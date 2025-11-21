@@ -173,7 +173,6 @@ CREATE TABLE IF NOT EXISTS `pattern_templates` (
   KEY `idx_type` (`type`),
   KEY `idx_type_level` (`type`, `level`),
   KEY `idx_active` (`is_active`),
-  KEY `idx_tags` ((CAST(`tags` AS CHAR(255) ARRAY))),
   CONSTRAINT `fk_pattern_templates_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='[AI:Claude] Bibliothèque de patrons de référence pour prompt engineering';
