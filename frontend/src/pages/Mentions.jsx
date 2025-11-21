@@ -34,10 +34,10 @@ export default function Mentions() {
                 <strong>Forme juridique :</strong> Auto-entrepreneur
               </p>
               <p className="text-gray-700 leading-relaxed mb-2">
-                <strong>SIRET :</strong> [Numéro SIRET]
+                <strong>SIRET :</strong> En cours d'immatriculation
               </p>
               <p className="text-gray-700 leading-relaxed mb-2">
-                <strong>Numéro TVA :</strong> [Numéro TVA Intracommunautaire]
+                <strong>Numéro TVA :</strong> En cours d'immatriculation
               </p>
               <p className="text-gray-700 leading-relaxed mb-2">
                 <strong>Adresse du siège social :</strong> rue Boullay 71000 MACON

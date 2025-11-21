@@ -3,7 +3,7 @@
  * @brief Landing page publique pour la waitlist YarnFlow
  * @author YarnFlow Team + AI Assistants
  * @created 2025-11-20
- * @version 0.12.0
+ * @version 0.13.0 - Minimal & Clean
  */
 
 import { useState, useEffect } from 'react'
@@ -56,469 +56,255 @@ const Landing = () => {
     }
   }
 
+  const totalSubscribers = 45 + subscribersCount
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center gap-2">
-              <span className="text-3xl">🧶</span>
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                YarnFlow
-              </span>
-            </div>
+    <div className="min-h-screen bg-white">
+      {/* Header simple */}
+      <header className="bg-white border-b sticky top-0 z-50">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-2xl">🧶</span>
+            <span className="text-xl font-bold text-gray-900">YarnFlow</span>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-        <div className="text-center">
-          {/* Badge "Beta fermée" */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-6">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
-            </span>
-            Beta fermée en cours • Lancement public bientôt
-          </div>
-
-          {/* Titre principal */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Trackez, progressez, partagez</span> vos créations tricot & crochet
+      <section className="max-w-4xl mx-auto px-4 py-16 sm:py-20">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            L'app qui simplifie le tricot & crochet<br />
+            <span className="text-purple-600">— et sublime vos créations.</span>
           </h1>
 
-          {/* Sous-titre */}
-          <p className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Trackez vos projets comme un pro, sublimez vos photos avec l'IA,
-            partagez vos créations avec une communauté passionnée.
+          <p className="text-xl text-gray-600 mb-6 max-w-2xl mx-auto leading-relaxed">
+            Trackez vos projets, progressez sans stress, transformez vos photos avec l'IA.
           </p>
 
-          {/* Compteur d'inscrits */}
-          <div className="mb-8">
-            <p className="text-lg text-gray-700 mb-4">
-              Déjà <span className="font-bold text-purple-600 text-2xl">{112 + subscribersCount}</span> passionné·es sur la liste d'attente ! ❤️
+          <p className="text-lg text-gray-700 mb-8">
+            Déjà <strong className="text-purple-600">{totalSubscribers}</strong> passionné·es sur la waitlist ❤️
+          </p>
+
+          <div className="inline-flex flex-col gap-2 bg-purple-50 border-2 border-purple-200 rounded-xl px-6 py-4 mb-8">
+            <p className="text-purple-900 font-bold">🚀 Beta fermée — lancement public bientôt</p>
+            <p className="text-purple-700 text-sm">🎁 Offre Early Bird réservée aux inscrits</p>
+          </div>
+        </div>
+
+        {/* Formulaire */}
+        {!success ? (
+          <form onSubmit={handleSubmit} className="max-w-md mx-auto mb-16">
+            <div className="bg-gray-50 rounded-xl border-2 border-gray-200 p-6 space-y-4">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Votre email"
+                required
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-lg"
+              />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Votre prénom (optionnel)"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+
+              {error && (
+                <div className="bg-red-50 border-2 border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-purple-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-purple-700 transition disabled:opacity-50"
+              >
+                {loading ? 'Inscription...' : '👉 Je rejoins la waitlist'}
+              </button>
+
+              <p className="text-xs text-gray-500 text-center">
+                Sans engagement · Notification prioritaire · Offre exclusive
+              </p>
+            </div>
+          </form>
+        ) : (
+          <div className="max-w-md mx-auto bg-green-50 border-2 border-green-200 rounded-xl p-8 text-center mb-16">
+            <div className="text-5xl mb-4">🎉</div>
+            <h3 className="text-2xl font-bold text-green-900 mb-2">
+              Bienvenue dans l'aventure !
+            </h3>
+            <p className="text-green-700">
+              Vous êtes inscrit·e à la waitlist YarnFlow.<br />
+              On vous tient au courant très bientôt ! 💌
             </p>
           </div>
+        )}
 
-          {/* Formulaire d'inscription */}
-          {!success ? (
-            <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 space-y-4">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Votre email"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition text-lg"
-                />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Votre prénom (optionnel)"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
-                />
+        {/* Pourquoi YarnFlow */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">💡 Pourquoi YarnFlow ?</h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Parce que vous méritez mieux que des post-its, des notes éparpillées et des photos ternes.
+          </p>
 
-                {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    {error}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-lg font-bold text-lg hover:from-purple-700 hover:to-pink-700 transition disabled:opacity-50 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  {loading ? 'Inscription...' : '🚀 Rejoindre la waitlist'}
-                </button>
-
-                <p className="text-xs text-gray-500 text-center">
-                  ✅ Soyez parmi les premiers notifiés du lancement<br />
-                  🎁 Offre exclusive pour les early birds
-                </p>
-              </div>
-            </form>
-          ) : (
-            <div className="max-w-md mx-auto bg-green-50 border-2 border-green-200 rounded-2xl p-8">
-              <div className="text-6xl mb-4">🎉</div>
-              <h3 className="text-2xl font-bold text-green-900 mb-2">
-                Bienvenue dans l'aventure !
-              </h3>
-              <p className="text-green-700">
-                Vous êtes inscrit·e à la waitlist YarnFlow. On vous tient au courant très bientôt ! 💌
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
+              <h3 className="font-bold text-red-900 text-lg mb-3">Sans YarnFlow → chaos</h3>
+              <p className="text-red-700 text-sm leading-relaxed">
+                Rangs oubliés · patrons dispersés · photos ratées · progression impossible à suivre
               </p>
             </div>
-          )}
+            <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+              <h3 className="font-bold text-green-900 text-lg mb-3">Avec YarnFlow → fluidité</h3>
+              <ul className="text-green-700 text-sm space-y-1">
+                <li>✓ Compteur intelligent</li>
+                <li>✓ Stats temps réel</li>
+                <li>✓ Bibliothèque patrons</li>
+                <li>✓ AI Photo Studio</li>
+              </ul>
+            </div>
+          </div>
         </div>
-      </section>
 
-      {/* Section Problème */}
-      <section className="bg-gray-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
-            Vous en avez marre de...
-          </h2>
-          <p className="text-xl text-gray-600 text-center mb-12">
-            YarnFlow résout vos problèmes quotidiens
-          </p>
+        {/* Ce que vous allez pouvoir faire */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">✨ Ce que vous allez pouvoir faire</h2>
 
-          {/* Tableau Problème → Solution */}
-          <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-2">
-              {/* Header */}
-              <div className="bg-red-100 p-4 text-center border-b md:border-b-0 md:border-r border-red-200">
-                <h3 className="text-lg font-bold text-red-900">❌ Problème</h3>
-              </div>
-              <div className="bg-green-100 p-4 text-center border-b md:border-b-0 border-green-200">
-                <h3 className="text-lg font-bold text-green-900">✅ Solution YarnFlow</h3>
-              </div>
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">🧶 Compter vos rangs intelligemment</h3>
+              <p className="text-gray-600">Multi-sections · timer automatique · sauvegarde cloud</p>
+            </div>
 
-              {/* Ligne 1 */}
-              <div className="p-6 bg-red-50 border-b md:border-r border-red-100 flex items-center gap-3">
-                <span className="text-3xl">😩</span>
-                <div>
-                  <p className="font-semibold text-red-900">Perdre le compte de vos rangs</p>
-                  <p className="text-sm text-red-700">Recommencer à zéro après interruption</p>
-                </div>
-              </div>
-              <div className="p-6 bg-green-50 border-b border-green-100 flex items-center gap-3">
-                <span className="text-3xl">🧶</span>
-                <div>
-                  <p className="font-semibold text-green-900">Compteur intelligent multi-sections</p>
-                  <p className="text-sm text-green-700">Sauvegarde automatique, reprise où vous étiez</p>
-                </div>
-              </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">📚 Gérer vos patrons facilement</h3>
+              <p className="text-gray-600">Tous vos PDF centralisés et liés à vos projets (Pro)</p>
+            </div>
 
-              {/* Ligne 2 */}
-              <div className="p-6 bg-red-50 border-b md:border-r border-red-100 flex items-center gap-3">
-                <span className="text-3xl">📱</span>
-                <div>
-                  <p className="font-semibold text-red-900">Jongler entre 10 apps différentes</p>
-                  <p className="text-sm text-red-700">Compteur, timer, patrons, notes...</p>
-                </div>
-              </div>
-              <div className="p-6 bg-green-50 border-b border-green-100 flex items-center gap-3">
-                <span className="text-3xl">📚</span>
-                <div>
-                  <p className="font-semibold text-green-900">App tout-en-un centralisée</p>
-                  <p className="text-sm text-green-700">Tout au même endroit, sync automatique</p>
-                </div>
-              </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">📸 Sublimer vos photos en un clic</h3>
+              <p className="text-gray-600">9 styles professionnels · jusqu'à 5 photos à la fois</p>
+            </div>
 
-              {/* Ligne 3 */}
-              <div className="p-6 bg-red-50 border-b md:border-r border-red-100 flex items-center gap-3">
-                <span className="text-3xl">📸</span>
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">📊 Suivre votre progression</h3>
+              <p className="text-gray-600">Rangs/heure · vitesse · historique · graphiques en temps réel</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Témoignages */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">💬 Ils testent déjà YarnFlow</h2>
+
+          <div className="space-y-6">
+            <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
+              <p className="font-bold text-gray-900 mb-1">Claire M. – Tricot</p>
+              <p className="text-gray-700 italic">"Enfin une app qui comprend le tricot. Le compteur est un bonheur."</p>
+            </div>
+
+            <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
+              <p className="font-bold text-gray-900 mb-1">Julien L. – Crochet</p>
+              <p className="text-gray-700 italic">"J'ai tout au même endroit. Je n'utilise plus rien d'autre."</p>
+            </div>
+
+            <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
+              <p className="font-bold text-gray-900 mb-1">Élodie P. – Etsy</p>
+              <p className="text-gray-700 italic">"L'IA améliore juste la photo. Pas l'ouvrage. Exactement ce qu'il faut."</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Offre Early Bird */}
+        <div className="mb-16">
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-300 rounded-xl p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">🔥 Offre de lancement (waitlist uniquement)</h2>
+
+            <div className="space-y-4 mb-6">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🥇</span>
                 <div>
-                  <p className="font-semibold text-red-900">Photos ternes sur Instagram</p>
-                  <p className="text-sm text-red-700">Éclairage raté, rendu amateur</p>
-                </div>
-              </div>
-              <div className="p-6 bg-green-50 border-b border-green-100 flex items-center gap-3">
-                <span className="text-3xl">✨</span>
-                <div>
-                  <p className="font-semibold text-green-900">AI Photo Studio avec 9 styles pro</p>
-                  <p className="text-sm text-green-700">Sublimez vos créations en 1 clic</p>
+                  <p className="font-bold text-gray-900">Places 1-100 : 2,99€/mois pendant 12 mois</p>
+                  <p className="text-gray-600 text-sm">(puis 4,99€/mois) — Accès PRO complet</p>
                 </div>
               </div>
 
-              {/* Ligne 4 */}
-              <div className="p-6 bg-red-50 md:border-r border-red-100 flex items-center gap-3">
-                <span className="text-3xl">❓</span>
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🥈</span>
                 <div>
-                  <p className="font-semibold text-red-900">Ne jamais connaître votre progression</p>
-                  <p className="text-sm text-red-700">Combien de temps ? Quelle vitesse ?</p>
+                  <p className="font-bold text-gray-900">Places 101-200 : 10 crédits IA offerts</p>
+                  <p className="text-gray-600 text-sm">+ Badge Membre Fondateur</p>
                 </div>
               </div>
-              <div className="p-6 bg-green-50 flex items-center gap-3">
-                <span className="text-3xl">📊</span>
-                <div>
-                  <p className="font-semibold text-green-900">Stats & graphiques en temps réel</p>
-                  <p className="text-sm text-green-700">Rangs/heure, taux complétion, historique</p>
-                </div>
+            </div>
+
+            <p className="text-sm text-gray-600 border-t-2 border-orange-200 pt-4">
+              Réservé aux inscrits waitlist. <strong>200 places au total.</strong>
+            </p>
+          </div>
+        </div>
+
+        {/* Pricing */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">🔧 Pricing</h2>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            {/* FREE */}
+            <div className="border-2 border-gray-200 rounded-xl p-6">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">FREE</h3>
+              <p className="text-gray-600 mb-4">Pour tester</p>
+              <p className="text-3xl font-bold text-gray-900 mb-6">0€</p>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>✓ 3 projets actifs</li>
+                <li>✓ 5 photos IA/mois</li>
+                <li>✓ Compteur & stats de base</li>
+              </ul>
+            </div>
+
+            {/* PRO */}
+            <div className="border-2 border-purple-500 rounded-xl p-6 relative">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                  Recommandé
+                </span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">PRO</h3>
+              <p className="text-gray-600 mb-4">Pour les passionné·es</p>
+              <p className="text-3xl font-bold text-purple-600 mb-6">4,99€<span className="text-lg text-gray-600">/mois</span></p>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>✓ Projets illimités</li>
+                <li>✓ 75 photos IA/mois</li>
+                <li>✓ 9 styles photo pro</li>
+                <li>✓ Stats avancées</li>
+                <li>✓ Bibliothèque patrons</li>
+                <li>✓ Support prioritaire</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* PRO ANNUEL */}
+          <div className="bg-green-50 border-2 border-green-300 rounded-xl p-6">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900 mb-1">PRO ANNUEL</h3>
+                <p className="text-gray-600 text-sm">2 mois offerts · Meilleur prix</p>
+              </div>
+              <div className="text-right">
+                <p className="text-3xl font-bold text-green-600">39,99€<span className="text-lg text-gray-600">/an</span></p>
+                <p className="text-sm text-gray-500">soit 3,33€/mois</p>
               </div>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* Section Solution */}
-      <section className="py-16 bg-gradient-to-br from-purple-50 to-pink-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
-            Découvrez YarnFlow
-          </h2>
-          <p className="text-xl text-gray-600 text-center mb-12">
-            L'app tout-en-un qui transforme votre passion en superpouvoir
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                icon: '🧶',
-                title: 'Compteur intelligent',
-                description: 'Multi-sections, timer automatique, sauvegarde cloud instantanée'
-              },
-              {
-                icon: '📚',
-                title: 'Bibliothèque de patrons',
-                description: 'Tous vos patrons centralisés. Importez et liez-les à vos projets. (Pro)'
-              },
-              {
-                icon: '📸',
-                title: 'AI Photo Studio',
-                description: '9 styles pro, jusqu\'à 5 photos simultanément, sublimez vos créations'
-              },
-              {
-                icon: '📊',
-                title: 'Stats & graphiques',
-                description: 'Rangs/heure, temps total, progression, graphiques en temps réel'
-              }
-            ].map((feature, index) => (
-              <div key={index} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition">
-                <div className="text-5xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Section Témoignages Beta */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
-            Ce que disent nos beta testeurs
-          </h2>
-          <p className="text-gray-600 text-center mb-12">
-            Actuellement en test avec 50 passionné·es
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                name: 'Claire M.',
-                role: 'Beta testeuse • Tricot',
-                text: 'J\'ai enfin un outil qui me comprend ! Le compteur de rangs est hyper intuitif et les photos IA sont vraiment bluffantes.',
-                avatar: '👩‍🦰',
-                badge: 'Beta'
-              },
-              {
-                name: 'Julien L.',
-                role: 'Beta testeur • Crochet',
-                text: 'Fini les post-its partout ! YarnFlow centralise tout. Les stats détaillées me motivent vraiment à progresser.',
-                avatar: '👨‍🦱',
-                badge: 'Beta'
-              },
-              {
-                name: 'Élodie P.',
-                role: '120 ventes Etsy cette année',
-                text: 'L\'IA rattrape mon éclairage raté et met en valeur mes créations. Mais elle ne triche pas : si ton ouvrage est raté, il restera raté. Elle améliore la photo, pas le tricot. Et c\'est exactement ce que je voulais.',
-                avatar: '👩‍🦳',
-                badge: 'Beta'
-              }
-            ].map((testimonial, index) => (
-              <div key={index} className="bg-purple-50 rounded-2xl p-6 border-2 border-purple-200 relative">
-                {/* Badge Beta */}
-                <div className="absolute -top-3 -right-3">
-                  <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-                    {testimonial.badge}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-4xl">{testimonial.avatar}</span>
-                  <div>
-                    <div className="font-bold">{testimonial.name}</div>
-                    <div className="text-xs text-gray-600">{testimonial.role}</div>
-                  </div>
-                </div>
-                <p className="text-gray-700 italic text-sm">"{testimonial.text}"</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 text-center">
-            <div className="inline-block bg-blue-50 border-2 border-blue-200 rounded-xl px-6 py-3">
-              <p className="text-blue-800">
-                <span className="font-bold">🔥 La beta est complète</span> — Inscrivez-vous pour le lancement public !
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA intermédiaire */}
-      <section className="py-16 bg-gradient-to-r from-purple-600 to-pink-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Convaincu·e ? Rejoignez la waitlist ! 🚀
-          </h2>
-          <p className="text-xl text-white/90 mb-8">
-            Soyez parmi les premiers notifiés et profitez de l'offre Early Bird exclusive
-          </p>
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault()
-              window.scrollTo({ top: 0, behavior: 'smooth' })
-            }}
-            className="inline-block bg-white text-purple-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition shadow-xl transform hover:scale-105"
-          >
-            Je m'inscris maintenant ⬆️
-          </a>
-          <p className="mt-4 text-white/80 text-sm">
-            ⏰ Offre Early Bird limitée aux inscrits waitlist uniquement
-          </p>
-        </div>
-      </section>
-
-      {/* Section Pricing */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-4">
-            Pricing simple, clair, honnête
-          </h2>
-          <p className="text-xl text-gray-600 text-center mb-8">
-            Pas de surprise. Pas d'engagement. Juste ce dont vous avez vraiment besoin.
-          </p>
-
-          {/* Bandeau Early Bird */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 rounded-2xl p-8 text-center shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
-              <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-white/20 rounded-full blur-2xl"></div>
-              <div className="relative">
-                <div className="inline-block bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full mb-4">
-                  <span className="text-sm font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-                    🎁 OFFRE DE LANCEMENT • WAITLIST UNIQUEMENT
-                  </span>
-                </div>
-                <h3 className="text-3xl font-black text-white mb-3 drop-shadow-lg">
-                  EARLY BIRD — 2.99€/mois
-                </h3>
-                <p className="text-white text-lg mb-4 font-semibold">
-                  Prix bloqué pendant 12 mois • Puis 4.99€/mois • Accès complet PRO
-                </p>
-                <p className="text-white/90 text-sm">
-                  ⏰ Économisez 24€ la première année • Réservé aux inscrits waitlist
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* 2 plans principaux */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-12">
-            {[
-              {
-                name: 'FREE',
-                price: '0€',
-                period: '',
-                subtitle: 'Pour découvrir YarnFlow',
-                features: [
-                  '3 projets actifs',
-                  '5 photos IA/mois',
-                  'Tracker & Compteur',
-                  'Stats de base'
-                ],
-                notIncluded: ['Sync cloud', 'Styles IA avancés', 'Stats pro', 'Bibliothèque patrons'],
-                popular: false,
-                badge: null
-              },
-              {
-                name: 'PRO',
-                price: '4.99€',
-                period: '/mois',
-                subtitle: 'Pour les passionné·es',
-                features: [
-                  'Projets illimités',
-                  '75 photos IA/mois',
-                  '9 styles photo pro',
-                  'Stats complètes + graphiques',
-                  'Bibliothèque de patrons illimitée',
-                  'Multi-upload (5 photos)',
-                  'Support prioritaire'
-                ],
-                notIncluded: [],
-                popular: true,
-                badge: 'Recommandé'
-              }
-            ].map((plan, index) => (
-              <div
-                key={index}
-                className={`bg-white rounded-2xl p-6 shadow-lg ${
-                  plan.popular ? 'ring-4 ring-purple-500 relative' : ''
-                }`}
-              >
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                    <span className={`${
-                      plan.popular ? 'bg-purple-500' : 'bg-gradient-to-r from-yellow-400 to-orange-500'
-                    } text-white px-4 py-1 rounded-full text-xs font-bold shadow-lg`}>
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
-                <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
-                <p className="text-sm text-gray-500 mb-4">{plan.subtitle}</p>
-                <div className="mb-6">
-                  <span className="text-3xl font-bold">{plan.price}</span>
-                  <span className="text-gray-600 text-sm">{plan.period}</span>
-                </div>
-                <ul className="space-y-2 mb-6">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <span className="text-green-500 mt-0.5">✓</span>
-                      <span className="text-gray-700">{feature}</span>
-                    </li>
-                  ))}
-                  {plan.notIncluded && plan.notIncluded.length > 0 && plan.notIncluded.map((feature, i) => (
-                    <li key={`not-${i}`} className="flex items-start gap-2 text-sm">
-                      <span className="text-red-400 mt-0.5">✗</span>
-                      <span className="text-gray-400">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          {/* Offre Annuelle */}
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-purple-200">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-2xl font-bold">PRO ANNUEL</h3>
-                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
-                      Meilleure offre
-                    </span>
-                  </div>
-                  <p className="text-gray-600">Accès complet PRO • 2 mois offerts • Économisez 20€/an</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-purple-600">39.99€<span className="text-lg text-gray-600">/an</span></div>
-                  <p className="text-sm text-gray-500">soit 3.33€/mois</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Final */}
-      <section className="py-16 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-6">
-            Prêt·e à révolutionner votre passion ?
-          </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Rejoignez la communauté YarnFlow dès aujourd'hui
-          </p>
+        {/* CTA Final */}
+        <div className="text-center bg-purple-600 text-white rounded-xl p-12">
+          <h2 className="text-3xl font-bold mb-4">🚀 Prêt·e à rejoindre l'aventure ?</h2>
+          <p className="text-xl mb-8 opacity-90">Accès prioritaire + offre Early Bird garantie</p>
 
           {!success && (
             <a
@@ -527,56 +313,49 @@ const Landing = () => {
                 e.preventDefault()
                 window.scrollTo({ top: 0, behavior: 'smooth' })
               }}
-              className="inline-block bg-white text-purple-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition shadow-xl"
+              className="inline-block bg-white text-purple-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition"
             >
-              Je rejoins la waitlist 🚀
+              👉 Je rejoins la waitlist
             </a>
           )}
-
-          <div className="mt-8 flex items-center justify-center gap-8 text-sm opacity-75">
-            <span>✅ Sans engagement</span>
-            <span>✅ Notification prioritaire</span>
-            <span>✅ Offre exclusive</span>
-          </div>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <span className="text-3xl">🧶</span>
-                <span className="text-xl font-bold">YarnFlow</span>
+                <span className="text-2xl">🧶</span>
+                <span className="text-lg font-bold">YarnFlow</span>
               </div>
-              <p className="text-gray-400">
-                Trackez, progressez, partagez vos créations tricot & crochet
+              <p className="text-gray-400 text-sm">
+                L'app tout-en-un pour tricot & crochet avec AI Photo Studio.
               </p>
             </div>
 
             <div>
               <h3 className="font-bold mb-4">Liens rapides</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link to="/login" className="hover:text-white transition">Connexion</Link></li>
-                <li><a href="#" className="hover:text-white transition">FAQ</a></li>
-                <li><a href="#" className="hover:text-white transition">Contact</a></li>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                <li><a href="#waitlist" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }) }} className="hover:text-white transition">Rejoindre la waitlist</a></li>
+                <li><a href="mailto:yarnflowapp@gmail.com" className="hover:text-white transition">Contact</a></li>
               </ul>
             </div>
 
             <div>
               <h3 className="font-bold mb-4">Suivez-nous</h3>
-              <div className="flex gap-4 text-2xl">
-                <a href="#" className="hover:text-purple-400 transition">📷</a>
-                <a href="#" className="hover:text-pink-400 transition">📌</a>
-                <a href="#" className="hover:text-purple-400 transition">🎵</a>
+              <div className="flex gap-4 text-xl">
+                <a href="#" className="hover:text-purple-400 transition" aria-label="Instagram">📷</a>
+                <a href="#" className="hover:text-pink-400 transition" aria-label="Pinterest">📌</a>
+                <a href="#" className="hover:text-purple-400 transition" aria-label="TikTok">🎵</a>
               </div>
             </div>
           </div>
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
-            <p>&copy; 2025 YarnFlow. Tous droits réservés.</p>
-            <div className="mt-2 space-x-4">
+            <p className="mb-3">&copy; 2025 YarnFlow. Tous droits réservés.</p>
+            <div className="space-x-4">
               <Link to="/privacy" className="hover:text-white transition">Politique de confidentialité</Link>
               <Link to="/cgu" className="hover:text-white transition">Conditions d'utilisation</Link>
               <Link to="/mentions" className="hover:text-white transition">Mentions légales</Link>

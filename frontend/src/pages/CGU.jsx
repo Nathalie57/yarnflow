@@ -157,7 +157,7 @@ export default function CGU() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Contact</h2>
             <p className="text-gray-700 leading-relaxed">
               Pour toute question concernant ces CGU, contactez-nous à :<br/>
-              <strong className="text-purple-600">yarnfloxapp@gmail.com</strong>
+              <strong className="text-purple-600">yarnflowapp@gmail.com</strong>
             </p>
           </section>
 
