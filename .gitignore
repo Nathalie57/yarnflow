@@ -54,3 +54,4 @@ composer.lock
 # Database dumps
 *.sql.gz
 *.dump
+CHECKLIST-GRATUIT.md
