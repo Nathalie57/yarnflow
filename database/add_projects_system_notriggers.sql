@@ -189,11 +189,13 @@ CREATE TABLE IF NOT EXISTS project_sessions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
--- VUES UTILES (optionnel - peut être commenté si problème hébergement)
+-- VUES UTILES - RETIREES (InfinityFree n'autorise pas CREATE VIEW)
 -- ============================================================================
 
+-- Si besoin, ces requêtes peuvent être exécutées directement dans le code PHP :
+
+/*
 -- Vue : Projets avec temps formaté
-CREATE OR REPLACE VIEW v_projects_formatted AS
 SELECT
     p.*,
     u.email as user_email,
@@ -212,7 +214,6 @@ FROM projects p
 JOIN users u ON p.user_id = u.id;
 
 -- Vue : Top projets actifs (derniers travaillés)
-CREATE OR REPLACE VIEW v_active_projects AS
 SELECT
     p.id,
     p.user_id,
@@ -225,6 +226,7 @@ SELECT
 FROM projects p
 WHERE p.status = 'in_progress'
 ORDER BY p.last_worked_at DESC;
+*/
 
 -- ============================================================================
 -- COMMENTAIRES FINAUX
