@@ -1,0 +1,18 @@
+# robots.txt - YarnFlow
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /my-projects
+Disallow: /profile
+Disallow: /subscription
+Disallow: /stats
+Disallow: /gallery
+Disallow: /pattern-library
+
+# Sitemap
+Sitemap: https://yarnflow.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10

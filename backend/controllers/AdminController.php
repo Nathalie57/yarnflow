@@ -1,0 +1,462 @@
+<?php
+/**
+ * @file AdminController.php
+ * @brief Contrôleur pour l'administration de l'application
+ * @author Superpictor Team + AI Assistants
+ * @created 2025-11-13
+ * @modified 2025-11-13 by [AI:Claude] - Création initiale
+ *
+ * @history
+ *   2025-11-13 [AI:Claude] Création du contrôleur admin avec stats et gestion templates
+ */
+
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Models\User;
+use App\Models\Pattern;
+use App\Models\Payment;
+use App\Models\PatternTemplate;
+use App\Utils\Response;
+use App\Utils\Validator;
+
+/**
+ * [AI:Claude] Contrôleur d'administration (accès réservé aux admins)
+ */
+class AdminController
+{
+    private User $userModel;
+    private Pattern $patternModel;
+    private Payment $paymentModel;
+    private PatternTemplate $templateModel;
+
+    public function __construct()
+    {
+        $this->userModel = new User();
+        $this->patternModel = new Pattern();
+        $this->paymentModel = new Payment();
+        $this->templateModel = new PatternTemplate();
+    }
+
+    /**
+     * [AI:Claude] Vérifier que l'utilisateur est admin
+     */
+    private function requireAdmin(): ?array
+    {
+        $authMiddleware = new \App\Middleware\AuthMiddleware();
+        $userData = $authMiddleware->authenticate();
+
+        if ($userData === null)
+            return null;
+
+        if ($userData['role'] !== 'admin') {
+            Response::error('Accès réservé aux administrateurs', HTTP_FORBIDDEN);
+            return null;
+        }
+
+        return $userData;
+    }
+
+    /**
+     * [AI:Claude] Obtenir les statistiques globales de l'application
+     * GET /api/admin/stats
+     */
+    public function getStats(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        // [AI:Claude] Statistiques utilisateurs
+        $totalUsers = $this->userModel->count([]);
+        $freeUsers = $this->userModel->count(['subscription_type' => SUBSCRIPTION_FREE]);
+        $monthlyUsers = $this->userModel->count(['subscription_type' => SUBSCRIPTION_MONTHLY]);
+        $yearlyUsers = $this->userModel->count(['subscription_type' => SUBSCRIPTION_YEARLY]);
+
+        // [AI:Claude] Statistiques patrons
+        $totalPatterns = $this->patternModel->count([]);
+        $completedPatterns = $this->patternModel->count(['status' => PATTERN_COMPLETED]);
+        $errorPatterns = $this->patternModel->count(['status' => PATTERN_ERROR]);
+
+        // [AI:Claude] Statistiques paiements
+        $paymentStats = $this->paymentModel->getPaymentStats();
+
+        // [AI:Claude] Revenus du mois en cours
+        $currentMonthStart = date('Y-m-01');
+        $currentMonthEnd = date('Y-m-t');
+        $monthlyRevenue = $this->paymentModel->getTotalRevenue($currentMonthStart, $currentMonthEnd);
+
+        // [AI:Claude] Revenus du mois dernier
+        $lastMonthStart = date('Y-m-01', strtotime('-1 month'));
+        $lastMonthEnd = date('Y-m-t', strtotime('-1 month'));
+        $lastMonthRevenue = $this->paymentModel->getTotalRevenue($lastMonthStart, $lastMonthEnd);
+
+        Response::success([
+            'users' => [
+                'total' => $totalUsers,
+                'free' => $freeUsers,
+                'monthly_subscribers' => $monthlyUsers,
+                'yearly_subscribers' => $yearlyUsers
+            ],
+            'patterns' => [
+                'total' => $totalPatterns,
+                'completed' => $completedPatterns,
+                'errors' => $errorPatterns
+            ],
+            'payments' => $paymentStats,
+            'revenue' => [
+                'total' => $paymentStats['total_revenue'],
+                'current_month' => $monthlyRevenue,
+                'last_month' => $lastMonthRevenue,
+                'average_payment' => $paymentStats['average_payment']
+            ]
+        ]);
+    }
+
+    /**
+     * [AI:Claude] Lister tous les utilisateurs
+     * GET /api/admin/users
+     */
+    public function listUsers(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $page = (int)($_GET['page'] ?? 1);
+        $limit = (int)($_GET['limit'] ?? 20);
+        $offset = ($page - 1) * $limit;
+
+        $users = $this->userModel->findAll($limit, $offset);
+        $total = $this->userModel->count([]);
+
+        // [AI:Claude] Retirer les mots de passe
+        foreach ($users as &$user) {
+            unset($user['password']);
+        }
+
+        Response::success([
+            'users' => $users,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => (int)ceil($total / $limit)
+            ]
+        ]);
+    }
+
+    /**
+     * [AI:Claude] Obtenir les détails d'un utilisateur
+     * GET /api/admin/users/{id}
+     */
+    public function getUserDetails(int $userId): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $user = $this->userModel->findById($userId);
+
+        if ($user === null)
+            Response::notFound('Utilisateur introuvable');
+
+        unset($user['password']);
+
+        // [AI:Claude] Statistiques de l'utilisateur
+        $patterns = $this->patternModel->findByUserId($userId, 10);
+        $payments = $this->paymentModel->findByUserId($userId, 10);
+        $totalSpent = $this->paymentModel->getTotalPaidByUser($userId);
+
+        Response::success([
+            'user' => $user,
+            'patterns' => $patterns,
+            'payments' => $payments,
+            'stats' => [
+                'total_patterns' => count($patterns),
+                'total_spent' => $totalSpent
+            ]
+        ]);
+    }
+
+    /**
+     * [AI:Claude] Mettre à jour l'abonnement d'un utilisateur
+     * PUT /api/admin/users/{id}/subscription
+     */
+    public function updateUserSubscription(int $userId): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $validator = new Validator();
+        $validator
+            ->required($data['subscription_type'] ?? null, 'subscription_type')
+            ->in($data['subscription_type'] ?? null, [SUBSCRIPTION_FREE, SUBSCRIPTION_MONTHLY, SUBSCRIPTION_YEARLY], 'subscription_type');
+
+        if ($validator->fails())
+            Response::validationError($validator->getErrors());
+
+        $user = $this->userModel->findById($userId);
+
+        if ($user === null)
+            Response::notFound('Utilisateur introuvable');
+
+        $subscriptionType = $data['subscription_type'];
+        $expiresAt = null;
+
+        if ($subscriptionType === SUBSCRIPTION_MONTHLY)
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 month'));
+        elseif ($subscriptionType === SUBSCRIPTION_YEARLY)
+            $expiresAt = date('Y-m-d H:i:s', strtotime('+1 year'));
+
+        try {
+            $this->userModel->updateSubscription($userId, $subscriptionType, $expiresAt);
+
+            Response::success([], HTTP_OK, 'Abonnement mis à jour');
+
+        } catch (\Exception $e) {
+            error_log('[AdminController] Erreur mise à jour abonnement : '.$e->getMessage());
+            Response::serverError('Erreur lors de la mise à jour');
+        }
+    }
+
+    /**
+     * [AI:Claude] Lister tous les patrons (avec filtres)
+     * GET /api/admin/patterns
+     */
+    public function listPatterns(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $page = (int)($_GET['page'] ?? 1);
+        $limit = (int)($_GET['limit'] ?? 20);
+        $offset = ($page - 1) * $limit;
+        $status = $_GET['status'] ?? null;
+
+        $conditions = [];
+        if ($status !== null)
+            $conditions['status'] = $status;
+
+        $patterns = $this->patternModel->findBy($conditions, $limit, $offset);
+        $total = $this->patternModel->count($conditions);
+
+        Response::success([
+            'patterns' => $patterns,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => (int)ceil($total / $limit)
+            ]
+        ]);
+    }
+
+    /**
+     * [AI:Claude] Supprimer un patron
+     * DELETE /api/admin/patterns/{id}
+     */
+    public function deletePattern(int $patternId): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $pattern = $this->patternModel->findById($patternId);
+
+        if ($pattern === null)
+            Response::notFound('Patron introuvable');
+
+        try {
+            $this->patternModel->delete($patternId);
+            Response::success([], HTTP_OK, 'Patron supprimé');
+
+        } catch (\Exception $e) {
+            error_log('[AdminController] Erreur suppression patron : '.$e->getMessage());
+            Response::serverError('Erreur lors de la suppression');
+        }
+    }
+
+    /**
+     * [AI:Claude] Lister tous les pattern templates
+     * GET /api/admin/templates
+     */
+    public function listTemplates(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $page = (int)($_GET['page'] ?? 1);
+        $limit = (int)($_GET['limit'] ?? 50);
+        $offset = ($page - 1) * $limit;
+
+        $templates = $this->templateModel->findAll($limit, $offset);
+        $total = $this->templateModel->count([]);
+
+        Response::success([
+            'templates' => $templates,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'pages' => (int)ceil($total / $limit)
+            ]
+        ]);
+    }
+
+    /**
+     * [AI:Claude] Créer un nouveau pattern template
+     * POST /api/admin/templates
+     */
+    public function createTemplate(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $validator = new Validator();
+        $validator
+            ->required($data['name'] ?? null, 'name')
+            ->required($data['type'] ?? null, 'type')
+            ->required($data['level'] ?? null, 'level')
+            ->required($data['content'] ?? null, 'content');
+
+        if ($validator->fails())
+            Response::validationError($validator->getErrors());
+
+        try {
+            $templateId = $this->templateModel->createTemplate([
+                'name' => $data['name'],
+                'type' => $data['type'],
+                'subtype' => $data['subtype'] ?? null,
+                'level' => $data['level'],
+                'size' => $data['size'] ?? null,
+                'content' => is_string($data['content']) ? $data['content'] : json_encode($data['content']),
+                'tags' => isset($data['tags']) ? json_encode($data['tags']) : null,
+                'is_active' => $data['is_active'] ?? true
+            ]);
+
+            $template = $this->templateModel->findById($templateId);
+
+            Response::created([
+                'template' => $template
+            ], 'Template créé avec succès');
+
+        } catch (\Exception $e) {
+            error_log('[AdminController] Erreur création template : '.$e->getMessage());
+            Response::serverError('Erreur lors de la création du template');
+        }
+    }
+
+    /**
+     * [AI:Claude] Mettre à jour un pattern template
+     * PUT /api/admin/templates/{id}
+     */
+    public function updateTemplate(int $templateId): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $template = $this->templateModel->findById($templateId);
+
+        if ($template === null)
+            Response::notFound('Template introuvable');
+
+        $data = json_decode(file_get_contents('php://input'), true);
+
+        $updateData = [];
+
+        if (isset($data['name']))
+            $updateData['name'] = $data['name'];
+
+        if (isset($data['type']))
+            $updateData['type'] = $data['type'];
+
+        if (isset($data['subtype']))
+            $updateData['subtype'] = $data['subtype'];
+
+        if (isset($data['level']))
+            $updateData['level'] = $data['level'];
+
+        if (isset($data['size']))
+            $updateData['size'] = $data['size'];
+
+        if (isset($data['content']))
+            $updateData['content'] = is_string($data['content']) ? $data['content'] : json_encode($data['content']);
+
+        if (isset($data['tags']))
+            $updateData['tags'] = json_encode($data['tags']);
+
+        if (isset($data['is_active']))
+            $updateData['is_active'] = $data['is_active'];
+
+        if (empty($updateData))
+            Response::error('Aucune donnée à mettre à jour', HTTP_UNPROCESSABLE);
+
+        try {
+            $this->templateModel->update($templateId, $updateData);
+
+            $updated = $this->templateModel->findById($templateId);
+
+            Response::success([
+                'template' => $updated
+            ], HTTP_OK, 'Template mis à jour');
+
+        } catch (\Exception $e) {
+            error_log('[AdminController] Erreur mise à jour template : '.$e->getMessage());
+            Response::serverError('Erreur lors de la mise à jour');
+        }
+    }
+
+    /**
+     * [AI:Claude] Supprimer un pattern template
+     * DELETE /api/admin/templates/{id}
+     */
+    public function deleteTemplate(int $templateId): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $template = $this->templateModel->findById($templateId);
+
+        if ($template === null)
+            Response::notFound('Template introuvable');
+
+        try {
+            $this->templateModel->delete($templateId);
+            Response::success([], HTTP_OK, 'Template supprimé');
+
+        } catch (\Exception $e) {
+            error_log('[AdminController] Erreur suppression template : '.$e->getMessage());
+            Response::serverError('Erreur lors de la suppression');
+        }
+    }
+
+    /**
+     * [AI:Claude] Lister tous les paiements récents
+     * GET /api/admin/payments
+     */
+    public function listPayments(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $limit = (int)($_GET['limit'] ?? 50);
+        $payments = $this->paymentModel->getRecentPayments($limit);
+
+        Response::success([
+            'payments' => $payments
+        ]);
+    }
+}

@@ -1,0 +1,109 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://yarnflow.com/#organization",
+      "name": "YarnFlow Studio",
+      "url": "https://yarnflow.com",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://yarnflow.com/logo.png",
+        "width": 512,
+        "height": 512
+      },
+      "sameAs": [
+        "https://twitter.com/yarnflow",
+        "https://instagram.com/yarnflow",
+        "https://facebook.com/yarnflow"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "yarnflowapp@gmail.com",
+        "contactType": "customer support",
+        "availableLanguage": ["fr", "en"]
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://yarnflow.com/#website",
+      "url": "https://yarnflow.com",
+      "name": "YarnFlow",
+      "description": "Tracker tricot & crochet avec stats avancées et AI Photo Studio",
+      "publisher": {
+        "@id": "https://yarnflow.com/#organization"
+      },
+      "inLanguage": "fr-FR"
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "YarnFlow",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web, iOS, Android",
+      "offers": {
+        "@type": "AggregateOffer",
+        "lowPrice": "0",
+        "highPrice": "4.99",
+        "priceCurrency": "EUR",
+        "offerCount": "3",
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "FREE",
+            "price": "0",
+            "priceCurrency": "EUR"
+          },
+          {
+            "@type": "Offer",
+            "name": "PRO Mensuel",
+            "price": "4.99",
+            "priceCurrency": "EUR",
+            "billingDuration": "P1M"
+          },
+          {
+            "@type": "Offer",
+            "name": "PRO Annuel",
+            "price": "39.99",
+            "priceCurrency": "EUR",
+            "billingDuration": "P1Y"
+          }
+        ]
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "127",
+        "bestRating": "5",
+        "worstRating": "1"
+      },
+      "description": "YarnFlow est l'app ultime pour les passionnés de tricot et crochet. Trackez vos projets avec des stats avancées, générez des photos professionnelles avec l'IA, et centralisez tous vos patrons.",
+      "featureList": [
+        "Compteur de rangs/tours intelligent",
+        "Timer automatique",
+        "Statistiques avancées (vitesse, progression)",
+        "AI Photo Studio (génération backgrounds)",
+        "Bibliothèque de patrons centralisée",
+        "Sync cloud multi-devices",
+        "Graphiques de progression"
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://yarnflow.com/#webpage",
+      "url": "https://yarnflow.com/",
+      "name": "YarnFlow - Tracker tricot & crochet avec stats avancées",
+      "description": "Suivez vos projets tricot et crochet avec des stats avancées, générez des photos professionnelles avec l'IA, centralisez vos patrons. Offre Early Bird à 2.99€/mois.",
+      "isPartOf": {
+        "@id": "https://yarnflow.com/#website"
+      },
+      "inLanguage": "fr-FR",
+      "potentialAction": {
+        "@type": "SubscribeAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://yarnflow.com/#waitlist"
+        }
+      }
+    }
+  ]
+}

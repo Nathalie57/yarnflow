@@ -1,0 +1,800 @@
+<?php
+/**
+ * @file PhotoController.php
+ * @brief Contrôleur REST API pour AI Photo Studio
+ * @author Nathalie + AI Assistants
+ * @created 2025-11-14
+ * @modified 2025-11-14 by [AI:Claude] - Création API photos IA
+ *
+ * @history
+ *   2025-11-14 [AI:Claude] Création contrôleur galerie + génération IA
+ */
+
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use App\Models\User;
+use App\Services\AIPhotoService;
+use App\Services\CreditManager;
+use App\Middleware\AuthMiddleware;
+use App\Config\Database;
+use PDO;
+
+class PhotoController
+{
+    private PDO $db;
+    private AIPhotoService $photoService;
+    private CreditManager $creditManager;
+    private User $userModel;
+    private AuthMiddleware $authMiddleware;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+        $this->photoService = new AIPhotoService();
+        $this->creditManager = new CreditManager();
+        $this->userModel = new User();
+        $this->authMiddleware = new AuthMiddleware();
+    }
+
+    /**
+     * [AI:Claude] GET /api/photos - Liste des photos de l'utilisateur
+     *
+     * @param array $params Query params (project_id, limit, offset)
+     * @return void JSON response
+     */
+    public function index(array $params = []): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            $projectId = isset($params['project_id']) ? (int)$params['project_id'] : null;
+            $limit = isset($params['limit']) ? (int)$params['limit'] : 50;
+            $offset = isset($params['offset']) ? (int)$params['offset'] : 0;
+
+            if ($limit > 100)
+                $limit = 100;
+
+            $photos = $this->getUserPhotos($userId, $projectId, $limit, $offset);
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'photos' => $photos,
+                'count' => count($photos)
+            ]);
+
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] POST /api/photos/upload - Upload photo originale
+     *
+     * @return void JSON response
+     */
+    public function upload(): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            // [AI:Claude] Vérifier le fichier uploadé
+            if (!isset($_FILES['photo']))
+                throw new \InvalidArgumentException('Fichier photo manquant');
+
+            $file = $_FILES['photo'];
+
+            if ($file['error'] !== UPLOAD_ERR_OK)
+                throw new \Exception('Erreur lors de l\'upload');
+
+            // [AI:Claude] Valider le fichier
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!in_array($file['type'], $allowedTypes))
+                throw new \InvalidArgumentException('Type de fichier non supporté');
+
+            // [AI:Claude] Sauvegarder le fichier
+            $originalPath = $this->saveUploadedFile($file, $userId);
+
+            // [AI:Claude] Récupérer les métadonnées
+            $data = $_POST;
+            $projectId = isset($data['project_id']) ? (int)$data['project_id'] : null;
+
+            // [AI:Claude] Enregistrer en base
+            $photoId = $this->createPhotoRecord($userId, $projectId, $originalPath, $data);
+
+            $photo = $this->getPhotoById($photoId);
+
+            $this->sendResponse(201, [
+                'success' => true,
+                'message' => 'Photo uploadée avec succès',
+                'photo' => $photo
+            ]);
+
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] POST /api/photos/{id}/enhance - Embellir avec IA
+     *
+     * @param int $photoId ID de la photo
+     * @return void JSON response
+     */
+    public function enhance(int $photoId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+
+            // [AI:Claude] Vérifier que la photo appartient à l'utilisateur
+            $photo = $this->getPhotoById($photoId);
+
+            if (!$photo || (int)$photo['user_id'] !== $userId) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Accès non autorisé'
+                ]);
+                return;
+            }
+
+            // [AI:Claude] Vérifier les crédits
+            if (!$this->creditManager->hasEnoughCredits($userId)) {
+                $credits = $this->creditManager->getUserCredits($userId);
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Crédits insuffisants',
+                    'credits_available' => $credits['total_available']
+                ]);
+                return;
+            }
+
+            // [AI:Claude] Récupérer les options
+            $style = $data['style'] ?? 'lifestyle';
+            $purpose = $data['purpose'] ?? 'instagram';
+            $projectType = $data['project_type'] ?? $photo['item_type'] ?? 'handmade craft';
+
+            // [AI:Claude] Chemin complet de l'image
+            $imagePath = __DIR__ . '/../public' . $photo['original_path'];
+
+            // [AI:Claude] Générer avec IA
+            $startTime = microtime(true);
+
+            $result = $this->photoService->enhancePhoto($imagePath, [
+                'project_type' => $projectType,
+                'purpose' => $purpose,
+                'style' => $style
+            ]);
+
+            if (!$result['success']) {
+                throw new \Exception($result['error'] ?? 'Erreur génération IA');
+            }
+
+            // [AI:Claude] Sauvegarder l'image générée
+            $enhancedPath = $this->photoService->saveGeneratedImage(
+                $result['enhanced_image_data'],
+                (string)$userId
+            );
+
+            // [AI:Claude] Utiliser un crédit
+            $creditResult = $this->creditManager->useCredit($userId);
+
+            // [AI:Claude] Mettre à jour la photo en base
+            $this->updatePhotoWithEnhanced($photoId, $enhancedPath, $style, $purpose, $result['prompt_used']);
+
+            // [AI:Claude] Logger la génération
+            $this->logPhotoGeneration($userId, $photoId, $creditResult['credit_type'], $result);
+
+            // [AI:Claude] Récupérer la photo mise à jour
+            $updatedPhoto = $this->getPhotoById($photoId);
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => 'Photo embellie avec succès',
+                'photo' => $updatedPhoto,
+                'credits_used' => 1,
+                'credit_type' => $creditResult['credit_type'],
+                'credits_remaining' => $creditResult['remaining_credits'],
+                'generation_time_ms' => $result['generation_time_ms']
+            ]);
+
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] POST /api/photos/{id}/enhance-multiple - Générer multiples variations avec contextes
+     *
+     * @param int $photoId ID de la photo
+     * @return void JSON response
+     */
+    public function enhanceMultiple(int $photoId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+
+            // [AI:Claude] Vérifier que la photo appartient à l'utilisateur
+            $photo = $this->getPhotoById($photoId);
+
+            if (!$photo || (int)$photo['user_id'] !== $userId) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Accès non autorisé'
+                ]);
+                return;
+            }
+
+            // [AI:Claude] Récupérer les contextes demandés
+            $contexts = $data['contexts'] ?? [];
+            $projectCategory = $data['project_category'] ?? 'other';
+
+            if (empty($contexts)) {
+                $this->sendResponse(400, [
+                    'success' => false,
+                    'error' => 'Aucun contexte fourni'
+                ]);
+                return;
+            }
+
+            $quantity = count($contexts);
+
+            // [AI:Claude] Calculer le coût (5 photos = 4 crédits, sinon 1 crédit/photo)
+            $cost = $quantity === 5 ? 4 : $quantity;
+
+            // [AI:Claude] Vérifier les crédits
+            $userCredits = $this->creditManager->getUserCredits($userId);
+            if ($userCredits['total_available'] < $cost) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Crédits insuffisants',
+                    'credits_needed' => $cost,
+                    'credits_available' => $userCredits['total_available']
+                ]);
+                return;
+            }
+
+            // [AI:Claude] Chemin complet de l'image
+            $imagePath = __DIR__.'/../public'.$photo['original_path'];
+
+            // [AI:Claude] Générer chaque variation
+            $generatedPhotos = [];
+            $successCount = 0;
+
+            foreach ($contexts as $context) {
+                try {
+                    // [AI:Claude] Générer avec IA pour ce contexte
+                    $result = $this->photoService->enhancePhoto($imagePath, [
+                        'project_type' => $photo['item_type'] ?? 'handmade craft',
+                        'context' => $context,
+                        'project_category' => $projectCategory
+                    ]);
+
+                    if (!$result['success']) {
+                        throw new \Exception($result['error'] ?? 'Erreur génération IA');
+                    }
+
+                    // [AI:Claude] Sauvegarder l'image générée
+                    $enhancedPath = $this->photoService->saveGeneratedImage(
+                        $result['enhanced_image_data'],
+                        (string)$userId
+                    );
+
+                    // [AI:Claude] Créer un nouvel enregistrement pour cette variation
+                    $newPhotoId = $this->createEnhancedVariation(
+                        $userId,
+                        $photo['project_id'],
+                        $photoId,
+                        $enhancedPath,
+                        $context,
+                        $result['prompt_used'],
+                        $photo
+                    );
+
+                    $generatedPhotos[] = [
+                        'context' => $context,
+                        'photo_id' => $newPhotoId,
+                        'enhanced_path' => $enhancedPath,
+                        'success' => true
+                    ];
+
+                    $successCount++;
+
+                } catch (\Exception $e) {
+                    $generatedPhotos[] = [
+                        'context' => $context,
+                        'success' => false,
+                        'error' => $e->getMessage()
+                    ];
+                }
+            }
+
+            // [AI:Claude] Utiliser les crédits (seulement pour les photos réussies)
+            for ($i = 0; $i < $successCount; $i++) {
+                // [AI:Claude] Promo 5 photos = 4 crédits
+                if ($quantity === 5 && $i === 4)
+                    break;
+
+                $this->creditManager->useCredit($userId);
+            }
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => "$successCount photo(s) générée(s) avec succès",
+                'generated_photos' => $generatedPhotos,
+                'credits_used' => $quantity === 5 ? 4 : $successCount,
+                'success_count' => $successCount,
+                'total_requested' => $quantity
+            ]);
+
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] GET /api/photos/credits - Crédits disponibles
+     *
+     * @return void JSON response
+     */
+    public function getCredits(): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            $credits = $this->creditManager->getUserCredits($userId);
+            $packs = CreditManager::getAvailablePacks();
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'credits' => $credits,
+                'available_packs' => $packs
+            ]);
+
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] DELETE /api/photos/{id} - Supprimer une photo
+     *
+     * @param int $photoId ID de la photo
+     * @return void JSON response
+     */
+    public function delete(int $photoId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            $photo = $this->getPhotoById($photoId);
+
+            if (!$photo || (int)$photo['user_id'] !== $userId) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Accès non autorisé'
+                ]);
+                return;
+            }
+
+            // [AI:Claude] Supprimer les fichiers
+            $this->deletePhotoFiles($photo);
+
+            // [AI:Claude] Supprimer l'enregistrement
+            $query = "DELETE FROM user_photos WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id', $photoId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => 'Photo supprimée avec succès'
+            ]);
+
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    // ========================================================================
+    // HELPERS
+    // ========================================================================
+
+    /**
+     * [AI:Claude] Récupérer les photos d'un utilisateur
+     */
+    private function getUserPhotos(
+        int $userId,
+        ?int $projectId,
+        int $limit,
+        int $offset
+    ): array {
+        $query = "SELECT * FROM user_photos
+                  WHERE user_id = :user_id";
+
+        if ($projectId !== null)
+            $query .= " AND project_id = :project_id";
+
+        $query .= " ORDER BY created_at DESC
+                    LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+
+        if ($projectId !== null)
+            $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * [AI:Claude] Récupérer une photo par ID
+     */
+    private function getPhotoById(int $photoId): ?array
+    {
+        $query = "SELECT * FROM user_photos WHERE id = :id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':id', $photoId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $photo = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $photo ?: null;
+    }
+
+    /**
+     * [AI:Claude] Créer un enregistrement photo
+     */
+    private function createPhotoRecord(
+        int $userId,
+        ?int $projectId,
+        string $originalPath,
+        array $data
+    ): int {
+        $query = "INSERT INTO user_photos
+                  (user_id, project_id, original_path, item_name, item_type, technique, description)
+                  VALUES
+                  (:user_id, :project_id, :original_path, :item_name, :item_type, :technique, :description)";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->bindValue(':original_path', $originalPath, PDO::PARAM_STR);
+        $stmt->bindValue(':item_name', $data['item_name'] ?? null, PDO::PARAM_STR);
+        $stmt->bindValue(':item_type', $data['item_type'] ?? null, PDO::PARAM_STR);
+        $stmt->bindValue(':technique', $data['technique'] ?? null, PDO::PARAM_STR);
+        $stmt->bindValue(':description', $data['description'] ?? null, PDO::PARAM_STR);
+
+        $stmt->execute();
+
+        return (int)$this->db->lastInsertId();
+    }
+
+    /**
+     * [AI:Claude] Mettre à jour la photo avec version IA
+     */
+    private function updatePhotoWithEnhanced(
+        int $photoId,
+        string $enhancedPath,
+        string $style,
+        string $purpose,
+        string $prompt
+    ): bool {
+        $query = "UPDATE user_photos
+                  SET enhanced_path = :enhanced_path,
+                      ai_style = :style,
+                      ai_purpose = :purpose,
+                      ai_prompt_used = :prompt,
+                      ai_generated_at = NOW()
+                  WHERE id = :id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':id', $photoId, PDO::PARAM_INT);
+        $stmt->bindValue(':enhanced_path', $enhancedPath, PDO::PARAM_STR);
+        $stmt->bindValue(':style', $style, PDO::PARAM_STR);
+        $stmt->bindValue(':purpose', $purpose, PDO::PARAM_STR);
+        $stmt->bindValue(':prompt', $prompt, PDO::PARAM_STR);
+
+        return $stmt->execute();
+    }
+
+    /**
+     * [AI:Claude] Créer une variation améliorée d'une photo
+     */
+    private function createEnhancedVariation(
+        int $userId,
+        ?int $projectId,
+        int $originalPhotoId,
+        string $enhancedPath,
+        string $context,
+        string $prompt,
+        array $originalPhoto
+    ): int {
+        $query = "INSERT INTO user_photos
+                  (user_id, project_id, original_path, enhanced_path,
+                   item_name, item_type, technique, description,
+                   ai_style, ai_purpose, ai_prompt_used, ai_generated_at,
+                   parent_photo_id)
+                  VALUES
+                  (:user_id, :project_id, :original_path, :enhanced_path,
+                   :item_name, :item_type, :technique, :description,
+                   :ai_style, :ai_purpose, :ai_prompt, NOW(),
+                   :parent_photo_id)";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->bindValue(':original_path', $originalPhoto['original_path'], PDO::PARAM_STR);
+        $stmt->bindValue(':enhanced_path', $enhancedPath, PDO::PARAM_STR);
+        $stmt->bindValue(':item_name', $originalPhoto['item_name'], PDO::PARAM_STR);
+        $stmt->bindValue(':item_type', $originalPhoto['item_type'], PDO::PARAM_STR);
+        $stmt->bindValue(':technique', $originalPhoto['technique'], PDO::PARAM_STR);
+        $stmt->bindValue(':description', $originalPhoto['description'], PDO::PARAM_STR);
+        $stmt->bindValue(':ai_style', $context, PDO::PARAM_STR);
+        $stmt->bindValue(':ai_purpose', $context, PDO::PARAM_STR);
+        $stmt->bindValue(':ai_prompt', $prompt, PDO::PARAM_STR);
+        $stmt->bindValue(':parent_photo_id', $originalPhotoId, PDO::PARAM_INT);
+
+        $stmt->execute();
+
+        return (int)$this->db->lastInsertId();
+    }
+
+    /**
+     * [AI:Claude] Logger une génération de photo IA
+     */
+    private function logPhotoGeneration(
+        int $userId,
+        int $photoId,
+        string $creditType,
+        array $result
+    ): void {
+        $query = "INSERT INTO photo_generations_log
+                  (user_id, photo_id, credits_used, credit_type, ai_model,
+                   generation_time_ms, success, error_message)
+                  VALUES
+                  (:user_id, :photo_id, 1, :credit_type, :ai_model,
+                   :generation_time, :success, :error)";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':photo_id', $photoId, PDO::PARAM_INT);
+        $stmt->bindValue(':credit_type', $creditType, PDO::PARAM_STR);
+        $stmt->bindValue(':ai_model', $result['ai_model'] ?? 'gemini-2.0-flash', PDO::PARAM_STR);
+        $stmt->bindValue(':generation_time', $result['generation_time_ms'] ?? null, PDO::PARAM_INT);
+        $stmt->bindValue(':success', $result['success'], PDO::PARAM_BOOL);
+        $stmt->bindValue(':error', $result['error'] ?? null, PDO::PARAM_STR);
+
+        $stmt->execute();
+    }
+
+    /**
+     * [AI:Claude] Sauvegarder un fichier uploadé
+     */
+    private function saveUploadedFile(array $file, int $userId): string
+    {
+        // [AI:Claude] Sauvegarder dans public/uploads pour accès web
+        $uploadsDir = __DIR__ . '/../public/uploads/photos/original';
+
+        if (!is_dir($uploadsDir))
+            mkdir($uploadsDir, 0755, true);
+
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = sprintf(
+            '%s_%s_%s.%s',
+            $userId,
+            date('Ymd_His'),
+            bin2hex(random_bytes(8)),
+            $extension
+        );
+
+        $filepath = $uploadsDir . '/' . $filename;
+
+        // [AI:Claude] Debug upload
+        error_log("[PHOTO UPLOAD] Tentative upload: {$file['tmp_name']} -> {$filepath}");
+        error_log("[PHOTO UPLOAD] Dossier existe: " . (is_dir($uploadsDir) ? 'OUI' : 'NON'));
+        error_log("[PHOTO UPLOAD] Temp file existe: " . (file_exists($file['tmp_name']) ? 'OUI' : 'NON'));
+
+        if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+            $error = error_get_last();
+            error_log("[PHOTO UPLOAD] ECHEC move_uploaded_file: " . json_encode($error));
+            throw new \Exception('Erreur sauvegarde fichier: impossible de déplacer le fichier uploadé');
+        }
+
+        error_log("[PHOTO UPLOAD] SUCCESS: fichier sauvegardé dans {$filepath}");
+
+        return '/uploads/photos/original/' . $filename;
+    }
+
+    /**
+     * [AI:Claude] Supprimer les fichiers d'une photo
+     */
+    private function deletePhotoFiles(array $photo): void
+    {
+        $basePath = __DIR__ . '/../public';
+
+        if ($photo['original_path'] && file_exists($basePath . $photo['original_path']))
+            unlink($basePath . $photo['original_path']);
+
+        if ($photo['enhanced_path'] && file_exists($basePath . $photo['enhanced_path']))
+            unlink($basePath . $photo['enhanced_path']);
+
+        if ($photo['thumbnail_path'] && file_exists($basePath . $photo['thumbnail_path']))
+            unlink($basePath . $photo['thumbnail_path']);
+    }
+
+    /**
+     * [AI:Claude] GET /api/photos/stats - Statistiques photos IA selon période
+     *
+     * @param array $params Query params (period: week|month|year|all)
+     * @return void JSON response
+     */
+    public function getPhotoStats(array $params = []): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $period = $params['period'] ?? 'all';
+
+            // [AI:Claude] Valider le paramètre period
+            $validPeriods = ['week', 'month', 'year', 'all'];
+            if (!in_array($period, $validPeriods))
+                $period = 'all';
+
+            // [AI:Claude] Déterminer la date de début selon la période
+            $dateCondition = '';
+            if ($period === 'week')
+                $dateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+            elseif ($period === 'month')
+                $dateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+            elseif ($period === 'year')
+                $dateCondition = "AND created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)";
+
+            // [AI:Claude] Stats photos IA générées (avec enhanced_path)
+            $query = "SELECT
+                        COUNT(*) as total_ai_photos,
+                        COUNT(CASE WHEN parent_photo_id IS NULL THEN 1 END) as original_photos,
+                        COUNT(CASE WHEN parent_photo_id IS NOT NULL THEN 1 END) as variations,
+                        ai_style,
+                        COUNT(*) as style_count
+                      FROM user_photos
+                      WHERE user_id = :user_id
+                      AND enhanced_path IS NOT NULL
+                      $dateCondition
+                      GROUP BY ai_style
+                      ORDER BY style_count DESC";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+            $stmt->execute();
+
+            $styleStats = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // [AI:Claude] Calculer le total et le style préféré
+            $totalAiPhotos = 0;
+            $originalPhotos = 0;
+            $variations = 0;
+            $topStyle = null;
+            $topStyleCount = 0;
+
+            foreach ($styleStats as $stat) {
+                $totalAiPhotos += (int)$stat['style_count'];
+                if ($stat['original_photos'])
+                    $originalPhotos = (int)$stat['original_photos'];
+                if ($stat['variations'])
+                    $variations = (int)$stat['variations'];
+
+                if ((int)$stat['style_count'] > $topStyleCount && $stat['ai_style']) {
+                    $topStyle = $stat['ai_style'];
+                    $topStyleCount = (int)$stat['style_count'];
+                }
+            }
+
+            // [AI:Claude] Récupérer les crédits
+            $credits = $this->creditManager->getUserCredits($userId);
+
+            // [AI:Claude] Photos par projet
+            $projectQuery = "SELECT
+                                p.name as project_name,
+                                COUNT(up.id) as photo_count
+                             FROM user_photos up
+                             LEFT JOIN projects p ON up.project_id = p.id
+                             WHERE up.user_id = :user_id
+                             AND up.enhanced_path IS NOT NULL
+                             $dateCondition
+                             GROUP BY up.project_id, p.name
+                             ORDER BY photo_count DESC
+                             LIMIT 3";
+
+            $stmt = $this->db->prepare($projectQuery);
+            $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+            $stmt->execute();
+
+            $topProjects = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'stats' => [
+                    'total_ai_photos' => $totalAiPhotos,
+                    'original_photos' => $originalPhotos,
+                    'variations' => $variations,
+                    'top_style' => $topStyle,
+                    'top_style_count' => $topStyleCount,
+                    'styles_breakdown' => array_filter($styleStats, fn($s) => $s['ai_style'] !== null),
+                    'top_projects' => $topProjects,
+                    'credits_remaining' => $credits['total_available'] ?? 0,
+                    'credits_used' => $credits['total_credits_used'] ?? 0,
+                    'period' => $period
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la récupération des statistiques photos',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] Récupérer l'ID utilisateur depuis JWT
+     */
+    private function getUserIdFromAuth(): int
+    {
+        $userData = $this->authMiddleware->authenticate();
+
+        if ($userData === null)
+            throw new \Exception('Non authentifié');
+
+        return (int)$userData['user_id'];
+    }
+
+    /**
+     * [AI:Claude] Récupérer le JSON du body
+     */
+    private function getJsonInput(): array
+    {
+        $json = file_get_contents('php://input');
+        $data = json_decode($json, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE)
+            throw new \InvalidArgumentException('JSON invalide');
+
+        return $data ?? [];
+    }
+
+    /**
+     * [AI:Claude] Envoyer une réponse JSON
+     */
+    private function sendResponse(int $statusCode, array $data): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+}

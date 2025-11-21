@@ -1,0 +1,36 @@
+# .htaccess RACINE pour InfinityFree
+# Place dans backend/ (htdocs/)
+
+# Set index to public/index.php
+DirectoryIndex public/index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Force HTTPS (sécurité)
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Redirect all requests to public directory
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes
+
+# Security Headers
+<IfModule mod_headers.c>
+    # Force HTTPS pour 1 an (HSTS)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Empêcher le MIME sniffing
+    Header set X-Content-Type-Options "nosniff"
+
+    # Protection XSS
+    Header set X-XSS-Protection "1; mode=block"
+
+    # Empêcher l'iframe (protection clickjacking)
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
