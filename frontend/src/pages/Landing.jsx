@@ -10,7 +10,14 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+// Détection automatique de l'environnement
+const getAPIUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  if (import.meta.env.PROD) return 'https://yarnflow.infinityfreeapp.com/api'
+  return 'http://localhost:8000/api'
+}
+
+const API_URL = getAPIUrl()
 
 const Landing = () => {
   const [email, setEmail] = useState('')

@@ -1,7 +1,23 @@
 import axios from 'axios'
 
+// Détection automatique de l'environnement
+const getAPIUrl = () => {
+  // Si variable d'environnement définie, l'utiliser
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+
+  // Si on est en production (mode build), utiliser l'URL InfinityFree
+  if (import.meta.env.PROD) {
+    return 'https://yarnflow.infinityfreeapp.com/api'
+  }
+
+  // Sinon, utiliser localhost pour le développement
+  return 'http://localhost:8000/api'
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: getAPIUrl(),
   headers: {
     'Content-Type': 'application/json'
   }
