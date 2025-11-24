@@ -1,8 +1,11 @@
 [phases.setup]
-nixPkgs = ['php82', 'php82Extensions.pdo', 'php82Extensions.pdo_mysql', 'php82Extensions.mbstring']
+nixPkgs = ['php82', 'php82Extensions.pdo', 'php82Extensions.pdo_mysql', 'php82Extensions.mbstring', 'php82Extensions.curl']
 
 [phases.install]
-cmds = ['cd backend && composer install --no-dev --optimize-autoloader']
+cmds = [
+  'cd backend',
+  'composer install --no-dev --optimize-autoloader --no-interaction'
+]
 
 [start]
-cmd = 'cd backend/public && php -S 0.0.0.0:$PORT'
+cmd = 'php -S 0.0.0.0:$PORT -t backend/public backend/public/index.php'
