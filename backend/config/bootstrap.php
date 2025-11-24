@@ -15,8 +15,12 @@ require_once __DIR__.'/constants.php';
 
 use Dotenv\Dotenv;
 
-$dotenv = Dotenv::createImmutable(__DIR__);
-$dotenv->load();
+// [AI:Claude] Charger .env seulement s'il existe (local dev)
+// Sur Railway/production, les variables sont déjà injectées
+if (file_exists(__DIR__.'/.env')) {
+    $dotenv = Dotenv::createImmutable(__DIR__);
+    $dotenv->load();
+}
 
 date_default_timezone_set('Europe/Paris');
 
