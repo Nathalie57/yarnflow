@@ -3,8 +3,8 @@ nixPkgs = ['php82', 'php82Extensions.pdo', 'php82Extensions.pdo_mysql', 'php82Ex
 
 [phases.install]
 cmds = [
-  'cd backend && composer install --no-dev --optimize-autoloader --no-interaction'
+  'composer install --no-dev --optimize-autoloader --no-interaction'
 ]
 
 [start]
-cmd = 'cd backend && php -S 0.0.0.0:$PORT -t public public/index.php'
+cmd = 'php -S 0.0.0.0:$PORT -t public public/index.php'
