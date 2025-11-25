@@ -81,12 +81,12 @@ const Landing = () => {
       <section className="max-w-4xl mx-auto px-4 py-16 sm:py-20">
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            L'app qui simplifie le tricot & crochet<br />
-            <span className="text-purple-600">— et sublime vos créations.</span>
+            L'app qui organise vos projets tricot & crochet<br />
+            <span className="text-purple-600">— et transforme vos photos en images pro.</span>
           </h1>
 
           <p className="text-xl text-gray-600 mb-6 max-w-2xl mx-auto leading-relaxed">
-            Trackez vos projets, progressez sans stress, transformez vos photos avec l'IA.
+            Suivez vos avancées, gérez vos patrons sans stress et sublimez vos ouvrages grâce à l'IA.
           </p>
 
           <p className="text-lg text-gray-700 mb-8">
@@ -94,7 +94,7 @@ const Landing = () => {
           </p>
 
           <div className="inline-flex flex-col gap-2 bg-purple-50 border-2 border-purple-200 rounded-xl px-6 py-4 mb-8">
-            <p className="text-purple-900 font-bold">🚀 Beta fermée — lancement public bientôt</p>
+            <p className="text-purple-900 font-bold">🚀 Beta privée — lancement bientôt</p>
             <p className="text-purple-700 text-sm">🎁 Offre Early Bird réservée aux inscrits</p>
           </div>
         </div>
@@ -132,10 +132,6 @@ const Landing = () => {
               >
                 {loading ? 'Inscription...' : '👉 Je rejoins la waitlist'}
               </button>
-
-              <p className="text-xs text-gray-500 text-center">
-                Sans engagement · Notification prioritaire · Offre exclusive
-              </p>
             </div>
           </form>
         ) : (
@@ -155,23 +151,26 @@ const Landing = () => {
         <div className="mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">💡 Pourquoi YarnFlow ?</h2>
           <p className="text-xl text-gray-600 mb-8">
-            Parce que vous méritez mieux que des post-its, des notes éparpillées et des photos ternes.
+            Parce que vos projets méritent mieux que des notes éparpillées, des rangs oubliés et des photos qui ne rendent pas justice à votre travail.
           </p>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-              <h3 className="font-bold text-red-900 text-lg mb-3">Sans YarnFlow → chaos</h3>
-              <p className="text-red-700 text-sm leading-relaxed">
-                Rangs oubliés · patrons dispersés · photos ratées · progression impossible à suivre
-              </p>
+              <h3 className="font-bold text-red-900 text-lg mb-3">❌ Avant YarnFlow</h3>
+              <ul className="text-red-700 text-sm space-y-1">
+                <li>• Rangs perdus</li>
+                <li>• Patrons introuvables</li>
+                <li>• Photos ternes</li>
+                <li>• Progression impossible à suivre</li>
+              </ul>
             </div>
             <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
-              <h3 className="font-bold text-green-900 text-lg mb-3">Avec YarnFlow → fluidité</h3>
+              <h3 className="font-bold text-green-900 text-lg mb-3">✅ Avec YarnFlow</h3>
               <ul className="text-green-700 text-sm space-y-1">
                 <li>✓ Compteur intelligent</li>
-                <li>✓ Stats temps réel</li>
+                <li>✓ Stats automatiques</li>
                 <li>✓ Bibliothèque patrons</li>
-                <li>✓ AI Photo Studio</li>
+                <li>✓ IA Photo Studio pro</li>
               </ul>
             </div>
           </div>
@@ -179,34 +178,34 @@ const Landing = () => {
 
         {/* Ce que vous allez pouvoir faire */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">✨ Ce que vous allez pouvoir faire</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">✨ Tout devient simple</h2>
 
           <div className="space-y-8">
             <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">🧶 Compter vos rangs intelligemment</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">🧶 Comptez vos rangs sans jamais vous perdre</h3>
               <p className="text-gray-600">Multi-sections · timer automatique · sauvegarde cloud</p>
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">📚 Gérer vos patrons facilement</h3>
-              <p className="text-gray-600">Tous vos PDF centralisés et liés à vos projets (Pro)</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">📚 Gardez tous vos patrons au même endroit</h3>
+              <p className="text-gray-600">PDF importés et associés à vos projets (Pro)</p>
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">📸 Sublimer vos photos en un clic</h3>
-              <p className="text-gray-600">9 styles professionnels · jusqu'à 5 photos à la fois</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">📸 Obtenez des photos professionnelles en un clic</h3>
+              <p className="text-gray-600">9 styles photo · jusqu'à 5 images en simultané</p>
             </div>
 
             <div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">📊 Suivre votre progression</h3>
-              <p className="text-gray-600">Rangs/heure · vitesse · historique · graphiques en temps réel</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">📊 Suivez votre progression en temps réel</h3>
+              <p className="text-gray-600">Rangs/heure · vitesse moyenne · historique complet · graphiques automatiques</p>
             </div>
           </div>
         </div>
 
         {/* Témoignages */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">💬 Ils testent déjà YarnFlow</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">💬 Ils utilisent déjà YarnFlow</h2>
 
           <div className="space-y-6">
             <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
@@ -257,14 +256,13 @@ const Landing = () => {
 
         {/* Pricing */}
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">🔧 Pricing</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">🔧 Tarifs — simple & transparent</h2>
 
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             {/* FREE */}
             <div className="border-2 border-gray-200 rounded-xl p-6">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">FREE</h3>
-              <p className="text-gray-600 mb-4">Pour tester</p>
-              <p className="text-3xl font-bold text-gray-900 mb-6">0€</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">FREE — 0€</h3>
+              <p className="text-gray-600 mb-4">Pour essayer</p>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li>✓ 3 projets actifs</li>
                 <li>✓ 5 photos IA/mois</li>
@@ -276,12 +274,11 @@ const Landing = () => {
             <div className="border-2 border-purple-500 rounded-xl p-6 relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <span className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold">
-                  Recommandé
+                  ⭐ PRO
                 </span>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">PRO</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">PRO — 4,99€/mois</h3>
               <p className="text-gray-600 mb-4">Pour les passionné·es</p>
-              <p className="text-3xl font-bold text-purple-600 mb-6">4,99€<span className="text-lg text-gray-600">/mois</span></p>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li>✓ Projets illimités</li>
                 <li>✓ 75 photos IA/mois</li>
@@ -311,19 +308,22 @@ const Landing = () => {
         {/* CTA Final */}
         <div className="text-center bg-purple-600 text-white rounded-xl p-12">
           <h2 className="text-3xl font-bold mb-4">🚀 Prêt·e à rejoindre l'aventure ?</h2>
-          <p className="text-xl mb-8 opacity-90">Accès prioritaire + offre Early Bird garantie</p>
+          <p className="text-xl mb-8 opacity-90">Accès anticipé + prix Early Bird garanti</p>
 
           {!success && (
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                window.scrollTo({ top: 0, behavior: 'smooth' })
-              }}
-              className="inline-block bg-white text-purple-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition"
-            >
-              👉 Je rejoins la waitlist
-            </a>
+            <>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+                className="inline-block bg-white text-purple-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition"
+              >
+                👉 Je rejoins la waitlist
+              </a>
+              <p className="text-sm mt-4 opacity-75">Aucun engagement — retrait en 1 clic</p>
+            </>
           )}
         </div>
       </section>
@@ -352,6 +352,7 @@ const Landing = () => {
 
             <div>
               <h3 className="font-bold mb-4">Suivez-nous</h3>
+              <p className="text-gray-400 text-sm mb-3">Instagram, Pinterest & TikTok</p>
               <div className="flex gap-4 text-xl">
                 <a href="#" className="hover:text-purple-400 transition" aria-label="Instagram">📷</a>
                 <a href="#" className="hover:text-pink-400 transition" aria-label="Pinterest">📌</a>
@@ -362,9 +363,11 @@ const Landing = () => {
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400 text-sm">
             <p className="mb-3">&copy; 2025 YarnFlow. Tous droits réservés.</p>
-            <div className="space-x-4">
+            <div className="flex items-center justify-center gap-2 flex-wrap">
               <Link to="/privacy" className="hover:text-white transition">Politique de confidentialité</Link>
+              <span>·</span>
               <Link to="/cgu" className="hover:text-white transition">Conditions d'utilisation</Link>
+              <span>·</span>
               <Link to="/mentions" className="hover:text-white transition">Mentions légales</Link>
             </div>
           </div>
