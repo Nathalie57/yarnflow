@@ -13,7 +13,7 @@ import axios from 'axios'
 // Détection automatique de l'environnement
 const getAPIUrl = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
-  if (import.meta.env.PROD) return 'https://yarnflow.infinityfreeapp.com/api'
+  if (import.meta.env.PROD) return 'https://yarnflow.fr/api'
   return 'http://localhost:8000/api'
 }
 
