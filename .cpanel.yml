@@ -1,0 +1,20 @@
+---
+# Configuration déploiement automatique cPanel
+# Ce fichier permet de déployer automatiquement à chaque git pull
+
+deployment:
+  tasks:
+    # Déployer le backend
+    - export DEPLOYPATH=/home/najo1022/public_html/api
+    - /bin/rsync -av --delete --exclude='.git' --exclude='.env' --exclude='node_modules' --exclude='database' --exclude='test*.php' backend/ $DEPLOYPATH/
+
+    # Déployer le frontend (si dist existe)
+    - export WEBROOT=/home/najo1022/public_html
+    - if [ -d "frontend/dist" ]; then /bin/rsync -av --delete --exclude='api' frontend/dist/ $WEBROOT/; fi
+
+    # Vérifier permissions
+    - /bin/chmod 755 $DEPLOYPATH/public
+    - /bin/mkdir -p $DEPLOYPATH/public/uploads && /bin/chmod 755 $DEPLOYPATH/public/uploads
+
+    # Message de confirmation
+    - /bin/echo "✅ Déploiement terminé - $(date)"

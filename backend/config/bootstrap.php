@@ -17,8 +17,10 @@ use Dotenv\Dotenv;
 
 // [AI:Claude] Charger .env seulement s'il existe (local dev)
 // Sur Railway/production, les variables sont déjà injectées
-if (file_exists(__DIR__.'/.env')) {
-    $dotenv = Dotenv::createImmutable(__DIR__);
+// Le .env est à la racine du backend (un niveau au-dessus de config/)
+$envPath = __DIR__.'/../';
+if (file_exists($envPath.'.env')) {
+    $dotenv = Dotenv::createImmutable($envPath);
     $dotenv->load();
 }
 
