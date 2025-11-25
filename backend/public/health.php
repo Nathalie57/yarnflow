@@ -15,5 +15,7 @@ echo json_encode([
     'message' => 'API is running',
     'timestamp' => date('Y-m-d H:i:s'),
     'php_version' => PHP_VERSION,
-    'server' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown'
+    'server' => $_SERVER['SERVER_SOFTWARE'] ?? 'Unknown',
+    'deployment' => 'Git Version Control',
+    'git_workflow' => 'active'
 ]);
