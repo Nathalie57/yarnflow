@@ -154,7 +154,7 @@ const Landing = () => {
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 p-6 rounded-lg text-center shadow-md">
             <h3 className="text-xl font-black text-blue-900 mb-2">✨ Commencez GRATUITEMENT</h3>
             <p className="text-base text-blue-800">
-              <strong>Aucune carte bancaire requise</strong> · Plan FREE à vie · Upgrade quand vous voulez
+              <strong>Aucune carte bancaire requise</strong> · Plan FREE à vie · Passez au PRO quand vous voulez
             </p>
           </div>
         </div>
