@@ -7,13 +7,13 @@ const getAPIUrl = () => {
     return import.meta.env.VITE_API_URL
   }
 
-  // Si on est en production (mode build), utiliser l'URL InfinityFree
+  // Si on est en production (mode build), utiliser l'URL O2Switch
   if (import.meta.env.PROD) {
-    return 'https://yarnflow.infinityfreeapp.com/api'
+    return 'https://yarnflow.fr/api'
   }
 
-  // Sinon, utiliser localhost pour le développement
-  return 'http://localhost:8000/api'
+  // Sinon, utiliser le vhost WAMP pour le développement
+  return 'http://patron-maker.local/api'
 }
 
 const api = axios.create({

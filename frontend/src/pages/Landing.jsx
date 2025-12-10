@@ -150,6 +150,16 @@ const Landing = () => {
         </svg>
       </div>
 
+      {/* Bouton connexion pour beta testeurs (en haut à droite) */}
+      <div className="absolute top-4 right-4 z-20">
+        <Link
+          to="/login"
+          className="px-4 py-2 bg-white border-2 border-primary-600 text-primary-600 rounded-lg font-medium hover:bg-primary-50 transition shadow-sm"
+        >
+          🔑 Connexion
+        </Link>
+      </div>
+
       {/* Header */}
       <header className="max-w-4xl mx-auto px-6 py-16 text-center relative z-10">
         <h1 className="text-5xl md:text-6xl font-bold text-primary-600 mb-6">
@@ -161,15 +171,26 @@ const Landing = () => {
         <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-6 leading-relaxed">
           J'ai créé YarnFlow parce que je voulais enfin un outil simple pour compter mes rangs, organiser mes patrons, et sublimer mes photos.
         </p>
+        <div className="bg-green-50 border-2 border-green-500 rounded-2xl p-6 max-w-2xl mx-auto mb-8">
+          <div className="text-center">
+            <div className="text-3xl mb-2">🎉</div>
+            <p className="text-lg font-bold text-green-800 mb-1">BETA PRO COMPLÈTE !</p>
+            <p className="text-sm text-green-700">(50 places prises)</p>
+          </div>
+        </div>
+
         <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-10 leading-relaxed">
-          L'app est presque prête, et je cherche <strong className="text-primary-700">50–100 testeuses motivées</strong> pour l'essayer gratuitement et m'aider à l'améliorer.
+          <strong className="text-primary-700">Mais vous pouvez toujours rejoindre :</strong>
         </p>
 
-        {/* Box Beta Testeuse */}
+        {/* Box Beta FREE */}
         <div className="bg-primary-50 border-2 border-primary-500 rounded-3xl p-8 md:p-10 max-w-3xl mx-auto text-left">
-          <h2 className="text-2xl md:text-3xl font-bold text-primary-700 mb-6 text-center">
-            Rejoignez la waitlist
+          <h2 className="text-2xl md:text-3xl font-bold text-primary-700 mb-3 text-center">
+            La liste prioritaire Beta FREE
           </h2>
+          <p className="text-center text-gray-700 mb-6">
+            Rejoignez la waitlist et profitez d'avantages exclusifs
+          </p>
 
           <form onSubmit={handleSubmit} className="max-w-md mx-auto mb-8">
             <div className="mb-4">
@@ -197,29 +218,36 @@ const Landing = () => {
                 disabled={loading}
                 className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg px-10 py-4 rounded-full shadow-lg transition disabled:opacity-50"
               >
-                {loading ? 'Inscription...' : 'Je rejoins la beta'}
+                {loading ? 'Inscription...' : 'Je rejoins la liste prioritaire'}
               </button>
             )}
           </form>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-bold text-primary-700 mb-3">Ce que vous obtenez :</h3>
-              <ul className="space-y-2 text-gray-700">
-                <li>✓ Accès complet gratuit pendant la beta</li>
-                <li>✓ Influence directe sur les prochaines fonctionnalités</li>
-                <li>✓ Tarifs préférentiels au lancement</li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="font-bold text-primary-700 mb-3">Ce que je vous demande :</h3>
-              <ul className="space-y-2 text-gray-700">
-                <li>✓ Tester sur vos vrais projets</li>
-                <li>✓ Me donner vos retours honnêtes</li>
-                <li>✓ Tolérer quelques bugs 😄</li>
-              </ul>
-            </div>
+          <div className="bg-white rounded-2xl p-6 border-2 border-primary-200">
+            <h3 className="font-bold text-primary-700 mb-4 text-center text-lg">✨ Vos avantages exclusifs</h3>
+            <ul className="space-y-3 text-gray-700">
+              <li className="flex items-start">
+                <span className="text-primary-600 font-bold mr-3 text-xl">✓</span>
+                <div>
+                  <strong>Accès gratuit à la version FREE pendant la beta</strong>
+                  <p className="text-sm text-gray-600">Testez toutes les fonctionnalités essentielles gratuitement</p>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <span className="text-primary-600 font-bold mr-3 text-xl">✓</span>
+                <div>
+                  <strong>Tarif préférentiel PRO au lancement</strong>
+                  <p className="text-sm text-gray-600"><span className="text-green-600 font-bold">2,99€ au lieu de 4,99€ pendant un an</span> si vous décidez de passer PRO</p>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <span className="text-primary-600 font-bold mr-3 text-xl">✓</span>
+                <div>
+                  <strong>Priorité absolue sur la liste d'attente</strong>
+                  <p className="text-sm text-gray-600">Vous serez parmi les premiers à accéder à l'app</p>
+                </div>
+              </li>
+            </ul>
           </div>
         </div>
       </header>
@@ -232,7 +260,7 @@ const Landing = () => {
           <div className="bg-gray-50 rounded-2xl p-8 text-center shadow-sm hover:shadow-md transition">
             <div className="text-4xl mb-3">🧵</div>
             <h3 className="text-xl font-bold text-primary-700 mb-3">Compteur de rangs intelligent</h3>
-            <p className="text-gray-600">Plus jamais perdue : plusieurs projets à la fois, timer automatique, progression en temps réel.</p>
+            <p className="text-gray-600">Plus jamais perdu : plusieurs projets à la fois, timer automatique, progression en temps réel.</p>
           </div>
 
           {/* Feature 2 */}
@@ -309,7 +337,7 @@ const Landing = () => {
         <div className="space-y-6">
           <div>
             <h3 className="font-bold text-lg text-gray-900 mb-2">C'est vraiment gratuit ?</h3>
-            <p className="text-gray-600">Oui. Accès complet gratuit pendant toute la beta. Ensuite, vous pourrez rester sur la version gratuite ou passer à un plan payant (tarif préférentiel pour les testeuses).</p>
+            <p className="text-gray-600">Oui. Accès complet gratuit pendant toute la beta. Ensuite, vous pourrez rester sur la version gratuite ou passer à un plan payant (tarif préférentiel pour les testeurs).</p>
           </div>
 
           <div>

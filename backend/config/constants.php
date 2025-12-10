@@ -22,14 +22,16 @@ define('TYPE_BAG', 'bag');           // Sac
 define('TYPE_GARMENT', 'garment');   // Vêtement
 
 // [AI:Claude] Types d'abonnement (v0.12.0 - YarnFlow Pricing Final)
-define('SUBSCRIPTION_FREE', 'free');      // 0€ - 3 projets, 5 photos/mois
-define('SUBSCRIPTION_PRO', 'pro');        // 4.99€/mois ou 39.99€/an - Tout illimité + 75 photos IA
+define('SUBSCRIPTION_FREE', 'free');           // 0€ - 3 projets, 5 photos/mois
+define('SUBSCRIPTION_PRO', 'pro');             // 4.99€/mois - Projets illimités + 75 photos IA
+define('SUBSCRIPTION_PRO_ANNUAL', 'pro_annual'); // 39.99€/an - Comme PRO avec réduction annuelle
+define('SUBSCRIPTION_EARLY_BIRD', 'early_bird'); // 2.99€/mois x 12 mois (200 places max)
 // Legacy support (deprecated - sera migré vers 'pro')
-define('SUBSCRIPTION_STANDARD', 'pro');   // Alias pour PRO
-define('SUBSCRIPTION_PREMIUM', 'pro');    // Alias pour PRO
-define('SUBSCRIPTION_STARTER', 'pro');    // Alias pour PRO
-define('SUBSCRIPTION_MONTHLY', 'pro');    // Alias pour PRO
-define('SUBSCRIPTION_YEARLY', 'pro');     // Alias pour PRO
+define('SUBSCRIPTION_STANDARD', 'pro');        // Alias pour PRO
+define('SUBSCRIPTION_PREMIUM', 'pro');         // Alias pour PRO
+define('SUBSCRIPTION_STARTER', 'pro');         // Alias pour PRO
+define('SUBSCRIPTION_MONTHLY', 'pro');         // Alias pour PRO
+define('SUBSCRIPTION_YEARLY', 'pro');          // Alias pour PRO
 
 // [AI:Claude] Statuts de paiement
 define('PAYMENT_PENDING', 'pending');

@@ -12,7 +12,7 @@ export default function Mentions() {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/" className="text-purple-600 hover:text-purple-700 font-semibold mb-4 inline-block">
+          <Link to="/" className="text-primary-600 hover:text-primary-700 font-semibold mb-4 inline-block">
             ← Retour à l'accueil
           </Link>
           <h1 className="text-4xl font-black text-gray-900 mb-2">
@@ -26,7 +26,7 @@ export default function Mentions() {
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">1. Éditeur du site</h2>
-            <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="bg-primary-50 p-4 rounded-lg">
               <p className="text-gray-700 leading-relaxed mb-2">
                 <strong>Nom/Raison sociale :</strong> YarnFlow Studio
               </p>
@@ -40,10 +40,10 @@ export default function Mentions() {
                 <strong>Numéro TVA :</strong> En cours d'immatriculation
               </p>
               <p className="text-gray-700 leading-relaxed mb-2">
-                <strong>Adresse du siège social :</strong> rue Boullay 71000 MACON
+                <strong>Adresse du siège social :</strong> en cours de domiciliation
               </p>
               <p className="text-gray-700 leading-relaxed mb-2">
-                <strong>Email :</strong> <span className="text-purple-600">yarnflowapp@gmail.com</span>
+                <strong>Email :</strong> <span className="text-primary-600">yarnflowapp@gmail.com</span>
               </p>
               <p className="text-gray-700 leading-relaxed">
                 <strong>Directeur de la publication :</strong> Nathalie HENRION
@@ -60,7 +60,7 @@ export default function Mentions() {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-gray-700 mb-1"><strong>Nom :</strong> Vercel Inc.</p>
                 <p className="text-gray-700 mb-1"><strong>Adresse :</strong> [Adresse de l'hébergeur]</p>
-                <p className="text-gray-700"><strong>Site web :</strong> <a href="#" className="text-purple-600 hover:underline">vercel.com</a></p>
+                <p className="text-gray-700"><strong>Site web :</strong> <a href="#" className="text-primary-600 hover:underline">vercel.com</a></p>
               </div>
 
               <p className="text-gray-700 leading-relaxed mt-4">
@@ -69,7 +69,7 @@ export default function Mentions() {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-gray-700 mb-1"><strong>Nom :</strong> InfinityFree</p>
                 <p className="text-gray-700 mb-1"><strong>Adresse :</strong> [Adresse de l'hébergeur]</p>
-                <p className="text-gray-700"><strong>Site web :</strong> <a href="#" className="text-purple-600 hover:underline">infinityfree.com</a></p>
+                <p className="text-gray-700"><strong>Site web :</strong> <a href="#" className="text-primary-600 hover:underline">infinityfree.com</a></p>
               </div>
             </div>
           </section>
@@ -101,7 +101,7 @@ export default function Mentions() {
                 </p>
                 <p className="text-gray-700 text-sm">
                   Stripe, Inc. - 510 Townsend Street, San Francisco, CA 94103, États-Unis<br/>
-                  <a href="https://stripe.com/fr/privacy" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
+                  <a href="https://stripe.com/fr/privacy" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
                     Politique de confidentialité Stripe
                   </a>
                 </p>
@@ -113,7 +113,7 @@ export default function Mentions() {
                 </p>
                 <p className="text-gray-700 text-sm">
                   Google LLC - 1600 Amphitheatre Parkway, Mountain View, CA 94043, États-Unis<br/>
-                  <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
+                  <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
                     Politique de confidentialité Google
                   </a>
                 </p>
@@ -129,14 +129,14 @@ export default function Mentions() {
             </p>
             <p className="text-gray-700 leading-relaxed mt-3">
               Pour plus d'informations, consultez notre{' '}
-              <Link to="/privacy" className="text-purple-600 hover:underline font-semibold">
+              <Link to="/privacy" className="text-primary-600 hover:underline font-semibold">
                 Politique de Confidentialité
               </Link>.
             </p>
-            <div className="bg-purple-50 p-4 rounded-lg mt-3">
+            <div className="bg-primary-50 p-4 rounded-lg mt-3">
               <p className="text-gray-700">
                 <strong>Délégué à la Protection des Données (DPO) :</strong><br/>
-                Email : <span className="text-purple-600">yarnflowapp@gmail.com</span><br/>
+                Email : <span className="text-primary-600">yarnflowapp@gmail.com</span><br/>
                 Objet : "RGPD - [Votre demande]"
               </p>
             </div>
@@ -191,7 +191,7 @@ export default function Mentions() {
             <div className="bg-gray-50 p-4 rounded-lg mt-3">
               <p className="text-gray-700">
                 <strong>Médiateur de la consommation :</strong> [Nom du médiateur]<br/>
-                <strong>Site web :</strong> <a href="#" className="text-purple-600 hover:underline">[URL du médiateur]</a>
+                <strong>Site web :</strong> <a href="#" className="text-primary-600 hover:underline">[URL du médiateur]</a>
               </p>
             </div>
           </section>
@@ -211,11 +211,11 @@ export default function Mentions() {
             </div>
           </section>
 
-          <section className="bg-purple-50 p-6 rounded-lg mt-8">
+          <section className="bg-primary-50 p-6 rounded-lg mt-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Contact</h2>
             <p className="text-gray-700 leading-relaxed">
               Pour toute question concernant ces mentions légales :<br/>
-              <strong className="text-purple-600">yarnflowapp@gmail.com</strong>
+              <strong className="text-primary-600">yarnflowapp@gmail.com</strong>
             </p>
           </section>
 

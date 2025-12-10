@@ -7,26 +7,26 @@ export default function Home() {
   const [demoCounter, setDemoCounter] = useState(42)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-primary-50 to-warm-100">
       {/* Navigation */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <span className="text-2xl font-bold text-purple-600">🧶 YarnFlow</span>
+              <span className="text-2xl font-bold text-primary-600">🧶 YarnFlow</span>
             </div>
             <div className="flex items-center gap-4">
               {user ? (
                 <>
                   <Link
                     to="/dashboard"
-                    className="text-gray-700 hover:text-purple-600 font-medium"
+                    className="text-gray-700 hover:text-primary-600 font-medium"
                   >
                     Tableau de bord
                   </Link>
                   <Link
                     to="/my-projects"
-                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                    className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
                   >
                     Mes projets
                   </Link>
@@ -35,15 +35,16 @@ export default function Home() {
                 <>
                   <Link
                     to="/login"
-                    className="text-gray-700 hover:text-purple-600 font-medium"
+                    className="text-gray-700 hover:text-primary-600 font-medium"
                   >
                     Connexion
                   </Link>
+                  {/* [AI:Claude] BETA - Redirection vers login */}
                   <Link
-                    to="/register"
-                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                    to="/login"
+                    className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
                   >
-                    Essayer gratuitement
+                    Connexion Beta
                   </Link>
                 </>
               )}
@@ -56,7 +57,7 @@ export default function Home() {
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           {/* Badge différenciation */}
-          <div className="inline-block bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 px-6 py-2 rounded-full font-semibold mb-6">
+          <div className="inline-block bg-gradient-to-r from-primary-100 to-pink-100 text-primary-800 px-6 py-2 rounded-full font-semibold mb-6">
             🧶 De la première maille à tous vos réseaux
           </div>
 
@@ -64,7 +65,7 @@ export default function Home() {
             Créez, trackez, photographiez,<br />partagez vos ouvrages
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 mb-4 max-w-3xl mx-auto">
-            La plateforme complète : <strong className="text-purple-600">Tracker de projets</strong> + <strong className="text-pink-600">Photos IA pro</strong> + Statistiques
+            La plateforme complète : <strong className="text-primary-600">Tracker de projets</strong> + <strong className="text-pink-600">Photos IA pro</strong> + Statistiques
           </p>
           <p className="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
             Suivez vos projets rang par rang avec le compteur intelligent, puis transformez vos ouvrages terminés
@@ -73,15 +74,16 @@ export default function Home() {
 
           {/* CTA Principal */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            {/* [AI:Claude] BETA - Redirection vers login pour non-connectés */}
             <Link
-              to={user ? '/my-projects' : '/register'}
-              className="bg-purple-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 shadow-lg hover:shadow-xl transition-all"
+              to={user ? '/my-projects' : '/login'}
+              className="bg-primary-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all"
             >
               {user ? '🧶 Mes projets' : '🎉 Essayer gratuitement'}
             </Link>
             <a
               href="#features"
-              className="bg-white text-purple-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 shadow-lg border-2 border-purple-600"
+              className="bg-white text-primary-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 shadow-lg border-2 border-primary-600"
             >
               📊 Découvrir les fonctionnalités
             </a>
@@ -97,7 +99,7 @@ export default function Home() {
             <div className="grid md:grid-cols-4 gap-6">
               {/* Étape 1 - Créer */}
               <div className="bg-white rounded-xl shadow-lg p-6 text-center transform hover:scale-105 transition-all">
-                <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-3xl">🧶</span>
                 </div>
                 <h4 className="font-bold text-lg mb-2">1. Créez</h4>
@@ -107,8 +109,8 @@ export default function Home() {
               </div>
 
               {/* Étape 2 - Tracker */}
-              <div className="bg-white rounded-xl shadow-lg p-6 text-center transform hover:scale-105 transition-all border-2 border-purple-300">
-                <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="bg-white rounded-xl shadow-lg p-6 text-center transform hover:scale-105 transition-all border-2 border-primary-300">
+                <div className="bg-primary-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-3xl">📊</span>
                 </div>
                 <h4 className="font-bold text-lg mb-2">2. Trackez</h4>
@@ -129,7 +131,7 @@ export default function Home() {
               </div>
 
               {/* Étape 4 - Partager */}
-              <div className="bg-gradient-to-br from-pink-500 to-purple-500 text-white rounded-xl shadow-lg p-6 text-center transform hover:scale-105 transition-all">
+              <div className="bg-gradient-to-br from-pink-500 to-primary-500 text-white rounded-xl shadow-lg p-6 text-center transform hover:scale-105 transition-all">
                 <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-3xl">✨</span>
                 </div>
@@ -164,14 +166,14 @@ export default function Home() {
 
                 {/* Après */}
                 <div className="text-center">
-                  <div className="bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg p-6 mb-3 h-48 flex items-center justify-center border-2 border-pink-300 shadow-lg">
+                  <div className="bg-gradient-to-br from-pink-100 to-primary-100 rounded-lg p-6 mb-3 h-48 flex items-center justify-center border-2 border-pink-300 shadow-lg">
                     <div className="text-pink-600">
                       <div className="text-5xl mb-2">✨</div>
                       <p className="font-semibold">Photo IA professionnelle</p>
                       <p className="text-sm">Éclairage parfait, mise en scène lifestyle</p>
                     </div>
                   </div>
-                  <span className="inline-block bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-full font-semibold text-sm">
+                  <span className="inline-block bg-gradient-to-r from-pink-500 to-primary-500 text-white px-4 py-2 rounded-full font-semibold text-sm">
                     🤩 Après IA (5 styles au choix)
                   </span>
                 </div>
@@ -181,10 +183,11 @@ export default function Home() {
                 <p className="text-sm text-gray-500 mb-4">
                   🎨 5 styles disponibles : Lifestyle • Studio • Scandinave • Nature • Café
                 </p>
+                {/* [AI:Claude] BETA - Redirection vers login */}
                 {!user && (
                   <Link
-                    to="/register"
-                    className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-purple-700 hover:to-pink-700 shadow-lg"
+                    to="/login"
+                    className="inline-block bg-gradient-to-r from-primary-600 to-pink-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-primary-700 hover:to-pink-700 shadow-lg"
                   >
                     🎉 Commencer gratuitement
                   </Link>
@@ -204,8 +207,8 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Feature 1 - TRACKER (suit le workflow) */}
-            <div className="bg-purple-50 rounded-xl p-8 border-2 border-purple-200 relative">
-              <div className="absolute -top-4 -right-4 bg-purple-600 text-white px-4 py-2 rounded-full font-bold text-sm">
+            <div className="bg-primary-50 rounded-xl p-8 border-2 border-primary-200 relative">
+              <div className="absolute -top-4 -right-4 bg-primary-600 text-white px-4 py-2 rounded-full font-bold text-sm">
                 🥇 ESSENTIEL
               </div>
               <div className="text-5xl mb-4">📊</div>
@@ -242,7 +245,7 @@ export default function Home() {
             </div>
 
             {/* Feature 3 - STATS */}
-            <div className="bg-blue-50 rounded-xl p-8 border-2 border-blue-200">
+            <div className="bg-warm-100 rounded-xl p-8 border-2 border-primary-200">
               <div className="text-5xl mb-4">📈</div>
               <h3 className="text-2xl font-bold mb-4">Statistiques</h3>
               <p className="text-gray-700 mb-4">
@@ -294,7 +297,7 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {/* 1. Tracker universel */}
-            <div className="bg-purple-50 rounded-xl p-8 border-2 border-purple-200">
+            <div className="bg-primary-50 rounded-xl p-8 border-2 border-primary-200">
               <div className="text-5xl mb-4">📊</div>
               <h3 className="text-xl font-bold mb-3">Tracker universel</h3>
               <ul className="space-y-2 text-gray-700">
@@ -318,7 +321,7 @@ export default function Home() {
             </div>
 
             {/* 2. Statistiques motivantes */}
-            <div className="bg-blue-50 rounded-xl p-8 border-2 border-blue-200">
+            <div className="bg-warm-100 rounded-xl p-8 border-2 border-primary-200">
               <div className="text-5xl mb-4">📈</div>
               <h3 className="text-xl font-bold mb-3">Stats Strava-style</h3>
               <ul className="space-y-2 text-gray-700">
@@ -395,19 +398,19 @@ export default function Home() {
               <h3 className="text-xl font-bold mb-3">Communauté (bientôt)</h3>
               <ul className="space-y-2 text-gray-700">
                 <li className="flex items-start">
-                  <span className="text-purple-500 mr-2 mt-1">🔜</span>
+                  <span className="text-primary-500 mr-2 mt-1">🔜</span>
                   <span>Galerie publique des créations</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-purple-500 mr-2 mt-1">🔜</span>
+                  <span className="text-primary-500 mr-2 mt-1">🔜</span>
                   <span>Partage de projets inspirants</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-purple-500 mr-2 mt-1">🔜</span>
+                  <span className="text-primary-500 mr-2 mt-1">🔜</span>
                   <span>Commentaires et encouragements</span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-purple-500 mr-2 mt-1">🔜</span>
+                  <span className="text-primary-500 mr-2 mt-1">🔜</span>
                   <span>Défis communautaires</span>
                 </li>
               </ul>
@@ -438,17 +441,18 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="text-center bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-8 border-2 border-purple-200">
-            <h3 className="text-2xl font-bold text-purple-900 mb-4">
+          <div className="text-center bg-gradient-to-r from-primary-50 to-pink-50 rounded-2xl p-8 border-2 border-primary-200">
+            <h3 className="text-2xl font-bold text-primary-900 mb-4">
               🧶 YarnFlow = Votre workflow complet
             </h3>
             <p className="text-lg text-gray-700 mb-6 max-w-3xl mx-auto">
               De la première maille jusqu'au partage sur Instagram, Etsy et Pinterest.
               Tracker, statistiques, photos IA, communauté... Tout ce dont vous avez besoin, en un seul endroit.
             </p>
+            {/* [AI:Claude] BETA - Redirection vers login */}
             <Link
-              to={user ? '/my-projects' : '/register'}
-              className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-purple-700 hover:to-pink-700 shadow-lg"
+              to={user ? '/my-projects' : '/login'}
+              className="inline-block bg-gradient-to-r from-primary-600 to-pink-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-primary-700 hover:to-pink-700 shadow-lg"
             >
               {user ? '🧶 Voir mes projets' : '🎉 Commencer gratuitement'}
             </Link>
@@ -495,8 +499,9 @@ export default function Home() {
                   <span>Timer de session</span>
                 </li>
               </ul>
+              {/* [AI:Claude] BETA - Redirection vers login */}
               <Link
-                to="/register"
+                to="/login"
                 className="block w-full text-center bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300"
               >
                 Commencer gratuitement
@@ -504,7 +509,7 @@ export default function Home() {
             </div>
 
             {/* STANDARD */}
-            <div className="bg-purple-600 text-white rounded-xl p-8 shadow-2xl transform scale-105 relative">
+            <div className="bg-primary-600 text-white rounded-xl p-8 shadow-2xl transform scale-105 relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-gray-900 px-4 py-1 rounded-full font-bold text-sm">
                 ⭐ POPULAIRE
               </div>
@@ -534,16 +539,17 @@ export default function Home() {
                   <span>Support prioritaire</span>
                 </li>
               </ul>
+              {/* [AI:Claude] BETA - Redirection vers login */}
               <Link
-                to="/register"
-                className="block w-full text-center bg-white text-purple-600 py-3 rounded-lg font-semibold hover:bg-gray-100"
+                to="/login"
+                className="block w-full text-center bg-white text-primary-600 py-3 rounded-lg font-semibold hover:bg-gray-100"
               >
                 Choisir Standard
               </Link>
             </div>
 
             {/* PREMIUM */}
-            <div className="bg-white rounded-xl p-8 shadow-lg border-2 border-purple-300">
+            <div className="bg-white rounded-xl p-8 shadow-lg border-2 border-primary-300">
               <h3 className="text-2xl font-bold mb-2">Premium</h3>
               <div className="text-4xl font-bold mb-6">
                 9.99€<span className="text-lg">/mois</span>
@@ -574,9 +580,10 @@ export default function Home() {
                   <span>Support VIP</span>
                 </li>
               </ul>
+              {/* [AI:Claude] BETA - Redirection vers login */}
               <Link
-                to="/register"
-                className="block w-full text-center bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700"
+                to="/login"
+                className="block w-full text-center bg-primary-600 text-white py-3 rounded-lg font-semibold hover:bg-primary-700"
               >
                 Choisir Premium
               </Link>
@@ -584,9 +591,9 @@ export default function Home() {
           </div>
 
           {/* Packs ponctuels */}
-          <div className="mt-12 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-8 border-2 border-purple-200">
+          <div className="mt-12 bg-gradient-to-r from-primary-50 to-pink-50 rounded-2xl p-8 border-2 border-primary-200">
             <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-purple-900 mb-2">
+              <h3 className="text-2xl font-bold text-primary-900 mb-2">
                 🎁 Besoin de plus d'images ce mois-ci ?
               </h3>
               <p className="text-gray-700">
@@ -597,24 +604,24 @@ export default function Home() {
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <div className="bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition">
                 <h4 className="font-bold text-lg mb-2">Pack Small</h4>
-                <div className="text-3xl font-bold text-purple-600 mb-2">2.99€</div>
+                <div className="text-3xl font-bold text-primary-600 mb-2">2.99€</div>
                 <p className="text-gray-700 mb-2">20 images IA</p>
                 <p className="text-sm text-green-600">+2 images bonus</p>
               </div>
 
-              <div className="bg-white rounded-xl p-6 text-center shadow-xl border-2 border-purple-300 transform scale-105">
-                <div className="bg-purple-500 text-white text-xs px-3 py-1 rounded-full inline-block mb-2">
+              <div className="bg-white rounded-xl p-6 text-center shadow-xl border-2 border-primary-300 transform scale-105">
+                <div className="bg-primary-500 text-white text-xs px-3 py-1 rounded-full inline-block mb-2">
                   MEILLEUR RAPPORT
                 </div>
                 <h4 className="font-bold text-lg mb-2">Pack Medium</h4>
-                <div className="text-3xl font-bold text-purple-600 mb-2">6.99€</div>
+                <div className="text-3xl font-bold text-primary-600 mb-2">6.99€</div>
                 <p className="text-gray-700 mb-2">50 images IA</p>
                 <p className="text-sm text-green-600">+7 images bonus</p>
               </div>
 
               <div className="bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition">
                 <h4 className="font-bold text-lg mb-2">Pack Large</h4>
-                <div className="text-3xl font-bold text-purple-600 mb-2">14.99€</div>
+                <div className="text-3xl font-bold text-primary-600 mb-2">14.99€</div>
                 <p className="text-gray-700 mb-2">200 images IA</p>
                 <p className="text-sm text-green-600">+20 images bonus</p>
               </div>

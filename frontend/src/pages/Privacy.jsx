@@ -12,14 +12,14 @@ export default function Privacy() {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/" className="text-purple-600 hover:text-purple-700 font-semibold mb-4 inline-block">
+          <Link to="/" className="text-primary-600 hover:text-primary-700 font-semibold mb-4 inline-block">
             ← Retour à l'accueil
           </Link>
           <h1 className="text-4xl font-black text-gray-900 mb-2">
             Politique de Confidentialité
           </h1>
           <p className="text-gray-600">Dernière mise à jour : 20 novembre 2025</p>
-          <p className="text-sm text-purple-600 font-semibold mt-2">Conforme RGPD (Règlement Général sur la Protection des Données)</p>
+          <p className="text-sm text-primary-600 font-semibold mt-2">Conforme RGPD (Règlement Général sur la Protection des Données)</p>
         </div>
 
         {/* Content */}
@@ -30,8 +30,8 @@ export default function Privacy() {
             <p className="text-gray-700 leading-relaxed">
               Le responsable du traitement des données personnelles collectées sur YarnFlow est :<br/>
               <strong>YarnFlow Studio</strong><br/>
-              <strong>rue Boullay 71000 Macon</strong><br/>
-              Email : <strong className="text-purple-600">yarnflowapp@gmail.com</strong>
+              <strong>En cours de domiciliation</strong><br/>
+              Email : <strong className="text-primary-600">yarnflowapp@gmail.com</strong>
             </p>
           </section>
 
@@ -108,7 +108,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-3">5. Partage des données</h2>
             <p className="text-gray-700 leading-relaxed mb-3">
-              Vos données ne sont <strong className="text-purple-600">jamais vendues</strong> à des tiers.
+              Vos données ne sont <strong className="text-primary-600">jamais vendues</strong> à des tiers.
               Elles peuvent être partagées uniquement avec :
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
@@ -134,7 +134,7 @@ export default function Privacy() {
             <p className="text-gray-700 leading-relaxed mb-3">
               Conformément au RGPD, vous disposez des droits suivants :
             </p>
-            <div className="bg-purple-50 p-4 rounded-lg space-y-2">
+            <div className="bg-primary-50 p-4 rounded-lg space-y-2">
               <p className="text-gray-700"><strong>✓ Droit d'accès :</strong> Consulter vos données</p>
               <p className="text-gray-700"><strong>✓ Droit de rectification :</strong> Corriger vos données</p>
               <p className="text-gray-700"><strong>✓ Droit à l'effacement :</strong> Supprimer votre compte et données</p>
@@ -143,7 +143,7 @@ export default function Privacy() {
               <p className="text-gray-700"><strong>✓ Droit de limitation :</strong> Restreindre certains usages</p>
             </div>
             <p className="text-gray-700 leading-relaxed mt-4">
-              Pour exercer ces droits, contactez-nous à : <strong className="text-purple-600">yarnflowapp@gmail.com</strong><br/>
+              Pour exercer ces droits, contactez-nous à : <strong className="text-primary-600">yarnflowapp@gmail.com</strong><br/>
               Réponse sous 30 jours maximum.
             </p>
           </section>
@@ -199,17 +199,17 @@ export default function Privacy() {
             <p className="text-gray-700 leading-relaxed">
               Si vous estimez que vos droits ne sont pas respectés, vous pouvez déposer une réclamation
               auprès de la CNIL (Commission Nationale de l'Informatique et des Libertés) :<br/>
-              <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">
+              <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">
                 www.cnil.fr
               </a>
             </p>
           </section>
 
-          <section className="bg-purple-50 p-6 rounded-lg mt-8">
+          <section className="bg-primary-50 p-6 rounded-lg mt-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Contact DPO</h2>
             <p className="text-gray-700 leading-relaxed">
               Pour toute question concernant vos données personnelles :<br/>
-              <strong className="text-purple-600">yarnflowapp@gmail.com</strong><br/>
+              <strong className="text-primary-600">yarnflowapp@gmail.com</strong><br/>
               Objet : "RGPD - [Votre demande]"
             </p>
           </section>

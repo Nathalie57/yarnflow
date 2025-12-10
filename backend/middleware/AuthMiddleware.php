@@ -97,9 +97,20 @@ class AuthMiddleware
      */
     public function requireActiveSubscription(array $userData): bool
     {
+        // [AI:Claude] Vérifier si l'utilisateur est en FREE
         if ($userData['subscription_type'] === SUBSCRIPTION_FREE) {
-            Response::error('Abonnement requis', HTTP_FORBIDDEN);
+            Response::error('Abonnement PRO requis pour accéder à cette fonctionnalité', HTTP_FORBIDDEN);
             return false;
+        }
+
+        // [AI:Claude] Vérifier la date d'expiration si elle existe
+        if (isset($userData['subscription_expires_at']) && $userData['subscription_expires_at'] !== null) {
+            $expiresAt = strtotime($userData['subscription_expires_at']);
+
+            if ($expiresAt <= time()) {
+                Response::error('Votre abonnement a expiré. Veuillez renouveler pour continuer', HTTP_FORBIDDEN);
+                return false;
+            }
         }
 
         return true;

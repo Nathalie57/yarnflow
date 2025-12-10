@@ -459,4 +459,114 @@ class AdminController
             'payments' => $payments
         ]);
     }
+
+    /**
+     * [AI:Claude] Générer les codes Early Bird pour tous les inscrits waitlist
+     * POST /api/admin/early-bird/generate-codes
+     *
+     * Body optionnel :
+     * - validity_hours : Durée de validité en heures (défaut: 72h)
+     */
+    public function generateEarlyBirdCodes(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $data = json_decode(file_get_contents('php://input'), true);
+        $validityHours = $data['validity_hours'] ?? 72;
+
+        try {
+            $earlyBirdService = new \Services\EarlyBirdCodeService($this->userModel->getDb());
+            $result = $earlyBirdService->generateCodesForWaitlist($validityHours);
+
+            if (!$result['success']) {
+                Response::error($result['message'], HTTP_UNPROCESSABLE);
+            }
+
+            Response::success([
+                'total_emails' => $result['total'],
+                'new_codes' => $result['new_codes'],
+                'existing_codes' => $result['existing_codes'],
+                'validity_hours' => $validityHours,
+                'expires_at' => date('Y-m-d H:i:s', strtotime("+{$validityHours} hours")),
+                'codes' => $result['codes']
+            ], HTTP_OK, "Codes Early Bird générés avec succès");
+
+        } catch (\Exception $e) {
+            error_log('[AdminController] Erreur génération codes Early Bird : '.$e->getMessage());
+            Response::serverError('Erreur lors de la génération des codes');
+        }
+    }
+
+    /**
+     * [AI:Claude] Obtenir les statistiques des codes Early Bird
+     * GET /api/admin/early-bird/stats
+     */
+    public function getEarlyBirdStats(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        try {
+            $earlyBirdService = new \Services\EarlyBirdCodeService($this->userModel->getDb());
+
+            $stats = $earlyBirdService->getStats();
+            $availability = $earlyBirdService->checkEarlyBirdAvailability();
+
+            // Récupérer les codes actifs
+            $stmt = $this->userModel->getDb()->query("
+                SELECT * FROM v_early_bird_codes_active
+                ORDER BY hours_remaining ASC
+                LIMIT 100
+            ");
+            $activeCodes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            Response::success([
+                'codes' => $stats,
+                'availability' => $availability,
+                'active_codes' => $activeCodes
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('[AdminController] Erreur stats Early Bird : '.$e->getMessage());
+            Response::serverError('Erreur lors de la récupération des stats');
+        }
+    }
+
+    /**
+     * [AI:Claude] Récupérer le code d'un email spécifique
+     * GET /api/admin/early-bird/code?email=xxx@example.com
+     */
+    public function getEarlyBirdCodeByEmail(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $email = $_GET['email'] ?? null;
+
+        if (empty($email)) {
+            Response::error('Email requis', HTTP_UNPROCESSABLE);
+        }
+
+        try {
+            $earlyBirdService = new \Services\EarlyBirdCodeService($this->userModel->getDb());
+            $code = $earlyBirdService->getCodeByEmail($email);
+
+            if ($code === null) {
+                Response::notFound("Aucun code trouvé pour l'email : {$email}");
+            }
+
+            Response::success([
+                'email' => $email,
+                'code_data' => $code
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('[AdminController] Erreur recherche code : '.$e->getMessage());
+            Response::serverError('Erreur lors de la recherche');
+        }
+    }
 }

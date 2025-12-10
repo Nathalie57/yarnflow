@@ -80,16 +80,26 @@ class PhotoController
     public function upload(): void
     {
         try {
+            error_log("[PHOTO UPLOAD] Début upload");
+            error_log("[PHOTO UPLOAD] FILES: " . json_encode($_FILES));
+            error_log("[PHOTO UPLOAD] POST: " . json_encode($_POST));
+
             $userId = $this->getUserIdFromAuth();
+            error_log("[PHOTO UPLOAD] User ID: $userId");
 
             // [AI:Claude] Vérifier le fichier uploadé
-            if (!isset($_FILES['photo']))
+            if (!isset($_FILES['photo'])) {
+                error_log("[PHOTO UPLOAD] ERREUR: Fichier photo manquant");
                 throw new \InvalidArgumentException('Fichier photo manquant');
+            }
 
             $file = $_FILES['photo'];
+            error_log("[PHOTO UPLOAD] File error code: " . $file['error']);
 
-            if ($file['error'] !== UPLOAD_ERR_OK)
-                throw new \Exception('Erreur lors de l\'upload');
+            if ($file['error'] !== UPLOAD_ERR_OK) {
+                error_log("[PHOTO UPLOAD] ERREUR Upload: " . $file['error']);
+                throw new \Exception('Erreur lors de l\'upload - Code: ' . $file['error']);
+            }
 
             // [AI:Claude] Valider le fichier
             $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
@@ -159,7 +169,21 @@ class PhotoController
             // [AI:Claude] Récupérer les options
             $style = $data['style'] ?? 'lifestyle';
             $purpose = $data['purpose'] ?? 'instagram';
-            $projectType = $data['project_type'] ?? $photo['item_type'] ?? 'handmade craft';
+
+            // [AI:Claude] Récupérer le type du projet si la photo est liée à un projet
+            $projectType = 'handmade craft';
+            if (!empty($photo['project_id'])) {
+                $db = \App\Config\Database::getInstance()->getConnection();
+                $projectQuery = "SELECT type FROM projects WHERE id = :project_id";
+                $projectStmt = $db->prepare($projectQuery);
+                $projectStmt->bindValue(':project_id', $photo['project_id'], \PDO::PARAM_INT);
+                $projectStmt->execute();
+                $project = $projectStmt->fetch(\PDO::FETCH_ASSOC);
+
+                if ($project && !empty($project['type'])) {
+                    $projectType = $project['type'];
+                }
+            }
 
             // [AI:Claude] Chemin complet de l'image
             $imagePath = __DIR__ . '/../public' . $photo['original_path'];
@@ -169,8 +193,8 @@ class PhotoController
 
             $result = $this->photoService->enhancePhoto($imagePath, [
                 'project_type' => $projectType,
-                'purpose' => $purpose,
-                'style' => $style
+                'context' => $style, // [AI:Claude] Utiliser 'context' pour correspondre au service
+                'purpose' => $purpose
             ]);
 
             if (!$result['success']) {
@@ -248,6 +272,21 @@ class PhotoController
                 return;
             }
 
+            // [AI:Claude] Récupérer le type du projet si la photo est liée à un projet
+            $projectType = 'handmade craft';
+            if (!empty($photo['project_id'])) {
+                $db = \App\Config\Database::getInstance()->getConnection();
+                $projectQuery = "SELECT type FROM projects WHERE id = :project_id";
+                $projectStmt = $db->prepare($projectQuery);
+                $projectStmt->bindValue(':project_id', $photo['project_id'], \PDO::PARAM_INT);
+                $projectStmt->execute();
+                $project = $projectStmt->fetch(\PDO::FETCH_ASSOC);
+
+                if ($project && !empty($project['type'])) {
+                    $projectType = $project['type'];
+                }
+            }
+
             $quantity = count($contexts);
 
             // [AI:Claude] Calculer le coût (5 photos = 4 crédits, sinon 1 crédit/photo)
@@ -268,6 +307,16 @@ class PhotoController
             // [AI:Claude] Chemin complet de l'image
             $imagePath = __DIR__.'/../public'.$photo['original_path'];
 
+            // [AI:Claude] Vérifier si une preview existe pour cette photo
+            $previewTempPath = sys_get_temp_dir() . "/preview_{$photoId}.jpg";
+            $usePreview = file_exists($previewTempPath);
+
+            if ($usePreview) {
+                error_log("[ENHANCE] Using preview as base for HD generation (photo {$photoId})");
+            } else {
+                error_log("[ENHANCE] No preview found, using original image (photo {$photoId})");
+            }
+
             // [AI:Claude] Générer chaque variation
             $generatedPhotos = [];
             $successCount = 0;
@@ -275,11 +324,16 @@ class PhotoController
             foreach ($contexts as $context) {
                 try {
                     // [AI:Claude] Générer avec IA pour ce contexte
-                    $result = $this->photoService->enhancePhoto($imagePath, [
-                        'project_type' => $photo['item_type'] ?? 'handmade craft',
-                        'context' => $context,
-                        'project_category' => $projectCategory
-                    ]);
+                    // Si une preview existe, l'utiliser comme base pour l'upscaling
+                    $result = $this->photoService->enhancePhoto(
+                        $usePreview ? $previewTempPath : $imagePath,
+                        [
+                            'project_type' => $projectType,
+                            'context' => $context,
+                            'project_category' => $projectCategory,
+                            'from_preview' => $usePreview
+                        ]
+                    );
 
                     if (!$result['success']) {
                         throw new \Exception($result['error'] ?? 'Erreur génération IA');
@@ -327,6 +381,12 @@ class PhotoController
                     break;
 
                 $this->creditManager->useCredit($userId);
+            }
+
+            // [AI:Claude] Supprimer la preview temporaire après utilisation
+            if ($usePreview && file_exists($previewTempPath)) {
+                unlink($previewTempPath);
+                error_log("[ENHANCE] Preview temp file deleted: {$previewTempPath}");
             }
 
             $this->sendResponse(200, [
@@ -412,6 +472,103 @@ class PhotoController
             $this->sendResponse(500, [
                 'success' => false,
                 'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] POST /api/photos/{id}/preview - Générer une preview IA basse résolution (gratuit)
+     *
+     * @param int $photoId ID de la photo
+     * @return void JSON response
+     */
+    public function generatePreview(int $photoId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+
+            // [AI:Claude] Vérifier que la photo appartient à l'utilisateur
+            $photo = $this->getPhotoById($photoId);
+
+            if (!$photo || (int)$photo['user_id'] !== $userId) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Accès non autorisé'
+                ]);
+                return;
+            }
+
+            // [AI:Claude] Rate limiting : max 3 previews par 30 secondes
+            $rateLimitKey = "preview_ratelimit_{$userId}";
+            $cacheFile = sys_get_temp_dir() . "/{$rateLimitKey}.txt";
+
+            if (file_exists($cacheFile)) {
+                $attempts = json_decode(file_get_contents($cacheFile), true);
+                $attempts = array_filter($attempts, fn($time) => time() - $time < 30);
+
+                if (count($attempts) >= 3) {
+                    $this->sendResponse(429, [
+                        'success' => false,
+                        'error' => 'Trop de previews. Attendez 30 secondes.'
+                    ]);
+                    return;
+                }
+
+                $attempts[] = time();
+                file_put_contents($cacheFile, json_encode($attempts));
+            } else {
+                file_put_contents($cacheFile, json_encode([time()]));
+            }
+
+            // [AI:Claude] Récupérer le contexte
+            $context = $data['context'] ?? 'lifestyle';
+
+            // [AI:Claude] Récupérer le type du projet
+            $projectType = 'handmade craft';
+            if (!empty($photo['project_id'])) {
+                $db = \App\Config\Database::getInstance()->getConnection();
+                $projectQuery = "SELECT type FROM projects WHERE id = :project_id";
+                $projectStmt = $db->prepare($projectQuery);
+                $projectStmt->bindValue(':project_id', $photo['project_id'], \PDO::PARAM_INT);
+                $projectStmt->execute();
+                $project = $projectStmt->fetch(\PDO::FETCH_ASSOC);
+
+                if ($project && !empty($project['type'])) {
+                    $projectType = $project['type'];
+                }
+            }
+
+            // [AI:Claude] Chemin complet de l'image
+            $imagePath = __DIR__.'/../public'.$photo['original_path'];
+
+            // [AI:Claude] Générer la preview (pas de crédit consommé)
+            $result = $this->photoService->generatePreview($imagePath, [
+                'project_type' => $projectType,
+                'context' => $context
+            ]);
+
+            if (!$result['success']) {
+                throw new \Exception($result['error'] ?? 'Erreur génération preview');
+            }
+
+            // [AI:Claude] Sauvegarder la preview temporairement pour génération HD ultérieure
+            $previewTempPath = sys_get_temp_dir() . "/preview_{$photoId}.jpg";
+            file_put_contents($previewTempPath, base64_decode($result['preview_image_base64']));
+            error_log("[PREVIEW SAVED] Photo {$photoId} preview saved at: {$previewTempPath}");
+
+            // [AI:Claude] Retourner l'image en base64 (pas de sauvegarde en BDD)
+            $this->sendResponse(200, [
+                'success' => true,
+                'preview_image' => $result['preview_image_base64'],
+                'prompt_used' => $result['prompt_used']
+            ]);
+
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la génération de la preview',
+                'message' => $e->getMessage()
             ]);
         }
     }

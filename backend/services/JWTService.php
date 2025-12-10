@@ -49,7 +49,8 @@ class JWTService
                 'user_id' => $user['id'],
                 'email' => $user['email'],
                 'role' => $user['role'],
-                'subscription_type' => $user['subscription_type']
+                'subscription_type' => $user['subscription_type'],
+                'subscription_expires_at' => $user['subscription_expires_at'] ?? null
             ]
         ];
 

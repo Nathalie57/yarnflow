@@ -68,6 +68,75 @@ class User extends BaseModel
     }
 
     /**
+     * [AI:Claude] Créer ou récupérer un utilisateur OAuth (Google, Facebook)
+     *
+     * @param string $provider Provider OAuth (google, facebook)
+     * @param string $providerId ID fourni par le provider
+     * @param string $email Email de l'utilisateur
+     * @param string|null $firstName Prénom
+     * @param string|null $lastName Nom
+     * @param string|null $avatar URL de l'avatar
+     * @return array Données de l'utilisateur (nouveau ou existant)
+     */
+    public function findOrCreateOAuthUser(
+        string $provider,
+        string $providerId,
+        string $email,
+        ?string $firstName = null,
+        ?string $lastName = null,
+        ?string $avatar = null
+    ): array {
+        // [AI:Claude] Chercher d'abord par provider + provider_id
+        $sql = "SELECT * FROM {$this->table}
+                WHERE oauth_provider = :provider
+                AND oauth_provider_id = :provider_id
+                LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'provider' => $provider,
+            'provider_id' => $providerId
+        ]);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($user) {
+            // [AI:Claude] Utilisateur OAuth trouvé, le retourner
+            return $user;
+        }
+
+        // [AI:Claude] Chercher par email (un utilisateur peut avoir créé un compte classique avant)
+        $existingUser = $this->findByEmail($email);
+
+        if ($existingUser) {
+            // [AI:Claude] Lier le compte existant à OAuth
+            $this->update($existingUser['id'], [
+                'oauth_provider' => $provider,
+                'oauth_provider_id' => $providerId,
+                'oauth_avatar' => $avatar
+            ]);
+
+            return $this->findById($existingUser['id']);
+        }
+
+        // [AI:Claude] Créer un nouvel utilisateur OAuth
+        $data = [
+            'email' => $email,
+            'password' => null, // Pas de mot de passe pour OAuth
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'oauth_provider' => $provider,
+            'oauth_provider_id' => $providerId,
+            'oauth_avatar' => $avatar,
+            'role' => ROLE_USER,
+            'subscription_type' => SUBSCRIPTION_FREE,
+            'email_verified' => 1 // OAuth emails sont déjà vérifiés
+        ];
+
+        $userId = $this->create($data);
+        return $this->findById($userId);
+    }
+
+    /**
      * [AI:Claude] Vérifier le mot de passe d'un utilisateur
      *
      * @param string $email Email de l'utilisateur

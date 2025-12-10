@@ -249,10 +249,24 @@ class Project extends BaseModel
             ':completed_at' => $rowData['completed_at'] ?? date('Y-m-d H:i:s')
         ];
 
-        if ($stmt->execute($params))
-            return (int) $this->db->lastInsertId();
+        if (!$stmt->execute($params))
+            return false;
 
-        return false;
+        $rowId = (int) $this->db->lastInsertId();
+
+        // [AI:Claude] Mettre à jour current_row dans la section si définie
+        if (isset($rowData['section_id']) && $rowData['section_id'] !== null) {
+            $updateSectionQuery = "UPDATE project_sections
+                                   SET current_row = :row_num
+                                   WHERE id = :section_id";
+
+            $updateStmt = $this->db->prepare($updateSectionQuery);
+            $updateStmt->bindValue(':row_num', $rowData['row_number'], PDO::PARAM_INT);
+            $updateStmt->bindValue(':section_id', $rowData['section_id'], PDO::PARAM_INT);
+            $updateStmt->execute();
+        }
+
+        return $rowId;
     }
 
     /**
@@ -305,9 +319,10 @@ class Project extends BaseModel
      * @param int $sessionId ID de la session
      * @param int $rowsCompleted Nombre de rangs complétés
      * @param string|null $notes Notes de la session
+     * @param int|null $duration Durée exacte en secondes (du frontend, plus précis)
      * @return bool Succès
      */
-    public function endSession(int $sessionId, int $rowsCompleted = 0, ?string $notes = null): bool
+    public function endSession(int $sessionId, int $rowsCompleted = 0, ?string $notes = null, ?int $duration = null): bool
     {
         // [AI:Claude] Récupérer la session pour obtenir project_id et section_id
         $sessionQuery = "SELECT project_id, section_id FROM project_sessions WHERE id = :id";
@@ -319,51 +334,87 @@ class Project extends BaseModel
         if (!$session)
             return false;
 
-        // [AI:Claude] Mettre à jour la session avec durée calculée
-        $query = "UPDATE project_sessions
-                  SET ended_at = NOW(),
-                      duration = TIMESTAMPDIFF(SECOND, started_at, NOW()),
-                      rows_completed = :rows_completed,
-                      notes = :notes
-                  WHERE id = :id";
+        // [AI:Claude] FIX BUG: Si la durée est fournie par le frontend, l'utiliser directement
+        // Sinon, calculer avec TIMESTAMPDIFF (rétrocompatibilité)
+        if ($duration !== null) {
+            $query = "UPDATE project_sessions
+                      SET ended_at = NOW(),
+                          duration = :duration,
+                          rows_completed = :rows_completed,
+                          notes = :notes
+                      WHERE id = :id";
 
-        $stmt = $this->db->prepare($query);
-        $stmt->bindValue(':id', $sessionId, PDO::PARAM_INT);
-        $stmt->bindValue(':rows_completed', $rowsCompleted, PDO::PARAM_INT);
-        $stmt->bindValue(':notes', $notes, PDO::PARAM_STR);
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id', $sessionId, PDO::PARAM_INT);
+            $stmt->bindValue(':duration', $duration, PDO::PARAM_INT);
+            $stmt->bindValue(':rows_completed', $rowsCompleted, PDO::PARAM_INT);
+            $stmt->bindValue(':notes', $notes, PDO::PARAM_STR);
+        } else {
+            // [AI:Claude] Fallback : calculer la durée côté backend
+            $query = "UPDATE project_sessions
+                      SET ended_at = NOW(),
+                          duration = TIMESTAMPDIFF(SECOND, started_at, NOW()),
+                          rows_completed = :rows_completed,
+                          notes = :notes
+                      WHERE id = :id";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id', $sessionId, PDO::PARAM_INT);
+            $stmt->bindValue(':rows_completed', $rowsCompleted, PDO::PARAM_INT);
+            $stmt->bindValue(':notes', $notes, PDO::PARAM_STR);
+        }
 
         if (!$stmt->execute())
             return false;
 
-        // [AI:Claude] Mettre à jour le temps total du projet avec la durée de la session
-        $updateProjectQuery = "UPDATE projects p
-                               SET p.total_time = p.total_time + (
-                                   SELECT duration FROM project_sessions WHERE id = :session_id
-                               ),
-                               p.last_worked_at = NOW()
-                               WHERE p.id = :project_id";
+        // [AI:Claude] Récupérer la durée de la session (soit celle fournie, soit celle calculée)
+        if ($duration === null) {
+            $getDurationQuery = "SELECT duration FROM project_sessions WHERE id = :session_id";
+            $durationStmt = $this->db->prepare($getDurationQuery);
+            $durationStmt->bindValue(':session_id', $sessionId, PDO::PARAM_INT);
+            $durationStmt->execute();
+            $duration = (int)$durationStmt->fetchColumn();
+        }
 
-        $updateStmt = $this->db->prepare($updateProjectQuery);
-        $updateStmt->bindValue(':session_id', $sessionId, PDO::PARAM_INT);
-        $updateStmt->bindValue(':project_id', $session['project_id'], PDO::PARAM_INT);
+        error_log("[Project] Session $sessionId terminée: durée={$duration}s, project_id={$session['project_id']}, section_id={$session['section_id']}");
 
-        if (!$updateStmt->execute())
-            return false;
+        if ($duration > 0) {
+            // [AI:Claude] Mettre à jour le temps total du projet
+            $updateProjectQuery = "UPDATE projects
+                                   SET total_time = total_time + :duration,
+                                       last_worked_at = NOW()
+                                   WHERE id = :project_id";
 
-        // [AI:Claude] Mettre à jour le temps passé sur la section si définie
-        if ($session['section_id'] !== null) {
-            $updateSectionQuery = "UPDATE project_sections
-                                   SET time_spent = time_spent + (
-                                       SELECT duration FROM project_sessions WHERE id = :session_id
-                                   )
-                                   WHERE id = :section_id";
+            $updateStmt = $this->db->prepare($updateProjectQuery);
+            $updateStmt->bindValue(':duration', $duration, PDO::PARAM_INT);
+            $updateStmt->bindValue(':project_id', $session['project_id'], PDO::PARAM_INT);
 
-            $updateSectionStmt = $this->db->prepare($updateSectionQuery);
-            $updateSectionStmt->bindValue(':session_id', $sessionId, PDO::PARAM_INT);
-            $updateSectionStmt->bindValue(':section_id', $session['section_id'], PDO::PARAM_INT);
-
-            if (!$updateSectionStmt->execute())
+            if (!$updateStmt->execute()) {
+                error_log("[Project] Erreur mise à jour total_time projet {$session['project_id']}: duration=$duration");
                 return false;
+            }
+
+            error_log("[Project] Projet {$session['project_id']}: +{$duration}s ajoutés au total_time");
+
+            // [AI:Claude] Mettre à jour le temps passé sur la section si définie
+            if ($session['section_id'] !== null) {
+                $updateSectionQuery = "UPDATE project_sections
+                                       SET time_spent = time_spent + :duration
+                                       WHERE id = :section_id";
+
+                $updateSectionStmt = $this->db->prepare($updateSectionQuery);
+                $updateSectionStmt->bindValue(':duration', $duration, PDO::PARAM_INT);
+                $updateSectionStmt->bindValue(':section_id', $session['section_id'], PDO::PARAM_INT);
+
+                if (!$updateSectionStmt->execute()) {
+                    error_log("[Project] Erreur mise à jour time_spent section {$session['section_id']}: duration=$duration");
+                    return false;
+                }
+
+                error_log("[Project] Section {$session['section_id']}: +{$duration}s ajoutés au time_spent");
+            }
+        } else {
+            error_log("[Project] ATTENTION: durée de session = 0, rien à ajouter");
         }
 
         return true;
@@ -461,24 +512,77 @@ class Project extends BaseModel
             ? round($sessionStats['avg_session_duration'] / 60)
             : 0;
 
-        // [AI:Claude] Streak calculation (jours consécutifs)
-        $streakQuery = "SELECT DATEDIFF(NOW(), MAX(last_worked_at)) as days_since_last
-                        FROM {$this->table}
-                        WHERE user_id = :user_id
-                        AND last_worked_at IS NOT NULL";
+        // [AI:Claude] Calcul du streak (jours consécutifs de travail)
+        // Récupérer tous les jours distincts où l'utilisateur a travaillé
+        $workDaysQuery = "SELECT DISTINCT DATE(ps.started_at) as work_date
+                          FROM project_sessions ps
+                          JOIN {$this->table} p ON ps.project_id = p.id
+                          WHERE p.user_id = :user_id
+                          AND ps.started_at IS NOT NULL
+                          ORDER BY work_date DESC
+                          LIMIT 365";
 
-        $stmt = $this->db->prepare($streakQuery);
+        $stmt = $this->db->prepare($workDaysQuery);
         $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
         $stmt->execute();
+        $workDays = $stmt->fetchAll(\PDO::FETCH_COLUMN);
 
-        $streakData = $stmt->fetch(\PDO::FETCH_ASSOC);
-        $daysSinceLast = (int)($streakData['days_since_last'] ?? 999);
+        // Calculer le streak actuel
+        $currentStreak = 0;
+        $today = new \DateTime();
+        $today->setTime(0, 0, 0);
 
-        // [AI:Claude] Streak actuel (si dernier travail < 2 jours)
-        $currentStreak = $daysSinceLast < 2 ? 1 : 0;
+        if (count($workDays) > 0) {
+            $yesterday = clone $today;
+            $yesterday->modify('-1 day');
 
-        // [AI:Claude] TODO: Calculer le streak réel jour par jour (requête plus complexe)
-        $longestStreak = $currentStreak;
+            // Vérifier si l'utilisateur a travaillé aujourd'hui ou hier
+            $lastWorkDate = new \DateTime($workDays[0]);
+            $lastWorkDate->setTime(0, 0, 0);
+
+            if ($lastWorkDate >= $yesterday) {
+                // Compter les jours consécutifs
+                $expectedDate = clone $lastWorkDate;
+
+                foreach ($workDays as $dateStr) {
+                    $workDate = new \DateTime($dateStr);
+                    $workDate->setTime(0, 0, 0);
+
+                    if ($workDate == $expectedDate) {
+                        $currentStreak++;
+                        $expectedDate->modify('-1 day');
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Calculer le plus long streak historique
+        $longestStreak = 0;
+        $tempStreak = 0;
+
+        if (count($workDays) > 0) {
+            $tempStreak = 1;
+
+            for ($i = 0; $i < count($workDays) - 1; $i++) {
+                $currentDate = new \DateTime($workDays[$i]);
+                $nextDate = new \DateTime($workDays[$i + 1]);
+
+                // Calculer la différence en jours
+                $diff = $currentDate->diff($nextDate)->days;
+
+                if ($diff === 1) {
+                    $tempStreak++;
+                    $longestStreak = max($longestStreak, $tempStreak);
+                } else {
+                    $longestStreak = max($longestStreak, $tempStreak);
+                    $tempStreak = 1;
+                }
+            }
+
+            $longestStreak = max($longestStreak, $tempStreak);
+        }
 
         return [
             'total_projects' => $totalProjects,
@@ -623,7 +727,8 @@ class Project extends BaseModel
                   END as completion_percentage,
                   CONCAT(
                       FLOOR(s.time_spent / 3600), 'h ',
-                      FLOOR((s.time_spent % 3600) / 60), 'min'
+                      FLOOR((s.time_spent % 3600) / 60), 'min ',
+                      (s.time_spent % 60), 'sec'
                   ) as time_formatted
                   FROM project_sections s
                   LEFT JOIN project_rows pr ON s.id = pr.section_id
@@ -665,7 +770,7 @@ class Project extends BaseModel
      */
     public function updateSection(int $sectionId, array $data): bool
     {
-        $allowedFields = ['name', 'description', 'display_order', 'total_rows', 'is_completed'];
+        $allowedFields = ['name', 'description', 'display_order', 'total_rows', 'current_row', 'is_completed'];
 
         $fields = [];
         $params = [':id' => $sectionId];

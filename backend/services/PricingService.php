@@ -142,7 +142,7 @@ class PricingService
     }
 
     /**
-     * [AI:Claude] Obtenir le prix des abonnements
+     * [AI:Claude] Obtenir le prix des abonnements (v0.12.0 - Aligné sur CLAUDE.md)
      *
      * @return array Prix des abonnements mensuels et annuels
      */
@@ -150,41 +150,54 @@ class PricingService
     {
         return [
             'monthly' => [
-                'price' => (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 9.99),
+                'price' => (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 4.99),
                 'currency' => 'EUR',
                 'period' => 'month',
                 'features' => [
-                    'Génération illimitée de patrons',
-                    'Accès à tous les niveaux',
-                    'Export PDF sans limite',
+                    'Projets illimités',
+                    '30 photos IA/mois',
+                    'Bibliothèque de patrons',
                     'Support prioritaire'
                 ]
             ],
             'yearly' => [
-                'price' => (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 99.99),
+                'price' => (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 39.99),
                 'currency' => 'EUR',
                 'period' => 'year',
-                'savings' => '2 mois gratuits',
+                'savings' => '20% de réduction',
                 'features' => [
-                    'Génération illimitée de patrons',
-                    'Accès à tous les niveaux',
-                    'Export PDF sans limite',
+                    'Projets illimités',
+                    '30 photos IA/mois',
+                    'Bibliothèque de patrons',
                     'Support prioritaire',
                     'Accès anticipé aux nouveautés'
+                ]
+            ],
+            'early_bird' => [
+                'price' => 2.99,
+                'currency' => 'EUR',
+                'period' => 'month',
+                'duration' => '12 mois',
+                'limit' => '200 places',
+                'features' => [
+                    'Accès PRO complet',
+                    'Projets illimités',
+                    '30 photos IA/mois',
+                    'Prix garanti 12 mois'
                 ]
             ]
         ];
     }
 
     /**
-     * [AI:Claude] Calculer les économies de l'abonnement annuel
+     * [AI:Claude] Calculer les économies de l'abonnement annuel (v0.12.0)
      *
      * @return array Détails des économies
      */
     public function getYearlySavings(): array
     {
-        $monthlyPrice = (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 9.99);
-        $yearlyPrice = (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 99.99);
+        $monthlyPrice = (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 4.99);
+        $yearlyPrice = (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 39.99);
 
         $monthlyTotal = $monthlyPrice * 12;
         $savings = $monthlyTotal - $yearlyPrice;

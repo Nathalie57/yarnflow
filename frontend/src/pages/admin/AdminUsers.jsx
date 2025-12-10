@@ -153,7 +153,7 @@ const AdminUsers = () => {
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded text-xs ${
                       user.subscription_type === 'yearly'
-                        ? 'bg-purple-100 text-purple-800'
+                        ? 'bg-primary-100 text-primary-800'
                         : user.subscription_type === 'monthly'
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-gray-100 text-gray-800'

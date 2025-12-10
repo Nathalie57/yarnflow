@@ -215,7 +215,7 @@ const PatternDetail = () => {
         {pattern.tips && pattern.tips.length > 0 && (
           <div className="mb-6">
             <h2 className="text-2xl font-bold mb-3">Conseils</h2>
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="bg-warm-100 p-4 rounded-lg border border-primary-200">
               <ul className="list-disc list-inside space-y-2">
                 {pattern.tips.map((tip, index) => (
                   <li key={index} className="text-sm text-gray-700">{tip}</li>

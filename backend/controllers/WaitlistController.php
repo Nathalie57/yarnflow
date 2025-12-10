@@ -13,14 +13,17 @@ namespace App\Controllers;
 
 use App\Utils\Response;
 use App\Utils\Validator;
+use App\Services\EmailService;
 
 class WaitlistController
 {
     private \PDO $db;
+    private EmailService $emailService;
 
     public function __construct()
     {
         $this->db = \App\Config\Database::getInstance()->getConnection();
+        $this->emailService = new EmailService();
     }
 
     /**
@@ -76,6 +79,15 @@ class WaitlistController
 
             // Incrémenter le compteur
             $this->db->exec('UPDATE waitlist_stats SET total_subscribers = total_subscribers + 1 WHERE id = 1');
+
+            // Envoyer l'email de bienvenue
+            try {
+                $this->emailService->sendWelcomeEmail($email, $name);
+                error_log("[WaitlistController] Email de bienvenue envoyé à {$email}");
+            } catch (\Exception $emailError) {
+                // Ne pas bloquer l'inscription si l'email échoue
+                error_log("[WaitlistController] Erreur envoi email (inscription OK) : " . $emailError->getMessage());
+            }
 
             Response::created([
                 'message' => 'Inscription réussie !',

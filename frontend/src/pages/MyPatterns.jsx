@@ -83,7 +83,7 @@ const MyPatterns = () => {
   const getStatusBadge = (status) => {
     const badges = {
       draft: { label: 'Brouillon', class: 'bg-gray-100 text-gray-800' },
-      generating: { label: 'En cours...', class: 'bg-blue-100 text-blue-800' },
+      generating: { label: 'En cours...', class: 'bg-primary-100 text-primary-800' },
       completed: { label: 'Terminé', class: 'bg-green-100 text-green-800' },
       error: { label: 'Erreur', class: 'bg-red-100 text-red-800' }
     }
@@ -130,12 +130,12 @@ const MyPatterns = () => {
 
       {/* [AI:Claude] Notification de génération en cours */}
       {generatingId && generatingStatus === 'generating' && (
-        <div className="card bg-blue-50 border-2 border-blue-200 mb-6">
+        <div className="card bg-warm-100 border-2 border-primary-200 mb-6">
           <div className="flex items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
             <div>
-              <h3 className="font-bold text-blue-900">Génération en cours...</h3>
-              <p className="text-sm text-blue-700">
+              <h3 className="font-bold text-primary-900">Génération en cours...</h3>
+              <p className="text-sm text-primary-700">
                 Votre patron est en cours de création. Cela peut prendre quelques secondes.
               </p>
             </div>

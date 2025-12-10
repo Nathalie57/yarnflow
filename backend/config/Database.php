@@ -34,11 +34,12 @@ class Database
      */
     private function __construct()
     {
-        $this->host = $_ENV['DB_HOST'] ?? 'localhost';
-        $this->dbName = $_ENV['DB_NAME'] ?? 'patron_maker';
-        $this->username = $_ENV['DB_USER'] ?? 'root';
-        $this->password = $_ENV['DB_PASSWORD'] ?? '';
-        $this->charset = $_ENV['DB_CHARSET'] ?? 'utf8mb4';
+        // Utiliser getenv() en fallback si $_ENV n'est pas disponible
+        $this->host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: 'localhost';
+        $this->dbName = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: 'patron_maker';
+        $this->username = $_ENV['DB_USER'] ?? getenv('DB_USER') ?: 'root';
+        $this->password = $_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: '';
+        $this->charset = $_ENV['DB_CHARSET'] ?? getenv('DB_CHARSET') ?: 'utf8mb4';
     }
 
     /**

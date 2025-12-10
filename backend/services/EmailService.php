@@ -39,10 +39,8 @@ class EmailService
             $this->mailer->Port = (int)($_ENV['SMTP_PORT'] ?? 587);
             $this->mailer->CharSet = 'UTF-8';
 
-            // Debug en mode développement
-            if (($_ENV['APP_DEBUG'] ?? 'false') === 'true') {
-                $this->mailer->SMTPDebug = SMTP::DEBUG_SERVER;
-            }
+            // Désactiver debug SMTP (les erreurs vont dans error_log)
+            $this->mailer->SMTPDebug = 0;
 
             // Expéditeur par défaut
             $this->mailer->setFrom(
@@ -130,50 +128,95 @@ class EmailService
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; padding: 30px 0; border-bottom: 2px solid #8b5cf6; }
-        .content { padding: 30px 0; }
-        .footer { text-align: center; padding: 20px 0; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; }
-        .cta-button { display: inline-block; background: #8b5cf6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin: 20px 0; }
-        .emoji { font-size: 48px; margin: 20px 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #374151;
+            background-color: #fef8f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%);
+        }
+        .header h1 {
+            color: white;
+            margin: 10px 0 0 0;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        .emoji {
+            font-size: 56px;
+            margin: 0;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .content h2 {
+            color: #884024;
+            font-size: 24px;
+            margin-top: 0;
+        }
+        .content p {
+            color: #4b5563;
+            margin: 16px 0;
+            font-size: 16px;
+        }
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            background: #fef8f4;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #dd7a4a;
+            text-decoration: none;
+        }
+        .signature {
+            margin-top: 30px;
+            color: #6b7280;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="emoji">🧶</div>
-            <h1 style="color: #8b5cf6; margin: 0;">YarnFlow</h1>
-        </div>
+    <div style="background-color: #fef8f4; padding: 20px 0;">
+        <div class="container">
+            <div class="header">
+                <div class="emoji">🧶</div>
+                <h1>YarnFlow</h1>
+            </div>
 
-        <div class="content">
-            <h2>Bienvenue dans l'aventure, {$name} ! 🎉</h2>
+            <div class="content">
+                <h2>Bienvenue sur YarnFlow !</h2>
 
-            <p>Vous êtes maintenant inscrit·e à la <strong>waitlist YarnFlow</strong>.</p>
+                <p>Merci de rejoindre la waitlist. Tu fais maintenant partie des early birds !</p>
 
-            <p>On prépare quelque chose de spécial pour vous :</p>
+                <p>On te contacte très bientôt avec tous les détails de l'offre exclusive et ton accès en avant-première.</p>
 
-            <ul>
-                <li>🧶 <strong>Compteur de rangs intelligent</strong> avec timer automatique</li>
-                <li>📊 <strong>Stats avancées</strong> en temps réel</li>
-                <li>📸 <strong>AI Photo Studio</strong> pour sublimer vos créations</li>
-                <li>📚 <strong>Bibliothèque de patrons</strong> centralisée</li>
-            </ul>
+                <p>D'ici là, garde tes aiguilles et tes crochets à portée de main 😊</p>
 
-            <p><strong>🔥 Offre Early Bird réservée aux inscrits waitlist :</strong></p>
-            <ul>
-                <li>Places 1-100 : <strong>2,99€/mois pendant 12 mois</strong> (au lieu de 4,99€)</li>
-                <li>Places 101-200 : <strong>10 crédits IA offerts</strong> + Badge Membre Fondateur</li>
-            </ul>
+                <div class="signature">
+                    <p style="margin: 0;">À très vite,</p>
+                    <p style="margin: 8px 0 0 0;"><strong>Nathalie</strong></p>
+                </div>
+            </div>
 
-            <p>On vous tient au courant très bientôt pour le lancement de la beta privée ! 💌</p>
-
-            <p style="margin-top: 30px;">À très vite,<br><strong>L'équipe YarnFlow</strong></p>
-        </div>
-
-        <div class="footer">
-            <p>&copy; 2025 YarnFlow. Tous droits réservés.</p>
-            <p><a href="https://yarnflow.fr" style="color: #8b5cf6;">yarnflow.fr</a></p>
+            <div class="footer">
+                <p style="margin: 0 0 8px 0;">&copy; 2025 YarnFlow</p>
+                <p style="margin: 0;"><a href="https://yarnflow.fr">yarnflow.fr</a></p>
+            </div>
         </div>
     </div>
 </body>
@@ -202,5 +245,140 @@ HTML;
                 'message' => "Erreur SMTP: {$e->getMessage()}"
             ];
         }
+    }
+
+    /**
+     * [AI:Claude] Envoyer un email de réinitialisation de mot de passe
+     *
+     * @param string $email Email du destinataire
+     * @param string $name Prénom de l'utilisateur
+     * @param string $resetLink Lien de réinitialisation
+     * @return bool True si envoi réussi
+     */
+    public function sendPasswordResetEmail(string $email, string $name, string $resetLink): bool
+    {
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = '🔑 Réinitialisation de votre mot de passe YarnFlow';
+
+            // Corps HTML
+            $mail->isHTML(true);
+            $mail->Body = $this->getPasswordResetEmailTemplate($name, $resetLink);
+
+            // Version texte
+            $mail->AltBody = "Bonjour $name,\n\nVous avez demandé à réinitialiser votre mot de passe YarnFlow.\n\nCliquez sur ce lien pour créer un nouveau mot de passe :\n$resetLink\n\nCe lien est valide pendant 1 heure.\n\nSi vous n'avez pas demandé cette réinitialisation, ignorez cet email.\n\nL'équipe YarnFlow 🧶";
+
+            $mail->send();
+            error_log("[EMAIL] Email de reset password envoyé à: $email");
+            return true;
+
+        } catch (Exception $e) {
+            error_log("[EMAIL ERROR] Erreur envoi reset password: {$mail->ErrorInfo}");
+            return false;
+        }
+    }
+
+    /**
+     * [AI:Claude] Template HTML pour email de réinitialisation
+     *
+     * @param string $name Prénom utilisateur
+     * @param string $resetLink Lien de réinitialisation
+     * @return string HTML de l'email
+     */
+    private function getPasswordResetEmailTemplate(string $name, string $resetLink): string
+    {
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
+                                🧶 YarnFlow
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px 40px 20px;">
+                            <h2 style="color: #1f2937; margin: 0 0 20px; font-size: 24px;">
+                                Réinitialisation de mot de passe
+                            </h2>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Bonjour <strong>{$name}</strong>,
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Vous avez demandé à réinitialiser votre mot de passe YarnFlow.
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
+                                Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding: 0 0 30px;">
+                                        <a href="{$resetLink}" style="display: inline-block; background-color: #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                                            🔑 Réinitialiser mon mot de passe
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Info Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; margin: 0 0 30px;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="color: #92400e; font-size: 14px; line-height: 1.6; margin: 0;">
+                                            ⏱️ <strong>Ce lien est valide pendant 1 heure.</strong><br>
+                                            Après ce délai, vous devrez demander un nouveau lien.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Security Warning -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fee2e2; border-left: 4px solid #ef4444; border-radius: 4px;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="color: #991b1b; font-size: 14px; line-height: 1.6; margin: 0;">
+                                            🔒 <strong>Vous n'avez pas demandé cette réinitialisation ?</strong><br>
+                                            Ignorez cet email. Votre mot de passe actuel reste inchangé.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 30px 40px; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 10px; text-align: center;">
+                                L'équipe YarnFlow 🧶
+                            </p>
+                            <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
     }
 }

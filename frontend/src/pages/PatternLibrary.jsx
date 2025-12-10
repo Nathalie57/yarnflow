@@ -12,8 +12,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
+import PDFViewer from '../components/PDFViewer'
+import ImageLightbox from '../components/ImageLightbox'
 
 const PatternLibrary = () => {
+  const { user } = useAuth()
   const [patterns, setPatterns] = useState([])
   const [stats, setStats] = useState(null)
   const [categories, setCategories] = useState([])
@@ -34,6 +38,10 @@ const PatternLibrary = () => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingPattern, setEditingPattern] = useState(null)
+
+  // [AI:Claude] Visualisation de patron
+  const [showViewerModal, setShowViewerModal] = useState(false)
+  const [viewerData, setViewerData] = useState({ url: '', fileName: '', type: '' })
 
   // [AI:Claude] Formulaire d'ajout
   const [addType, setAddType] = useState('file') // 'file' ou 'url'
@@ -152,7 +160,10 @@ const PatternLibrary = () => {
       setShowAddModal(false)
     } catch (err) {
       console.error('Erreur ajout patron:', err)
-      alert(err.response?.data?.error || 'Erreur lors de l\'ajout du patron')
+
+      // [AI:Claude] Afficher le message détaillé en priorité (ex: limite atteinte)
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Erreur lors de l\'ajout du patron'
+      alert(errorMessage)
     } finally {
       setUploading(false)
     }
@@ -206,21 +217,34 @@ const PatternLibrary = () => {
     setSearchQuery('')
   }
 
-  const handleOpenFile = async (patternId) => {
+  const handleOpenFile = async (pattern) => {
     try {
-      const response = await api.get(`/pattern-library/${patternId}/file`, {
+      const response = await api.get(`/pattern-library/${pattern.id}/file`, {
         responseType: 'blob'
       })
 
-      // [AI:Claude] Créer une URL temporaire pour le blob
-      const blob = new Blob([response.data])
+      // [AI:Claude] Récupérer le type MIME depuis la réponse
+      const contentType = response.headers['content-type'] || 'application/octet-stream'
+
+      // [AI:Claude] Créer une URL temporaire pour le blob avec le bon type MIME
+      const blob = new Blob([response.data], { type: contentType })
       const url = window.URL.createObjectURL(blob)
 
-      // [AI:Claude] Ouvrir dans un nouvel onglet
-      window.open(url, '_blank')
+      // [AI:Claude] Déterminer le type de fichier (PDF ou image)
+      const isPDF = contentType.includes('pdf')
+      const isImage = contentType.includes('image')
 
-      // [AI:Claude] Nettoyer l'URL après 1 minute
-      setTimeout(() => window.URL.revokeObjectURL(url), 60000)
+      // [AI:Claude] Ouvrir dans la modale au lieu d'un nouvel onglet
+      setViewerData({
+        url,
+        fileName: pattern.file_name || pattern.name || 'patron',
+        type: isPDF ? 'pdf' : isImage ? 'image' : 'other',
+        contentType
+      })
+      setShowViewerModal(true)
+
+      // [AI:Claude] Nettoyer l'URL après fermeture (10 minutes)
+      setTimeout(() => window.URL.revokeObjectURL(url), 600000)
     } catch (err) {
       console.error('Erreur ouverture fichier:', err)
       alert('Erreur lors de l\'ouverture du fichier')
@@ -256,7 +280,7 @@ const PatternLibrary = () => {
             </div>
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-600">Fichiers</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.file_patterns || 0}</p>
+              <p className="text-2xl font-bold text-primary-600">{stats.file_patterns || 0}</p>
             </div>
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-600">Liens</p>
@@ -265,6 +289,53 @@ const PatternLibrary = () => {
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-600">Favoris</p>
               <p className="text-2xl font-bold text-amber-600">{stats.favorite_patterns || 0}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Indicateur de limite FREE */}
+        {!loading && user && (!user.subscription_type || user.subscription_type === 'free') && stats && (
+          <div className="mt-4 bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-300 rounded-lg p-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📚</span>
+                <div>
+                  <p className="font-semibold text-orange-900">
+                    {stats.total_patterns || 0} / 10 patrons utilisés
+                  </p>
+                  <p className="text-sm text-orange-700">
+                    Plan gratuit - {10 - (stats.total_patterns || 0)} patrons restants
+                  </p>
+                </div>
+              </div>
+              {(stats.total_patterns || 0) >= 10 ? (
+                <Link
+                  to="/profile"
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition text-sm"
+                >
+                  🚀 Passer à PRO (illimité)
+                </Link>
+              ) : (stats.total_patterns || 0) >= 7 ? (
+                <Link
+                  to="/profile"
+                  className="px-4 py-2 bg-orange-100 text-orange-800 border border-orange-300 rounded-lg font-medium hover:bg-orange-200 transition text-sm"
+                >
+                  Passer à PRO
+                </Link>
+              ) : null}
+            </div>
+            {/* Barre de progression */}
+            <div className="mt-3 bg-orange-200 rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-full transition-all ${
+                  (stats.total_patterns || 0) >= 10
+                    ? 'bg-red-600'
+                    : (stats.total_patterns || 0) >= 7
+                    ? 'bg-orange-500'
+                    : 'bg-orange-400'
+                }`}
+                style={{ width: `${Math.min(((stats.total_patterns || 0) / 10) * 100, 100)}%` }}
+              />
             </div>
           </div>
         )}
@@ -421,13 +492,33 @@ const PatternLibrary = () => {
                         </div>
                       </div>
                     ) : (
-                      // [AI:Claude] URL : fond avec icône lien
-                      <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-                        <div className="text-center">
-                          <span className="text-6xl">🔗</span>
-                          <p className="text-xs text-blue-700 mt-2 font-medium">Lien web</p>
+                      // [AI:Claude] URL : afficher preview image si disponible, sinon icône
+                      pattern.preview_image_url ? (
+                        <img
+                          src={pattern.preview_image_url}
+                          alt={pattern.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback si l'image ne charge pas
+                            e.target.style.display = 'none'
+                            e.target.parentElement.innerHTML = `
+                              <div class="w-full h-full bg-gradient-to-br from-warm-100 to-primary-100 flex items-center justify-center">
+                                <div class="text-center">
+                                  <span class="text-6xl">🔗</span>
+                                  <p class="text-xs text-primary-700 mt-2 font-medium">Lien web</p>
+                                </div>
+                              </div>
+                            `
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-warm-100 to-primary-100 flex items-center justify-center">
+                          <div className="text-center">
+                            <span className="text-6xl">🔗</span>
+                            <p className="text-xs text-primary-700 mt-2 font-medium">Lien web</p>
+                          </div>
                         </div>
-                      </div>
+                      )
                     )}
 
                     {/* Badge favori (overlay) */}
@@ -464,7 +555,7 @@ const PatternLibrary = () => {
                         </span>
                       )}
                       {pattern.difficulty && (
-                        <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs">
+                        <span className="px-2 py-1 bg-warm-100 text-primary-700 rounded text-xs">
                           {pattern.difficulty}
                         </span>
                       )}
@@ -481,8 +572,8 @@ const PatternLibrary = () => {
                     <div className="flex items-center gap-2">
                       {pattern.source_type === 'file' && pattern.file_path && (
                         <button
-                          onClick={() => handleOpenFile(pattern.id)}
-                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-center font-medium hover:bg-blue-700 transition text-sm"
+                          onClick={() => handleOpenFile(pattern)}
+                          className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition text-sm"
                         >
                           📥 Ouvrir
                         </button>
@@ -493,7 +584,7 @@ const PatternLibrary = () => {
                           href={pattern.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-center font-medium hover:bg-blue-700 transition text-sm"
+                          className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition text-sm"
                         >
                           🔗 Voir le lien
                         </a>
@@ -713,6 +804,74 @@ const PatternLibrary = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* [AI:Claude] Modale de visualisation de patron (PDF/Image) avec bouton de fermeture */}
+      {showViewerModal && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black bg-opacity-75"
+            onClick={() => setShowViewerModal(false)}
+          />
+
+          {/* Contenu */}
+          <div className="relative h-full flex flex-col">
+            {/* Header avec bouton de fermeture bien visible */}
+            <div className="bg-gray-900 text-white px-4 py-3 flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowViewerModal(false)}
+                  className="px-4 py-2 bg-white text-gray-900 rounded-lg font-bold hover:bg-gray-200 transition flex items-center gap-2"
+                >
+                  ← Retour
+                </button>
+                <h2 className="text-lg font-semibold">{viewerData.fileName}</h2>
+              </div>
+              <a
+                href={viewerData.url}
+                download={viewerData.fileName}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+              >
+                📥 Télécharger
+              </a>
+            </div>
+
+            {/* Contenu du visualiseur */}
+            <div className="flex-1 overflow-auto bg-gray-100">
+              {viewerData.type === 'pdf' && (
+                <PDFViewer url={viewerData.url} fileName={viewerData.fileName} />
+              )}
+
+              {viewerData.type === 'image' && (
+                <div className="flex items-center justify-center p-8 h-full">
+                  <img
+                    src={viewerData.url}
+                    alt={viewerData.fileName}
+                    className="max-w-full max-h-full object-contain shadow-2xl"
+                  />
+                </div>
+              )}
+
+              {viewerData.type === 'other' && (
+                <div className="flex items-center justify-center h-full p-8 text-center">
+                  <div>
+                    <p className="text-gray-700 mb-4">
+                      Prévisualisation non disponible pour ce type de fichier
+                    </p>
+                    <a
+                      href={viewerData.url}
+                      download={viewerData.fileName}
+                      className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition inline-block"
+                    >
+                      📥 Télécharger le fichier
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

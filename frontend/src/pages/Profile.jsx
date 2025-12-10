@@ -132,11 +132,10 @@ const Profile = () => {
 
   const { user: userData, stats } = profileData
   const subscriptionLabels = {
-    free: 'Gratuit',
-    starter: 'Starter',
-    premium: 'Premium',
-    monthly: 'Mensuel',
-    yearly: 'Annuel'
+    free: 'FREE Beta',
+    pro: 'PRO Beta',
+    pro_annual: 'PRO Annuel',
+    early_bird: 'Early Bird'
   }
 
   return (
@@ -289,13 +288,13 @@ const Profile = () => {
               <div className="border-t pt-6">
                 <h3 className="text-lg font-bold mb-4">Mes statistiques YarnFlow</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="bg-primary-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-600 mb-1">🧶 Projets totaux</p>
-                    <p className="text-2xl font-bold text-purple-600">{stats.total_projects || 0}</p>
+                    <p className="text-2xl font-bold text-primary-600">{stats.total_projects || 0}</p>
                   </div>
-                  <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="bg-warm-100 p-4 rounded-lg">
                     <p className="text-sm text-gray-600 mb-1">⏱️ Projets actifs</p>
-                    <p className="text-2xl font-bold text-blue-600">{stats.active_projects || 0}</p>
+                    <p className="text-2xl font-bold text-primary-600">{stats.active_projects || 0}</p>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-600 mb-1">✅ Projets terminés</p>
@@ -313,9 +312,9 @@ const Profile = () => {
                     <p className="text-sm text-gray-600 mb-1">📸 Photos IA générées</p>
                     <p className="text-2xl font-bold text-pink-600">{stats.ai_photos_generated || 0}</p>
                   </div>
-                  <div className="bg-indigo-50 p-4 rounded-lg">
+                  <div className="bg-primary-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-600 mb-1">🎨 Crédits restants</p>
-                    <p className="text-2xl font-bold text-indigo-600">{stats.photo_credits_remaining || 0}</p>
+                    <p className="text-2xl font-bold text-primary-600">{stats.photo_credits_remaining || 0}</p>
                   </div>
                   <div className="bg-teal-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-600 mb-1">💳 Total dépensé</p>
@@ -328,13 +327,117 @@ const Profile = () => {
                   <div className="mt-4 bg-gradient-to-r from-primary-50 to-primary-100 p-4 rounded-lg">
                     <p className="text-sm text-gray-600 mb-1">⏰ Temps total de tricot</p>
                     <p className="text-3xl font-bold text-primary-600">
-                      {Math.floor(stats.total_time / 60)}h {stats.total_time % 60}min
+                      {(() => {
+                        const hours = Math.floor(stats.total_time / 3600)
+                        const minutes = Math.floor((stats.total_time % 3600) / 60)
+                        const seconds = stats.total_time % 60
+
+                        if (hours > 0) {
+                          return `${hours}h ${minutes}min`
+                        } else if (minutes > 0) {
+                          return `${minutes}min ${seconds}s`
+                        } else {
+                          return `${seconds}s`
+                        }
+                      })()}
                     </p>
                   </div>
                 )}
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Tab: Abonnement */}
+      {activeTab === 'subscription' && (
+        <div className="card">
+          <h2 className="text-2xl font-bold mb-6">Abonnement & Crédits</h2>
+
+          <div className="bg-gradient-to-r from-primary-50 to-primary-100 p-6 rounded-lg mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-primary-900">
+                  Plan {subscriptionLabels[userData.subscription_type] || userData.subscription_type}
+                </h3>
+                <p className="text-primary-700">
+                  {stats.has_active_subscription && userData.subscription_expires_at ? (
+                    <>
+                      Actif jusqu'au {new Date(userData.subscription_expires_at).toLocaleDateString('fr-FR')}
+                    </>
+                  ) : (
+                    'Aucune limite de temps'
+                  )}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-primary-600">Crédits photos restants</p>
+                <p className="text-3xl font-bold text-primary-900">
+                  {stats.photo_credits_remaining || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Stats projets */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="border-l-4 border-primary-600 pl-4 py-2">
+                <p className="font-medium text-gray-700">Projets créés</p>
+                <p className="text-2xl font-bold text-primary-600">{stats.total_projects || 0}</p>
+              </div>
+              <div className="border-l-4 border-green-600 pl-4 py-2">
+                <p className="font-medium text-gray-700">Projets terminés</p>
+                <p className="text-2xl font-bold text-green-600">{stats.completed_projects || 0}</p>
+              </div>
+            </div>
+
+            {/* Stats photos IA */}
+            <div className="border-l-4 border-pink-600 pl-4 py-2">
+              <p className="font-medium text-gray-700">Photos IA générées</p>
+              <p className="text-2xl font-bold text-pink-600">{stats.ai_photos_generated || 0}</p>
+            </div>
+
+            {/* Message Beta FREE */}
+            {userData.subscription_type === 'free' && (
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-300 p-4 rounded-lg">
+                <p className="text-blue-900 font-medium mb-2">
+                  🧶 Plan FREE Beta
+                </p>
+                <ul className="text-sm text-blue-800 mb-3 list-disc list-inside space-y-1">
+                  <li>3 projets maximum</li>
+                  <li>3 crédits photos IA par mois</li>
+                  <li>Accès à toutes les fonctionnalités de base</li>
+                </ul>
+                <p className="text-xs text-blue-700 mt-3">
+                  💡 Merci de tester YarnFlow ! Vos retours sont précieux pour améliorer l'app.
+                </p>
+              </div>
+            )}
+
+            {/* Message Beta PRO */}
+            {userData.subscription_type === 'pro' && (
+              <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-300 p-4 rounded-lg">
+                <p className="text-orange-900 font-medium mb-2">
+                  ✨ Plan PRO Beta - Merci d'être testeur PRO !
+                </p>
+                <ul className="text-sm text-orange-800 mb-3 list-disc list-inside space-y-1">
+                  <li>Projets illimités</li>
+                  <li>30 crédits photos IA par mois</li>
+                  <li>Bibliothèque de patrons illimitée</li>
+                  <li>Accès anticipé aux nouvelles fonctionnalités</li>
+                </ul>
+                <p className="text-sm text-orange-700 mt-3">
+                  {stats.has_active_subscription && userData.subscription_expires_at && (
+                    <>
+                      🎁 Votre accès PRO est offert jusqu'au{' '}
+                      <strong>{new Date(userData.subscription_expires_at).toLocaleDateString('fr-FR')}</strong>
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -387,91 +490,6 @@ const Profile = () => {
         </div>
       )}
 
-      {/* Tab: Abonnement */}
-      {activeTab === 'subscription' && (
-        <div className="card">
-          <h2 className="text-2xl font-bold mb-6">Abonnement & Crédits</h2>
-
-          <div className="bg-gradient-to-r from-primary-50 to-primary-100 p-6 rounded-lg mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-xl font-bold text-primary-900">
-                  Plan {subscriptionLabels[userData.subscription_type] || userData.subscription_type}
-                </h3>
-                <p className="text-primary-700">
-                  {stats.has_active_subscription ? (
-                    <>
-                      Actif jusqu'au {new Date(userData.subscription_expires_at).toLocaleDateString('fr-FR')}
-                    </>
-                  ) : (
-                    'Aucun abonnement actif'
-                  )}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm text-primary-600">Crédits photos restants</p>
-                <p className="text-3xl font-bold text-primary-900">
-                  {stats.photo_credits_remaining || 0}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {/* Stats projets */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="border-l-4 border-purple-600 pl-4 py-2">
-                <p className="font-medium text-gray-700">Projets créés</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.total_projects || 0}</p>
-              </div>
-              <div className="border-l-4 border-green-600 pl-4 py-2">
-                <p className="font-medium text-gray-700">Projets terminés</p>
-                <p className="text-2xl font-bold text-green-600">{stats.completed_projects || 0}</p>
-              </div>
-            </div>
-
-            {/* Stats photos IA */}
-            <div className="border-l-4 border-pink-600 pl-4 py-2">
-              <p className="font-medium text-gray-700">Photos IA générées</p>
-              <p className="text-2xl font-bold text-pink-600">{stats.ai_photos_generated || 0}</p>
-            </div>
-
-            {/* Upgrade CTA pour FREE */}
-            {userData.subscription_type === 'free' && (
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-300 p-4 rounded-lg">
-                <p className="text-yellow-900 font-medium mb-2">
-                  🎁 Plan Gratuit : 3 crédits photos IA par mois
-                </p>
-                <p className="text-yellow-800 text-sm mb-3">
-                  Passez à un plan payant pour plus de crédits et fonctionnalités :
-                </p>
-                <ul className="text-sm text-yellow-800 mb-3 list-disc list-inside">
-                  <li>Standard (4.99€/mois) : Projets illimités + 30 crédits photos</li>
-                  <li>Premium (9.99€/mois) : Tout illimité + 120 crédits photos HD</li>
-                </ul>
-                <a href="/subscription" className="btn-primary inline-block">
-                  Voir les offres Premium
-                </a>
-              </div>
-            )}
-
-            {/* Infos plan payant */}
-            {userData.subscription_type !== 'free' && (
-              <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                <p className="text-green-800 font-medium mb-1">
-                  ✨ Merci d'être un membre {subscriptionLabels[userData.subscription_type]} !
-                </p>
-                <p className="text-green-700 text-sm">
-                  Vous bénéficiez de projets illimités et de {
-                    userData.subscription_type === 'monthly' ? '30' :
-                    userData.subscription_type === 'yearly' ? '120' : 'nombreux'
-                  } crédits photos IA par mois.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Tab: Supprimer le compte */}
       {activeTab === 'delete' && (

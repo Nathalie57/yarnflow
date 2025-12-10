@@ -23,10 +23,11 @@ const MyProjects = () => {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [filter, setFilter] = useState('all') // all, in_progress, completed, paused
-  const [filterType, setFilterType] = useState('') // Filtre par type de projet
-  const [filterTechnique, setFilterTechnique] = useState('') // Filtre par technique (tricot/crochet)
+  const [searchQuery, setSearchQuery] = useState('') // Recherche par nom/description
   const [showCreateModal, setShowCreateModal] = useState(false)
+
+  // [AI:Claude] Détecter si on est sur mobile
+  const [isMobile, setIsMobile] = useState(false)
 
   // [AI:Claude] Stats du dashboard
   const [dashboardStats, setDashboardStats] = useState(null)
@@ -41,11 +42,18 @@ const MyProjects = () => {
     description: ''
   })
   const [creating, setCreating] = useState(false)
+  const [creatingStep, setCreatingStep] = useState('') // [AI:Claude] Étape en cours
 
   // [AI:Claude] Import de patron
   const [patternFile, setPatternFile] = useState(null)
   const [patternUrl, setPatternUrl] = useState('')
-  const [patternType, setPatternType] = useState('') // 'file' ou 'url'
+  const [patternType, setPatternType] = useState('') // 'file', 'url' ou 'library'
+  const [selectedLibraryPattern, setSelectedLibraryPattern] = useState(null)
+
+  // [AI:Claude] Modal bibliothèque de patrons
+  const [showPatternLibraryModal, setShowPatternLibraryModal] = useState(false)
+  const [libraryPatterns, setLibraryPatterns] = useState([])
+  const [loadingLibraryPatterns, setLoadingLibraryPatterns] = useState(false)
 
   // [AI:Claude] Sections/parties du projet (face, dos, manches, etc.)
   const [sections, setSections] = useState([])
@@ -57,10 +65,27 @@ const MyProjects = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: null })
 
+  // [AI:Claude] Upload photo de projet
+  const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false)
+  const [selectedProjectForPhoto, setSelectedProjectForPhoto] = useState(null)
+  const [photoFile, setPhotoFile] = useState(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+
+  // [AI:Claude] Détecter mobile au montage
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia('(max-width: 768px)').matches ||
+                  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   // [AI:Claude] Charger les projets au montage
   useEffect(() => {
     fetchProjects()
-  }, [filter])
+  }, [])
 
   // [AI:Claude] Charger les stats du dashboard au montage
   useEffect(() => {
@@ -73,8 +98,7 @@ const MyProjects = () => {
       setLoading(true)
       setError(null)
 
-      const params = filter !== 'all' ? { status: filter } : {}
-      const response = await api.get('/projects', { params })
+      const response = await api.get('/projects')
 
       setProjects(response.data.projects || [])
     } catch (err) {
@@ -182,12 +206,72 @@ const MyProjects = () => {
     }
   }
 
+  // [AI:Claude] Ouvrir modal d'upload photo
+  const openPhotoUploadModal = (project) => {
+    setSelectedProjectForPhoto(project)
+    setPhotoFile(null)
+    setShowPhotoUploadModal(true)
+  }
+
+  // [AI:Claude] Upload photo de projet
+  const handleUploadProjectPhoto = async (e) => {
+    e.preventDefault()
+
+    if (!photoFile || !selectedProjectForPhoto) {
+      showAlert('Erreur', 'Veuillez sélectionner une photo')
+      return
+    }
+
+    try {
+      setUploadingPhoto(true)
+
+      const formData = new FormData()
+      formData.append('photo', photoFile)
+
+      await api.post(`/projects/${selectedProjectForPhoto.id}/photo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+
+      showAlert('Succès', 'Photo ajoutée avec succès !', 'success')
+      setShowPhotoUploadModal(false)
+      setPhotoFile(null)
+      fetchProjects() // Recharger les projets
+    } catch (err) {
+      console.error('Erreur upload photo:', err)
+      showAlert('Erreur', err.response?.data?.message || 'Erreur lors de l\'ajout de la photo')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
+  // [AI:Claude] Charger les patrons de la bibliothèque
+  const fetchLibraryPatterns = async () => {
+    setLoadingLibraryPatterns(true)
+    try {
+      const response = await api.get('/pattern-library')
+      setLibraryPatterns(response.data.patterns || [])
+    } catch (err) {
+      console.error('Erreur chargement bibliothèque:', err)
+      showAlert('Erreur', 'Impossible de charger votre bibliothèque de patrons')
+    } finally {
+      setLoadingLibraryPatterns(false)
+    }
+  }
+
   // [AI:Claude] Créer un nouveau projet avec patron optionnel
   const handleCreateProject = async (e) => {
     e.preventDefault()
     setCreating(true)
+    setCreatingStep('Création du projet...')
+
+    let currentStep = ''
+    let newProject = null
 
     try {
+      // [AI:Claude] ÉTAPE 1 : Création du projet
+      currentStep = 'création du projet'
+      console.log('[PROJECT CREATE] Étape 1: Création du projet...', formData)
+
       const projectData = {
         name: formData.name,
         technique: formData.technique,
@@ -197,11 +281,17 @@ const MyProjects = () => {
       }
 
       const response = await api.post('/projects', projectData)
-      const newProject = response.data.project
+      newProject = response.data.project
+      console.log('[PROJECT CREATE] ✓ Projet créé avec ID:', newProject.id)
 
-      // [AI:Claude] Créer les sections si définies
+      // [AI:Claude] ÉTAPE 2 : Créer les sections si définies
       if (sections.length > 0) {
+        currentStep = 'création des sections'
+        setCreatingStep(`Création de ${sections.length} section(s)...`)
+        console.log('[PROJECT CREATE] Étape 2: Création de', sections.length, 'section(s)...')
+
         for (let i = 0; i < sections.length; i++) {
+          console.log(`[PROJECT CREATE] Création section ${i + 1}/${sections.length}:`, sections[i].name)
           await api.post(`/projects/${newProject.id}/sections`, {
             name: sections[i].name,
             description: sections[i].description || null,
@@ -209,10 +299,19 @@ const MyProjects = () => {
             display_order: i
           })
         }
+        console.log('[PROJECT CREATE] ✓ Sections créées')
       }
 
-      // [AI:Claude] Upload du patron si fourni
+      // [AI:Claude] ÉTAPE 3 : Upload du patron si fourni
       if (patternType === 'file' && patternFile) {
+        currentStep = 'upload du fichier patron'
+        setCreatingStep('Upload du patron...')
+        console.log('[PROJECT CREATE] Étape 3: Upload du patron (fichier)...', {
+          name: patternFile.name,
+          type: patternFile.type,
+          size: patternFile.size
+        })
+
         const formDataPattern = new FormData()
         formDataPattern.append('pattern', patternFile)
         formDataPattern.append('pattern_type', patternFile.type.startsWith('image/') ? 'image' : 'pdf')
@@ -220,10 +319,25 @@ const MyProjects = () => {
         await api.post(`/projects/${newProject.id}/pattern`, formDataPattern, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
+        console.log('[PROJECT CREATE] ✓ Patron uploadé')
       } else if (patternType === 'url' && patternUrl.trim()) {
+        currentStep = 'enregistrement du lien patron'
+        setCreatingStep('Enregistrement du lien patron...')
+        console.log('[PROJECT CREATE] Étape 3: Enregistrement du lien patron...', patternUrl)
+
         await api.post(`/projects/${newProject.id}/pattern-url`, {
           pattern_url: patternUrl
         })
+        console.log('[PROJECT CREATE] ✓ Lien patron enregistré')
+      } else if (patternType === 'library' && selectedLibraryPattern) {
+        currentStep = 'liaison du patron depuis la bibliothèque'
+        setCreatingStep('Liaison du patron...')
+        console.log('[PROJECT CREATE] Étape 3: Liaison patron depuis bibliothèque...', selectedLibraryPattern.id)
+
+        await api.post(`/projects/${newProject.id}/pattern-from-library`, {
+          pattern_library_id: selectedLibraryPattern.id
+        })
+        console.log('[PROJECT CREATE] ✓ Patron lié depuis bibliothèque')
       }
 
       // [AI:Claude] Ajouter à la liste
@@ -239,9 +353,12 @@ const MyProjects = () => {
       setPatternFile(null)
       setPatternUrl('')
       setPatternType('')
+      setSelectedLibraryPattern(null)
       setSections([])
       setShowSections(false)
       setShowCreateModal(false)
+
+      console.log('[PROJECT CREATE] ✓ Projet créé avec succès!')
 
       // [AI:Claude] Rediriger vers le compteur
       showConfirm(
@@ -252,45 +369,64 @@ const MyProjects = () => {
         }
       )
     } catch (err) {
-      console.error('Erreur création projet:', err)
-      showAlert('❌ Erreur', err.response?.data?.error || 'Erreur lors de la création du projet', 'error')
+      console.error(`[PROJECT CREATE] ❌ Erreur lors de la ${currentStep}:`, err)
+      console.error('[PROJECT CREATE] Détails erreur:', err.response?.data)
+
+      // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
+      let errorMessage = ''
+      const apiError = err.response?.data?.error || err.response?.data?.message
+
+      if (currentStep === 'création du projet') {
+        errorMessage = apiError || 'Impossible de créer le projet. Vérifiez votre connexion internet.'
+      } else if (currentStep === 'création des sections') {
+        errorMessage = `Le projet a été créé mais erreur lors de la ${currentStep}. ${apiError || 'Vous pouvez ajouter les sections manuellement depuis le projet.'}`
+      } else if (currentStep.includes('patron')) {
+        errorMessage = `Le projet a été créé mais erreur lors de ${currentStep}. ${apiError || 'Vous pouvez ajouter le patron manuellement depuis le projet.'}`
+      } else {
+        errorMessage = apiError || 'Erreur lors de la création du projet'
+      }
+
+      showAlert('❌ Erreur', errorMessage, 'error')
+
+      // [AI:Claude] Si le projet a été créé, l'ajouter quand même à la liste
+      if (newProject) {
+        console.log('[PROJECT CREATE] Projet partiellement créé, ajout à la liste...')
+        setProjects([newProject, ...projects])
+        setShowCreateModal(false)
+      }
     } finally {
       setCreating(false)
+      setCreatingStep('')
     }
   }
-
-  // [AI:Claude] Filtres de statut
-  const filterButtons = [
-    { key: 'all', label: 'Tous', icon: '📋' },
-    { key: 'in_progress', label: 'En cours', icon: '🚧' },
-    { key: 'completed', label: 'Terminés', icon: '✅' },
-    { key: 'paused', label: 'En pause', icon: '⏸️' }
-  ]
 
   // [AI:Claude] Badge de statut
   const getStatusBadge = (status) => {
     const badges = {
-      in_progress: { label: 'En cours', color: 'bg-blue-100 text-blue-800' },
+      in_progress: { label: 'En cours', color: 'bg-primary-100 text-primary-800' },
       completed: { label: 'Terminé', color: 'bg-green-100 text-green-800' },
-      paused: { label: 'En pause', color: 'bg-yellow-100 text-yellow-800' },
+      paused: { label: 'En pause', color: 'bg-red-100 text-red-800' },
       abandoned: { label: 'Abandonné', color: 'bg-gray-100 text-gray-800' }
     }
 
     const badge = badges[status] || badges.in_progress
 
     return (
-      <span className={`px-2 py-1 rounded text-xs font-medium ${badge.color}`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-bold ${badge.color}`}>
         {badge.label}
       </span>
     )
   }
 
-  // [AI:Claude] Quota utilisateur
+  // [AI:Claude] Quota utilisateur (v0.12.0)
   const getProjectQuota = () => {
-    if (!user) return { current: 0, max: 2 }
+    if (!user) return { current: 0, max: 3 }
 
-    const max = user.subscription_type === 'free' ? 2
+    const max = user.subscription_type === 'free' ? 3
       : user.subscription_type === 'starter' ? 10
+      : user.subscription_type === 'pro' ? 999
+      : user.subscription_type === 'pro_annual' ? 999
+      : user.subscription_type === 'early_bird' ? 999
       : 999
 
     return { current: projects.length, max }
@@ -299,35 +435,41 @@ const MyProjects = () => {
   const quota = getProjectQuota()
   const canCreateProject = quota.current < quota.max
 
-  // [AI:Claude] Helper pour obtenir les types uniques
-  const getUniqueTypes = () => {
-    const types = projects.map(p => p.type).filter(Boolean)
-    return [...new Set(types)].sort()
+  // [AI:Claude] Fonction pour reset le formulaire de création
+  const handleCancelModal = () => {
+    setFormData({
+      name: '',
+      technique: 'crochet',
+      type: '',
+      description: ''
+    })
+    setPatternFile(null)
+    setPatternUrl('')
+    setPatternType('')
+    setSections([])
+    setShowSections(false)
+    setShowCreateModal(false)
   }
 
-  // [AI:Claude] Helper pour obtenir les techniques uniques
-  const getUniqueTechniques = () => {
-    const techniques = projects.map(p => p.technique).filter(Boolean)
-    return [...new Set(techniques)]
-  }
-
-  // [AI:Claude] Filtrer les projets selon tous les filtres actifs
+  // [AI:Claude] Filtrer les projets par recherche
   const getFilteredProjects = () => {
     return projects.filter(project => {
-      // Filtre par type
-      if (filterType && project.type !== filterType)
-        return false
+      // Recherche dans le nom et la description
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        const matchName = project.name?.toLowerCase().includes(query)
+        const matchDescription = project.description?.toLowerCase().includes(query)
+        const matchType = project.type?.toLowerCase().includes(query)
 
-      // Filtre par technique
-      if (filterTechnique && project.technique !== filterTechnique)
-        return false
+        if (!matchName && !matchDescription && !matchType)
+          return false
+      }
 
       return true
     })
   }
 
   const filteredProjects = getFilteredProjects()
-  const hasActiveFilters = filterType || filterTechnique
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -351,7 +493,7 @@ const MyProjects = () => {
           ) : (
             <Link
               to="/subscription"
-              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 active:from-purple-800 active:to-pink-800 text-center flex items-center gap-2 justify-center"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-bold transition touch-manipulation bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 active:from-primary-800 active:to-primary-900 text-center flex items-center gap-2 justify-center focus:outline-none focus:ring-4 focus:ring-primary-300"
             >
               <span>✨ Débloquer plus de projets</span>
             </Link>
@@ -381,20 +523,20 @@ const MyProjects = () => {
                 <span className="text-3xl">📸</span>
                 <div className="flex-1">
                   <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-2xl font-bold text-purple-600">{credits?.total_available || 0}</span>
+                    <span className="text-2xl font-bold text-primary-600">{credits?.total_available || 0}</span>
                     <span className="text-sm text-gray-500">crédit{(credits?.total_available || 0) > 1 ? 's' : ''} IA</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-xs text-gray-500">
                       {credits?.monthly_credits || 0} mensuels + {credits?.purchased_credits || 0} achetés
                       {' • '}
-                      <Link to="/gallery" className="underline font-medium text-purple-600 hover:text-purple-700">
+                      <Link to="/gallery" className="underline font-medium text-primary-600 hover:text-primary-700">
                         Galerie
                       </Link>
                     </p>
                     <Link
                       to="/subscription"
-                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-medium rounded hover:from-purple-700 hover:to-pink-700 transition"
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-xs font-bold rounded-lg hover:from-primary-700 hover:to-primary-800 transition focus:outline-none focus:ring-2 focus:ring-primary-300"
                       title="Acheter des crédits"
                     >
                       <span>+</span>
@@ -408,109 +550,36 @@ const MyProjects = () => {
         )}
       </div>
 
-      {/* Filtres - Responsive mobile */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        {filterButtons.map(btn => (
-          <button
-            key={btn.key}
-            onClick={() => setFilter(btn.key)}
-            className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition touch-manipulation ${
-              filter === btn.key
-                ? 'bg-primary-600 text-white'
-                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 active:bg-gray-100'
-            }`}
-          >
-            <span className="hidden sm:inline">{btn.icon} {btn.label}</span>
-            <span className="sm:hidden">{btn.icon}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Filtres avancés - Type et Technique */}
-      {!loading && projects.length > 0 && (getUniqueTypes().length > 0 || getUniqueTechniques().length > 0) && (
-        <div className="mb-6 space-y-4">
-          {/* Filtre par type de projet */}
-          {getUniqueTypes().length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type de projet
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilterType('')}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                    !filterType
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Tous
-                </button>
-                {getUniqueTypes().map(type => (
-                  <button
-                    key={type}
-                    onClick={() => setFilterType(type)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                      filterType === type
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Filtre par technique */}
-          {getUniqueTechniques().length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Technique
-              </label>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilterTechnique('')}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                    !filterTechnique
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Tous
-                </button>
-                {getUniqueTechniques().map(technique => (
-                  <button
-                    key={technique}
-                    onClick={() => setFilterTechnique(technique)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
-                      filterTechnique === technique
-                        ? 'bg-gray-900 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {technique === 'tricot' ? '🧶 Tricot' : '🪡 Crochet'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Bouton reset si filtres actifs */}
-          {hasActiveFilters && (
-            <div className="flex justify-end">
+      {/* Barre de recherche */}
+      {!loading && projects.length > 0 && (
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Rechercher un projet par nom, type..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-3 pl-11 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+            />
+            <svg
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            {searchQuery && (
               <button
-                onClick={() => {
-                  setFilterType('')
-                  setFilterTechnique('')
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 underline transition"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
               >
-                ✕ Réinitialiser les filtres
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
@@ -533,42 +602,37 @@ const MyProjects = () => {
       {!loading && !error && (
         <>
           {projects.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+            <div className="text-center py-12 bg-white rounded-lg border-2 border-gray-200">
               <div className="text-6xl mb-4">📸</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {filter === 'all' ? 'Aucun projet' : 'Aucun projet trouvé'}
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                Aucun projet
               </h3>
               <p className="text-gray-600 mb-6">
-                {filter === 'all'
-                  ? 'Commencez votre premier projet et immortalisez-le en photos !'
-                  : 'Aucun projet ne correspond à ce filtre'}
+                Commencez votre premier projet et immortalisez-le en photos !
               </p>
-              {filter === 'all' && canCreateProject && (
+              {canCreateProject && (
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                  className="px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
                   ➕ Créer un projet
                 </button>
               )}
             </div>
           ) : filteredProjects.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+            <div className="text-center py-12 bg-white rounded-lg border-2 border-gray-200">
               <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
                 Aucun projet trouvé
               </h3>
               <p className="text-gray-600 mb-4">
-                Aucun projet ne correspond aux filtres sélectionnés
+                Aucun projet ne correspond à votre recherche "{searchQuery}"
               </p>
               <button
-                onClick={() => {
-                  setFilterType('')
-                  setFilterTechnique('')
-                }}
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg font-medium hover:bg-gray-700 transition"
+                onClick={() => setSearchQuery('')}
+                className="px-6 py-3 bg-gray-600 text-white rounded-lg font-bold hover:bg-gray-700 transition focus:outline-none focus:ring-4 focus:ring-gray-400"
               >
-                ✕ Réinitialiser les filtres
+                ✕ Effacer la recherche
               </button>
             </div>
           ) : (
@@ -576,28 +640,41 @@ const MyProjects = () => {
               {filteredProjects.map(project => (
                 <div
                   key={project.id}
-                  className="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition overflow-hidden"
+                  className="bg-white rounded-lg border-2 border-gray-200 hover:shadow-lg transition overflow-hidden"
                 >
                   {/* Photo principale */}
                   {project.main_photo ? (
-                    <div className="h-48 bg-gray-200">
+                    <div className="h-48 bg-gray-200 relative group">
                       <img
-                        src={project.main_photo}
-                        alt={project.name}
+                        src={`${import.meta.env.VITE_BACKEND_URL}${project.main_photo}`}
+                        alt={`Photo du projet ${project.name}`}
                         className="w-full h-full object-cover"
                       />
+                      <button
+                        onClick={() => openPhotoUploadModal(project)}
+                        className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <span className="px-4 py-2 bg-white text-gray-800 rounded-lg font-medium">
+                          📷 Changer la photo
+                        </span>
+                      </button>
                     </div>
                   ) : (
-                    <div className="h-48 bg-gradient-to-br from-primary-100 to-primary-200 flex flex-col items-center justify-center">
-                      <span className="text-5xl mb-2">{project.technique === 'tricot' ? '🧶' : '🪡'}</span>
-                      <p className="text-xs text-gray-600">Aucune photo</p>
-                    </div>
+                    <button
+                      onClick={() => openPhotoUploadModal(project)}
+                      className="w-full h-48 bg-gradient-to-br from-primary-100 to-primary-200 hover:from-primary-200 hover:to-primary-300 transition-all flex flex-col items-center justify-center gap-3"
+                    >
+                      <span className="text-5xl">{project.technique === 'tricot' ? '🧶' : '🪡'}</span>
+                      <span className="px-4 py-2 bg-white text-primary-700 rounded-lg font-medium shadow-md hover:shadow-lg transition">
+                        📷 Ajouter une photo
+                      </span>
+                    </button>
                   )}
 
                   {/* Contenu */}
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 flex-1">
+                      <h3 className="text-lg font-bold text-gray-900 flex-1">
                         {project.name}
                       </h3>
 
@@ -613,12 +690,12 @@ const MyProjects = () => {
                     <div className="flex items-center flex-wrap gap-2 mb-3">
                       {getStatusBadge(project.status)}
                       {project.type && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
+                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold">
                           {project.type}
                         </span>
                       )}
-                      <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded text-xs font-medium">
-                        {project.technique === 'tricot' ? '🧶 Tricot' : '🪡 Crochet'}
+                      <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold">
+                        {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
                       </span>
                     </div>
 
@@ -631,17 +708,17 @@ const MyProjects = () => {
 
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
-                      <div className="bg-gray-50 rounded p-2">
+                      <div className="bg-gray-50 rounded-lg p-2">
                         <p className="text-gray-600">Rang actuel</p>
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-bold text-gray-900">
                           {project.current_row || 0}
                           {project.total_rows ? ` / ${project.total_rows}` : ''}
                         </p>
                       </div>
 
-                      <div className="bg-gray-50 rounded p-2">
+                      <div className="bg-gray-50 rounded-lg p-2">
                         <p className="text-gray-600">Temps</p>
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-bold text-gray-900">
                           {project.time_formatted || '0h 0min'}
                         </p>
                       </div>
@@ -652,7 +729,7 @@ const MyProjects = () => {
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-600">Progression</span>
                         {project.completion_percentage !== null ? (
-                          <span className="text-xs font-semibold text-primary-600">
+                          <span className="text-xs font-bold text-primary-600">
                             {project.completion_percentage}%
                           </span>
                         ) : (
@@ -682,14 +759,14 @@ const MyProjects = () => {
                     <div className="flex items-center gap-2">
                       <Link
                         to={`/projects/${project.id}`}
-                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition"
+                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-2 focus:ring-primary-300"
                       >
                         📖 Voir le projet
                       </Link>
 
                       <button
                         onClick={() => handleDeleteProject(project.id)}
-                        className="px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition"
+                        className="px-3 py-2 border-2 border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition focus:outline-none focus:ring-2 focus:ring-red-300"
                         title="Supprimer"
                       >
                         🗑️
@@ -749,14 +826,15 @@ const MyProjects = () => {
               {/* Catégorie de projet */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Catégorie de projet
+                  Catégorie de projet <span className="text-red-600">*</span>
                 </label>
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  required
                 >
-                  <option value="">-- Sélectionner --</option>
+                  <option value="">-- Sélectionner une catégorie --</option>
                   <option value="Vêtements">🧥 Vêtements</option>
                   <option value="Accessoires">👜 Accessoires</option>
                   <option value="Maison/Déco">🏠 Maison/Déco</option>
@@ -803,8 +881,8 @@ const MyProjects = () => {
                   <div className="space-y-3">
                     {/* Boutons exemples rapides */}
                     {sections.length === 0 && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                        <p className="text-xs text-blue-800 font-medium mb-2">Exemples rapides :</p>
+                      <div className="bg-primary-50 border-2 border-primary-200 rounded-lg p-3 mb-3">
+                        <p className="text-xs text-primary-800 font-bold mb-2">Exemples rapides :</p>
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
@@ -814,7 +892,7 @@ const MyProjects = () => {
                               { name: 'Manche gauche', description: '', total_rows: null },
                               { name: 'Manche droite', description: '', total_rows: null }
                             ])}
-                            className="px-3 py-1 text-xs bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50 transition"
+                            className="px-3 py-1 text-xs bg-white border-2 border-primary-300 text-primary-700 rounded-lg hover:bg-primary-50 transition focus:outline-none focus:ring-2 focus:ring-primary-300 font-bold"
                           >
                             🧥 Pull/Gilet
                           </button>
@@ -826,7 +904,7 @@ const MyProjects = () => {
                               { name: 'Bras (x2)', description: '', total_rows: null },
                               { name: 'Jambes (x2)', description: '', total_rows: null }
                             ])}
-                            className="px-3 py-1 text-xs bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-50 transition"
+                            className="px-3 py-1 text-xs bg-white border-2 border-primary-300 text-primary-700 rounded-lg hover:bg-primary-50 transition focus:outline-none focus:ring-2 focus:ring-primary-300 font-bold"
                           >
                             🧸 Amigurumi
                           </button>
@@ -906,40 +984,91 @@ const MyProjects = () => {
                   Patron (optionnel)
                 </label>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Option 1: Upload fichier */}
-                  <label className={`cursor-pointer block ${patternType === 'file' ? 'ring-2 ring-primary-600' : ''}`}>
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition h-full flex flex-col">
-                      <div className="text-3xl mb-2 text-center">📎</div>
-                      <p className="text-sm font-medium text-center mb-1">
-                        Importer un fichier
-                      </p>
-                      <p className="text-xs text-gray-500 text-center mb-2">
-                        PDF, JPG, PNG, WEBP
-                      </p>
-                      {patternFile && (
-                        <p className="text-xs text-primary-600 text-center mt-auto font-medium">
-                          ✓ {patternFile.name}
-                        </p>
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
-                      onChange={(e) => {
-                        const file = e.target.files[0]
-                        if (file) {
-                          setPatternFile(file)
-                          setPatternType('file')
-                          setPatternUrl('')
-                        }
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Option 1: Bibliothèque */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPatternLibraryModal(true)
+                        fetchLibraryPatterns()
                       }}
-                      className="hidden"
-                    />
-                  </label>
+                      className={`w-full border-2 border-dashed border-primary-300 rounded-lg p-4 hover:border-primary-500 hover:bg-primary-50 transition flex flex-col ${patternType === 'library' ? 'ring-2 ring-primary-600 bg-primary-50' : 'border-gray-300'}`}
+                    >
+                      <div className="text-3xl mb-2 text-center">📚</div>
+                      <p className="text-sm font-medium text-center mb-1">
+                        Depuis ma bibliothèque
+                      </p>
+                      <p className="text-xs text-gray-500 text-center">
+                        {selectedLibraryPattern ? `✓ ${selectedLibraryPattern.name}` : 'Patrons sauvegardés'}
+                      </p>
+                    </button>
+                    {selectedLibraryPattern && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedLibraryPattern(null)
+                          setPatternType('')
+                        }}
+                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
+                        title="Annuler la sélection"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
 
-                  {/* Option 2: URL */}
-                  <div className={`border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition h-full flex flex-col ${patternType === 'url' ? 'ring-2 ring-primary-600' : ''}`}>
+                  {/* Option 2: Upload fichier */}
+                  <div className={`relative ${patternType === 'file' ? 'ring-2 ring-primary-600 rounded-lg' : ''}`}>
+                    <label className="cursor-pointer block">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition h-full flex flex-col">
+                        <div className="text-3xl mb-2 text-center">📎</div>
+                        <p className="text-sm font-medium text-center mb-1">
+                          Importer un fichier
+                        </p>
+                        <p className="text-xs text-gray-500 text-center mb-2">
+                          PDF, JPG, PNG, WEBP
+                        </p>
+                        {patternFile && (
+                          <p className="text-xs text-primary-600 text-center mt-auto font-medium truncate px-2">
+                            ✓ {patternFile.name}
+                          </p>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={(e) => {
+                          const file = e.target.files[0]
+                          if (file) {
+                            setPatternFile(file)
+                            setPatternType('file')
+                            setPatternUrl('')
+                            setSelectedLibraryPattern(null)
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    {patternFile && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPatternFile(null)
+                          setPatternType('')
+                        }}
+                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
+                        title="Supprimer le fichier"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Option 3: URL */}
+                  <div className={`relative border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition h-full flex flex-col ${patternType === 'url' ? 'ring-2 ring-primary-600' : ''}`}>
                     <div className="text-3xl mb-2 text-center">🔗</div>
                     <p className="text-sm font-medium text-center mb-1">
                       Lien web
@@ -955,6 +1084,7 @@ const MyProjects = () => {
                         if (e.target.value.trim()) {
                           setPatternType('url')
                           setPatternFile(null)
+                          setSelectedLibraryPattern(null)
                         } else {
                           setPatternType('')
                         }
@@ -962,6 +1092,20 @@ const MyProjects = () => {
                       placeholder="https://..."
                       className="w-full px-3 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                     />
+                    {patternUrl && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPatternUrl('')
+                          setPatternType('')
+                        }}
+                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
+                        title="Effacer l'URL"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -970,7 +1114,7 @@ const MyProjects = () => {
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={handleCancelModal}
                   className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                 >
                   Annuler
@@ -978,9 +1122,9 @@ const MyProjects = () => {
                 <button
                   type="submit"
                   disabled={creating}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
-                  {creating ? 'Création...' : '✨ Créer le projet'}
+                  {creating ? (creatingStep || 'Création...') : '✨ Créer le projet'}
                 </button>
               </div>
             </form>
@@ -1001,7 +1145,7 @@ const MyProjects = () => {
             <div className="flex justify-end">
               <button
                 onClick={() => setShowAlertModal(false)}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
               >
                 OK
               </button>
@@ -1034,11 +1178,184 @@ const MyProjects = () => {
                     confirmData.onConfirm()
                   }
                 }}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
               >
                 Confirmer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal sélection patron depuis bibliothèque */}
+      {showPatternLibraryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold">
+                📚 Choisir un patron depuis ma bibliothèque
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Sélectionnez un patron que vous avez déjà sauvegardé
+              </p>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              {loadingLibraryPatterns ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                </div>
+              ) : libraryPatterns.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">📚</div>
+                  <p className="text-gray-600 mb-4">Votre bibliothèque est vide</p>
+                  <p className="text-sm text-gray-500">
+                    Ajoutez des patrons à votre bibliothèque depuis vos projets
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {libraryPatterns.map((pattern) => (
+                    <button
+                      key={pattern.id}
+                      onClick={() => {
+                        setSelectedLibraryPattern(pattern)
+                        setPatternType('library')
+                        setPatternFile(null)
+                        setPatternUrl('')
+                        setShowPatternLibraryModal(false)
+                      }}
+                      className="border-2 border-gray-200 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
+                          {pattern.file_type === 'pdf' ? '📄' : pattern.file_type === 'image' ? '🖼️' : '🔗'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 truncate">{pattern.name}</h3>
+                          {pattern.description && (
+                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{pattern.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                            {pattern.category && (
+                              <span className="px-2 py-0.5 bg-gray-100 rounded">{pattern.category}</span>
+                            )}
+                            {pattern.difficulty && (
+                              <span className="px-2 py-0.5 bg-gray-100 rounded">{pattern.difficulty}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowPatternLibraryModal(false)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal upload photo de projet */}
+      {showPhotoUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold">
+                📷 Ajouter une photo
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {selectedProjectForPhoto?.name}
+              </p>
+            </div>
+
+            <form onSubmit={handleUploadProjectPhoto} className="p-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Choisir une photo
+                </label>
+
+                {/* Inputs cachés */}
+                <input
+                  ref={(el) => (window.cameraInputProjects = el)}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  capture="environment"
+                  onChange={(e) => setPhotoFile(e.target.files[0])}
+                  className="hidden"
+                />
+                <input
+                  ref={(el) => (window.galleryInputProjects = el)}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={(e) => setPhotoFile(e.target.files[0])}
+                  className="hidden"
+                />
+
+                {/* Boutons visibles */}
+                <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mb-2`}>
+                  {isMobile && (
+                    <button
+                      type="button"
+                      onClick={() => window.cameraInputProjects?.click()}
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                    >
+                      <span className="text-xl">📷</span>
+                      <span className="font-medium">Prendre une photo</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => window.galleryInputProjects?.click()}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                  >
+                    <span className="text-xl">🖼️</span>
+                    <span className="font-medium">Choisir une photo</span>
+                  </button>
+                </div>
+
+                <p className="text-xs text-gray-500">
+                  Formats acceptés : JPG, PNG, WEBP (max 10MB)
+                </p>
+              </div>
+
+              {photoFile && (
+                <div className="mb-4 p-3 bg-primary-50 rounded-lg">
+                  <p className="text-sm text-primary-700">
+                    ✓ Fichier sélectionné : {photoFile.name}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPhotoUploadModal(false)
+                    setPhotoFile(null)
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                  disabled={uploadingPhoto}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={uploadingPhoto}
+                >
+                  {uploadingPhoto ? 'Upload...' : 'Ajouter'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

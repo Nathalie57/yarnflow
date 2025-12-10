@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6366f1;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle - full bleed for maskable -->
+  <circle cx="256" cy="256" r="256" fill="url(#grad)"/>
+
+  <!-- Yarn ball design - smaller for safe zone -->
+  <circle cx="256" cy="256" r="140" fill="#ffffff" opacity="0.95"/>
+
+  <!-- Yarn threads -->
+  <path d="M 210 210 Q 256 225 302 210" stroke="#8b5cf6" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M 200 240 Q 256 255 312 240" stroke="#8b5cf6" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M 205 270 Q 256 285 307 270" stroke="#6366f1" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M 210 300 Q 256 315 302 300" stroke="#6366f1" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+  <!-- Knitting needles -->
+  <line x1="180" y1="180" x2="235" y2="235" stroke="#ec4899" stroke-width="8" stroke-linecap="round"/>
+  <line x1="332" y1="180" x2="277" y2="235" stroke="#ec4899" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="180" cy="180" r="6" fill="#f472b6"/>
+  <circle cx="332" cy="180" r="6" fill="#f472b6"/>
+</svg>

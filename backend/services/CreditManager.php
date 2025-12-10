@@ -23,39 +23,37 @@ class CreditManager
 
     /**
      * [AI:Claude] Quotas mensuels par plan (v0.12.0 - YarnFlow Pricing Final)
+     * Aligné sur CLAUDE.md
      */
     private const MONTHLY_QUOTAS = [
-        'free' => 5,         // FREE : 5 photos/mois (découverte app)
-        'pro' => 75,         // PRO 4.99€/mois : 75 photos (créateurs réguliers)
+        'free' => 3,          // FREE : 3 photos/mois
+        'pro' => 30,          // PRO 4.99€/mois : 30 photos
+        'pro_annual' => 30,   // PRO ANNUAL 39.99€/an : 30 photos/mois
+        'early_bird' => 30,   // EARLY BIRD 2.99€/mois : 30 photos/mois (accès PRO complet)
         // Legacy support (deprecated - tous migrés vers 'pro')
-        'standard' => 75,
-        'premium' => 75,
-        'monthly' => 75,
-        'yearly' => 75,
-        'starter' => 75
+        'standard' => 30,
+        'premium' => 30,
+        'monthly' => 30,
+        'yearly' => 30,
+        'starter' => 30
     ];
 
     /**
-     * [AI:Claude] Packs de crédits disponibles (v0.11.0 - AI PHOTO STUDIO)
+     * [AI:Claude] Packs de crédits disponibles (v0.12.0 - YarnFlow Pricing Final)
+     * Aligné sur CLAUDE.md
      */
     private const CREDIT_PACKS = [
-        'small' => [
-            'price' => 2.99,
-            'credits' => 20,
-            'bonus' => 2,
-            'total' => 22
-        ],
-        'medium' => [
-            'price' => 6.99,
+        'pack_50' => [
+            'price' => 4.99,
             'credits' => 50,
-            'bonus' => 7,
-            'total' => 57
+            'bonus' => 0,
+            'total' => 50
         ],
-        'large' => [
-            'price' => 14.99,
-            'credits' => 200,
-            'bonus' => 20,
-            'total' => 220
+        'pack_150' => [
+            'price' => 9.99,
+            'credits' => 150,
+            'bonus' => 0,
+            'total' => 150
         ]
     ];
 
@@ -366,7 +364,8 @@ class CreditManager
         // [AI:Claude] Récupérer les infos utilisateur et crédits
         $query = "SELECT
                     upc.last_reset_at,
-                    u.subscription_type
+                    u.subscription_type,
+                    u.subscription_expires_at
                   FROM user_photo_credits upc
                   INNER JOIN users u ON u.id = upc.user_id
                   WHERE upc.user_id = :user_id";
@@ -387,7 +386,18 @@ class CreditManager
 
         // [AI:Claude] Si >= 1 mois, reset
         if ($interval->m >= 1 || $interval->y >= 1) {
-            $newQuota = self::getMonthlyQuota($data['subscription_type']);
+            // [AI:Claude] Vérifier si l'abonnement est expiré
+            $subscriptionType = $data['subscription_type'];
+            if ($subscriptionType !== 'free' && isset($data['subscription_expires_at']) && $data['subscription_expires_at'] !== null) {
+                $expiresAt = strtotime($data['subscription_expires_at']);
+                if ($expiresAt <= time()) {
+                    // Abonnement expiré, utiliser quota FREE
+                    $subscriptionType = 'free';
+                    error_log("[CREDIT RESET] User $userId - Abonnement expiré, quota FREE appliqué");
+                }
+            }
+
+            $newQuota = self::getMonthlyQuota($subscriptionType);
 
             $updateQuery = "UPDATE user_photo_credits
                            SET monthly_credits = :new_quota,
@@ -400,7 +410,7 @@ class CreditManager
             $updateStmt->bindValue(':new_quota', $newQuota, PDO::PARAM_INT);
             $updateStmt->execute();
 
-            error_log("[CREDIT RESET] User $userId - Quota resetté à $newQuota crédits (plan: {$data['subscription_type']})");
+            error_log("[CREDIT RESET] User $userId - Quota resetté à $newQuota crédits (plan: {$subscriptionType})");
 
             return true;
         }

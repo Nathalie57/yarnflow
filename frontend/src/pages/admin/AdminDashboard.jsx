@@ -55,9 +55,9 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        <div className="card bg-purple-50 border-l-4 border-purple-500">
+        <div className="card bg-primary-50 border-l-4 border-primary-500">
           <h3 className="text-gray-600 mb-2">Abonnements actifs</h3>
-          <p className="text-3xl font-bold text-purple-600">
+          <p className="text-3xl font-bold text-primary-600">
             {stats?.subscriptions?.active || 0}
           </p>
           <p className="text-sm text-gray-500 mt-1">

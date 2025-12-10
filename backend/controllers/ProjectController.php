@@ -83,6 +83,9 @@ class ProjectController
             if (empty($data['name']))
                 throw new \InvalidArgumentException('Le nom du projet est obligatoire');
 
+            if (empty($data['type']))
+                throw new \InvalidArgumentException('La catégorie du projet est obligatoire');
+
             // [AI:Claude] Vérification des quotas (selon abonnement)
             $user = $this->userModel->findById($userId);
             $userProjects = $this->projectModel->getUserProjects($userId);
@@ -104,7 +107,7 @@ class ProjectController
                 'user_id' => $userId,
                 'name' => $data['name'],
                 'technique' => $data['technique'] ?? 'crochet', // [AI:Claude] Yarn Hub v0.9.0
-                'type' => $data['type'] ?? null,
+                'type' => $data['type'],
                 'description' => $data['description'] ?? null,
                 'pattern_id' => $data['pattern_id'] ?? null,
                 'main_photo' => $data['main_photo'] ?? null,
@@ -456,8 +459,9 @@ class ProjectController
             $sessionId = (int)$data['session_id'];
             $rowsCompleted = $data['rows_completed'] ?? 0;
             $notes = $data['notes'] ?? null;
+            $duration = isset($data['duration']) ? (int)$data['duration'] : null; // [AI:Claude] Durée exacte du frontend
 
-            $success = $this->projectModel->endSession($sessionId, $rowsCompleted, $notes);
+            $success = $this->projectModel->endSession($sessionId, $rowsCompleted, $notes, $duration);
 
             if (!$success) {
                 throw new \Exception('Erreur lors de la fin de session');
@@ -554,17 +558,24 @@ class ProjectController
      */
     public function uploadPattern(int $id): void
     {
+        // [AI:Claude] Log accessible pour debug
+        $debugLog = __DIR__.'/../public/upload-debug.log';
+        $log = function($msg) use ($debugLog) {
+            file_put_contents($debugLog, date('[Y-m-d H:i:s] ').$msg.PHP_EOL, FILE_APPEND);
+            error_log($msg);
+        };
+
         try {
-            error_log("[PATTERN UPLOAD] Début upload pour projet $id");
-            error_log("[PATTERN UPLOAD] FILES: ".print_r($_FILES, true));
-            error_log("[PATTERN UPLOAD] POST: ".print_r($_POST, true));
+            $log("[PATTERN UPLOAD] Début upload pour projet $id");
+            $log("[PATTERN UPLOAD] FILES: ".print_r($_FILES, true));
+            $log("[PATTERN UPLOAD] POST: ".print_r($_POST, true));
 
             $userId = $this->getUserIdFromAuth();
-            error_log("[PATTERN UPLOAD] User ID: $userId");
+            $log("[PATTERN UPLOAD] User ID: $userId");
 
             // [AI:Claude] Vérifier que le projet appartient à l'utilisateur
             if (!$this->projectModel->belongsToUser($id, $userId)) {
-                error_log("[PATTERN UPLOAD] Projet n'appartient pas à l'utilisateur");
+                $log("[PATTERN UPLOAD] Projet n'appartient pas à l'utilisateur");
                 $this->sendResponse(403, [
                     'success' => false,
                     'error' => 'Accès non autorisé'
@@ -574,18 +585,18 @@ class ProjectController
 
             // [AI:Claude] Vérifier qu'un fichier a été uploadé
             if (!isset($_FILES['pattern'])) {
-                error_log("[PATTERN UPLOAD] Aucun fichier dans \$_FILES");
+                $log("[PATTERN UPLOAD] Aucun fichier dans \$_FILES");
                 throw new \Exception('Aucun fichier uploadé');
             }
 
             if ($_FILES['pattern']['error'] !== UPLOAD_ERR_OK) {
-                error_log("[PATTERN UPLOAD] Erreur upload: ".$_FILES['pattern']['error']);
+                $log("[PATTERN UPLOAD] Erreur upload: ".$_FILES['pattern']['error']);
                 throw new \Exception('Erreur lors de l\'upload du fichier (code: '.$_FILES['pattern']['error'].')');
             }
 
             $file = $_FILES['pattern'];
             $patternType = $_POST['pattern_type'] ?? 'pdf';
-            error_log("[PATTERN UPLOAD] Fichier reçu: {$file['name']}, Type: $patternType");
+            $log("[PATTERN UPLOAD] Fichier reçu: {$file['name']}, Type: $patternType");
 
             // [AI:Claude] Validation du type de fichier
             $allowedTypes = [
@@ -596,67 +607,67 @@ class ProjectController
                 'image/webp'
             ];
 
-            error_log("[PATTERN UPLOAD] Type MIME: {$file['type']}");
+            $log("[PATTERN UPLOAD] Type MIME: {$file['type']}");
             if (!in_array($file['type'], $allowedTypes)) {
-                error_log("[PATTERN UPLOAD] Type non autorisé!");
+                $log("[PATTERN UPLOAD] Type non autorisé!");
                 throw new \Exception('Type de fichier non autorisé. Utilisez PDF ou images (JPG, PNG, WEBP)');
             }
-            error_log("[PATTERN UPLOAD] Type validé");
+            $log("[PATTERN UPLOAD] Type validé");
 
             // [AI:Claude] Validation de la taille (max 10MB)
             $maxSize = 10 * 1024 * 1024;
-            error_log("[PATTERN UPLOAD] Taille: {$file['size']} bytes (max: $maxSize)");
+            $log("[PATTERN UPLOAD] Taille: {$file['size']} bytes (max: $maxSize)");
             if ($file['size'] > $maxSize)
                 throw new \Exception('Fichier trop volumineux (max 10MB)');
-            error_log("[PATTERN UPLOAD] Taille validée");
+            $log("[PATTERN UPLOAD] Taille validée");
 
             // [AI:Claude] Déterminer l'extension
             $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             if ($extension === 'jpg')
                 $extension = 'jpeg';
-            error_log("[PATTERN UPLOAD] Extension: $extension");
+            $log("[PATTERN UPLOAD] Extension: $extension");
 
-            // [AI:Claude] Créer le dossier d'uploads s'il n'existe pas
-            $uploadDir = __DIR__.'/../../uploads/patterns';
-            error_log("[PATTERN UPLOAD] Upload dir: $uploadDir");
+            // [AI:Claude] Créer le dossier d'uploads s'il n'existe pas (dans public/)
+            $uploadDir = __DIR__.'/../public/uploads/patterns';
+            $log("[PATTERN UPLOAD] Upload dir: $uploadDir");
             if (!is_dir($uploadDir)) {
-                error_log("[PATTERN UPLOAD] Création dossier...");
+                $log("[PATTERN UPLOAD] Création dossier...");
                 mkdir($uploadDir, 0755, true);
             }
-            error_log("[PATTERN UPLOAD] Dossier OK");
+            $log("[PATTERN UPLOAD] Dossier OK");
 
             // [AI:Claude] Nom de fichier unique
             $filename = 'pattern_'.$id.'_'.time().'.'.$extension;
             $destination = $uploadDir.'/'.$filename;
-            error_log("[PATTERN UPLOAD] Destination: $destination");
+            $log("[PATTERN UPLOAD] Destination: $destination");
 
             // [AI:Claude] Déplacer le fichier uploadé
-            error_log("[PATTERN UPLOAD] Déplacement fichier...");
+            $log("[PATTERN UPLOAD] Déplacement fichier...");
             if (!move_uploaded_file($file['tmp_name'], $destination)) {
-                error_log("[PATTERN UPLOAD] ERREUR move_uploaded_file!");
+                $log("[PATTERN UPLOAD] ERREUR move_uploaded_file!");
                 throw new \Exception('Erreur lors de l\'enregistrement du fichier');
             }
-            error_log("[PATTERN UPLOAD] Fichier déplacé avec succès");
+            $log("[PATTERN UPLOAD] Fichier déplacé avec succès");
 
-            // [AI:Claude] Mettre à jour le projet avec le chemin du patron
+            // [AI:Claude] Mettre à jour le projet avec le chemin du patron (relatif à public/)
             $relativePath = '/uploads/patterns/'.$filename;
-            error_log("[PATTERN UPLOAD] Mise à jour BDD avec path: $relativePath");
+            $log("[PATTERN UPLOAD] Mise à jour BDD avec path: $relativePath");
 
             $success = $this->projectModel->updateProject($id, [
                 'pattern_path' => $relativePath,
                 'pattern_url' => null
             ]);
 
-            error_log("[PATTERN UPLOAD] updateProject result: ".($success ? 'true' : 'false'));
+            $log("[PATTERN UPLOAD] updateProject result: ".($success ? 'true' : 'false'));
 
             if (!$success)
                 throw new \Exception('Erreur lors de la mise à jour du projet');
 
-            error_log("[PATTERN UPLOAD] Récupération projet...");
+            $log("[PATTERN UPLOAD] Récupération projet...");
             $project = $this->projectModel->getProjectById($id);
-            error_log("[PATTERN UPLOAD] Projet récupéré");
+            $log("[PATTERN UPLOAD] Projet récupéré");
 
-            error_log("[PATTERN UPLOAD] Envoi réponse 200...");
+            $log("[PATTERN UPLOAD] Envoi réponse 200...");
             $this->sendResponse(200, [
                 'success' => true,
                 'message' => 'Patron importé avec succès',
@@ -664,12 +675,200 @@ class ProjectController
                 'project' => $project
             ]);
         } catch (\Exception $e) {
-            error_log("[PATTERN UPLOAD] EXCEPTION: ".$e->getMessage());
-            error_log("[PATTERN UPLOAD] Stack trace: ".$e->getTraceAsString());
+            $log("[PATTERN UPLOAD] EXCEPTION: ".$e->getMessage());
+            $log("[PATTERN UPLOAD] Stack trace: ".$e->getTraceAsString());
             $this->sendResponse(500, [
                 'success' => false,
                 'error' => 'Erreur lors de l\'import du patron',
                 'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] POST /api/projects/{id}/photo - Upload photo principale du projet
+     *
+     * @param int $id ID du projet
+     * @return void JSON response
+     */
+    public function uploadPhoto(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            // Vérifier que le projet appartient à l'utilisateur
+            if (!$this->projectModel->belongsToUser($id, $userId)) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Accès non autorisé'
+                ]);
+                return;
+            }
+
+            // Vérifier qu'un fichier a été uploadé
+            if (!isset($_FILES['photo'])) {
+                throw new \Exception('Aucune photo uploadée');
+            }
+
+            if ($_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+                throw new \Exception('Erreur lors de l\'upload de la photo (code: '.$_FILES['photo']['error'].')');
+            }
+
+            $file = $_FILES['photo'];
+
+            // Validation du type de fichier (images uniquement)
+            $allowedTypes = [
+                'image/jpeg',
+                'image/jpg',
+                'image/png',
+                'image/webp'
+            ];
+
+            if (!in_array($file['type'], $allowedTypes)) {
+                throw new \Exception('Type de fichier non autorisé. Utilisez des images (JPG, PNG, WEBP)');
+            }
+
+            // Validation de la taille (max 10MB)
+            $maxSize = 10 * 1024 * 1024;
+            if ($file['size'] > $maxSize) {
+                throw new \Exception('Fichier trop volumineux (max 10MB)');
+            }
+
+            // Déterminer l'extension
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if ($extension === 'jpg') {
+                $extension = 'jpeg';
+            }
+
+            // Créer le dossier d'uploads s'il n'existe pas
+            $uploadDir = __DIR__.'/../public/uploads/projects';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            // Nom de fichier unique
+            $filename = 'project_'.$id.'_'.time().'.'.$extension;
+            $destination = $uploadDir.'/'.$filename;
+
+            // Déplacer le fichier uploadé
+            if (!move_uploaded_file($file['tmp_name'], $destination)) {
+                throw new \Exception('Erreur lors de l\'enregistrement de la photo');
+            }
+
+            // Mettre à jour le projet avec le chemin de la photo (relatif à public/)
+            $relativePath = '/uploads/projects/'.$filename;
+
+            // [AI:Claude] Ajouter aussi la photo dans la galerie user_photos
+            $db = \App\Config\Database::getInstance()->getConnection();
+            $insertPhotoQuery = "INSERT INTO user_photos
+                                 (user_id, project_id, original_path, item_name, created_at)
+                                 VALUES
+                                 (:user_id, :project_id, :original_path, :item_name, NOW())";
+
+            $photoStmt = $db->prepare($insertPhotoQuery);
+            $photoStmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+            $photoStmt->bindValue(':project_id', $id, \PDO::PARAM_INT);
+            $photoStmt->bindValue(':original_path', $relativePath, \PDO::PARAM_STR);
+            $photoStmt->bindValue(':item_name', 'Photo de couverture', \PDO::PARAM_STR);
+            $photoStmt->execute();
+
+            $success = $this->projectModel->updateProject($id, [
+                'main_photo' => $relativePath
+            ]);
+
+            if (!$success) {
+                throw new \Exception('Erreur lors de la mise à jour du projet');
+            }
+
+            $project = $this->projectModel->getProjectById($id);
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => 'Photo ajoutée avec succès',
+                'main_photo' => $relativePath,
+                'project' => $project
+            ]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de l\'ajout de la photo',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] PUT /api/projects/{id}/set-cover-photo - Définir une photo IA comme photo de couverture
+     *
+     * @param int $id ID du projet
+     * @return void JSON response
+     */
+    public function setCoverPhoto(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+
+            // Vérifier que le projet appartient à l'utilisateur
+            $project = $this->projectModel->getProjectById($id);
+
+            if (!$project || (int)$project['user_id'] !== $userId) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Projet non trouvé ou accès refusé'
+                ]);
+                return;
+            }
+
+            // Récupérer l'ID de la photo
+            if (!isset($data['photo_id'])) {
+                throw new \InvalidArgumentException('photo_id requis');
+            }
+
+            $photoId = (int)$data['photo_id'];
+
+            // Récupérer la photo depuis user_photos
+            $db = \App\Config\Database::getInstance()->getConnection();
+            $photoQuery = "SELECT * FROM user_photos WHERE id = :id AND user_id = :user_id";
+            $photoStmt = $db->prepare($photoQuery);
+            $photoStmt->bindValue(':id', $photoId, \PDO::PARAM_INT);
+            $photoStmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+            $photoStmt->execute();
+            $photo = $photoStmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$photo) {
+                throw new \InvalidArgumentException('Photo non trouvée');
+            }
+
+            // Utiliser enhanced_path si disponible, sinon original_path
+            $photoPath = $photo['enhanced_path'] ?? $photo['original_path'];
+
+            if (!$photoPath) {
+                throw new \InvalidArgumentException('Aucun chemin de photo disponible');
+            }
+
+            // Mettre à jour le projet
+            $success = $this->projectModel->updateProject($id, [
+                'main_photo' => $photoPath
+            ]);
+
+            if (!$success) {
+                throw new \Exception('Erreur lors de la mise à jour du projet');
+            }
+
+            $updatedProject = $this->projectModel->getProjectById($id);
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => 'Photo de couverture mise à jour',
+                'main_photo' => $photoPath,
+                'project' => $updatedProject
+            ]);
+
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => $e->getMessage()
             ]);
         }
     }
@@ -703,6 +902,9 @@ class ProjectController
             if ($url === false)
                 throw new \InvalidArgumentException('URL invalide');
 
+            // [AI:Claude] Convertir les liens Dropbox en liens directs
+            $url = $this->convertToDirectLink($url);
+
             // [AI:Claude] Mettre à jour le projet avec l'URL du patron
             $success = $this->projectModel->updateProject($id, [
                 'pattern_url' => $url,
@@ -729,6 +931,87 @@ class ProjectController
             $this->sendResponse(500, [
                 'success' => false,
                 'error' => 'Erreur lors de l\'enregistrement du lien',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] POST /api/projects/{id}/pattern-from-library - Lier un patron de bibliothèque au projet
+     *
+     * @param int $id ID du projet
+     * @return void JSON response
+     */
+    public function linkPatternFromLibrary(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+
+            // [AI:Claude] Vérifier que le projet appartient à l'utilisateur
+            if (!$this->projectModel->belongsToUser($id, $userId)) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Accès non autorisé'
+                ]);
+                return;
+            }
+
+            // [AI:Claude] Validation du pattern_library_id
+            if (empty($data['pattern_library_id']))
+                throw new \InvalidArgumentException('ID du patron manquant');
+
+            $patternLibraryId = (int)$data['pattern_library_id'];
+
+            // [AI:Claude] Charger le patron de bibliothèque
+            $patternLibrary = new \App\Models\PatternLibrary();
+            $pattern = $patternLibrary->getPatternById($patternLibraryId);
+
+            if (!$pattern)
+                throw new \InvalidArgumentException('Patron introuvable');
+
+            // [AI:Claude] Vérifier que le patron appartient à l'utilisateur
+            if (!$patternLibrary->belongsToUser($patternLibraryId, $userId))
+                throw new \InvalidArgumentException('Ce patron ne vous appartient pas');
+
+            // [AI:Claude] Mettre à jour le projet avec le patron
+            if ($pattern['source_type'] === 'file') {
+                // Lier le fichier
+                $success = $this->projectModel->updateProject($id, [
+                    'pattern_path' => $pattern['file_path'],
+                    'pattern_url' => null
+                ]);
+            } else {
+                // Lier l'URL
+                $success = $this->projectModel->updateProject($id, [
+                    'pattern_url' => $pattern['url'],
+                    'pattern_path' => null
+                ]);
+            }
+
+            if (!$success)
+                throw new \Exception('Erreur lors de la mise à jour du projet');
+
+            // [AI:Claude] Incrémenter le compteur d'utilisation du patron dans la bibliothèque
+            $patternLibrary->incrementUsage($patternLibraryId);
+
+            $project = $this->projectModel->getProjectById($id);
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => 'Patron lié au projet avec succès',
+                'project' => $project,
+                'pattern' => $pattern
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors du lien du patron',
                 'message' => $e->getMessage()
             ]);
         }
@@ -1101,6 +1384,16 @@ class ProjectController
         if ($user['subscription_type'] === 'free')
             return $currentCount < 3;
 
+        // [AI:Claude] Vérifier que l'abonnement PRO n'est pas expiré
+        if (isset($user['subscription_expires_at']) && $user['subscription_expires_at'] !== null) {
+            $expiresAt = strtotime($user['subscription_expires_at']);
+
+            if ($expiresAt <= time()) {
+                // Abonnement expiré, traiter comme FREE
+                return $currentCount < 3;
+            }
+        }
+
         // [AI:Claude] Pro: illimité
         // Legacy support: tous les anciens plans sont considérés comme 'pro'
         return true;
@@ -1136,5 +1429,39 @@ class ProjectController
         header('Content-Type: application/json');
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
+    }
+
+    /**
+     * [AI:Claude] Convertir les liens cloud en liens directs
+     *
+     * Supporte :
+     * - Dropbox : dl=0 → dl=1 pour téléchargement direct
+     * - Google Drive : conversion vers lien direct
+     *
+     * @param string $url URL d'origine
+     * @return string URL convertie
+     */
+    private function convertToDirectLink(string $url): string
+    {
+        // Dropbox : Changer dl=0 en dl=1 pour lien direct
+        if (preg_match('/dropbox\.com/', $url)) {
+            $url = preg_replace('/(\?|&)dl=0/', '$1dl=1', $url);
+
+            // Si dl=1 n'était pas présent, l'ajouter
+            if (strpos($url, 'dl=') === false) {
+                $url .= (strpos($url, '?') !== false ? '&' : '?') . 'dl=1';
+            }
+
+            error_log("[PATTERN URL] Dropbox converti : $url");
+        }
+
+        // Google Drive : Convertir en lien direct
+        if (preg_match('/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/', $url, $matches)) {
+            $fileId = $matches[1];
+            $url = "https://drive.google.com/uc?export=download&id={$fileId}";
+            error_log("[PATTERN URL] Google Drive converti : $url");
+        }
+
+        return $url;
     }
 }

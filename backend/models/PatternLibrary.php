@@ -258,6 +258,23 @@ class PatternLibrary
     }
 
     /**
+     * [AI:Claude] Obtenir le nombre de patrons d'un utilisateur
+     *
+     * @param int $userId ID de l'utilisateur
+     * @return int Nombre de patrons
+     */
+    public function getUserPatternCount(int $userId): int
+    {
+        $query = "SELECT COUNT(*) FROM {$this->table} WHERE user_id = :user_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
      * [AI:Claude] Obtenir les stats de la bibliothèque
      *
      * @param int $userId ID de l'utilisateur

@@ -12,7 +12,7 @@ export default function CGU() {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/" className="text-purple-600 hover:text-purple-700 font-semibold mb-4 inline-block">
+          <Link to="/" className="text-primary-600 hover:text-primary-700 font-semibold mb-4 inline-block">
             ← Retour à l'accueil
           </Link>
           <h1 className="text-4xl font-black text-gray-900 mb-2">
@@ -153,11 +153,11 @@ export default function CGU() {
             </p>
           </section>
 
-          <section className="bg-purple-50 p-6 rounded-lg mt-8">
+          <section className="bg-primary-50 p-6 rounded-lg mt-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Contact</h2>
             <p className="text-gray-700 leading-relaxed">
               Pour toute question concernant ces CGU, contactez-nous à :<br/>
-              <strong className="text-purple-600">yarnflowapp@gmail.com</strong>
+              <strong className="text-primary-600">yarnflowapp@gmail.com</strong>
             </p>
           </section>
 

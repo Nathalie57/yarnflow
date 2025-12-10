@@ -2,8 +2,17 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="YarnFlow" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="/manifest.json" />
 
     <!-- SEO -->
     <title>YarnFlow - Tracker tricot & crochet avec stats avancées et AI Photo Studio</title>
@@ -11,15 +20,15 @@
     <meta name="keywords" content="tricot, crochet, tracker, compteur rangs, statistiques, IA, photos, patrons, YarnFlow, knitting, amigurumi" />
     <meta name="author" content="YarnFlow Studio" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://yarnflow.com/" />
+    <link rel="canonical" href="https://yarnflow.fr/" />
 
     <!-- Open Graph (réseaux sociaux) -->
     <meta property="og:site_name" content="YarnFlow" />
     <meta property="og:title" content="YarnFlow - Le tracker ultime pour tricot & crochet" />
     <meta property="og:description" content="Stats avancées, AI Photo Studio, bibliothèque de patrons. Offre Early Bird 2.99€/mois. Rejoignez la waitlist !" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://yarnflow.com/" />
-    <meta property="og:image" content="https://yarnflow.com/og-image.jpg" />
+    <meta property="og:url" content="https://yarnflow.fr/" />
+    <meta property="og:image" content="https://yarnflow.fr/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="YarnFlow - Tracker tricot & crochet avec AI Photo Studio" />
@@ -30,7 +39,7 @@
     <meta name="twitter:site" content="@yarnflow" />
     <meta name="twitter:title" content="YarnFlow - Tracker tricot & crochet" />
     <meta name="twitter:description" content="Stats avancées, AI Photo Studio, bibliothèque de patrons. Early Bird 2.99€/mois !" />
-    <meta name="twitter:image" content="https://yarnflow.com/og-image.jpg" />
+    <meta name="twitter:image" content="https://yarnflow.fr/og-image.jpg" />
     <meta name="twitter:image:alt" content="YarnFlow - Tracker tricot & crochet" />
 
     <!-- Schema.org Structured Data (JSON-LD) -->
@@ -56,27 +65,28 @@
     }
     </script>
 
-    <!--
-      ANALYTICS - À CONFIGURER APRÈS DÉPLOIEMENT
-
-      Option 1 (Recommandé - RGPD friendly) : Plausible Analytics
-      Décommenter après signup sur https://plausible.io
-    -->
-    <!-- <script defer data-domain="yarnflow.com" src="https://plausible.io/js/script.js"></script> -->
-
-    <!--
-      Option 2 (Gratuit mais cookies) : Google Analytics 4
-      Remplacer G-XXXXXXXXXX par votre Measurement ID
-    -->
-    <!--
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <!-- Google Analytics 4 avec Consent Mode v2 (RGPD) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-43HS92RL3J"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-XXXXXXXXXX');
+
+      // [AI:Claude] Consent Mode v2 - Refusé par défaut (RGPD)
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'wait_for_update': 500
+      });
+
+      // [AI:Claude] Configurer GA4
+      gtag('config', 'G-43HS92RL3J', {
+        'anonymize_ip': true,
+        'cookie_flags': 'SameSite=None;Secure'
+      });
     </script>
-    -->
   </head>
   <body>
     <div id="root"></div>

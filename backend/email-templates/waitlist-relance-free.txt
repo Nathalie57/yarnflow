@@ -1,0 +1,39 @@
+🧶 YarnFlow - Ton compte t'attend !
+
+Salut !
+
+Tu es sur la liste d'attente de YarnFlow depuis quelques jours, mais tu n'as pas encore créé ton compte.
+
+Je voulais m'assurer que tu n'avais pas manqué ton invitation ! 🎉
+
+🔑 TON CODE D'ACCÈS BETA : {{BETA_CODE}}
+Garde-le bien, il te sera demandé lors de l'inscription !
+
+🧶 Ce qui t'attend sur YarnFlow :
+
+- Compteur de rangs intelligent avec timer intégré
+- Gestion de tes projets tricot/crochet en un seul endroit
+- Import de patrons (PDF, photos ou liens)
+- Galerie IA pour embellir tes créations
+- Statistiques détaillées (temps, vitesse, progression)
+
+👉 Créer mon compte maintenant : https://yarnflow.fr/register?beta={{BETA_CODE}}
+
+C'est gratuit et ça ne prend que 30 secondes ⏱️
+
+---
+
+Des questions ? Un problème pour créer ton compte ?
+
+Réponds simplement à cet email, je serai ravie de t'aider ! 💛
+
+À très bientôt sur YarnFlow !
+Nathalie, créatrice de YarnFlow
+
+---
+
+Site web : https://yarnflow.fr
+Confidentialité : https://yarnflow.fr/privacy
+
+Tu reçois cet email car tu es inscrit(e) sur la liste d'attente de YarnFlow.
+Si tu ne souhaites plus recevoir d'emails, tu peux te désinscrire à tout moment.

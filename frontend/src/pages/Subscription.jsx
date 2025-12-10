@@ -46,53 +46,34 @@ const Subscription = () => {
       period: '',
       features: [
         '3 projets trackés',
-        '3 images IA/mois',
-        'Statistiques basiques',
+        '5 photos IA/mois',
+        'Stats de base',
         'Compteur de rangs',
         'Timer de session',
         'Sauvegarde cloud'
       ],
       limitations: [
-        'Projets limités',
-        'Images IA limitées'
+        'Projets limités à 3',
+        'Photos IA limitées'
       ],
-      current: subscription?.type === 'free'
+      current: !subscription || subscription.type === 'free' || !subscription.is_active
     },
     {
       type: 'monthly',
-      name: 'Standard',
+      name: 'PRO',
       price: '4.99€',
       period: '/mois',
       features: [
         'Projets illimités',
-        '30 images IA/mois',
-        'Statistiques complètes',
+        '75 photos IA/mois',
+        'Stats avancées',
         'Compteur + Timer',
-        'Export PDF projets',
-        'Galerie illimitée',
+        'Bibliothèque de patrons',
+        'Export PDF',
         'Support prioritaire'
       ],
       popular: true,
-      current: subscription?.type === 'monthly'
-    },
-    {
-      type: 'yearly',
-      name: 'Premium',
-      price: '9.99€',
-      period: '/mois',
-      yearlyPrice: '79.99€/an',
-      savings: 'Économisez 33% (4 mois offerts)',
-      features: [
-        'Projets illimités',
-        '120 images IA/mois',
-        'Styles premium',
-        'Téléchargement HD',
-        'Édition IA (fond, couleur)',
-        'Statistiques avancées',
-        'Support VIP',
-        'Nouvelles features en avant-première'
-      ],
-      current: subscription?.type === 'yearly'
+      current: subscription?.is_active && (subscription?.type === 'monthly' || subscription?.type === 'pro')
     }
   ]
 
@@ -122,39 +103,45 @@ const Subscription = () => {
       </p>
 
       {/* Abonnement actuel */}
-      {subscription && subscription.type !== 'free' && (
+      {subscription && subscription.is_active && subscription.type !== 'free' && (
         <div className="card mb-8 bg-primary-50 border-2 border-primary-200">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold mb-2">✓ Abonnement actif</h2>
+              <h2 className="text-xl font-bold mb-2">✅ Abonnement PRO actif</h2>
               <p className="text-gray-700">
-                Vous êtes actuellement sur le plan <span className="font-bold">{
-                  subscription.type === 'monthly' ? 'Mensuel' : 'Annuel'
-                }</span>
+                Projets illimités • 75 photos IA/mois
               </p>
               {subscription.expires_at && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Expire le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}
+                  Renouvellement le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}
                 </p>
               )}
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-primary-600">
-                {subscription.type === 'monthly'
-                  ? (user?.subscription_type === 'starter' ? '4.99€' : '9.99€')
-                  : (user?.subscription_type === 'starter_yearly' ? '39.99€' : '79.99€')
-                }
-              </div>
-              <div className="text-sm text-gray-600">
-                {subscription.type === 'monthly' ? 'par mois' : 'par an'}
-              </div>
+              <div className="text-3xl font-bold text-primary-600">4.99€</div>
+              <div className="text-sm text-gray-600">par mois</div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Message pour compte FREE */}
+      {(!subscription || subscription.type === 'free' || !subscription.is_active) && (
+        <div className="card mb-8 bg-gray-50 border-2 border-gray-200">
+          <div className="text-center">
+            <h2 className="text-xl font-bold mb-2">📦 Plan FREE actuel</h2>
+            <p className="text-gray-700">
+              3 projets • 5 photos IA/mois • Stats de base
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              Passez au plan PRO pour débloquer toutes les fonctionnalités 👇
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Plans */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {plans.map((plan) => (
           <div
             key={plan.type}
@@ -242,37 +229,6 @@ const Subscription = () => {
         ))}
       </div>
 
-      {/* Packs ponctuels */}
-      <div className="card mb-8 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200">
-        <h2 className="text-2xl font-bold mb-4">🎁 Packs images IA (achats ponctuels)</h2>
-        <p className="text-gray-700 mb-4">
-          Besoin de plus d'images ce mois-ci ? Achetez des packs ponctuels !
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded-lg border border-purple-200">
-            <h3 className="font-bold text-lg mb-2">Pack Small</h3>
-            <div className="text-3xl font-bold text-purple-600 mb-2">2.99€</div>
-            <p className="text-sm text-gray-600 mb-3">20 images IA</p>
-            <p className="text-xs text-green-600">+2 images bonus</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border-2 border-purple-400">
-            <h3 className="font-bold text-lg mb-2">Pack Medium</h3>
-            <div className="text-3xl font-bold text-purple-600 mb-2">6.99€</div>
-            <p className="text-sm text-gray-600 mb-3">50 images IA</p>
-            <p className="text-xs text-green-600">+7 images bonus</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg border border-purple-200">
-            <h3 className="font-bold text-lg mb-2">Pack Large</h3>
-            <div className="text-3xl font-bold text-purple-600 mb-2">14.99€</div>
-            <p className="text-sm text-gray-600 mb-3">200 images IA</p>
-            <p className="text-xs text-green-600">+20 images bonus</p>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 mt-4">
-          💡 Les packs achetés ne expirent jamais et se cumulent avec vos crédits mensuels !
-        </p>
-      </div>
-
       {/* FAQ simplifiée */}
       <div className="card">
         <h2 className="text-2xl font-bold mb-4">Questions fréquentes</h2>
@@ -292,7 +248,7 @@ const Subscription = () => {
           <div>
             <h3 className="font-bold mb-1">🎨 Crédits photos IA</h3>
             <p className="text-sm text-gray-600">
-              Les crédits mensuels se réinitialisent chaque mois. Les packs achetés ne expirent jamais et se cumulent avec vos crédits mensuels.
+              Les crédits mensuels se réinitialisent automatiquement le 1er de chaque mois. Plan FREE : 5 photos/mois • Plan PRO : 75 photos/mois.
             </p>
           </div>
           <div>

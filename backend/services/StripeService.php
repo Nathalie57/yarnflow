@@ -203,6 +203,66 @@ class StripeService
     }
 
     /**
+     * [AI:Claude] Créer une session de paiement pour Early Bird (2.99€/mois x 12 mois)
+     *
+     * @param int $userId ID de l'utilisateur
+     * @param string $customerEmail Email du client
+     * @return array Session créée ou erreur
+     */
+    public function createEarlyBirdSubscriptionSession(int $userId, string $customerEmail): array
+    {
+        $earlyBirdPrice = 2.99; // Prix fixe Early Bird
+
+        try {
+            $session = Session::create([
+                'payment_method_types' => ['card'],
+                'customer_email' => $customerEmail,
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => 'eur',
+                        'product_data' => [
+                            'name' => 'YarnFlow Early Bird - 12 mois',
+                            'description' => 'Accès PRO complet à 2.99€/mois pendant 12 mois (offre limitée 200 places)'
+                        ],
+                        'unit_amount' => 299, // 2.99€
+                        'recurring' => [
+                            'interval' => 'month',
+                            'interval_count' => 1
+                        ]
+                    ],
+                    'quantity' => 1
+                ]],
+                'mode' => 'subscription',
+                'success_url' => $this->successUrl,
+                'cancel_url' => $this->cancelUrl,
+                'metadata' => [
+                    'user_id' => $userId,
+                    'payment_type' => 'subscription_early_bird'
+                ],
+                'subscription_data' => [
+                    'metadata' => [
+                        'early_bird' => 'true',
+                        'duration_months' => '12'
+                    ]
+                ]
+            ]);
+
+            return [
+                'success' => true,
+                'session_id' => $session->id,
+                'checkout_url' => $session->url
+            ];
+
+        } catch (ApiErrorException $e) {
+            error_log('[Stripe] Erreur création Early Bird : '.$e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * [AI:Claude] Vérifier le statut d'une session de paiement
      *
      * @param string $sessionId ID de la session Stripe

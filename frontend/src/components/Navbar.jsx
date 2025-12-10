@@ -23,46 +23,22 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/my-projects" className="text-2xl font-bold text-purple-600">
+          <Link to="/my-projects" className="text-2xl font-bold text-primary-600">
             🧶 YarnFlow
           </Link>
 
           {/* Desktop Navigation - Hidden on mobile */}
           <div className="hidden md:flex items-center space-x-6">
-            {/* DASHBOARD UNIFIÉ */}
+            {/* PROJETS */}
             <Link
               to="/my-projects"
               className={`transition flex items-center gap-1 ${
                 location.pathname === '/dashboard' || location.pathname === '/my-projects' || location.pathname.startsWith('/projects/')
-                  ? 'text-purple-600 font-semibold'
-                  : 'text-gray-700 hover:text-purple-600'
+                  ? 'text-primary-600 font-semibold'
+                  : 'text-gray-700 hover:text-primary-600'
               }`}
             >
-              📊 Dashboard
-            </Link>
-
-            {/* STATISTIQUES */}
-            <Link
-              to="/stats"
-              className={`transition flex items-center gap-1 ${
-                location.pathname === '/stats'
-                  ? 'text-purple-600 font-semibold'
-                  : 'text-gray-700 hover:text-purple-600'
-              }`}
-            >
-              📈 Stats
-            </Link>
-
-            {/* GALERIE PHOTOS IA */}
-            <Link
-              to="/gallery"
-              className={`transition flex items-center gap-1 ${
-                location.pathname === '/gallery'
-                  ? 'text-purple-600 font-semibold'
-                  : 'text-gray-700 hover:text-purple-600'
-              }`}
-            >
-              📸 Galerie
+              🧶 Projets
             </Link>
 
             {/* BIBLIOTHÈQUE DE PATRONS */}
@@ -70,11 +46,35 @@ const Navbar = () => {
               to="/pattern-library"
               className={`transition flex items-center gap-1 ${
                 location.pathname === '/pattern-library'
-                  ? 'text-purple-600 font-semibold'
-                  : 'text-gray-700 hover:text-purple-600'
+                  ? 'text-primary-600 font-semibold'
+                  : 'text-gray-700 hover:text-primary-600'
               }`}
             >
               📚 Patrons
+            </Link>
+
+            {/* GALERIE PHOTOS IA */}
+            <Link
+              to="/gallery"
+              className={`transition flex items-center gap-1 ${
+                location.pathname === '/gallery'
+                  ? 'text-primary-600 font-semibold'
+                  : 'text-gray-700 hover:text-primary-600'
+              }`}
+            >
+              📸 Galerie
+            </Link>
+
+            {/* STATISTIQUES */}
+            <Link
+              to="/stats"
+              className={`transition flex items-center gap-1 ${
+                location.pathname === '/stats'
+                  ? 'text-primary-600 font-semibold'
+                  : 'text-gray-700 hover:text-primary-600'
+              }`}
+            >
+              📈 Stats
             </Link>
 
             {/* ADMIN */}
@@ -84,8 +84,8 @@ const Navbar = () => {
                   to="/generator"
                   className={`transition flex items-center gap-1 ${
                     location.pathname === '/generator'
-                      ? 'text-purple-600 font-semibold'
-                      : 'text-gray-700 hover:text-purple-600'
+                      ? 'text-primary-600 font-semibold'
+                      : 'text-gray-700 hover:text-primary-600'
                   }`}
                 >
                   🤖 Générer
@@ -97,8 +97,8 @@ const Navbar = () => {
                   to="/admin"
                   className={`transition font-medium ${
                     location.pathname === '/admin'
-                      ? 'text-purple-600 font-semibold'
-                      : 'text-purple-600 hover:text-purple-700'
+                      ? 'text-primary-600 font-semibold'
+                      : 'text-primary-600 hover:text-primary-700'
                   }`}
                 >
                   Admin
@@ -108,7 +108,7 @@ const Navbar = () => {
 
             {/* User menu Desktop */}
             <div className="relative group">
-              <button className="flex items-center space-x-2 text-gray-700 hover:text-purple-600 transition">
+              <button className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 transition">
                 <span className="max-w-[120px] truncate">{user?.first_name || user?.email}</span>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -121,12 +121,6 @@ const Navbar = () => {
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
                   ⚙️ Mon profil
-                </Link>
-                <Link
-                  to="/subscription"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  💳 Abonnement
                 </Link>
                 <hr className="my-2" />
                 <button
@@ -175,7 +169,7 @@ const Navbar = () => {
         >
           {/* Mobile Menu Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <div className="text-xl font-bold text-purple-600">
+            <div className="text-xl font-bold text-primary-600">
               🧶 YarnFlow
             </div>
             <button
@@ -189,9 +183,9 @@ const Navbar = () => {
           </div>
 
           {/* User Info */}
-          <div className="p-4 bg-purple-50 border-b">
+          <div className="p-4 bg-primary-50 border-b">
             <div className="text-sm text-gray-600">Connecté en tant que</div>
-            <div className="font-semibold text-purple-900 truncate">
+            <div className="font-semibold text-primary-900 truncate">
               {user?.first_name || user?.email}
             </div>
           </div>
@@ -203,35 +197,11 @@ const Navbar = () => {
               onClick={closeMobileMenu}
               className={`block px-4 py-3 rounded-lg transition ${
                 location.pathname === '/my-projects' || location.pathname.startsWith('/projects/')
-                  ? 'bg-purple-100 text-purple-700 font-semibold'
+                  ? 'bg-primary-100 text-primary-700 font-semibold'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
-              📊 Dashboard
-            </Link>
-
-            <Link
-              to="/stats"
-              onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-lg transition ${
-                location.pathname === '/stats'
-                  ? 'bg-purple-100 text-purple-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              📈 Statistiques
-            </Link>
-
-            <Link
-              to="/gallery"
-              onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-lg transition ${
-                location.pathname === '/gallery'
-                  ? 'bg-purple-100 text-purple-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              📸 Galerie Photos IA
+              🧶 Mes Projets
             </Link>
 
             <Link
@@ -239,11 +209,35 @@ const Navbar = () => {
               onClick={closeMobileMenu}
               className={`block px-4 py-3 rounded-lg transition ${
                 location.pathname === '/pattern-library'
-                  ? 'bg-purple-100 text-purple-700 font-semibold'
+                  ? 'bg-primary-100 text-primary-700 font-semibold'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
               📚 Bibliothèque Patrons
+            </Link>
+
+            <Link
+              to="/gallery"
+              onClick={closeMobileMenu}
+              className={`block px-4 py-3 rounded-lg transition ${
+                location.pathname === '/gallery'
+                  ? 'bg-primary-100 text-primary-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              📸 Galerie Photos IA
+            </Link>
+
+            <Link
+              to="/stats"
+              onClick={closeMobileMenu}
+              className={`block px-4 py-3 rounded-lg transition ${
+                location.pathname === '/stats'
+                  ? 'bg-primary-100 text-primary-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              📈 Statistiques
             </Link>
 
             {isAdmin() && (
@@ -253,7 +247,7 @@ const Navbar = () => {
                   onClick={closeMobileMenu}
                   className={`block px-4 py-3 rounded-lg transition ${
                     location.pathname === '/generator'
-                      ? 'bg-purple-100 text-purple-700 font-semibold'
+                      ? 'bg-primary-100 text-primary-700 font-semibold'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -265,7 +259,7 @@ const Navbar = () => {
                   onClick={closeMobileMenu}
                   className={`block px-4 py-3 rounded-lg transition ${
                     location.pathname === '/admin'
-                      ? 'bg-purple-100 text-purple-700 font-semibold'
+                      ? 'bg-primary-100 text-primary-700 font-semibold'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -282,14 +276,6 @@ const Navbar = () => {
               className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition"
             >
               ⚙️ Mon profil
-            </Link>
-
-            <Link
-              to="/subscription"
-              onClick={closeMobileMenu}
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition"
-            >
-              💳 Abonnement
             </Link>
 
             <button

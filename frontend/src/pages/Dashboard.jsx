@@ -46,22 +46,22 @@ const Dashboard = () => {
 
       {/* Statistiques - v0.11.0 AI PHOTO STUDIO */}
       <div className={`grid grid-cols-1 ${isAdmin() ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6 mb-8`}>
-        <div className="card border-2 border-purple-200 bg-purple-50">
-          <h3 className="text-purple-700 mb-2 font-semibold">📊 Projets trackés</h3>
-          <p className="text-3xl font-bold text-purple-600">
+        <div className="card border-2 border-primary-200 bg-primary-50">
+          <h3 className="text-primary-700 mb-2 font-semibold">📊 Projets trackés</h3>
+          <p className="text-3xl font-bold text-primary-600">
             {dashboard?.stats?.total_projects || 0}
           </p>
-          <p className="text-sm text-purple-600 mt-2">
+          <p className="text-sm text-primary-600 mt-2">
             Compteur de rangs interactif
           </p>
         </div>
 
-        <div className="card border-2 border-blue-200 bg-blue-50">
-          <h3 className="text-blue-700 mb-2 font-semibold">📸 Images IA</h3>
-          <p className="text-3xl font-bold text-blue-600">
+        <div className="card border-2 border-primary-200 bg-warm-100">
+          <h3 className="text-primary-700 mb-2 font-semibold">📸 Images IA</h3>
+          <p className="text-3xl font-bold text-primary-600">
             {dashboard?.stats?.ai_photos_generated || 0}
           </p>
-          <p className="text-sm text-blue-600 mt-2">
+          <p className="text-sm text-primary-600 mt-2">
             AI Photo Studio
           </p>
         </div>
@@ -90,7 +90,7 @@ const Dashboard = () => {
           {/* TRACKER EN PREMIER */}
           <Link
             to="/my-projects"
-            className="bg-purple-600 hover:bg-purple-700 text-white py-4 px-6 rounded-lg font-semibold text-center transition shadow-lg"
+            className="bg-primary-600 hover:bg-primary-700 text-white py-4 px-6 rounded-lg font-semibold text-center transition shadow-lg"
           >
             📊 Mes projets
             <div className="text-sm font-normal mt-1">Tracker de rangs interactif</div>
@@ -99,11 +99,11 @@ const Dashboard = () => {
           {/* AI PHOTO STUDIO en DEUXIÈME */}
           <Link
             to="/gallery"
-            className="bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 rounded-lg font-semibold text-center transition shadow-lg flex flex-col items-center gap-2"
+            className="bg-primary-600 hover:bg-primary-700 text-white py-4 px-6 rounded-lg font-semibold text-center transition shadow-lg flex flex-col items-center gap-2"
           >
             <div className="flex items-center gap-2">
               📸 AI Photo Studio
-              <span className="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">NEW</span>
+              <span className="bg-primary-500 text-white text-xs px-2 py-1 rounded-full">NEW</span>
             </div>
             <div className="text-sm font-normal">Photos professionnelles IA</div>
           </Link>
@@ -125,14 +125,14 @@ const Dashboard = () => {
       </div>
 
       {/* Message de bienvenue */}
-      <div className="card bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 mb-8">
+      <div className="card bg-gradient-to-r from-primary-50 to-warm-100 border-2 border-primary-200 mb-8">
         <div className="flex items-start gap-4">
           <div className="text-4xl">✨</div>
           <div className="flex-1">
-            <h3 className="text-lg font-bold text-purple-900 mb-2">
+            <h3 className="text-lg font-bold text-primary-900 mb-2">
               Bienvenue sur YarnFlow !
             </h3>
-            <p className="text-purple-800 mb-3">
+            <p className="text-primary-800 mb-3">
               YarnFlow vous accompagne de la première maille jusqu'au partage sur vos réseaux :
               <strong> tracker de projets</strong>, <strong>statistiques motivantes</strong>,
               <strong> AI Photo Studio</strong>, et bien plus !
@@ -141,13 +141,13 @@ const Dashboard = () => {
             <div className="flex flex-wrap gap-2">
               <Link
                 to="/stats"
-                className="px-4 py-2 bg-white hover:bg-purple-50 text-purple-700 rounded-lg font-medium transition border border-purple-300"
+                className="px-4 py-2 bg-white hover:bg-primary-50 text-primary-700 rounded-lg font-medium transition border border-primary-300"
               >
                 📊 Voir mes statistiques
               </Link>
               <Link
                 to="/gallery"
-                className="px-4 py-2 bg-white hover:bg-purple-50 text-purple-700 rounded-lg font-medium transition border border-purple-300"
+                className="px-4 py-2 bg-white hover:bg-primary-50 text-primary-700 rounded-lg font-medium transition border border-primary-300"
               >
                 📸 Essayer l'AI Photo Studio
               </Link>

@@ -9,6 +9,8 @@ vendor/
 config/.env
 .env.local
 .env.*.local
+backend/.env.production
+.env.production.local
 
 # Build outputs
 dist/
@@ -44,8 +46,41 @@ temp/
 # Generated files
 backend/generated/*.pdf
 backend/uploads/*
+backend/public/uploads/*
+uploads/*
 !backend/generated/.gitkeep
 !backend/uploads/.gitkeep
+
+# Test files
+backend/public/test-*.php
+backend/public/phpinfo-test.php
+test.php
+
+# Debug files
+backend/public/debug-*.php
+backend/public/check-*.php
+backend/public/fix-*.php
+backend/public/delete-*.php
+backend/public/simulate-*.php
+backend/public/view-*.php
+backend/public/transfer-*.php
+backend/public/migrate-*.php
+backend/public/*.html
+backend/public/debug-*.txt
+
+# Cache
+backend/cache/
+
+# Local scripts
+setup-test.sh
+start-backend.sh
+start-frontend.sh
+backend/scripts/
+
+# Marketing content (not code)
+instagram-post-*.md
+ravelry-*.md
+reddit-posts.md
 
 # Composer
 composer.phar
@@ -55,3 +90,14 @@ composer.lock
 *.sql.gz
 *.dump
 CHECKLIST-GRATUIT.md
+
+# Seed data (ne pas committer les données de test)
+database/seed_*.sql
+
+# Dev builds
+frontend/dev-dist/
+
+# Local test scripts
+import_mysql_railway.sh
+import_railway.sh
+import_railway_simple.sh

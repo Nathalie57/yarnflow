@@ -14,22 +14,29 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useImagePreview } from '../hooks/useImagePreview'
 import api from '../services/api'
 
 const Gallery = () => {
   const { user } = useAuth()
+  const {
+    previewImage,
+    isGeneratingPreview,
+    previewError,
+    previewContext,
+    generatePreview,
+    clearPreview
+  } = useImagePreview()
   const [photos, setPhotos] = useState([])
-  const [projects, setProjects] = useState([]) // [AI:Claude] Liste des projets pour filtres
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [credits, setCredits] = useState(null)
 
-  // [AI:Claude] Filtres
-  const [filters, setFilters] = useState({
-    project: '',
-    type: '',
-    style: ''
-  })
+  // [AI:Claude] Détecter si on est sur mobile
+  const [isMobile, setIsMobile] = useState(false)
+
+  // [AI:Claude] Recherche
+  const [searchQuery, setSearchQuery] = useState('')
 
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showEnhanceModal, setShowEnhanceModal] = useState(false)
@@ -45,24 +52,24 @@ const Gallery = () => {
   })
   const [uploading, setUploading] = useState(false)
 
-  // [AI:Claude] Embellissement IA - v0.11.0 workflow quantité → contextes
-  const [enhanceData, setEnhanceData] = useState({
-    quantity: 1, // [AI:Claude] D'ABORD choisir la quantité
-    contexts: [], // [AI:Claude] ENSUITE choisir les contextes
-    project_category: '',
-    custom_instructions: '' // [AI:Claude] Instructions personnalisées
-  })
+  // [AI:Claude] Embellissement IA - v0.12.1 SIMPLIFIÉ (1 photo, preset auto)
+  const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
   const [enhancing, setEnhancing] = useState(false)
-  const [generationProgress, setGenerationProgress] = useState({
-    current: 0,
-    total: 0,
-    status: []
-  })
 
-  // [AI:Claude] Charger les photos, projets et crédits au montage
+  // [AI:Claude] Détecter mobile au montage
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.matchMedia('(max-width: 768px)').matches ||
+                  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // [AI:Claude] Charger les photos et crédits au montage
   useEffect(() => {
     fetchPhotos()
-    fetchProjects()
     fetchCredits()
   }, [])
 
@@ -88,16 +95,6 @@ const Gallery = () => {
     }
   }
 
-  const fetchProjects = async () => {
-    try {
-      const response = await api.get('/projects')
-      setProjects(response.data.projects || [])
-    } catch (err) {
-      console.error('Erreur chargement projets:', err)
-      setProjects([])
-    }
-  }
-
   const fetchCredits = async () => {
     try {
       const response = await api.get('/photos/credits')
@@ -114,39 +111,22 @@ const Gallery = () => {
     }
   }
 
-  // [AI:Claude] Filtrer les photos affichées
+  // [AI:Claude] Filtrer les photos par recherche
   const getFilteredPhotos = () => {
     return photos.filter(photo => {
-      // Filtre par projet
-      if (filters.project && photo.project_id !== parseInt(filters.project))
-        return false
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        const matchName = photo.item_name?.toLowerCase().includes(query)
+        const matchType = photo.item_type?.toLowerCase().includes(query)
+        const matchStyle = photo.ai_style?.toLowerCase().includes(query)
+        const matchDescription = photo.description?.toLowerCase().includes(query)
+        const matchTechnique = photo.technique?.toLowerCase().includes(query)
 
-      // Filtre par type
-      if (filters.type && photo.item_type !== filters.type)
-        return false
-
-      // Filtre par style/ambiance
-      if (filters.style && photo.ai_style !== filters.style)
-        return false
-
+        if (!matchName && !matchType && !matchStyle && !matchDescription && !matchTechnique)
+          return false
+      }
       return true
     })
-  }
-
-  // [AI:Claude] Extraire les valeurs uniques pour les filtres
-  const getUniqueTypes = () => {
-    const types = photos.map(p => p.item_type).filter(Boolean)
-    return [...new Set(types)].sort()
-  }
-
-  const getUniqueStyles = () => {
-    const styles = photos.map(p => p.ai_style).filter(Boolean)
-    return [...new Set(styles)].sort()
-  }
-
-  // [AI:Claude] Réinitialiser les filtres
-  const resetFilters = () => {
-    setFilters({ project: '', type: '', style: '' })
   }
 
   // [AI:Claude] Upload d'une photo
@@ -187,82 +167,53 @@ const Gallery = () => {
     }
   }
 
-  // [AI:Claude] Embellir avec IA - v0.11.0 génération multiple
+  // [AI:Claude] Générer une preview gratuite
+  const handleGeneratePreview = async () => {
+    if (!selectedPhoto || !selectedContext) return
+
+    const result = await generatePreview(selectedPhoto.id, selectedContext.key)
+
+    if (!result.success) {
+      alert(result.error || 'Erreur lors de la génération de la preview')
+    }
+  }
+
+  // [AI:Claude] Embellir avec IA - v0.12.1 SIMPLIFIÉ
   const handleEnhance = async (e) => {
     e.preventDefault()
 
-    if (!selectedPhoto) return
+    if (!selectedPhoto || !selectedContext) return
 
-    const quantity = enhanceData.contexts.length
-    if (quantity === 0) {
-      alert('Veuillez sélectionner vos contextes')
-      return
-    }
-
-    if (quantity !== enhanceData.quantity) {
-      alert(`Veuillez sélectionner exactement ${enhanceData.quantity} contexte${enhanceData.quantity > 1 ? 's' : ''}`)
-      return
-    }
-
-    // [AI:Claude] Calculer le coût (5 photos = 4 crédits, sinon 1 crédit/photo)
-    const cost = quantity === 5 ? 4 : quantity
-
-    if (!credits || credits.total_available < cost) {
-      alert(`Vous n'avez pas assez de crédits. Nécessaire: ${cost}, Disponible: ${credits?.total_available || 0}`)
+    // [AI:Claude] Vérifier les crédits (1 photo = 1 crédit)
+    if (!credits || credits.total_available < 1) {
+      alert(`Vous n'avez pas assez de crédits. Il vous faut 1 crédit.`)
       return
     }
 
     setEnhancing(true)
-    setGenerationProgress({
-      current: 0,
-      total: quantity,
-      status: enhanceData.contexts.map(ctx => ({ context: ctx, status: 'pending', time: 0 }))
-    })
 
     try {
-      // [AI:Claude] MODE SIMULATION pour démo (Gemini bloqué en France)
-      await simulateMultipleGeneration(quantity)
+      // [AI:Claude] Utiliser le context de la preview si disponible, sinon le context sélectionné
+      const contextToUse = previewContext || selectedContext.key
 
-      // [AI:Claude] Code production (décommenter en prod):
-      /*
+      // [AI:Claude] Appel API pour génération HD avec le même context que la preview
       const response = await api.post(`/photos/${selectedPhoto.id}/enhance-multiple`, {
-        contexts: enhanceData.contexts,
-        project_category: enhanceData.project_category,
-        custom_instructions: enhanceData.custom_instructions || null
+        contexts: [contextToUse],
+        project_category: detectProjectCategory(selectedPhoto.item_type || '')
       })
 
-      const updatedPhoto = response.data.photo
-      setPhotos(photos.map(p => p.id === updatedPhoto.id ? updatedPhoto : p))
-      setCredits({
-        ...credits,
-        total_available: response.data.credits_remaining
-      })
-      */
-
+      await fetchPhotos()
+      await fetchCredits()
       setShowEnhanceModal(false)
       setSelectedPhoto(null)
+      clearPreview()
 
-      alert(`✨ ${quantity} photo${quantity > 1 ? 's' : ''} générée${quantity > 1 ? 's' : ''} avec succès !\n${credits.total_available - cost} crédits restants.`)
+      alert(`✨ Photo générée avec succès !`)
     } catch (err) {
       console.error('Erreur génération IA:', err)
       alert(err.response?.data?.error || 'Erreur lors de la génération IA')
     } finally {
       setEnhancing(false)
-    }
-  }
-
-  // [AI:Claude] Simulation de génération multiple (MODE DÉMO)
-  const simulateMultipleGeneration = async (quantity) => {
-    for (let i = 0; i < quantity; i++) {
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      setGenerationProgress(prev => ({
-        ...prev,
-        current: i + 1,
-        status: prev.status.map((s, idx) =>
-          idx === i ? { ...s, status: 'completed', time: Math.floor(Math.random() * 3000 + 2000) } :
-          idx === i + 1 ? { ...s, status: 'generating' } : s
-        )
-      }))
     }
   }
 
@@ -280,19 +231,13 @@ const Gallery = () => {
     }
   }
 
-  // [AI:Claude] Ouvrir modal d'embellissement avec détection auto
+  // [AI:Claude] Ouvrir modal d'embellissement avec sélection du premier style par défaut
   const openEnhanceModal = (photo) => {
     setSelectedPhoto(photo)
-
-    // [AI:Claude] Détecter la catégorie depuis item_type
+    clearPreview() // [AI:Claude] Réinitialiser la preview
     const category = detectProjectCategory(photo.item_type || '')
-
-    setEnhanceData({
-      quantity: 1,
-      contexts: [],
-      project_category: category,
-      custom_instructions: ''
-    })
+    const styles = stylesByCategory[category] || stylesByCategory.other
+    setSelectedContext(styles[0]) // Premier style par défaut
     setShowEnhanceModal(true)
   }
 
@@ -300,6 +245,23 @@ const Gallery = () => {
   const detectProjectCategory = (itemType) => {
     const lower = itemType.toLowerCase()
 
+    // [AI:Claude] Nouvelles catégories depuis la base de données
+    if (lower === 'vêtements' || lower === 'vetements')
+      return 'wearable'
+
+    if (lower === 'accessoires bébé' || lower === 'accessoires bebe')
+      return 'wearable'
+
+    if (lower === 'jouets/peluches')
+      return 'amigurumi'
+
+    if (lower === 'accessoires')
+      return 'accessory'
+
+    if (lower === 'maison/déco' || lower === 'maison/deco')
+      return 'home_decor'
+
+    // [AI:Claude] Détection par mots-clés (fallback)
     if (lower.match(/bonnet|écharpe|pull|chaussette|gilet|châle|snood|mitaine/))
       return 'wearable'
 
@@ -315,94 +277,35 @@ const Gallery = () => {
     return 'other'
   }
 
-  // [AI:Claude] Contextes par catégorie de projet - v0.11.0 enrichis
-  const contextsByCategory = {
+  // [AI:Claude] 3 styles simplifiés par catégorie - v0.12.1
+  const stylesByCategory = {
     wearable: [
       { key: 'worn_model', label: 'Sur modèle', icon: '👤', desc: 'Porté par une personne' },
-      { key: 'mannequin', label: 'Sur mannequin', icon: '🪑', desc: 'Mise en scène élégante' },
-      { key: 'outdoor_winter', label: 'Extérieur hiver', icon: '🌲', desc: 'Forêt, parc, neige' },
-      { key: 'outdoor_spring', label: 'Extérieur printemps', icon: '🌸', desc: 'Jardin, fleurs, doux' },
-      { key: 'cozy_indoor', label: 'Intérieur cosy', icon: '🏠', desc: 'Canapé, plaid, thé' },
-      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'À plat avec accessoires' },
-      { key: 'mirror_selfie', label: 'Miroir selfie', icon: '🪞', desc: 'Style mode lifestyle' },
-      { key: 'urban_street', label: 'Urbain', icon: '🏙️', desc: 'Rue, ville, tendance' },
-      { key: 'studio_white', label: 'Studio fond blanc', icon: '✨', desc: 'Pro e-commerce' }
+      { key: 'studio_white', label: 'Studio blanc', icon: '✨', desc: 'Fond blanc professionnel' },
+      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'À plat avec accessoires' }
     ],
     amigurumi: [
-      { key: 'kids_room', label: 'Chambre enfant', icon: '🛏️', desc: 'Sur lit, étagère colorée' },
       { key: 'play_scene', label: 'Scène de jeu', icon: '🧸', desc: 'Mise en scène créative' },
-      { key: 'nature_garden', label: 'Nature/jardin', icon: '🌳', desc: 'Herbe, fleurs, arbres' },
-      { key: 'cafe_trendy', label: 'Café trendy', icon: '☕', desc: 'Table bois, décor Instagram' },
-      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'Fond neutre, accessoires' },
-      { key: 'held_hands', label: 'Dans les mains', icon: '🤲', desc: 'Tenu avec amour' },
-      { key: 'shelf_display', label: 'Sur étagère', icon: '📚', desc: 'Décoration rangée' },
-      { key: 'picnic_outdoor', label: 'Pique-nique', icon: '🧺', desc: 'Nappe, extérieur, doux' }
+      { key: 'kids_room', label: 'Chambre d\'enfant', icon: '🛏️', desc: 'Sur lit, étagère colorée' },
+      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'Fond neutre propre' }
     ],
     accessory: [
-      { key: 'in_use', label: 'En utilisation', icon: '👜', desc: 'Porté, main tenant' },
-      { key: 'urban_lifestyle', label: 'Urbain lifestyle', icon: '🌆', desc: 'Rue, café, boutique' },
-      { key: 'product_white', label: 'Fond blanc produit', icon: '📐', desc: 'E-commerce' },
-      { key: 'scandinavian', label: 'Scandinave', icon: '🏠', desc: 'Table bois, minimaliste' },
-      { key: 'nature_flowers', label: 'Nature/fleurs', icon: '🌸', desc: 'Jardin, parc, douceur' },
-      { key: 'flat_lay_styled', label: 'Flat lay stylisé', icon: '✨', desc: 'Composition esthétique' },
-      { key: 'beach_vacation', label: 'Plage/vacances', icon: '🏖️', desc: 'Sable, été, détente' },
-      { key: 'coffee_shop', label: 'Coffee shop', icon: '☕', desc: 'Ambiance café cosy' }
+      { key: 'in_use', label: 'En utilisation', icon: '👜', desc: 'Porté ou tenu' },
+      { key: 'product_white', label: 'Fond blanc', icon: '✨', desc: 'Style e-commerce' },
+      { key: 'flat_lay_styled', label: 'Flat lay', icon: '📐', desc: 'Composition esthétique' }
     ],
     home_decor: [
-      { key: 'on_sofa', label: 'Sur canapé/lit', icon: '🛋️', desc: 'En utilisation réaliste' },
-      { key: 'scandinavian', label: 'Scandinave', icon: '🏠', desc: 'Lumineux, épuré' },
-      { key: 'with_plants', label: 'Avec plantes', icon: '🪴', desc: 'Bohème, naturel' },
-      { key: 'natural_light', label: 'Lumière naturelle', icon: '🌅', desc: 'Fenêtre, doux' },
-      { key: 'flat_lay_texture', label: 'Flat lay texture', icon: '📐', desc: 'Gros plan matière' },
-      { key: 'cozy_bedroom', label: 'Chambre cosy', icon: '🛏️', desc: 'Lit, coussins, douceur' },
-      { key: 'modern_living', label: 'Salon moderne', icon: '🪟', desc: 'Design contemporain' },
-      { key: 'rustic_cottage', label: 'Cottage rustique', icon: '🏡', desc: 'Charme campagne' }
+      { key: 'on_sofa', label: 'Sur canapé', icon: '🛋️', desc: 'En utilisation réaliste' },
+      { key: 'scandinavian', label: 'Scandinave', icon: '🏠', desc: 'Lumineux épuré' },
+      { key: 'flat_lay_texture', label: 'Flat lay', icon: '📐', desc: 'Texture gros plan' }
     ],
     other: [
-      { key: 'lifestyle', label: 'Lifestyle Instagram', icon: '🌟', desc: 'Lumière naturelle, tendance' },
-      { key: 'studio', label: 'Studio Pro', icon: '✨', desc: 'Fond blanc, éclairage parfait' },
-      { key: 'scandinavian', label: 'Scandinave', icon: '🎨', desc: 'Minimaliste, tons neutres' },
-      { key: 'nature', label: 'Nature', icon: '🌲', desc: 'Extérieur, lumière jour' },
-      { key: 'cafe', label: 'Café Trendy', icon: '☕', desc: 'Ambiance café Instagram' },
-      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'À plat, vue du dessus' },
-      { key: 'bokeh_background', label: 'Fond bokeh', icon: '✨', desc: 'Flou artistique' },
-      { key: 'vintage_retro', label: 'Vintage rétro', icon: '📻', desc: 'Style années passées' }
+      { key: 'studio_white', label: 'Fond blanc', icon: '✨', desc: 'Professionnel fond blanc pur' },
+      { key: 'lifestyle', label: 'Lifestyle', icon: '🌟', desc: 'Ambiance chaleureuse naturelle' },
+      { key: 'nature', label: 'Nature', icon: '🌿', desc: 'Tons verts extérieur' }
     ]
   }
 
-  // [AI:Claude] Changer la quantité (reset les contextes)
-  const changeQuantity = (newQuantity) => {
-    setEnhanceData({
-      ...enhanceData,
-      quantity: newQuantity,
-      contexts: [] // [AI:Claude] Reset les contextes quand on change la quantité
-    })
-  }
-
-  // [AI:Claude] Toggle contexte
-  const toggleContext = (contextKey) => {
-    if (enhanceData.contexts.includes(contextKey)) {
-      setEnhanceData({
-        ...enhanceData,
-        contexts: enhanceData.contexts.filter(c => c !== contextKey)
-      })
-    } else {
-      if (enhanceData.contexts.length >= enhanceData.quantity) {
-        alert(`Maximum ${enhanceData.quantity} contexte${enhanceData.quantity > 1 ? 's' : ''}`)
-        return
-      }
-      setEnhanceData({
-        ...enhanceData,
-        contexts: [...enhanceData.contexts, contextKey]
-      })
-    }
-  }
-
-  // [AI:Claude] Calculer le coût
-  const calculateCost = () => {
-    const quantity = enhanceData.quantity
-    return quantity === 5 ? 4 : quantity
-  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -417,6 +320,67 @@ const Gallery = () => {
           </div>
         </div>
       </div>
+
+      {/* Crédits IA disponibles */}
+      {credits && (
+        <div className="mb-6 bg-gradient-to-r from-primary-50 to-primary-50 border-2 border-primary-200 rounded-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-2xl">✨</span>
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900">Crédits Photos IA</h3>
+                  <p className="text-sm text-gray-600">
+                    {user?.subscription_type === 'free' || !user?.subscription_type
+                      ? 'Plan FREE : 5 photos/mois'
+                      : 'Plan PRO : 75 photos/mois'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2 ml-11">
+                <span className="text-4xl font-bold text-primary-600">{credits.total_available}</span>
+                <span className="text-gray-600">crédits disponibles</span>
+              </div>
+              {credits.credits_used_this_month > 0 && (
+                <p className="text-xs text-gray-500 mt-2 ml-11">
+                  {credits.credits_used_this_month} utilisés ce mois-ci
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              {credits.total_available === 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
+                  <p className="text-sm text-amber-800 font-medium">
+                    ⚠️ Vous n'avez plus de crédits
+                  </p>
+                </div>
+              )}
+
+              {(!user?.subscription_type || user?.subscription_type === 'free') ? (
+                <Link
+                  to="/profile"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition shadow-md hover:shadow-lg"
+                >
+                  🚀 Passer à PRO (30 crédits/mois)
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-400 font-medium rounded-lg cursor-not-allowed"
+                  title="Recharge automatique le 1er du mois"
+                >
+                  ✅ Abonnement PRO actif
+                </button>
+              )}
+
+              <p className="text-xs text-center text-gray-500">
+                Recharge auto le 1er du mois
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Loading */}
       {loading && (
@@ -433,116 +397,34 @@ const Gallery = () => {
         </div>
       )}
 
-      {/* Filtres modernes */}
+      {/* Barre de recherche */}
       {!loading && !error && photos.length > 0 && (
         <div className="mb-6">
-          {/* Bouton reset */}
-          {(filters.project || filters.type || filters.style) && (
-            <div className="flex justify-end mb-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher par nom, type, style..."
+              className="w-full pl-11 pr-12 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+            />
+            {searchQuery && (
               <button
-                onClick={resetFilters}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-medium text-sm transition flex items-center gap-2"
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+                title="Effacer la recherche"
               >
-                ✕ Réinitialiser
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            </div>
-          )}
-
-          {/* Filtres par projet */}
-          {projects.length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">📂 Projets</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilters({ ...filters, project: '' })}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                    !filters.project
-                      ? 'bg-primary-600 text-white shadow-md'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:border-primary-400'
-                  }`}
-                >
-                  Tous
-                </button>
-                {projects.map(project => (
-                  <button
-                    key={project.id}
-                    onClick={() => setFilters({ ...filters, project: project.id.toString() })}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                      filters.project === project.id.toString()
-                        ? 'bg-primary-600 text-white shadow-md'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:border-primary-400'
-                    }`}
-                  >
-                    {project.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Filtres par type */}
-          {getUniqueTypes().length > 0 && (
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">🧶 Type d'ouvrage</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilters({ ...filters, type: '' })}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                    !filters.type
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
-                  }`}
-                >
-                  Tous
-                </button>
-                {getUniqueTypes().map(type => (
-                  <button
-                    key={type}
-                    onClick={() => setFilters({ ...filters, type })}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                      filters.type === type
-                        ? 'bg-blue-600 text-white shadow-md'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-400'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Filtres par style/ambiance */}
-          {getUniqueStyles().length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">✨ Style & Ambiance</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilters({ ...filters, style: '' })}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                    !filters.style
-                      ? 'bg-purple-600 text-white shadow-md'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:border-purple-400'
-                  }`}
-                >
-                  Tous
-                </button>
-                {getUniqueStyles().map(style => (
-                  <button
-                    key={style}
-                    onClick={() => setFilters({ ...filters, style })}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                      filters.style === style
-                        ? 'bg-purple-600 text-white shadow-md'
-                        : 'bg-white border border-gray-300 text-gray-700 hover:border-purple-400'
-                    }`}
-                  >
-                    {style.replace(/_/g, ' ')}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
@@ -572,13 +454,13 @@ const Gallery = () => {
                 Aucun résultat
               </h3>
               <p className="text-gray-600 mb-4">
-                Aucune photo ne correspond à vos critères
+                Aucune photo ne correspond à votre recherche "{searchQuery}"
               </p>
               <button
-                onClick={resetFilters}
+                onClick={() => setSearchQuery('')}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
               >
-                Réinitialiser les filtres
+                Effacer la recherche
               </button>
             </div>
           ) : (
@@ -590,10 +472,10 @@ const Gallery = () => {
                 >
                   {/* Photo IA générée */}
                   <img
-                    src={`http://patron-maker.local${photo.enhanced_path}`}
+                    src={`${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`}
                     alt={photo.item_name || 'Photo IA'}
                     className="w-full h-full object-cover cursor-pointer"
-                    onClick={() => window.open(`http://patron-maker.local${photo.enhanced_path}`, '_blank')}
+                    onClick={() => window.open(`${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`, '_blank')}
                     onError={(e) => {
                       console.error('Erreur chargement image:', photo.enhanced_path)
                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
@@ -604,7 +486,7 @@ const Gallery = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     {/* Info en haut */}
                     <div className="absolute top-3 right-3 left-3">
-                      <p className="text-white text-sm font-semibold drop-shadow-lg line-clamp-1">
+                      <p className="text-white text-sm font-bold drop-shadow-lg line-clamp-1">
                         {photo.item_name || 'Sans nom'}
                       </p>
                     </div>
@@ -612,26 +494,50 @@ const Gallery = () => {
                     {/* Boutons en bas */}
                     <div className="absolute bottom-0 inset-x-0 p-4">
                       {/* Boutons principaux */}
-                      <div className="flex items-center gap-2 mb-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.open(`http://patron-maker.local${photo.enhanced_path}`, '_blank')
-                          }}
-                          className="flex-1 px-4 py-2 bg-white text-gray-900 rounded-lg font-medium hover:bg-gray-100 transition text-sm shadow-lg"
-                        >
-                          📥 Télécharger
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDelete(photo.id)
-                          }}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm shadow-lg"
-                          title="Supprimer"
-                        >
-                          🗑️
-                        </button>
+                      <div className="flex flex-col gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              window.open(`${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`, '_blank')
+                            }}
+                            className="flex-1 px-4 py-2 bg-white text-gray-900 rounded-lg font-bold hover:bg-gray-100 transition text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
+                          >
+                            📥 Télécharger
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(photo.id)
+                            }}
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-red-300"
+                            title="Supprimer"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+
+                        {/* Bouton "Définir comme photo de couverture" si photo liée à un projet */}
+                        {photo.project_id && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              try {
+                                await api.put(`/projects/${photo.project_id}/set-cover-photo`, {
+                                  photo_id: photo.id
+                                })
+                                alert('✅ Photo de couverture mise à jour !')
+                              } catch (err) {
+                                console.error('Erreur:', err)
+                                alert('❌ Erreur lors de la mise à jour')
+                              }
+                            }}
+                            className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-300"
+                            title="Définir comme photo de couverture du projet"
+                          >
+                            📸 Définir comme couverture
+                          </button>
+                        )}
                       </div>
 
                       {/* Boutons partage réseaux sociaux */}
@@ -642,7 +548,7 @@ const Gallery = () => {
                         <button
                           onClick={async (e) => {
                             e.stopPropagation()
-                            const url = `http://patron-maker.local${photo.enhanced_path}`
+                            const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
 
                             // [AI:Claude] Sur mobile, utiliser Web Share API
                             if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
@@ -676,7 +582,7 @@ const Gallery = () => {
                               alert('📸 Image téléchargée !')
                             }
                           }}
-                          className="w-8 h-8 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs font-bold"
+                          className="w-8 h-8 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 hover:from-primary-700 hover:via-primary-800 hover:to-primary-900 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary-300"
                           title="Partager sur Instagram"
                         >
                           IG
@@ -686,7 +592,7 @@ const Gallery = () => {
                         <button
                           onClick={async (e) => {
                             e.stopPropagation()
-                            const url = `http://patron-maker.local${photo.enhanced_path}`
+                            const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
 
                             // [AI:Claude] Sur mobile, utiliser Web Share API
                             if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
@@ -730,11 +636,11 @@ const Gallery = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            const url = `http://patron-maker.local${photo.enhanced_path}`
+                            const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
                             const description = photo.item_name || 'Photo tricot/crochet'
                             window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(url)}&description=${encodeURIComponent(description)}`, '_blank')
                           }}
-                          className="w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs"
+                          className="w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-300"
                           title="Partager sur Pinterest"
                         >
                           📌
@@ -746,7 +652,7 @@ const Gallery = () => {
                             e.stopPropagation()
                             window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')
                           }}
-                          className="w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs font-bold"
+                          className="w-8 h-8 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary-300"
                           title="Partager sur Facebook"
                         >
                           f
@@ -769,7 +675,7 @@ const Gallery = () => {
                         <button
                           onClick={async (e) => {
                             e.stopPropagation()
-                            const url = `http://patron-maker.local${photo.enhanced_path}`
+                            const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
                             try {
                               await navigator.clipboard.writeText(url)
                               alert('Lien copié dans le presse-papier !')
@@ -778,7 +684,7 @@ const Gallery = () => {
                               alert('Impossible de copier le lien')
                             }
                           }}
-                          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs"
+                          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs focus:outline-none focus:ring-2 focus:ring-gray-400"
                           title="Copier le lien"
                         >
                           🔗
@@ -807,17 +713,56 @@ const Gallery = () => {
             <form onSubmit={handleUpload} className="p-6">
               {/* Fichier photo */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Photo <span className="text-red-600">*</span>
                 </label>
+
+                {/* Inputs cachés */}
                 <input
+                  ref={(el) => (window.cameraInputGallery = el)}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  capture="environment"
+                  onChange={(e) => setUploadData({ ...uploadData, photo: e.target.files[0] })}
+                  className="hidden"
+                />
+                <input
+                  ref={(el) => (window.galleryInputGallery = el)}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   onChange={(e) => setUploadData({ ...uploadData, photo: e.target.files[0] })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="hidden"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+
+                {/* Boutons visibles */}
+                <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mb-2`}>
+                  {isMobile && (
+                    <button
+                      type="button"
+                      onClick={() => window.cameraInputGallery?.click()}
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                    >
+                      <span className="text-xl">📷</span>
+                      <span className="font-medium">Prendre une photo</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => window.galleryInputGallery?.click()}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                  >
+                    <span className="text-xl">🖼️</span>
+                    <span className="font-medium">Choisir une photo</span>
+                  </button>
+                </div>
+
+                {uploadData.photo && (
+                  <p className="text-sm text-green-600 mb-2">
+                    ✓ {uploadData.photo.name}
+                  </p>
+                )}
+
+                <p className="text-xs text-gray-500">
                   Formats: JPG, PNG, WEBP • Max 10 MB
                 </p>
               </div>
@@ -920,7 +865,7 @@ const Gallery = () => {
                 <button
                   type="submit"
                   disabled={uploading}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
                   {uploading ? 'Upload...' : '📤 Uploader'}
                 </button>
@@ -930,196 +875,195 @@ const Gallery = () => {
         </div>
       )}
 
-      {/* Modal d'embellissement IA - v0.11.0 WORKFLOW OPTIMISÉ */}
-      {showEnhanceModal && selectedPhoto && (
+      {/* Modal d'embellissement IA - v0.12.1 SIMPLIFIÉ */}
+      {showEnhanceModal && selectedPhoto && selectedContext && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-5xl w-full my-8">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg z-10">
-              <h2 className="text-2xl font-bold text-gray-900">✨ Générer vos photos IA</h2>
+          <div className="bg-white rounded-lg max-w-lg w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            <div className="bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg">
+              <h2 className="text-2xl font-bold text-gray-900">✨ Générer une photo IA</h2>
               <p className="text-sm text-gray-600 mt-1">
-                {selectedPhoto.item_name} • Type: {selectedPhoto.item_type || 'Autre'}
+                {selectedPhoto.item_name}
               </p>
             </div>
 
             <form onSubmit={handleEnhance} className="p-6">
-              {/* Photo actuelle */}
-              <div className="mb-6 bg-gray-100 rounded-lg border-2 border-gray-200 p-4">
+              {/* Photo actuelle (remplacée par preview pendant génération HD) */}
+              <div className={`mb-6 rounded-lg border-2 p-4 relative ${enhancing && previewImage ? 'bg-green-50 border-green-400' : 'bg-gray-100 border-gray-200'}`}>
+                {enhancing && previewImage && (
+                  <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    Upscaling en cours...
+                  </div>
+                )}
                 <img
-                  src={`http://patron-maker.local${selectedPhoto.original_path}`}
+                  src={(enhancing && previewImage) ? previewImage : `${import.meta.env.VITE_BACKEND_URL}${selectedPhoto.original_path}`}
                   alt={selectedPhoto.item_name}
                   className="max-h-48 w-auto object-contain rounded-lg mx-auto"
                   onError={(e) => {
-                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
+                    if (!(enhancing && previewImage)) {
+                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
+                    }
                   }}
                 />
               </div>
 
-              {/* ÉTAPE 1 : Choisir la quantité */}
+              {/* Choix du style */}
               <div className="mb-6">
-                <label className="block text-base font-semibold text-gray-900 mb-3">
-                  1️⃣ Combien de photos voulez-vous générer ?
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Choisissez un style :
                 </label>
-                <div className="grid grid-cols-5 gap-3">
-                  {[1, 2, 3, 4, 5].map(qty => {
-                    const cost = qty === 5 ? 4 : qty
-                    return (
-                      <button
-                        key={qty}
-                        type="button"
-                        onClick={() => changeQuantity(qty)}
-                        className={`p-4 border-2 rounded-lg transition ${
-                          enhanceData.quantity === qty
-                            ? 'border-purple-600 bg-purple-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <div className="text-3xl font-bold text-gray-900 mb-1">{qty}</div>
-                        <div className="text-xs text-gray-600">
-                          {cost} crédit{cost > 1 ? 's' : ''}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* ÉTAPE 2 : Sélection des contextes */}
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-gray-900 mb-3">
-                  2️⃣ Choisissez {enhanceData.quantity} style{enhanceData.quantity > 1 ? 's' : ''} de photo
-                  <span className="ml-2 text-purple-600 font-normal text-sm">
-                    ({enhanceData.contexts.length}/{enhanceData.quantity} sélectionné{enhanceData.contexts.length > 1 ? 's' : ''})
-                  </span>
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {(contextsByCategory[enhanceData.project_category] || contextsByCategory.other).map(ctx => (
-                    <button
-                      key={ctx.key}
-                      type="button"
-                      onClick={() => toggleContext(ctx.key)}
-                      disabled={!enhanceData.contexts.includes(ctx.key) && enhanceData.contexts.length >= enhanceData.quantity}
-                      className={`p-3 border-2 rounded-lg text-left transition ${
-                        enhanceData.contexts.includes(ctx.key)
-                          ? 'border-purple-600 bg-purple-50'
-                          : 'border-gray-200 hover:border-gray-300 disabled:opacity-30 disabled:cursor-not-allowed'
+                <div className="space-y-2">
+                  {(stylesByCategory[detectProjectCategory(selectedPhoto.item_type || '')] || stylesByCategory.other).map(style => (
+                    <label
+                      key={style.key}
+                      className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
+                        selectedContext?.key === style.key
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-2xl">{ctx.icon}</span>
-                        <span className="font-medium text-gray-900 text-sm flex-1">{ctx.label}</span>
-                        {enhanceData.contexts.includes(ctx.key) && (
-                          <span className="text-purple-600 text-lg">✓</span>
-                        )}
+                      <input
+                        type="radio"
+                        name="style"
+                        value={style.key}
+                        checked={selectedContext?.key === style.key}
+                        onChange={() => setSelectedContext(style)}
+                        className="text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="text-2xl">{style.icon}</span>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{style.label}</p>
+                        <p className="text-sm text-gray-600">{style.desc}</p>
                       </div>
-                      <p className="text-xs text-gray-600 leading-tight">{ctx.desc}</p>
-                    </button>
+                    </label>
                   ))}
                 </div>
               </div>
 
-              {/* ÉTAPE 3 : Instructions personnalisées */}
-              <div className="mb-6">
-                <label className="block text-base font-semibold text-gray-900 mb-2">
-                  3️⃣ Instructions personnalisées (optionnel)
-                </label>
-                <p className="text-sm text-gray-600 mb-3">
-                  Précisez des détails pour affiner le résultat : couleurs, ambiance, éléments à inclure...
-                </p>
-                <textarea
-                  value={enhanceData.custom_instructions}
-                  onChange={(e) => setEnhanceData({ ...enhanceData, custom_instructions: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
-                  placeholder="Ex: Ambiance chaleureuse avec lumière dorée, ajouter des fleurs séchées à côté, tons beiges et naturels..."
-                />
-              </div>
+              {/* Zone de preview */}
+              {previewImage && !enhancing && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                    ✨ Aperçu (preview gratuite)
+                  </h3>
+                  <div className="relative">
+                    <img
+                      src={previewImage}
+                      alt="Preview IA"
+                      className="w-full h-auto rounded-lg border-2 border-primary-300"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                    <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
+                      0 crédit
+                    </div>
+                  </div>
+                  <p className="text-xs text-green-700 mt-2 font-medium">
+                    ✓ L'image HD sera générée à partir de cette preview en haute résolution
+                  </p>
+                </div>
+              )}
 
-              {/* Progression de génération */}
+              {/* Erreur preview */}
+              {previewError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-800">{previewError}</p>
+                </div>
+              )}
+
+              {/* Progression de génération HD */}
               {enhancing && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-blue-900">🎨 Génération en cours...</h4>
-                    <span className="text-sm text-blue-700">
-                      {generationProgress.current}/{generationProgress.total}
-                    </span>
-                  </div>
-
-                  <div className="w-full bg-blue-200 rounded-full h-2 mb-3">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${(generationProgress.current / generationProgress.total) * 100}%` }}
-                    ></div>
-                  </div>
-
-                  <div className="space-y-1">
-                    {generationProgress.status.map((s, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-sm">
-                        <span className="text-gray-700">
-                          {s.status === 'completed' && '✅'}
-                          {s.status === 'generating' && '⏳'}
-                          {s.status === 'pending' && '⏸️'}
-                          {' '}Photo {idx + 1}
-                        </span>
-                        {s.status === 'completed' && (
-                          <span className="text-xs text-gray-500">({(s.time / 1000).toFixed(1)}s)</span>
-                        )}
-                      </div>
-                    ))}
+                <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                    <div>
+                      <h4 className="font-semibold text-primary-900">🎨 Génération HD en cours...</h4>
+                      <p className="text-sm text-gray-600">Cela peut prendre quelques secondes</p>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Résumé */}
-              {!enhancing && credits && enhanceData.contexts.length > 0 && (
-                <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              {/* Résumé des crédits - uniquement si preview existe */}
+              {!enhancing && previewImage && credits && (
+                <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        💎 {enhanceData.quantity} photo{enhanceData.quantity > 1 ? 's' : ''} = {calculateCost()} crédit{calculateCost() > 1 ? 's' : ''}
+                        💎 Génération HD = 1 crédit
                       </p>
                       <p className="text-xs text-gray-600 mt-1">
-                        {enhanceData.quantity === 5 && '🎉 Promo: 5 photos = 4 crédits (-20%)'}
-                        {enhanceData.quantity < 5 && credits.total_available >= calculateCost() && `Il vous restera ${credits.total_available - calculateCost()} crédits`}
+                        Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-purple-600">{credits.total_available}</div>
-                      <div className="text-xs text-gray-600">disponibles</div>
+                      <div className="text-2xl font-bold text-primary-600">{credits.total_available}</div>
+                      <div className="text-xs text-gray-600">disponible{credits.total_available > 1 ? 's' : ''}</div>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Boutons */}
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEnhanceModal(false)
-                    setSelectedPhoto(null)
-                  }}
-                  disabled={enhancing}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={
-                    enhancing ||
-                    enhanceData.contexts.length !== enhanceData.quantity ||
-                    !credits ||
-                    credits.total_available < calculateCost()
-                  }
-                  className="px-6 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {enhancing
-                    ? '✨ Génération...'
-                    : enhanceData.contexts.length !== enhanceData.quantity
-                    ? `Sélectionnez ${enhanceData.quantity - enhanceData.contexts.length} contexte${(enhanceData.quantity - enhanceData.contexts.length) > 1 ? 's' : ''} de plus`
-                    : `✨ Générer ${enhanceData.quantity} photo${enhanceData.quantity > 1 ? 's' : ''}`
-                  }
-                </button>
+              <div className="flex items-center gap-3">
+                {!previewImage ? (
+                  // Bouton Preview gratuite
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEnhanceModal(false)
+                        setSelectedPhoto(null)
+                        clearPreview()
+                      }}
+                      disabled={isGeneratingPreview}
+                      className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleGeneratePreview}
+                      disabled={!selectedContext || isGeneratingPreview}
+                      className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isGeneratingPreview ? (
+                        <>🔄 Génération preview...</>
+                      ) : (
+                        <>✨ Aperçu gratuit (0 crédit)</>
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  // Après preview : boutons Nouvelle preview + HD
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEnhanceModal(false)
+                        setSelectedPhoto(null)
+                        clearPreview()
+                      }}
+                      disabled={enhancing}
+                      className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleGeneratePreview}
+                      disabled={enhancing || isGeneratingPreview}
+                      className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
+                    >
+                      {isGeneratingPreview ? '🔄 Génération...' : '🔄 Nouvelle preview'}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={enhancing || !credits || credits.total_available < 1}
+                      className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                    >
+                      {enhancing ? '⏳ Génération HD...' : '🎨 Générer en HD (1 crédit)'}
+                    </button>
+                  </>
+                )}
               </div>
             </form>
           </div>

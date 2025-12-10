@@ -24,31 +24,51 @@ class AIPhotoService
     private Client $httpClient;
 
     /**
-     * [AI:Claude] Styles de photos disponibles
+     * [AI:Claude] Contextes - Descriptions SIMPLES pour le prompt Gemini
+     * Format: "genere une photo [STYLE] a partir de cette image sans changer le produit home made"
      */
-    private const STYLES = [
-        'lifestyle' => 'cozy lifestyle aesthetic with warm natural lighting and trendy home décor',
-        'studio' => 'professional studio photography with clean white background and perfect lighting',
-        'scandinavian' => 'Scandinavian minimalist style with neutral tones, natural materials, and soft daylight',
-        'nature' => 'natural outdoor setting with soft daylight, greenery, and organic composition',
-        'cafe' => 'Instagram-worthy café ambiance with trendy décor, warm lighting, and modern aesthetic'
+    private const CONTEXTS = [
+        // Wearables
+        'worn_model' => 'avec le produit porté par un modèle dans un cadre naturel',
+        'mannequin' => 'sur mannequin avec fond neutre gris',
+        'studio_white' => 'sur fond blanc pur style studio professionnel',
+        'flat_lay' => 'en vue du dessus sur surface claire en bois ou lin avec lumière douce naturelle',
+
+        // Amigurumi
+        'kids_room' => 'dans une ambiance douce et colorée style chambre d\'enfant',
+        'held_hands' => 'tenu délicatement dans des mains avec fond doux',
+        'shelf_display' => 'présenté sur une surface avec éclairage lumineux',
+
+        // Accessoires
+        'in_use' => 'en situation d\'usage naturel avec fond doux',
+        'product_white' => 'sur fond blanc pur style e-commerce',
+        'flat_lay_styled' => 'en vue du dessus sur table en bois clair avec éléments déco minimalistes et ombres douces',
+
+        // Home decor
+        'on_sofa' => 'dans un cadre cosy avec textures douces en arrière-plan',
+        'with_plants' => 'avec des tons verts naturels en arrière-plan',
+        'flat_lay_texture' => 'en vue du dessus rapprochée sur surface texturée naturelle comme lin ou coton avec éclairage doux',
+
+        // Général - Styles lifestyle
+        'lifestyle' => 'lifestyle chaleureuse avec lumière naturelle dorée',
+        'studio' => 'studio professionnel avec fond blanc et éclairage parfait',
+        'nature' => 'dans une ambiance naturelle avec lumière douce et tons verts',
+        'cafe' => 'dans une ambiance chaleureuse avec tons bois et lumière douce',
+
+        // Styles distincts
+        'rustic' => 'rustique avec tons bois chaleureux et lumière naturelle',
+        'modern' => 'moderne minimaliste avec tons gris et lignes épurées',
+        'vintage' => 'vintage avec tons sépia chauds et ambiance nostalgique',
+        'scandinavian' => 'scandinave avec tons clairs bois et blanc, lumineux et aéré'
     ];
 
-    /**
-     * [AI:Claude] Usages des photos
-     */
-    private const PURPOSES = [
-        'instagram' => 'Instagram posting with engaging composition and shareable appeal',
-        'etsy' => 'Etsy product listing with commercial appeal and clear product showcase',
-        'portfolio' => 'professional portfolio showcase with artistic composition and high-end aesthetic'
-    ];
 
     private bool $simulationMode;
 
     public function __construct()
     {
         $this->geminiApiKey = $_ENV['GEMINI_API_KEY'] ?? '';
-        $this->geminiModel = 'gemini-2.5-flash-image'; // [AI:Claude] Modèle stable avec génération d'images
+        $this->geminiModel = $_ENV['GEMINI_MODEL'] ?? 'gemini-2.5-flash-image-preview'; // [AI:Claude] Utiliser la config .env
         $this->simulationMode = ($_ENV['GEMINI_SIMULATION_MODE'] ?? 'false') === 'true';
 
         // [AI:Claude] Ne pas lever d'exception ici, mais seulement lors de l'utilisation
@@ -76,12 +96,19 @@ class AIPhotoService
             if (!file_exists($imagePath))
                 throw new \InvalidArgumentException("Image non trouvée: $imagePath");
 
-            // [AI:Claude] Construire le prompt
+            // [AI:Claude] Construire le prompt avec le contexte
             $projectType = $options['project_type'] ?? 'handmade craft';
-            $purpose = $options['purpose'] ?? 'instagram';
-            $style = $options['style'] ?? 'lifestyle';
+            $context = $options['context'] ?? 'lifestyle';
+            $fromPreview = $options['from_preview'] ?? false;
 
-            $prompt = $this->buildPrompt($projectType, $purpose, $style);
+            // [AI:Claude] Si on part d'une preview, utiliser un prompt d'upscaling au lieu de génération
+            if ($fromPreview) {
+                $prompt = "Generate a high-resolution version of this exact image. Keep the exact same composition, style, lighting, colors, and all details identical. Only increase the resolution and quality, do not change anything else.";
+                error_log("[GEMINI] Using UPSCALE prompt (from preview)");
+            } else {
+                $prompt = $this->buildPrompt($projectType, $context);
+                error_log("[GEMINI] Using GENERATION prompt (from original)");
+            }
 
             // [AI:Claude] Mode simulation (pour tester sans API)
             if ($this->simulationMode) {
@@ -137,29 +164,31 @@ class AIPhotoService
     }
 
     /**
-     * [AI:Claude] Construire le prompt de génération pour Gemini Image Preview
+     * [AI:Claude] Construire le prompt de génération - Format SIMPLE qui fonctionne
+     * Basé sur le prompt testé avec succès par l'utilisatrice sur Gemini
      *
-     * @param string $type Type de projet (ex: "crochet teddy bear")
-     * @param string $purpose Usage (instagram, etsy, portfolio)
-     * @param string $style Style visuel (lifestyle, studio, etc.)
-     * @return string Prompt complet optimisé pour la génération d'images
+     * @param string $type Type de projet (Vêtements, Accessoires, etc.)
+     * @param string $context Contexte visuel (studio_white, product_white, etc.)
+     * @return string Prompt optimisé
      */
-    private function buildPrompt(string $type, string $purpose, string $style): string
+    private function buildPrompt(string $type, string $context): string
     {
-        $purposeText = self::PURPOSES[$purpose] ?? self::PURPOSES['instagram'];
-        $styleText = self::STYLES[$style] ?? self::STYLES['lifestyle'];
+        // [AI:Claude] Récupérer la description du contexte
+        $contextDescription = self::CONTEXTS[$context] ?? self::CONTEXTS['lifestyle'];
 
-        // [AI:Claude] Prompt optimisé pour générer une NOUVELLE image basée sur l'originale
-        return sprintf(
-            "Based on this image, create a professional product photo of the %s. " .
-            "Style: %s. " .
-            "Purpose: %s. " .
-            "Keep the handmade item identical but enhance the background, lighting, and composition. " .
-            "The result should look natural and appealing.",
-            $type,
-            $styleText,
-            $purposeText
-        );
+        // [AI:Claude] Mapping des catégories vers des indices de contexte pour le prompt
+        $typeHints = [
+            'Vêtements' => 'un vêtement',
+            'Accessoires' => 'un accessoire',
+            'Maison/Déco' => 'un objet de décoration',
+            'Jouets/Peluches' => 'un jouet ou une peluche amigurumi',
+            'Accessoires bébé' => 'un accessoire pour bébé'
+        ];
+
+        $typeHint = $typeHints[$type] ?? 'un objet';
+
+        // [AI:Claude] Format SIMPLE testé et validé - fonctionne parfaitement avec Gemini
+        return "Génère une photo de l'ouvrage fait main ({$typeHint}) qui est sur la photo, dans un style {$contextDescription}, sans modifier le produit.";
     }
 
     /**
@@ -204,12 +233,13 @@ class AIPhotoService
                     ]
                 ],
                 'generationConfig' => [
-                    'temperature' => 1.0,
-                    'topK' => 40,
-                    'topP' => 0.95,
+                    'temperature' => 0.2, // [AI:Claude] Très bas pour maximum de fidélité (préserver le produit)
+                    'topK' => 20,
+                    'topP' => 0.9,
                     'responseModalities' => ['Image'], // [AI:Claude] Retourner uniquement l'image
                     'imageConfig' => [
                         'aspectRatio' => '1:1' // [AI:Claude] Format carré par défaut
+                        // [AI:Claude] negativePrompt retiré - non supporté par Gemini API
                     ]
                 ]
             ];
@@ -395,64 +425,243 @@ class AIPhotoService
     }
 
     /**
-     * [AI:Claude] Obtenir les styles disponibles
+     * [AI:Claude] Ajouter un filigrane "YarnFlow" répété en diagonal sur toute l'image
      *
-     * @return array Liste des styles avec leurs descriptions
+     * @param resource $image Ressource image GD
+     * @return void
      */
-    public static function getAvailableStyles(): array
+    private function addWatermark($image): void
     {
-        return [
-            'lifestyle' => [
-                'name' => 'Lifestyle Instagram',
-                'description' => 'Photo cosy avec lumière naturelle et déco tendance',
-                'icon' => '🌟'
-            ],
-            'studio' => [
-                'name' => 'Studio professionnel',
-                'description' => 'Fond blanc épuré avec éclairage parfait',
-                'icon' => '✨'
-            ],
-            'scandinavian' => [
-                'name' => 'Scandinave minimaliste',
-                'description' => 'Style nordique avec tons neutres',
-                'icon' => '🎨'
-            ],
-            'nature' => [
-                'name' => 'Nature/Outdoor',
-                'description' => 'Extérieur avec lumière naturelle',
-                'icon' => '🌲'
-            ],
-            'cafe' => [
-                'name' => 'Café trendy',
-                'description' => 'Ambiance café Instagram-worthy',
-                'icon' => '☕'
-            ]
-        ];
+        $width = imagesx($image);
+        $height = imagesy($image);
+
+        // [AI:Claude] Créer une couleur blanche très transparente
+        $white = imagecolorallocatealpha($image, 255, 255, 255, 100); // 100 = très transparent
+
+        // [AI:Claude] Texte du filigrane
+        $text = 'YarnFlow';
+
+        // [AI:Claude] Angle diagonal
+        $angle = -45;
+
+        // [AI:Claude] Taille de police
+        $fontSize = (int)($width / 12); // Plus petit pour répétition
+
+        // [AI:Claude] Espacement entre les répétitions
+        $spacing = (int)($width / 3);
+
+        // [AI:Claude] Chemin de la police TrueType
+        $fontPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+
+        if (file_exists($fontPath)) {
+            // [AI:Claude] Répéter le texte en lignes diagonales parallèles
+            // Créer des lignes diagonales espacées qui couvrent toute l'image
+            $diagonal = sqrt($width * $width + $height * $height); // Diagonale de l'image
+
+            // Parcourir des lignes diagonales parallèles
+            for ($offset = -$diagonal; $offset < $diagonal; $offset += $spacing) {
+                // Sur chaque ligne diagonale, placer le texte à intervalles réguliers
+                for ($pos = -$diagonal; $pos < $diagonal; $pos += $spacing) {
+                    // Calculer les coordonnées x,y pour suivre une diagonale à 45°
+                    $x = (int)($pos * cos(deg2rad(45)) - $offset * sin(deg2rad(45)));
+                    $y = (int)($pos * sin(deg2rad(45)) + $offset * cos(deg2rad(45)));
+
+                    // Ajouter le texte
+                    imagettftext($image, $fontSize, $angle, $x, $y, $white, $fontPath, $text);
+                }
+            }
+        } else {
+            // [AI:Claude] Fallback : utiliser imagestring (motif répété horizontal)
+            $spacing = 60;
+            for ($x = 0; $x < $width; $x += $spacing) {
+                for ($y = 0; $y < $height; $y += $spacing) {
+                    imagestring($image, 3, $x, $y, $text, $white);
+                }
+            }
+        }
     }
 
     /**
-     * [AI:Claude] Obtenir les usages disponibles
+     * [AI:Claude] Générer une preview basse résolution (256x256) - GRATUIT
      *
-     * @return array Liste des usages avec leurs descriptions
+     * @param string $imagePath Chemin de l'image source
+     * @param array $options Options (project_type, context)
+     * @return array Résultat avec preview_image_base64
      */
-    public static function getAvailablePurposes(): array
+    public function generatePreview(string $imagePath, array $options): array
     {
-        return [
-            'instagram' => [
-                'name' => 'Instagram',
-                'description' => 'Photo engageante pour les réseaux sociaux',
-                'icon' => '📱'
-            ],
-            'etsy' => [
-                'name' => 'Vendre sur Etsy',
-                'description' => 'Photo commerciale pour listing produit',
-                'icon' => '💰'
-            ],
-            'portfolio' => [
-                'name' => 'Portfolio professionnel',
-                'description' => 'Photo artistique haut de gamme',
-                'icon' => '📸'
-            ]
-        ];
+        $startTime = microtime(true);
+
+        try {
+            // [AI:Claude] Validation de l'image
+            if (!file_exists($imagePath))
+                throw new \InvalidArgumentException("Image non trouvée: $imagePath");
+
+            // [AI:Claude] Construire le prompt
+            $projectType = $options['project_type'] ?? 'handmade craft';
+            $context = $options['context'] ?? 'lifestyle';
+
+            $prompt = $this->buildPrompt($projectType, $context);
+
+            // [AI:Claude] Mode simulation (pour tester sans API)
+            if ($this->simulationMode) {
+                error_log("[GEMINI SIMULATION] Preview mode - copie miniature");
+
+                // Créer une version miniature
+                $imageData = file_get_contents($imagePath);
+                $image = imagecreatefromstring($imageData);
+
+                $thumbnail = imagecreatetruecolor(256, 256);
+                imagecopyresampled(
+                    $thumbnail, $image,
+                    0, 0, 0, 0,
+                    256, 256,
+                    imagesx($image), imagesy($image)
+                );
+
+                // [AI:Claude] Ajouter le filigrane "PREVIEW"
+                $this->addWatermark($thumbnail);
+
+                ob_start();
+                imagejpeg($thumbnail, null, 60);
+                $thumbnailData = ob_get_clean();
+
+                imagedestroy($image);
+                imagedestroy($thumbnail);
+
+                return [
+                    'success' => true,
+                    'preview_image_base64' => base64_encode($thumbnailData),
+                    'prompt_used' => $prompt,
+                    'generation_time_ms' => round((microtime(true) - $startTime) * 1000)
+                ];
+            }
+
+            // [AI:Claude] Préparer l'image
+            $imageData = file_get_contents($imagePath);
+            $imageBase64 = base64_encode($imageData);
+            $mimeType = mime_content_type($imagePath);
+
+            // [AI:Claude] Construire l'endpoint Gemini
+            $endpoint = sprintf(
+                'https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s',
+                $this->geminiModel,
+                $this->geminiApiKey
+            );
+
+            error_log("[GEMINI PREVIEW] Endpoint: " . $endpoint);
+            error_log("[GEMINI PREVIEW] Prompt: " . $prompt);
+
+            // [AI:Claude] Appeler Gemini avec OUTPUT BASSE RÉSOLUTION
+            $response = $this->httpClient->post($endpoint, [
+                'json' => [
+                    'contents' => [[
+                        'parts' => [
+                            [
+                                'text' => $prompt
+                            ],
+                            [
+                                'inline_data' => [
+                                    'mime_type' => $mimeType,
+                                    'data' => $imageBase64
+                                ]
+                            ]
+                        ]
+                    ]],
+                    'generationConfig' => [
+                        'temperature' => 0.2,
+                        'topK' => 20,
+                        'topP' => 0.9,
+                        'responseModalities' => ['Image'],
+                        'imageConfig' => [
+                            'aspectRatio' => '1:1'
+                        ]
+                    ]
+                ],
+                'headers' => [
+                    'Content-Type' => 'application/json'
+                ]
+            ]);
+
+            $responseData = json_decode($response->getBody()->getContents(), true);
+
+            // [AI:Claude] Extraire l'image générée
+            if (!isset($responseData['candidates'][0]['content']['parts'][0]['inlineData']['data'])) {
+                throw new \Exception('Aucune image générée par Gemini');
+            }
+
+            $generatedImageBase64 = $responseData['candidates'][0]['content']['parts'][0]['inlineData']['data'];
+
+            // [AI:Claude] Réduire la résolution si nécessaire
+            $generatedImageData = base64_decode($generatedImageBase64);
+            $image = imagecreatefromstring($generatedImageData);
+
+            $width = imagesx($image);
+            $height = imagesy($image);
+
+            // Si l'image est plus grande que 256x256, la réduire
+            if ($width > 256 || $height > 256) {
+                $ratio = min(256 / $width, 256 / $height);
+                $newWidth = (int)round($width * $ratio);
+                $newHeight = (int)round($height * $ratio);
+
+                $thumbnail = imagecreatetruecolor($newWidth, $newHeight);
+                imagecopyresampled(
+                    $thumbnail, $image,
+                    0, 0, 0, 0,
+                    $newWidth, $newHeight,
+                    $width, $height
+                );
+
+                // [AI:Claude] Ajouter le filigrane "PREVIEW"
+                $this->addWatermark($thumbnail);
+
+                ob_start();
+                imagejpeg($thumbnail, null, 60); // Qualité réduite
+                $generatedImageData = ob_get_clean();
+
+                imagedestroy($thumbnail);
+                $generatedImageBase64 = base64_encode($generatedImageData);
+            } else {
+                // [AI:Claude] Ajouter le filigrane même si pas de redimensionnement
+                $this->addWatermark($image);
+
+                ob_start();
+                imagejpeg($image, null, 60);
+                $generatedImageData = ob_get_clean();
+                $generatedImageBase64 = base64_encode($generatedImageData);
+            }
+
+            imagedestroy($image);
+
+            $generationTimeMs = round((microtime(true) - $startTime) * 1000);
+
+            error_log("[GEMINI PREVIEW SUCCESS] Temps: {$generationTimeMs}ms");
+
+            return [
+                'success' => true,
+                'preview_image_base64' => $generatedImageBase64,
+                'prompt_used' => $prompt,
+                'generation_time_ms' => $generationTimeMs
+            ];
+
+        } catch (\Exception $e) {
+            error_log('[GEMINI PREVIEW ERROR] ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * [AI:Claude] Obtenir les contextes disponibles pour le frontend
+     *
+     * @return array Liste des contextes
+     */
+    public static function getAvailableContexts(): array
+    {
+        return array_keys(self::CONTEXTS);
     }
 }

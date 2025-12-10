@@ -20,6 +20,8 @@ use App\Controllers\ProjectController;
 use App\Controllers\PhotoController;
 use App\Controllers\PatternLibraryController;
 use App\Controllers\WaitlistController;
+use App\Controllers\PasswordResetController;
+use App\Controllers\WebFetchController;
 
 /**
  * [AI:Claude] Router simple basé sur les méthodes HTTP et les URIs
@@ -55,6 +57,17 @@ function route(string $method, string $uri): void
         $method === 'POST' && $uri === 'auth/login' => (new AuthController())->login(),
         $method === 'GET' && $uri === 'auth/me' => (new AuthController())->me(),
         $method === 'POST' && $uri === 'auth/refresh' => (new AuthController())->refresh(),
+
+        // [AI:Claude] Routes OAuth
+        $method === 'GET' && $uri === 'auth/google/url' => (new AuthController())->googleAuthUrl(),
+        $method === 'GET' && $uri === 'auth/google/callback' => (new AuthController())->googleCallback(),
+        $method === 'GET' && $uri === 'auth/facebook/url' => (new AuthController())->facebookAuthUrl(),
+        $method === 'GET' && $uri === 'auth/facebook/callback' => (new AuthController())->facebookCallback(),
+
+        // [AI:Claude] Routes de réinitialisation de mot de passe
+        $method === 'POST' && $uri === 'auth/forgot-password' => (new PasswordResetController())->requestReset(),
+        $method === 'POST' && $uri === 'auth/verify-reset-token' => (new PasswordResetController())->verifyToken(),
+        $method === 'POST' && $uri === 'auth/reset-password' => (new PasswordResetController())->resetPassword(),
 
         // [AI:Claude] Routes waitlist (publiques)
         $method === 'POST' && $uri === 'waitlist/subscribe' => (new WaitlistController())->subscribe(),
@@ -135,6 +148,9 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^projects\/(\d+)\/sessions\/end$/', $uri, $matches) => (new ProjectController())->endSession((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/pattern$/', $uri, $matches) => (new ProjectController())->uploadPattern((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/pattern-url$/', $uri, $matches) => (new ProjectController())->savePatternUrl((int)$matches[1]),
+        $method === 'POST' && preg_match('/^projects\/(\d+)\/pattern-from-library$/', $uri, $matches) => (new ProjectController())->linkPatternFromLibrary((int)$matches[1]),
+        $method === 'POST' && preg_match('/^projects\/(\d+)\/photo$/', $uri, $matches) => (new ProjectController())->uploadPhoto((int)$matches[1]),
+        $method === 'PUT' && preg_match('/^projects\/(\d+)\/set-cover-photo$/', $uri, $matches) => (new ProjectController())->setCoverPhoto((int)$matches[1]),
 
         // [AI:Claude] Routes de gestion des sections de projet
         $method === 'POST' && preg_match('/^projects\/(\d+)\/sections$/', $uri, $matches) => (new ProjectController())->createSection((int)$matches[1]),
@@ -151,6 +167,7 @@ function route(string $method, string $uri): void
         $method === 'GET' && $uri === 'photos/credits' => (new PhotoController())->getCredits(),
         $method === 'GET' && $uri === 'photos/stats' => (new PhotoController())->getPhotoStats($_GET),
         $method === 'POST' && preg_match('/^photos\/(\d+)\/enhance-multiple$/', $uri, $matches) => (new PhotoController())->enhanceMultiple((int)$matches[1]),
+        $method === 'POST' && preg_match('/^photos\/(\d+)\/preview$/', $uri, $matches) => (new PhotoController())->generatePreview((int)$matches[1]),
         $method === 'POST' && preg_match('/^photos\/(\d+)\/enhance$/', $uri, $matches) => (new PhotoController())->enhance((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^photos\/(\d+)$/', $uri, $matches) => (new PhotoController())->delete((int)$matches[1]),
 
@@ -161,6 +178,11 @@ function route(string $method, string $uri): void
         $method === 'GET' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->show((int)$matches[1]),
         $method === 'PUT' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->update((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->delete((int)$matches[1]),
+
+        // [AI:Claude] Routes de récupération de contenu web externe
+        $method === 'POST' && $uri === 'web-fetch' => (new WebFetchController())->fetch(),
+        $method === 'POST' && $uri === 'web-fetch/metadata' => (new WebFetchController())->fetchMetadata(),
+        $method === 'GET' && $uri === 'web-fetch/proxy' => (new WebFetchController())->proxy(),
 
         default => notFound()
     };

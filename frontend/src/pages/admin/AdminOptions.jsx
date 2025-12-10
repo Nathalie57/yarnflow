@@ -333,8 +333,8 @@ const AdminOptions = () => {
                         )}
 
                         {option.ai_prompt_template && (
-                          <div className="mt-2 text-xs bg-purple-50 p-2 rounded">
-                            <strong className="text-purple-700">Prompt IA:</strong>
+                          <div className="mt-2 text-xs bg-primary-50 p-2 rounded">
+                            <strong className="text-primary-700">Prompt IA:</strong>
                             <div className="text-gray-600 mt-1 font-mono text-xs">
                               {option.ai_prompt_template}
                             </div>
@@ -597,7 +597,7 @@ const AdminOptions = () => {
                 </div>
 
                 {/* Applicabilité */}
-                <div className="bg-purple-50 p-4 rounded">
+                <div className="bg-primary-50 p-4 rounded">
                   <h3 className="font-bold mb-3">🎯 Applicabilité (laisser vide = toutes)</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

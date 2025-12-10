@@ -233,8 +233,8 @@ const Generator = () => {
               <strong>Recommandation :</strong> Vérifiez attentivement les instructions avant de commencer.
               Si vous trouvez des problèmes, merci de nous les signaler pour nous aider à améliorer la qualité !
             </p>
-            <div className="bg-purple-100 border-l-4 border-purple-500 p-3 rounded">
-              <p className="text-sm text-purple-900">
+            <div className="bg-primary-100 border-l-4 border-primary-500 p-3 rounded">
+              <p className="text-sm text-primary-900">
                 💡 <strong>Vous cherchez juste à suivre vos projets ?</strong> Allez sur{' '}
                 <a href="/my-projects" className="underline font-bold">Mes Projets</a> pour utiliser le tracker de rangs
                 (notre fonctionnalité principale, 100% fiable) !
@@ -456,7 +456,7 @@ const Generator = () => {
         {/* ÉTAPE 5 : Personnalisation (optionnel) */}
         {step === 5 && (
           <>
-            <div className="card bg-purple-50">
+            <div className="card bg-primary-50">
               <h2 className="text-2xl font-bold mb-2">⚙️ Personnalisation avancée</h2>
               <p className="text-gray-600">
                 Affinez votre patron selon vos préférences. Toutes ces options sont optionnelles !
@@ -487,7 +487,7 @@ const Generator = () => {
                         <span className="font-bold text-lg">{group.group_label}</span>
                         <span className="text-sm text-gray-500">({group.options.length} option{group.options.length > 1 ? 's' : ''})</span>
                       </div>
-                      <span className="text-2xl">{expandedGroups[group.group_key] ? '▼' : '▶'}</span>
+                      <span className="text-2xl">{expandedGroups[group.group_key] ? '▾' : '▸'}</span>
                     </button>
 
                     {/* Contenu du groupe */}

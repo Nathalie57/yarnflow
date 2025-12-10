@@ -41,7 +41,7 @@ class PatternLibraryController
     {
         try {
             $userId = $this->getUserIdFromAuth();
-            $this->checkSubscriptionAccess($userId);
+            $this->checkSubscriptionAccess($userId, false);
 
             $filters = [
                 'category' => $params['category'] ?? null,
@@ -86,7 +86,7 @@ class PatternLibraryController
     {
         try {
             $userId = $this->getUserIdFromAuth();
-            $this->checkSubscriptionAccess($userId);
+            $this->checkSubscriptionAccess($userId, false);
 
             $pattern = $this->patternLibrary->getPatternById($id);
 
@@ -129,16 +129,22 @@ class PatternLibraryController
     {
         try {
             $userId = $this->getUserIdFromAuth();
-            $this->checkSubscriptionAccess($userId);
+            $this->checkSubscriptionAccess($userId, true); // Vérifier la limite lors de la création
 
-            // [AI:Claude] Déterminer si c'est un upload de fichier ou une URL
+            // [AI:Claude] Déterminer si c'est un upload de fichier, une URL, ou un fichier existant
             if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
                 // Upload de fichier
                 $this->handleFileUpload($userId);
             } else {
                 // URL ou données JSON
                 $data = $this->getJsonInput();
-                $this->handleUrlPattern($userId, $data);
+
+                // [AI:Claude] Nouveau : Référencer un fichier déjà uploadé
+                if (!empty($data['existing_file_path'])) {
+                    $this->handleExistingFile($userId, $data);
+                } else {
+                    $this->handleUrlPattern($userId, $data);
+                }
             }
         } catch (\InvalidArgumentException $e) {
             $this->sendResponse(400, [
@@ -164,7 +170,7 @@ class PatternLibraryController
     {
         try {
             $userId = $this->getUserIdFromAuth();
-            $this->checkSubscriptionAccess($userId);
+            $this->checkSubscriptionAccess($userId, false);
             $data = $this->getJsonInput();
 
             // [AI:Claude] Vérifier que le patron appartient à l'utilisateur
@@ -212,7 +218,7 @@ class PatternLibraryController
     {
         try {
             $userId = $this->getUserIdFromAuth();
-            $this->checkSubscriptionAccess($userId);
+            $this->checkSubscriptionAccess($userId, false);
 
             // [AI:Claude] Vérifier que le patron appartient à l'utilisateur
             if (!$this->patternLibrary->belongsToUser($id, $userId)) {
@@ -229,12 +235,34 @@ class PatternLibraryController
                 exit;
             }
 
-            $filePath = __DIR__.'/../../'.$pattern['file_path'];
+            // [AI:Claude] Le file_path commence par /uploads/... donc on ajoute /public
+            $filePath = __DIR__.'/../public'.$pattern['file_path'];
 
             if (!file_exists($filePath)) {
-                http_response_code(404);
-                echo json_encode(['success' => false, 'error' => 'Fichier inexistant sur le serveur']);
-                exit;
+                // [AI:Claude] Tentative alternative : peut-être que file_path est déjà complet
+                error_log('[PatternLibrary] File not found at: ' . $filePath);
+                error_log('[PatternLibrary] Trying alternative path...');
+
+                // Essayer sans ../public si le chemin est déjà complet
+                $alternativePath = __DIR__ . '/..' . $pattern['file_path'];
+
+                if (file_exists($alternativePath)) {
+                    $filePath = $alternativePath;
+                    error_log('[PatternLibrary] File found at alternative path: ' . $filePath);
+                } else {
+                    http_response_code(404);
+                    error_log('[PatternLibrary] File not found at alternative path either: ' . $alternativePath);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Fichier inexistant sur le serveur',
+                        'debug' => [
+                            'file_path_db' => $pattern['file_path'],
+                            'tried_path_1' => $filePath,
+                            'tried_path_2' => $alternativePath
+                        ]
+                    ]);
+                    exit;
+                }
             }
 
             // [AI:Claude] Déterminer le type MIME
@@ -271,7 +299,7 @@ class PatternLibraryController
     {
         try {
             $userId = $this->getUserIdFromAuth();
-            $this->checkSubscriptionAccess($userId);
+            $this->checkSubscriptionAccess($userId, false);
 
             // [AI:Claude] Vérifier que le patron appartient à l'utilisateur
             if (!$this->patternLibrary->belongsToUser($id, $userId)) {
@@ -353,7 +381,7 @@ class PatternLibraryController
             $extension = 'jpeg';
 
         // [AI:Claude] Créer le dossier d'uploads s'il n'existe pas
-        $uploadDir = __DIR__.'/../../uploads/pattern-library';
+        $uploadDir = __DIR__.'/../public/uploads/patterns';
         if (!is_dir($uploadDir))
             mkdir($uploadDir, 0755, true);
 
@@ -366,7 +394,7 @@ class PatternLibraryController
             throw new \Exception('Erreur lors de l\'enregistrement du fichier');
 
         // [AI:Claude] Chemin relatif
-        $relativePath = '/uploads/pattern-library/'.$filename;
+        $relativePath = '/uploads/patterns/'.$filename;
 
         // [AI:Claude] Récupérer les autres données du formulaire
         $name = $_POST['name'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
@@ -427,6 +455,10 @@ class PatternLibraryController
         if (empty($data['name']))
             throw new \InvalidArgumentException('Le nom du patron est obligatoire');
 
+        // [AI:Claude] Récupérer l'image de preview
+        $previewService = new \App\Services\UrlPreviewService();
+        $previewImageUrl = $previewService->getPreviewImage($url);
+
         // [AI:Claude] Créer le patron dans la BDD
         $patternData = [
             'user_id' => $userId,
@@ -436,6 +468,7 @@ class PatternLibraryController
             'file_path' => null,
             'file_type' => null,
             'url' => $url,
+            'preview_image_url' => $previewImageUrl,
             'category' => $data['category'] ?? null,
             'technique' => $data['technique'] ?? null,
             'difficulty' => $data['difficulty'] ?? null,
@@ -454,6 +487,68 @@ class PatternLibraryController
         $this->sendResponse(201, [
             'success' => true,
             'message' => 'Patron ajouté avec succès',
+            'pattern' => $pattern
+        ]);
+    }
+
+    /**
+     * [AI:Claude] Gérer l'ajout d'un patron depuis un fichier déjà uploadé
+     *
+     * @param int $userId ID de l'utilisateur
+     * @param array $data Données JSON
+     * @return void
+     */
+    private function handleExistingFile(int $userId, array $data): void
+    {
+        // [AI:Claude] Validation
+        if (empty($data['existing_file_path']))
+            throw new \InvalidArgumentException('Chemin du fichier manquant');
+
+        if (empty($data['name']))
+            throw new \InvalidArgumentException('Le nom du patron est obligatoire');
+
+        $filePath = $data['existing_file_path'];
+
+        // [AI:Claude] Vérifier que le fichier existe
+        $fullPath = __DIR__.'/../public'.$filePath;
+        if (!file_exists($fullPath))
+            throw new \InvalidArgumentException('Le fichier n\'existe pas');
+
+        // [AI:Claude] Déterminer le type de fichier
+        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+        $fileType = match($extension) {
+            'pdf' => 'pdf',
+            'jpg', 'jpeg', 'png', 'webp' => 'image',
+            default => throw new \InvalidArgumentException('Type de fichier non supporté')
+        };
+
+        // [AI:Claude] Créer le patron dans la BDD
+        $patternData = [
+            'user_id' => $userId,
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'source_type' => 'file',
+            'file_path' => $filePath,
+            'file_type' => $fileType,
+            'url' => null,
+            'category' => $data['category'] ?? null,
+            'technique' => $data['technique'] ?? null,
+            'difficulty' => $data['difficulty'] ?? null,
+            'thumbnail_path' => null,
+            'tags' => $data['tags'] ?? null,
+            'notes' => $data['notes'] ?? null
+        ];
+
+        $patternId = $this->patternLibrary->createPattern($patternData);
+
+        if (!$patternId)
+            throw new \Exception('Erreur lors de la création du patron');
+
+        $pattern = $this->patternLibrary->getPatternById($patternId);
+
+        $this->sendResponse(201, [
+            'success' => true,
+            'message' => 'Patron ajouté à votre bibliothèque avec succès',
             'pattern' => $pattern
         ]);
     }
@@ -492,29 +587,38 @@ class PatternLibraryController
     }
 
     /**
-     * [AI:Claude] Vérifier l'accès à la bibliothèque de patrons (plans payants uniquement)
+     * [AI:Claude] Vérifier l'accès à la bibliothèque de patrons
+     * FREE: max 10 patrons | PRO: illimité
      *
      * @param int $userId ID de l'utilisateur
+     * @param bool $isCreating True si on crée un nouveau patron (pour vérifier la limite)
      * @return void
-     * @throws \Exception Si plan FREE
+     * @throws \Exception Si limite atteinte
      */
-    private function checkSubscriptionAccess(int $userId): void
+    private function checkSubscriptionAccess(int $userId, bool $isCreating = false): void
     {
         $user = $this->userModel->findById($userId);
 
         if (!$user)
             throw new \Exception('Utilisateur introuvable');
 
-        // [AI:Claude] La bibliothèque de patrons est réservée aux plans payants (Pro)
-        if ($user['subscription_type'] === 'free') {
-            $this->sendResponse(403, [
-                'success' => false,
-                'error' => 'Fonctionnalité réservée aux abonnés',
-                'message' => 'La bibliothèque de patrons est disponible avec le plan Pro (4.99€/mois). Passez à Pro pour centraliser tous vos patrons.',
-                'upgrade_required' => true,
-                'current_plan' => 'free',
-                'required_plan' => 'pro'
-            ]);
+        // [AI:Claude] Si plan FREE et création d'un nouveau patron, vérifier la limite de 10 patrons
+        if ($user['subscription_type'] === 'free' && $isCreating) {
+            $currentCount = $this->patternLibrary->getUserPatternCount($userId);
+
+            if ($currentCount >= 10) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Limite de patrons atteinte',
+                    'message' => 'Vous avez atteint la limite de 10 patrons pour le plan gratuit. Passez au plan Pro pour un nombre illimité de patrons.',
+                    'upgrade_required' => true,
+                    'current_plan' => 'free',
+                    'required_plan' => 'pro',
+                    'current_count' => $currentCount,
+                    'max_count' => 10
+                ]);
+                exit;
+            }
         }
     }
 

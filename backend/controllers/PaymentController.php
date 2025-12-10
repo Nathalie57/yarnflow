@@ -19,6 +19,8 @@ use App\Models\Pattern;
 use App\Models\Payment;
 use App\Services\StripeService;
 use App\Services\PricingService;
+use App\Services\EarlyBirdService;
+use App\Services\CreditManager;
 use App\Utils\Response;
 use App\Utils\Validator;
 
@@ -32,6 +34,8 @@ class PaymentController
     private Payment $paymentModel;
     private StripeService $stripeService;
     private PricingService $pricingService;
+    private EarlyBirdService $earlyBirdService;
+    private CreditManager $creditManager;
 
     public function __construct()
     {
@@ -40,6 +44,8 @@ class PaymentController
         $this->paymentModel = new Payment();
         $this->stripeService = new StripeService();
         $this->pricingService = new PricingService();
+        $this->earlyBirdService = new EarlyBirdService();
+        $this->creditManager = new CreditManager();
     }
 
     /**
@@ -120,7 +126,7 @@ class PaymentController
         $validator = new Validator();
         $validator
             ->required($data['type'] ?? null, 'type')
-            ->in($data['type'] ?? null, ['monthly', 'yearly'], 'type');
+            ->in($data['type'] ?? null, ['monthly', 'yearly', 'early_bird'], 'type');
 
         if ($validator->fails())
             Response::validationError($validator->getErrors());
@@ -128,10 +134,30 @@ class PaymentController
         $user = $this->userModel->findById($userData['user_id']);
         $type = $data['type'];
 
+        // [AI:Claude] Si Early Bird, vérifier disponibilité
+        if ($type === 'early_bird') {
+            if (!$this->earlyBirdService->isAvailable()) {
+                $stats = $this->earlyBirdService->getStats();
+                Response::error(
+                    "Offre Early Bird épuisée ({$stats['current_slots']}/{$stats['max_slots']} places)",
+                    HTTP_FORBIDDEN
+                );
+                return;
+            }
+
+            if ($this->earlyBirdService->hasSlot($userData['user_id'])) {
+                Response::error('Vous avez déjà une place Early Bird', HTTP_FORBIDDEN);
+                return;
+            }
+        }
+
         // [AI:Claude] Créer la session selon le type d'abonnement
-        $result = $type === 'monthly'
-            ? $this->stripeService->createMonthlySubscriptionSession($userData['user_id'], $user['email'])
-            : $this->stripeService->createYearlySubscriptionSession($userData['user_id'], $user['email']);
+        $result = match($type) {
+            'monthly' => $this->stripeService->createMonthlySubscriptionSession($userData['user_id'], $user['email']),
+            'yearly' => $this->stripeService->createYearlySubscriptionSession($userData['user_id'], $user['email']),
+            'early_bird' => $this->stripeService->createEarlyBirdSubscriptionSession($userData['user_id'], $user['email']),
+            default => ['success' => false]
+        };
 
         if (!$result['success'])
             Response::serverError('Erreur lors de la création de la session d\'abonnement');
@@ -233,16 +259,44 @@ class PaymentController
         }
 
         // [AI:Claude] Si c'est un abonnement, mettre à jour l'utilisateur
-        if (in_array($paymentType, ['subscription_monthly', 'subscription_yearly'])) {
-            $expiresAt = $paymentType === 'subscription_monthly'
-                ? date('Y-m-d H:i:s', strtotime('+1 month'))
-                : date('Y-m-d H:i:s', strtotime('+1 year'));
+        if (in_array($paymentType, ['subscription_monthly', 'subscription_yearly', 'subscription_early_bird'])) {
+            $expiresAt = match($paymentType) {
+                'subscription_monthly' => date('Y-m-d H:i:s', strtotime('+1 month')),
+                'subscription_yearly' => date('Y-m-d H:i:s', strtotime('+1 year')),
+                'subscription_early_bird' => date('Y-m-d H:i:s', strtotime('+12 months')),
+                default => null
+            };
 
-            $this->userModel->updateSubscription(
-                $userId,
-                $paymentType === 'subscription_monthly' ? SUBSCRIPTION_MONTHLY : SUBSCRIPTION_YEARLY,
-                $expiresAt
-            );
+            $subscriptionType = match($paymentType) {
+                'subscription_monthly' => SUBSCRIPTION_PRO,
+                'subscription_yearly' => SUBSCRIPTION_PRO_ANNUAL,
+                'subscription_early_bird' => SUBSCRIPTION_EARLY_BIRD,
+                default => SUBSCRIPTION_FREE
+            };
+
+            $this->userModel->updateSubscription($userId, $subscriptionType, $expiresAt);
+
+            // [AI:Claude] Si PRO Annuel, ajouter 50 crédits bonus (one-time)
+            if ($paymentType === 'subscription_yearly') {
+                $this->creditManager->addPurchasedCredits($userId, 50);
+                error_log("[PRO ANNUEL] 50 crédits bonus ajoutés pour user {$userId}");
+            }
+
+            // [AI:Claude] Si Early Bird, réserver une place
+            if ($paymentType === 'subscription_early_bird') {
+                $user = $this->userModel->findById($userId);
+                $result = $this->earlyBirdService->reserveSlot(
+                    $userId,
+                    $user['stripe_customer_id'] ?? null,
+                    $data['subscription_id'] ?? null
+                );
+
+                if ($result['success']) {
+                    error_log("[EARLY BIRD] Place #{$result['slot_number']} attribuée à user {$userId}");
+                } else {
+                    error_log("[EARLY BIRD] ERREUR - Paiement validé mais slot non réservé pour user {$userId}");
+                }
+            }
         }
 
         // [AI:Claude] Si c'est un patron, mettre à jour le statut
@@ -279,7 +333,37 @@ class PaymentController
         // [AI:Claude] Retrouver l'utilisateur via le customer_id et désactiver son abonnement
         error_log('[Payment] Abonnement annulé : '.$data['subscription_id']);
 
-        // [AI:Claude] TODO: Trouver l'utilisateur et mettre à jour son abonnement à "free"
+        $customerId = $data['customer_id'] ?? null;
+
+        if ($customerId === null) {
+            error_log('[Payment] Impossible de traiter l\'annulation : customer_id manquant');
+            return;
+        }
+
+        // [AI:Claude] Trouver l'utilisateur via stripe_customer_id
+        $user = $this->userModel->findOne(['stripe_customer_id' => $customerId]);
+
+        if ($user === null) {
+            error_log('[Payment] Utilisateur introuvable pour customer_id : '.$customerId);
+            return;
+        }
+
+        // [AI:Claude] Si c'était un Early Bird, libérer la place
+        if ($user['subscription_type'] === SUBSCRIPTION_EARLY_BIRD) {
+            $cancelled = $this->earlyBirdService->cancelSlot((int)$user['id']);
+            if ($cancelled) {
+                error_log("[Payment] Place Early Bird libérée pour user {$user['id']}");
+            }
+        }
+
+        // [AI:Claude] Rétrograder l'utilisateur à FREE
+        $this->userModel->updateSubscription(
+            (int)$user['id'],
+            SUBSCRIPTION_FREE,
+            null  // Reset date d'expiration
+        );
+
+        error_log("[Payment] Utilisateur {$user['id']} ({$user['email']}) rétrogradé à FREE suite à annulation");
     }
 
     /**
