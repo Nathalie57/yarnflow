@@ -131,18 +131,22 @@ class PatternLibraryController
             $userId = $this->getUserIdFromAuth();
             $this->checkSubscriptionAccess($userId, true); // Vérifier la limite lors de la création
 
-            // [AI:Claude] Déterminer si c'est un upload de fichier, une URL, ou un fichier existant
+            // [AI:Claude] Déterminer si c'est un upload de fichier, une URL, un texte ou un fichier existant
             if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
                 // Upload de fichier
                 $this->handleFileUpload($userId);
             } else {
-                // URL ou données JSON
+                // URL, texte ou données JSON
                 $data = $this->getJsonInput();
 
                 // [AI:Claude] Nouveau : Référencer un fichier déjà uploadé
                 if (!empty($data['existing_file_path'])) {
                     $this->handleExistingFile($userId, $data);
+                } elseif (!empty($data['source_type']) && $data['source_type'] === 'text') {
+                    // [AI:Claude] Patron texte (copier-coller)
+                    $this->handleTextPattern($userId, $data);
                 } else {
+                    // [AI:Claude] Patron URL par défaut
                     $this->handleUrlPattern($userId, $data);
                 }
             }
@@ -487,6 +491,55 @@ class PatternLibraryController
         $this->sendResponse(201, [
             'success' => true,
             'message' => 'Patron ajouté avec succès',
+            'pattern' => $pattern
+        ]);
+    }
+
+    /**
+     * [AI:Claude] Gérer l'ajout d'un patron texte (copier-coller)
+     *
+     * @param int $userId ID de l'utilisateur
+     * @param array $data Données du patron
+     * @return void JSON response
+     */
+    private function handleTextPattern(int $userId, array $data): void
+    {
+        // [AI:Claude] Validation du texte
+        if (empty($data['pattern_text']))
+            throw new \InvalidArgumentException('Le texte du patron est obligatoire');
+
+        if (empty($data['name']))
+            throw new \InvalidArgumentException('Le nom du patron est obligatoire');
+
+        // [AI:Claude] Créer le patron dans la BDD
+        $patternData = [
+            'user_id' => $userId,
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'source_type' => 'text',
+            'file_path' => null,
+            'file_type' => null,
+            'url' => null,
+            'pattern_text' => $data['pattern_text'],
+            'preview_image_url' => null,
+            'category' => $data['category'] ?? null,
+            'technique' => $data['technique'] ?? null,
+            'difficulty' => $data['difficulty'] ?? null,
+            'thumbnail_path' => null,
+            'tags' => $data['tags'] ?? null,
+            'notes' => $data['notes'] ?? null
+        ];
+
+        $patternId = $this->patternLibrary->createPattern($patternData);
+
+        if (!$patternId)
+            throw new \Exception('Erreur lors de la création du patron');
+
+        $pattern = $this->patternLibrary->getPatternById($patternId);
+
+        $this->sendResponse(201, [
+            'success' => true,
+            'message' => 'Patron texte ajouté avec succès',
             'pattern' => $pattern
         ]);
     }

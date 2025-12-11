@@ -153,7 +153,7 @@ class Project extends BaseModel
             'name', 'technique', 'type', 'description', 'main_photo', 'status', 'total_rows',
             'yarn_brand', 'yarn_color', 'yarn_weight', 'hook_size', 'yarn_used_grams',
             'notes', 'pattern_notes', 'is_public', 'is_favorite', 'completed_at',
-            'pattern_path', 'pattern_url' // [AI:Claude] v0.11.0 - Import patron multi-format
+            'pattern_path', 'pattern_url', 'pattern_text' // [AI:Claude] v0.13.0 - Support texte patron
         ];
 
         $fields = [];

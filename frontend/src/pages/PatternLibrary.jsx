@@ -44,11 +44,12 @@ const PatternLibrary = () => {
   const [viewerData, setViewerData] = useState({ url: '', fileName: '', type: '' })
 
   // [AI:Claude] Formulaire d'ajout
-  const [addType, setAddType] = useState('file') // 'file' ou 'url'
+  const [addType, setAddType] = useState('file') // 'file', 'url' ou 'text'
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     url: '',
+    pattern_text: '',
     category: '',
     technique: '',
     difficulty: '',
@@ -150,8 +151,11 @@ const PatternLibrary = () => {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
       } else {
-        // [AI:Claude] Ajout d'URL avec JSON
-        await api.post('/pattern-library', formData)
+        // [AI:Claude] Ajout d'URL ou de texte avec JSON
+        await api.post('/pattern-library', {
+          ...formData,
+          source_type: addType // 'url' ou 'text'
+        })
       }
 
       // [AI:Claude] Refresh et reset
@@ -201,6 +205,7 @@ const PatternLibrary = () => {
       name: '',
       description: '',
       url: '',
+      pattern_text: '',
       category: '',
       technique: '',
       difficulty: '',
@@ -273,7 +278,7 @@ const PatternLibrary = () => {
 
         {/* Stats */}
         {!loading && stats && (
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-600">Total</p>
               <p className="text-2xl font-bold text-primary-600">{stats.total_patterns || 0}</p>
@@ -285,6 +290,10 @@ const PatternLibrary = () => {
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-600">Liens</p>
               <p className="text-2xl font-bold text-green-600">{stats.url_patterns || 0}</p>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <p className="text-sm text-gray-600">Textes</p>
+              <p className="text-2xl font-bold text-blue-600">{stats.text_patterns || 0}</p>
             </div>
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <p className="text-sm text-gray-600">Favoris</p>
@@ -491,6 +500,15 @@ const PatternLibrary = () => {
                           <p className="text-xs text-red-700 mt-2 font-medium">PDF</p>
                         </div>
                       </div>
+                    ) : pattern.source_type === 'text' ? (
+                      // [AI:Claude] TEXTE : aperçu du texte
+                      <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col items-center justify-center p-4 overflow-hidden">
+                        <span className="text-5xl mb-2">📝</span>
+                        <p className="text-xs text-blue-700 font-medium mb-2">TEXTE</p>
+                        <div className="text-xs text-blue-600 font-mono text-center line-clamp-3 max-w-full">
+                          {pattern.pattern_text?.substring(0, 80)}...
+                        </div>
+                      </div>
                     ) : (
                       // [AI:Claude] URL : afficher preview image si disponible, sinon icône
                       pattern.preview_image_url ? (
@@ -590,6 +608,23 @@ const PatternLibrary = () => {
                         </a>
                       )}
 
+                      {pattern.source_type === 'text' && pattern.pattern_text && (
+                        <button
+                          onClick={() => {
+                            setViewerData({
+                              url: '',
+                              fileName: pattern.name,
+                              type: 'text',
+                              text: pattern.pattern_text
+                            })
+                            setShowViewerModal(true)
+                          }}
+                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-center font-medium hover:bg-blue-700 transition text-sm"
+                        >
+                          📝 Lire
+                        </button>
+                      )}
+
                       <button
                         onClick={() => handleDelete(pattern.id)}
                         className="px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition"
@@ -620,7 +655,7 @@ const PatternLibrary = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Type de patron
                 </label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <button
                     type="button"
                     onClick={() => setAddType('file')}
@@ -647,6 +682,20 @@ const PatternLibrary = () => {
                     <div className="text-3xl mb-2">🔗</div>
                     <p className="font-medium">Lien web</p>
                     <p className="text-xs text-gray-600">YouTube, blog...</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAddType('text')}
+                    className={`p-4 border-2 rounded-lg transition ${
+                      addType === 'text'
+                        ? 'border-primary-600 bg-primary-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="text-3xl mb-2">📝</div>
+                    <p className="font-medium">Texte</p>
+                    <p className="text-xs text-gray-600">Copier-coller</p>
                   </button>
                 </div>
               </div>
@@ -682,6 +731,26 @@ const PatternLibrary = () => {
                     placeholder="https://..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   />
+                </div>
+              )}
+
+              {/* Texte du patron */}
+              {addType === 'text' && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Texte du patron <span className="text-red-600">*</span>
+                  </label>
+                  <textarea
+                    value={formData.pattern_text}
+                    onChange={(e) => setFormData({ ...formData, pattern_text: e.target.value })}
+                    required
+                    rows={15}
+                    placeholder="Collez ici le texte de votre patron...&#10;&#10;Exemple :&#10;Rang 1 : 6 mailles serrées dans un cercle magique&#10;Rang 2 : 2ms dans chaque maille (12)&#10;Rang 3 : *1ms, aug* x6 (18)&#10;..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 Vous pouvez copier-coller le texte depuis n'importe quelle source
+                  </p>
                 </div>
               )}
 
@@ -852,6 +921,16 @@ const PatternLibrary = () => {
                     alt={viewerData.fileName}
                     className="max-w-full max-h-full object-contain shadow-2xl"
                   />
+                </div>
+              )}
+
+              {viewerData.type === 'text' && (
+                <div className="p-8 h-full overflow-y-auto">
+                  <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
+                    <pre className="whitespace-pre-wrap font-sans text-gray-800 leading-relaxed">
+                      {viewerData.text}
+                    </pre>
+                  </div>
                 </div>
               )}
 

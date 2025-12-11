@@ -108,11 +108,11 @@ class PatternLibrary
     {
         $query = "INSERT INTO {$this->table} (
                     user_id, name, description, source_type, file_path, file_type,
-                    url, category, technique, difficulty, thumbnail_path, tags, notes
+                    url, pattern_text, category, technique, difficulty, thumbnail_path, tags, notes
                   )
                   VALUES (
                     :user_id, :name, :description, :source_type, :file_path, :file_type,
-                    :url, :category, :technique, :difficulty, :thumbnail_path, :tags, :notes
+                    :url, :pattern_text, :category, :technique, :difficulty, :thumbnail_path, :tags, :notes
                   )";
 
         $stmt = $this->db->prepare($query);
@@ -124,6 +124,7 @@ class PatternLibrary
         $stmt->bindValue(':file_path', $data['file_path'] ?? null);
         $stmt->bindValue(':file_type', $data['file_type'] ?? null);
         $stmt->bindValue(':url', $data['url'] ?? null);
+        $stmt->bindValue(':pattern_text', $data['pattern_text'] ?? null);
         $stmt->bindValue(':category', $data['category'] ?? null);
         $stmt->bindValue(':technique', $data['technique'] ?? null);
         $stmt->bindValue(':difficulty', $data['difficulty'] ?? null);
@@ -286,6 +287,7 @@ class PatternLibrary
                     COUNT(*) as total_patterns,
                     SUM(CASE WHEN source_type = 'file' THEN 1 ELSE 0 END) as file_patterns,
                     SUM(CASE WHEN source_type = 'url' THEN 1 ELSE 0 END) as url_patterns,
+                    SUM(CASE WHEN source_type = 'text' THEN 1 ELSE 0 END) as text_patterns,
                     SUM(CASE WHEN is_favorite = 1 THEN 1 ELSE 0 END) as favorite_patterns,
                     SUM(times_used) as total_uses
                   FROM {$this->table}

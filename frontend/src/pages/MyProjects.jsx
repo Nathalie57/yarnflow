@@ -47,13 +47,19 @@ const MyProjects = () => {
   // [AI:Claude] Import de patron
   const [patternFile, setPatternFile] = useState(null)
   const [patternUrl, setPatternUrl] = useState('')
-  const [patternType, setPatternType] = useState('') // 'file', 'url' ou 'library'
+  const [patternText, setPatternText] = useState('')
+  const [patternType, setPatternType] = useState('') // 'file', 'url', 'text' ou 'library'
   const [selectedLibraryPattern, setSelectedLibraryPattern] = useState(null)
 
   // [AI:Claude] Modal bibliothèque de patrons
   const [showPatternLibraryModal, setShowPatternLibraryModal] = useState(false)
   const [libraryPatterns, setLibraryPatterns] = useState([])
   const [loadingLibraryPatterns, setLoadingLibraryPatterns] = useState(false)
+
+  // [AI:Claude] Modales URL et Texte
+  const [showPatternUrlModal, setShowPatternUrlModal] = useState(false)
+  const [showPatternTextModal, setShowPatternTextModal] = useState(false)
+  const [patternSearchQuery, setPatternSearchQuery] = useState('') // Pour recherche Google/Ravelry
 
   // [AI:Claude] Sections/parties du projet (face, dos, manches, etc.)
   const [sections, setSections] = useState([])
@@ -329,6 +335,15 @@ const MyProjects = () => {
           pattern_url: patternUrl
         })
         console.log('[PROJECT CREATE] ✓ Lien patron enregistré')
+      } else if (patternType === 'text' && patternText.trim()) {
+        currentStep = 'enregistrement du texte patron'
+        setCreatingStep('Enregistrement du patron texte...')
+        console.log('[PROJECT CREATE] Étape 3: Enregistrement du patron texte...')
+
+        await api.post(`/projects/${newProject.id}/pattern-text`, {
+          pattern_text: patternText
+        })
+        console.log('[PROJECT CREATE] ✓ Patron texte enregistré')
       } else if (patternType === 'library' && selectedLibraryPattern) {
         currentStep = 'liaison du patron depuis la bibliothèque'
         setCreatingStep('Liaison du patron...')
@@ -351,9 +366,11 @@ const MyProjects = () => {
         description: ''
       })
       setPatternFile(null)
+      setPatternText('')
       setPatternUrl('')
       setPatternType('')
       setSelectedLibraryPattern(null)
+      setPatternSearchQuery('')
       setSections([])
       setShowSections(false)
       setShowCreateModal(false)
@@ -445,10 +462,15 @@ const MyProjects = () => {
     })
     setPatternFile(null)
     setPatternUrl('')
+    setPatternText('')
     setPatternType('')
+    setSelectedLibraryPattern(null)
+    setPatternSearchQuery('')
     setSections([])
     setShowSections(false)
     setShowCreateModal(false)
+    setShowPatternUrlModal(false)
+    setShowPatternTextModal(false)
   }
 
   // [AI:Claude] Filtrer les projets par recherche
@@ -984,16 +1006,16 @@ const MyProjects = () => {
                   Patron (optionnel)
                 </label>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* Option 1: Bibliothèque */}
-                  <div className="relative">
+                  <div className="relative h-full">
                     <button
                       type="button"
                       onClick={() => {
                         setShowPatternLibraryModal(true)
                         fetchLibraryPatterns()
                       }}
-                      className={`w-full border-2 border-dashed border-primary-300 rounded-lg p-4 hover:border-primary-500 hover:bg-primary-50 transition flex flex-col ${patternType === 'library' ? 'ring-2 ring-primary-600 bg-primary-50' : 'border-gray-300'}`}
+                      className={`w-full h-full min-h-[140px] border-2 border-dashed border-primary-300 rounded-lg p-4 hover:border-primary-500 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'library' ? 'ring-2 ring-primary-600 bg-primary-50' : 'border-gray-300'}`}
                     >
                       <div className="text-3xl mb-2 text-center">📚</div>
                       <p className="text-sm font-medium text-center mb-1">
@@ -1020,21 +1042,16 @@ const MyProjects = () => {
                   </div>
 
                   {/* Option 2: Upload fichier */}
-                  <div className={`relative ${patternType === 'file' ? 'ring-2 ring-primary-600 rounded-lg' : ''}`}>
-                    <label className="cursor-pointer block">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition h-full flex flex-col">
+                  <div className={`relative h-full ${patternType === 'file' ? 'ring-2 ring-primary-600 rounded-lg' : ''}`}>
+                    <label className="cursor-pointer block h-full">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition h-full min-h-[140px] flex flex-col justify-center">
                         <div className="text-3xl mb-2 text-center">📎</div>
                         <p className="text-sm font-medium text-center mb-1">
                           Importer un fichier
                         </p>
-                        <p className="text-xs text-gray-500 text-center mb-2">
-                          PDF, JPG, PNG, WEBP
+                        <p className="text-xs text-gray-500 text-center">
+                          {patternFile ? `✓ ${patternFile.name}` : 'PDF, JPG, PNG, WEBP'}
                         </p>
-                        {patternFile && (
-                          <p className="text-xs text-primary-600 text-center mt-auto font-medium truncate px-2">
-                            ✓ {patternFile.name}
-                          </p>
-                        )}
                       </div>
                       <input
                         type="file"
@@ -1045,6 +1062,7 @@ const MyProjects = () => {
                             setPatternFile(file)
                             setPatternType('file')
                             setPatternUrl('')
+                            setPatternText('')
                             setSelectedLibraryPattern(null)
                           }
                         }}
@@ -1068,30 +1086,20 @@ const MyProjects = () => {
                   </div>
 
                   {/* Option 3: URL */}
-                  <div className={`relative border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition h-full flex flex-col ${patternType === 'url' ? 'ring-2 ring-primary-600' : ''}`}>
-                    <div className="text-3xl mb-2 text-center">🔗</div>
-                    <p className="text-sm font-medium text-center mb-1">
-                      Lien web
-                    </p>
-                    <p className="text-xs text-gray-500 text-center mb-2">
-                      YouTube, Pinterest, blog...
-                    </p>
-                    <input
-                      type="url"
-                      value={patternUrl}
-                      onChange={(e) => {
-                        setPatternUrl(e.target.value)
-                        if (e.target.value.trim()) {
-                          setPatternType('url')
-                          setPatternFile(null)
-                          setSelectedLibraryPattern(null)
-                        } else {
-                          setPatternType('')
-                        }
-                      }}
-                      placeholder="https://..."
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                    />
+                  <div className="relative h-full">
+                    <button
+                      type="button"
+                      onClick={() => setShowPatternUrlModal(true)}
+                      className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'url' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
+                    >
+                      <div className="text-3xl mb-2 text-center">🔗</div>
+                      <p className="text-sm font-medium text-center mb-1">
+                        Lien web
+                      </p>
+                      <p className="text-xs text-gray-500 text-center">
+                        {patternUrl ? `✓ ${patternUrl.substring(0, 30)}...` : 'YouTube, Pinterest, blog...'}
+                      </p>
+                    </button>
                     {patternUrl && (
                       <button
                         type="button"
@@ -1102,6 +1110,37 @@ const MyProjects = () => {
                         }}
                         className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
                         title="Effacer l'URL"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Option 4: Texte */}
+                  <div className="relative h-full">
+                    <button
+                      type="button"
+                      onClick={() => setShowPatternTextModal(true)}
+                      className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'text' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
+                    >
+                      <div className="text-3xl mb-2 text-center">📝</div>
+                      <p className="text-sm font-medium text-center mb-1">
+                        Texte
+                      </p>
+                      <p className="text-xs text-gray-500 text-center">
+                        {patternText ? `✓ ${patternText.substring(0, 30)}...` : 'Copier-coller le patron'}
+                      </p>
+                    </button>
+                    {patternText && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setPatternText('')
+                          setPatternType('')
+                        }}
+                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
+                        title="Effacer le texte"
                       >
                         ✕
                       </button>
@@ -1223,6 +1262,7 @@ const MyProjects = () => {
                         setPatternType('library')
                         setPatternFile(null)
                         setPatternUrl('')
+                        setPatternText('')
                         setShowPatternLibraryModal(false)
                       }}
                       className="border-2 border-gray-200 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
@@ -1259,6 +1299,190 @@ const MyProjects = () => {
               >
                 Annuler
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ajout URL patron */}
+      {showPatternUrlModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold mb-4">
+              🔗 Lien vers le patron
+            </h2>
+
+            {/* Workflow rapide */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-blue-800">
+                💡 <strong>Workflow rapide :</strong>
+              </p>
+              <ol className="text-xs text-blue-700 mt-2 ml-4 list-decimal space-y-1">
+                <li>Cherchez votre patron avec les boutons Google ou Ravelry ci-dessous</li>
+                <li>Copiez l'URL du patron trouvé</li>
+                <li>Revenez ici et collez dans le champ (appui long ou Ctrl+V)</li>
+              </ol>
+            </div>
+
+            {/* Champ URL */}
+            <input
+              type="url"
+              value={patternUrl}
+              onChange={(e) => setPatternUrl(e.target.value)}
+              placeholder="https://example.com/mon-patron"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 mb-6"
+              autoFocus
+            />
+
+            {/* Séparateur */}
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Ou chercher un patron</span>
+              </div>
+            </div>
+
+            {/* Recherche rapide */}
+            <div className="mb-6">
+              <input
+                type="text"
+                value={patternSearchQuery}
+                onChange={(e) => setPatternSearchQuery(e.target.value)}
+                placeholder="Ex: pull irlandais, bonnet simple..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const query = patternSearchQuery.trim()
+                      ? encodeURIComponent(`tricot crochet patron ${patternSearchQuery}`)
+                      : encodeURIComponent('tricot crochet patron')
+                    window.open(`https://www.google.com/search?q=${query}`, '_blank')
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                >
+                  🌐 Google
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = patternSearchQuery.trim()
+                      ? `https://www.ravelry.com/patterns/search#query=${encodeURIComponent(patternSearchQuery)}`
+                      : 'https://www.ravelry.com/patterns/search'
+                    window.open(url, '_blank')
+                  }}
+                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium"
+                >
+                  🧶 Ravelry
+                </button>
+              </div>
+            </div>
+
+            {/* Boutons de validation */}
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPatternUrlModal(false)
+                  setPatternUrl('')
+                  setPatternSearchQuery('')
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (patternUrl.trim()) {
+                    setPatternType('url')
+                    setPatternFile(null)
+                    setSelectedLibraryPattern(null)
+                    setPatternText('')
+                    setShowPatternUrlModal(false)
+                    setPatternSearchQuery('')
+                  }
+                }}
+                disabled={!patternUrl.trim()}
+                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ajout texte patron */}
+      {showPatternTextModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold">
+                📝 Ajouter le texte du patron
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Copiez-collez le texte de votre patron ici
+              </p>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Texte du patron <span className="text-red-600">*</span>
+                </label>
+                <textarea
+                  value={patternText}
+                  onChange={(e) => setPatternText(e.target.value)}
+                  rows={20}
+                  placeholder="Collez ici le texte de votre patron...
+
+Exemple :
+Rang 1 : 6 mailles serrées dans un cercle magique
+Rang 2 : 2ms dans chaque maille (12)
+Rang 3 : *1ms, aug* x6 (18)
+Rang 4 : *2ms, aug* x6 (24)
+..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 Vous pouvez copier-coller le texte depuis n'importe quelle source
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPatternTextModal(false)
+                  }}
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (patternText.trim()) {
+                      setPatternType('text')
+                      setPatternFile(null)
+                      setSelectedLibraryPattern(null)
+                      setPatternUrl('')
+                      setShowPatternTextModal(false)
+                    }
+                  }}
+                  disabled={!patternText.trim()}
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ✓ Valider
+                </button>
+              </div>
             </div>
           </div>
         </div>

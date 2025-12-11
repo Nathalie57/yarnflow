@@ -937,6 +937,62 @@ class ProjectController
     }
 
     /**
+     * [AI:Claude] POST /api/projects/{id}/pattern-text - Enregistrer un texte de patron copié-collé
+     *
+     * @param int $id ID du projet
+     * @return void JSON response
+     */
+    public function savePatternText(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+
+            // [AI:Claude] Vérifier que le projet appartient à l'utilisateur
+            if (!$this->projectModel->belongsToUser($id, $userId)) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'Accès non autorisé'
+                ]);
+                return;
+            }
+
+            // [AI:Claude] Validation du texte
+            if (empty($data['pattern_text']))
+                throw new \InvalidArgumentException('Texte du patron manquant');
+
+            // [AI:Claude] Mettre à jour le projet avec le texte du patron
+            $success = $this->projectModel->updateProject($id, [
+                'pattern_text' => $data['pattern_text'],
+                'pattern_path' => null,
+                'pattern_url' => null
+            ]);
+
+            if (!$success)
+                throw new \Exception('Erreur lors de la mise à jour du projet');
+
+            $project = $this->projectModel->getProjectById($id);
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => 'Texte du patron enregistré avec succès',
+                'project' => $project
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de l\'enregistrement du texte',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * [AI:Claude] POST /api/projects/{id}/pattern-from-library - Lier un patron de bibliothèque au projet
      *
      * @param int $id ID du projet
@@ -979,13 +1035,22 @@ class ProjectController
                 // Lier le fichier
                 $success = $this->projectModel->updateProject($id, [
                     'pattern_path' => $pattern['file_path'],
+                    'pattern_url' => null,
+                    'pattern_text' => null
+                ]);
+            } elseif ($pattern['source_type'] === 'text') {
+                // Lier le texte
+                $success = $this->projectModel->updateProject($id, [
+                    'pattern_text' => $pattern['pattern_text'],
+                    'pattern_path' => null,
                     'pattern_url' => null
                 ]);
             } else {
                 // Lier l'URL
                 $success = $this->projectModel->updateProject($id, [
                     'pattern_url' => $pattern['url'],
-                    'pattern_path' => null
+                    'pattern_path' => null,
+                    'pattern_text' => null
                 ]);
             }
 
