@@ -29,6 +29,15 @@ abstract class BaseModel
     }
 
     /**
+     * [AI:Claude] Obtenir la connexion PDO
+     * @return PDO
+     */
+    public function getDb(): PDO
+    {
+        return $this->db;
+    }
+
+    /**
      * [AI:Claude] Trouver un enregistrement par ID
      *
      * @param int $id ID de l'enregistrement

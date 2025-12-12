@@ -108,6 +108,11 @@ const ProjectCounter = () => {
   // [AI:Claude] Tabs pour Patron/Photos/Description
   const [activeTab, setActiveTab] = useState('patron')
 
+  // [AI:Claude] Notes du projet
+  const [showNotes, setShowNotes] = useState(false)
+  const [notes, setNotes] = useState('')
+  const [savingNotes, setSavingNotes] = useState(false)
+
   // [AI:Claude] Lightbox pour images de patron
   const [lightboxImage, setLightboxImage] = useState(null)
 
@@ -262,6 +267,7 @@ const ProjectCounter = () => {
 
       setProject(projectData)
       setCurrentRow(projectData.current_row || 0)
+      setNotes(projectData.notes || '')
 
       // [AI:Claude] Sélectionner la section en cours si elle existe
       if (projectData.current_section_id) {
@@ -424,6 +430,28 @@ const ProjectCounter = () => {
   const handleSaveCustomType = () => {
     if (customType.trim()) {
       handleChangeType(customType.trim())
+    }
+  }
+
+  // [AI:Claude] Ouvrir la modal des notes
+  const handleOpenNotes = () => {
+    setNotes(project.notes || '')
+    setShowNotes(true)
+  }
+
+  // [AI:Claude] Sauvegarder les notes du projet
+  const handleSaveNotes = async () => {
+    setSavingNotes(true)
+    try {
+      await api.put(`/projects/${projectId}`, { notes })
+      await fetchProject()
+      setShowNotes(false)
+      showAlert('Notes sauvegardées avec succès !', 'success')
+    } catch (err) {
+      console.error('Erreur sauvegarde notes:', err)
+      showAlert('Erreur lors de la sauvegarde des notes', 'error')
+    } finally {
+      setSavingNotes(false)
     }
   }
 
@@ -1478,6 +1506,17 @@ const ProjectCounter = () => {
                   </div>
                 )}
               </div>
+              <button
+                onClick={handleOpenNotes}
+                className={`px-2 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                  project?.notes
+                    ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={project?.notes ? 'Notes présentes - cliquer pour éditer' : 'Ajouter des notes'}
+              >
+                📝 Notes
+              </button>
             </div>
           </div>
         </div>
@@ -2949,6 +2988,60 @@ const ProjectCounter = () => {
               >
                 {savingProject ? 'Enregistrement...' : 'Enregistrer'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [AI:Claude] Modal des notes du projet */}
+      {showNotes && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">
+                📝 Notes du projet
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {project.name}
+              </p>
+            </div>
+
+            <div className="p-6 flex-1 overflow-y-auto">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes personnelles
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={12}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+                  placeholder="Ajoutez vos notes personnelles sur ce projet :&#10;&#10;• Modifications apportées au patron&#10;• Difficultés rencontrées&#10;• Astuces et conseils&#10;• Idées pour la suite&#10;• Points d'attention..."
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowNotes(false)
+                    setNotes(project.notes || '')
+                  }}
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                  disabled={savingNotes}
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSaveNotes}
+                  disabled={savingNotes}
+                  className="px-6 py-2 bg-yellow-600 text-white rounded-lg font-bold hover:bg-yellow-700 transition disabled:opacity-50"
+                >
+                  {savingNotes ? 'Sauvegarde...' : '💾 Sauvegarder'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -210,24 +210,24 @@ class Payment extends BaseModel
      */
     public function getPaymentStats(): array
     {
+        // [AI:Claude] Note: On utilise directement les constantes au lieu de paramètres bindés
+        // car PDO ne supporte pas la réutilisation du même paramètre nommé plusieurs fois
+        $completed = PAYMENT_COMPLETED;
+        $pending = PAYMENT_PENDING;
+        $failed = PAYMENT_FAILED;
+        $refunded = PAYMENT_REFUNDED;
+
         $sql = "SELECT
                     COUNT(*) as total_payments,
-                    SUM(CASE WHEN status = :completed THEN 1 ELSE 0 END) as completed_count,
-                    SUM(CASE WHEN status = :pending THEN 1 ELSE 0 END) as pending_count,
-                    SUM(CASE WHEN status = :failed THEN 1 ELSE 0 END) as failed_count,
-                    SUM(CASE WHEN status = :refunded THEN 1 ELSE 0 END) as refunded_count,
-                    SUM(CASE WHEN status = :completed THEN amount ELSE 0 END) as total_revenue,
-                    AVG(CASE WHEN status = :completed THEN amount ELSE NULL END) as average_payment
+                    SUM(CASE WHEN status = '$completed' THEN 1 ELSE 0 END) as completed_count,
+                    SUM(CASE WHEN status = '$pending' THEN 1 ELSE 0 END) as pending_count,
+                    SUM(CASE WHEN status = '$failed' THEN 1 ELSE 0 END) as failed_count,
+                    SUM(CASE WHEN status = '$refunded' THEN 1 ELSE 0 END) as refunded_count,
+                    SUM(CASE WHEN status = '$completed' THEN amount ELSE 0 END) as total_revenue,
+                    AVG(CASE WHEN status = '$completed' THEN amount ELSE NULL END) as average_payment
                 FROM {$this->table}";
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([
-            'completed' => PAYMENT_COMPLETED,
-            'pending' => PAYMENT_PENDING,
-            'failed' => PAYMENT_FAILED,
-            'refunded' => PAYMENT_REFUNDED
-        ]);
-
+        $stmt = $this->db->query($sql);
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         return [

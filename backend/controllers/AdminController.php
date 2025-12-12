@@ -59,8 +59,9 @@ class AdminController
     }
 
     /**
-     * [AI:Claude] Obtenir les statistiques globales de l'application
+     * [AI:Claude] Obtenir les statistiques globales de l'application YarnFlow
      * GET /api/admin/stats
+     * @modified 2025-12-12 - Mise à jour pour YarnFlow (projets + photos IA)
      */
     public function getStats(): void
     {
@@ -68,16 +69,55 @@ class AdminController
         if ($userData === null)
             return;
 
-        // [AI:Claude] Statistiques utilisateurs
-        $totalUsers = $this->userModel->count([]);
-        $freeUsers = $this->userModel->count(['subscription_type' => SUBSCRIPTION_FREE]);
-        $monthlyUsers = $this->userModel->count(['subscription_type' => SUBSCRIPTION_MONTHLY]);
-        $yearlyUsers = $this->userModel->count(['subscription_type' => SUBSCRIPTION_YEARLY]);
+        $db = $this->userModel->getDb();
 
-        // [AI:Claude] Statistiques patrons
-        $totalPatterns = $this->patternModel->count([]);
-        $completedPatterns = $this->patternModel->count(['status' => PATTERN_COMPLETED]);
-        $errorPatterns = $this->patternModel->count(['status' => PATTERN_ERROR]);
+        // [AI:Claude] Statistiques utilisateurs
+        $stmtUsers = $db->query("
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN subscription_type = 'free' THEN 1 ELSE 0 END) as free,
+                SUM(CASE WHEN subscription_type = 'pro' THEN 1 ELSE 0 END) as pro,
+                SUM(CASE WHEN subscription_type = 'pro_annual' THEN 1 ELSE 0 END) as pro_annual,
+                SUM(CASE WHEN subscription_type = 'early_bird' THEN 1 ELSE 0 END) as early_bird,
+                SUM(CASE WHEN DATE(created_at) >= DATE_FORMAT(NOW(), '%Y-%m-01') THEN 1 ELSE 0 END) as new_this_month
+            FROM users
+        ");
+        $userStats = $stmtUsers->fetch(\PDO::FETCH_ASSOC);
+
+        // [AI:Claude] Statistiques projets (CŒUR DE L'APP)
+        $stmtProjects = $db->query("
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+                SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN technique = 'crochet' THEN 1 ELSE 0 END) as crochet,
+                SUM(CASE WHEN technique = 'tricot' THEN 1 ELSE 0 END) as tricot,
+                SUM(CASE WHEN DATE(created_at) >= DATE_FORMAT(NOW(), '%Y-%m-01') THEN 1 ELSE 0 END) as this_month
+            FROM projects
+        ");
+        $projectStats = $stmtProjects->fetch(\PDO::FETCH_ASSOC);
+
+        // [AI:Claude] Statistiques photos IA (AI PHOTO STUDIO)
+        $stmtPhotos = $db->query("
+            SELECT
+                COUNT(*) as total,
+                COUNT(DISTINCT user_id) as users_using_ai,
+                SUM(CASE WHEN DATE(created_at) >= DATE_FORMAT(NOW(), '%Y-%m-01') THEN 1 ELSE 0 END) as this_month
+            FROM user_photos
+            WHERE enhanced_path IS NOT NULL
+        ");
+        $photoStats = $stmtPhotos->fetch(\PDO::FETCH_ASSOC);
+
+        // [AI:Claude] Crédits photos utilisés
+        $stmtCredits = $db->query("
+            SELECT
+                COALESCE(SUM(monthly_credits), 0) as monthly_credits_allocated,
+                COALESCE(SUM(purchased_credits), 0) as purchased_credits_total,
+                COALESCE(SUM(credits_used_this_month), 0) as used_this_month,
+                COALESCE(SUM(total_credits_used), 0) as total_used
+            FROM user_photo_credits
+        ");
+        $creditStats = $stmtCredits->fetch(\PDO::FETCH_ASSOC);
 
         // [AI:Claude] Statistiques paiements
         $paymentStats = $this->paymentModel->getPaymentStats();
@@ -87,30 +127,66 @@ class AdminController
         $currentMonthEnd = date('Y-m-t');
         $monthlyRevenue = $this->paymentModel->getTotalRevenue($currentMonthStart, $currentMonthEnd);
 
-        // [AI:Claude] Revenus du mois dernier
-        $lastMonthStart = date('Y-m-01', strtotime('-1 month'));
-        $lastMonthEnd = date('Y-m-t', strtotime('-1 month'));
-        $lastMonthRevenue = $this->paymentModel->getTotalRevenue($lastMonthStart, $lastMonthEnd);
+        // [AI:Claude] Derniers utilisateurs
+        $stmtRecentUsers = $db->query("
+            SELECT id, email, first_name, last_name, subscription_type, created_at
+            FROM users
+            ORDER BY created_at DESC
+            LIMIT 5
+        ");
+        $recentUsers = $stmtRecentUsers->fetchAll(\PDO::FETCH_ASSOC);
+
+        // [AI:Claude] Derniers projets
+        $stmtRecentProjects = $db->query("
+            SELECT p.id, p.name, p.technique, p.status, p.created_at,
+                   u.first_name, u.last_name
+            FROM projects p
+            LEFT JOIN users u ON p.user_id = u.id
+            ORDER BY p.created_at DESC
+            LIMIT 5
+        ");
+        $recentProjects = $stmtRecentProjects->fetchAll(\PDO::FETCH_ASSOC);
 
         Response::success([
             'users' => [
-                'total' => $totalUsers,
-                'free' => $freeUsers,
-                'monthly_subscribers' => $monthlyUsers,
-                'yearly_subscribers' => $yearlyUsers
+                'total' => (int)$userStats['total'],
+                'free' => (int)$userStats['free'],
+                'pro' => (int)$userStats['pro'],
+                'pro_annual' => (int)$userStats['pro_annual'],
+                'early_bird' => (int)$userStats['early_bird'],
+                'new_this_month' => (int)$userStats['new_this_month']
             ],
-            'patterns' => [
-                'total' => $totalPatterns,
-                'completed' => $completedPatterns,
-                'errors' => $errorPatterns
+            'projects' => [
+                'total' => (int)$projectStats['total'],
+                'in_progress' => (int)$projectStats['in_progress'],
+                'completed' => (int)$projectStats['completed'],
+                'crochet' => (int)$projectStats['crochet'],
+                'tricot' => (int)$projectStats['tricot'],
+                'this_month' => (int)$projectStats['this_month']
             ],
-            'payments' => $paymentStats,
+            'photos' => [
+                'total_ai' => (int)$photoStats['total'],
+                'users_using_ai' => (int)$photoStats['users_using_ai'],
+                'this_month' => (int)$photoStats['this_month']
+            ],
+            'credits' => [
+                'monthly_allocated' => (int)$creditStats['monthly_credits_allocated'],
+                'purchased_total' => (int)$creditStats['purchased_credits_total'],
+                'used_this_month' => (int)$creditStats['used_this_month'],
+                'total_used' => (int)$creditStats['total_used']
+            ],
+            'subscriptions' => [
+                'active' => (int)$userStats['pro'] + (int)$userStats['pro_annual'] + (int)$userStats['early_bird'],
+                'pro' => (int)$userStats['pro'],
+                'pro_annual' => (int)$userStats['pro_annual'],
+                'early_bird' => (int)$userStats['early_bird']
+            ],
             'revenue' => [
-                'total' => $paymentStats['total_revenue'],
-                'current_month' => $monthlyRevenue,
-                'last_month' => $lastMonthRevenue,
-                'average_payment' => $paymentStats['average_payment']
-            ]
+                'this_month' => $monthlyRevenue,
+                'total' => $paymentStats['total_revenue']
+            ],
+            'recent_users' => $recentUsers,
+            'recent_projects' => $recentProjects
         ]);
     }
 
