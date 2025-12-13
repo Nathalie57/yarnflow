@@ -99,6 +99,16 @@ const ProjectCounter = () => {
   })
   const [savingProject, setSavingProject] = useState(false)
 
+  // [AI:Claude] Modal des détails techniques
+  const [showTechnicalDetailsModal, setShowTechnicalDetailsModal] = useState(false)
+  const [technicalForm, setTechnicalForm] = useState({
+    yarn: [{ brand: '', name: '', quantities: [{ amount: '', color: '' }] }],
+    needles: [{ type: '', size: '', length: '' }],
+    gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' },
+    description: ''
+  })
+  const [savingTechnical, setSavingTechnical] = useState(false)
+
   // [AI:Claude] Menu changement de catégorie
   const [showTechniqueMenu, setShowTechniqueMenu] = useState(false)
   const [showTypeMenu, setShowTypeMenu] = useState(false)
@@ -398,16 +408,55 @@ const ProjectCounter = () => {
     }
   }
 
+  // [AI:Claude] Ouvrir modal détails techniques
+  const openTechnicalDetailsModal = () => {
+    try {
+      const details = project.technical_details ? JSON.parse(project.technical_details) : null
+      setTechnicalForm({
+        yarn: details?.yarn || [{ brand: '', name: '', quantities: [{ amount: '', color: '' }] }],
+        needles: details?.needles || [{ type: '', size: '', length: '' }],
+        gauge: details?.gauge || { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' },
+        description: details?.description || project.description || ''
+      })
+    } catch (err) {
+      console.error('Erreur parsing technical_details:', err)
+      setTechnicalForm({
+        yarn: [{ brand: '', name: '', quantities: [{ amount: '', color: '' }] }],
+        needles: [{ type: '', size: '', length: '' }],
+        gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' },
+        description: project.description || ''
+      })
+    }
+    setShowTechnicalDetailsModal(true)
+  }
+
+  // [AI:Claude] Sauvegarder les détails techniques
+  const handleSaveTechnicalDetails = async () => {
+    setSavingTechnical(true)
+    try {
+      const technicalDetailsJson = JSON.stringify(technicalForm)
+      await api.put(`/projects/${projectId}`, { technical_details: technicalDetailsJson })
+      await fetchProject()
+      setShowTechnicalDetailsModal(false)
+      showAlert('Détails techniques mis à jour avec succès !', 'success')
+    } catch (err) {
+      console.error('Erreur mise à jour détails techniques:', err)
+      showAlert('Erreur lors de la mise à jour des détails techniques', 'error')
+    } finally {
+      setSavingTechnical(false)
+    }
+  }
+
   // [AI:Claude] Changer la technique (tricot/crochet)
   const handleChangeTechnique = async (newTechnique) => {
     try {
       await api.put(`/projects/${projectId}`, { technique: newTechnique })
       await fetchProject()
       setShowTechniqueMenu(false)
-      showAlert('Catégorie modifiée avec succès !', 'success')
+      showAlert('Technique modifiée avec succès !', 'success')
     } catch (err) {
       console.error('Erreur changement technique:', err)
-      showAlert('Erreur lors du changement de catégorie', 'error')
+      showAlert('Erreur lors du changement de technique', 'error')
     }
   }
 
@@ -419,10 +468,10 @@ const ProjectCounter = () => {
       setShowTypeMenu(false)
       setShowCustomTypeInput(false)
       setCustomType('')
-      showAlert('Type de projet modifié avec succès !', 'success')
+      showAlert('Catégorie modifiée avec succès !', 'success')
     } catch (err) {
       console.error('Erreur changement type:', err)
-      showAlert('Erreur lors du changement de type', 'error')
+      showAlert('Erreur lors du changement de catégorie', 'error')
     }
   }
 
@@ -1452,7 +1501,7 @@ const ProjectCounter = () => {
                   onClick={() => setShowTypeMenu(!showTypeMenu)}
                   className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold hover:bg-gray-200 transition cursor-pointer flex items-center gap-1"
                 >
-                  {project.type || 'Type'}
+                  {project.type || 'Catégorie'}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -2057,8 +2106,8 @@ const ProjectCounter = () => {
                   : 'bg-gray-50 text-gray-600 hover:text-gray-900'
               }`}
             >
-              📝 Description
-              {project.description && (
+              🔧 Détails techniques
+              {(project.technical_details || project.description) && (
                 <span className="ml-1 text-green-600 text-sm">✓</span>
               )}
             </button>
@@ -2399,77 +2448,147 @@ const ProjectCounter = () => {
                 </div>
               )}
 
-              {/* TAB DESCRIPTION */}
-              {activeTab === 'description' && (
-                <div>
-                  {project.description ? (
-                    <>
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-gray-900">Description du projet</h2>
+              {/* TAB DÉTAILS TECHNIQUES */}
+              {activeTab === 'description' && (() => {
+                let technicalDetails = null
+                try {
+                  technicalDetails = project.technical_details ? JSON.parse(project.technical_details) : null
+                } catch (err) {
+                  console.error('Erreur parsing technical_details:', err)
+                }
+
+                const hasDetails = technicalDetails && (
+                  (technicalDetails.yarn && technicalDetails.yarn.length > 0 && technicalDetails.yarn[0].brand) ||
+                  (technicalDetails.needles && technicalDetails.needles.length > 0 && technicalDetails.needles[0].type) ||
+                  (technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows)) ||
+                  technicalDetails.description
+                )
+
+                return (
+                  <div>
+                    {hasDetails ? (
+                      <>
+                        <div className="flex items-center justify-between mb-6">
+                          <h2 className="text-lg font-semibold text-gray-900">Détails techniques</h2>
+                          <button
+                            onClick={openTechnicalDetailsModal}
+                            className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
+                          >
+                            ✏️ Modifier
+                          </button>
+                        </div>
+
+                        {/* Description générale */}
+                        {technicalDetails.description && (
+                          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                              {technicalDetails.description}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* LAINE / YARN */}
+                        {technicalDetails.yarn && technicalDetails.yarn.length > 0 && technicalDetails.yarn[0].brand && (
+                          <div className="mb-6">
+                            <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                              🧶 {project.technique === 'tricot' ? 'Laine' : 'Fil'}
+                            </h3>
+                            <div className="space-y-4">
+                              {technicalDetails.yarn.map((y, idx) => (
+                                <div key={idx} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                                  <div className="font-medium text-gray-900 mb-1">{y.brand}</div>
+                                  {y.name && <div className="text-sm text-gray-600 mb-2">{y.name}</div>}
+                                  {y.quantities && y.quantities.length > 0 && (
+                                    <div className="space-y-1">
+                                      {y.quantities.map((q, qIdx) => (
+                                        q.amount && (
+                                          <div key={qIdx} className="text-sm">
+                                            <span className="font-medium text-gray-700">{q.amount}</span>
+                                            {q.color && <span className="text-gray-600"> - {q.color}</span>}
+                                          </div>
+                                        )
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* AIGUILLES / CROCHETS */}
+                        {technicalDetails.needles && technicalDetails.needles.length > 0 && technicalDetails.needles[0].type && (
+                          <div className="mb-6">
+                            <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                              {project.technique === 'tricot' ? '🪡 Aiguilles' : '🪝 Crochets'}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {technicalDetails.needles.map((n, idx) => (
+                                <div key={idx} className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                  {project.technique === 'tricot' && n.type && (
+                                    <div className="font-medium text-gray-900">{n.type}</div>
+                                  )}
+                                  <div className={`text-sm ${project.technique === 'tricot' ? 'text-gray-600' : 'font-medium text-gray-900'}`}>
+                                    {n.size && <span>{project.technique === 'tricot' ? 'Taille: ' : ''}{n.size}</span>}
+                                    {project.technique === 'tricot' && n.length && <span> • Longueur: {n.length}</span>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* ÉCHANTILLON / GAUGE */}
+                        {technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows) && (
+                          <div className="mb-6">
+                            <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                              📏 Échantillon
+                            </h3>
+                            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                                {technicalDetails.gauge.stitches && (
+                                  <div>
+                                    <div className="text-xs text-gray-500">Largeur</div>
+                                    <div className="font-medium text-gray-900">{technicalDetails.gauge.stitches}</div>
+                                  </div>
+                                )}
+                                {technicalDetails.gauge.rows && (
+                                  <div>
+                                    <div className="text-xs text-gray-500">Hauteur</div>
+                                    <div className="font-medium text-gray-900">{technicalDetails.gauge.rows}</div>
+                                  </div>
+                                )}
+                                {technicalDetails.gauge.dimensions && (
+                                  <div>
+                                    <div className="text-xs text-gray-500">Dimensions</div>
+                                    <div className="font-medium text-gray-900">{technicalDetails.gauge.dimensions}</div>
+                                  </div>
+                                )}
+                              </div>
+                              {technicalDetails.gauge.notes && (
+                                <div className="text-sm text-gray-600 italic mt-2 pt-2 border-t border-green-300">
+                                  {technicalDetails.gauge.notes}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+                        <div className="text-6xl mb-4">🔧</div>
+                        <p className="text-gray-600 mb-4">Aucun détail technique pour ce projet</p>
                         <button
-                          onClick={openEditModal}
-                          className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
+                          onClick={openTechnicalDetailsModal}
+                          className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
                         >
-                          ✏️ Modifier
+                          ➕ Ajouter les détails techniques
                         </button>
                       </div>
-
-                      <div className="prose max-w-none">
-                        <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                          {project.description}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                      <div className="text-6xl mb-4">📝</div>
-                      <p className="text-gray-600 mb-4">Aucune description pour ce projet</p>
-                      <button
-                        onClick={openEditModal}
-                        className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
-                      >
-                        ✏️ Ajouter une description
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Infos techniques */}
-                  {(project.type || project.hook_size || project.yarn_brand) && (
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                      <h3 className="text-base font-semibold text-gray-900 mb-3">Informations techniques</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {project.type && (
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <span className="text-2xl">📁</span>
-                            <div>
-                              <p className="text-xs text-gray-500">Catégorie</p>
-                              <p className="font-medium text-gray-900">{project.type}</p>
-                            </div>
-                          </div>
-                        )}
-                        {project.hook_size && (
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <span className="text-2xl">🪝</span>
-                            <div>
-                              <p className="text-xs text-gray-500">Taille du crochet</p>
-                              <p className="font-medium text-gray-900">{project.hook_size}</p>
-                            </div>
-                          </div>
-                        )}
-                        {project.yarn_brand && (
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <span className="text-2xl">🧶</span>
-                            <div>
-                              <p className="text-xs text-gray-500">Marque de fil</p>
-                              <p className="font-medium text-gray-900">{project.yarn_brand}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           </div>
 
@@ -2988,6 +3107,334 @@ const ProjectCounter = () => {
               >
                 {savingProject ? 'Enregistrement...' : 'Enregistrer'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [AI:Claude] Modal des détails techniques */}
+      {showTechnicalDetailsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-4xl w-full my-8 shadow-xl">
+            <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
+              <h3 className="text-2xl font-bold text-gray-900">
+                🔧 Détails techniques
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Ajoutez les informations sur la laine, les aiguilles/crochets et l'échantillon
+              </p>
+            </div>
+
+            <div className="p-6 max-h-[calc(100vh-16rem)] overflow-y-auto">
+              {/* Description générale */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  📝 Description / Notes
+                </label>
+                <textarea
+                  value={technicalForm.description}
+                  onChange={(e) => setTechnicalForm({ ...technicalForm, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Description générale du projet, notes personnelles..."
+                />
+              </div>
+
+              {/* LAINE / YARN */}
+              <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    🧶 {project.technique === 'tricot' ? 'Laine' : 'Fil'}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setTechnicalForm({
+                      ...technicalForm,
+                      yarn: [...technicalForm.yarn, { brand: '', name: '', quantities: [{ amount: '', color: '' }] }]
+                    })}
+                    className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700"
+                  >
+                    + Ajouter
+                  </button>
+                </div>
+                {technicalForm.yarn.map((y, yIdx) => (
+                  <div key={yIdx} className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-gray-700">Laine #{yIdx + 1}</span>
+                      {technicalForm.yarn.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setTechnicalForm({
+                            ...technicalForm,
+                            yarn: technicalForm.yarn.filter((_, i) => i !== yIdx)
+                          })}
+                          className="text-red-600 hover:text-red-700 text-sm"
+                        >
+                          ✕ Supprimer
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Marque</label>
+                        <input
+                          type="text"
+                          value={y.brand}
+                          onChange={(e) => {
+                            const newYarn = [...technicalForm.yarn]
+                            newYarn[yIdx].brand = e.target.value
+                            setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                          placeholder="Ex: DROPS ALPACA"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Nom</label>
+                        <input
+                          type="text"
+                          value={y.name}
+                          onChange={(e) => {
+                            const newYarn = [...technicalForm.yarn]
+                            newYarn[yIdx].name = e.target.value
+                            setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                          placeholder="Ex: Garnstudio (groupe A)"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs text-gray-600">Quantités et coloris</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newYarn = [...technicalForm.yarn]
+                            newYarn[yIdx].quantities.push({ amount: '', color: '' })
+                            setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                          }}
+                          className="text-purple-600 hover:text-purple-700 text-xs"
+                        >
+                          + Ajouter coloris
+                        </button>
+                      </div>
+                      {y.quantities.map((q, qIdx) => (
+                        <div key={qIdx} className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={q.amount}
+                            onChange={(e) => {
+                              const newYarn = [...technicalForm.yarn]
+                              newYarn[yIdx].quantities[qIdx].amount = e.target.value
+                              setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                            }}
+                            className="px-3 py-1.5 border border-gray-300 rounded text-sm"
+                            placeholder="Quantité (ex: 250g)"
+                          />
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={q.color}
+                              onChange={(e) => {
+                                const newYarn = [...technicalForm.yarn]
+                                newYarn[yIdx].quantities[qIdx].color = e.target.value
+                                setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                              }}
+                              className="flex-1 px-3 py-1.5 border border-gray-300 rounded text-sm"
+                              placeholder="Coloris (ex: 3620 Rouge)"
+                            />
+                            {y.quantities.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newYarn = [...technicalForm.yarn]
+                                  newYarn[yIdx].quantities = newYarn[yIdx].quantities.filter((_, i) => i !== qIdx)
+                                  setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                                }}
+                                className="text-red-500 hover:text-red-700 text-sm px-2"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* AIGUILLES / CROCHETS */}
+              <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    {project.technique === 'tricot' ? '🪡 Aiguilles' : '🪝 Crochets'}
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setTechnicalForm({
+                      ...technicalForm,
+                      needles: [...technicalForm.needles, { type: '', size: '', length: '' }]
+                    })}
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                  >
+                    + Ajouter
+                  </button>
+                </div>
+                {technicalForm.needles.map((n, nIdx) => (
+                  <div key={nIdx} className="mb-3 p-3 bg-white rounded-lg shadow-sm">
+                    {(technicalForm.needles.length > 1 || project.technique === 'tricot') && (
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-gray-700">
+                          {project.technique === 'tricot' ? `Aiguille #${nIdx + 1}` : `Crochet #${nIdx + 1}`}
+                        </span>
+                        {technicalForm.needles.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setTechnicalForm({
+                              ...technicalForm,
+                              needles: technicalForm.needles.filter((_, i) => i !== nIdx)
+                            })}
+                            className="text-red-600 hover:text-red-700 text-sm"
+                          >
+                            ✕ Supprimer
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <div className={`grid grid-cols-1 ${project.technique === 'tricot' ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-2`}>
+                      {project.technique === 'tricot' && (
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Type</label>
+                          <input
+                            type="text"
+                            value={n.type}
+                            onChange={(e) => {
+                              const newNeedles = [...technicalForm.needles]
+                              newNeedles[nIdx].type = e.target.value
+                              setTechnicalForm({ ...technicalForm, needles: newNeedles })
+                            }}
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
+                            placeholder="Ex: Circulaires, Doubles pointes"
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Taille</label>
+                        <input
+                          type="text"
+                          value={n.size}
+                          onChange={(e) => {
+                            const newNeedles = [...technicalForm.needles]
+                            newNeedles[nIdx].size = e.target.value
+                            setTechnicalForm({ ...technicalForm, needles: newNeedles })
+                          }}
+                          className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
+                          placeholder="Ex: 4mm, 5mm"
+                        />
+                      </div>
+                      {project.technique === 'tricot' && (
+                        <div>
+                          <label className="block text-xs text-gray-600 mb-1">Longueur</label>
+                          <input
+                            type="text"
+                            value={n.length}
+                            onChange={(e) => {
+                              const newNeedles = [...technicalForm.needles]
+                              newNeedles[nIdx].length = e.target.value
+                              setTechnicalForm({ ...technicalForm, needles: newNeedles })
+                            }}
+                            className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
+                            placeholder="Ex: 40cm et 80cm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ÉCHANTILLON / GAUGE */}
+              <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  📏 Échantillon
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">Largeur (mailles)</label>
+                    <input
+                      type="text"
+                      value={technicalForm.gauge.stitches}
+                      onChange={(e) => setTechnicalForm({
+                        ...technicalForm,
+                        gauge: { ...technicalForm.gauge, stitches: e.target.value }
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded"
+                      placeholder="Ex: 17 mailles"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">Hauteur (rangs)</label>
+                    <input
+                      type="text"
+                      value={technicalForm.gauge.rows}
+                      onChange={(e) => setTechnicalForm({
+                        ...technicalForm,
+                        gauge: { ...technicalForm.gauge, rows: e.target.value }
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded"
+                      placeholder="Ex: 22 rangs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-1">Dimensions</label>
+                    <input
+                      type="text"
+                      value={technicalForm.gauge.dimensions}
+                      onChange={(e) => setTechnicalForm({
+                        ...technicalForm,
+                        gauge: { ...technicalForm.gauge, dimensions: e.target.value }
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded"
+                      placeholder="10 x 10 cm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-700 mb-1">Notes</label>
+                  <textarea
+                    value={technicalForm.gauge.notes}
+                    onChange={(e) => setTechnicalForm({
+                      ...technicalForm,
+                      gauge: { ...technicalForm.gauge, notes: e.target.value }
+                    })}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    placeholder="Ex: en jersey, avec 1 fil de chaque qualité et les aiguilles 5"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Boutons */}
+            <div className="p-6 border-t border-gray-200 bg-gray-50 sticky bottom-0">
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowTechnicalDetailsModal(false)}
+                  disabled={savingTechnical}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleSaveTechnicalDetails}
+                  disabled={savingTechnical}
+                  className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                >
+                  {savingTechnical ? 'Enregistrement...' : '💾 Enregistrer'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
