@@ -56,6 +56,7 @@ const PatternLibrary = () => {
     notes: ''
   })
   const [file, setFile] = useState(null)
+  const [coverImage, setCoverImage] = useState(null)
   const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
@@ -140,6 +141,7 @@ const PatternLibrary = () => {
         // [AI:Claude] Upload de fichier avec FormData
         const formDataUpload = new FormData()
         formDataUpload.append('file', file)
+        if (coverImage) formDataUpload.append('cover_image', coverImage)
         formDataUpload.append('name', formData.name)
         if (formData.description) formDataUpload.append('description', formData.description)
         if (formData.category) formDataUpload.append('category', formData.category)
@@ -151,11 +153,30 @@ const PatternLibrary = () => {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
       } else {
-        // [AI:Claude] Ajout d'URL ou de texte avec JSON
-        await api.post('/pattern-library', {
-          ...formData,
-          source_type: addType // 'url' ou 'text'
-        })
+        // [AI:Claude] Ajout d'URL ou de texte - utiliser FormData si cover_image fourni
+        if (coverImage) {
+          const formDataUpload = new FormData()
+          formDataUpload.append('cover_image', coverImage)
+          formDataUpload.append('source_type', addType)
+          formDataUpload.append('name', formData.name)
+          if (formData.description) formDataUpload.append('description', formData.description)
+          if (formData.category) formDataUpload.append('category', formData.category)
+          if (formData.technique) formDataUpload.append('technique', formData.technique)
+          if (formData.difficulty) formDataUpload.append('difficulty', formData.difficulty)
+          if (formData.notes) formDataUpload.append('notes', formData.notes)
+          if (addType === 'url') formDataUpload.append('url', formData.url)
+          if (addType === 'text') formDataUpload.append('pattern_text', formData.pattern_text)
+
+          await api.post('/pattern-library', formDataUpload, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          })
+        } else {
+          // [AI:Claude] Sans cover_image, utiliser JSON
+          await api.post('/pattern-library', {
+            ...formData,
+            source_type: addType // 'url' ou 'text'
+          })
+        }
       }
 
       // [AI:Claude] Refresh et reset
@@ -212,6 +233,7 @@ const PatternLibrary = () => {
       notes: ''
     })
     setFile(null)
+    setCoverImage(null)
     setAddType('file')
   }
 
@@ -493,25 +515,58 @@ const PatternLibrary = () => {
                         </div>
                       )
                     ) : pattern.source_type === 'file' && pattern.file_type === 'pdf' ? (
-                      // [AI:Claude] PDF : fond avec icône stylée
-                      <div className="w-full h-full bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
-                        <div className="text-center">
-                          <span className="text-6xl">📄</span>
-                          <p className="text-xs text-red-700 mt-2 font-medium">PDF</p>
+                      // [AI:Claude] PDF : afficher cover_image_path si dispo, sinon icône
+                      pattern.cover_image_path ? (
+                        <img
+                          src={`${import.meta.env.VITE_BACKEND_URL}${pattern.cover_image_path}`}
+                          alt={pattern.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+                          <div className="text-center">
+                            <span className="text-6xl">📄</span>
+                            <p className="text-xs text-red-700 mt-2 font-medium">PDF</p>
+                          </div>
                         </div>
-                      </div>
+                      )
                     ) : pattern.source_type === 'text' ? (
-                      // [AI:Claude] TEXTE : aperçu du texte
-                      <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col items-center justify-center p-4 overflow-hidden">
-                        <span className="text-5xl mb-2">📝</span>
-                        <p className="text-xs text-blue-700 font-medium mb-2">TEXTE</p>
-                        <div className="text-xs text-blue-600 font-mono text-center line-clamp-3 max-w-full">
-                          {pattern.pattern_text?.substring(0, 80)}...
+                      // [AI:Claude] TEXTE : afficher cover_image_path si dispo, sinon aperçu texte
+                      pattern.cover_image_path ? (
+                        <img
+                          src={`${import.meta.env.VITE_BACKEND_URL}${pattern.cover_image_path}`}
+                          alt={pattern.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col items-center justify-center p-4 overflow-hidden">
+                          <span className="text-5xl mb-2">📝</span>
+                          <p className="text-xs text-blue-700 font-medium mb-2">TEXTE</p>
+                          <div className="text-xs text-blue-600 font-mono text-center line-clamp-3 max-w-full">
+                            {pattern.pattern_text?.substring(0, 80)}...
+                          </div>
                         </div>
-                      </div>
+                      )
                     ) : (
-                      // [AI:Claude] URL : afficher preview image si disponible, sinon icône
-                      pattern.preview_image_url ? (
+                      // [AI:Claude] URL : afficher cover_image_path > preview_image_url > icône
+                      pattern.cover_image_path ? (
+                        <img
+                          src={`${import.meta.env.VITE_BACKEND_URL}${pattern.cover_image_path}`}
+                          alt={pattern.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none'
+                            e.target.parentElement.innerHTML = `
+                              <div class="w-full h-full bg-gradient-to-br from-warm-100 to-primary-100 flex items-center justify-center">
+                                <div class="text-center">
+                                  <span class="text-6xl">🔗</span>
+                                  <p class="text-xs text-primary-700 mt-2 font-medium">Lien web</p>
+                                </div>
+                              </div>
+                            `
+                          }}
+                        />
+                      ) : pattern.preview_image_url ? (
                         <img
                           src={pattern.preview_image_url}
                           alt={pattern.name}
@@ -781,6 +836,27 @@ const PatternLibrary = () => {
                   placeholder="Description du patron..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
+              </div>
+
+              {/* Image de couverture (optionnelle) */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image de couverture (optionnelle)
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={(e) => setCoverImage(e.target.files[0])}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Ajoutez une photo de votre ouvrage pour un bel aperçu (JPG, PNG, WEBP - max 5MB)
+                </p>
+                {coverImage && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ {coverImage.name}
+                  </p>
+                )}
               </div>
 
               {/* Grille de métadonnées */}

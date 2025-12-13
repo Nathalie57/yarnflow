@@ -136,8 +136,8 @@ class PatternLibraryController
                 // Upload de fichier
                 $this->handleFileUpload($userId);
             } else {
-                // URL, texte ou données JSON
-                $data = $this->getJsonInput();
+                // [AI:Claude] Si cover_image est fourni, utiliser $_POST (FormData), sinon JSON
+                $data = isset($_FILES['cover_image']) ? $_POST : $this->getJsonInput();
 
                 // [AI:Claude] Nouveau : Référencer un fichier déjà uploadé
                 if (!empty($data['existing_file_path'])) {
@@ -408,6 +408,9 @@ class PatternLibraryController
         $difficulty = $_POST['difficulty'] ?? null;
         $notes = $_POST['notes'] ?? null;
 
+        // [AI:Claude] Sauvegarder l'image de couverture si fournie
+        $coverImagePath = $this->saveCoverImage($userId);
+
         // [AI:Claude] Créer le patron dans la BDD
         $patternData = [
             'user_id' => $userId,
@@ -417,6 +420,7 @@ class PatternLibraryController
             'file_path' => $relativePath,
             'file_type' => $fileType,
             'url' => null,
+            'cover_image_path' => $coverImagePath,
             'category' => $category,
             'technique' => $technique,
             'difficulty' => $difficulty,
@@ -463,6 +467,9 @@ class PatternLibraryController
         $previewService = new \App\Services\UrlPreviewService();
         $previewImageUrl = $previewService->getPreviewImage($url);
 
+        // [AI:Claude] Sauvegarder l'image de couverture si fournie
+        $coverImagePath = $this->saveCoverImage($userId);
+
         // [AI:Claude] Créer le patron dans la BDD
         $patternData = [
             'user_id' => $userId,
@@ -473,6 +480,7 @@ class PatternLibraryController
             'file_type' => null,
             'url' => $url,
             'preview_image_url' => $previewImageUrl,
+            'cover_image_path' => $coverImagePath,
             'category' => $data['category'] ?? null,
             'technique' => $data['technique'] ?? null,
             'difficulty' => $data['difficulty'] ?? null,
@@ -511,6 +519,9 @@ class PatternLibraryController
         if (empty($data['name']))
             throw new \InvalidArgumentException('Le nom du patron est obligatoire');
 
+        // [AI:Claude] Sauvegarder l'image de couverture si fournie
+        $coverImagePath = $this->saveCoverImage($userId);
+
         // [AI:Claude] Créer le patron dans la BDD
         $patternData = [
             'user_id' => $userId,
@@ -522,6 +533,7 @@ class PatternLibraryController
             'url' => null,
             'pattern_text' => $data['pattern_text'],
             'preview_image_url' => null,
+            'cover_image_path' => $coverImagePath,
             'category' => $data['category'] ?? null,
             'technique' => $data['technique'] ?? null,
             'difficulty' => $data['difficulty'] ?? null,
@@ -607,6 +619,58 @@ class PatternLibraryController
     }
 
     /**
+     * [AI:Claude] Sauvegarder l'image de couverture (optionnelle)
+     *
+     * @param int $userId ID de l'utilisateur
+     * @return string|null Chemin relatif de l'image ou null
+     */
+    private function saveCoverImage(int $userId): ?string
+    {
+        // [AI:Claude] Vérifier si une image de couverture a été uploadée
+        if (!isset($_FILES['cover_image']) || $_FILES['cover_image']['error'] === UPLOAD_ERR_NO_FILE) {
+            return null;
+        }
+
+        if ($_FILES['cover_image']['error'] !== UPLOAD_ERR_OK) {
+            throw new \Exception('Erreur lors de l\'upload de l\'image de couverture');
+        }
+
+        $file = $_FILES['cover_image'];
+
+        // [AI:Claude] Validation du type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!in_array($file['type'], $allowedTypes)) {
+            throw new \InvalidArgumentException('Type d\'image non supporté (JPEG, PNG, WEBP uniquement)');
+        }
+
+        // [AI:Claude] Validation de la taille (max 5MB)
+        if ($file['size'] > 5 * 1024 * 1024) {
+            throw new \InvalidArgumentException('L\'image de couverture est trop grande (max 5MB)');
+        }
+
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ($extension === 'jpg') $extension = 'jpeg';
+
+        // [AI:Claude] Créer le dossier d'uploads s'il n'existe pas
+        $uploadDir = __DIR__.'/../public/uploads/pattern-covers';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        // [AI:Claude] Nom de fichier unique
+        $filename = 'cover_'.$userId.'_'.time().'.'.$extension;
+        $destination = $uploadDir.'/'.$filename;
+
+        // [AI:Claude] Déplacer le fichier uploadé
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            throw new \Exception('Erreur lors de l\'enregistrement de l\'image de couverture');
+        }
+
+        // [AI:Claude] Retourner le chemin relatif
+        return '/uploads/pattern-covers/'.$filename;
+    }
+
+    /**
      * [AI:Claude] Supprimer les fichiers d'un patron
      *
      * @param array $pattern Données du patron
@@ -621,6 +685,9 @@ class PatternLibraryController
 
         if ($pattern['thumbnail_path'] && file_exists($basePath.$pattern['thumbnail_path']))
             unlink($basePath.$pattern['thumbnail_path']);
+
+        if (!empty($pattern['cover_image_path']) && file_exists($basePath.$pattern['cover_image_path']))
+            unlink($basePath.$pattern['cover_image_path']);
     }
 
     /**

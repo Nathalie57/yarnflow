@@ -108,11 +108,13 @@ class PatternLibrary
     {
         $query = "INSERT INTO {$this->table} (
                     user_id, name, description, source_type, file_path, file_type,
-                    url, pattern_text, category, technique, difficulty, thumbnail_path, tags, notes
+                    url, pattern_text, preview_image_url, cover_image_path,
+                    category, technique, difficulty, thumbnail_path, tags, notes
                   )
                   VALUES (
                     :user_id, :name, :description, :source_type, :file_path, :file_type,
-                    :url, :pattern_text, :category, :technique, :difficulty, :thumbnail_path, :tags, :notes
+                    :url, :pattern_text, :preview_image_url, :cover_image_path,
+                    :category, :technique, :difficulty, :thumbnail_path, :tags, :notes
                   )";
 
         $stmt = $this->db->prepare($query);
@@ -125,6 +127,8 @@ class PatternLibrary
         $stmt->bindValue(':file_type', $data['file_type'] ?? null);
         $stmt->bindValue(':url', $data['url'] ?? null);
         $stmt->bindValue(':pattern_text', $data['pattern_text'] ?? null);
+        $stmt->bindValue(':preview_image_url', $data['preview_image_url'] ?? null);
+        $stmt->bindValue(':cover_image_path', $data['cover_image_path'] ?? null);
         $stmt->bindValue(':category', $data['category'] ?? null);
         $stmt->bindValue(':technique', $data['technique'] ?? null);
         $stmt->bindValue(':difficulty', $data['difficulty'] ?? null);
