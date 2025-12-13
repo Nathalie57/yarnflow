@@ -3,9 +3,6 @@ deployment:
   tasks:
     # Déployer le backend (exclure vendor/ et uploads/)
     - /bin/bash -c "rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/public_html/api/"
-    
-    # Installer les dépendances composer
-    - cd /home/najo1022/public_html/api && /usr/bin/composer install --no-dev --optimize-autoloader
-    
+
     # Déployer le frontend (build React)
     - /bin/bash -c "rsync -av --delete --exclude='api/' /home/najo1022/repositories/yarnflow/frontend/dist/ /home/najo1022/public_html/"
