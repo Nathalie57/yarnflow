@@ -1033,6 +1033,10 @@ const ProjectCounter = () => {
 
             if (allCompleted && sections.length > 0) {
               await api.put(`/projects/${projectId}`, { status: 'completed' })
+              // Arrêter le timer automatiquement quand le projet est terminé
+              if (isTimerRunning) {
+                await handleEndSession()
+              }
               showAlert('🎉🎉 Toutes les sections terminées ! Projet complet !', 'success')
             } else {
               showAlert(`🎉 Section terminée ! (${maxRows}/${maxRows})`, 'success')
@@ -1047,6 +1051,10 @@ const ProjectCounter = () => {
           // Pas de sections, marquer le projet global comme terminé
           try {
             await api.put(`/projects/${projectId}`, { status: 'completed' })
+            // Arrêter le timer automatiquement quand le projet est terminé
+            if (isTimerRunning) {
+              await handleEndSession()
+            }
             await fetchProject()
             showAlert(`🎉 Projet terminé ! (${maxRows}/${maxRows})`, 'success')
           } catch (err) {
@@ -1234,6 +1242,13 @@ const ProjectCounter = () => {
       } else {
         // Création
         await api.post(`/projects/${projectId}/sections`, sectionData)
+
+        // Si le projet était terminé, le remettre en cours
+        if (project.status === 'completed') {
+          await api.put(`/projects/${projectId}`, { status: 'in_progress' })
+          await fetchProject()
+        }
+
         showAlert('Section créée avec succès', 'success')
       }
 
@@ -1695,57 +1710,84 @@ const ProjectCounter = () => {
 
           {/* Timer de la section */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="text-center">
-              <div className="text-xl font-bold text-gray-900">{formatTime(elapsedTime)}</div>
-              <div className="text-[10px] text-gray-500">Temps de session</div>
-            </div>
-            {project.status !== 'completed' && (
-              <>
-                {!isTimerRunning ? (
-                  <button
-                    onClick={handleStartSession}
-                    className="px-3 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition"
-                  >
-                    ▶️ Démarrer
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    {/* Bouton Pause/Reprendre */}
-                    {!isTimerPaused ? (
-                      <button
-                        onClick={handlePauseSession}
-                        className="px-3 py-2 bg-orange-500 text-white rounded text-sm font-medium hover:bg-orange-600 transition"
-                        title="Mettre en pause"
-                      >
-                        ⏸️ Pause
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleResumeSession}
-                        className="px-3 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition"
-                        title="Reprendre"
-                      >
-                        ▶️ Reprendre
-                      </button>
-                    )}
+            {(() => {
+              const currentSection = currentSectionId ? sections.find(s => s.id === currentSectionId) : null
+              const isSectionCompleted = currentSection?.is_completed === 1
 
-                    {/* Bouton Arrêter */}
-                    <button
-                      onClick={handleEndSession}
-                      className="px-3 py-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition"
-                      title="Terminer la session"
-                    >
-                      ⏹️ Arrêter
-                    </button>
+              // Si la section est terminée, afficher le temps total uniquement
+              if (isSectionCompleted) {
+                return (
+                  <div className="flex items-center gap-2">
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-green-700">
+                        {currentSection?.time_formatted || '0h 0min 0s'}
+                      </div>
+                      <div className="text-[10px] text-gray-500">Temps total</div>
+                    </div>
+                    <div className="px-3 py-2 bg-green-100 text-green-700 rounded text-sm font-medium">
+                      ✅ Terminé
+                    </div>
                   </div>
-                )}
-              </>
-            )}
-            {project.status === 'completed' && (
-              <div className="px-3 py-2 bg-green-100 text-green-700 rounded text-sm font-medium">
-                ✅ Terminé
-              </div>
-            )}
+                )
+              }
+
+              // Sinon afficher le timer + boutons normalement
+              return (
+                <>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-gray-900">{formatTime(elapsedTime)}</div>
+                    <div className="text-[10px] text-gray-500">Temps de session</div>
+                  </div>
+                  {project.status !== 'completed' && (
+                    <>
+                      {!isTimerRunning ? (
+                        <button
+                          onClick={handleStartSession}
+                          className="px-3 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition"
+                        >
+                          ▶️ Démarrer
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          {/* Bouton Pause/Reprendre */}
+                          {!isTimerPaused ? (
+                            <button
+                              onClick={handlePauseSession}
+                              className="px-3 py-2 bg-orange-500 text-white rounded text-sm font-medium hover:bg-orange-600 transition"
+                              title="Mettre en pause"
+                            >
+                              ⏸️ Pause
+                            </button>
+                          ) : (
+                            <button
+                              onClick={handleResumeSession}
+                              className="px-3 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition"
+                              title="Reprendre"
+                            >
+                              ▶️ Reprendre
+                            </button>
+                          )}
+
+                          {/* Bouton Arrêter */}
+                          <button
+                            onClick={handleEndSession}
+                            className="px-3 py-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition"
+                            title="Terminer la session"
+                          >
+                            ⏹️ Arrêter
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {project.status === 'completed' && (
+                    <div className="px-3 py-2 bg-green-100 text-green-700 rounded text-sm font-medium">
+                      ✅ Terminé
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </div>
         </div>
       </div>
