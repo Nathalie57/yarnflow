@@ -771,10 +771,10 @@ const ProjectCounter = () => {
     setEnhancing(true)
 
     try {
-      // [AI:Claude] Utiliser le context de la preview si disponible, sinon le context sélectionné
-      const contextToUse = previewContext || selectedContext.key
+      // [AI:Claude] Utiliser le context sélectionné (preview désactivée)
+      const contextToUse = selectedContext.key
 
-      // [AI:Claude] Appel API pour génération HD avec le même context que la preview
+      // [AI:Claude] Appel API pour génération HD
       const response = await api.post(`/photos/${selectedPhoto.id}/enhance-multiple`, {
         contexts: [contextToUse],
         project_category: detectProjectCategory(project?.type || '')
@@ -784,7 +784,7 @@ const ProjectCounter = () => {
       await fetchCredits()
       setShowEnhanceModal(false)
       setSelectedPhoto(null)
-      clearPreview()
+      // clearPreview() // Désactivé car preview désactivée
 
       showAlert(`✨ Photo générée avec succès !`, 'success')
     } catch (err) {
@@ -797,6 +797,8 @@ const ProjectCounter = () => {
   }
 
   // [AI:Claude] Générer preview gratuite (0 crédit) - v0.12.1
+  // [AI:Claude] DÉSACTIVÉ pour économiser les coûts API
+  /*
   const handleGeneratePreview = async () => {
     if (!selectedPhoto || !selectedContext) return
 
@@ -806,11 +808,12 @@ const ProjectCounter = () => {
       showAlert(result.error || 'Erreur lors de la génération de l\'aperçu', 'error')
     }
   }
+  */
 
   // [AI:Claude] Ouvrir modal d'embellissement avec sélection du premier style par défaut
   const openEnhanceModal = (photo) => {
     setSelectedPhoto(photo)
-    clearPreview() // [AI:Claude] Réinitialiser la preview
+    // clearPreview() // [AI:Claude] Désactivé car preview désactivée
     const category = detectProjectCategory(project?.type || '')
     const styles = stylesByCategory[category] || stylesByCategory.other
     setSelectedContext(styles[0]) // Premier style par défaut
@@ -861,9 +864,9 @@ const ProjectCounter = () => {
       { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'À plat avec accessoires' }
     ],
     amigurumi: [
-      { key: 'play_scene', label: 'Scène de jeu', icon: '🧸', desc: 'Mise en scène créative' },
+      { key: 'play_scene', label: 'Dans la nature', icon: '🌿', desc: 'Jardin, parc, extérieur' },
       { key: 'kids_room', label: 'Chambre d\'enfant', icon: '🛏️', desc: 'Sur lit, étagère colorée' },
-      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'Fond neutre propre' }
+      { key: 'studio_white', label: 'Fond blanc', icon: '✨', desc: 'Studio professionnel' }
     ],
     accessory: [
       { key: 'in_use', label: 'En utilisation', icon: '👜', desc: 'Porté ou tenu' },
@@ -2900,7 +2903,8 @@ const ProjectCounter = () => {
                 </div>
               </div>
 
-              {/* Aperçu gratuit */}
+              {/* Aperçu gratuit - DÉSACTIVÉ pour économiser les coûts API */}
+              {/*
               {previewImage && !enhancing && (
                 <div className="mb-6 bg-gray-100 rounded-lg border-2 border-green-400 p-4 relative">
                   <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
@@ -2921,13 +2925,16 @@ const ProjectCounter = () => {
               )}
 
               {/* Erreur preview */}
+              {/*
               {previewError && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-700">❌ {previewError}</p>
                 </div>
               )}
+              */}
 
               {/* Progression génération preview */}
+              {/*
               {isGeneratingPreview && (
                 <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-3">
@@ -2939,6 +2946,7 @@ const ProjectCounter = () => {
                   </div>
                 </div>
               )}
+              */}
 
               {/* Progression génération HD */}
               {enhancing && (
@@ -2953,7 +2961,8 @@ const ProjectCounter = () => {
                 </div>
               )}
 
-              {/* Résumé des crédits (si génération HD) */}
+              {/* Résumé des crédits (si génération HD) - DÉSACTIVÉ car preview désactivée */}
+              {/*
               {!enhancing && !isGeneratingPreview && previewImage && credits && (
                 <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="flex items-center justify-between">
@@ -2972,8 +2981,9 @@ const ProjectCounter = () => {
                   </div>
                 </div>
               )}
+              */}
 
-              {/* Boutons */}
+              {/* Boutons - SIMPLIFIÉ : génération HD directe sans preview */}
               <div className="flex items-center gap-3">
                 <button
                   type="button"
@@ -2981,12 +2991,22 @@ const ProjectCounter = () => {
                     setShowEnhanceModal(false)
                     setSelectedPhoto(null)
                   }}
-                  disabled={enhancing || isGeneratingPreview}
+                  disabled={enhancing}
                   className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 font-medium"
                 >
                   Annuler
                 </button>
 
+                <button
+                  type="submit"
+                  disabled={enhancing || !credits || credits.total_available < 1}
+                  className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                >
+                  {enhancing ? '✨ Génération...' : '✨ Générer en HD (1 crédit)'}
+                </button>
+
+                {/* DÉSACTIVÉ - Boutons de preview pour économiser les coûts API */}
+                {/*
                 {!previewImage ? (
                   <button
                     type="button"
@@ -3015,6 +3035,7 @@ const ProjectCounter = () => {
                     </button>
                   </>
                 )}
+                */}
               </div>
             </form>
           </div>
@@ -3160,7 +3181,9 @@ const ProjectCounter = () => {
                 {technicalForm.yarn.map((y, yIdx) => (
                   <div key={yIdx} className="mb-4 p-4 bg-white rounded-lg shadow-sm">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-gray-700">Laine #{yIdx + 1}</span>
+                      <span className="text-sm font-medium text-gray-700">
+                        {project.technique === 'tricot' ? 'Laine' : 'Fil'} #{yIdx + 1}
+                      </span>
                       {technicalForm.yarn.length > 1 && (
                         <button
                           type="button"

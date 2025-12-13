@@ -35,8 +35,9 @@ class AIPhotoService
         'flat_lay' => 'en vue du dessus sur surface claire en bois ou lin avec lumière douce naturelle',
 
         // Amigurumi
-        'kids_room' => 'dans une ambiance douce et colorée style chambre d\'enfant',
-        'held_hands' => 'tenu délicatement dans des mains avec fond doux',
+        'play_scene' => 'dans un jardin ou parc avec lumière naturelle',
+        'kids_room' => 'dans une chambre d\'enfant',
+        // 'held_hands' => 'tenu délicatement dans des mains avec fond doux', // Removed - doesn't respect scale
         'shelf_display' => 'présenté sur une surface avec éclairage lumineux',
 
         // Accessoires
@@ -75,7 +76,7 @@ class AIPhotoService
         // Cela permet d'instancier le service sans avoir configuré Gemini
 
         $this->httpClient = new Client([
-            'timeout' => 60.0,
+            'timeout' => 120.0, // 2 minutes pour la génération d'images
             'verify' => false // Pour éviter erreurs SSL en dev
         ]);
     }
@@ -188,7 +189,7 @@ class AIPhotoService
         $typeHint = $typeHints[$type] ?? 'un objet';
 
         // [AI:Claude] Format SIMPLE testé et validé - fonctionne parfaitement avec Gemini
-        return "Génère une photo de l'ouvrage fait main ({$typeHint}) qui est sur la photo, dans un style {$contextDescription}, sans modifier le produit.";
+        return "Génère une photo de l'ouvrage fait main ({$typeHint}) qui est sur la photo, dans un style {$contextDescription}, avec une lumière améliorée, sans modifier le produit.";
     }
 
     /**

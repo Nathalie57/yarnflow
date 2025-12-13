@@ -245,6 +245,9 @@ class PhotoController
      */
     public function enhanceMultiple(int $photoId): void
     {
+        // [AI:Claude] Augmenter le timeout PHP pour la génération d'images
+        set_time_limit(180); // 3 minutes
+
         try {
             $userId = $this->getUserIdFromAuth();
             $data = $this->getJsonInput();

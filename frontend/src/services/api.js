@@ -20,7 +20,8 @@ const api = axios.create({
   baseURL: getAPIUrl(),
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 120000 // 120 secondes (2 minutes) pour la génération d'images IA
 })
 
 // Intercepteur pour ajouter le token JWT
