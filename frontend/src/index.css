@@ -28,6 +28,30 @@
   .animate-slide-up {
     animation: slideUp 0.5s ease-out;
   }
+
+  /* Padding pour les contenus de modale mobile - évite que les boutons soient cachés */
+  .modal-content-mobile {
+    @apply pb-12 sm:pb-6;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2.5rem);
+  }
+
+  @media (min-width: 640px) {
+    .modal-content-mobile {
+      padding-bottom: 1.5rem;
+    }
+  }
+
+  /* Padding pour les boutons de modale mobile */
+  .modal-actions-mobile {
+    @apply pb-6 sm:pb-0;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
+  }
+
+  @media (min-width: 640px) {
+    .modal-actions-mobile {
+      padding-bottom: 0;
+    }
+  }
 }
 
 @keyframes slideUp {
