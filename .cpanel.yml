@@ -1,20 +1,11 @@
 ---
-# Configuration déploiement automatique cPanel
-# Ce fichier permet de déployer automatiquement à chaque git pull
-
 deployment:
   tasks:
-    # Déployer le backend
-    - export DEPLOYPATH=/home/najo1022/public_html/api
-    - /bin/rsync -av --delete --exclude='.git' --exclude='.env' --exclude='node_modules' --exclude='database' --exclude='test*.php' backend/ $DEPLOYPATH/
-
-    # Déployer le frontend (si dist existe)
-    - export WEBROOT=/home/najo1022/public_html
-    - if [ -d "frontend/dist" ]; then /bin/rsync -av --delete --exclude='api' frontend/dist/ $WEBROOT/; fi
-
-    # Vérifier permissions
-    - /bin/chmod 755 $DEPLOYPATH/public
-    - /bin/mkdir -p $DEPLOYPATH/public/uploads && /bin/chmod 755 $DEPLOYPATH/public/uploads
-
-    # Message de confirmation
-    - /bin/echo "✅ Déploiement terminé - $(date)"
+    # Déployer le backend (exclure vendor/ et uploads/)
+    - /bin/bash -c "rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/public_html/api/"
+    
+    # Installer les dépendances composer
+    - cd /home/najo1022/public_html/api && /usr/bin/composer install --no-dev --optimize-autoloader
+    
+    # Déployer le frontend (build React)
+    - /bin/bash -c "rsync -av --delete --exclude='api/' /home/najo1022/repositories/yarnflow/frontend/dist/ /home/najo1022/public_html/"
