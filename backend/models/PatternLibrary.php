@@ -248,7 +248,9 @@ class PatternLibrary
     {
         $query = "SELECT DISTINCT category
                   FROM {$this->table}
-                  WHERE user_id = :user_id AND category IS NOT NULL
+                  WHERE user_id = :user_id
+                    AND category IS NOT NULL
+                    AND category != ''
                   ORDER BY category";
 
         $stmt = $this->db->prepare($query);

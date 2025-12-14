@@ -402,7 +402,7 @@ const PatternLibrary = () => {
             </button>
 
             {/* Catégories */}
-            {categories.map(cat => (
+            {categories.filter(cat => cat && cat.trim()).map(cat => (
               <button
                 key={cat}
                 onClick={() => setFilterCategory(filterCategory === cat ? '' : cat)}

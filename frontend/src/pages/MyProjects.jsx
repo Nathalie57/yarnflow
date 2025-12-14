@@ -1295,7 +1295,10 @@ const MyProjects = () => {
                   <div className="relative h-full">
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('[DEBUG] Clic sur bibliothèque')
                         setShowPatternLibraryModal(true)
                         fetchLibraryPatterns()
                       }}
@@ -1373,7 +1376,12 @@ const MyProjects = () => {
                   <div className="relative h-full">
                     <button
                       type="button"
-                      onClick={() => setShowPatternUrlModal(true)}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('[DEBUG] Clic sur URL')
+                        setShowPatternUrlModal(true)
+                      }}
                       className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'url' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
                     >
                       <div className="text-3xl mb-2 text-center">🔗</div>
@@ -1404,7 +1412,12 @@ const MyProjects = () => {
                   <div className="relative h-full">
                     <button
                       type="button"
-                      onClick={() => setShowPatternTextModal(true)}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('[DEBUG] Clic sur Texte')
+                        setShowPatternTextModal(true)
+                      }}
                       className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'text' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
                     >
                       <div className="text-3xl mb-2 text-center">📝</div>
@@ -1457,7 +1470,7 @@ const MyProjects = () => {
 
       {/* Modal d'alerte personnalisée */}
       {showAlertModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
               {alertData.title}
@@ -1479,7 +1492,7 @@ const MyProjects = () => {
 
       {/* Modal de confirmation personnalisée */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">
               {confirmData.title}
@@ -1512,7 +1525,7 @@ const MyProjects = () => {
 
       {/* Modal sélection patron depuis bibliothèque */}
       {showPatternLibraryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold">
@@ -1590,7 +1603,7 @@ const MyProjects = () => {
 
       {/* Modal ajout URL patron */}
       {showPatternUrlModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-2xl font-bold mb-4">
               🔗 Lien vers le patron
@@ -1702,7 +1715,7 @@ const MyProjects = () => {
 
       {/* Modal ajout texte patron */}
       {showPatternTextModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold">
@@ -1774,7 +1787,7 @@ Rang 4 : *2ms, aug* x6 (24)
 
       {/* Modal upload photo de projet */}
       {showPhotoUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold">

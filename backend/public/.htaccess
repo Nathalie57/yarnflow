@@ -19,10 +19,12 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
-# CORS Headers - IMPORTANT pour connexion Vercel ↔ InfinityFree
+# CORS Headers - IMPORTANT pour connexion frontend ↔ backend
 <IfModule mod_headers.c>
-    # ⚠️ REMPLACER par ton URL Vercel exacte après déploiement
-    Header set Access-Control-Allow-Origin "https://yarnflow.vercel.app"
+    # Autoriser plusieurs origines (développement local + production)
+    # Dev: localhost:5173 | Prod: yarnflow.fr (même domaine, pas de CORS nécessaire mais on le garde par sécurité)
+    SetEnvIf Origin "^http(s)?://(localhost:5173|127.0.0.1:5173|yarnflow.fr)$" ORIGIN_ALLOWED=$0
+    Header set Access-Control-Allow-Origin "%{ORIGIN_ALLOWED}e" env=ORIGIN_ALLOWED
     Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
     Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
     Header set Access-Control-Allow-Credentials "true"
