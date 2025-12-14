@@ -88,6 +88,7 @@ const ProjectCounter = () => {
   const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: null })
   const [showAlertModal, setShowAlertModal] = useState(false)
   const [alertData, setAlertData] = useState({ title: '', message: '', type: 'info' })
+  const [showProjectCompletionModal, setShowProjectCompletionModal] = useState(false)
 
   // [AI:Claude] Modal d'édition du projet
   const [showEditModal, setShowEditModal] = useState(false)
@@ -1041,17 +1042,14 @@ const ProjectCounter = () => {
             await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`)
             await fetchSections()
 
-            // Vérifier si toutes les sections sont terminées pour marquer le projet comme terminé
+            // Vérifier si toutes les sections sont terminées
             const updatedSections = await api.get(`/projects/${projectId}/sections`)
             const allCompleted = updatedSections.data.sections?.every(s => s.is_completed === 1)
 
             if (allCompleted && sections.length > 0) {
-              await api.put(`/projects/${projectId}`, { status: 'completed' })
-              // Arrêter le timer automatiquement quand le projet est terminé
-              if (isTimerRunning) {
-                await handleEndSession()
-              }
-              showAlert('🎉🎉 Toutes les sections terminées ! Projet complet !', 'success')
+              // Afficher la modale de confirmation au lieu de terminer automatiquement
+              showAlert(`🎉 Section terminée ! (${maxRows}/${maxRows})`, 'success')
+              await handleAllSectionsCompleted()
             } else {
               showAlert(`🎉 Section terminée ! (${maxRows}/${maxRows})`, 'success')
             }
@@ -1322,10 +1320,10 @@ const ProjectCounter = () => {
         const allSectionsCompleted = updatedSections.every(s => s.is_completed === 1)
 
         if (allSectionsCompleted && project.status !== 'completed') {
-          // Marquer automatiquement le projet comme terminé
-          await api.put(`/projects/${projectId}`, { status: 'completed' })
-          await fetchProject()
-          alertMessage = '🎉 Toutes les sections sont terminées ! Projet marqué comme terminé.'
+          // Afficher la modale de confirmation au lieu de terminer automatiquement
+          showAlert(alertMessage, 'success')
+          await handleAllSectionsCompleted()
+          return
         }
       } else if (!newState && project.status === 'completed') {
         // [AI:Claude] Si une section a été réouverte et que le projet était terminé, réouvrir le projet
@@ -1338,6 +1336,29 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur toggle section:', err)
       showAlert('Erreur lors de la mise à jour', 'error')
+    }
+  }
+
+  // [AI:Claude] Gérer la fin de toutes les sections - afficher modale de confirmation
+  const handleAllSectionsCompleted = async () => {
+    // Arrêter le timer si en cours
+    if (isTimerRunning) {
+      await handleEndSession()
+    }
+    // Afficher la modale de confirmation
+    setShowProjectCompletionModal(true)
+  }
+
+  // [AI:Claude] Terminer le projet définitivement
+  const handleCompleteProject = async () => {
+    try {
+      await api.put(`/projects/${projectId}`, { status: 'completed' })
+      await fetchProject()
+      setShowProjectCompletionModal(false)
+      showAlert('🎉 Projet marqué comme terminé !', 'success')
+    } catch (err) {
+      console.error('Erreur terminer projet:', err)
+      showAlert('Erreur lors de la finalisation du projet', 'error')
     }
   }
 
@@ -3624,6 +3645,47 @@ const ProjectCounter = () => {
                 Confirmer
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* [AI:Claude] Modal de fin de projet - toutes sections terminées */}
+      {showProjectCompletionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
+          <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
+            <h3 className="text-2xl font-bold mb-4 text-gray-900 text-center">
+              🎉 Toutes les sections sont terminées !
+            </h3>
+            <p className="text-gray-700 mb-6 text-center">
+              Félicitations ! Vous avez terminé toutes les sections de votre projet.
+              <br />
+              Que souhaitez-vous faire ?
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  setShowProjectCompletionModal(false)
+                  setShowAddSectionModal(true)
+                  setSectionForm({ name: '', description: '', total_rows: '' })
+                  setEditingSection(null)
+                }}
+                className="flex-1 px-6 py-4 border-2 border-primary-600 text-primary-600 rounded-lg font-bold hover:bg-primary-50 transition text-center"
+              >
+                ➕ Ajouter une section
+              </button>
+              <button
+                onClick={handleCompleteProject}
+                className="flex-1 px-6 py-4 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition text-center"
+              >
+                ✅ Terminer le projet
+              </button>
+            </div>
+            <button
+              onClick={() => setShowProjectCompletionModal(false)}
+              className="w-full mt-3 px-4 py-2 text-gray-500 hover:text-gray-700 transition text-sm"
+            >
+              Annuler (rester en cours)
+            </button>
           </div>
         </div>
       )}
