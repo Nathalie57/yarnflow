@@ -19,6 +19,7 @@ export default defineConfig({
         orientation: 'portrait-primary',
         scope: '/',
         start_url: '/',
+        permissions: ['wake-lock'],
         icons: [
           {
             src: '/icons/icon-72x72.png',
