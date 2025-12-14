@@ -14,6 +14,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useImagePreview } from '../hooks/useImagePreview'
+import { useWakeLock } from '../hooks/useWakeLock'
 import api from '../services/api'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
@@ -30,6 +31,7 @@ const ProjectCounter = () => {
     generatePreview,
     clearPreview
   } = useImagePreview()
+  const { isSupported: isWakeLockSupported, isActive: isWakeLockActive, request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
 
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -916,6 +918,9 @@ const ProjectCounter = () => {
       setIsTimerRunning(true)
       setIsTimerPaused(false)
       setPausedTime(0)
+
+      // [AI:Claude] Activer le wake lock pour garder l'écran allumé
+      await requestWakeLock()
     } catch (err) {
       console.error('Erreur démarrage session:', err)
       showAlert('Erreur lors du démarrage de la session', 'error')
@@ -931,15 +936,21 @@ const ProjectCounter = () => {
     setPausedTime(currentElapsed)
     setElapsedTime(currentElapsed)
     setIsTimerPaused(true)
+
+    // [AI:Claude] Libérer le wake lock pendant la pause
+    releaseWakeLock()
   }
 
   // [AI:Claude] Reprendre la session après pause
-  const handleResumeSession = () => {
+  const handleResumeSession = async () => {
     if (!isTimerRunning || !isTimerPaused) return
 
     // [AI:Claude] Redémarrer le chrono depuis maintenant
     setSessionStartTime(Date.now())
     setIsTimerPaused(false)
+
+    // [AI:Claude] Réactiver le wake lock à la reprise
+    await requestWakeLock()
   }
 
   // [AI:Claude] Terminer la session
@@ -978,6 +989,9 @@ const ProjectCounter = () => {
       setIsTimerPaused(false)
       setPausedTime(0)
       setElapsedTime(0)
+
+      // [AI:Claude] Libérer le wake lock quand on arrête le timer
+      await releaseWakeLock()
 
       // [AI:Claude] Réinitialiser le flag après avoir tout nettoyé
       isEndingSessionRef.current = false
@@ -1771,7 +1785,12 @@ const ProjectCounter = () => {
                 <>
                   <div className="text-center">
                     <div className="text-xl font-bold text-gray-900">{formatTime(elapsedTime)}</div>
-                    <div className="text-[10px] text-gray-500">Temps de session</div>
+                    <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
+                      Temps de session
+                      {isWakeLockActive && (
+                        <span className="text-green-600" title="Écran maintenu allumé">🔋</span>
+                      )}
+                    </div>
                   </div>
                   {project.status !== 'completed' && (
                     <>
