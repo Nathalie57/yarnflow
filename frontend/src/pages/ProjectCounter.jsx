@@ -298,26 +298,40 @@ const ProjectCounter = () => {
       const loadedSections = response.data.sections || []
       setSections(loadedSections)
 
-      // [AI:Claude] Si aucune section n'est active et qu'il y a des sections, en sélectionner une
-      if (!currentSectionId && loadedSections.length > 0) {
-        // Priorité 1 : Section sauvegardée dans localStorage (dernière utilisée)
-        const savedSectionId = localStorage.getItem(`currentSection_${projectId}`)
-        if (savedSectionId) {
-          const savedSection = loadedSections.find(s => s.id === parseInt(savedSectionId))
-          if (savedSection) {
-            setCurrentSectionId(savedSection.id)
-            return
-          }
-        }
+      // [AI:Claude] Vérifier si la section actuelle est toujours valide et non terminée
+      let needsNewSection = false
 
-        // Priorité 2 : Première section non terminée
+      if (currentSectionId) {
+        const currentSection = loadedSections.find(s => s.id === currentSectionId)
+        // Si la section actuelle est terminée, chercher une section en cours
+        if (currentSection && currentSection.is_completed === 1) {
+          needsNewSection = true
+        }
+      }
+
+      // [AI:Claude] Si aucune section n'est active, si la section actuelle est terminée, ou s'il y a des sections
+      if ((!currentSectionId || needsNewSection) && loadedSections.length > 0) {
+        // Priorité 1 : Première section non terminée
         const firstIncomplete = loadedSections.find(s => !s.is_completed)
         if (firstIncomplete) {
           setCurrentSectionId(firstIncomplete.id)
-        } else {
-          // Priorité 3 : Première section de la liste (si toutes sont terminées)
-          setCurrentSectionId(loadedSections[0].id)
+          return
         }
+
+        // Priorité 2 : Section sauvegardée dans localStorage (dernière utilisée) - seulement si pas terminée
+        if (!needsNewSection) {
+          const savedSectionId = localStorage.getItem(`currentSection_${projectId}`)
+          if (savedSectionId) {
+            const savedSection = loadedSections.find(s => s.id === parseInt(savedSectionId))
+            if (savedSection) {
+              setCurrentSectionId(savedSection.id)
+              return
+            }
+          }
+        }
+
+        // Priorité 3 : Première section de la liste (si toutes sont terminées)
+        setCurrentSectionId(loadedSections[0].id)
       }
     } catch (err) {
       console.error('Erreur chargement sections:', err)
