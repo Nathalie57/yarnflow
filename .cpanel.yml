@@ -1,8 +1,9 @@
 ---
 deployment:
   tasks:
-    # Déployer le backend (exclure vendor/ et uploads/)
+    # Déployer UNIQUEMENT le backend (exclure vendor/ et uploads/)
     - /bin/bash -c "rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/public_html/api/"
 
-    # Déployer le frontend (build React)
-    - /bin/bash -c "rsync -av --delete --exclude='api/' /home/najo1022/repositories/yarnflow/frontend/dist/ /home/najo1022/public_html/"
+    # Frontend : déployé manuellement via FTP (npm run build + upload dist/)
+    # (La ligne ci-dessous est commentée car dist/ n'est pas dans Git)
+    # - /bin/bash -c "rsync -av --delete --exclude='api/' /home/najo1022/repositories/yarnflow/frontend/dist/ /home/najo1022/public_html/"
