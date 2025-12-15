@@ -67,6 +67,7 @@ const ProjectCounter = () => {
   const [uploadingPattern, setUploadingPattern] = useState(false)
   const [showPatternUrlModal, setShowPatternUrlModal] = useState(false)
   const [patternUrl, setPatternUrl] = useState('')
+  const [proxyError, setProxyError] = useState(false) // [AI:Claude] Erreur de chargement du proxy
   const [searchQuery, setSearchQuery] = useState('')
 
   // [AI:Claude] Choisir patron depuis bibliothèque
@@ -2513,10 +2514,14 @@ const ProjectCounter = () => {
                     // URL externe - Affichage via ProxyViewer
                     <>
                       <div className="border-2 border-gray-200 rounded-lg overflow-hidden mb-4">
-                        <ProxyViewer url={project.pattern_url} />
+                        <ProxyViewer
+                          url={project.pattern_url}
+                          onError={() => setProxyError(true)}
+                          onLoad={() => setProxyError(false)}
+                        />
                       </div>
 
-                      {/* Section texte (coexiste avec URL) */}
+                      {/* Section texte (coexiste avec URL) - Afficher uniquement si texte existe OU si erreur proxy */}
                       {project.pattern_text ? (
                         // Texte existant
                         <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
@@ -2535,8 +2540,8 @@ const ProjectCounter = () => {
                             </pre>
                           </div>
                         </div>
-                      ) : (
-                        // Pas de texte - proposer d'en ajouter
+                      ) : proxyError ? (
+                        // Pas de texte ET erreur proxy - proposer d'en ajouter
                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 text-center">
                           <div className="text-4xl mb-3">📝</div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -2552,7 +2557,7 @@ const ProjectCounter = () => {
                             📝 Ajouter le texte
                           </button>
                         </div>
-                      )}
+                      ) : null}
                     </>
                   ) : project.pattern_text ? (
                     // Patron texte seul (sans URL ni fichier)

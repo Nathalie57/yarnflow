@@ -7,7 +7,7 @@
 
 import { useState } from 'react'
 
-const ProxyViewer = ({ url }) => {
+const ProxyViewer = ({ url, onError, onLoad }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
@@ -16,11 +16,13 @@ const ProxyViewer = ({ url }) => {
   const handleLoad = () => {
     setLoading(false)
     setError(false)
+    if (onLoad) onLoad()
   }
 
   const handleError = () => {
     setLoading(false)
     setError(true)
+    if (onError) onError()
   }
 
   return (
