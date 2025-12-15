@@ -74,6 +74,14 @@ const ProjectCounter = () => {
   const [libraryPatterns, setLibraryPatterns] = useState([])
   const [loadingLibraryPatterns, setLoadingLibraryPatterns] = useState(false)
 
+  // [AI:Claude] Édition patron texte
+  const [showPatternTextModal, setShowPatternTextModal] = useState(false)
+  const [patternTextEdit, setPatternTextEdit] = useState('')
+  const [savingPatternText, setSavingPatternText] = useState(false)
+
+  // [AI:Claude] Modale de choix de modification du patron
+  const [showPatternEditChoiceModal, setShowPatternEditChoiceModal] = useState(false)
+
   // [AI:Claude] Upload photo projet
   const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -670,6 +678,42 @@ const ProjectCounter = () => {
       showAlert('Erreur lors de l\'ajout du patron', 'error')
     } finally {
       setUploadingPattern(false)
+    }
+  }
+
+  // [AI:Claude] Ouvrir la modale d'édition du patron texte
+  const handleOpenPatternTextModal = () => {
+    setPatternTextEdit(project.pattern_text || '')
+    setShowPatternTextModal(true)
+  }
+
+  // [AI:Claude] Sauvegarder le patron texte
+  const handleSavePatternText = async () => {
+    if (!patternTextEdit.trim()) {
+      showAlert('Le texte du patron ne peut pas être vide', 'error')
+      return
+    }
+
+    setSavingPatternText(true)
+    try {
+      // [AI:Claude] Ne garder que pattern_text, permettre coexistence avec pattern_url
+      const updateData = { pattern_text: patternTextEdit }
+
+      // [AI:Claude] Si on a un fichier, on l'efface (fichier et texte s'excluent)
+      if (project.pattern_path) {
+        updateData.pattern_path = null
+      }
+
+      await api.put(`/projects/${projectId}`, updateData)
+
+      await fetchProject()
+      setShowPatternTextModal(false)
+      showAlert('✅ Patron texte enregistré avec succès !', 'success')
+    } catch (err) {
+      console.error('Erreur sauvegarde patron texte:', err)
+      showAlert('Erreur lors de la sauvegarde du patron', 'error')
+    } finally {
+      setSavingPatternText(false)
     }
   }
 
@@ -2461,31 +2505,81 @@ const ProjectCounter = () => {
               {/* TAB PATRON */}
               {activeTab === 'patron' && (
                 <div>
-            {project.pattern_path || project.pattern_url ? (
+            {project.pattern_text || project.pattern_path || project.pattern_url ? (
               <div>
                 {/* Affichage du patron selon le type */}
                 <div className="mb-4">
                   {project.pattern_url ? (
-                    // URL externe - Affichage simplifié
-                    <div className="border-2 border-gray-200 rounded-lg p-8 bg-gradient-to-br from-blue-50 to-white">
-                      <div className="text-center max-w-2xl mx-auto">
-                        <div className="text-6xl mb-4">📄</div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                          Ce site ne peut pas être affiché ici
-                        </h3>
-                        <p className="text-gray-600 mb-6">
-                          Pour des raisons de sécurité, ce site web ne peut pas être intégré dans l'application. Ouvrez-le dans un nouvel onglet pour consulter votre patron.
-                        </p>
+                    // URL externe - Affichage avec option texte
+                    <>
+                      <div className="border-2 border-gray-200 rounded-lg p-8 bg-gradient-to-br from-blue-50 to-white mb-4">
+                        <div className="text-center max-w-2xl mx-auto">
+                          <div className="text-6xl mb-4">📄</div>
+                          <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                            Ce site ne peut pas être affiché ici
+                          </h3>
+                          <p className="text-gray-600 mb-6">
+                            Pour des raisons de sécurité, ce site web ne peut pas être intégré dans l'application. Ouvrez-le dans un nouvel onglet pour consulter votre patron.
+                          </p>
 
-                        {/* Bouton ouvrir */}
-                        <a
-                          href={project.pattern_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-block px-8 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-lg shadow-md"
-                        >
-                          🔗 Ouvrir le patron
-                        </a>
+                          {/* Bouton ouvrir */}
+                          <a
+                            href={project.pattern_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block px-8 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-lg shadow-md"
+                          >
+                            🔗 Ouvrir le patron
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Section texte (coexiste avec URL) */}
+                      {project.pattern_text ? (
+                        // Texte existant
+                        <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900">📝 Texte du patron</h3>
+                            <button
+                              onClick={handleOpenPatternTextModal}
+                              className="px-4 py-2 text-primary-600 border border-primary-600 rounded-lg font-medium hover:bg-primary-50 transition text-sm"
+                            >
+                              ✏️ Modifier le texte
+                            </button>
+                          </div>
+                          <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                            <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
+                              {project.pattern_text}
+                            </pre>
+                          </div>
+                        </div>
+                      ) : (
+                        // Pas de texte - proposer d'en ajouter
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 text-center">
+                          <div className="text-4xl mb-3">📝</div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            Ajouter le texte du patron
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-4">
+                            Le site ne s'affiche pas ? Copiez-collez le texte du patron ici pour l'avoir toujours sous les yeux.
+                          </p>
+                          <button
+                            onClick={handleOpenPatternTextModal}
+                            className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                          >
+                            📝 Ajouter le texte
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : project.pattern_text ? (
+                    // Patron texte seul (sans URL ni fichier)
+                    <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">📝 Patron</h3>
+                      <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                        <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
+                          {project.pattern_text}
+                        </pre>
                       </div>
                     </div>
                   ) : project.pattern_path?.match(/\.(jpg|jpeg|png|webp)$/i) ? (
@@ -2524,25 +2618,12 @@ const ProjectCounter = () => {
                 </div>
 
                 {/* Actions de modification */}
-                <div className="flex gap-2 justify-center text-xs mt-4">
-                  <label className="block">
-                    <span className="text-gray-500 cursor-pointer hover:text-primary-600 underline">
-                      Remplacer le fichier
-                    </span>
-                    <input
-                      type="file"
-                      accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
-                      onChange={handlePatternUpload}
-                      className="hidden"
-                      disabled={uploadingPattern}
-                    />
-                  </label>
-                  <span className="text-gray-400">•</span>
+                <div className="flex justify-center mt-4">
                   <button
-                    onClick={() => setShowPatternUrlModal(true)}
-                    className="text-gray-500 hover:text-primary-600 underline"
+                    onClick={() => setShowPatternEditChoiceModal(true)}
+                    className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
                   >
-                    Changer le lien
+                    ✏️ Modifier
                   </button>
                 </div>
               </div>
@@ -2566,7 +2647,22 @@ const ProjectCounter = () => {
                   </p>
                 </button>
 
-                {/* Option 2: Upload fichier */}
+                {/* Option 2: Créer un patron texte */}
+                <button
+                  onClick={handleOpenPatternTextModal}
+                  className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
+                  disabled={uploadingPattern}
+                >
+                  <div className="text-4xl mb-2">📝</div>
+                  <p className="text-gray-700 font-medium mb-1">
+                    Modifier le texte du patron
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Coller ou saisir le texte du patron
+                  </p>
+                </button>
+
+                {/* Option 3: Upload fichier */}
                 <label className="block cursor-pointer">
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition">
                     <div className="text-4xl mb-2 text-center">📎</div>
@@ -2919,6 +3015,163 @@ const ProjectCounter = () => {
                 className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
               >
                 {uploadingPattern ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [AI:Claude] Modal de choix de modification du patron */}
+      {showPatternEditChoiceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
+            <h2 className="text-2xl font-bold mb-4">
+              ✏️ Modifier le patron
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Choisissez comment vous souhaitez modifier votre patron
+            </p>
+
+            <div className="space-y-4">
+              {/* Option 1: Bibliothèque */}
+              <button
+                onClick={() => {
+                  setShowPatternEditChoiceModal(false)
+                  setShowPatternLibraryModal(true)
+                  fetchLibraryPatterns()
+                }}
+                className="w-full border-2 border-dashed border-primary-300 rounded-lg p-6 hover:border-primary-500 hover:bg-primary-50 transition"
+                disabled={uploadingPattern}
+              >
+                <div className="text-4xl mb-2">📚</div>
+                <p className="text-gray-700 font-medium mb-1">
+                  Choisir depuis ma bibliothèque
+                </p>
+                <p className="text-xs text-gray-500">
+                  Utilisez un patron déjà sauvegardé
+                </p>
+              </button>
+
+              {/* Option 2: Créer un patron texte */}
+              <button
+                onClick={() => {
+                  setShowPatternEditChoiceModal(false)
+                  handleOpenPatternTextModal()
+                }}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
+                disabled={uploadingPattern}
+              >
+                <div className="text-4xl mb-2">📝</div>
+                <p className="text-gray-700 font-medium mb-1">
+                  Modifier le texte du patron
+                </p>
+                <p className="text-xs text-gray-500">
+                  Coller ou saisir le texte du patron
+                </p>
+              </button>
+
+              {/* Option 3: Upload fichier */}
+              <label className="block cursor-pointer">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition">
+                  <div className="text-4xl mb-2 text-center">📎</div>
+                  <p className="text-gray-700 font-medium text-center mb-1">
+                    Importer un nouveau fichier
+                  </p>
+                  <p className="text-xs text-gray-500 text-center">
+                    PDF, JPG, PNG, WEBP
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={(e) => {
+                    setShowPatternEditChoiceModal(false)
+                    handlePatternUpload(e)
+                  }}
+                  className="hidden"
+                  disabled={uploadingPattern}
+                />
+              </label>
+
+              {/* Option 4: URL */}
+              <button
+                onClick={() => {
+                  setShowPatternEditChoiceModal(false)
+                  setShowPatternUrlModal(true)
+                }}
+                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
+                disabled={uploadingPattern}
+              >
+                <div className="text-4xl mb-2">🔗</div>
+                <p className="text-gray-700 font-medium mb-1">
+                  Lien vers une page web
+                </p>
+                <p className="text-xs text-gray-500">
+                  YouTube, Pinterest, blog...
+                </p>
+              </button>
+            </div>
+
+            <div className="mt-6">
+              <button
+                onClick={() => setShowPatternEditChoiceModal(false)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [AI:Claude] Modal d'édition du patron texte */}
+      {showPatternTextModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-3xl w-full p-6 max-h-[90vh] overflow-hidden flex flex-col">
+            <h2 className="text-2xl font-bold mb-4">
+              📝 {project.pattern_text ? 'Modifier le patron texte' : 'Créer un patron texte'}
+            </h2>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-blue-800">
+                💡 <strong>Astuce :</strong> Vous pouvez copier-coller le texte de votre patron ici
+              </p>
+            </div>
+
+            <div className="flex-1 overflow-y-auto mb-4">
+              <textarea
+                value={patternTextEdit}
+                onChange={(e) => setPatternTextEdit(e.target.value)}
+                rows={20}
+                placeholder="Collez ici le texte de votre patron...
+
+Exemple :
+Rang 1 : 6 mailles serrées dans un cercle magique
+Rang 2 : 2ms dans chaque maille (12)
+Rang 3 : *1ms, aug* x6 (18)
+..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex space-x-3 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowPatternTextModal(false)
+                  setPatternTextEdit('')
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                disabled={savingPatternText}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSavePatternText}
+                disabled={savingPatternText || !patternTextEdit.trim()}
+                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+              >
+                {savingPatternText ? 'Enregistrement...' : 'Enregistrer'}
               </button>
             </div>
           </div>

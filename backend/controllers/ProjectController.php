@@ -653,9 +653,10 @@ class ProjectController
             $relativePath = '/uploads/patterns/'.$filename;
             $log("[PATTERN UPLOAD] Mise à jour BDD avec path: $relativePath");
 
+            // [AI:Claude] Fichier et texte s'excluent, mais on garde l'URL si présente
             $success = $this->projectModel->updateProject($id, [
                 'pattern_path' => $relativePath,
-                'pattern_url' => null
+                'pattern_text' => null
             ]);
 
             $log("[PATTERN UPLOAD] updateProject result: ".($success ? 'true' : 'false'));
@@ -906,9 +907,11 @@ class ProjectController
             $url = $this->convertToDirectLink($url);
 
             // [AI:Claude] Mettre à jour le projet avec l'URL du patron
+            // [AI:Claude] Supprimer pattern_text car on change de patron source
             $success = $this->projectModel->updateProject($id, [
                 'pattern_url' => $url,
-                'pattern_path' => null
+                'pattern_path' => null,
+                'pattern_text' => null
             ]);
 
             if (!$success)
