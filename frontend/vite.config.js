@@ -19,7 +19,6 @@ export default defineConfig({
         orientation: 'portrait-primary',
         scope: '/',
         start_url: '/',
-        permissions: ['wake-lock'],
         icons: [
           {
             src: '/icons/icon-72x72.png',
@@ -171,6 +170,7 @@ export default defineConfig({
     })
   ],
   server: {
+    host: true, // Accepter les connexions depuis le réseau local
     port: 5173,
     proxy: {
       '/api': {

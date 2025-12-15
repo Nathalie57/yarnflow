@@ -193,17 +193,25 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Mettre à jour currentRow UNIQUEMENT quand on change de section
   // [AI:Claude] FIX BUG: Ajouter 'sections' dans les dépendances pour éviter la propagation
+  // [AI:Claude] FIX COHERENCE: Ne mettre à jour que si la valeur est différente pour éviter les écrasements
   useEffect(() => {
     if (currentSectionId && sections.length > 0) {
       const activeSection = sections.find(s => s.id === currentSectionId)
       if (activeSection) {
-        setCurrentRow(activeSection.current_row || 0)
+        const sectionCurrentRow = activeSection.current_row || 0
+        // Ne mettre à jour que si c'est vraiment différent
+        if (sectionCurrentRow !== currentRow) {
+          setCurrentRow(sectionCurrentRow)
+        }
       }
     } else if (project && !currentSectionId) {
       // Aucune section active, utiliser le compteur global du projet
-      setCurrentRow(project.current_row || 0)
+      const projectCurrentRow = project.current_row || 0
+      if (projectCurrentRow !== currentRow) {
+        setCurrentRow(projectCurrentRow)
+      }
     }
-  }, [currentSectionId, sections, project])
+  }, [currentSectionId, sections, project, currentRow])
 
   // [AI:Claude] Timer tick
   useEffect(() => {
@@ -1022,6 +1030,7 @@ const ProjectCounter = () => {
     }
 
     const newRow = currentRow + 1
+    const oldRow = currentRow
     setCurrentRow(newRow)
 
     // [AI:Claude] Sauvegarder directement sans ouvrir la modal
@@ -1054,6 +1063,16 @@ const ProjectCounter = () => {
           // Marquer la section comme terminée
           try {
             await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`)
+
+            // [AI:Claude] Mettre à jour is_completed localement IMMÉDIATEMENT pour l'UI
+            setSections(prevSections =>
+              prevSections.map(s =>
+                s.id === currentSectionId
+                  ? { ...s, is_completed: 1 }
+                  : s
+              )
+            )
+
             await fetchSections()
 
             // Vérifier si toutes les sections sont terminées
@@ -1092,8 +1111,17 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur sauvegarde rang:', err)
       showAlert('Erreur lors de la sauvegarde du rang', 'error')
-      // [AI:Claude] Rollback en cas d'erreur
-      setCurrentRow(currentRow)
+      // [AI:Claude] Rollback en cas d'erreur (compteur ET sections)
+      setCurrentRow(oldRow)
+      if (currentSectionId) {
+        setSections(prevSections =>
+          prevSections.map(s =>
+            s.id === currentSectionId
+              ? { ...s, current_row: oldRow }
+              : s
+          )
+        )
+      }
     }
   }
 
@@ -1101,6 +1129,21 @@ const ProjectCounter = () => {
   const handleDecrementRow = async () => {
     if (currentRow > 0) {
       const newRow = currentRow - 1
+      const oldRow = currentRow
+
+      // [AI:Claude] Mettre à jour le compteur immédiatement pour un feedback instantané
+      setCurrentRow(newRow)
+
+      // [AI:Claude] Mettre à jour la progression de la section localement
+      if (currentSectionId) {
+        setSections(prevSections =>
+          prevSections.map(s =>
+            s.id === currentSectionId
+              ? { ...s, current_row: newRow }
+              : s
+          )
+        )
+      }
 
       try {
         // [AI:Claude] Récupérer tous les rangs de cette section
@@ -1111,31 +1154,26 @@ const ProjectCounter = () => {
         const rows = response.data.rows || []
 
         // [AI:Claude] Trouver le rang avec row_number = currentRow (le dernier)
-        const lastRow = rows.find(r => r.row_number === currentRow && r.section_id === currentSectionId)
+        const lastRow = rows.find(r => r.row_number === oldRow && r.section_id === currentSectionId)
 
         if (lastRow) {
           // [AI:Claude] Supprimer ce rang
           await api.delete(`/projects/${projectId}/rows/${lastRow.id}`)
         }
-
-        // [AI:Claude] Mettre à jour le compteur
-        setCurrentRow(newRow)
-
-        // [AI:Claude] Mettre à jour la progression de la section localement
+      } catch (err) {
+        console.error('Erreur sauvegarde rang:', err)
+        showAlert('Erreur lors de la sauvegarde du rang', 'error')
+        // [AI:Claude] Rollback en cas d'erreur (compteur ET sections)
+        setCurrentRow(oldRow)
         if (currentSectionId) {
           setSections(prevSections =>
             prevSections.map(s =>
               s.id === currentSectionId
-                ? { ...s, current_row: newRow }
+                ? { ...s, current_row: oldRow }
                 : s
             )
           )
         }
-      } catch (err) {
-        console.error('Erreur sauvegarde rang:', err)
-        showAlert('Erreur lors de la sauvegarde du rang', 'error')
-        // [AI:Claude] Rollback en cas d'erreur
-        setCurrentRow(currentRow)
       }
     }
   }
@@ -1317,11 +1355,21 @@ const ProjectCounter = () => {
   const handleToggleSectionComplete = async (section, e) => {
     e.stopPropagation()
     try {
+      const newState = section.is_completed === 1 ? 0 : 1
+
       await api.post(`/projects/${projectId}/sections/${section.id}/complete`)
+
+      // [AI:Claude] Mettre à jour is_completed localement IMMÉDIATEMENT pour l'UI
+      setSections(prevSections =>
+        prevSections.map(s =>
+          s.id === section.id
+            ? { ...s, is_completed: newState }
+            : s
+        )
+      )
+
       await fetchSections()
       await fetchProject()
-
-      const newState = !section.is_completed
       let alertMessage = newState ? '✅ Section marquée comme terminée' : 'Section réouverte'
 
       // [AI:Claude] Recharger les sections pour avoir les données à jour
@@ -1399,6 +1447,16 @@ const ProjectCounter = () => {
             })
           }
         }
+
+        // [AI:Claude] Mettre à jour toutes les sections localement IMMÉDIATEMENT
+        setSections(prevSections =>
+          prevSections.map(s => ({
+            ...s,
+            is_completed: 1,
+            current_row: s.total_rows || s.current_row
+          }))
+        )
+
         await fetchSections()
       }
 
@@ -1916,7 +1974,9 @@ const ProjectCounter = () => {
                       className={`transition-colors ${
                         isActive
                           ? 'bg-primary-50 border-l-4 border-l-primary-600'
-                          : 'hover:bg-gray-50 cursor-pointer'
+                          : isCompleted
+                            ? 'bg-green-50 hover:bg-green-100 cursor-pointer'
+                            : 'hover:bg-gray-50 cursor-pointer'
                       }`}
                     >
                       {/* Nom */}
@@ -2037,7 +2097,9 @@ const ProjectCounter = () => {
                     className={`${
                       isActive
                         ? 'bg-primary-50 border-l-4 border-l-primary-600'
-                        : ''
+                        : isCompleted
+                          ? 'bg-green-50'
+                          : ''
                     } ${isExpanded ? 'p-4' : ''}`}
                   >
                     {/* Header simplifié : Nom + flèche (tout cliquable pour déplier) */}

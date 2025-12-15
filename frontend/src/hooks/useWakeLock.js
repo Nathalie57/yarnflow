@@ -30,7 +30,6 @@ export const useWakeLock = () => {
   // Demander le wake lock
   const request = async () => {
     if (!isSupported) {
-      console.log('[WakeLock] API non supportée sur ce navigateur')
       return false
     }
 
@@ -43,17 +42,15 @@ export const useWakeLock = () => {
       // Demander un nouveau wake lock
       wakeLockRef.current = await navigator.wakeLock.request('screen')
       setIsActive(true)
-      console.log('[WakeLock] ✅ Écran maintenu allumé')
 
       // Gérer la libération automatique (ex: changement d'onglet)
       wakeLockRef.current.addEventListener('release', () => {
-        console.log('[WakeLock] Wake lock libéré')
         setIsActive(false)
       })
 
       return true
     } catch (err) {
-      console.error('[WakeLock] Erreur lors de la demande:', err)
+      console.error('[WakeLock] Erreur:', err.message)
       setIsActive(false)
       return false
     }
@@ -66,9 +63,8 @@ export const useWakeLock = () => {
         await wakeLockRef.current.release()
         wakeLockRef.current = null
         setIsActive(false)
-        console.log('[WakeLock] ✅ Wake lock libéré manuellement')
       } catch (err) {
-        console.error('[WakeLock] Erreur lors de la libération:', err)
+        console.error('[WakeLock] Erreur lors de la libération:', err.message)
       }
     }
   }
@@ -77,7 +73,6 @@ export const useWakeLock = () => {
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible' && isActive && !wakeLockRef.current) {
-        console.log('[WakeLock] Page visible, réacquisition du wake lock')
         await request()
       }
     }
