@@ -90,8 +90,8 @@ class WebFetchController {
 
             // Servir le HTML avec les bons headers
             header('Content-Type: text/html; charset=UTF-8');
-            header('X-Frame-Options: SAMEORIGIN'); // Autoriser iframe depuis notre domaine
-            header('Content-Security-Policy: frame-ancestors \'self\'');
+            // Ne pas mettre de restrictions X-Frame-Options pour permettre l'affichage dans l'iframe
+            // Le contenu provient de sites externes, on ne peut pas imposer SAMEORIGIN
 
             echo $html;
         } catch (\Exception $e) {

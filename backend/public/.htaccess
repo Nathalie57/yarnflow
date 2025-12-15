@@ -22,8 +22,8 @@
 # CORS Headers - IMPORTANT pour connexion frontend ↔ backend
 <IfModule mod_headers.c>
     # Autoriser plusieurs origines (développement local + production)
-    # Dev: localhost:5173 | Prod: yarnflow.fr (même domaine, pas de CORS nécessaire mais on le garde par sécurité)
-    SetEnvIf Origin "^http(s)?://(localhost:5173|127.0.0.1:5173|yarnflow.fr)$" ORIGIN_ALLOWED=$0
+    # Dev: localhost:5173, patron-maker.local | Prod: yarnflow.fr (même domaine, pas de CORS nécessaire mais on le garde par sécurité)
+    SetEnvIf Origin "^http(s)?://(localhost:5173|127.0.0.1:5173|patron-maker.local|yarnflow.fr)$" ORIGIN_ALLOWED=$0
     Header set Access-Control-Allow-Origin "%{ORIGIN_ALLOWED}e" env=ORIGIN_ALLOWED
     Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
     Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
@@ -37,7 +37,10 @@
 # Security Headers
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
-    Header set X-Frame-Options "SAMEORIGIN"
+    # X-Frame-Options: SAMEORIGIN pour toutes les pages SAUF le proxy web-fetch
+    # (le proxy doit pouvoir afficher le contenu externe dans une iframe)
+    SetEnvIf Request_URI "^/api/web-fetch/proxy" IS_PROXY=1
+    Header set X-Frame-Options "SAMEORIGIN" env=!IS_PROXY
     Header set X-XSS-Protection "1; mode=block"
 </IfModule>
 

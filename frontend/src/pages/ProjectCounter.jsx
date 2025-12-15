@@ -2510,28 +2510,10 @@ const ProjectCounter = () => {
                 {/* Affichage du patron selon le type */}
                 <div className="mb-4">
                   {project.pattern_url ? (
-                    // URL externe - Affichage avec option texte
+                    // URL externe - Affichage via ProxyViewer
                     <>
-                      <div className="border-2 border-gray-200 rounded-lg p-8 bg-gradient-to-br from-blue-50 to-white mb-4">
-                        <div className="text-center max-w-2xl mx-auto">
-                          <div className="text-6xl mb-4">📄</div>
-                          <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                            Ce site ne peut pas être affiché ici
-                          </h3>
-                          <p className="text-gray-600 mb-6">
-                            Pour des raisons de sécurité, ce site web ne peut pas être intégré dans l'application. Ouvrez-le dans un nouvel onglet pour consulter votre patron.
-                          </p>
-
-                          {/* Bouton ouvrir */}
-                          <a
-                            href={project.pattern_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block px-8 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-lg shadow-md"
-                          >
-                            🔗 Ouvrir le patron
-                          </a>
-                        </div>
+                      <div className="border-2 border-gray-200 rounded-lg overflow-hidden mb-4">
+                        <ProxyViewer url={project.pattern_url} />
                       </div>
 
                       {/* Section texte (coexiste avec URL) */}
