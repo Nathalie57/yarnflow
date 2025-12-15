@@ -88,14 +88,6 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
         />
       )}
-
-      {/* Note pour l'utilisateur */}
-      {!error && !loading && (
-        <div className="bg-blue-50 border-t border-blue-200 px-4 py-3 text-sm text-blue-800">
-          💡 <strong>Astuce :</strong> Pour une meilleure expérience, téléchargez le PDF du patron depuis le site
-          et uploadez-le dans l'app. Vous pourrez alors zoomer et naviguer plus facilement !
-        </div>
-      )}
     </div>
   )
 }
