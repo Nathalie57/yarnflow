@@ -1736,17 +1736,6 @@ const ProjectCounter = () => {
                   </div>
                 )}
               </div>
-              <button
-                onClick={handleOpenNotes}
-                className={`px-2 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                  project?.notes
-                    ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-                title={project?.notes ? 'Notes présentes - cliquer pour éditer' : 'Ajouter des notes'}
-              >
-                📝 Notes
-              </button>
             </div>
           </div>
         </div>
@@ -4288,6 +4277,37 @@ Rang 3 : *1ms, aug* x6 (18)
           onClose={() => setLightboxImage(null)}
         />
       )}
+
+      {/* [AI:Claude] Bouton flottant pour les notes - toujours accessible */}
+      <button
+        onClick={handleOpenNotes}
+        className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-2xl px-4 py-3 flex items-center gap-3"
+        title="Notes du projet"
+      >
+        {/* Icône SVG */}
+        <svg
+          className="w-7 h-7 text-white flex-shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        <div className="flex flex-col items-start">
+          <span className="text-white font-bold text-sm leading-tight">Notes</span>
+        </div>
+        {/* Badge animé avec stylo */}
+        <span className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full border-2 border-primary-600 flex items-center justify-center animate-bounce">
+          <svg className="w-3.5 h-3.5 text-primary-600" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+          </svg>
+        </span>
+      </button>
 
     </div>
   )
