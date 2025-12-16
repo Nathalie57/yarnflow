@@ -31,10 +31,10 @@ class Project extends BaseModel
     {
         $query = "INSERT INTO {$this->table}
                   (user_id, name, technique, type, description, pattern_id, main_photo, status,
-                   total_rows, yarn_brand, yarn_color, yarn_weight, hook_size, notes, is_public)
+                   total_rows, yarn_brand, yarn_color, yarn_weight, hook_size, notes, technical_details, is_public)
                   VALUES
                   (:user_id, :name, :technique, :type, :description, :pattern_id, :main_photo, :status,
-                   :total_rows, :yarn_brand, :yarn_color, :yarn_weight, :hook_size, :notes, :is_public)";
+                   :total_rows, :yarn_brand, :yarn_color, :yarn_weight, :hook_size, :notes, :technical_details, :is_public)";
 
         $stmt = $this->db->prepare($query);
 
@@ -53,6 +53,7 @@ class Project extends BaseModel
             ':yarn_weight' => $data['yarn_weight'] ?? null,
             ':hook_size' => $data['hook_size'] ?? null,
             ':notes' => $data['notes'] ?? null,
+            ':technical_details' => $data['technical_details'] ?? null, // [AI:Claude] Détails techniques (JSON)
             ':is_public' => isset($data['is_public']) ? (int)$data['is_public'] : 0
         ];
 

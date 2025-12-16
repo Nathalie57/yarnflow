@@ -118,6 +118,7 @@ class ProjectController
                 'yarn_weight' => $data['yarn_weight'] ?? null,
                 'hook_size' => $data['hook_size'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'technical_details' => $data['technical_details'] ?? null, // [AI:Claude] Détails techniques
                 'is_public' => $data['is_public'] ?? false
             ];
 

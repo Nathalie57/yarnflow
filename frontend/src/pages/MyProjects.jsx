@@ -46,7 +46,7 @@ const MyProjects = () => {
 
   // [AI:Claude] Détails techniques du projet
   const [technicalForm, setTechnicalForm] = useState({
-    yarn: [{ brand: '', name: '', quantities: [{ amount: '', color: '' }] }],
+    yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
     needles: [{ type: '', size: '', length: '' }],
     gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
   })
@@ -294,9 +294,14 @@ const MyProjects = () => {
         status: 'in_progress'
       }
 
-      // [AI:Claude] Ajouter les détails techniques si définis
-      if (showTechnicalDetails) {
+      // [AI:Claude] Ajouter les détails techniques si des données ont été saisies
+      const hasYarnData = technicalForm.yarn.some(y => y.brand || y.name || y.quantities.some(q => q.amount || q.color))
+      const hasNeedlesData = technicalForm.needles.some(n => n.type || n.size || n.length)
+      const hasGaugeData = technicalForm.gauge.stitches || technicalForm.gauge.rows || technicalForm.gauge.notes
+
+      if (hasYarnData || hasNeedlesData || hasGaugeData) {
         projectData.technical_details = JSON.stringify(technicalForm)
+        console.log('[PROJECT CREATE] Détails techniques inclus:', technicalForm)
       }
 
       const response = await api.post('/projects', projectData)
@@ -378,6 +383,12 @@ const MyProjects = () => {
         type: '',
         description: ''
       })
+      setTechnicalForm({
+        yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
+        needles: [{ type: '', size: '', length: '' }],
+        gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
+      })
+      setShowTechnicalDetails(false)
       setPatternFile(null)
       setPatternText('')
       setPatternUrl('')
@@ -473,6 +484,12 @@ const MyProjects = () => {
       type: '',
       description: ''
     })
+    setTechnicalForm({
+      yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
+      needles: [{ type: '', size: '', length: '' }],
+      gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
+    })
+    setShowTechnicalDetails(false)
     setPatternFile(null)
     setPatternUrl('')
     setPatternText('')
@@ -924,7 +941,7 @@ const MyProjects = () => {
                           type="button"
                           onClick={() => setTechnicalForm({
                             ...technicalForm,
-                            yarn: [...technicalForm.yarn, { brand: '', name: '', quantities: [{ amount: '', color: '' }] }]
+                            yarn: [...technicalForm.yarn, { brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }]
                           })}
                           className="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
                         >
@@ -974,32 +991,77 @@ const MyProjects = () => {
                               placeholder="Nom (ex: ALPACA)"
                             />
                           </div>
-                          <div className="space-y-1">
+                          <div className="space-y-2">
                             {y.quantities.map((q, qIdx) => (
-                              <div key={qIdx} className="grid grid-cols-2 gap-2">
-                                <input
-                                  type="text"
-                                  value={q.amount}
-                                  onChange={(e) => {
-                                    const newYarn = [...technicalForm.yarn]
-                                    newYarn[yIdx].quantities[qIdx].amount = e.target.value
-                                    setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                  }}
-                                  className="px-2 py-1 border border-gray-300 rounded text-xs"
-                                  placeholder="Quantité (250g)"
-                                />
-                                <div className="flex gap-1">
-                                  <input
-                                    type="text"
-                                    value={q.color}
-                                    onChange={(e) => {
-                                      const newYarn = [...technicalForm.yarn]
-                                      newYarn[yIdx].quantities[qIdx].color = e.target.value
-                                      setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                    }}
-                                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-xs"
-                                    placeholder="Coloris (Rouge)"
-                                  />
+                              <div key={qIdx} className="p-2 bg-gray-50 rounded border border-gray-200">
+                                {/* Ligne 1: Quantité + Unité */}
+                                <div className="grid grid-cols-[1fr,auto] gap-2 mb-2">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Quantité</label>
+                                    <input
+                                      type="text"
+                                      value={q.amount}
+                                      onChange={(e) => {
+                                        const newYarn = [...technicalForm.yarn]
+                                        newYarn[yIdx].quantities[qIdx].amount = e.target.value
+                                        setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                                      }}
+                                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
+                                      placeholder="Ex: 3, 150-200"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Unité</label>
+                                    <div className="flex border border-gray-300 rounded overflow-hidden">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newYarn = [...technicalForm.yarn]
+                                          newYarn[yIdx].quantities[qIdx].unit = 'pelotes'
+                                          setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                                        }}
+                                        className={`px-2 py-1.5 text-[10px] font-medium transition ${
+                                          (q.unit || 'pelotes') === 'pelotes'
+                                            ? 'bg-primary-600 text-white'
+                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        Pelotes
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const newYarn = [...technicalForm.yarn]
+                                          newYarn[yIdx].quantities[qIdx].unit = 'grammes'
+                                          setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                                        }}
+                                        className={`px-2 py-1.5 text-[10px] font-medium transition border-l border-gray-300 ${
+                                          (q.unit || 'pelotes') === 'grammes'
+                                            ? 'bg-primary-600 text-white'
+                                            : 'bg-white text-gray-700 hover:bg-gray-50'
+                                        }`}
+                                      >
+                                        Grammes
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                                {/* Ligne 2: Coloris + Supprimer */}
+                                <div className="flex gap-1 items-end">
+                                  <div className="flex-1">
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">Coloris</label>
+                                    <input
+                                      type="text"
+                                      value={q.color}
+                                      onChange={(e) => {
+                                        const newYarn = [...technicalForm.yarn]
+                                        newYarn[yIdx].quantities[qIdx].color = e.target.value
+                                        setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                                      }}
+                                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
+                                      placeholder="Ex: Rouge, Bleu"
+                                    />
+                                  </div>
                                   {y.quantities.length > 1 && (
                                     <button
                                       type="button"
@@ -1008,7 +1070,8 @@ const MyProjects = () => {
                                         newYarn[yIdx].quantities = newYarn[yIdx].quantities.filter((_, i) => i !== qIdx)
                                         setTechnicalForm({ ...technicalForm, yarn: newYarn })
                                       }}
-                                      className="text-red-500 hover:text-red-700 text-xs px-1"
+                                      className="text-red-500 hover:text-red-700 text-xs px-1 py-1.5"
+                                      title="Supprimer ce coloris"
                                     >
                                       ✕
                                     </button>
@@ -1020,7 +1083,7 @@ const MyProjects = () => {
                               type="button"
                               onClick={() => {
                                 const newYarn = [...technicalForm.yarn]
-                                newYarn[yIdx].quantities.push({ amount: '', color: '' })
+                                newYarn[yIdx].quantities.push({ amount: '', unit: 'pelotes', color: '' })
                                 setTechnicalForm({ ...technicalForm, yarn: newYarn })
                               }}
                               className="text-purple-600 hover:text-purple-700 text-xs"
@@ -1093,7 +1156,7 @@ const MyProjects = () => {
                                 setTechnicalForm({ ...technicalForm, needles: newNeedles })
                               }}
                               className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                              placeholder="Taille (5mm)"
+                              placeholder="Taille mm (ex: 4, 5)"
                             />
                             {formData.technique === 'tricot' && (
                               <input
