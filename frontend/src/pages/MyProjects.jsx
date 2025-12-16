@@ -568,7 +568,9 @@ const MyProjects = () => {
                 <span className="text-3xl">📋</span>
                 <div className="flex-1">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-primary-600">{quota.current}</span>
+                    <span className="text-2xl font-bold text-primary-600">
+                      {quota.max === 999 ? quota.total : quota.current}
+                    </span>
                     <span className="text-sm text-gray-500">
                       / {quota.max === 999 ? '∞' : quota.max} projet{quota.max > 1 ? 's' : ''} {quota.max < 999 ? 'actifs' : ''}
                     </span>
