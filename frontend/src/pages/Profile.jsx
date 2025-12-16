@@ -405,8 +405,8 @@ const Profile = () => {
                   🧶 Plan FREE Beta
                 </p>
                 <ul className="text-sm text-blue-800 mb-3 list-disc list-inside space-y-1">
-                  <li>3 projets maximum</li>
-                  <li>3 crédits photos IA par mois</li>
+                  <li>3 projets actifs maximum</li>
+                  <li>5 crédits photos par mois</li>
                   <li>Accès à toutes les fonctionnalités de base</li>
                 </ul>
                 <p className="text-xs text-blue-700 mt-3">
@@ -423,7 +423,7 @@ const Profile = () => {
                 </p>
                 <ul className="text-sm text-orange-800 mb-3 list-disc list-inside space-y-1">
                   <li>Projets illimités</li>
-                  <li>30 crédits photos IA par mois</li>
+                  <li>30 crédits photos par mois</li>
                   <li>Bibliothèque de patrons illimitée</li>
                   <li>Accès anticipé aux nouvelles fonctionnalités</li>
                 </ul>

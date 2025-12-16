@@ -22,14 +22,14 @@ class CreditManager
     private PDO $db;
 
     /**
-     * [AI:Claude] Quotas mensuels par plan (v0.12.0 - YarnFlow Pricing Final)
+     * [AI:Claude] Quotas mensuels par plan (v0.13.0 - YarnFlow Pricing Final)
      * Aligné sur CLAUDE.md
      */
     private const MONTHLY_QUOTAS = [
-        'free' => 3,          // FREE : 3 photos/mois
-        'pro' => 30,          // PRO 4.99€/mois : 30 photos
-        'pro_annual' => 30,   // PRO ANNUAL 39.99€/an : 30 photos/mois
-        'early_bird' => 30,   // EARLY BIRD 2.99€/mois : 30 photos/mois (accès PRO complet)
+        'free' => 5,          // FREE : 5 crédits/mois
+        'pro' => 30,          // PRO 3.99€/mois : 30 crédits/mois
+        'pro_annual' => 30,   // PRO ANNUAL 34.99€/an : 30 crédits/mois
+        'early_bird' => 30,   // EARLY BIRD 2.99€/mois : 30 crédits/mois (waitlist uniquement)
         // Legacy support (deprecated - tous migrés vers 'pro')
         'standard' => 30,
         'premium' => 30,
@@ -39,7 +39,7 @@ class CreditManager
     ];
 
     /**
-     * [AI:Claude] Packs de crédits disponibles (v0.12.0 - YarnFlow Pricing Final)
+     * [AI:Claude] Packs de crédits disponibles (v0.13.0 - YarnFlow Pricing Final)
      * Aligné sur CLAUDE.md
      */
     private const CREDIT_PACKS = [

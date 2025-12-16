@@ -459,9 +459,9 @@ const MyProjects = () => {
     )
   }
 
-  // [AI:Claude] Quota utilisateur (v0.12.0)
+  // [AI:Claude] Quota utilisateur (v0.13.0 - Projets actifs uniquement)
   const getProjectQuota = () => {
-    if (!user) return { current: 0, max: 3 }
+    if (!user) return { current: 0, max: 3, total: 0 }
 
     const max = user.subscription_type === 'free' ? 3
       : user.subscription_type === 'starter' ? 10
@@ -470,7 +470,14 @@ const MyProjects = () => {
       : user.subscription_type === 'early_bird' ? 999
       : 999
 
-    return { current: projects.length, max }
+    // [AI:Claude] Compter uniquement les projets ACTIFS (non terminés)
+    const activeProjectsCount = projects.filter(p => p.status !== 'completed').length
+
+    return {
+      current: activeProjectsCount,
+      max,
+      total: projects.length
+    }
   }
 
   const quota = getProjectQuota()
@@ -562,8 +569,15 @@ const MyProjects = () => {
                 <div className="flex-1">
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold text-primary-600">{quota.current}</span>
-                    <span className="text-sm text-gray-500">/ {quota.max === 999 ? '∞' : quota.max} projet{quota.max > 1 ? 's' : ''}</span>
+                    <span className="text-sm text-gray-500">
+                      / {quota.max === 999 ? '∞' : quota.max} projet{quota.max > 1 ? 's' : ''} {quota.max < 999 ? 'actifs' : ''}
+                    </span>
                   </div>
+                  {quota.max < 999 && quota.total > 0 && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {quota.total} projet{quota.total > 1 ? 's' : ''} au total
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -576,7 +590,7 @@ const MyProjects = () => {
                 <div className="flex-1">
                   <div className="flex items-baseline gap-2 mb-1">
                     <span className="text-2xl font-bold text-primary-600">{credits?.total_available || 0}</span>
-                    <span className="text-sm text-gray-500">crédit{(credits?.total_available || 0) > 1 ? 's' : ''} IA</span>
+                    <span className="text-sm text-gray-500">crédit{(credits?.total_available || 0) > 1 ? 's' : ''} photos</span>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-xs text-gray-500">

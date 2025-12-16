@@ -67,20 +67,20 @@ export default function CGU() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">4. Offres et tarification</h2>
             <div className="space-y-3">
               <p className="text-gray-700 leading-relaxed">
-                <strong>4.1 Plan GRATUIT :</strong> Accès limité à 3 projets et 5 photos IA par mois.
+                <strong>4.1 Plan GRATUIT :</strong> Accès limité à 3 projets actifs et 5 crédits photos par mois.
                 Aucun engagement, aucune carte bancaire requise.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                <strong>4.2 Plan PRO :</strong> 4,99€/mois ou 39,99€/an. Projets illimités, 75 photos IA/mois,
+                <strong>4.2 Plan PRO :</strong> 3,99€/mois ou 34,99€/an. Projets illimités, 30 crédits photos/mois,
                 bibliothèque de patrons complète.
               </p>
               <p className="text-gray-700 leading-relaxed">
                 <strong>4.3 Offre EARLY BIRD :</strong> 2,99€/mois pendant 12 mois (réservée aux membres
-                de la waitlist), puis passage automatique à 4,99€/mois. Tous les avantages PRO inclus.
+                de la waitlist), puis passage automatique à 3,99€/mois. Tous les avantages PRO inclus.
               </p>
               <p className="text-gray-700 leading-relaxed">
                 <strong>4.4 Packs de crédits :</strong> Disponibles pour tous les utilisateurs en complément
-                (Small 2,99€, Medium 6,99€, Large 14,99€).
+                (Pack 50 crédits photos 4,99€, Pack 150 crédits photos 9,99€).
               </p>
             </div>
           </section>

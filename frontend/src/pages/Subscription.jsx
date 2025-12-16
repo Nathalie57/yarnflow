@@ -45,27 +45,27 @@ const Subscription = () => {
       price: '0€',
       period: '',
       features: [
-        '3 projets trackés',
-        '5 photos IA/mois',
+        '3 projets actifs',
+        '5 crédits photos/mois',
         'Stats de base',
         'Compteur de rangs',
         'Timer de session',
         'Sauvegarde cloud'
       ],
       limitations: [
-        'Projets limités à 3',
-        'Photos IA limitées'
+        'Projets actifs limités à 3',
+        'Crédits photos limités'
       ],
       current: !subscription || subscription.type === 'free' || !subscription.is_active
     },
     {
       type: 'monthly',
       name: 'PRO',
-      price: '4.99€',
+      price: '3.99€',
       period: '/mois',
       features: [
         'Projets illimités',
-        '75 photos IA/mois',
+        '30 crédits photos/mois',
         'Stats avancées',
         'Compteur + Timer',
         'Bibliothèque de patrons',
@@ -109,7 +109,7 @@ const Subscription = () => {
             <div>
               <h2 className="text-xl font-bold mb-2">✅ Abonnement PRO actif</h2>
               <p className="text-gray-700">
-                Projets illimités • 75 photos IA/mois
+                Projets illimités • 30 crédits photos/mois
               </p>
               {subscription.expires_at && (
                 <p className="text-sm text-gray-600 mt-1">
@@ -118,7 +118,7 @@ const Subscription = () => {
               )}
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-primary-600">4.99€</div>
+              <div className="text-3xl font-bold text-primary-600">3.99€</div>
               <div className="text-sm text-gray-600">par mois</div>
             </div>
           </div>
@@ -131,7 +131,7 @@ const Subscription = () => {
           <div className="text-center">
             <h2 className="text-xl font-bold mb-2">📦 Plan FREE actuel</h2>
             <p className="text-gray-700">
-              3 projets • 5 photos IA/mois • Stats de base
+              3 projets actifs • 5 crédits photos/mois • Stats de base
             </p>
             <p className="text-sm text-gray-600 mt-2">
               Passez au plan PRO pour débloquer toutes les fonctionnalités 👇
@@ -246,9 +246,9 @@ const Subscription = () => {
             </p>
           </div>
           <div>
-            <h3 className="font-bold mb-1">🎨 Crédits photos IA</h3>
+            <h3 className="font-bold mb-1">🎨 Crédits photos</h3>
             <p className="text-sm text-gray-600">
-              Les crédits mensuels se réinitialisent automatiquement le 1er de chaque mois. Plan FREE : 5 photos/mois • Plan PRO : 75 photos/mois.
+              Les crédits photos mensuels se réinitialisent automatiquement le 1er de chaque mois. Plan FREE : 5 crédits/mois • Plan PRO : 30 crédits/mois.
             </p>
           </div>
           <div>

@@ -239,7 +239,7 @@ export default function Home() {
               <ul className="text-gray-600 space-y-2 text-sm">
                 <li>✅ 5 styles pro (lifestyle, studio...)</li>
                 <li>✅ Lumière et composition améliorées</li>
-                <li>✅ 3 crédits gratuits/mois</li>
+                <li>✅ 5 crédits photos gratuits/mois</li>
                 <li>✅ Galerie cloud illimitée</li>
               </ul>
             </div>
@@ -359,7 +359,7 @@ export default function Home() {
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">✓</span>
-                  <span>3 crédits gratuits par mois</span>
+                  <span>5 crédits photos gratuits par mois</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2 mt-1">✓</span>
@@ -480,11 +480,11 @@ export default function Home() {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2">✓</span>
-                  <span>3 projets trackés</span>
+                  <span>3 projets actifs</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2">✓</span>
-                  <span><strong>3 images IA/mois</strong></span>
+                  <span><strong>5 crédits photos/mois</strong></span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2">✓</span>
@@ -515,7 +515,7 @@ export default function Home() {
               </div>
               <h3 className="text-2xl font-bold mb-2">Standard</h3>
               <div className="text-4xl font-bold mb-6">
-                4.99€<span className="text-lg">/mois</span>
+                3.99€<span className="text-lg">/mois</span>
               </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start">
@@ -524,7 +524,7 @@ export default function Home() {
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">✓</span>
-                  <span><strong>30 images IA/mois</strong></span>
+                  <span><strong>30 crédits photos/mois</strong></span>
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">✓</span>
@@ -603,27 +603,18 @@ export default function Home() {
 
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <div className="bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition">
-                <h4 className="font-bold text-lg mb-2">Pack Small</h4>
-                <div className="text-3xl font-bold text-primary-600 mb-2">2.99€</div>
-                <p className="text-gray-700 mb-2">20 images IA</p>
-                <p className="text-sm text-green-600">+2 images bonus</p>
+                <h4 className="font-bold text-lg mb-2">Pack 50</h4>
+                <div className="text-3xl font-bold text-primary-600 mb-2">4.99€</div>
+                <p className="text-gray-700 mb-2">50 crédits photos</p>
               </div>
 
               <div className="bg-white rounded-xl p-6 text-center shadow-xl border-2 border-primary-300 transform scale-105">
                 <div className="bg-primary-500 text-white text-xs px-3 py-1 rounded-full inline-block mb-2">
                   MEILLEUR RAPPORT
                 </div>
-                <h4 className="font-bold text-lg mb-2">Pack Medium</h4>
-                <div className="text-3xl font-bold text-primary-600 mb-2">6.99€</div>
-                <p className="text-gray-700 mb-2">50 images IA</p>
-                <p className="text-sm text-green-600">+7 images bonus</p>
-              </div>
-
-              <div className="bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition">
-                <h4 className="font-bold text-lg mb-2">Pack Large</h4>
-                <div className="text-3xl font-bold text-primary-600 mb-2">14.99€</div>
-                <p className="text-gray-700 mb-2">200 images IA</p>
-                <p className="text-sm text-green-600">+20 images bonus</p>
+                <h4 className="font-bold text-lg mb-2">Pack 150</h4>
+                <div className="text-3xl font-bold text-primary-600 mb-2">9.99€</div>
+                <p className="text-gray-700 mb-2">150 crédits photos</p>
               </div>
             </div>
 

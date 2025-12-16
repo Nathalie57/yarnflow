@@ -89,17 +89,21 @@ class ProjectController
             // [AI:Claude] Vérification des quotas (selon abonnement)
             $user = $this->userModel->findById($userId);
             $userProjects = $this->projectModel->getUserProjects($userId);
-            $projectCount = count($userProjects);
+
+            // [AI:Claude] Compter uniquement les projets ACTIFS (non terminés)
+            $activeProjectCount = count(array_filter($userProjects, function($project) {
+                return $project['status'] !== 'completed';
+            }));
 
             // [AI:Claude] Debug quota
             error_log("[PROJECT CREATE] User ID: $userId");
             error_log("[PROJECT CREATE] Subscription: ".$user['subscription_type']);
-            error_log("[PROJECT CREATE] Current projects: $projectCount");
-            error_log("[PROJECT CREATE] Can create: ".($this->canCreateProject($user, $projectCount) ? 'YES' : 'NO'));
+            error_log("[PROJECT CREATE] Active projects: $activeProjectCount");
+            error_log("[PROJECT CREATE] Can create: ".($this->canCreateProject($user, $activeProjectCount) ? 'YES' : 'NO'));
 
-            if (!$this->canCreateProject($user, $projectCount)) {
+            if (!$this->canCreateProject($user, $activeProjectCount)) {
                 $maxProjects = $user['subscription_type'] === 'free' ? 3 : 999;
-                throw new \Exception("Quota de projets atteint. Vous avez $projectCount projet(s), maximum autorisé: $maxProjects (abonnement: {$user['subscription_type']}). Passez à Pro (4.99€/mois) pour des projets illimités.");
+                throw new \Exception("Quota de projets actifs atteint. Vous avez $activeProjectCount projet(s) actif(s), maximum autorisé: $maxProjects (abonnement: {$user['subscription_type']}). Terminez un projet ou passez à Pro (3.99€/mois) pour des projets illimités.");
             }
 
             // [AI:Claude] Préparation des données
@@ -1441,29 +1445,29 @@ class ProjectController
     }
 
     /**
-     * [AI:Claude] Vérifier si l'utilisateur peut créer un projet (quotas v0.12.0 - Final)
+     * [AI:Claude] Vérifier si l'utilisateur peut créer un projet (quotas v0.13.0 - Projets actifs)
      *
      * @param array $user Données utilisateur
-     * @param int $currentCount Nombre de projets actuels
+     * @param int $activeCount Nombre de projets ACTIFS (non terminés)
      * @return bool Peut créer ou non
      */
-    private function canCreateProject(array $user, int $currentCount): bool
+    private function canCreateProject(array $user, int $activeCount): bool
     {
-        // [AI:Claude] Free: 3 projets max
+        // [AI:Claude] Free: 3 projets actifs max (les projets terminés ne comptent pas)
         if ($user['subscription_type'] === 'free')
-            return $currentCount < 3;
+            return $activeCount < 3;
 
         // [AI:Claude] Vérifier que l'abonnement PRO n'est pas expiré
         if (isset($user['subscription_expires_at']) && $user['subscription_expires_at'] !== null) {
             $expiresAt = strtotime($user['subscription_expires_at']);
 
             if ($expiresAt <= time()) {
-                // Abonnement expiré, traiter comme FREE
-                return $currentCount < 3;
+                // Abonnement expiré, traiter comme FREE (3 projets actifs max)
+                return $activeCount < 3;
             }
         }
 
-        // [AI:Claude] Pro: illimité
+        // [AI:Claude] Pro: projets illimités
         // Legacy support: tous les anciens plans sont considérés comme 'pro'
         return true;
     }

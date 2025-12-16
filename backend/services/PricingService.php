@@ -142,7 +142,7 @@ class PricingService
     }
 
     /**
-     * [AI:Claude] Obtenir le prix des abonnements (v0.12.0 - Aligné sur CLAUDE.md)
+     * [AI:Claude] Obtenir le prix des abonnements (v0.13.0 - Aligné sur CLAUDE.md)
      *
      * @return array Prix des abonnements mensuels et annuels
      */
@@ -150,24 +150,24 @@ class PricingService
     {
         return [
             'monthly' => [
-                'price' => (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 4.99),
+                'price' => (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 3.99),
                 'currency' => 'EUR',
                 'period' => 'month',
                 'features' => [
                     'Projets illimités',
-                    '30 photos IA/mois',
+                    '30 crédits photos/mois',
                     'Bibliothèque de patrons',
                     'Support prioritaire'
                 ]
             ],
             'yearly' => [
-                'price' => (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 39.99),
+                'price' => (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 34.99),
                 'currency' => 'EUR',
                 'period' => 'year',
-                'savings' => '20% de réduction',
+                'savings' => '27% de réduction (12.89€ d\'économie)',
                 'features' => [
                     'Projets illimités',
-                    '30 photos IA/mois',
+                    '30 crédits photos/mois',
                     'Bibliothèque de patrons',
                     'Support prioritaire',
                     'Accès anticipé aux nouveautés'
@@ -182,7 +182,7 @@ class PricingService
                 'features' => [
                     'Accès PRO complet',
                     'Projets illimités',
-                    '30 photos IA/mois',
+                    '30 crédits photos/mois',
                     'Prix garanti 12 mois'
                 ]
             ]
@@ -190,14 +190,14 @@ class PricingService
     }
 
     /**
-     * [AI:Claude] Calculer les économies de l'abonnement annuel (v0.12.0)
+     * [AI:Claude] Calculer les économies de l'abonnement annuel (v0.13.0)
      *
      * @return array Détails des économies
      */
     public function getYearlySavings(): array
     {
-        $monthlyPrice = (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 4.99);
-        $yearlyPrice = (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 39.99);
+        $monthlyPrice = (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 3.99);
+        $yearlyPrice = (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 34.99);
 
         $monthlyTotal = $monthlyPrice * 12;
         $savings = $monthlyTotal - $yearlyPrice;
