@@ -42,6 +42,7 @@ const ProjectCounter = () => {
   const [currentSectionId, setCurrentSectionId] = useState(null)
   const [expandedSections, setExpandedSections] = useState(new Set()) // [AI:Claude] Sections dépliées
   const [sectionsCollapsed, setSectionsCollapsed] = useState(true) // [AI:Claude] Tout le bloc sections replié/déplié par défaut
+  const [sectionsSortBy, setSectionsSortBy] = useState('manual') // [AI:Claude] Tri des sections
 
   // [AI:Claude] État du compteur
   const [currentRow, setCurrentRow] = useState(0)
@@ -185,6 +186,19 @@ const ProjectCounter = () => {
     }
     loadData()
   }, [projectId])
+
+  // [AI:Claude] Charger le tri des sections depuis localStorage
+  useEffect(() => {
+    const savedSort = localStorage.getItem('sectionsSortBy')
+    if (savedSort) {
+      setSectionsSortBy(savedSort)
+    }
+  }, [])
+
+  // [AI:Claude] Sauvegarder le tri des sections dans localStorage
+  useEffect(() => {
+    localStorage.setItem('sectionsSortBy', sectionsSortBy)
+  }, [sectionsSortBy])
 
   // [AI:Claude] Fermer les menus quand on clique en dehors
   useEffect(() => {
@@ -1234,6 +1248,19 @@ const ProjectCounter = () => {
           // [AI:Claude] Supprimer ce rang
           await api.delete(`/projects/${projectId}/rows/${lastRow.id}`)
         }
+
+        // [AI:Claude] Mettre à jour le current_row dans la base de données
+        if (currentSectionId) {
+          // Si on est dans une section, mettre à jour la section
+          await api.put(`/projects/${projectId}/sections/${currentSectionId}`, {
+            current_row: newRow
+          })
+        } else {
+          // Sinon mettre à jour le projet
+          await api.put(`/projects/${projectId}`, {
+            current_row: newRow
+          })
+        }
       } catch (err) {
         console.error('Erreur sauvegarde rang:', err)
         showAlert('Erreur lors de la sauvegarde du rang', 'error')
@@ -1331,6 +1358,105 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur changement section:', err)
       showAlert('Erreur lors du changement de section', 'error')
+    }
+  }
+
+  // [AI:Claude] Fonction de tri des sections
+  const getSortedSections = () => {
+    if (!sections || sections.length === 0) return []
+
+    const sorted = [...sections]
+
+    // Fonction de tri alphanumérique naturel
+    const naturalSort = (a, b) => {
+      const nameA = a.name
+      const nameB = b.name
+
+      // Extraire les nombres du début ou du milieu du nom
+      const getNumberFromName = (name) => {
+        const match = name.match(/\d+/)
+        return match ? parseInt(match[0]) : null
+      }
+
+      const numA = getNumberFromName(nameA)
+      const numB = getNumberFromName(nameB)
+
+      // Si les deux ont des nombres, comparer les nombres
+      if (numA !== null && numB !== null) {
+        if (numA !== numB) return numA - numB
+      }
+
+      // Si seulement A a un nombre, A vient en premier
+      if (numA !== null && numB === null) return -1
+      // Si seulement B a un nombre, B vient en premier
+      if (numA === null && numB !== null) return 1
+
+      // Sinon tri alphabétique standard
+      return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' })
+    }
+
+    switch (sectionsSortBy) {
+      case 'name-az':
+        return sorted.sort((a, b) => naturalSort(a, b))
+
+      case 'progress':
+        return sorted.sort((a, b) => {
+          // Vérifier si la section est terminée
+          const isCompletedA = (a.is_completed === 1 || a.is_completed === true || a.is_completed === '1') ||
+                              (a.is_completed !== 0 && a.is_completed !== '0' && a.is_completed !== false &&
+                               ((a.total_rows && a.current_row >= a.total_rows) ||
+                                (a.completion_percentage && parseFloat(a.completion_percentage) >= 100)))
+          const isCompletedB = (b.is_completed === 1 || b.is_completed === true || b.is_completed === '1') ||
+                              (b.is_completed !== 0 && b.is_completed !== '0' && b.is_completed !== false &&
+                               ((b.total_rows && b.current_row >= b.total_rows) ||
+                                (b.completion_percentage && parseFloat(b.completion_percentage) >= 100)))
+
+          const progressA = a.total_rows ? (a.current_row / a.total_rows) * 100 : 0
+          const progressB = b.total_rows ? (b.current_row / b.total_rows) * 100 : 0
+
+          // Les sections terminées à la fin, même sans total_rows
+          if (isCompletedA && !isCompletedB) return 1
+          if (!isCompletedA && isCompletedB) return -1
+
+          // Tri par progression, puis alphabétique si égalité
+          if (progressA === progressB) return naturalSort(a, b)
+          return progressA - progressB
+        })
+
+      case 'status':
+        // Ordre : En cours (active) → En attente → Terminées, puis alphabétique dans chaque groupe
+        return sorted.sort((a, b) => {
+          const isActiveA = a.id === currentSectionId
+          const isActiveB = b.id === currentSectionId
+          // Une section est terminée si is_completed = 1 OU (is_completed !== 0 ET progression à 100%)
+          const isCompletedA = (a.is_completed === 1 || a.is_completed === true || a.is_completed === '1') ||
+                              (a.is_completed !== 0 && a.is_completed !== '0' && a.is_completed !== false &&
+                               ((a.total_rows && a.current_row >= a.total_rows) ||
+                                (a.completion_percentage && parseFloat(a.completion_percentage) >= 100)))
+          const isCompletedB = (b.is_completed === 1 || b.is_completed === true || b.is_completed === '1') ||
+                              (b.is_completed !== 0 && b.is_completed !== '0' && b.is_completed !== false &&
+                               ((b.total_rows && b.current_row >= b.total_rows) ||
+                                (b.completion_percentage && parseFloat(b.completion_percentage) >= 100)))
+
+          // En cours d'abord
+          if (isActiveA && !isActiveB) return -1
+          if (!isActiveA && isActiveB) return 1
+
+          // Puis terminées à la fin
+          if (isCompletedA && !isCompletedB) return 1
+          if (!isCompletedA && isCompletedB) return -1
+
+          // Tri alphabétique secondaire dans le même groupe
+          return naturalSort(a, b)
+        })
+
+      case 'manual':
+      default:
+        return sorted.sort((a, b) => {
+          // Tri par display_order, puis alphabétique si égalité
+          if (a.display_order === b.display_order) return naturalSort(a, b)
+          return a.display_order - b.display_order
+        })
     }
   }
 
@@ -2007,6 +2133,22 @@ const ProjectCounter = () => {
               </div>
             ) : (
               <>
+                {/* Menu de tri */}
+                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-600">Trier par :</span>
+                    <select
+                      value={sectionsSortBy}
+                      onChange={(e) => setSectionsSortBy(e.target.value)}
+                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                    >
+                      <option value="manual">Ordre manuel</option>
+                      <option value="name-az">Nom (A-Z)</option>
+                      <option value="progress">Progression (croissant)</option>
+                      <option value="status">Statut (en cours d'abord)</option>
+                    </select>
+                  </div>
+                </div>
                 {/* Version Desktop : Tableau */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
@@ -2019,7 +2161,7 @@ const ProjectCounter = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {sections.map((section) => {
+                {getSortedSections().map((section) => {
                   const isActive = currentSectionId === section.id
                   // Une section est terminée si :
                   // - is_completed = 1 explicitement
@@ -2155,7 +2297,7 @@ const ProjectCounter = () => {
 
             {/* Version Mobile : Cards simplifiées */}
             <div className="md:hidden divide-y divide-gray-200">
-              {sections.map((section) => {
+              {getSortedSections().map((section) => {
                 const isActive = currentSectionId === section.id
                 // Une section est terminée si :
                 // - is_completed = 1 explicitement
