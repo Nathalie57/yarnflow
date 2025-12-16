@@ -2021,12 +2021,13 @@ const ProjectCounter = () => {
               <tbody className="divide-y divide-gray-200">
                 {sections.map((section) => {
                   const isActive = currentSectionId === section.id
-                  // Une section est terminée si is_completed = 1 OU si la progression est à 100%
-                  const isCompleted = section.is_completed === 1 ||
-                                     section.is_completed === true ||
-                                     section.is_completed === '1' ||
-                                     (section.total_rows && section.current_row >= section.total_rows) ||
-                                     (section.completion_percentage && parseFloat(section.completion_percentage) >= 100)
+                  // Une section est terminée si :
+                  // - is_completed = 1 explicitement
+                  // - OU (is_completed n'est pas explicitement 0 ET progression à 100%)
+                  const isCompleted = (section.is_completed === 1 || section.is_completed === true || section.is_completed === '1') ||
+                                     (section.is_completed !== 0 && section.is_completed !== '0' && section.is_completed !== false &&
+                                      ((section.total_rows && section.current_row >= section.total_rows) ||
+                                       (section.completion_percentage && parseFloat(section.completion_percentage) >= 100)))
 
                   const sectionProgress = isCompleted && section.total_rows
                     ? 100
@@ -2156,12 +2157,13 @@ const ProjectCounter = () => {
             <div className="md:hidden divide-y divide-gray-200">
               {sections.map((section) => {
                 const isActive = currentSectionId === section.id
-                // Une section est terminée si is_completed = 1 OU si la progression est à 100%
-                const isCompleted = section.is_completed === 1 ||
-                                   section.is_completed === true ||
-                                   section.is_completed === '1' ||
-                                   (section.total_rows && section.current_row >= section.total_rows) ||
-                                   (section.completion_percentage && parseFloat(section.completion_percentage) >= 100)
+                // Une section est terminée si :
+                // - is_completed = 1 explicitement
+                // - OU (is_completed n'est pas explicitement 0 ET progression à 100%)
+                const isCompleted = (section.is_completed === 1 || section.is_completed === true || section.is_completed === '1') ||
+                                   (section.is_completed !== 0 && section.is_completed !== '0' && section.is_completed !== false &&
+                                    ((section.total_rows && section.current_row >= section.total_rows) ||
+                                     (section.completion_percentage && parseFloat(section.completion_percentage) >= 100)))
                 const isExpanded = expandedSections.has(section.id)
                 const sectionProgress = isCompleted && section.total_rows
                   ? 100
