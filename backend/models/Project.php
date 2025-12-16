@@ -84,9 +84,14 @@ class Project extends BaseModel
                   CASE
                       WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
                       ELSE NULL
-                  END as completion_percentage
+                  END as completion_percentage,
+                  ps.name as current_section_name,
+                  ps.current_row as current_section_row,
+                  ps.total_rows as current_section_total_rows,
+                  (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) as sections_count
                   FROM {$this->table} p
                   LEFT JOIN project_rows pr ON p.id = pr.project_id
+                  LEFT JOIN project_sections ps ON p.current_section_id = ps.id
                   WHERE p.user_id = :user_id";
 
         if ($status !== null)

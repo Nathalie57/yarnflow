@@ -176,10 +176,14 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Charger le projet au montage
   useEffect(() => {
-    fetchProject()
-    fetchProjectPhotos()
-    fetchCredits()
-    fetchSections()
+    const loadData = async () => {
+      const projectData = await fetchProject()
+      fetchProjectPhotos()
+      fetchCredits()
+      // Passer le current_section_id du projet fraîchement chargé
+      fetchSections(projectData?.current_section_id)
+    }
+    loadData()
   }, [projectId])
 
   // [AI:Claude] Fermer les menus quand on clique en dehors
@@ -303,16 +307,20 @@ const ProjectCounter = () => {
       if (projectData.current_section_id) {
         setCurrentSectionId(projectData.current_section_id)
       }
+
+      // [AI:Claude] Retourner les données pour utilisation immédiate
+      return projectData
     } catch (err) {
       console.error('Erreur chargement projet:', err)
       setError('Impossible de charger le projet')
+      return null
     } finally {
       setLoading(false)
     }
   }
 
   // [AI:Claude] Charger les sections du projet
-  const fetchSections = async () => {
+  const fetchSections = async (projectCurrentSectionId = null) => {
     try {
       const response = await api.get(`/projects/${projectId}/sections`)
       const loadedSections = response.data.sections || []
@@ -331,23 +339,33 @@ const ProjectCounter = () => {
 
       // [AI:Claude] Si aucune section n'est active, si la section actuelle est terminée, ou s'il y a des sections
       if ((!currentSectionId || needsNewSection) && loadedSections.length > 0) {
-        // Priorité 1 : Première section non terminée
-        const firstIncomplete = loadedSections.find(s => !s.is_completed)
-        if (firstIncomplete) {
-          setCurrentSectionId(firstIncomplete.id)
-          return
+        // Priorité 0 : Section définie dans le projet (passée en paramètre ou depuis state) - la plus importante !
+        const targetSectionId = projectCurrentSectionId || project?.current_section_id
+        if (targetSectionId) {
+          const projectSection = loadedSections.find(s => s.id === targetSectionId)
+          if (projectSection && !needsNewSection) {
+            setCurrentSectionId(projectSection.id)
+            return
+          }
         }
 
-        // Priorité 2 : Section sauvegardée dans localStorage (dernière utilisée) - seulement si pas terminée
+        // Priorité 1 : Section sauvegardée dans localStorage (dernière utilisée)
         if (!needsNewSection) {
           const savedSectionId = localStorage.getItem(`currentSection_${projectId}`)
           if (savedSectionId) {
             const savedSection = loadedSections.find(s => s.id === parseInt(savedSectionId))
-            if (savedSection) {
+            if (savedSection && !savedSection.is_completed) {
               setCurrentSectionId(savedSection.id)
               return
             }
           }
+        }
+
+        // Priorité 2 : Première section non terminée
+        const firstIncomplete = loadedSections.find(s => !s.is_completed)
+        if (firstIncomplete) {
+          setCurrentSectionId(firstIncomplete.id)
+          return
         }
 
         // Priorité 3 : Première section de la liste (si toutes sont terminées)
@@ -1301,16 +1319,14 @@ const ProjectCounter = () => {
         section_id: sectionId
       })
 
-      // [AI:Claude] Rafraîchir les sections AVANT de changer currentSectionId
-      // pour s'assurer que le useEffect aura les bonnes valeurs
-      await fetchSections()
-
       // [AI:Claude] Maintenant on peut changer la section en cours
       setCurrentSectionId(sectionId)
 
       // [AI:Claude] Sauvegarder la section active dans localStorage pour la retrouver au retour
       localStorage.setItem(`currentSection_${projectId}`, sectionId.toString())
 
+      // [AI:Claude] Rafraîchir les sections et le projet avec la nouvelle section
+      await fetchSections(sectionId)
       await fetchProject()
     } catch (err) {
       console.error('Erreur changement section:', err)

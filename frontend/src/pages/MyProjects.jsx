@@ -777,11 +777,27 @@ const MyProjects = () => {
                     {/* Stats */}
                     <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
                       <div className="bg-gray-50 rounded-lg p-2">
-                        <p className="text-gray-600">Rang actuel</p>
-                        <p className="font-bold text-gray-900">
-                          {project.current_row || 0}
-                          {project.total_rows ? ` / ${project.total_rows}` : ''}
-                        </p>
+                        {/* Afficher section si présente, sinon rang global */}
+                        {project.sections_count > 0 && project.current_section_name ? (
+                          <>
+                            <p className="text-gray-600">Section en cours</p>
+                            <p className="font-bold text-gray-900 text-xs">
+                              {project.current_section_name}
+                            </p>
+                            <p className="text-gray-700 text-xs mt-0.5">
+                              {project.current_section_row || 0}
+                              {project.current_section_total_rows ? ` / ${project.current_section_total_rows}` : ''}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-gray-600">Rang actuel</p>
+                            <p className="font-bold text-gray-900">
+                              {project.current_row || 0}
+                              {project.total_rows ? ` / ${project.total_rows}` : ''}
+                            </p>
+                          </>
+                        )}
                       </div>
 
                       <div className="bg-gray-50 rounded-lg p-2">
