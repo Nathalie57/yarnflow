@@ -775,44 +775,61 @@ const MyProjects = () => {
                     )}
 
                     {/* Stats */}
-                    <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
-                      <div className="bg-gray-50 rounded-lg p-2">
-                        {/* Afficher section si présente, sinon rang global */}
-                        {project.sections_count > 0 && project.current_section_name ? (
-                          <>
-                            <p className="text-gray-600">Section en cours</p>
-                            <p className="font-bold text-gray-900 text-xs">
-                              {project.current_section_name}
-                            </p>
-                            <p className="text-gray-700 text-xs mt-0.5">
-                              {project.current_section_row || 0}
-                              {project.current_section_total_rows ? ` / ${project.current_section_total_rows}` : ''}
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-gray-600">Rang actuel</p>
-                            <p className="font-bold text-gray-900">
-                              {project.current_row || 0}
-                              {project.total_rows ? ` / ${project.total_rows}` : ''}
-                            </p>
-                          </>
-                        )}
+                    {project.status === 'completed' ? (
+                      // Projet terminé : afficher seulement le temps
+                      <div className="mb-4 text-sm">
+                        <div className="bg-gray-50 rounded-lg p-2">
+                          <p className="text-gray-600">Temps total</p>
+                          <p className="font-bold text-gray-900">
+                            {project.time_formatted || '0h 0min'}
+                          </p>
+                        </div>
                       </div>
+                    ) : (
+                      // Projet en cours : afficher rang/section + temps
+                      <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
+                        <div className="bg-gray-50 rounded-lg p-2">
+                          {/* Afficher section si présente, sinon rang global */}
+                          {project.sections_count > 0 && project.current_section_name ? (
+                            <>
+                              <p className="text-gray-600">Section en cours</p>
+                              <p className="font-bold text-gray-900 text-xs">
+                                {project.current_section_name}
+                              </p>
+                              <p className="text-gray-700 text-xs mt-0.5">
+                                {project.current_section_row || 0}
+                                {project.current_section_total_rows ? ` / ${project.current_section_total_rows}` : ''}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-gray-600">Rang actuel</p>
+                              <p className="font-bold text-gray-900">
+                                {project.current_row || 0}
+                                {project.total_rows ? ` / ${project.total_rows}` : ''}
+                              </p>
+                            </>
+                          )}
+                        </div>
 
-                      <div className="bg-gray-50 rounded-lg p-2">
-                        <p className="text-gray-600">Temps</p>
-                        <p className="font-bold text-gray-900">
-                          {project.time_formatted || '0h 0min'}
-                        </p>
+                        <div className="bg-gray-50 rounded-lg p-2">
+                          <p className="text-gray-600">Temps</p>
+                          <p className="font-bold text-gray-900">
+                            {project.time_formatted || '0h 0min'}
+                          </p>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Barre de progression */}
                     <div className="mb-4">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs text-gray-600">Progression</span>
-                        {project.completion_percentage !== null ? (
+                        {project.status === 'completed' ? (
+                          <span className="text-xs font-bold text-green-600">
+                            100%
+                          </span>
+                        ) : project.completion_percentage !== null ? (
                           <span className="text-xs font-bold text-primary-600">
                             {project.completion_percentage}%
                           </span>
@@ -824,11 +841,15 @@ const MyProjects = () => {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-primary-600 h-2 rounded-full transition-all"
+                          className={`h-2 rounded-full transition-all ${
+                            project.status === 'completed' ? 'bg-green-600' : 'bg-primary-600'
+                          }`}
                           style={{
-                            width: project.completion_percentage !== null
-                              ? `${project.completion_percentage}%`
-                              : '0%'
+                            width: project.status === 'completed'
+                              ? '100%'
+                              : project.completion_percentage !== null
+                                ? `${project.completion_percentage}%`
+                                : '0%'
                           }}
                         ></div>
                       </div>

@@ -1880,7 +1880,7 @@ const ProjectCounter = () => {
           <div className="flex items-center gap-3 flex-shrink-0">
             {(() => {
               const currentSection = currentSectionId ? sections.find(s => s.id === currentSectionId) : null
-              const isSectionCompleted = currentSection?.is_completed === 1
+              const isSectionCompleted = currentSection?.is_completed === 1 || project.status === 'completed'
 
               // Si la section est terminée, afficher le temps total uniquement
               if (isSectionCompleted) {
@@ -2021,7 +2021,13 @@ const ProjectCounter = () => {
               <tbody className="divide-y divide-gray-200">
                 {sections.map((section) => {
                   const isActive = currentSectionId === section.id
-                  const isCompleted = section.is_completed === 1
+                  // Une section est terminée si is_completed = 1 OU si la progression est à 100%
+                  const isCompleted = section.is_completed === 1 ||
+                                     section.is_completed === true ||
+                                     section.is_completed === '1' ||
+                                     (section.total_rows && section.current_row >= section.total_rows) ||
+                                     (section.completion_percentage && parseFloat(section.completion_percentage) >= 100)
+
                   const sectionProgress = isCompleted && section.total_rows
                     ? 100
                     : section.total_rows
@@ -2033,18 +2039,24 @@ const ProjectCounter = () => {
                       key={section.id}
                       onClick={() => !isActive && handleChangeSection(section.id)}
                       className={`transition-colors ${
-                        isActive
-                          ? 'bg-primary-50 border-l-4 border-l-primary-600'
-                          : isCompleted
-                            ? 'bg-green-50 hover:bg-green-100 cursor-pointer'
+                        isCompleted
+                          ? isActive
+                            ? 'bg-green-50 border-l-4 border-l-green-600'
+                            : 'bg-green-50 hover:bg-green-100 cursor-pointer'
+                          : isActive
+                            ? 'bg-primary-50 border-l-4 border-l-primary-600'
                             : 'hover:bg-gray-50 cursor-pointer'
                       }`}
                     >
                       {/* Nom */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          {isActive && <span className="text-primary-600 font-bold">●</span>}
-                          <span className={`text-sm font-medium ${isActive ? 'text-primary-900' : 'text-gray-900'}`}>
+                          {isActive && !isCompleted && <span className="text-primary-600 font-bold">●</span>}
+                          {isActive && isCompleted && <span className="text-green-600 font-bold">●</span>}
+                          {!isActive && isCompleted && <span className="text-green-600 font-bold">✓</span>}
+                          <span className={`text-sm font-medium ${
+                            isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
+                          }`}>
                             {section.name}
                           </span>
                         </div>
@@ -2144,7 +2156,12 @@ const ProjectCounter = () => {
             <div className="md:hidden divide-y divide-gray-200">
               {sections.map((section) => {
                 const isActive = currentSectionId === section.id
-                const isCompleted = section.is_completed === 1
+                // Une section est terminée si is_completed = 1 OU si la progression est à 100%
+                const isCompleted = section.is_completed === 1 ||
+                                   section.is_completed === true ||
+                                   section.is_completed === '1' ||
+                                   (section.total_rows && section.current_row >= section.total_rows) ||
+                                   (section.completion_percentage && parseFloat(section.completion_percentage) >= 100)
                 const isExpanded = expandedSections.has(section.id)
                 const sectionProgress = isCompleted && section.total_rows
                   ? 100
@@ -2156,10 +2173,12 @@ const ProjectCounter = () => {
                   <div
                     key={section.id}
                     className={`${
-                      isActive
-                        ? 'bg-primary-50 border-l-4 border-l-primary-600'
-                        : isCompleted
-                          ? 'bg-green-50'
+                      isCompleted
+                        ? isActive
+                          ? 'bg-green-50 border-l-4 border-l-green-600'
+                          : 'bg-green-50'
+                        : isActive
+                          ? 'bg-primary-50 border-l-4 border-l-primary-600'
                           : ''
                     } ${isExpanded ? 'p-4' : ''}`}
                   >
@@ -2178,11 +2197,14 @@ const ProjectCounter = () => {
                       }}
                     >
                       <div className="flex items-center gap-2 flex-1">
-                        {isActive && <span className="text-primary-600 font-bold text-xs">●</span>}
-                        <h3 className={`text-sm font-semibold ${isActive ? 'text-primary-900' : 'text-gray-900'}`}>
+                        {isActive && !isCompleted && <span className="text-primary-600 font-bold text-xs">●</span>}
+                        {isActive && isCompleted && <span className="text-green-600 font-bold text-xs">●</span>}
+                        <h3 className={`text-sm font-semibold ${
+                          isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
+                        }`}>
                           {section.name}
                         </h3>
-                        {isCompleted && <span className="text-green-600 text-xs">✓</span>}
+                        {!isActive && isCompleted && <span className="text-green-600 text-xs">✓</span>}
                       </div>
                       <span className="text-gray-400 p-1">
                         {isExpanded ? '▾' : '▸'}
