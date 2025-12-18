@@ -792,19 +792,32 @@ class PhotoController
 
     /**
      * [AI:Claude] Supprimer les fichiers d'une photo
+     * v0.14.0 - FIX: Ne supprimer original_path QUE pour les photos originales
      */
     private function deletePhotoFiles(array $photo): void
     {
         $basePath = __DIR__ . '/../public';
 
-        if ($photo['original_path'] && file_exists($basePath . $photo['original_path']))
+        // [AI:Claude] v0.14.0 FIX CRITIQUE : Ne supprimer original_path QUE si c'est une photo originale
+        // Les variations partagent le même original_path que leur parent
+        // Si on supprime une variation, on NE DOIT PAS supprimer le fichier original !
+        $isOriginal = empty($photo['parent_photo_id']);
+
+        if ($isOriginal && $photo['original_path'] && file_exists($basePath . $photo['original_path'])) {
             unlink($basePath . $photo['original_path']);
+            error_log("[PHOTO DELETE] Fichier original supprimé : {$photo['original_path']}");
+        }
 
-        if ($photo['enhanced_path'] && file_exists($basePath . $photo['enhanced_path']))
+        // [AI:Claude] Toujours supprimer enhanced_path car chaque variation a son propre fichier
+        if ($photo['enhanced_path'] && file_exists($basePath . $photo['enhanced_path'])) {
             unlink($basePath . $photo['enhanced_path']);
+            error_log("[PHOTO DELETE] Fichier enhanced supprimé : {$photo['enhanced_path']}");
+        }
 
-        if ($photo['thumbnail_path'] && file_exists($basePath . $photo['thumbnail_path']))
+        if ($photo['thumbnail_path'] && file_exists($basePath . $photo['thumbnail_path'])) {
             unlink($basePath . $photo['thumbnail_path']);
+            error_log("[PHOTO DELETE] Fichier thumbnail supprimé : {$photo['thumbnail_path']}");
+        }
     }
 
     /**
