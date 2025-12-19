@@ -7,6 +7,7 @@ const Subscription = () => {
   const [subscription, setSubscription] = useState(null)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
+  const [billingPeriod, setBillingPeriod] = useState('monthly') // 'monthly' ou 'annual'
 
   useEffect(() => {
     loadSubscription()
@@ -23,10 +24,18 @@ const Subscription = () => {
     }
   }
 
-  const handleSubscribe = async (type) => {
+  const handleSubscribe = async (planType) => {
     setProcessing(true)
     try {
-      const response = await paymentsAPI.checkoutSubscription({ subscription_type: type })
+      // Déterminer le type d'abonnement selon le plan et la période
+      let subscriptionType = planType
+      if (planType === 'plus' && billingPeriod === 'annual') {
+        subscriptionType = 'plus_annual'
+      } else if (planType === 'pro' && billingPeriod === 'annual') {
+        subscriptionType = 'pro_annual'
+      }
+
+      const response = await paymentsAPI.checkoutSubscription({ subscription_type: subscriptionType })
       const { checkout_url } = response.data.data
 
       // Rediriger vers Stripe Checkout
@@ -46,11 +55,10 @@ const Subscription = () => {
       period: '',
       features: [
         '3 projets actifs',
-        '5 crédits photos/mois',
-        'Stats de base',
+        'Patrons illimités',
         'Compteur de rangs',
-        'Timer de session',
-        'Sauvegarde cloud'
+        'Organisation simplifiée',
+        '5 crédits photos/mois'
       ],
       limitations: [
         'Projets actifs limités à 3',
@@ -59,21 +67,39 @@ const Subscription = () => {
       current: !subscription || subscription.type === 'free' || !subscription.is_active
     },
     {
-      type: 'monthly',
-      name: 'PRO',
-      price: '3.99€',
-      period: '/mois',
+      type: 'plus',
+      name: 'PLUS',
+      price: billingPeriod === 'monthly' ? '2.99€' : '29.99€',
+      period: billingPeriod === 'monthly' ? '/mois' : '/an',
+      yearlyPrice: billingPeriod === 'annual' ? 'soit 2.49€/mois' : null,
+      savings: billingPeriod === 'annual' ? 'Économisez 15% (5.89€/an)' : null,
       features: [
-        'Projets illimités',
-        '30 crédits photos/mois',
-        'Stats avancées',
-        'Compteur + Timer',
-        'Bibliothèque de patrons',
-        'Export PDF',
-        'Support prioritaire'
+        '7 projets actifs',
+        'Patrons illimités',
+        'Compteur de rangs',
+        'Organisation avancée',
+        '15 crédits photos/mois'
       ],
       popular: true,
-      current: subscription?.is_active && (subscription?.type === 'monthly' || subscription?.type === 'pro')
+      current: subscription?.is_active && (subscription?.type === 'plus' || subscription?.type === 'plus_annual')
+    },
+    {
+      type: 'pro',
+      name: 'PRO',
+      price: billingPeriod === 'monthly' ? '4.99€' : '49.99€',
+      period: billingPeriod === 'monthly' ? '/mois' : '/an',
+      yearlyPrice: billingPeriod === 'annual' ? 'soit 4.16€/mois' : null,
+      savings: billingPeriod === 'annual' ? 'Économisez 17% (9.89€/an)' : null,
+      features: [
+        'Projets illimités',
+        'Patrons illimités',
+        'Compteur de rangs',
+        'Organisation avancée',
+        '30 crédits photos/mois',
+        'Support prioritaire',
+        'Accès premium aux nouveautés'
+      ],
+      current: subscription?.is_active && (subscription?.type === 'pro' || subscription?.type === 'pro_annual' || subscription?.type === 'monthly' || subscription?.type === 'annual')
     }
   ]
 
@@ -102,6 +128,33 @@ const Subscription = () => {
         Projets illimités, plus de crédits photos IA, et bien plus encore
       </p>
 
+      {/* Toggle Mensuel/Annuel */}
+      <div className="flex justify-center items-center gap-4 mb-8">
+        <button
+          onClick={() => setBillingPeriod('monthly')}
+          className={`px-6 py-2 rounded-lg font-medium transition ${
+            billingPeriod === 'monthly'
+              ? 'bg-primary-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Mensuel
+        </button>
+        <button
+          onClick={() => setBillingPeriod('annual')}
+          className={`px-6 py-2 rounded-lg font-medium transition relative ${
+            billingPeriod === 'annual'
+              ? 'bg-primary-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          Annuel
+          <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+            -27%
+          </span>
+        </button>
+      </div>
+
       {/* Abonnement actuel */}
       {subscription && subscription.is_active && subscription.type !== 'free' && (
         <div className="card mb-8 bg-primary-50 border-2 border-primary-200">
@@ -118,7 +171,7 @@ const Subscription = () => {
               )}
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-primary-600">3.99€</div>
+              <div className="text-3xl font-bold text-primary-600">4.99€</div>
               <div className="text-sm text-gray-600">par mois</div>
             </div>
           </div>
@@ -141,7 +194,7 @@ const Subscription = () => {
       )}
 
       {/* Plans */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {plans.map((plan) => (
           <div
             key={plan.type}
@@ -248,7 +301,7 @@ const Subscription = () => {
           <div>
             <h3 className="font-bold mb-1">🎨 Crédits photos</h3>
             <p className="text-sm text-gray-600">
-              Les crédits photos mensuels se réinitialisent automatiquement le 1er de chaque mois. Plan FREE : 5 crédits/mois • Plan PRO : 30 crédits/mois.
+              Les crédits photos mensuels se réinitialisent automatiquement chaque mois à votre date d'abonnement. Plan FREE : 5 crédits/mois • Plan PLUS : 15 crédits/mois • Plan PRO : 30 crédits/mois.
             </p>
           </div>
           <div>

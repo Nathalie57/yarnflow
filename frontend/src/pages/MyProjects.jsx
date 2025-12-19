@@ -459,12 +459,12 @@ const MyProjects = () => {
     )
   }
 
-  // [AI:Claude] Quota utilisateur (v0.13.0 - Projets actifs uniquement)
+  // [AI:Claude] Quota utilisateur (v0.14.0 - FREE/PLUS/PRO)
   const getProjectQuota = () => {
     if (!user) return { current: 0, max: 3, total: 0 }
 
     const max = user.subscription_type === 'free' ? 3
-      : user.subscription_type === 'starter' ? 10
+      : (user.subscription_type === 'plus' || user.subscription_type === 'plus_annual') ? 7
       : user.subscription_type === 'pro' ? 999
       : user.subscription_type === 'pro_annual' ? 999
       : user.subscription_type === 'early_bird' ? 999

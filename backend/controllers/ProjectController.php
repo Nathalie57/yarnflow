@@ -102,8 +102,15 @@ class ProjectController
             error_log("[PROJECT CREATE] Can create: ".($this->canCreateProject($user, $activeProjectCount) ? 'YES' : 'NO'));
 
             if (!$this->canCreateProject($user, $activeProjectCount)) {
-                $maxProjects = $user['subscription_type'] === 'free' ? 3 : 999;
-                throw new \Exception("Quota de projets actifs atteint. Vous avez $activeProjectCount projet(s) actif(s), maximum autorisé: $maxProjects (abonnement: {$user['subscription_type']}). Terminez un projet ou passez à Pro (3.99€/mois) pour des projets illimités.");
+                $maxProjects = match($user['subscription_type']) {
+                    'free' => 3,
+                    'plus', 'plus_annual' => 7,
+                    default => 999
+                };
+                $upgradeMessage = $user['subscription_type'] === 'free'
+                    ? 'Passez à PLUS (2.99€/mois, 7 projets) ou PRO (4.99€/mois, illimité)'
+                    : 'Passez à PRO (4.99€/mois) pour des projets illimités';
+                throw new \Exception("Quota de projets actifs atteint. Vous avez $activeProjectCount projet(s) actif(s), maximum autorisé: $maxProjects (abonnement: {$user['subscription_type']}). Terminez un projet ou $upgradeMessage.");
             }
 
             // [AI:Claude] Préparation des données
@@ -1445,7 +1452,7 @@ class ProjectController
     }
 
     /**
-     * [AI:Claude] Vérifier si l'utilisateur peut créer un projet (quotas v0.13.0 - Projets actifs)
+     * [AI:Claude] Vérifier si l'utilisateur peut créer un projet (quotas v0.14.0 - FREE 3, PLUS 7, PRO illimité)
      *
      * @param array $user Données utilisateur
      * @param int $activeCount Nombre de projets ACTIFS (non terminés)
@@ -1453,23 +1460,25 @@ class ProjectController
      */
     private function canCreateProject(array $user, int $activeCount): bool
     {
-        // [AI:Claude] Free: 3 projets actifs max (les projets terminés ne comptent pas)
-        if ($user['subscription_type'] === 'free')
-            return $activeCount < 3;
+        $subscriptionType = $user['subscription_type'] ?? 'free';
 
-        // [AI:Claude] Vérifier que l'abonnement PRO n'est pas expiré
-        if (isset($user['subscription_expires_at']) && $user['subscription_expires_at'] !== null) {
+        // [AI:Claude] Vérifier que l'abonnement n'est pas expiré
+        if ($subscriptionType !== 'free' && isset($user['subscription_expires_at']) && $user['subscription_expires_at'] !== null) {
             $expiresAt = strtotime($user['subscription_expires_at']);
 
             if ($expiresAt <= time()) {
                 // Abonnement expiré, traiter comme FREE (3 projets actifs max)
-                return $activeCount < 3;
+                $subscriptionType = 'free';
             }
         }
 
-        // [AI:Claude] Pro: projets illimités
-        // Legacy support: tous les anciens plans sont considérés comme 'pro'
-        return true;
+        // [AI:Claude] Quotas selon le plan
+        return match($subscriptionType) {
+            'free' => $activeCount < 3,
+            'plus', 'plus_annual' => $activeCount < 7,
+            // PRO, PRO_ANNUAL, EARLY_BIRD: projets illimités
+            default => true
+        };
     }
 
     /**

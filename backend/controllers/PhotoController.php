@@ -334,7 +334,8 @@ class PhotoController
                             'project_type' => $projectType,
                             'context' => $context,
                             'project_category' => $projectCategory,
-                            'from_preview' => $usePreview
+                            'from_preview' => $usePreview,
+                            'item_name' => $photo['item_name'] ?? ''
                         ]
                     );
 
@@ -476,6 +477,54 @@ class PhotoController
                 'success' => false,
                 'error' => $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] GET /api/photos/{id}/download - Télécharger une photo
+     *
+     * @param int $photoId ID de la photo
+     * @return void File download
+     */
+    public function download(int $photoId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            $photo = $this->getPhotoById($photoId);
+
+            if (!$photo || (int)$photo['user_id'] !== $userId) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            // Déterminer le chemin du fichier
+            $filePath = $photo['enhanced_path'] ?? $photo['original_path'];
+            $fullPath = __DIR__ . '/../public' . $filePath;
+
+            if (!file_exists($fullPath)) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Fichier introuvable']);
+                return;
+            }
+
+            // Déterminer le nom du fichier
+            $filename = basename($filePath);
+
+            // Forcer le téléchargement
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Length: ' . filesize($fullPath));
+            header('Cache-Control: no-cache, must-revalidate');
+            header('Pragma: public');
+
+            readfile($fullPath);
+            exit;
+
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
     }
 

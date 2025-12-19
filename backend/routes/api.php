@@ -170,6 +170,7 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^photos\/(\d+)\/enhance-multiple$/', $uri, $matches) => (new PhotoController())->enhanceMultiple((int)$matches[1]),
         $method === 'POST' && preg_match('/^photos\/(\d+)\/preview$/', $uri, $matches) => (new PhotoController())->generatePreview((int)$matches[1]),
         $method === 'POST' && preg_match('/^photos\/(\d+)\/enhance$/', $uri, $matches) => (new PhotoController())->enhance((int)$matches[1]),
+        $method === 'GET' && preg_match('/^photos\/(\d+)\/download$/', $uri, $matches) => (new PhotoController())->download((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^photos\/(\d+)$/', $uri, $matches) => (new PhotoController())->delete((int)$matches[1]),
 
         // [AI:Claude] Routes de la bibliothèque de patrons

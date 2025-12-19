@@ -2,7 +2,7 @@
 
 **De la première maille à tous vos réseaux** - Créez, trackez, photographiez et partagez vos ouvrages tricot & crochet.
 
-[![Version](https://img.shields.io/badge/version-0.10.0-purple.svg)](https://github.com/username/yarnflow)
+[![Version](https://img.shields.io/badge/version-0.14.0-purple.svg)](https://github.com/username/yarnflow)
 [![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4.svg)](https://www.php.net/)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://reactjs.org/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1.svg)](https://www.mysql.com/)
@@ -35,20 +35,19 @@
 
 ### 💳 Tarifs transparents
 
-| Plan | Prix | Projets | Images IA/mois | Stats |
-|------|------|---------|----------------|-------|
-| **FREE** | Gratuit | 3 projets | 3 images IA | Basiques |
-| **Standard** | 4.99€/mois | ∞ illimité | 30 images IA | Complètes |
-| **Premium** | 9.99€/mois | ∞ illimité | 120 images IA + HD | Complètes + Édition IA |
+| Plan | Prix | Projets | Crédits Photos IA/mois | Organisation |
+|------|------|---------|------------------------|--------------|
+| **FREE** | Gratuit | 3 projets actifs | 5 crédits | Simplifiée |
+| **PLUS** | 2.99€/mois | 7 projets actifs | 15 crédits | Avancée |
+| **PRO** | 4.99€/mois | ∞ illimité | 30 crédits | Avancée + Support prioritaire |
 
-**Abonnements annuels** (économies importantes) :
-- **Standard** : 39.99€/an (économise 33% - 2 mois offerts)
-- **Premium** : 79.99€/an (économise 33% - 4 mois offerts)
+**Abonnements annuels** (économies) :
+- **PLUS** : 29.99€/an (-15%, économise 5.89€/an)
+- **PRO** : 49.99€/an (-17%, économise 9.89€/an)
 
-**Packs IA ponctuels** (pour heavy users) :
-- 🎁 Pack 20 images : 2.99€
-- 🎁 Pack 50 images : 6.99€
-- 🎁 Pack 200 images : 14.99€
+**Packs crédits photos ponctuels** :
+- 🎁 Pack 50 crédits : 4.99€
+- 🎁 Pack 150 crédits : 9.99€
 
 - Paiements sécurisés via Stripe
 - Résiliable à tout moment
@@ -177,9 +176,11 @@ PATTERN_BASE_PRICE=2.99
 
 ## 🎯 Roadmap
 
-**Version actuelle : 0.10.0** ✅ YARNFLOW
+**Version actuelle : 0.14.0** ✅ YARNFLOW + PRICING V2
 - [x] **Support tricot ET crochet** (v0.10.0)
 - [x] **AI Photo Studio** (v0.10.0)
+- [x] **Système de sections** (v0.13.0)
+- [x] **Pricing PLUS/PRO** (v0.14.0)
 - [x] Tracker de projets universel (CŒUR DE L'APP)
 - [x] Compteur de rangs interactif géant
 - [x] Timer de session automatique
@@ -248,8 +249,8 @@ Créé par **Nathalie** avec l'assistance de **Claude Code** (Anthropic)
 
 ---
 
-**Version** : 0.10.0 - YARNFLOW (AI PHOTO STUDIO)
-**Dernière mise à jour** : 2025-11-16
+**Version** : 0.14.0 - YARNFLOW + PRICING V2 (FREE/PLUS/PRO)
+**Dernière mise à jour** : 2025-12-17
 
 ---
 

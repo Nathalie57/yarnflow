@@ -126,7 +126,7 @@ class PaymentController
         $validator = new Validator();
         $validator
             ->required($data['type'] ?? null, 'type')
-            ->in($data['type'] ?? null, ['monthly', 'yearly', 'early_bird'], 'type');
+            ->in($data['type'] ?? null, ['plus', 'plus_annual', 'pro', 'pro_annual', 'early_bird'], 'type');
 
         if ($validator->fails())
             Response::validationError($validator->getErrors());
@@ -153,8 +153,10 @@ class PaymentController
 
         // [AI:Claude] Créer la session selon le type d'abonnement
         $result = match($type) {
-            'monthly' => $this->stripeService->createMonthlySubscriptionSession($userData['user_id'], $user['email']),
-            'yearly' => $this->stripeService->createYearlySubscriptionSession($userData['user_id'], $user['email']),
+            'plus' => $this->stripeService->createPlusMonthlySession($userData['user_id'], $user['email']),
+            'plus_annual' => $this->stripeService->createPlusAnnualSession($userData['user_id'], $user['email']),
+            'pro' => $this->stripeService->createProMonthlySession($userData['user_id'], $user['email']),
+            'pro_annual' => $this->stripeService->createProAnnualSession($userData['user_id'], $user['email']),
             'early_bird' => $this->stripeService->createEarlyBirdSubscriptionSession($userData['user_id'], $user['email']),
             default => ['success' => false]
         };
@@ -162,18 +164,32 @@ class PaymentController
         if (!$result['success'])
             Response::serverError('Erreur lors de la création de la session d\'abonnement');
 
-        $amount = $type === 'monthly'
-            ? $this->pricingService->getSubscriptionPrices()['monthly']
-            : $this->pricingService->getSubscriptionPrices()['yearly'];
+        $amount = match($type) {
+            'plus' => $this->pricingService->getSubscriptionPrices()['plus']['monthly'],
+            'plus_annual' => $this->pricingService->getSubscriptionPrices()['plus']['annual'],
+            'pro' => $this->pricingService->getSubscriptionPrices()['pro']['monthly'],
+            'pro_annual' => $this->pricingService->getSubscriptionPrices()['pro']['annual'],
+            'early_bird' => 2.99,
+            default => 0
+        };
 
         // [AI:Claude] Enregistrer le paiement en attente
+        $paymentType = match($type) {
+            'plus' => PAYMENT_SUBSCRIPTION_PLUS,
+            'plus_annual' => PAYMENT_SUBSCRIPTION_PLUS_ANNUAL,
+            'pro' => PAYMENT_SUBSCRIPTION_PRO,
+            'pro_annual' => PAYMENT_SUBSCRIPTION_PRO_ANNUAL,
+            'early_bird' => PAYMENT_SUBSCRIPTION_EARLY_BIRD,
+            default => PAYMENT_SUBSCRIPTION_PRO
+        };
+
         $this->paymentModel->create([
             'user_id' => $userData['user_id'],
             'pattern_id' => null,
             'stripe_session_id' => $result['session_id'],
             'amount' => $amount,
             'status' => PAYMENT_PENDING,
-            'payment_type' => $type === 'monthly' ? PAYMENT_SUBSCRIPTION_MONTHLY : PAYMENT_SUBSCRIPTION_YEARLY
+            'payment_type' => $paymentType
         ]);
 
         Response::success([
@@ -259,17 +275,21 @@ class PaymentController
         }
 
         // [AI:Claude] Si c'est un abonnement, mettre à jour l'utilisateur
-        if (in_array($paymentType, ['subscription_monthly', 'subscription_yearly', 'subscription_early_bird'])) {
+        if (in_array($paymentType, ['subscription_plus', 'subscription_plus_annual', 'subscription_pro', 'subscription_pro_annual', 'subscription_early_bird'])) {
             $expiresAt = match($paymentType) {
-                'subscription_monthly' => date('Y-m-d H:i:s', strtotime('+1 month')),
-                'subscription_yearly' => date('Y-m-d H:i:s', strtotime('+1 year')),
+                'subscription_plus' => date('Y-m-d H:i:s', strtotime('+1 month')),
+                'subscription_plus_annual' => date('Y-m-d H:i:s', strtotime('+1 year')),
+                'subscription_pro' => date('Y-m-d H:i:s', strtotime('+1 month')),
+                'subscription_pro_annual' => date('Y-m-d H:i:s', strtotime('+1 year')),
                 'subscription_early_bird' => date('Y-m-d H:i:s', strtotime('+12 months')),
                 default => null
             };
 
             $subscriptionType = match($paymentType) {
-                'subscription_monthly' => SUBSCRIPTION_PRO,
-                'subscription_yearly' => SUBSCRIPTION_PRO_ANNUAL,
+                'subscription_plus' => SUBSCRIPTION_PLUS,
+                'subscription_plus_annual' => SUBSCRIPTION_PLUS_ANNUAL,
+                'subscription_pro' => SUBSCRIPTION_PRO,
+                'subscription_pro_annual' => SUBSCRIPTION_PRO_ANNUAL,
                 'subscription_early_bird' => SUBSCRIPTION_EARLY_BIRD,
                 default => SUBSCRIPTION_FREE
             };
@@ -277,7 +297,7 @@ class PaymentController
             $this->userModel->updateSubscription($userId, $subscriptionType, $expiresAt);
 
             // [AI:Claude] Si PRO Annuel, ajouter 50 crédits bonus (one-time)
-            if ($paymentType === 'subscription_yearly') {
+            if ($paymentType === 'subscription_pro_annual') {
                 $this->creditManager->addPurchasedCredits($userId, 50);
                 error_log("[PRO ANNUEL] 50 crédits bonus ajoutés pour user {$userId}");
             }

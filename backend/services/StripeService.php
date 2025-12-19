@@ -97,15 +97,15 @@ class StripeService
     }
 
     /**
-     * [AI:Claude] Créer une session d'abonnement mensuel
+     * [AI:Claude] Créer une session PLUS mensuel
      *
      * @param int $userId ID de l'utilisateur
      * @param string $customerEmail Email du client
      * @return array Session Stripe créée
      */
-    public function createMonthlySubscriptionSession(int $userId, string $customerEmail): array
+    public function createPlusMonthlySession(int $userId, string $customerEmail): array
     {
-        $monthlyPrice = (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 9.99);
+        $plusPrice = (float)($_ENV['SUBSCRIPTION_PLUS_MONTHLY_PRICE'] ?? 2.99);
 
         try {
             $session = Session::create([
@@ -115,10 +115,10 @@ class StripeService
                     'price_data' => [
                         'currency' => 'eur',
                         'product_data' => [
-                            'name' => 'Abonnement Patron Maker - Mensuel',
-                            'description' => 'Patrons illimités pendant 1 mois'
+                            'name' => 'YarnFlow PLUS - Mensuel',
+                            'description' => '7 projets actifs + 15 crédits photos/mois + Organisation avancée'
                         ],
-                        'unit_amount' => (int)($monthlyPrice * 100),
+                        'unit_amount' => (int)($plusPrice * 100),
                         'recurring' => [
                             'interval' => 'month'
                         ]
@@ -130,7 +130,7 @@ class StripeService
                 'cancel_url' => $this->cancelUrl,
                 'metadata' => [
                     'user_id' => $userId,
-                    'payment_type' => 'subscription_monthly'
+                    'payment_type' => 'subscription_plus'
                 ]
             ]);
 
@@ -141,7 +141,7 @@ class StripeService
             ];
 
         } catch (ApiErrorException $e) {
-            error_log('[Stripe] Erreur création abonnement mensuel : '.$e->getMessage());
+            error_log('[Stripe] Erreur création PLUS mensuel : '.$e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()
@@ -150,15 +150,15 @@ class StripeService
     }
 
     /**
-     * [AI:Claude] Créer une session d'abonnement annuel
+     * [AI:Claude] Créer une session PLUS annuel
      *
      * @param int $userId ID de l'utilisateur
      * @param string $customerEmail Email du client
      * @return array Session Stripe créée
      */
-    public function createYearlySubscriptionSession(int $userId, string $customerEmail): array
+    public function createPlusAnnualSession(int $userId, string $customerEmail): array
     {
-        $yearlyPrice = (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 99.99);
+        $plusAnnualPrice = (float)($_ENV['SUBSCRIPTION_PLUS_ANNUAL_PRICE'] ?? 29.99);
 
         try {
             $session = Session::create([
@@ -168,10 +168,10 @@ class StripeService
                     'price_data' => [
                         'currency' => 'eur',
                         'product_data' => [
-                            'name' => 'Abonnement Patron Maker - Annuel',
-                            'description' => 'Patrons illimités pendant 1 an'
+                            'name' => 'YarnFlow PLUS Annuel',
+                            'description' => '7 projets actifs + 15 crédits photos/mois (économisez 15%)'
                         ],
-                        'unit_amount' => (int)($yearlyPrice * 100),
+                        'unit_amount' => (int)($plusAnnualPrice * 100),
                         'recurring' => [
                             'interval' => 'year'
                         ]
@@ -183,7 +183,7 @@ class StripeService
                 'cancel_url' => $this->cancelUrl,
                 'metadata' => [
                     'user_id' => $userId,
-                    'payment_type' => 'subscription_yearly'
+                    'payment_type' => 'subscription_plus_annual'
                 ]
             ]);
 
@@ -194,7 +194,113 @@ class StripeService
             ];
 
         } catch (ApiErrorException $e) {
-            error_log('[Stripe] Erreur création abonnement annuel : '.$e->getMessage());
+            error_log('[Stripe] Erreur création PLUS annuel : '.$e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * [AI:Claude] Créer une session PRO mensuel
+     *
+     * @param int $userId ID de l'utilisateur
+     * @param string $customerEmail Email du client
+     * @return array Session Stripe créée
+     */
+    public function createProMonthlySession(int $userId, string $customerEmail): array
+    {
+        $proPrice = (float)($_ENV['SUBSCRIPTION_PRO_MONTHLY_PRICE'] ?? 4.99);
+
+        try {
+            $session = Session::create([
+                'payment_method_types' => ['card'],
+                'customer_email' => $customerEmail,
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => 'eur',
+                        'product_data' => [
+                            'name' => 'YarnFlow PRO - Mensuel',
+                            'description' => 'Projets illimités + 30 crédits photos/mois + Support prioritaire'
+                        ],
+                        'unit_amount' => (int)($proPrice * 100),
+                        'recurring' => [
+                            'interval' => 'month'
+                        ]
+                    ],
+                    'quantity' => 1
+                ]],
+                'mode' => 'subscription',
+                'success_url' => $this->successUrl,
+                'cancel_url' => $this->cancelUrl,
+                'metadata' => [
+                    'user_id' => $userId,
+                    'payment_type' => 'subscription_pro'
+                ]
+            ]);
+
+            return [
+                'success' => true,
+                'session_id' => $session->id,
+                'checkout_url' => $session->url
+            ];
+
+        } catch (ApiErrorException $e) {
+            error_log('[Stripe] Erreur création PRO mensuel : '.$e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * [AI:Claude] Créer une session PRO annuel
+     *
+     * @param int $userId ID de l'utilisateur
+     * @param string $customerEmail Email du client
+     * @return array Session Stripe créée
+     */
+    public function createProAnnualSession(int $userId, string $customerEmail): array
+    {
+        $proAnnualPrice = (float)($_ENV['SUBSCRIPTION_PRO_ANNUAL_PRICE'] ?? 49.99);
+
+        try {
+            $session = Session::create([
+                'payment_method_types' => ['card'],
+                'customer_email' => $customerEmail,
+                'line_items' => [[
+                    'price_data' => [
+                        'currency' => 'eur',
+                        'product_data' => [
+                            'name' => 'YarnFlow PRO Annuel',
+                            'description' => 'Projets illimités + 30 crédits photos/mois + Support prioritaire (économisez 17%)'
+                        ],
+                        'unit_amount' => (int)($proAnnualPrice * 100),
+                        'recurring' => [
+                            'interval' => 'year'
+                        ]
+                    ],
+                    'quantity' => 1
+                ]],
+                'mode' => 'subscription',
+                'success_url' => $this->successUrl,
+                'cancel_url' => $this->cancelUrl,
+                'metadata' => [
+                    'user_id' => $userId,
+                    'payment_type' => 'subscription_pro_annual'
+                ]
+            ]);
+
+            return [
+                'success' => true,
+                'session_id' => $session->id,
+                'checkout_url' => $session->url
+            ];
+
+        } catch (ApiErrorException $e) {
+            error_log('[Stripe] Erreur création PRO annuel : '.$e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()

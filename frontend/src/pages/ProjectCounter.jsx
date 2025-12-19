@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { useImagePreview } from '../hooks/useImagePreview'
 import { useWakeLock } from '../hooks/useWakeLock'
 import api from '../services/api'
@@ -23,6 +24,7 @@ import ProxyViewer from '../components/ProxyViewer'
 const ProjectCounter = () => {
   const { projectId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const {
     previewImage,
     isGeneratingPreview,
@@ -42,7 +44,7 @@ const ProjectCounter = () => {
   const [currentSectionId, setCurrentSectionId] = useState(null)
   const [expandedSections, setExpandedSections] = useState(new Set()) // [AI:Claude] Sections dépliées
   const [sectionsCollapsed, setSectionsCollapsed] = useState(true) // [AI:Claude] Tout le bloc sections replié/déplié par défaut
-  const [sectionsSortBy, setSectionsSortBy] = useState('manual') // [AI:Claude] Tri des sections
+  const [sectionsSortBy, setSectionsSortBy] = useState('created') // [AI:Claude] Tri des sections (v0.14.0 - défaut: ordre de création)
 
   // [AI:Claude] État du compteur
   const [currentRow, setCurrentRow] = useState(0)
@@ -90,6 +92,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Embellir photo avec IA - v0.12.1 SIMPLIFIÉ (1 photo, preset auto)
   const [showEnhanceModal, setShowEnhanceModal] = useState(false)
+  const [showStyleExamplesModal, setShowStyleExamplesModal] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
   const [enhancing, setEnhancing] = useState(false)
@@ -928,7 +931,7 @@ const ProjectCounter = () => {
     setSelectedPhoto(photo)
     // clearPreview() // [AI:Claude] Désactivé car preview désactivée
     const category = detectProjectCategory(project?.type || '')
-    const styles = stylesByCategory[category] || stylesByCategory.other
+    const styles = getAvailableStyles(category)
     setSelectedContext(styles[0]) // Premier style par défaut
     setShowEnhanceModal(true)
   }
@@ -942,7 +945,7 @@ const ProjectCounter = () => {
       return 'wearable'
 
     if (lower === 'accessoires bébé' || lower === 'accessoires bebe')
-      return 'wearable'
+      return 'other'
 
     if (lower === 'jouets/peluches')
       return 'amigurumi'
@@ -969,33 +972,126 @@ const ProjectCounter = () => {
     return 'other'
   }
 
-  // [AI:Claude] 3 styles simplifiés par catégorie - v0.12.1
+  // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
   const stylesByCategory = {
     wearable: [
-      { key: 'worn_model', label: 'Sur modèle', icon: '👤', desc: 'Porté par une personne' },
-      { key: 'studio_white', label: 'Studio blanc', icon: '✨', desc: 'Fond blanc professionnel' },
-      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'À plat avec accessoires' }
-    ],
-    amigurumi: [
-      { key: 'play_scene', label: 'Dans la nature', icon: '🌿', desc: 'Jardin, parc, extérieur' },
-      { key: 'kids_room', label: 'Chambre d\'enfant', icon: '🛏️', desc: 'Sur lit, étagère colorée' },
-      { key: 'studio_white', label: 'Fond blanc', icon: '✨', desc: 'Studio professionnel' }
+      // FREE (3)
+      { key: 'wearable_c1', label: 'Porté classique', icon: '👤', desc: 'Porté en portrait extérieur, lumière douce', tier: 'free' },
+      { key: 'flatlay_c1', label: 'Produit à plat', icon: '📸', desc: 'Posé à plat sur fond blanc studio', tier: 'free' },
+      { key: 'detail_c1', label: 'Détails texture', icon: '🔍', desc: 'Gros plan macro sur la texture et les points', tier: 'free' },
+      // PLUS (+3)
+      { key: 'wearable_c2', label: 'Porté studio', icon: '✨', desc: 'Porté en studio fond blanc neutre', tier: 'plus' },
+      { key: 'wearable_c3', label: 'Porté urbain', icon: '🌆', desc: 'Porté en ambiance urbaine lifestyle', tier: 'plus' },
+      { key: 'flatlay_c2', label: 'Flat lay lifestyle', icon: '🏡', desc: 'Posé à plat avec props décoratifs', tier: 'plus' },
+      // PRO (+3)
+      { key: 'wearable_c4', label: 'Bohème chic', icon: '🌼', desc: 'Porté ambiance vintage décor rétro', tier: 'pro' },
+      { key: 'wearable_c7', label: 'Haute couture', icon: '👗', desc: 'Porté studio fond texturé sombre', tier: 'pro' },
+      { key: 'wearable_c9', label: 'Urbain industriel', icon: '🏙️', desc: 'Porté ambiance industrielle', tier: 'pro' }
     ],
     accessory: [
-      { key: 'in_use', label: 'En utilisation', icon: '👜', desc: 'Porté ou tenu' },
-      { key: 'product_white', label: 'Fond blanc', icon: '✨', desc: 'Style e-commerce' },
-      { key: 'flat_lay_styled', label: 'Flat lay', icon: '📐', desc: 'Composition esthétique' }
+      // FREE (3)
+      { key: 'accessory_c1', label: 'Studio fond blanc', icon: '📸', desc: 'Flat lay sur fond blanc pur, éclairage studio', tier: 'free' },
+      { key: 'accessory_c2', label: 'Porté naturel', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
+      { key: 'accessory_c3', label: 'Porté studio', icon: '👤', desc: 'Porté sur modèle avec fond neutre', tier: 'free' },
+      // PLUS (+3)
+      { key: 'accessory_c4', label: 'Flat lay lifestyle', icon: '✨', desc: 'Posé à plat avec accessoires lifestyle', tier: 'plus' },
+      { key: 'accessory_c5', label: 'Porté urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'plus' },
+      { key: 'accessory_c6', label: 'Cosy intérieur', icon: '🏠', desc: 'Posé sur table avec textures douces', tier: 'plus' },
+      // PRO (+3)
+      { key: 'accessory_c7', label: 'Porté mode', icon: '💃', desc: 'Shooting mode professionnel avec mise en scène stylée', tier: 'pro' },
+      { key: 'accessory_c8', label: 'Luxe produit', icon: '💎', desc: 'Mise en scène luxe avec fond sombre élégant', tier: 'pro' },
+      { key: 'accessory_c9', label: 'Porté bohème', icon: '🌸', desc: 'Porté dans intérieur bohème avec plantes', tier: 'pro' }
     ],
     home_decor: [
-      { key: 'on_sofa', label: 'Sur canapé', icon: '🛋️', desc: 'En utilisation réaliste' },
-      { key: 'scandinavian', label: 'Scandinave', icon: '🏠', desc: 'Lumineux épuré' },
-      { key: 'flat_lay_texture', label: 'Flat lay', icon: '📐', desc: 'Texture gros plan' }
+      // FREE (3)
+      { key: 'home_c1', label: 'Contemporain graphique', icon: '🏠', desc: 'Design moderne avec touches de couleur', tier: 'free' },
+      { key: 'home_c2', label: 'Rustique naturel', icon: '🌿', desc: 'Bois, plantes, lumière naturelle', tier: 'free' },
+      { key: 'home_c3', label: 'Scandinave', icon: '✨', desc: 'Décor épuré blanc/gris', tier: 'free' },
+      // PLUS (+3)
+      { key: 'home_c4', label: 'Industriel', icon: '🏭', desc: 'Ambiance loft, métal, briques', tier: 'plus' },
+      { key: 'home_c5', label: 'Coloré vintage', icon: '🎨', desc: 'Couleurs chaudes, vintage', tier: 'plus' },
+      { key: 'home_c6', label: 'Bohème cozy', icon: '🛋️', desc: 'Ambiance chaleureuse, tissus doux', tier: 'plus' },
+      // PRO (+3)
+      { key: 'home_c7', label: 'Luxe contemporain', icon: '💎', desc: 'Décor moderne avec matériaux nobles', tier: 'pro' },
+      { key: 'home_c8', label: 'Minimaliste zen', icon: '🧘', desc: 'Ambiance zen, couleurs neutres', tier: 'pro' },
+      { key: 'home_c9', label: 'Atelier créatif', icon: '🎨', desc: 'Table d\'artiste avec fournitures créatives', tier: 'pro' }
+    ],
+    amigurumi: [
+      // FREE (3)
+      { key: 'toy_c1', label: 'Classique doux', icon: '🧸', desc: 'Chambre enfantine avec lumière douce', tier: 'free' },
+      { key: 'toy_c2', label: 'Livre de contes', icon: '📖', desc: 'Décor de conte illustré, aquarelle pastel', tier: 'free' },
+      { key: 'toy_c3', label: 'Studio fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
+      // PLUS (+3)
+      { key: 'toy_c4', label: 'Vintage peluche', icon: '🧸', desc: 'Ambiance rétro, lumière tamisée', tier: 'plus' },
+      { key: 'toy_c5', label: 'Artisanat naturel', icon: '🌿', desc: 'Bois, tissus naturels', tier: 'plus' },
+      { key: 'toy_c6', label: 'Cartoon coloré', icon: '🎈', desc: 'Couleurs vives, style dessin animé', tier: 'plus' },
+      // PRO (+3)
+      { key: 'toy_c7', label: 'Boutique premium', icon: '🏪', desc: 'Boutique artisanale avec étagères et fond pastel', tier: 'pro' },
+      { key: 'toy_c8', label: 'Aventure jungle', icon: '🦁', desc: 'Jungle tropicale avec plantes exotiques', tier: 'pro' },
+      { key: 'toy_c9', label: 'Cirque vintage', icon: '🎪', desc: 'Chapiteau rétro avec rayures et paillettes', tier: 'pro' }
     ],
     other: [
-      { key: 'lifestyle', label: 'Lifestyle', icon: '🌟', desc: 'Style Instagram naturel' },
-      { key: 'studio', label: 'Studio', icon: '✨', desc: 'Professionnel fond blanc' },
-      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'Vue du dessus' }
+      // FREE (3)
+      { key: 'baby_c1', label: 'Lit bébé doux', icon: '🛏️', desc: 'Plié sur lit avec draps blancs et peluches', tier: 'free' },
+      { key: 'baby_c2', label: 'Fond pastel épuré', icon: '📸', desc: 'Flat lay sur fond pastel studio', tier: 'free' },
+      { key: 'baby_c3', label: 'Berceau cosy', icon: '👶', desc: 'Dans berceau avec jouets en bois', tier: 'free' },
+      // PLUS (+3)
+      { key: 'baby_c4', label: 'Flat lay naturel', icon: '🌿', desc: 'Avec jouets en bois et plantes', tier: 'plus' },
+      { key: 'baby_c5', label: 'Table à langer', icon: '🏠', desc: 'Style scandinave minimaliste', tier: 'plus' },
+      { key: 'baby_c6', label: 'Panier vintage', icon: '🧺', desc: 'Osier avec tissus lin naturel', tier: 'plus' },
+      // PRO (+3)
+      { key: 'baby_c7', label: 'Cadeau emballé', icon: '🎁', desc: 'Emballage élégant avec ruban et carte', tier: 'pro' },
+      { key: 'baby_c8', label: 'Lifestyle premium', icon: '✨', desc: 'Mise en scène raffinée avec accessoires', tier: 'pro' },
+      { key: 'baby_c9', label: 'Étagère nursery', icon: '📚', desc: 'Sur étagère murale blanche organisée', tier: 'pro' }
     ]
+  }
+
+  // [AI:Claude] v0.14.0 - Convertir le code de style en label lisible
+  const getStyleLabel = (styleCode) => {
+    if (!styleCode) return 'IA'
+
+    // Chercher dans toutes les catégories
+    for (const category in stylesByCategory) {
+      const style = stylesByCategory[category].find(s => s.key === styleCode)
+      if (style) {
+        return `${style.icon} ${style.label}`
+      }
+    }
+
+    // Fallback si le style n'est pas trouvé
+    return styleCode
+  }
+
+  // [AI:Claude] Filtrer les styles selon le plan de l'utilisateur
+  const getAvailableStyles = (category) => {
+    const allStyles = stylesByCategory[category] || []
+    const subscriptionType = user?.subscription_type || 'free'
+
+    // Déterminer le tier en fonction du type d'abonnement
+    let userTier = 'free'
+
+    // Plans PLUS
+    if (subscriptionType === 'plus' || subscriptionType === 'plus_annual') {
+      userTier = 'plus'
+    }
+    // Plans PRO (tous les variants)
+    else if (
+      subscriptionType === 'pro' ||
+      subscriptionType === 'pro_annual' ||
+      subscriptionType === 'early_bird' ||
+      subscriptionType.toLowerCase().includes('pro')
+    ) {
+      userTier = 'pro'
+    }
+
+    // Filtrer selon le tier
+    if (userTier === 'free') {
+      return allStyles.filter(s => s.tier === 'free')
+    } else if (userTier === 'plus') {
+      return allStyles.filter(s => s.tier === 'free' || s.tier === 'plus')
+    } else {
+      return allStyles // PRO accède à tout
+    }
   }
 
 
@@ -1418,9 +1514,33 @@ const ProjectCounter = () => {
           if (isCompletedA && !isCompletedB) return 1
           if (!isCompletedA && isCompletedB) return -1
 
-          // Tri par progression, puis alphabétique si égalité
+          // Tri par progression croissante, puis alphabétique si égalité
           if (progressA === progressB) return naturalSort(a, b)
           return progressA - progressB
+        })
+
+      case 'progress-desc':
+        // [AI:Claude] v0.14.0 - Tri par progression décroissante (PLUS/PRO uniquement)
+        return sorted.sort((a, b) => {
+          const isCompletedA = (a.is_completed === 1 || a.is_completed === true || a.is_completed === '1') ||
+                              (a.is_completed !== 0 && a.is_completed !== '0' && a.is_completed !== false &&
+                               ((a.total_rows && a.current_row >= a.total_rows) ||
+                                (a.completion_percentage && parseFloat(a.completion_percentage) >= 100)))
+          const isCompletedB = (b.is_completed === 1 || b.is_completed === true || b.is_completed === '1') ||
+                              (b.is_completed !== 0 && b.is_completed !== '0' && b.is_completed !== false &&
+                               ((b.total_rows && b.current_row >= b.total_rows) ||
+                                (b.completion_percentage && parseFloat(b.completion_percentage) >= 100)))
+
+          const progressA = a.total_rows ? (a.current_row / a.total_rows) * 100 : 0
+          const progressB = b.total_rows ? (b.current_row / b.total_rows) * 100 : 0
+
+          // Les sections terminées à la fin
+          if (isCompletedA && !isCompletedB) return 1
+          if (!isCompletedA && isCompletedB) return -1
+
+          // Tri par progression décroissante, puis alphabétique si égalité
+          if (progressA === progressB) return naturalSort(a, b)
+          return progressB - progressA
         })
 
       case 'status':
@@ -1450,12 +1570,15 @@ const ProjectCounter = () => {
           return naturalSort(a, b)
         })
 
-      case 'manual':
+      case 'created':
       default:
+        // [AI:Claude] v0.14.0 - Tri par date de création (défaut)
         return sorted.sort((a, b) => {
-          // Tri par display_order, puis alphabétique si égalité
-          if (a.display_order === b.display_order) return naturalSort(a, b)
-          return a.display_order - b.display_order
+          // Tri par date de création, puis alphabétique si égalité
+          const dateA = new Date(a.created_at)
+          const dateB = new Date(b.created_at)
+          if (dateA.getTime() === dateB.getTime()) return naturalSort(a, b)
+          return dateA - dateB
         })
     }
   }
@@ -2135,18 +2258,35 @@ const ProjectCounter = () => {
               <>
                 {/* Menu de tri */}
                 <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-600">Trier par :</span>
-                    <select
-                      value={sectionsSortBy}
-                      onChange={(e) => setSectionsSortBy(e.target.value)}
-                      className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
-                    >
-                      <option value="manual">Ordre manuel</option>
-                      <option value="name-az">Nom (A-Z)</option>
-                      <option value="progress">Progression (croissant)</option>
-                      <option value="status">Statut (en cours d'abord)</option>
-                    </select>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-600">Trier par :</span>
+                      <select
+                        value={sectionsSortBy}
+                        onChange={(e) => setSectionsSortBy(e.target.value)}
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                      >
+                        <option value="created">Ordre de création</option>
+                        <option value="name-az">Nom (A-Z)</option>
+                        {(user?.subscription_type === 'plus' || user?.subscription_type === 'plus_annual' ||
+                          user?.subscription_type === 'pro' || user?.subscription_type === 'pro_annual' ||
+                          user?.subscription_type === 'early_bird') && (
+                          <>
+                            <option value="progress">Progression croissante</option>
+                            <option value="progress-desc">Progression décroissante</option>
+                            <option value="status">Statut (en cours d'abord)</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+                    {user?.subscription_type === 'free' && (
+                      <Link
+                        to="/subscription"
+                        className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                      >
+                        🔒 Plus de tris avec PLUS/PRO
+                      </Link>
+                    )}
                   </div>
                 </div>
                 {/* Version Desktop : Tableau */}
@@ -2565,7 +2705,7 @@ const ProjectCounter = () => {
                                     onClick={() => setLightboxImage(`${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`)}
                                   />
                                   <div className="absolute top-3 left-3 bg-primary-600 text-white text-sm px-3 py-1.5 rounded-lg font-semibold shadow-lg flex items-center gap-1">
-                                    ✨ {variation.ai_style || 'IA'}
+                                    {getStyleLabel(variation.ai_style)}
                                   </div>
 
                                   {/* Overlay voir en grand (z-index 10) */}
@@ -2580,6 +2720,40 @@ const ProjectCounter = () => {
 
                                   {/* Boutons actions (z-index 20 pour être au-dessus) */}
                                   <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition z-20">
+                                    {/* Bouton télécharger */}
+                                    <button
+                                      onClick={async (e) => {
+                                        e.stopPropagation()
+                                        try {
+                                          const token = localStorage.getItem('token')
+                                          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/photos/${variation.id}/download`, {
+                                            headers: {
+                                              'Authorization': `Bearer ${token}`
+                                            }
+                                          })
+
+                                          if (!response.ok) throw new Error('Erreur téléchargement')
+
+                                          const blob = await response.blob()
+                                          const url = window.URL.createObjectURL(blob)
+                                          const link = document.createElement('a')
+                                          link.href = url
+                                          link.download = `${project.name.replace(/[^a-z0-9]/gi, '_')}_${variation.ai_style || 'photo'}.jpg`
+                                          document.body.appendChild(link)
+                                          link.click()
+                                          document.body.removeChild(link)
+                                          window.URL.revokeObjectURL(url)
+                                        } catch (err) {
+                                          console.error('Erreur:', err)
+                                          alert('❌ Erreur lors du téléchargement')
+                                        }
+                                      }}
+                                      className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg text-center"
+                                      title="Télécharger cette photo"
+                                    >
+                                      📥 Télécharger
+                                    </button>
+
                                     {/* Bouton photo de couverture */}
                                     <button
                                       onClick={async (e) => {
@@ -2622,6 +2796,7 @@ const ProjectCounter = () => {
 
                         {/* [AI:Claude] Photo originale EN BAS - juste pour référence */}
                         <div className="bg-gray-50 p-4 border-t-2 border-gray-200">
+                          {/* [AI:Claude] v0.14.0 - Gérer le cas où la photo originale est manquante */}
                           <div className="flex items-start gap-4">
                             <div className="relative flex-shrink-0 group">
                               <img
@@ -2631,29 +2806,69 @@ const ProjectCounter = () => {
                                 onClick={() => setLightboxImage(`${import.meta.env.VITE_BACKEND_URL}${originalPhoto.original_path}`)}
                                 onError={(e) => {
                                   console.error('Erreur chargement image:', originalPhoto.original_path)
-                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EErreur%3C/text%3E%3C/svg%3E'
+                                  // [AI:Claude] Remplacer par un placeholder SVG si l'image n'existe pas
+                                  e.target.onerror = null // Éviter boucle infinie
+                                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="128" height="128"%3E%3Crect fill="%23e5e7eb" width="128" height="128" rx="8"/%3E%3Ctext x="50%25" y="40%25" text-anchor="middle" font-size="40" dy=".3em"%3E📷%3C/text%3E%3Ctext x="50%25" y="70%25" text-anchor="middle" font-size="12" fill="%239ca3af" dy=".3em"%3EPhoto%3C/text%3E%3Ctext x="50%25" y="80%25" text-anchor="middle" font-size="12" fill="%239ca3af" dy=".3em"%3Emanquante%3C/text%3E%3C/svg%3E'
+                                  e.target.style.cursor = 'default'
+                                  e.target.onclick = null
                                 }}
                               />
                               <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-90 text-white text-xs px-2 py-1 rounded font-medium">
                                 📷 Originale
                               </div>
                               {/* Overlay "Voir en grand" au survol */}
-                              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                 <span className="text-white font-bold text-xs">
                                   🔍 Voir
                                 </span>
                               </div>
-                              {/* Bouton supprimer */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeletePhoto(originalPhoto.id)
-                                }}
-                                className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white p-1.5 rounded transition shadow-lg z-10"
-                                title="Supprimer cette photo"
-                              >
-                                🗑️
-                              </button>
+                              {/* Boutons actions */}
+                              <div className="absolute bottom-2 left-2 right-2 flex gap-1 z-10">
+                                {/* Bouton télécharger */}
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation()
+                                    try {
+                                      const token = localStorage.getItem('token')
+                                      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/photos/${originalPhoto.id}/download`, {
+                                        headers: {
+                                          'Authorization': `Bearer ${token}`
+                                        }
+                                      })
+
+                                      if (!response.ok) throw new Error('Erreur téléchargement')
+
+                                      const blob = await response.blob()
+                                      const url = window.URL.createObjectURL(blob)
+                                      const link = document.createElement('a')
+                                      link.href = url
+                                      link.download = `${project.name.replace(/[^a-z0-9]/gi, '_')}_original.jpg`
+                                      document.body.appendChild(link)
+                                      link.click()
+                                      document.body.removeChild(link)
+                                      window.URL.revokeObjectURL(url)
+                                    } catch (err) {
+                                      console.error('Erreur:', err)
+                                      alert('❌ Erreur lors du téléchargement')
+                                    }
+                                  }}
+                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium transition shadow-lg text-center"
+                                  title="Télécharger cette photo"
+                                >
+                                  📥
+                                </button>
+                                {/* Bouton supprimer */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeletePhoto(originalPhoto.id)
+                                  }}
+                                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition shadow-lg"
+                                  title="Supprimer cette photo"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
                             </div>
 
                             <div className="flex-1">
@@ -3448,10 +3663,22 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-              <h2 className="text-2xl font-bold text-gray-900">✨ Générer une photo IA</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {selectedPhoto.item_name}
-              </p>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-2xl font-bold text-gray-900">✨ Générer une photo IA</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowStyleExamplesModal(true)}
+                  className="bg-primary-600 text-white text-sm px-3 py-1.5 rounded-lg font-semibold shadow-lg hover:bg-primary-700 transition flex items-center gap-1"
+                >
+                  <span>🎨</span>
+                  <span>Exemples de styles</span>
+                </button>
+              </div>
+              <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-gray-700 text-center">
+                  Les images sont générées par IA. Le rendu peut varier selon la photo et le style choisi 💫
+                </p>
+              </div>
             </div>
 
             <form onSubmit={handleEnhancePhoto} className="flex-1 overflow-y-auto p-6 flex flex-col">
@@ -3475,7 +3702,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   Choisissez un style :
                 </label>
                 <div className="space-y-2">
-                  {(stylesByCategory[detectProjectCategory(project?.type || '')] || stylesByCategory.other).map(style => (
+                  {getAvailableStyles(detectProjectCategory(project?.type || '')).map(style => (
                     <label
                       key={style.key}
                       className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
@@ -3494,12 +3721,44 @@ Rang 3 : *1ms, aug* x6 (18)
                       />
                       <span className="text-2xl">{style.icon}</span>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{style.label}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900">{style.label}</p>
+                          {style.tier === 'plus' && (
+                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">PLUS</span>
+                          )}
+                          {style.tier === 'pro' && (
+                            <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-600">{style.desc}</p>
                       </div>
                     </label>
                   ))}
                 </div>
+
+                {/* Message upgrade pour FREE */}
+                {user?.subscription_type === 'free' && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-primary-50 border border-purple-200 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      🎨 <span className="font-semibold">6 styles supplémentaires</span> avec PLUS et <span className="font-semibold">9 styles premium</span> avec PRO !
+                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
+                        Découvrir les plans
+                      </a>
+                    </p>
+                  </div>
+                )}
+
+                {/* Message upgrade pour PLUS */}
+                {(user?.subscription_type === 'plus' || user?.subscription_type === 'plus_annual') && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-primary-50 to-sage-50 border border-primary-200 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      ✨ <span className="font-semibold">3 styles premium supplémentaires</span> disponibles avec PRO (Instagram, Catalogues, Saisonnier) !
+                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
+                        Passer à PRO
+                      </a>
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Aperçu gratuit - DÉSACTIVÉ pour économiser les coûts API */}
@@ -3637,6 +3896,102 @@ Rang 3 : *1ms, aug* x6 (18)
                 */}
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* [AI:Claude] Modal des exemples de styles IA */}
+      {showStyleExamplesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] shadow-xl flex flex-col">
+            <div className="bg-gradient-to-r from-primary-600 to-sage-600 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-lg">
+              <h2 className="text-2xl font-bold">🎨 Exemples de styles IA</h2>
+              <button
+                onClick={() => setShowStyleExamplesModal(false)}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Photo originale unique en haut */}
+              <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border-2 border-gray-300">
+                <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">📷 Photo originale</h3>
+                <div className="max-w-md mx-auto">
+                  <img
+                    src={`/style-examples/${detectProjectCategory(project?.type || '')}_before.jpg`}
+                    alt="Photo originale"
+                    className="w-full rounded-lg shadow-lg"
+                    onError={(e) => {
+                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EPhoto à venir%3C/text%3E%3C/svg%3E'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Résultats des 9 styles */}
+              <div className="mb-4">
+                <h3 className="text-lg font-bold text-gray-900 text-center">✨ Résultats par style</h3>
+                <p className="text-sm text-gray-600 text-center mt-1">Les 9 styles disponibles appliqués à la même photo</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getAvailableStyles(detectProjectCategory(project?.type || '')).map((style) => (
+                  <div
+                    key={style.key}
+                    className="border-2 border-gray-200 rounded-lg overflow-hidden hover:border-primary-400 transition"
+                  >
+                    {/* Image générée */}
+                    <div className="relative bg-gray-100">
+                      <img
+                        src={`/style-examples/${style.key}_after.jpg`}
+                        alt={style.label}
+                        className="w-full h-64 object-cover"
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EExemple à venir%3C/text%3E%3C/svg%3E'
+                        }}
+                      />
+                      {style.tier === 'plus' && (
+                        <span className="absolute top-2 right-2 px-2 py-1 bg-purple-600 text-white text-xs font-bold rounded-full shadow">
+                          PLUS
+                        </span>
+                      )}
+                      {style.tier === 'pro' && (
+                        <span className="absolute top-2 right-2 px-2 py-1 bg-primary-600 text-white text-xs font-bold rounded-full shadow">
+                          PRO
+                        </span>
+                      )}
+                      {style.tier === 'free' && (
+                        <span className="absolute top-2 right-2 px-2 py-1 bg-green-600 text-white text-xs font-bold rounded-full shadow">
+                          GRATUIT
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Nom et description du style */}
+                    <div className="p-3 bg-white">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xl">{style.icon}</span>
+                        <h3 className="font-bold text-gray-900">{style.label}</h3>
+                      </div>
+                      <p className="text-xs text-gray-600">{style.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex-shrink-0 rounded-b-lg">
+              <button
+                onClick={() => setShowStyleExamplesModal(false)}
+                className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition"
+              >
+                Fermer
+              </button>
+            </div>
           </div>
         </div>
       )}

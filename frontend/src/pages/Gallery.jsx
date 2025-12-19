@@ -236,7 +236,7 @@ const Gallery = () => {
     setSelectedPhoto(photo)
     clearPreview() // [AI:Claude] Réinitialiser la preview
     const category = detectProjectCategory(photo.item_type || '')
-    const styles = stylesByCategory[category] || stylesByCategory.other
+    const styles = getAvailableStyles(category)
     setSelectedContext(styles[0]) // Premier style par défaut
     setShowEnhanceModal(true)
   }
@@ -277,33 +277,110 @@ const Gallery = () => {
     return 'other'
   }
 
-  // [AI:Claude] 3 styles simplifiés par catégorie - v0.12.1
+  // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
   const stylesByCategory = {
     wearable: [
-      { key: 'worn_model', label: 'Sur modèle', icon: '👤', desc: 'Porté par une personne' },
-      { key: 'studio_white', label: 'Studio blanc', icon: '✨', desc: 'Fond blanc professionnel' },
-      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'À plat avec accessoires' }
-    ],
-    amigurumi: [
-      { key: 'play_scene', label: 'Scène de jeu', icon: '🧸', desc: 'Mise en scène créative' },
-      { key: 'kids_room', label: 'Chambre d\'enfant', icon: '🛏️', desc: 'Sur lit, étagère colorée' },
-      { key: 'flat_lay', label: 'Flat lay', icon: '📐', desc: 'Fond neutre propre' }
+      // FREE (3)
+      { key: 'wearable_c1', label: 'Classique épuré', icon: '👤', desc: 'Portrait extérieur lumière douce', tier: 'free' },
+      { key: 'wearable_c2', label: 'Casual moderne', icon: '✨', desc: 'Studio fond blanc neutre', tier: 'free' },
+      { key: 'wearable_c3', label: 'Vintage sobre', icon: '🌆', desc: 'Ambiance urbaine lifestyle, rue calme', tier: 'free' },
+      // PLUS (+3)
+      { key: 'wearable_c4', label: 'Bohème chic', icon: '🌼', desc: 'Ambiance vintage avec décor rétro', tier: 'plus' },
+      { key: 'wearable_c5', label: 'Sportif élégant', icon: '💡', desc: 'Studio lumière chaude', tier: 'plus' },
+      { key: 'wearable_c6', label: 'Minimaliste graphique', icon: '🌿', desc: 'Portrait en nature, lumière dorée', tier: 'plus' },
+      // PRO (+3)
+      { key: 'wearable_c7', label: 'Haute couture sophistiquée', icon: '👗', desc: 'Studio fond texturé sombre', tier: 'pro' },
+      { key: 'wearable_c8', label: 'Rétro années 70', icon: '✨', desc: 'Ambiance soirée/décontractée', tier: 'pro' },
+      { key: 'wearable_c9', label: 'Urbain streetwear', icon: '🏙️', desc: 'Ambiance industrielle', tier: 'pro' }
     ],
     accessory: [
-      { key: 'in_use', label: 'En utilisation', icon: '👜', desc: 'Porté ou tenu' },
-      { key: 'product_white', label: 'Fond blanc', icon: '✨', desc: 'Style e-commerce' },
-      { key: 'flat_lay_styled', label: 'Flat lay', icon: '📐', desc: 'Composition esthétique' }
+      // FREE (3)
+      { key: 'accessory_c1', label: 'Classique minimaliste', icon: '📸', desc: 'Gros plan en studio', tier: 'free' },
+      { key: 'accessory_c2', label: 'Vintage délicat', icon: '🏠', desc: 'Mise en scène cosy sur table', tier: 'free' },
+      { key: 'accessory_c3', label: 'Moderne brillant', icon: '✨', desc: 'Ambiance luxe, fond sombre, lumière tamisée', tier: 'free' },
+      // PLUS (+3)
+      { key: 'accessory_c4', label: 'Bohème naturel', icon: '🌿', desc: 'Style bohème intérieur, lumière naturelle', tier: 'plus' },
+      { key: 'accessory_c5', label: 'Coloré graphique', icon: '🎨', desc: 'Studio avec lumière colorée', tier: 'plus' },
+      { key: 'accessory_c6', label: 'Chic urbain', icon: '🏙️', desc: 'Mise en scène urbaine dynamique', tier: 'plus' },
+      // PRO (+3)
+      { key: 'accessory_c7', label: 'Glamour soirée', icon: '💎', desc: 'Studio luxe avec accessoires complémentaires', tier: 'pro' },
+      { key: 'accessory_c8', label: 'Artistique abstrait', icon: '🎭', desc: 'Ambiance artistique, couleurs saturées', tier: 'pro' },
+      { key: 'accessory_c9', label: 'Vintage baroque', icon: '👑', desc: 'Décor baroque riche en détails', tier: 'pro' }
     ],
     home_decor: [
-      { key: 'on_sofa', label: 'Sur canapé', icon: '🛋️', desc: 'En utilisation réaliste' },
-      { key: 'scandinavian', label: 'Scandinave', icon: '🏠', desc: 'Lumineux épuré' },
-      { key: 'flat_lay_texture', label: 'Flat lay', icon: '📐', desc: 'Texture gros plan' }
+      // FREE (3)
+      { key: 'home_c1', label: 'Moderne épuré', icon: '🏠', desc: 'Intérieur lumineux et minimaliste', tier: 'free' },
+      { key: 'home_c2', label: 'Rustique naturel', icon: '🌿', desc: 'Bois, plantes, lumière naturelle', tier: 'free' },
+      { key: 'home_c3', label: 'Scandinave', icon: '✨', desc: 'Décor épuré blanc/gris', tier: 'free' },
+      // PLUS (+3)
+      { key: 'home_c4', label: 'Industriel', icon: '🏭', desc: 'Ambiance loft, métal, briques', tier: 'plus' },
+      { key: 'home_c5', label: 'Coloré vintage', icon: '🎨', desc: 'Couleurs chaudes, vintage', tier: 'plus' },
+      { key: 'home_c6', label: 'Bohème cozy', icon: '🛋️', desc: 'Ambiance chaleureuse, tissus doux', tier: 'plus' },
+      // PRO (+3)
+      { key: 'home_c7', label: 'Luxe contemporain', icon: '💎', desc: 'Décor moderne avec matériaux nobles', tier: 'pro' },
+      { key: 'home_c8', label: 'Minimaliste zen', icon: '🧘', desc: 'Ambiance zen, couleurs neutres', tier: 'pro' },
+      { key: 'home_c9', label: 'Éclectique artistique', icon: '🎭', desc: 'Mélange de styles, pièces uniques', tier: 'pro' }
+    ],
+    amigurumi: [
+      // FREE (3)
+      { key: 'toy_c1', label: 'Classique doux', icon: '🧸', desc: 'Chambre enfantine avec lumière douce', tier: 'free' },
+      { key: 'toy_c2', label: 'Contes de fées', icon: '✨', desc: 'Décor fantaisie, couleurs pastel', tier: 'free' },
+      { key: 'toy_c3', label: 'Moderne ludique', icon: '🎨', desc: 'Fond blanc studio uniforme', tier: 'free' },
+      // PLUS (+3)
+      { key: 'toy_c4', label: 'Vintage peluche', icon: '🧸', desc: 'Ambiance rétro, lumière tamisée', tier: 'plus' },
+      { key: 'toy_c5', label: 'Artisanat naturel', icon: '🌿', desc: 'Bois, tissus naturels', tier: 'plus' },
+      { key: 'toy_c6', label: 'Cartoon coloré', icon: '🎈', desc: 'Couleurs vives, style dessin animé', tier: 'plus' },
+      // PRO (+3)
+      { key: 'toy_c7', label: 'Luxe pour enfant', icon: '👑', desc: 'Studio avec décor chic', tier: 'pro' },
+      { key: 'toy_c8', label: 'Fantaisie magique', icon: '✨', desc: 'Ambiance féérique, lumières tamisées', tier: 'pro' },
+      { key: 'toy_c9', label: 'Personnalisé unique', icon: '🎭', desc: 'Mise en scène personnalisée', tier: 'pro' }
     ],
     other: [
-      { key: 'studio_white', label: 'Fond blanc', icon: '✨', desc: 'Professionnel fond blanc pur' },
-      { key: 'lifestyle', label: 'Lifestyle', icon: '🌟', desc: 'Ambiance chaleureuse naturelle' },
-      { key: 'nature', label: 'Nature', icon: '🌿', desc: 'Tons verts extérieur' }
+      // FREE (3)
+      { key: 'baby_c1', label: 'Doux naturel', icon: '👶', desc: 'Studio lumière douce et pastel', tier: 'free' },
+      { key: 'baby_c2', label: 'Bio organique', icon: '🌿', desc: 'Décor naturel, plantes', tier: 'free' },
+      { key: 'baby_c3', label: 'Classique enfantin', icon: '✨', desc: 'Ambiance joyeuse et lumineuse', tier: 'free' },
+      // PLUS (+3)
+      { key: 'baby_c4', label: 'Moderne épuré', icon: '🏠', desc: 'Style minimaliste blanc', tier: 'plus' },
+      { key: 'baby_c5', label: 'Coloré gai', icon: '🎨', desc: 'Couleurs vives, ambiance joyeuse', tier: 'plus' },
+      { key: 'baby_c6', label: 'Vintage doux', icon: '🧸', desc: 'Décor rétro, lumière chaude', tier: 'plus' },
+      // PRO (+3)
+      { key: 'baby_c7', label: 'Luxe contemporain', icon: '💎', desc: 'Studio avec accessoires premium', tier: 'pro' },
+      { key: 'baby_c8', label: 'Ambiance conte de fées', icon: '✨', desc: 'Décor féérique doux', tier: 'pro' },
+      { key: 'baby_c9', label: 'Personnalisé moderne', icon: '🎭', desc: 'Mise en scène personnalisée', tier: 'pro' }
     ]
+  }
+
+  // [AI:Claude] Filtrer les styles selon le plan de l'utilisateur
+  const getAvailableStyles = (category) => {
+    const allStyles = stylesByCategory[category] || []
+    const subscriptionType = user?.subscription_type || 'free'
+
+    // Déterminer le tier en fonction du type d'abonnement
+    let userTier = 'free'
+
+    // Plans PLUS
+    if (subscriptionType === 'plus' || subscriptionType === 'plus_annual') {
+      userTier = 'plus'
+    }
+    // Plans PRO (tous les variants)
+    else if (
+      subscriptionType === 'pro' ||
+      subscriptionType === 'pro_annual' ||
+      subscriptionType === 'early_bird' ||
+      subscriptionType.toLowerCase().includes('pro')
+    ) {
+      userTier = 'pro'
+    }
+
+    // Filtrer selon le tier
+    if (userTier === 'free') {
+      return allStyles.filter(s => s.tier === 'free')
+    } else if (userTier === 'plus') {
+      return allStyles.filter(s => s.tier === 'free' || s.tier === 'plus')
+    } else {
+      return allStyles // PRO accède à tout
+    }
   }
 
 
@@ -331,9 +408,12 @@ const Gallery = () => {
                 <div>
                   <h3 className="font-bold text-lg text-gray-900">Crédits Photos IA</h3>
                   <p className="text-sm text-gray-600">
-                    {user?.subscription_type === 'free' || !user?.subscription_type
-                      ? 'Plan FREE : 5 photos/mois'
-                      : 'Plan PRO : 75 photos/mois'}
+                    {(() => {
+                      const subType = user?.subscription_type;
+                      if (!subType || subType === 'free') return 'Plan FREE : 5 photos/mois';
+                      if (subType === 'plus' || subType === 'plus_annual') return 'Plan PLUS : 15 photos/mois';
+                      return 'Plan PRO : 30 photos/mois';
+                    })()}
                   </p>
                 </div>
               </div>
@@ -362,21 +442,17 @@ const Gallery = () => {
                   to="/profile"
                   className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition shadow-md hover:shadow-lg"
                 >
-                  🚀 Passer à PRO (30 crédits/mois)
+                  🚀 Passer à PLUS ou PRO
                 </Link>
               ) : (
                 <button
                   disabled
                   className="inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-400 font-medium rounded-lg cursor-not-allowed"
-                  title="Recharge automatique le 1er du mois"
+                  title="Recharge automatique chaque mois à votre date d'abonnement"
                 >
-                  ✅ Abonnement PRO actif
+                  ✅ Abonnement {user?.subscription_type?.includes('plus') ? 'PLUS' : 'PRO'} actif
                 </button>
               )}
-
-              <p className="text-xs text-center text-gray-500">
-                Recharge auto le 1er du mois
-              </p>
             </div>
           </div>
         </div>
@@ -701,7 +777,7 @@ const Gallery = () => {
 
       {/* Modal d'upload */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
               <h2 className="text-2xl font-bold text-gray-900">📷 Uploader une photo</h2>
@@ -877,7 +953,7 @@ const Gallery = () => {
 
       {/* Modal d'embellissement IA - v0.12.1 SIMPLIFIÉ */}
       {showEnhanceModal && selectedPhoto && selectedContext && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
           <div className="bg-white rounded-lg max-w-lg w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg">
               <h2 className="text-2xl font-bold text-gray-900">✨ Générer une photo IA</h2>
@@ -912,7 +988,7 @@ const Gallery = () => {
                   Choisissez un style :
                 </label>
                 <div className="space-y-2">
-                  {(stylesByCategory[detectProjectCategory(selectedPhoto.item_type || '')] || stylesByCategory.other).map(style => (
+                  {getAvailableStyles(detectProjectCategory(selectedPhoto.item_type || '')).map(style => (
                     <label
                       key={style.key}
                       className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
@@ -931,12 +1007,44 @@ const Gallery = () => {
                       />
                       <span className="text-2xl">{style.icon}</span>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{style.label}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900">{style.label}</p>
+                          {style.tier === 'plus' && (
+                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">PLUS</span>
+                          )}
+                          {style.tier === 'pro' && (
+                            <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-600">{style.desc}</p>
                       </div>
                     </label>
                   ))}
                 </div>
+
+                {/* Message upgrade pour FREE */}
+                {user?.subscription_type === 'free' && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-primary-50 border border-purple-200 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      🎨 <span className="font-semibold">6 styles supplémentaires</span> avec PLUS et <span className="font-semibold">9 styles premium</span> avec PRO !
+                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
+                        Découvrir les plans
+                      </a>
+                    </p>
+                  </div>
+                )}
+
+                {/* Message upgrade pour PLUS */}
+                {(user?.subscription_type === 'plus' || user?.subscription_type === 'plus_annual') && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-primary-50 to-sage-50 border border-primary-200 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      ✨ <span className="font-semibold">3 styles premium supplémentaires</span> disponibles avec PRO (Instagram, Catalogues, Saisonnier) !
+                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
+                        Passer à PRO
+                      </a>
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Zone de preview */}

@@ -23,10 +23,6 @@ const Profile = () => {
     confirm_password: ''
   })
 
-  // States pour suppression compte
-  const [deletePassword, setDeletePassword] = useState('')
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-
   // Messages
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
@@ -100,20 +96,6 @@ const Profile = () => {
     }
   }
 
-  const handleDeleteAccount = async (e) => {
-    e.preventDefault()
-    setSuccessMessage('')
-    setErrorMessage('')
-
-    try {
-      await userAPI.deleteAccount({ password: deletePassword })
-      logout()
-      window.location.href = '/'
-    } catch (error) {
-      setErrorMessage(error.response?.data?.message || 'Erreur lors de la suppression du compte')
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -157,12 +139,11 @@ const Profile = () => {
 
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-6">
-        <nav className="flex space-x-8">
+        <nav className="flex gap-4 md:gap-8">
           {[
             { id: 'info', label: 'Informations', icon: '👤' },
             { id: 'password', label: 'Mot de passe', icon: '🔒' },
-            { id: 'subscription', label: 'Abonnement', icon: '💳' },
-            { id: 'delete', label: 'Supprimer', icon: '⚠️' }
+            { id: 'subscription', label: 'Abonnement', icon: '💳' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -171,7 +152,7 @@ const Profile = () => {
                 setSuccessMessage('')
                 setErrorMessage('')
               }}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm md:text-base transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -415,8 +396,31 @@ const Profile = () => {
               </div>
             )}
 
+            {/* Message Beta PLUS */}
+            {(userData.subscription_type === 'plus' || userData.subscription_type === 'plus_annual') && (
+              <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-300 p-4 rounded-lg">
+                <p className="text-purple-900 font-medium mb-2">
+                  ✨ Plan PLUS Beta - Merci d'être testeur PLUS !
+                </p>
+                <ul className="text-sm text-purple-800 mb-3 list-disc list-inside space-y-1">
+                  <li>7 projets actifs</li>
+                  <li>15 crédits photos par mois</li>
+                  <li>Organisation avancée</li>
+                  <li>Support prioritaire</li>
+                </ul>
+                <p className="text-sm text-purple-700 mt-3">
+                  {stats.has_active_subscription && userData.subscription_expires_at && (
+                    <>
+                      🎁 Votre accès PLUS est offert jusqu'au{' '}
+                      <strong>{new Date(userData.subscription_expires_at).toLocaleDateString('fr-FR')}</strong>
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+
             {/* Message Beta PRO */}
-            {userData.subscription_type === 'pro' && (
+            {(userData.subscription_type === 'pro' || userData.subscription_type === 'pro_annual' || userData.subscription_type === 'early_bird') && (
               <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-300 p-4 rounded-lg">
                 <p className="text-orange-900 font-medium mb-2">
                   ✨ Plan PRO Beta - Merci d'être testeur PRO !
@@ -425,7 +429,7 @@ const Profile = () => {
                   <li>Projets illimités</li>
                   <li>30 crédits photos par mois</li>
                   <li>Bibliothèque de patrons illimitée</li>
-                  <li>Accès anticipé aux nouvelles fonctionnalités</li>
+                  <li>Accès premium aux nouveautés</li>
                 </ul>
                 <p className="text-sm text-orange-700 mt-3">
                   {stats.has_active_subscription && userData.subscription_expires_at && (
@@ -490,69 +494,30 @@ const Profile = () => {
         </div>
       )}
 
+      {/* Zone dangereuse - Suppression de compte */}
+      <div className="card border-2 border-red-200 mt-8">
+        <h2 className="text-xl font-bold mb-4 text-red-600">⚠️ Zone dangereuse</h2>
 
-      {/* Tab: Supprimer le compte */}
-      {activeTab === 'delete' && (
-        <div className="card">
-          <h2 className="text-2xl font-bold mb-6 text-red-600">Supprimer mon compte</h2>
-
-          <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-6">
-            <p className="text-red-800 font-medium mb-2">⚠️ Attention : Cette action est irréversible</p>
-            <ul className="text-red-700 text-sm list-disc list-inside space-y-1">
-              <li>Tous vos projets de tricot/crochet seront supprimés</li>
-              <li>Toutes vos photos et générations IA seront perdues</li>
-              <li>Votre historique de paiements sera perdu</li>
-              <li>Votre abonnement sera annulé (sans remboursement)</li>
-              <li>Vous ne pourrez pas récupérer votre compte</li>
-            </ul>
-          </div>
-
-          {!showDeleteConfirm ? (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-            >
-              Je veux supprimer mon compte
-            </button>
-          ) : (
-            <form onSubmit={handleDeleteAccount}>
-              <p className="text-gray-700 mb-4 font-medium">
-                Pour confirmer la suppression, veuillez entrer votre mot de passe :
-              </p>
-
-              <div className="mb-6">
-                <input
-                  type="password"
-                  className="input-field"
-                  placeholder="Mot de passe"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                >
-                  Confirmer la suppression
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDeleteConfirm(false)
-                    setDeletePassword('')
-                  }}
-                  className="btn-secondary"
-                >
-                  Annuler
-                </button>
-              </div>
-            </form>
-          )}
+        <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-4">
+          <p className="text-red-800 font-medium mb-2">Supprimer mon compte</p>
+          <p className="text-sm text-red-700 mb-3">
+            Cette action est irréversible. Tous vos projets, photos IA et données seront définitivement supprimés.
+          </p>
+          <p className="text-sm text-gray-600 mb-3">
+            Pour des raisons de sécurité, la suppression de compte nécessite une vérification par email.
+          </p>
+          <a
+            href={`mailto:support@yarnflow.fr?subject=Demande de suppression de compte&body=Bonjour,%0D%0A%0D%0AJe souhaite supprimer mon compte YarnFlow associé à l'email : ${userData.email}%0D%0A%0D%0AJe comprends que cette action est irréversible et que toutes mes données seront définitivement supprimées.%0D%0A%0D%0AMerci.`}
+            className="inline-block bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+          >
+            📧 Demander la suppression par email
+          </a>
         </div>
-      )}
+
+        <p className="text-xs text-gray-500">
+          💡 Vous recevrez une confirmation par email avant la suppression définitive.
+        </p>
+      </div>
     </div>
   )
 }

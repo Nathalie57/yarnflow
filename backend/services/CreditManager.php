@@ -22,13 +22,15 @@ class CreditManager
     private PDO $db;
 
     /**
-     * [AI:Claude] Quotas mensuels par plan (v0.13.0 - YarnFlow Pricing Final)
+     * [AI:Claude] Quotas mensuels par plan (v0.14.0 - YarnFlow avec PLUS)
      * Aligné sur CLAUDE.md
      */
     private const MONTHLY_QUOTAS = [
         'free' => 5,          // FREE : 5 crédits/mois
-        'pro' => 30,          // PRO 3.99€/mois : 30 crédits/mois
-        'pro_annual' => 30,   // PRO ANNUAL 34.99€/an : 30 crédits/mois
+        'plus' => 15,         // PLUS 2.99€/mois : 15 crédits/mois
+        'plus_annual' => 15,  // PLUS ANNUAL 29.99€/an : 15 crédits/mois
+        'pro' => 30,          // PRO 4.99€/mois : 30 crédits/mois
+        'pro_annual' => 30,   // PRO ANNUAL 49.99€/an : 30 crédits/mois
         'early_bird' => 30,   // EARLY BIRD 2.99€/mois : 30 crédits/mois (waitlist uniquement)
         // Legacy support (deprecated - tous migrés vers 'pro')
         'standard' => 30,
@@ -89,8 +91,15 @@ class CreditManager
         $credits = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$credits) {
-            // [AI:Claude] Initialiser les crédits si pas encore créés
-            $this->initializeUserCredits($userId);
+            // [AI:Claude] Initialiser les crédits si pas encore créés - RÉCUPÉRER LE TYPE D'ABONNEMENT
+            $userQuery = "SELECT subscription_type FROM users WHERE id = :user_id";
+            $userStmt = $this->db->prepare($userQuery);
+            $userStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+            $userStmt->execute();
+            $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+            $subscriptionType = $user['subscription_type'] ?? 'free';
+
+            $this->initializeUserCredits($userId, $subscriptionType);
             return $this->getUserCredits($userId);
         }
 
@@ -379,13 +388,14 @@ class CreditManager
         if (!$data)
             return false;
 
-        // [AI:Claude] Vérifier si le dernier reset date de plus d'un mois
+        // [AI:Claude] Vérifier si le dernier reset date de plus d'un mois (30 jours calendaires)
         $lastReset = new \DateTime($data['last_reset_at']);
         $now = new \DateTime();
         $interval = $lastReset->diff($now);
 
-        // [AI:Claude] Si >= 1 mois, reset
-        if ($interval->m >= 1 || $interval->y >= 1) {
+        // [AI:Claude] v0.14.0 - FIX: Utiliser days au lieu de m pour compter les jours calendaires
+        // Si >= 30 jours, reset (au lieu de >= 1 mois complet)
+        if ($interval->days >= 30) {
             // [AI:Claude] Vérifier si l'abonnement est expiré
             $subscriptionType = $data['subscription_type'];
             if ($subscriptionType !== 'free' && isset($data['subscription_expires_at']) && $data['subscription_expires_at'] !== null) {

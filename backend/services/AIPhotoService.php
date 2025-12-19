@@ -24,43 +24,76 @@ class AIPhotoService
     private Client $httpClient;
 
     /**
-     * [AI:Claude] Contextes - Descriptions SIMPLES pour le prompt Gemini
-     * Format: "genere une photo [STYLE] a partir de cette image sans changer le produit home made"
+     * [AI:Claude] v0.14.0 - Contextes par catégorie et tier (FREE/PLUS/PRO)
+     * Chaque catégorie a ses propres contextes spécifiques
      */
     private const CONTEXTS = [
-        // Wearables
-        'worn_model' => 'avec le produit porté par un modèle dans un cadre naturel',
-        'mannequin' => 'sur mannequin avec fond neutre gris',
-        'studio_white' => 'sur fond blanc pur style studio professionnel',
-        'flat_lay' => 'en vue du dessus sur surface claire en bois ou lin avec lumière douce naturelle',
+        // VÊTEMENTS PORTÉS - FREE
+        'wearable_c1' => 'porté par une personne dans un portrait extérieur avec lumière douce naturelle et arrière-plan flou',
+        // VÊTEMENTS À PLAT/DÉTAILS - FREE
+        'flatlay_c1' => 'posé à plat sur fond blanc studio avec éclairage uniforme et neutre',
+        'detail_c1' => 'en gros plan macro extrême sur une partie de l\'ouvrage uniquement, montrant la texture des points et le motif en détail, sans aucun fond visible, lumière naturelle douce pour révéler les détails',
+        // VÊTEMENTS PORTÉS - PLUS
+        'wearable_c2' => 'porté par une personne en studio avec fond blanc neutre et éclairage uniforme',
+        'wearable_c3' => 'porté par une personne dans une ambiance urbaine lifestyle avec rue calme et lumière naturelle',
+        // VÊTEMENTS À PLAT - PLUS
+        'flatlay_c2' => 'posé à plat avec accessoires lifestyle et props décoratifs sur surface naturelle texturée',
+        // VÊTEMENTS PORTÉS - PRO
+        'wearable_c4' => 'porté par une personne dans une ambiance vintage avec décor rétro et tons chauds',
+        'wearable_c7' => 'porté par une personne en studio avec fond texturé sombre et éclairage dramatique sophistiqué',
+        'wearable_c9' => 'porté par une personne dans une ambiance industrielle urbaine avec architecture moderne',
 
-        // Amigurumi
-        'play_scene' => 'dans un jardin ou parc avec lumière naturelle',
-        'kids_room' => 'dans une chambre d\'enfant',
-        // 'held_hands' => 'tenu délicatement dans des mains avec fond doux', // Removed - doesn't respect scale
-        'shelf_display' => 'présenté sur une surface avec éclairage lumineux',
+        // ACCESSOIRES - FREE
+        'accessory_c1' => 'posé à plat en flat lay sur fond blanc pur avec éclairage studio professionnel et ombres douces',
+        'accessory_c2' => 'porté sur la tête d\'une personne (modèle visible) en extérieur avec lumière naturelle douce et arrière-plan flou naturel',
+        'accessory_c3' => 'porté par un modèle sur fond neutre uni avec éclairage studio professionnel',
+        // ACCESSOIRES - PLUS
+        'accessory_c4' => 'posé à plat en flat lay avec accessoires lifestyle complémentaires et composition harmonieuse',
+        'accessory_c5' => 'porté par un modèle en ville avec architecture urbaine moderne et ambiance dynamique',
+        'accessory_c6' => 'posé sur une table avec textures douces, ambiance cosy et lumière naturelle chaleureuse',
+        // ACCESSOIRES - PRO
+        'accessory_c7' => 'porté par un modèle dans un shooting mode professionnel avec mise en scène stylée et éclairage studio créatif',
+        'accessory_c8' => 'posé en mise en scène luxe avec fond sombre, lumière tamisée élégante et composition raffinée',
+        'accessory_c9' => 'porté par un modèle dans un intérieur bohème avec plantes vertes, lumière naturelle et décoration ethnique',
 
-        // Accessoires
-        'in_use' => 'en situation d\'usage naturel avec fond doux',
-        'product_white' => 'sur fond blanc pur style e-commerce',
-        'flat_lay_styled' => 'en vue du dessus sur table en bois clair avec éléments déco minimalistes et ombres douces',
+        // MAISON/DÉCO - FREE
+        'home_c1' => 'dans un intérieur contemporain graphique avec lignes épurées, touches de couleur vive et design architectural moderne',
+        'home_c2' => 'avec bois naturel, plantes vertes et lumière naturelle douce',
+        'home_c3' => 'dans un décor scandinave épuré blanc et gris avec lumière aérée',
+        // MAISON/DÉCO - PLUS
+        'home_c4' => 'dans une ambiance loft industriel avec métal et briques apparentes',
+        'home_c5' => 'dans un décor vintage années 70 avec mobilier rétro, couleurs chaudes orangées et moutarde, lumière douce et ambiance cosy',
+        'home_c6' => 'dans une ambiance bohème chaleureuse avec tissus doux et textures',
+        // MAISON/DÉCO - PRO
+        'home_c7' => 'dans un décor moderne luxe avec matériaux nobles et design contemporain',
+        'home_c8' => 'dans une ambiance zen avec galets naturels, bambou, statuette Bouddha, bougies et couleurs neutres apaisantes',
+        'home_c9' => 'dans un atelier créatif avec table d\'artiste, fournitures artistiques, pinceaux, carnets de croquis, pelotes de laine et lumière naturelle d\'atelier',
 
-        // Home decor
-        'on_sofa' => 'dans un cadre cosy avec textures douces en arrière-plan',
-        'with_plants' => 'avec des tons verts naturels en arrière-plan',
-        'flat_lay_texture' => 'en vue du dessus rapprochée sur surface texturée naturelle comme lin ou coton avec éclairage doux',
+        // JOUETS/PELUCHES - FREE
+        'toy_c1' => 'dans une chambre enfantine avec lumière douce et tons pastel',
+        'toy_c2' => 'dans un décor de livre de contes illustré avec éléments féeriques en aquarelle et couleurs pastel douces',
+        'toy_c3' => 'dans une mise en scène artistique épurée avec fond uni blanc lumineux et éclairage doux directionnel éclatant',
+        // JOUETS/PELUCHES - PLUS
+        'toy_c4' => 'dans une chambre d\'enfant vintage rétro avec jouets anciens en bois et lumière chaude douce',
+        'toy_c5' => 'dans une chambre d\'enfant naturelle avec bois, jouets artisanaux et tissus doux en tons pastel',
+        'toy_c6' => 'dans un décor cartoon coloré avec fond uni vif et éléments graphiques ludiques style dessin animé',
+        // JOUETS/PELUCHES - PRO
+        'toy_c7' => 'dans une boutique de jouets artisanaux premium avec étagères en bois clair, fond pastel élégant et éclairage doux professionnel',
+        'toy_c8' => 'dans un décor d\'aventure jungle tropicale avec plantes exotiques, accessoires d\'exploration et lumière naturelle dorée',
+        'toy_c9' => 'dans une ambiance cirque vintage avec rayures rouge et blanc, paillettes dorées, projecteurs et décor de chapiteau rétro festif',
 
-        // Général - Styles lifestyle
-        'lifestyle' => 'lifestyle chaleureuse avec lumière naturelle dorée',
-        'studio' => 'studio professionnel avec fond blanc et éclairage parfait',
-        'nature' => 'dans une ambiance naturelle avec lumière douce et tons verts',
-        'cafe' => 'dans une ambiance chaleureuse avec tons bois et lumière douce',
-
-        // Styles distincts
-        'rustic' => 'rustique avec tons bois chaleureux et lumière naturelle',
-        'modern' => 'moderne minimaliste avec tons gris et lignes épurées',
-        'vintage' => 'vintage avec tons sépia chauds et ambiance nostalgique',
-        'scandinavian' => 'scandinave avec tons clairs bois et blanc, lumineux et aéré'
+        // ACCESSOIRES BÉBÉ - FREE
+        'baby_c1' => 'posé à plat sur un lit bébé avec draps blancs doux et peluches en tons pastel avec lumière naturelle',
+        'baby_c2' => 'posé à plat sur fond pastel uni avec éclairage doux studio et composition épurée',
+        'baby_c3' => 'posé à plat dans un berceau blanc avec couvertures douces et jouets en bois naturel clair',
+        // ACCESSOIRES BÉBÉ - PLUS
+        'baby_c4' => 'en flat lay lifestyle avec jouets artisanaux en bois, plantes vertes et surface naturelle texturée',
+        'baby_c5' => 'posé à plat sur une table à langer moderne scandinave avec accessoires minimalistes et lumière douce',
+        'baby_c6' => 'posé à plat dans un panier en osier vintage avec tissus lin naturel et lumière chaude dorée',
+        // ACCESSOIRES BÉBÉ - PRO
+        'baby_c7' => 'posé à plat dans ou à côté d\'un emballage cadeau élégant avec papier doux pastel, ruban satiné et petite carte avec lumière douce',
+        'baby_c8' => 'posé à plat en mise en scène lifestyle premium avec accessoires complémentaires raffinés et éclairage professionnel doux',
+        'baby_c9' => 'posé complètement à plat horizontalement sur une étagère murale blanche dans une nursery épurée avec autres accessoires bébé posés à plat et lumière naturelle douce'
     ];
 
 
@@ -107,7 +140,8 @@ class AIPhotoService
                 $prompt = "Generate a high-resolution version of this exact image. Keep the exact same composition, style, lighting, colors, and all details identical. Only increase the resolution and quality, do not change anything else.";
                 error_log("[GEMINI] Using UPSCALE prompt (from preview)");
             } else {
-                $prompt = $this->buildPrompt($projectType, $context);
+                $itemName = $options['item_name'] ?? '';
+                $prompt = $this->buildPrompt($projectType, $context, $itemName);
                 error_log("[GEMINI] Using GENERATION prompt (from original)");
             }
 
@@ -172,24 +206,44 @@ class AIPhotoService
      * @param string $context Contexte visuel (studio_white, product_white, etc.)
      * @return string Prompt optimisé
      */
-    private function buildPrompt(string $type, string $context): string
+    private function buildPrompt(string $type, string $context, string $itemName = ''): string
     {
         // [AI:Claude] Récupérer la description du contexte
         $contextDescription = self::CONTEXTS[$context] ?? self::CONTEXTS['lifestyle'];
 
-        // [AI:Claude] Mapping des catégories vers des indices de contexte pour le prompt
-        $typeHints = [
-            'Vêtements' => 'un vêtement',
-            'Accessoires' => 'un accessoire',
-            'Maison/Déco' => 'un objet de décoration',
-            'Jouets/Peluches' => 'un jouet ou une peluche amigurumi',
-            'Accessoires bébé' => 'un accessoire pour bébé'
-        ];
+        // [AI:Claude] v0.14.0 - Prompt ULTRA STRICT spécifique pour photos portées
+        $isWornContext = in_array($context, [
+            'worn_model',
+            'mannequin',
+            'wearable_c1',
+            'wearable_c2',
+            'wearable_c3',
+            'wearable_c4',
+            'wearable_c7',
+            'wearable_c9',
+            // Accessoires portés
+            'accessory_c2',
+            'accessory_c3',
+            'accessory_c5',
+            'accessory_c7',
+            'accessory_c9'
+        ]);
 
-        $typeHint = $typeHints[$type] ?? 'un objet';
+        if ($isWornContext) {
+            // Pour photos portées : préciser qu'on veut une vraie personne (pas un mannequin de vitrine)
+            return "Tu dois améliorer cette photo {$contextDescription}. L'article doit être porté par une vraie personne (modèle humain vivant), PAS un mannequin de vitrine en plastique. L'ouvrage fait main porté doit rester EXACTEMENT identique. CRITIQUE : conserve les COULEURS EXACTES, la TEXTURE précise, le MOTIF, la FORME et tous les détails de l'ouvrage. Seuls le modèle humain, la pose, l'éclairage et l'arrière-plan peuvent changer. L'ouvrage lui-même ne doit subir AUCUNE modification de couleur ou de texture.";
+        }
 
-        // [AI:Claude] Format SIMPLE testé et validé - fonctionne parfaitement avec Gemini
-        return "Génère une photo de l'ouvrage fait main ({$typeHint}) qui est sur la photo, dans un style {$contextDescription}, avec une lumière améliorée, sans modifier le produit.";
+        // [AI:Claude] v0.14.0 - Prompt spécifique pour tous les accessoires bébé (toujours à plat)
+        $isBabyContext = str_starts_with($context, 'baby_');
+
+        if ($isBabyContext) {
+            error_log("[PROMPT] Accessoire bébé '{$itemName}' - Utilisation du prompt FLAT LAY strict");
+            return "Tu dois améliorer cette photo {$contextDescription}. RÈGLE ABSOLUE : l'accessoire doit être posé complètement à plat sur la surface horizontale, comme s'il était naturellement posé par gravité, JAMAIS debout, dressé ou en position verticale. IMPORTANT : garde EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE AUCUN motif, dessin, broderie ou décoration qui n'était pas présent sur l'image originale. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément qui n'était pas présent dans l'image originale. Améliore uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes couleurs.";
+        }
+
+        // [AI:Claude] Prompt standard pour autres contextes (produit seul)
+        return "Tu dois améliorer cette photo {$contextDescription}. RÈGLE ABSOLUE : l'ouvrage fait main doit rester EXACTEMENT identique. CRITIQUE : conserve les COULEURS EXACTES, la TEXTURE précise, le MOTIF exact, la FORME et tous les détails de l'ouvrage original. Ne change AUCUNE couleur de l'ouvrage, même légèrement. N'AJOUTE AUCUN motif, dessin, broderie ou décoration qui n'était pas présent. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément qui n'était pas présent. Améliore uniquement l'éclairage, l'ambiance et l'arrière-plan autour de l'ouvrage.";
     }
 
     /**
@@ -501,8 +555,9 @@ class AIPhotoService
             // [AI:Claude] Construire le prompt
             $projectType = $options['project_type'] ?? 'handmade craft';
             $context = $options['context'] ?? 'lifestyle';
+            $itemName = $options['item_name'] ?? '';
 
-            $prompt = $this->buildPrompt($projectType, $context);
+            $prompt = $this->buildPrompt($projectType, $context, $itemName);
 
             // [AI:Claude] Mode simulation (pour tester sans API)
             if ($this->simulationMode) {

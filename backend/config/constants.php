@@ -21,23 +21,37 @@ define('TYPE_AMIGURUMI', 'amigurumi'); // Amigurumi (peluches)
 define('TYPE_BAG', 'bag');           // Sac
 define('TYPE_GARMENT', 'garment');   // Vêtement
 
-// [AI:Claude] Types d'abonnement (v0.12.0 - YarnFlow Pricing Final)
-define('SUBSCRIPTION_FREE', 'free');           // 0€ - 3 projets, 5 photos/mois
-define('SUBSCRIPTION_PRO', 'pro');             // 4.99€/mois - Projets illimités + 75 photos IA
-define('SUBSCRIPTION_PRO_ANNUAL', 'pro_annual'); // 39.99€/an - Comme PRO avec réduction annuelle
-define('SUBSCRIPTION_EARLY_BIRD', 'early_bird'); // 2.99€/mois x 12 mois (200 places max)
-// Legacy support (deprecated - sera migré vers 'pro')
-define('SUBSCRIPTION_STANDARD', 'pro');        // Alias pour PRO
-define('SUBSCRIPTION_PREMIUM', 'pro');         // Alias pour PRO
-define('SUBSCRIPTION_STARTER', 'pro');         // Alias pour PRO
-define('SUBSCRIPTION_MONTHLY', 'pro');         // Alias pour PRO
-define('SUBSCRIPTION_YEARLY', 'pro');          // Alias pour PRO
+// [AI:Claude] Types d'abonnement (v0.14.0 - YarnFlow Launch avec PLUS)
+define('SUBSCRIPTION_FREE', 'free');                   // 0€ - 3 projets actifs, 5 crédits photos/mois
+define('SUBSCRIPTION_PLUS', 'plus');                   // 2.99€/mois - 7 projets, 15 crédits photos/mois
+define('SUBSCRIPTION_PLUS_ANNUAL', 'plus_annual');     // 29.99€/an - Économisez 15%
+define('SUBSCRIPTION_PRO', 'pro');                     // 4.99€/mois - Projets illimités + 30 crédits photos/mois
+define('SUBSCRIPTION_PRO_ANNUAL', 'pro_annual');       // 49.99€/an - Économisez 17%
+define('SUBSCRIPTION_EARLY_BIRD', 'early_bird');       // 2.99€/mois x 12 mois (200 places max)
+// Legacy support (deprecated - sera migré vers les nouveaux types)
+define('SUBSCRIPTION_STANDARD', 'pro');                // Alias pour PRO
+define('SUBSCRIPTION_PREMIUM', 'pro');                 // Alias pour PRO
+define('SUBSCRIPTION_STARTER', 'plus');                // Alias pour PLUS
+define('SUBSCRIPTION_MONTHLY', 'pro');                 // Alias pour PRO monthly
+define('SUBSCRIPTION_YEARLY', 'pro');                  // Alias pour PRO
 
 // [AI:Claude] Statuts de paiement
 define('PAYMENT_PENDING', 'pending');
 define('PAYMENT_COMPLETED', 'completed');
 define('PAYMENT_FAILED', 'failed');
 define('PAYMENT_REFUNDED', 'refunded');
+
+// [AI:Claude] Types de paiement
+define('PAYMENT_PATTERN', 'pattern');
+define('PAYMENT_SUBSCRIPTION_PLUS', 'subscription_plus');
+define('PAYMENT_SUBSCRIPTION_PLUS_ANNUAL', 'subscription_plus_annual');
+define('PAYMENT_SUBSCRIPTION_PRO', 'subscription_pro');
+define('PAYMENT_SUBSCRIPTION_PRO_ANNUAL', 'subscription_pro_annual');
+define('PAYMENT_SUBSCRIPTION_EARLY_BIRD', 'subscription_early_bird');
+define('PAYMENT_PHOTO_CREDITS', 'photo_credits');
+// Legacy (kept for backward compatibility)
+define('PAYMENT_SUBSCRIPTION_MONTHLY', 'subscription_pro');
+define('PAYMENT_SUBSCRIPTION_ANNUAL', 'subscription_pro_annual');
 
 // [AI:Claude] Statuts de génération de patron
 define('PATTERN_DRAFT', 'draft');

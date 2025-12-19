@@ -18,7 +18,7 @@ export default function CGU() {
           <h1 className="text-4xl font-black text-gray-900 mb-2">
             Conditions Générales d'Utilisation
           </h1>
-          <p className="text-gray-600">Dernière mise à jour : 20 novembre 2025</p>
+          <p className="text-gray-600">Dernière mise à jour : 18 décembre 2025</p>
         </div>
 
         {/* Content */}
@@ -71,15 +71,19 @@ export default function CGU() {
                 Aucun engagement, aucune carte bancaire requise.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                <strong>4.2 Plan PRO :</strong> 3,99€/mois ou 34,99€/an. Projets illimités, 30 crédits photos/mois,
-                bibliothèque de patrons complète.
+                <strong>4.2 Plan PLUS :</strong> 2,99€/mois ou 29,99€/an. 7 projets actifs, 15 crédits photos/mois,
+                organisation avancée, support prioritaire.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                <strong>4.3 Offre EARLY BIRD :</strong> 2,99€/mois pendant 12 mois (réservée aux membres
-                de la waitlist), puis passage automatique à 3,99€/mois. Tous les avantages PRO inclus.
+                <strong>4.3 Plan PRO :</strong> 4,99€/mois ou 49,99€/an. Projets illimités, 30 crédits photos/mois,
+                bibliothèque de patrons complète, accès premium aux nouveautés.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                <strong>4.4 Packs de crédits :</strong> Disponibles pour tous les utilisateurs en complément
+                <strong>4.4 Offre EARLY BIRD :</strong> 2,99€/mois pendant 12 mois (réservée aux membres
+                de la waitlist), puis passage automatique à 4,99€/mois. Tous les avantages PRO inclus.
+              </p>
+              <p className="text-gray-700 leading-relaxed">
+                <strong>4.5 Packs de crédits :</strong> Disponibles pour tous les utilisateurs en complément
                 (Pack 50 crédits photos 4,99€, Pack 150 crédits photos 9,99€).
               </p>
             </div>
@@ -119,11 +123,14 @@ export default function CGU() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">7. Utilisation de l'IA</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">7. Génération d'images par intelligence artificielle</h2>
             <p className="text-gray-700 leading-relaxed">
-              Les photos générées par notre système d'IA sont basées sur vos photos originales. YarnFlow
-              utilise Google Gemini pour améliorer vos photos (arrière-plans, mise en scène) mais ne modifie
-              jamais l'ouvrage tricoté/crocheté lui-même.
+              Les images générées via notre service sont produites automatiquement par un système d'intelligence artificielle.
+              Ces images peuvent comporter des imperfections, des contenus imprévus ou ne pas correspondre exactement aux
+              attentes de l'utilisateur. Nathalie Henrion et YarnFlow déclinent toute responsabilité quant à la conformité,
+              la qualité, l'originalité ou l'usage que l'utilisateur fait de ces images. L'utilisateur reconnaît utiliser
+              ce service à ses propres risques et s'engage à vérifier la légalité et la pertinence des images avant toute
+              utilisation, notamment à des fins commerciales ou de diffusion publique.
             </p>
           </section>
 

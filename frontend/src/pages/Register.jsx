@@ -70,7 +70,7 @@ const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
       <div className="card max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center mb-2">🧶 Patron Maker</h1>
+        <h1 className="text-3xl font-bold text-center mb-2">🧶 YarnFlow</h1>
         <p className="text-gray-600 text-center mb-6">Créer votre compte</p>
 
         {error && (

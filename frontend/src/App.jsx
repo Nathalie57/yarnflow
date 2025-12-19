@@ -17,7 +17,7 @@ import Dashboard from './pages/Dashboard'
 import Generator from './pages/Generator'
 import MyPatterns from './pages/MyPatterns'
 import PatternDetail from './pages/PatternDetail'
-// import Subscription from './pages/Subscription'
+import Subscription from './pages/Subscription'
 import Profile from './pages/Profile'
 import MyProjects from './pages/MyProjects'
 import ProjectCounter from './pages/ProjectCounter'
@@ -70,7 +70,7 @@ function App() {
             <Route path="/generator" element={<Generator />} />
             <Route path="/my-patterns" element={<MyPatterns />} />
             <Route path="/patterns/:id" element={<PatternDetail />} />
-            {/* <Route path="/subscription" element={<Subscription />} /> */}
+            <Route path="/subscription" element={<Subscription />} />
             <Route path="/profile" element={<Profile />} />
 
             {/* Routes projets (YarnFlow - Dashboard unifié) */}

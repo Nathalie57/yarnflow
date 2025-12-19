@@ -142,35 +142,89 @@ class PricingService
     }
 
     /**
-     * [AI:Claude] Obtenir le prix des abonnements (v0.13.0 - Aligné sur CLAUDE.md)
+     * [AI:Claude] Obtenir le prix des abonnements (v0.14.0 - PLUS + PRO)
      *
-     * @return array Prix des abonnements mensuels et annuels
+     * @return array Prix des abonnements PLUS et PRO, mensuels et annuels
      */
     public function getSubscriptionPrices(): array
     {
         return [
-            'monthly' => [
-                'price' => (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 3.99),
+            'plus' => [
+                'monthly' => (float)($_ENV['SUBSCRIPTION_PLUS_MONTHLY_PRICE'] ?? 2.99),
+                'annual' => (float)($_ENV['SUBSCRIPTION_PLUS_ANNUAL_PRICE'] ?? 29.99)
+            ],
+            'pro' => [
+                'monthly' => (float)($_ENV['SUBSCRIPTION_PRO_MONTHLY_PRICE'] ?? 4.99),
+                'annual' => (float)($_ENV['SUBSCRIPTION_PRO_ANNUAL_PRICE'] ?? 49.99)
+            ],
+            'early_bird' => 2.99
+        ];
+    }
+
+    /**
+     * [AI:Claude] Obtenir les détails complets des abonnements (v0.14.0 - PLUS + PRO)
+     *
+     * @return array Détails des abonnements avec prix et fonctionnalités
+     */
+    public function getSubscriptionDetails(): array
+    {
+        return [
+            'plus' => [
+                'price' => (float)($_ENV['SUBSCRIPTION_PLUS_MONTHLY_PRICE'] ?? 2.99),
                 'currency' => 'EUR',
                 'period' => 'month',
+                'max_projects' => 7,
+                'photo_credits' => 15,
                 'features' => [
-                    'Projets illimités',
-                    '30 crédits photos/mois',
-                    'Bibliothèque de patrons',
-                    'Support prioritaire'
+                    '7 projets actifs',
+                    '15 crédits photos/mois',
+                    'Compteur de rangs',
+                    'Organisation avancée'
                 ]
             ],
-            'yearly' => [
-                'price' => (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 34.99),
+            'plus_annual' => [
+                'price' => (float)($_ENV['SUBSCRIPTION_PLUS_ANNUAL_PRICE'] ?? 29.99),
                 'currency' => 'EUR',
                 'period' => 'year',
-                'savings' => '27% de réduction (12.89€ d\'économie)',
+                'max_projects' => 7,
+                'photo_credits' => 15,
+                'savings' => '15% de réduction (5.89€ d\'économie)',
+                'features' => [
+                    '7 projets actifs',
+                    '15 crédits photos/mois',
+                    'Compteur de rangs',
+                    'Organisation avancée'
+                ]
+            ],
+            'pro' => [
+                'price' => (float)($_ENV['SUBSCRIPTION_PRO_MONTHLY_PRICE'] ?? 4.99),
+                'currency' => 'EUR',
+                'period' => 'month',
+                'max_projects' => -1, // Illimité
+                'photo_credits' => 30,
                 'features' => [
                     'Projets illimités',
                     '30 crédits photos/mois',
-                    'Bibliothèque de patrons',
+                    'Compteur de rangs',
+                    'Organisation avancée',
                     'Support prioritaire',
-                    'Accès anticipé aux nouveautés'
+                    'Accès premium aux nouveautés'
+                ]
+            ],
+            'pro_annual' => [
+                'price' => (float)($_ENV['SUBSCRIPTION_PRO_ANNUAL_PRICE'] ?? 49.99),
+                'currency' => 'EUR',
+                'period' => 'year',
+                'max_projects' => -1, // Illimité
+                'photo_credits' => 30,
+                'savings' => '17% de réduction (9.89€ d\'économie)',
+                'features' => [
+                    'Projets illimités',
+                    '30 crédits photos/mois',
+                    'Compteur de rangs',
+                    'Organisation avancée',
+                    'Support prioritaire',
+                    'Accès premium aux nouveautés'
                 ]
             ],
             'early_bird' => [
@@ -179,6 +233,8 @@ class PricingService
                 'period' => 'month',
                 'duration' => '12 mois',
                 'limit' => '200 places',
+                'max_projects' => -1, // Illimité
+                'photo_credits' => 30,
                 'features' => [
                     'Accès PRO complet',
                     'Projets illimités',
@@ -190,24 +246,31 @@ class PricingService
     }
 
     /**
-     * [AI:Claude] Calculer les économies de l'abonnement annuel (v0.13.0)
+     * [AI:Claude] Calculer les économies des abonnements annuels (v0.14.0 - PLUS + PRO)
      *
+     * @param string $plan Plan concerné ('plus' ou 'pro')
      * @return array Détails des économies
      */
-    public function getYearlySavings(): array
+    public function getYearlySavings(string $plan = 'pro'): array
     {
-        $monthlyPrice = (float)($_ENV['SUBSCRIPTION_MONTHLY_PRICE'] ?? 3.99);
-        $yearlyPrice = (float)($_ENV['SUBSCRIPTION_YEARLY_PRICE'] ?? 34.99);
+        if ($plan === 'plus') {
+            $monthlyPrice = (float)($_ENV['SUBSCRIPTION_PLUS_MONTHLY_PRICE'] ?? 2.99);
+            $yearlyPrice = (float)($_ENV['SUBSCRIPTION_PLUS_ANNUAL_PRICE'] ?? 29.99);
+        } else {
+            $monthlyPrice = (float)($_ENV['SUBSCRIPTION_PRO_MONTHLY_PRICE'] ?? 4.99);
+            $yearlyPrice = (float)($_ENV['SUBSCRIPTION_PRO_ANNUAL_PRICE'] ?? 49.99);
+        }
 
         $monthlyTotal = $monthlyPrice * 12;
         $savings = $monthlyTotal - $yearlyPrice;
         $savingsPercent = round(($savings / $monthlyTotal) * 100);
 
         return [
+            'plan' => $plan,
             'monthly_price' => $monthlyPrice,
             'monthly_total_year' => $monthlyTotal,
             'yearly_price' => $yearlyPrice,
-            'savings_amount' => $savings,
+            'savings_amount' => round($savings, 2),
             'savings_percent' => $savingsPercent
         ];
     }

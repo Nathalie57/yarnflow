@@ -258,13 +258,17 @@ class User extends BaseModel
 
         $subscriptionType = $user['subscription_type'] ?? SUBSCRIPTION_FREE;
 
-        // [AI:Claude] Quotas projets v0.8.0 - TRACKER-FIRST STRATEGY
-        if ($subscriptionType === SUBSCRIPTION_PREMIUM)
+        // [AI:Claude] Quotas projets v0.14.0 - FREE 3 projets, PLUS 7 projets, PRO illimité
+        $unlimitedPlans = [SUBSCRIPTION_PRO, SUBSCRIPTION_PRO_ANNUAL, SUBSCRIPTION_EARLY_BIRD, SUBSCRIPTION_PREMIUM];
+        if (in_array($subscriptionType, $unlimitedPlans))
             return null; // Illimité
 
         $quotas = [
             SUBSCRIPTION_FREE => (int)($_ENV['MAX_PROJECTS_FREE'] ?? 3),
-            SUBSCRIPTION_STARTER => (int)($_ENV['MAX_PROJECTS_STARTER'] ?? 15)
+            SUBSCRIPTION_PLUS => (int)($_ENV['MAX_PROJECTS_PLUS'] ?? 7),
+            SUBSCRIPTION_PLUS_ANNUAL => (int)($_ENV['MAX_PROJECTS_PLUS'] ?? 7),
+            // Legacy support
+            SUBSCRIPTION_STARTER => (int)($_ENV['MAX_PROJECTS_PLUS'] ?? 7)
         ];
 
         $maxProjects = $quotas[$subscriptionType] ?? $quotas[SUBSCRIPTION_FREE];

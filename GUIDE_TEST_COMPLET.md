@@ -1,7 +1,7 @@
 # 🧪 Guide de Test Complet - YarnFlow
 
-**Version** : 0.11.0 - AI PHOTO STUDIO
-**Date** : 2025-11-16
+**Version** : 0.14.0 - PRICING V2 (FREE/PLUS/PRO)
+**Date** : 2025-12-17
 **Auteur** : Nathalie + Claude Code
 
 ---
@@ -742,21 +742,21 @@ LIMIT 1;
    - ✅ Télécharger les 5 photos
    - ✅ Partager sur Instagram/Ravelry
 
-5. **Conversion à Starter** :
+5. **Conversion à PLUS ou PRO** :
    - ✅ Vouloir créer un 4e projet simultané
    - ✅ Message : "Quota FREE atteint (3 projets max)"
    - ✅ Voir la valeur apportée par le tracker quotidien
-   - ✅ Upgrade vers Starter (4.99€/mois → 15 projets)
+   - ✅ Upgrade vers PLUS (2.99€/mois → 7 projets, 15 crédits photos) ou PRO (4.99€/mois → projets illimités, 30 crédits photos)
 
 ---
 
-### Scénario 3 : Créatrice de contenus (Premium user)
+### Scénario 3 : Créatrice de contenus (PRO user)
 
 **Persona** : Nathalie, créatrice de contenus tricot/crochet sur Instagram/YouTube
 
-1. **Inscription Premium** :
+1. **Inscription PRO** :
    - ✅ Créer compte
-   - ✅ Upgrade immédiat vers Premium (9.99€/mois → projets illimités)
+   - ✅ Upgrade immédiat vers PRO (4.99€/mois → projets illimités, 30 crédits photos/mois)
 
 2. **Usage intensif du tracker** :
    - ✅ Créer 20+ projets simultanés (échantillons, tests, commandes)
@@ -962,7 +962,7 @@ npm run dev
 
 ---
 
-## 🎉 Résumé des nouveautés v0.11.0
+## 🎉 Résumé des nouveautés v0.14.0
 
 **Features principales à tester en priorité** :
 
@@ -970,17 +970,19 @@ npm run dev
 2. 🎯 **15 presets rapides** - Tous affichés, auto-ajustement de quantité
 3. 🧠 **Contextes intelligents** - Adaptation selon type de projet (bonnet vs amigurumi)
 4. 💰 **Tarification -20%** - 5 photos = 4 crédits
-5. 🔒 **Générateur admin-only** - Masqué pour utilisateurs normaux
-6. 🎨 **Navigation active dynamique** - Onglet actif suit la page
+5. 💳 **Système PLUS/PRO** - FREE (5 crédits), PLUS (15 crédits), PRO (30 crédits)
+6. 📦 **Système de sections** - Organisation avancée des projets
+7. 🔒 **Générateur admin-only** - Masqué pour utilisateurs normaux
+8. 🎨 **Navigation active dynamique** - Onglet actif suit la page
 
 **Différenciation stratégique** :
-- YarnFlow = Seule app avec tracker universel + AI Photo Studio professionnel
+- YarnFlow = Seule app avec tracker universel + AI Photo Studio professionnel + 3 tiers de pricing
 - Concurrent "Compte Rangs" = Compteur basique sans cloud ni photos IA
 
 ---
 
 **Créé le** : 2025-11-14
-**Dernière mise à jour** : 2025-11-16 (v0.11.0 - AI PHOTO STUDIO)
+**Dernière mise à jour** : 2025-12-17 (v0.14.0 - PRICING V2 FREE/PLUS/PRO)
 **Testé par** : Nathalie
 
 🧶 **Bon test et bon lancement v1.0 !**
