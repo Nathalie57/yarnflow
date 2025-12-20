@@ -24,11 +24,13 @@ import ProjectCounter from './pages/ProjectCounter'
 import Stats from './pages/Stats'
 import Gallery from './pages/Gallery'
 import PatternLibrary from './pages/PatternLibrary'
+import PaymentSuccess from './pages/PaymentSuccess'
 
 // Pages légales
 import CGU from './pages/CGU'
 import Privacy from './pages/Privacy'
 import Mentions from './pages/Mentions'
+import Contact from './pages/Contact'
 
 // Admin
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -56,10 +58,14 @@ function App() {
           <Route path="/auth/google/callback" element={<OAuthCallback />} />
           <Route path="/auth/facebook/callback" element={<OAuthCallback />} />
 
+          {/* Route de confirmation de paiement */}
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+
           {/* Pages légales */}
           <Route path="/cgu" element={<CGU />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/mentions" element={<Mentions />} />
+          <Route path="/contact" element={<Contact />} />
 
           {/* Routes protégées */}
           <Route element={<PrivateRoute><Layout /></PrivateRoute>}>

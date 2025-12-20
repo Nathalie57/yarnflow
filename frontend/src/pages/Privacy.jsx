@@ -31,7 +31,7 @@ export default function Privacy() {
               Le responsable du traitement des données personnelles collectées sur YarnFlow est :<br/>
               <strong>YarnFlow Studio</strong><br/>
               <strong>En cours de domiciliation</strong><br/>
-              Email : <strong className="text-primary-600">yarnflowapp@gmail.com</strong>
+              Email : <a href="mailto:contact@yarnflow.fr" className="text-primary-600 font-semibold hover:underline">contact@yarnflow.fr</a>
             </p>
           </section>
 
@@ -143,7 +143,7 @@ export default function Privacy() {
               <p className="text-gray-700"><strong>✓ Droit de limitation :</strong> Restreindre certains usages</p>
             </div>
             <p className="text-gray-700 leading-relaxed mt-4">
-              Pour exercer ces droits, contactez-nous à : <strong className="text-primary-600">yarnflowapp@gmail.com</strong><br/>
+              Pour exercer ces droits, contactez-nous à : <a href="mailto:contact@yarnflow.fr" className="text-primary-600 font-semibold hover:underline">contact@yarnflow.fr</a><br/>
               Réponse sous 30 jours maximum.
             </p>
           </section>
@@ -209,8 +209,8 @@ export default function Privacy() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Contact DPO</h2>
             <p className="text-gray-700 leading-relaxed">
               Pour toute question concernant vos données personnelles :<br/>
-              <strong className="text-primary-600">yarnflowapp@gmail.com</strong><br/>
-              Objet : "RGPD - [Votre demande]"
+              • Email : <a href="mailto:contact@yarnflow.fr" className="text-primary-600 font-semibold hover:underline">contact@yarnflow.fr</a> (Objet : "RGPD - [Votre demande]")<br/>
+              • <Link to="/contact" className="text-primary-600 font-semibold hover:underline">Formulaire de contact</Link>
             </p>
           </section>
 

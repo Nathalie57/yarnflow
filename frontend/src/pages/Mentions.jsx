@@ -43,7 +43,7 @@ export default function Mentions() {
                 <strong>Adresse du siège social :</strong> en cours de domiciliation
               </p>
               <p className="text-gray-700 leading-relaxed mb-2">
-                <strong>Email :</strong> <span className="text-primary-600">yarnflowapp@gmail.com</span>
+                <strong>Email :</strong> <a href="mailto:contact@yarnflow.fr" className="text-primary-600 font-semibold hover:underline">contact@yarnflow.fr</a>
               </p>
               <p className="text-gray-700 leading-relaxed">
                 <strong>Directeur de la publication :</strong> Nathalie HENRION
@@ -136,7 +136,7 @@ export default function Mentions() {
             <div className="bg-primary-50 p-4 rounded-lg mt-3">
               <p className="text-gray-700">
                 <strong>Délégué à la Protection des Données (DPO) :</strong><br/>
-                Email : <span className="text-primary-600">yarnflowapp@gmail.com</span><br/>
+                Email : <a href="mailto:contact@yarnflow.fr" className="text-primary-600 font-semibold hover:underline">contact@yarnflow.fr</a><br/>
                 Objet : "RGPD - [Votre demande]"
               </p>
             </div>
@@ -215,7 +215,8 @@ export default function Mentions() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Contact</h2>
             <p className="text-gray-700 leading-relaxed">
               Pour toute question concernant ces mentions légales :<br/>
-              <strong className="text-primary-600">yarnflowapp@gmail.com</strong>
+              • Email : <a href="mailto:contact@yarnflow.fr" className="text-primary-600 font-semibold hover:underline">contact@yarnflow.fr</a><br/>
+              • <Link to="/contact" className="text-primary-600 font-semibold hover:underline">Formulaire de contact</Link>
             </p>
           </section>
 

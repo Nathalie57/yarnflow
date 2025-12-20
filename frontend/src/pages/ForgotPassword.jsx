@@ -136,13 +136,19 @@ const ForgotPassword = () => {
         </form>
 
         {/* Footer */}
-        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+        <div className="mt-8 pt-6 border-t border-gray-200 text-center space-y-2">
           <Link
             to="/login"
-            className="text-primary-600 hover:text-primary-700 font-medium text-sm"
+            className="text-primary-600 hover:text-primary-700 font-medium text-sm block"
           >
             ← Retour à la connexion
           </Link>
+          <p className="text-sm text-gray-500">
+            Besoin d'aide ?{' '}
+            <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
+              Contactez-nous
+            </Link>
+          </p>
         </div>
       </div>
     </div>

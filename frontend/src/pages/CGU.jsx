@@ -72,7 +72,7 @@ export default function CGU() {
               </p>
               <p className="text-gray-700 leading-relaxed">
                 <strong>4.2 Plan PLUS :</strong> 2,99€/mois ou 29,99€/an. 7 projets actifs, 15 crédits photos/mois,
-                organisation avancée, support prioritaire.
+                organisation premium, support prioritaire.
               </p>
               <p className="text-gray-700 leading-relaxed">
                 <strong>4.3 Plan PRO :</strong> 4,99€/mois ou 49,99€/an. Projets illimités, 30 crédits photos/mois,
@@ -163,8 +163,9 @@ export default function CGU() {
           <section className="bg-primary-50 p-6 rounded-lg mt-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">Contact</h2>
             <p className="text-gray-700 leading-relaxed">
-              Pour toute question concernant ces CGU, contactez-nous à :<br/>
-              <strong className="text-primary-600">yarnflowapp@gmail.com</strong>
+              Pour toute question concernant ces CGU, vous pouvez :<br/>
+              • Nous contacter par email : <a href="mailto:contact@yarnflow.fr" className="text-primary-600 font-semibold hover:underline">contact@yarnflow.fr</a><br/>
+              • Utiliser notre <Link to="/contact" className="text-primary-600 font-semibold hover:underline">formulaire de contact</Link>
             </p>
           </section>
 

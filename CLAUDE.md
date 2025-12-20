@@ -1,8 +1,8 @@
 # CLAUDE.md - YarnFlow
 
 **Stack** : PHP 8.1+ / React 18 / MySQL 8.0
-**Version** : 0.14.0 (2025-12-17)
-**Baseline** : Tracker tricot/crochet avec stats Strava + AI Photo Studio
+**Version** : 0.16.0 (2025-12-20)
+**Baseline** : Tracker tricot/crochet avec stats Strava + AI Photo Studio + Tags & Filtres + Contact
 
 ---
 
@@ -22,6 +22,9 @@ Différenciation vs concurrents : stats avancées (vitesse, graphiques), embelli
 - ✅ Compteur de rangs
 - ✅ Notes et organisation simplifiée
 - ✅ **5 crédits photos gratuits par mois** (pour tester la génération d'images)
+- ✅ **Filtres de base** (Tous/En cours/Terminés/Favoris)
+- ✅ **Favoris** (marquer projets en ⭐)
+- ❌ Pas de tags personnalisés
 - ✅ Accès à toutes les fonctionnalités de base
 
 ### Plan PLUS — 2,99 €/mois
@@ -29,8 +32,11 @@ Différenciation vs concurrents : stats avancées (vitesse, graphiques), embelli
 - ✅ Patrons illimités
 - ✅ Sections illimitées
 - ✅ Compteur de rangs
-- ✅ Organisation avancée
+- ✅ Organisation premium
 - ✅ **15 crédits photos par mois**
+- ✅ **Tags personnalisés illimités** (cadeau, bébé, urgent...)
+- ✅ **Filtrage multi-tags**
+- ✅ **Suggestions de tags intelligentes**
 - ✅ Support prioritaire
 
 ### Plan PLUS Annuel — 29,99 €/an (-15%)
@@ -43,7 +49,7 @@ Différenciation vs concurrents : stats avancées (vitesse, graphiques), embelli
 - ✅ Patrons illimités
 - ✅ Sections illimitées
 - ✅ Compteur de rangs
-- ✅ Organisation avancée complète
+- ✅ Organisation premium complète
 - ✅ **30 crédits photos par mois** (génération d'images pro)
 - ✅ Support prioritaire + réponses accélérées
 - ✅ Accès premium aux nouveautés
@@ -75,7 +81,7 @@ frontend/src/    # React 18
 └── components/  # Layout, PrivateRoute, BottomNav
 ```
 
-**Tables clés** : users, projects, project_rows, project_stats, user_photos, user_photo_credits, payments, sections
+**Tables clés** : users, projects, project_rows, project_stats, user_photos, user_photo_credits, payments, sections, project_tags, contact_messages, contact_rate_limit
 
 ---
 
@@ -84,15 +90,52 @@ frontend/src/    # React 18
 **Auth** : `POST /api/auth/register|login`, `GET /api/auth/me`
 **Projets** : `GET|POST /api/projects`, `POST /api/projects/{id}/rows`, `GET /api/projects/stats`
 **Sections** : `GET|POST /api/projects/{id}/sections`, `PUT /api/projects/{id}/sections/{section_id}`
+**Tags & Filtres** : `POST /api/projects/{id}/tags`, `GET /api/user/tags/popular`, `PUT /api/projects/{id}/favorite`, `GET /api/projects?tags=cadeau,bébé&favorite=true&sort=date_desc`
 **Photos IA** : `POST /api/photos`, `POST /api/photos/{id}/enhance-multiple` (1-5 photos, presets intelligents)
 **Patrons** : `POST /api/patterns/generate` (BETA)
 **Bibliothèque** : `GET|POST /api/pattern-library`, `DELETE /api/pattern-library/{id}`
+**Contact** : `POST /api/contact` (public), `GET /api/admin/contact-messages` (admin), `PUT /api/admin/contact-messages/{id}/read` (admin)
+
+---
+
+## 🏷️ Tags & Filtres (v0.15.0)
+
+**Feature premium** : Tags réservés aux plans PLUS/PRO, Favoris pour tous
+
+### FREE - Organisation de base
+- **Filtres** : Tous / En cours / Terminés / Favoris
+- **Tri** : Date création / Dernière activité / Nom (A-Z, Z-A)
+- **Favoris** : ⭐ Marquer/démarquer les projets importants
+- **Pas de tags personnalisés**
+
+### PLUS/PRO - Organisation premium
+- **Tout FREE** +
+- **Tags illimités** : Créer tags personnalisés (2-50 caractères)
+- **Filtrage multi-tags** : Filtrer par plusieurs tags à la fois (mode OR)
+- **Suggestions intelligentes** : Top 20 tags les plus utilisés
+- **Tri avancé** : Par date modif / création / nom
+
+### Routes API Tags
+```
+POST   /api/projects/{id}/tags              # Ajouter tags (body: {tags: ["cadeau", "bébé"]})
+GET    /api/projects/{id}/tags              # Lister tags du projet
+DELETE /api/projects/{id}/tags/{tag_name}   # Supprimer un tag
+GET    /api/user/tags/popular               # Top 20 tags utilisateur (PLUS/PRO)
+PUT    /api/projects/{id}/favorite          # Toggle favori (tous plans)
+GET    /api/projects?tags=a,b&favorite=true # Filtrer projets
+```
+
+### Validation tags
+- 2-50 caractères
+- Lettres, chiffres, espaces, tirets uniquement
+- Stockés en minuscules
+- Pas de doublons par projet (UNIQUE KEY)
 
 ---
 
 ## 📸 AI Photo Studio
 
-**Crédits** : FREE 5/mois, PRO 30/mois, Early Bird 30/mois
+**Crédits** : FREE 5/mois, PLUS 15/mois, PRO 30/mois, Early Bird 30/mois
 **Styles** : lifestyle, studio, scandinavian, nature, cafe
 **Presets** : 9 par catégorie (Hero, Produit, Etsy, Instagram, Facebook, Carrousel)
 **Multi-génération** : 1-5 photos en batch, -20% si 5 photos (4 crédits), `parent_photo_id` pour variations
@@ -131,13 +174,31 @@ cd frontend && npm install && npm run dev
 
 ---
 
-## 📝 État (v0.14.0)
+## 📝 État (v0.16.0)
 
-**✅ Prêt** : Backend 100%, Frontend 98%, Database optimisée, Système d'abonnements sécurisé
+**✅ Prêt** : Backend 100%, Frontend 100%, Database optimisée, Système d'abonnements sécurisé, Tags & Filtres, Système de contact complet
 **⚠️ Manque prod** : Gemini API réelle, Stripe prod keys, Email SMTP, CGU/RGPD, Hébergement SSL
 **Lancement** : Phase 1 BETA fermée (20-50 testeurs) → Phase 2 Public (Stripe, SEO) → Phase 3 Croissance
 
-**Derniers ajouts (v0.14.0)** :
+**Derniers ajouts (v0.16.0)** :
+- ✅ **Système de contact complet** : Formulaire avec 4 catégories (Bug, Question, Suggestion, Autre)
+- ✅ **Rate limiting anti-spam** : 3 messages/heure par IP
+- ✅ **Emails automatiques** : Confirmation utilisateur + notification admin
+- ✅ **Traçabilité complète** : IP, user agent, statut lu/non-lu
+- ✅ **Accessible partout** : Lien dans header Landing, footer, menu profil, pages légales
+- ✅ **Pré-remplissage auto** : Nom et email si utilisateur connecté
+- ✅ **Dashboard admin** : Routes API pour gérer les messages (listMessages, markAsRead)
+
+**Ajouts v0.15.0** :
+- ✅ **Système de tags personnalisés** (PLUS/PRO uniquement)
+- ✅ **Filtres avancés** : Statut, Favoris, Tags, Tri
+- ✅ **Favoris** pour tous les plans (marquer projets ⭐)
+- ✅ **Suggestions de tags intelligentes** (Top 20 tags utilisateur)
+- ✅ **Composants React** : TagInput, TagBadge, ProjectFilters, UpgradePrompt
+- ✅ **Backend complet** : 5 nouvelles routes API, permissions par plan
+- ✅ **Upgrade prompt** pour FREE qui tente d'utiliser les tags
+
+**Ajouts v0.14.0** :
 - ✅ Nouveau plan PLUS intermédiaire (2.99€/mois, 7 projets, 15 crédits photos)
 - ✅ Toggle Mensuel/Annuel sur Landing et Subscription
 - ✅ Prix ajustés : PLUS 2.99€, PRO 4.99€ (mensuel et annuel)
@@ -160,4 +221,4 @@ cd frontend && npm install && npm run dev
 
 ---
 
-**Docs** : `docs/guides/` | **MAJ** : 2025-12-17
+**Docs** : `docs/guides/` | **MAJ** : 2025-12-20

@@ -25,6 +25,12 @@ const Landing = () => {
       {/* Boutons connexion/inscription (en haut à droite) */}
       <div className="absolute top-4 right-4 z-20 flex gap-3">
         <Link
+          to="/contact"
+          className="px-4 py-2 bg-white text-gray-700 hover:text-primary-600 rounded-lg font-medium hover:bg-gray-50 transition"
+        >
+          Contact
+        </Link>
+        <Link
           to="/login"
           className="px-4 py-2 bg-white border-2 border-primary-600 text-primary-600 rounded-lg font-medium hover:bg-primary-50 transition shadow-sm"
         >
@@ -160,7 +166,7 @@ const Landing = () => {
               </li>
               <li className="flex items-start">
                 <span className="text-primary-600 font-bold mr-3">✓</span>
-                <span className="text-gray-700">Organisation avancée</span>
+                <span className="text-gray-700">Organisation premium</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary-600 font-bold mr-3">✓</span>
@@ -209,7 +215,7 @@ const Landing = () => {
               </li>
               <li className="flex items-start">
                 <span className="text-primary-600 font-bold mr-3">✓</span>
-                <span className="text-gray-700">Organisation avancée</span>
+                <span className="text-gray-700">Organisation premium</span>
               </li>
               <li className="flex items-start">
                 <span className="text-primary-600 font-bold mr-3">✓</span>
@@ -365,6 +371,8 @@ const Landing = () => {
             <Link to="/cgu" className="hover:text-primary-300 transition">Conditions d'utilisation</Link>
             {' · '}
             <Link to="/mentions" className="hover:text-primary-300 transition">Mentions légales</Link>
+            {' · '}
+            <Link to="/contact" className="hover:text-primary-300 transition">Contact</Link>
           </p>
         </div>
       </footer>

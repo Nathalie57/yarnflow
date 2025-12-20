@@ -122,6 +122,18 @@ const Navbar = () => {
                 >
                   ⚙️ Mon profil
                 </Link>
+                <Link
+                  to="/subscription"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  💎 Abonnement
+                </Link>
+                <Link
+                  to="/contact"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  📧 Contact
+                </Link>
                 <hr className="my-2" />
                 <button
                   onClick={handleLogout}
@@ -276,6 +288,22 @@ const Navbar = () => {
               className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition"
             >
               ⚙️ Mon profil
+            </Link>
+
+            <Link
+              to="/subscription"
+              onClick={closeMobileMenu}
+              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+            >
+              💎 Abonnement
+            </Link>
+
+            <Link
+              to="/contact"
+              onClick={closeMobileMenu}
+              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+            >
+              📧 Contact
             </Link>
 
             <button

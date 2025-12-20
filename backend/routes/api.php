@@ -22,6 +22,7 @@ use App\Controllers\PatternLibraryController;
 use App\Controllers\WaitlistController;
 use App\Controllers\PasswordResetController;
 use App\Controllers\WebFetchController;
+use App\Controllers\ContactController;
 
 /**
  * [AI:Claude] Router simple basé sur les méthodes HTTP et les URIs
@@ -86,6 +87,7 @@ function route(string $method, string $uri): void
         // [AI:Claude] Routes de paiement
         $method === 'POST' && $uri === 'payments/checkout/pattern' => (new PaymentController())->createPatternCheckout(),
         $method === 'POST' && $uri === 'payments/checkout/subscription' => (new PaymentController())->createSubscriptionCheckout(),
+        $method === 'POST' && $uri === 'payments/checkout/credits' => (new PaymentController())->createCreditsCheckout(),
         $method === 'GET' && preg_match('/^payments\/status\/(.+)$/', $uri, $matches) => (new PaymentController())->checkStatus($matches[1]),
         $method === 'POST' && $uri === 'payments/webhook' => (new PaymentController())->handleWebhook(),
         $method === 'GET' && $uri === 'payments/history' => (new PaymentController())->getHistory(),
@@ -104,6 +106,9 @@ function route(string $method, string $uri): void
         $method === 'GET' && $uri === 'admin/users' => (new AdminController())->listUsers(),
         $method === 'GET' && preg_match('/^admin\/users\/(\d+)$/', $uri, $matches) => (new AdminController())->getUserDetails((int)$matches[1]),
         $method === 'PUT' && preg_match('/^admin\/users\/(\d+)\/subscription$/', $uri, $matches) => (new AdminController())->updateUserSubscription((int)$matches[1]),
+        $method === 'POST' && preg_match('/^admin\/users\/(\d+)\/credits$/', $uri, $matches) => (new AdminController())->manageUserCredits((int)$matches[1]),
+        $method === 'PUT' && preg_match('/^admin\/users\/(\d+)\/role$/', $uri, $matches) => (new AdminController())->updateUserRole((int)$matches[1]),
+        $method === 'PUT' && preg_match('/^admin\/users\/(\d+)\/ban$/', $uri, $matches) => (new AdminController())->toggleBan((int)$matches[1]),
         $method === 'GET' && $uri === 'admin/patterns' => (new AdminController())->listPatterns(),
         $method === 'DELETE' && preg_match('/^admin\/patterns\/(\d+)$/', $uri, $matches) => (new AdminController())->deletePattern((int)$matches[1]),
         $method === 'GET' && $uri === 'admin/templates' => (new AdminController())->listTemplates(),
@@ -144,6 +149,7 @@ function route(string $method, string $uri): void
         $method === 'DELETE' && preg_match('/^projects\/(\d+)$/', $uri, $matches) => (new ProjectController())->delete((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/rows$/', $uri, $matches) => (new ProjectController())->addRow((int)$matches[1]),
         $method === 'GET' && preg_match('/^projects\/(\d+)\/rows$/', $uri, $matches) => (new ProjectController())->getRows((int)$matches[1]),
+        $method === 'DELETE' && preg_match('/^projects\/(\d+)\/rows\/(\d+)$/', $uri, $matches) => (new ProjectController())->deleteRow((int)$matches[1], (int)$matches[2]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/sessions\/start$/', $uri, $matches) => (new ProjectController())->startSession((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/sessions\/end$/', $uri, $matches) => (new ProjectController())->endSession((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/pattern$/', $uri, $matches) => (new ProjectController())->uploadPattern((int)$matches[1]),
@@ -162,6 +168,13 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^projects\/(\d+)\/sections\/(\d+)\/complete$/', $uri, $matches) => (new ProjectController())->toggleSectionComplete((int)$matches[1], (int)$matches[2]),
         $method === 'GET' && preg_match('/^projects\/(\d+)\/sections\/(\d+)\/rows$/', $uri, $matches) => (new ProjectController())->getSectionRows((int)$matches[1], (int)$matches[2], $_GET),
 
+        // [AI:Claude] Routes de gestion des tags et favoris (v0.15.0)
+        $method === 'POST' && preg_match('/^projects\/(\d+)\/tags$/', $uri, $matches) => (new ProjectController())->addTags((int)$matches[1]),
+        $method === 'GET' && preg_match('/^projects\/(\d+)\/tags$/', $uri, $matches) => (new ProjectController())->getTags((int)$matches[1]),
+        $method === 'DELETE' && preg_match('/^projects\/(\d+)\/tags\/([^\/]+)$/', $uri, $matches) => (new ProjectController())->deleteTag((int)$matches[1], $matches[2]),
+        $method === 'GET' && $uri === 'user/tags/popular' => (new ProjectController())->getPopularTags(),
+        $method === 'PUT' && preg_match('/^projects\/(\d+)\/favorite$/', $uri, $matches) => (new ProjectController())->toggleFavorite((int)$matches[1]),
+
         // [AI:Claude] Routes de gestion des photos IA (AI Photo Studio v0.10.0)
         $method === 'GET' && $uri === 'photos' => (new PhotoController())->index($_GET),
         $method === 'POST' && $uri === 'photos/upload' => (new PhotoController())->upload(),
@@ -170,6 +183,7 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^photos\/(\d+)\/enhance-multiple$/', $uri, $matches) => (new PhotoController())->enhanceMultiple((int)$matches[1]),
         $method === 'POST' && preg_match('/^photos\/(\d+)\/preview$/', $uri, $matches) => (new PhotoController())->generatePreview((int)$matches[1]),
         $method === 'POST' && preg_match('/^photos\/(\d+)\/enhance$/', $uri, $matches) => (new PhotoController())->enhance((int)$matches[1]),
+        $method === 'POST' && preg_match('/^photos\/(\d+)\/feedback$/', $uri, $matches) => (new PhotoController())->submitFeedback((int)$matches[1]),
         $method === 'GET' && preg_match('/^photos\/(\d+)\/download$/', $uri, $matches) => (new PhotoController())->download((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^photos\/(\d+)$/', $uri, $matches) => (new PhotoController())->delete((int)$matches[1]),
 
@@ -185,6 +199,11 @@ function route(string $method, string $uri): void
         $method === 'POST' && $uri === 'web-fetch' => (new WebFetchController())->fetch(),
         $method === 'POST' && $uri === 'web-fetch/metadata' => (new WebFetchController())->fetchMetadata(),
         $method === 'GET' && $uri === 'web-fetch/proxy' => (new WebFetchController())->proxy(),
+
+        // [AI:Claude] Routes de contact (v0.15.0)
+        $method === 'POST' && $uri === 'contact' => (new ContactController())->sendMessage(),
+        $method === 'GET' && $uri === 'admin/contact-messages' => (new ContactController())->listMessages(),
+        $method === 'PUT' && preg_match('/^admin\/contact-messages\/(\d+)\/read$/', $uri, $matches) => (new ContactController())->markAsRead((int)$matches[1]),
 
         default => notFound()
     };

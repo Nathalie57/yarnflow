@@ -189,6 +189,13 @@ const Register = () => {
             Se connecter
           </Link>
         </p>
+
+        <p className="text-center mt-4 text-sm text-gray-500">
+          Besoin d'aide ?{' '}
+          <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
+            Contactez-nous
+          </Link>
+        </p>
       </div>
     </div>
   )
