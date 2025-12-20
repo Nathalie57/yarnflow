@@ -302,49 +302,19 @@ const PatternLibrary = () => {
           </div>
         )}
 
-        {/* Indicateur de limite FREE */}
-        {!loading && user && (!user.subscription_type || user.subscription_type === 'free') && stats && (
-          <div className="mt-4 bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-300 rounded-lg p-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">📚</span>
-                <div>
-                  <p className="font-semibold text-orange-900">
-                    {stats.total_patterns || 0} / 10 patrons utilisés
-                  </p>
-                  <p className="text-sm text-orange-700">
-                    Plan gratuit - {10 - (stats.total_patterns || 0)} patrons restants
-                  </p>
-                </div>
+        {/* Info : Patrons illimités pour tous */}
+        {!loading && stats && (
+          <div className="mt-4 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-300 rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📚</span>
+              <div>
+                <p className="font-semibold text-blue-900">
+                  {stats.total_patterns || 0} patron{(stats.total_patterns || 0) > 1 ? 's' : ''} sauvegardé{(stats.total_patterns || 0) > 1 ? 's' : ''}
+                </p>
+                <p className="text-sm text-blue-700">
+                  Patrons illimités pour tous les plans
+                </p>
               </div>
-              {(stats.total_patterns || 0) >= 10 ? (
-                <Link
-                  to="/profile"
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition text-sm"
-                >
-                  🚀 Passer à PRO (illimité)
-                </Link>
-              ) : (stats.total_patterns || 0) >= 7 ? (
-                <Link
-                  to="/profile"
-                  className="px-4 py-2 bg-orange-100 text-orange-800 border border-orange-300 rounded-lg font-medium hover:bg-orange-200 transition text-sm"
-                >
-                  Passer à PRO
-                </Link>
-              ) : null}
-            </div>
-            {/* Barre de progression */}
-            <div className="mt-3 bg-orange-200 rounded-full h-2 overflow-hidden">
-              <div
-                className={`h-full transition-all ${
-                  (stats.total_patterns || 0) >= 10
-                    ? 'bg-red-600'
-                    : (stats.total_patterns || 0) >= 7
-                    ? 'bg-orange-500'
-                    : 'bg-orange-400'
-                }`}
-                style={{ width: `${Math.min(((stats.total_patterns || 0) / 10) * 100, 100)}%` }}
-              />
             </div>
           </div>
         )}
