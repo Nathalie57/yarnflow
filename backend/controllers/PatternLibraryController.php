@@ -641,12 +641,12 @@ class PatternLibraryController
 
     /**
      * [AI:Claude] Vérifier l'accès à la bibliothèque de patrons
-     * FREE: max 10 patrons | PRO: illimité
+     * v0.16.0+ : Patrons illimités pour tous les plans
      *
      * @param int $userId ID de l'utilisateur
      * @param bool $isCreating True si on crée un nouveau patron (pour vérifier la limite)
      * @return void
-     * @throws \Exception Si limite atteinte
+     * @throws \Exception Si utilisateur introuvable
      */
     private function checkSubscriptionAccess(int $userId, bool $isCreating = false): void
     {
@@ -655,24 +655,9 @@ class PatternLibraryController
         if (!$user)
             throw new \Exception('Utilisateur introuvable');
 
-        // [AI:Claude] Si plan FREE et création d'un nouveau patron, vérifier la limite de 10 patrons
-        if ($user['subscription_type'] === 'free' && $isCreating) {
-            $currentCount = $this->patternLibrary->getUserPatternCount($userId);
-
-            if ($currentCount >= 10) {
-                $this->sendResponse(403, [
-                    'success' => false,
-                    'error' => 'Limite de patrons atteinte',
-                    'message' => 'Vous avez atteint la limite de 10 patrons pour le plan gratuit. Passez au plan Pro pour un nombre illimité de patrons.',
-                    'upgrade_required' => true,
-                    'current_plan' => 'free',
-                    'required_plan' => 'pro',
-                    'current_count' => $currentCount,
-                    'max_count' => 10
-                ]);
-                exit;
-            }
-        }
+        // [AI:Claude] Patrons illimités pour tous les plans (v0.16.0+)
+        // Pas de limite sur les patrons de la bibliothèque
+        // Les limites s'appliquent uniquement aux projets actifs (3/7/illimité selon plan)
     }
 
     /**
