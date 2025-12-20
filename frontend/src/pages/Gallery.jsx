@@ -439,7 +439,7 @@ const Gallery = () => {
 
               {(!user?.subscription_type || user?.subscription_type === 'free') ? (
                 <Link
-                  to="/profile"
+                  to="/subscription"
                   className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition shadow-md hover:shadow-lg"
                 >
                   🚀 Passer à PLUS ou PRO

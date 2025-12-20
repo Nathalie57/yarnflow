@@ -114,10 +114,10 @@ Déployer un environnement de **staging** (pré-production) pour YarnFlow sur O2
      1. database/schema.sql
      2. database/add_projects_system.sql
      3. database/add_knitting_types.sql
-     4. database/add_parent_photo_id.sql
-     5. database/add_project_sections.sql
-     6. database/add_section_time_tracking.sql
-     7. database/add_ai_photo_studio_notriggers.sql
+     4. database/add_ai_photo_studio_notriggers.sql  ⚠️ AVANT add_parent_photo_id !
+     5. database/add_parent_photo_id.sql
+     6. database/add_project_sections.sql
+     7. database/add_section_time_tracking.sql
      8. database/add_waitlist.sql
      9. database/update_subscription_plans.sql
      10. database/add_pattern_library.sql
@@ -127,7 +127,9 @@ Déployer un environnement de **staging** (pré-production) pour YarnFlow sur O2
      14. database/add_completed_at_to_payments.sql
      15. database/add_contact_messages.sql
      ```
-   - ⚠️ **ATTENTION** : Importer dans l'ordre !
+   - ⚠️ **ATTENTION** : L'ordre est CRITIQUE ! Ne pas inverser !
+   - ⚠️ `add_ai_photo_studio_notriggers.sql` crée la table `user_photos`
+   - ⚠️ `add_parent_photo_id.sql` modifie cette table (doit venir après)
    - Format : **SQL**
    - Cliquer sur **Exécuter**
 
@@ -222,6 +224,8 @@ Cela génère le dossier `frontend/dist/` avec les fichiers optimisés.
 
 ### 3.2 Structure des dossiers sur O2switch
 
+⚠️ **IMPORTANT** : Sur staging, le backend n'a PAS de sous-dossier `public/`. Tout est au même niveau dans `/api/`.
+
 Créer l'arborescence suivante sur le serveur :
 
 ```
@@ -232,20 +236,27 @@ Créer l'arborescence suivante sur le serveur :
 │   ├── index-xxx.js
 │   ├── index-xxx.css
 │   └── ...
-├── api/                         # Backend PHP
+├── api/                         # ⚠️ Backend PHP (TOUT au même niveau!)
 │   ├── .htaccess               # Configuration Apache pour API
+│   ├── .env                    # ⚠️ Variables d'environnement (MÊME NIVEAU que index.php!)
 │   ├── index.php               # Point d'entrée API
 │   ├── controllers/
 │   ├── models/
 │   ├── services/
 │   ├── config/
-│   │   ├── database.php
-│   │   └── .env              # Variables d'environnement (RENOMMER .env.staging)
-│   └── vendor/               # Dépendances Composer
-└── uploads/                   # Dossier pour les photos (créer manuellement)
+│   │   └── Database.php
+│   ├── routes/
+│   │   └── api.php
+│   └── vendor/                 # ⚠️ Composer (MÊME NIVEAU!)
+│       └── autoload.php
+└── uploads/                     # Dossier pour les photos (créer manuellement)
     ├── photos/
     └── patterns/
 ```
+
+**Différence avec le développement local :**
+- **Local** : `backend/public/index.php` + `backend/.env` + `backend/vendor/`
+- **Staging** : `api/index.php` + `api/.env` + `api/vendor/` (TOUT au même niveau)
 
 ### 3.3 Transférer les fichiers via FTP/SFTP
 
@@ -273,16 +284,20 @@ Créer l'arborescence suivante sur le serveur :
 
    **Backend (depuis `backend/`)** :
    - Créer le dossier `/home/username/staging.yarnflow.fr/api/`
-   - Copier tout le contenu de `backend/` vers `/api/` :
+   - ⚠️ **IMPORTANT** : Sur staging, TOUT est au même niveau dans `/api/` (pas de sous-dossier public/)
+   - Copier les fichiers :
      ```
      backend/controllers/     → /api/controllers/
      backend/models/          → /api/models/
      backend/services/        → /api/services/
      backend/config/          → /api/config/
+     backend/routes/          → /api/routes/
      backend/vendor/          → /api/vendor/
-     backend/public/index.php → /api/index.php
-     backend/.env.staging     → /api/.env (RENOMMER !)
+     backend/public/index.php → /api/index.php (enlever public/)
+     backend/.env.staging     → /api/.env (RENOMMER et mettre au même niveau!)
+     backend/public/.htaccess → /api/.htaccess
      ```
+   - ⚠️ Ne PAS créer de dossier `/api/public/` - tout est directement dans `/api/`
 
    **Uploads** :
    - Créer `/home/username/staging.yarnflow.fr/uploads/`

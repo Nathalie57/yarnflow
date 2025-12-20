@@ -14,9 +14,11 @@ const AdminPayments = () => {
   const loadPayments = async () => {
     try {
       const response = await adminAPI.getPayments({ status: filter, period: dateRange })
-      setPayments(response.data.data)
+      // L'API retourne { payments: [...] }
+      setPayments(response.data.data.payments || [])
     } catch (error) {
       console.error('Erreur chargement paiements:', error)
+      setPayments([]) // S'assurer que payments est toujours un tableau
     } finally {
       setLoading(false)
     }

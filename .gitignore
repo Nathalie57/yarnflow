@@ -9,7 +9,12 @@ vendor/
 config/.env
 .env.local
 .env.*.local
+backend/.env
+backend/.env.staging
 backend/.env.production
+frontend/.env
+frontend/.env.staging
+frontend/.env.production
 .env.production.local
 
 # Build outputs
@@ -50,6 +55,11 @@ backend/public/uploads/*
 uploads/*
 !backend/generated/.gitkeep
 !backend/uploads/.gitkeep
+
+# Archive files (backups, exports)
+*.zip
+*.tar.gz
+*.rar
 
 # Test files
 backend/public/test-*.php

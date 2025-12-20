@@ -20,6 +20,9 @@ import api from '../services/api'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import ProxyViewer from '../components/ProxyViewer'
+import TagBadge from '../components/TagBadge'
+import TagInput from '../components/TagInput'
+import SatisfactionModal from '../components/SatisfactionModal'
 
 const ProjectCounter = () => {
   const { projectId } = useParams()
@@ -97,6 +100,7 @@ const ProjectCounter = () => {
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
   const [enhancing, setEnhancing] = useState(false)
   const [credits, setCredits] = useState(null)
+  const [hideAIWarning, setHideAIWarning] = useState(false) // [AI:Claude] Cacher l'avertissement IA si l'utilisateur a coché "Ne plus afficher"
 
   // [AI:Claude] Modales de confirmation et alertes
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -104,6 +108,10 @@ const ProjectCounter = () => {
   const [showAlertModal, setShowAlertModal] = useState(false)
   const [alertData, setAlertData] = useState({ title: '', message: '', type: 'info' })
   const [showProjectCompletionModal, setShowProjectCompletionModal] = useState(false)
+
+  // [AI:Claude] v0.15.0 - Modal de satisfaction post-génération
+  const [showSatisfactionModal, setShowSatisfactionModal] = useState(false)
+  const [generatedPhoto, setGeneratedPhoto] = useState(null)
 
   // [AI:Claude] Modal d'édition du projet
   const [showEditModal, setShowEditModal] = useState(false)
@@ -133,6 +141,12 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Tabs pour Patron/Photos/Description
   const [activeTab, setActiveTab] = useState('patron')
+
+  // [AI:Claude] v0.15.0 - Gestion des tags
+  const [localTags, setLocalTags] = useState([])
+  const [popularTags, setPopularTags] = useState([])
+  const [canUseTags, setCanUseTags] = useState(false)
+  const [showTagSection, setShowTagSection] = useState(false)
 
   // [AI:Claude] Notes du projet
   const [showNotes, setShowNotes] = useState(false)
@@ -186,6 +200,37 @@ const ProjectCounter = () => {
       fetchCredits()
       // Passer le current_section_id du projet fraîchement chargé
       fetchSections(projectData?.current_section_id)
+
+      // [AI:Claude] Restaurer l'état du timer s'il était en pause
+      const savedState = localStorage.getItem(`timerState_${projectId}`)
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState)
+
+          // Vérifier que la session est récente (moins de 24h)
+          const hoursSinceSave = (Date.now() - state.timestamp) / (1000 * 60 * 60)
+          if (hoursSinceSave < 24 && state.isPaused && state.sessionId) {
+            console.log('[TIMER] Restauration état sauvegardé:', state.pausedTime, 's')
+
+            setSessionId(state.sessionId)
+            setSessionStartRow(state.sessionStartRow)
+            setPausedTime(state.pausedTime)
+            setElapsedTime(state.pausedTime)
+            setIsTimerRunning(true)
+            setIsTimerPaused(true)
+            setCurrentRow(state.currentRow)
+
+            // Restauration silencieuse - pas besoin d'alerte
+          } else if (hoursSinceSave >= 24) {
+            // Session trop ancienne, la supprimer
+            localStorage.removeItem(`timerState_${projectId}`)
+            console.log('[TIMER] Session sauvegardée trop ancienne, supprimée')
+          }
+        } catch (e) {
+          console.error('[TIMER] Erreur restauration:', e)
+          localStorage.removeItem(`timerState_${projectId}`)
+        }
+      }
     }
     loadData()
   }, [projectId])
@@ -197,6 +242,44 @@ const ProjectCounter = () => {
       setSectionsSortBy(savedSort)
     }
   }, [])
+
+  // [AI:Claude] Charger la préférence "Ne plus afficher l'avertissement IA"
+  useEffect(() => {
+    const hideWarning = localStorage.getItem('hideAIWarning')
+    if (hideWarning === 'true') {
+      setHideAIWarning(true)
+    }
+  }, [])
+
+  // [AI:Claude] v0.15.0 - Charger les permissions et tags
+  useEffect(() => {
+    if (user) {
+      const tier = user.subscription_type || 'free'
+      setCanUseTags(['plus', 'plus_annual', 'pro', 'pro_annual', 'early_bird'].includes(tier))
+    }
+  }, [user])
+
+  useEffect(() => {
+    const fetchPopularTags = async () => {
+      try {
+        const response = await api.get('/user/tags/popular')
+        if (response.data.success) {
+          setPopularTags(response.data.popular_tags || [])
+        }
+      } catch (err) {
+        console.error('Erreur chargement tags populaires:', err)
+      }
+    }
+    if (canUseTags) {
+      fetchPopularTags()
+    }
+  }, [canUseTags])
+
+  useEffect(() => {
+    if (project && project.tags) {
+      setLocalTags(project.tags)
+    }
+  }, [project])
 
   // [AI:Claude] Sauvegarder le tri des sections dans localStorage
   useEffect(() => {
@@ -308,6 +391,32 @@ const ProjectCounter = () => {
     }
   }, [sessionId, isTimerRunning, currentRow, sessionStartRow, projectId, pausedTime, sessionStartTime, isTimerPaused])
 
+  // [AI:Claude] Sauvegarder le timer quand l'app passe en arrière-plan (PWA)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && sessionId && isTimerRunning) {
+        // L'app passe en arrière-plan, sauvegarder l'état
+        const exactDuration = isTimerPaused
+          ? pausedTime
+          : pausedTime + Math.floor((Date.now() - sessionStartTime) / 1000)
+
+        localStorage.setItem(`timerState_${projectId}`, JSON.stringify({
+          sessionId,
+          sessionStartRow,
+          pausedTime: exactDuration,
+          currentRow,
+          currentSectionId,
+          isPaused: isTimerPaused,
+          timestamp: Date.now()
+        }))
+        console.log('[TIMER] Sauvegarde automatique (visibilitychange):', exactDuration, 's')
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [sessionId, isTimerRunning, isTimerPaused, pausedTime, sessionStartTime, currentRow, sessionStartRow, projectId, currentSectionId])
+
   const fetchProject = async () => {
     try {
       setLoading(true)
@@ -333,6 +442,42 @@ const ProjectCounter = () => {
       return null
     } finally {
       setLoading(false)
+    }
+  }
+
+  // [AI:Claude] v0.15.0 - Gestion des tags
+  const handleAddTag = async (tag) => {
+    if (!canUseTags) {
+      showAlert('Tags réservés aux abonnés PLUS/PRO', 'Passez à PLUS ou PRO pour utiliser les tags', 'warning')
+      return
+    }
+
+    if (!tag || localTags.includes(tag)) return
+
+    const newTags = [...localTags, tag]
+    setLocalTags(newTags)
+
+    try {
+      await api.put(`/projects/${projectId}`, { tags: newTags })
+      setProject({ ...project, tags: newTags })
+    } catch (err) {
+      console.error('Erreur ajout tag:', err)
+      setLocalTags(localTags) // Rollback
+      showAlert('Erreur', 'Impossible d\'ajouter le tag', 'error')
+    }
+  }
+
+  const handleRemoveTag = async (tagToRemove) => {
+    const newTags = localTags.filter(t => t !== tagToRemove)
+    setLocalTags(newTags)
+
+    try {
+      await api.put(`/projects/${projectId}`, { tags: newTags })
+      setProject({ ...project, tags: newTags })
+    } catch (err) {
+      console.error('Erreur suppression tag:', err)
+      setLocalTags(localTags) // Rollback
+      showAlert('Erreur', 'Impossible de supprimer le tag', 'error')
     }
   }
 
@@ -872,6 +1017,14 @@ const ProjectCounter = () => {
     )
   }
 
+  // [AI:Claude] Gérer le checkbox "Ne plus afficher l'avertissement IA"
+  const handleHideAIWarning = (e) => {
+    const isChecked = e.target.checked
+    setHideAIWarning(isChecked)
+    localStorage.setItem('hideAIWarning', isChecked.toString())
+    console.log('[AI Warning] Préférence sauvegardée:', isChecked ? 'masqué' : 'affiché')
+  }
+
   // [AI:Claude] Embellir une photo avec IA - v0.12.1 SIMPLIFIÉ
   const handleEnhancePhoto = async (e) => {
     e.preventDefault()
@@ -896,13 +1049,31 @@ const ProjectCounter = () => {
         project_category: detectProjectCategory(project?.type || '')
       })
 
+      // [AI:Claude] v0.15.0 - Récupérer la photo générée pour la modal de satisfaction
+      const generatedPhotoData = response.data.generated_photos?.[0]
+
       await fetchProjectPhotos()
       await fetchCredits()
       setShowEnhanceModal(false)
       setSelectedPhoto(null)
       // clearPreview() // Désactivé car preview désactivée
 
-      showAlert(`✨ Photo générée avec succès !`, 'success')
+      // [AI:Claude] v0.15.0 - Afficher la modal de satisfaction au lieu d'une simple alerte
+      if (generatedPhotoData && generatedPhotoData.success) {
+        // Récupérer la photo générée depuis l'API pour avoir les détails complets
+        const photoResponse = await api.get(`/photos?project_id=${projectId}`)
+        const photos = photoResponse.data.photos || []
+        const fullPhoto = photos.find(p => p.id === generatedPhotoData.photo_id)
+
+        if (fullPhoto) {
+          setGeneratedPhoto(fullPhoto)
+          setShowSatisfactionModal(true)
+        } else {
+          showAlert(`✨ Photo générée avec succès !`, 'success')
+        }
+      } else {
+        showAlert(`✨ Photo générée avec succès !`, 'success')
+      }
     } catch (err) {
       console.error('Erreur embellissement photo:', err)
       const errorMsg = err.response?.data?.error || 'Erreur lors de l\'embellissement'
@@ -925,6 +1096,20 @@ const ProjectCounter = () => {
     }
   }
   */
+
+  // [AI:Claude] v0.15.0 - Gérer le feedback de satisfaction (système étoiles)
+  const handleFeedbackSubmitted = (feedbackData) => {
+    const rating = feedbackData.rating || 0
+    if (rating >= 4) {
+      showAlert('Merci pour votre retour positif ! 😊', 'success')
+    } else if (rating === 3) {
+      showAlert('Merci pour votre retour ! Nous travaillons à améliorer le service.', 'success')
+    } else if (rating <= 2) {
+      showAlert('Merci pour votre retour. Nous prenons en compte vos remarques pour améliorer le service.', 'success')
+    } else {
+      showAlert('Merci pour votre retour !', 'success')
+    }
+  }
 
   // [AI:Claude] Ouvrir modal d'embellissement avec sélection du premier style par défaut
   const openEnhanceModal = (photo) => {
@@ -1129,6 +1314,18 @@ const ProjectCounter = () => {
     setElapsedTime(currentElapsed)
     setIsTimerPaused(true)
 
+    // [AI:Claude] Sauvegarder l'état du timer en pause dans localStorage
+    localStorage.setItem(`timerState_${projectId}`, JSON.stringify({
+      sessionId,
+      sessionStartRow,
+      pausedTime: currentElapsed,
+      currentRow,
+      currentSectionId,
+      isPaused: true,
+      timestamp: Date.now()
+    }))
+    console.log('[TIMER] État sauvegardé en pause:', currentElapsed, 's')
+
     // [AI:Claude] Libérer le wake lock pendant la pause
     releaseWakeLock()
   }
@@ -1140,6 +1337,18 @@ const ProjectCounter = () => {
     // [AI:Claude] Redémarrer le chrono depuis maintenant
     setSessionStartTime(Date.now())
     setIsTimerPaused(false)
+
+    // [AI:Claude] Mettre à jour le localStorage pour indiquer qu'on n'est plus en pause
+    localStorage.setItem(`timerState_${projectId}`, JSON.stringify({
+      sessionId,
+      sessionStartRow,
+      pausedTime,
+      currentRow,
+      currentSectionId,
+      isPaused: false,
+      timestamp: Date.now()
+    }))
+    console.log('[TIMER] Reprise - État localStorage mis à jour')
 
     // [AI:Claude] Réactiver le wake lock à la reprise
     await requestWakeLock()
@@ -1181,6 +1390,10 @@ const ProjectCounter = () => {
       setIsTimerPaused(false)
       setPausedTime(0)
       setElapsedTime(0)
+
+      // [AI:Claude] Nettoyer le localStorage
+      localStorage.removeItem(`timerState_${projectId}`)
+      console.log('[TIMER] État localStorage nettoyé')
 
       // [AI:Claude] Libérer le wake lock quand on arrête le timer
       await releaseWakeLock()
@@ -1239,6 +1452,12 @@ const ProjectCounter = () => {
               : s
           )
         )
+      } else {
+        // [AI:Claude] FIX: Mettre à jour le projet global si pas de sections
+        setProject(prevProject => ({
+          ...prevProject,
+          current_row: newRow
+        }))
       }
 
       // [AI:Claude] Si on vient de terminer, marquer comme terminé automatiquement
@@ -1294,7 +1513,9 @@ const ProjectCounter = () => {
       }
     } catch (err) {
       console.error('Erreur sauvegarde rang:', err)
-      showAlert('Erreur lors de la sauvegarde du rang', 'error')
+      console.error('Détails erreur:', err.response?.data)
+      const errorMsg = err.response?.data?.message || err.message || 'Erreur inconnue'
+      showAlert(`Erreur lors de la sauvegarde du rang: ${errorMsg}`, 'error')
       // [AI:Claude] Rollback en cas d'erreur (compteur ET sections)
       setCurrentRow(oldRow)
       if (currentSectionId) {
@@ -1305,6 +1526,12 @@ const ProjectCounter = () => {
               : s
           )
         )
+      } else {
+        // [AI:Claude] FIX: Rollback du projet global si pas de sections
+        setProject(prevProject => ({
+          ...prevProject,
+          current_row: oldRow
+        }))
       }
     }
   }
@@ -1327,6 +1554,12 @@ const ProjectCounter = () => {
               : s
           )
         )
+      } else {
+        // [AI:Claude] FIX: Mettre à jour le projet global si pas de sections
+        setProject(prevProject => ({
+          ...prevProject,
+          current_row: newRow
+        }))
       }
 
       try {
@@ -1337,12 +1570,20 @@ const ProjectCounter = () => {
 
         const rows = response.data.rows || []
 
-        // [AI:Claude] Trouver le rang avec row_number = currentRow (le dernier)
-        const lastRow = rows.find(r => r.row_number === oldRow && r.section_id === currentSectionId)
+        // [AI:Claude] FIX: Trouver le rang avec row_number = currentRow (le dernier)
+        // Comparaison qui gère null correctement
+        const lastRow = rows.find(r => {
+          const sectionMatch = currentSectionId
+            ? r.section_id === currentSectionId
+            : (r.section_id === null || r.section_id === undefined)
+          return r.row_num === oldRow && sectionMatch
+        })
 
         if (lastRow) {
           // [AI:Claude] Supprimer ce rang
           await api.delete(`/projects/${projectId}/rows/${lastRow.id}`)
+        } else {
+          console.warn('Aucun rang trouvé à supprimer:', { oldRow, currentSectionId, rows })
         }
 
         // [AI:Claude] Mettre à jour le current_row dans la base de données
@@ -1370,6 +1611,12 @@ const ProjectCounter = () => {
                 : s
             )
           )
+        } else {
+          // [AI:Claude] FIX: Rollback du projet global si pas de sections
+          setProject(prevProject => ({
+            ...prevProject,
+            current_row: oldRow
+          }))
         }
       }
     }
@@ -2001,6 +2248,69 @@ const ProjectCounter = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Tags (v0.15.0) - Éditable */}
+            <div className="w-full mt-2">
+              {canUseTags ? (
+                <>
+                  {!showTagSection && localTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {localTags.slice(0, 5).map((tag, idx) => (
+                        <TagBadge key={idx} tag={tag} className="text-xs" />
+                      ))}
+                      {localTags.length > 5 && (
+                        <span className="text-xs text-gray-500 px-2 py-1">+{localTags.length - 5}</span>
+                      )}
+                      <button
+                        onClick={() => setShowTagSection(true)}
+                        className="text-xs text-primary-600 hover:text-primary-700 font-medium ml-2"
+                      >
+                        ✏️ Modifier
+                      </button>
+                    </div>
+                  )}
+                  {!showTagSection && localTags.length === 0 && (
+                    <button
+                      onClick={() => setShowTagSection(true)}
+                      className="text-xs text-gray-500 hover:text-primary-600 font-medium"
+                    >
+                      🏷️ Ajouter des tags...
+                    </button>
+                  )}
+                  {showTagSection && (
+                    <div className="bg-sage/5 rounded-lg p-3 border border-sage/20">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-700">🏷️ Tags du projet</span>
+                        <button
+                          onClick={() => setShowTagSection(false)}
+                          className="text-xs text-gray-500 hover:text-gray-700"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <TagInput
+                        tags={localTags}
+                        onAddTag={handleAddTag}
+                        onRemoveTag={handleRemoveTag}
+                        suggestions={popularTags.map(t => t.tag_name)}
+                        placeholder="Ex: cadeau, bébé, urgent..."
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                localTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {localTags.slice(0, 5).map((tag, idx) => (
+                      <TagBadge key={idx} tag={tag} className="text-xs" />
+                    ))}
+                    {localTags.length > 5 && (
+                      <span className="text-xs text-gray-500 px-2 py-1">+{localTags.length - 5}</span>
+                    )}
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -3674,14 +3984,49 @@ Rang 3 : *1ms, aug* x6 (18)
                   <span>Exemples de styles</span>
                 </button>
               </div>
-              <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-xs text-gray-700 text-center">
-                  Les images sont générées par IA. Le rendu peut varier selon la photo et le style choisi 💫
-                </p>
-              </div>
             </div>
 
             <form onSubmit={handleEnhancePhoto} className="flex-1 overflow-y-auto p-6 flex flex-col">
+              {/* Avertissement important */}
+              {!hideAIWarning && (
+                <div className="mb-4 bg-orange-50 border-l-4 border-orange-400 rounded-r-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl flex-shrink-0">⚠️</span>
+                    <div className="text-sm w-full">
+                      <h4 className="font-bold text-orange-900 mb-2">Ce qui va être préservé et ce qui va changer :</h4>
+                      <div className="space-y-1.5 text-orange-800">
+                        <p className="flex items-start gap-2">
+                          <span className="text-green-600 font-bold flex-shrink-0">✓</span>
+                          <span><strong>Préservé :</strong> Les couleurs, motifs et texture de votre ouvrage restent identiques</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-orange-600 font-bold flex-shrink-0">↻</span>
+                          <span><strong>Modifié :</strong> Le fond, l'éclairage et la position sont adaptés au style choisi</span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-blue-600 font-bold flex-shrink-0">✂</span>
+                          <span><strong>Retiré :</strong> Les mains, éléments de fond indésirables sont supprimés</span>
+                        </p>
+                      </div>
+                      <p className="mt-2.5 text-xs text-orange-700 font-medium">
+                        💡 Conseil : Consultez les exemples de styles pour visualiser le résultat attendu
+                      </p>
+                      {/* Checkbox "Ne plus afficher" */}
+                      <div className="mt-3 pt-3 border-t border-orange-200">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs text-orange-800 hover:text-orange-900">
+                          <input
+                            type="checkbox"
+                            checked={hideAIWarning}
+                            onChange={handleHideAIWarning}
+                            className="rounded border-orange-300 text-primary-600 focus:ring-primary-500"
+                          />
+                          <span className="font-medium">J'ai compris, ne plus afficher cet avertissement</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Photo actuelle (remplacée par preview pendant génération HD) */}
               <div className={`mb-6 rounded-lg border-2 p-4 relative ${enhancing && previewImage ? 'bg-green-50 border-green-400' : 'bg-gray-100 border-gray-200'}`}>
                 {enhancing && previewImage && (
@@ -3862,9 +4207,19 @@ Rang 3 : *1ms, aug* x6 (18)
                 >
                   {enhancing ? '✨ Génération...' : '✨ Générer en HD (1 crédit)'}
                 </button>
+              </div>
 
-                {/* DÉSACTIVÉ - Boutons de preview pour économiser les coûts API */}
-                {/*
+              {/* Message d'information */}
+              <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+                <p className="text-xs text-gray-700 text-center leading-relaxed">
+                  <span className="font-bold text-blue-700">💬 Votre avis compte</span> :
+                  Après génération, vous pourrez noter le résultat et nous aider à améliorer le service.
+                </p>
+              </div>
+
+              {/* DÉSACTIVÉ - Boutons de preview pour économiser les coûts API */}
+              {/*
+              <div className="flex items-center gap-3 flex-shrink-0 pt-4 border-t border-gray-200 mt-6">
                 {!previewImage ? (
                   <button
                     type="button"
@@ -3893,8 +4248,8 @@ Rang 3 : *1ms, aug* x6 (18)
                     </button>
                   </>
                 )}
-                */}
               </div>
+              */}
             </form>
           </div>
         </div>
@@ -3918,13 +4273,13 @@ Rang 3 : *1ms, aug* x6 (18)
 
             <div className="flex-1 overflow-y-auto p-6">
               {/* Photo originale unique en haut */}
-              <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border-2 border-gray-300">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">📷 Photo originale</h3>
-                <div className="max-w-md mx-auto">
+              <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 border-2 border-gray-300">
+                <h3 className="text-sm font-bold text-gray-900 mb-2 text-center">📷 Photo originale</h3>
+                <div className="max-w-xs mx-auto">
                   <img
                     src={`/style-examples/${detectProjectCategory(project?.type || '')}_before.jpg`}
                     alt="Photo originale"
-                    className="w-full rounded-lg shadow-lg"
+                    className="w-full rounded-lg shadow"
                     onError={(e) => {
                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EPhoto à venir%3C/text%3E%3C/svg%3E'
                     }}
@@ -4845,6 +5200,17 @@ Rang 3 : *1ms, aug* x6 (18)
           </svg>
         </span>
       </button>
+
+      {/* [AI:Claude] v0.15.0 - Modal de satisfaction post-génération */}
+      <SatisfactionModal
+        isOpen={showSatisfactionModal}
+        photo={generatedPhoto}
+        onClose={() => {
+          setShowSatisfactionModal(false)
+          setGeneratedPhoto(null)
+        }}
+        onFeedbackSubmitted={handleFeedbackSubmitted}
+      />
 
     </div>
   )

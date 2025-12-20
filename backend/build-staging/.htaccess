@@ -1,0 +1,48 @@
+# .htaccess pour InfinityFree / Apache
+# Updated for production deployment
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # [AI:Claude] Autoriser le passage du header Authorization à PHP
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect Trailing Slashes If Not A Folder
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# CORS Headers - IMPORTANT pour connexion frontend ↔ backend
+<IfModule mod_headers.c>
+    # Autoriser plusieurs origines (développement local + production)
+    # Dev: localhost:5173, patron-maker.local | Prod: yarnflow.fr (même domaine, pas de CORS nécessaire mais on le garde par sécurité)
+    SetEnvIf Origin "^http(s)?://(localhost:5173|127.0.0.1:5173|patron-maker.local|yarnflow.fr)$" ORIGIN_ALLOWED=$0
+    Header set Access-Control-Allow-Origin "%{ORIGIN_ALLOWED}e" env=ORIGIN_ALLOWED
+    Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    Header set Access-Control-Allow-Credentials "true"
+
+    # Handle preflight OPTIONS requests
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    # X-Frame-Options: SAMEORIGIN pour toutes les pages SAUF le proxy web-fetch
+    # (le proxy doit pouvoir afficher le contenu externe dans une iframe)
+    SetEnvIf Request_URI "^/api/web-fetch/proxy" IS_PROXY=1
+    Header set X-Frame-Options "SAMEORIGIN" env=!IS_PROXY
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Disable directory browsing
+Options -Indexes

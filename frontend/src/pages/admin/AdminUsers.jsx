@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { adminAPI } from '../../services/api'
+import UserModal from '../../components/admin/UserModal'
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([])
@@ -16,9 +17,11 @@ const AdminUsers = () => {
   const loadUsers = async () => {
     try {
       const response = await adminAPI.getUsers({ search, filter })
-      setUsers(response.data.data)
+      // L'API retourne { users: [...], pagination: {...} }
+      setUsers(response.data.data.users || [])
     } catch (error) {
       console.error('Erreur chargement utilisateurs:', error)
+      setUsers([]) // S'assurer que users est toujours un tableau
     } finally {
       setLoading(false)
     }
@@ -27,7 +30,16 @@ const AdminUsers = () => {
   const openUserModal = async (userId) => {
     try {
       const response = await adminAPI.getUserDetails(userId)
-      setSelectedUser(response.data.data)
+      setSelectedUser(response.data.data.user)
+      // Ajouter les données complètes dans selectedUser
+      const fullData = response.data.data
+      setSelectedUser({
+        ...fullData.user,
+        projects: fullData.projects,
+        payments: fullData.payments,
+        credits: fullData.credits,
+        stats: fullData.stats
+      })
       setShowModal(true)
     } catch (error) {
       console.error('Erreur chargement détails:', error)
@@ -35,15 +47,12 @@ const AdminUsers = () => {
     }
   }
 
-  const updateSubscription = async (userId, data) => {
-    try {
-      await adminAPI.updateUserSubscription(userId, data)
-      alert('Abonnement mis à jour avec succès')
-      setShowModal(false)
-      loadUsers()
-    } catch (error) {
-      console.error('Erreur mise à jour:', error)
-      alert('Erreur lors de la mise à jour')
+  const handleUserUpdate = () => {
+    setShowModal(false)
+    loadUsers()
+    // Recharger les détails si modal encore ouverte
+    if (selectedUser) {
+      openUserModal(selectedUser.id)
     }
   }
 
@@ -152,13 +161,19 @@ const AdminUsers = () => {
                   </td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded text-xs ${
-                      user.subscription_type === 'yearly'
+                      user.subscription_type.startsWith('pro') || user.subscription_type === 'early_bird'
                         ? 'bg-primary-100 text-primary-800'
-                        : user.subscription_type === 'monthly'
+                        : user.subscription_type.startsWith('plus')
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {user.subscription_type}
+                      {user.subscription_type === 'free' ? 'FREE' :
+                       user.subscription_type === 'plus' ? 'PLUS' :
+                       user.subscription_type === 'plus_annual' ? 'PLUS Annual' :
+                       user.subscription_type === 'pro' ? 'PRO' :
+                       user.subscription_type === 'pro_annual' ? 'PRO Annual' :
+                       user.subscription_type === 'early_bird' ? 'Early Bird' :
+                       user.subscription_type}
                     </span>
                   </td>
                   <td className="p-3">{user.patterns_generated_count || 0}</td>
@@ -186,104 +201,11 @@ const AdminUsers = () => {
 
       {/* Modal détails utilisateur */}
       {showModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
-                <h2 className="text-2xl font-bold">
-                  {selectedUser.first_name} {selectedUser.last_name}
-                </h2>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
-
-              {/* Informations */}
-              <div className="space-y-4 mb-6">
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Email</label>
-                  <p>{selectedUser.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Rôle</label>
-                  <p>{selectedUser.role}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Inscrit le</label>
-                  <p>{new Date(selectedUser.created_at).toLocaleDateString('fr-FR')}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Patrons générés</label>
-                  <p>{selectedUser.patterns_generated_count || 0}</p>
-                </div>
-              </div>
-
-              {/* Modifier l'abonnement */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-bold mb-4">Modifier l'abonnement</h3>
-                <div className="space-y-3">
-                  <button
-                    onClick={() => updateSubscription(selectedUser.id, {
-                      subscription_type: 'monthly',
-                      subscription_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-                    })}
-                    className="w-full p-3 text-left border rounded hover:bg-gray-50"
-                  >
-                    <div className="font-medium">Abonnement Mensuel</div>
-                    <div className="text-sm text-gray-600">Expire dans 30 jours</div>
-                  </button>
-                  <button
-                    onClick={() => updateSubscription(selectedUser.id, {
-                      subscription_type: 'yearly',
-                      subscription_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-                    })}
-                    className="w-full p-3 text-left border rounded hover:bg-gray-50"
-                  >
-                    <div className="font-medium">Abonnement Annuel</div>
-                    <div className="text-sm text-gray-600">Expire dans 365 jours</div>
-                  </button>
-                  <button
-                    onClick={() => updateSubscription(selectedUser.id, {
-                      subscription_type: 'free',
-                      subscription_expires_at: null
-                    })}
-                    className="w-full p-3 text-left border rounded hover:bg-gray-50"
-                  >
-                    <div className="font-medium">Plan Gratuit</div>
-                    <div className="text-sm text-gray-600">Retirer l'abonnement</div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Patrons de l'utilisateur */}
-              {selectedUser.patterns && selectedUser.patterns.length > 0 && (
-                <div className="border-t pt-6 mt-6">
-                  <h3 className="text-lg font-bold mb-4">Patrons générés ({selectedUser.patterns.length})</h3>
-                  <div className="space-y-2">
-                    {selectedUser.patterns.map((pattern) => (
-                      <div key={pattern.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                        <div>
-                          <div className="font-medium">{pattern.title || `Patron ${pattern.type}`}</div>
-                          <div className="text-sm text-gray-600">{pattern.level} - {pattern.size}</div>
-                        </div>
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          pattern.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {pattern.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <UserModal
+          user={selectedUser}
+          onClose={() => setShowModal(false)}
+          onUpdate={handleUserUpdate}
+        />
       )}
     </div>
   )

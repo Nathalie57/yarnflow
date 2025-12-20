@@ -1,0 +1,2048 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║               GÉNÉRATION DE TOUS LES PROMPTS AI PHOTO                        ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CATÉGORIE : Vêtements
+═══════════════════════════════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : worn_model
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec le produit porté par un modèle dans
+un cadre naturel. Tu peux utiliser un mannequin humain réaliste ou une
+personne pour porter l'article, MAIS l'ouvrage fait main porté doit rester
+EXACTEMENT identique. CRITIQUE : conserve les COULEURS EXACTES, la TEXTURE
+précise, le MOTIF, la FORME et tous les détails de l'ouvrage. Seuls le
+modèle (mannequin humain réaliste), la pose, l'éclairage et
+l'arrière-plan peuvent changer. L'ouvrage lui-même ne doit subir AUCUNE
+modification de couleur ou de texture.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style studio
+professionnel. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo lifestyle chaleureuse avec lumière
+naturelle dorée. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : play_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un jardin ou parc avec lumière
+naturelle mise en scène simple. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : scandinavian
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo scandinave avec tons clairs bois et blanc,
+lumineux et aéré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur surface claire en bois
+ou lin avec lumière douce naturelle. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_texture
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus rapprochée sur surface
+texturée naturelle comme lin ou coton avec éclairage doux. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur table en bois clair
+avec éléments déco minimalistes et ombres douces. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_playful
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus ludique avec jouets et
+couleurs vives sur fond pastel. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus avec éléments bébé doux
+et tons pastel tendres. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : cozy_indoor
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un intérieur cosy chaleureux avec
+textures douces et lumière tamisée. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_soft
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo studio avec éclairage doux et fond neutre
+légèrement texturé. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : pastel_background
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond pastel doux et lumineux style
+moderne épuré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : kids_room
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans une chambre d'enfant colorée et
+joyeuse. IMPORTANT : garde EXACTEMENT le même ouvrage fait main visible
+sur l'image originale. Ne change PAS sa forme, son motif, ses couleurs, sa
+taille ou son apparence. N'AJOUTE PAS de mannequin, de personne, de tête
+ou tout autre élément qui n'était pas présent dans l'image originale.
+Améliore uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage
+doit rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : on_sofa
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un cadre cosy sur canapé avec textures
+douces en arrière-plan. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : warm_light
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec lumière chaude dorée style golden
+hour et ambiance chaleureuse. IMPORTANT : garde EXACTEMENT le même ouvrage
+fait main visible sur l'image originale. Ne change PAS sa forme, son motif,
+ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : natural_tones
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec tons naturels beiges crème et bois
+clair apaisants. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : product_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style e-commerce
+professionnel avec ombres douces. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : editorial
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style éditorial magazine mode avec
+composition artistique et éclairage dramatique. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : seasonal
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec décor saisonnier adapté (feuilles
+automne, neige hiver, fleurs printemps, plage été). IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram lifestyle tendance avec
+props esthétiques et lumière parfaite. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram home decor avec mise en
+scène inspirante et tons harmonieux. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_story
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram storytelling créatif avec
+narratif visuel et composition dynamique. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_parenting
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram parentalité avec ambiance
+douce tendre et moments authentiques. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : premium_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo mise en scène premium haut de gamme avec
+styling sophistiqué et détails soignés. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue décoration avec
+présentation professionnelle et ambiance aspirationnelle. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue bébé avec douceur
+professionnelle et tons apaisants. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : illustrated_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans décor illustré fantaisiste avec
+éléments créatifs et ambiance conte de fées. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CATÉGORIE : Accessoires
+═══════════════════════════════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : worn_model
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec le produit porté par un modèle dans
+un cadre naturel. Tu peux utiliser un mannequin humain réaliste ou une
+personne pour porter l'article, MAIS l'ouvrage fait main porté doit rester
+EXACTEMENT identique. CRITIQUE : conserve les COULEURS EXACTES, la TEXTURE
+précise, le MOTIF, la FORME et tous les détails de l'ouvrage. Seuls le
+modèle (mannequin humain réaliste), la pose, l'éclairage et
+l'arrière-plan peuvent changer. L'ouvrage lui-même ne doit subir AUCUNE
+modification de couleur ou de texture.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style studio
+professionnel. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo lifestyle chaleureuse avec lumière
+naturelle dorée. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : play_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un jardin ou parc avec lumière
+naturelle mise en scène simple. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : scandinavian
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo scandinave avec tons clairs bois et blanc,
+lumineux et aéré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur surface claire en bois
+ou lin avec lumière douce naturelle. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_texture
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus rapprochée sur surface
+texturée naturelle comme lin ou coton avec éclairage doux. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur table en bois clair
+avec éléments déco minimalistes et ombres douces. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_playful
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus ludique avec jouets et
+couleurs vives sur fond pastel. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus avec éléments bébé doux
+et tons pastel tendres. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : cozy_indoor
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un intérieur cosy chaleureux avec
+textures douces et lumière tamisée. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_soft
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo studio avec éclairage doux et fond neutre
+légèrement texturé. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : pastel_background
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond pastel doux et lumineux style
+moderne épuré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : kids_room
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans une chambre d'enfant colorée et
+joyeuse. IMPORTANT : garde EXACTEMENT le même ouvrage fait main visible
+sur l'image originale. Ne change PAS sa forme, son motif, ses couleurs, sa
+taille ou son apparence. N'AJOUTE PAS de mannequin, de personne, de tête
+ou tout autre élément qui n'était pas présent dans l'image originale.
+Améliore uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage
+doit rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : on_sofa
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un cadre cosy sur canapé avec textures
+douces en arrière-plan. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : warm_light
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec lumière chaude dorée style golden
+hour et ambiance chaleureuse. IMPORTANT : garde EXACTEMENT le même ouvrage
+fait main visible sur l'image originale. Ne change PAS sa forme, son motif,
+ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : natural_tones
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec tons naturels beiges crème et bois
+clair apaisants. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : product_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style e-commerce
+professionnel avec ombres douces. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : editorial
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style éditorial magazine mode avec
+composition artistique et éclairage dramatique. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : seasonal
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec décor saisonnier adapté (feuilles
+automne, neige hiver, fleurs printemps, plage été). IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram lifestyle tendance avec
+props esthétiques et lumière parfaite. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram home decor avec mise en
+scène inspirante et tons harmonieux. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_story
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram storytelling créatif avec
+narratif visuel et composition dynamique. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_parenting
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram parentalité avec ambiance
+douce tendre et moments authentiques. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : premium_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo mise en scène premium haut de gamme avec
+styling sophistiqué et détails soignés. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue décoration avec
+présentation professionnelle et ambiance aspirationnelle. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue bébé avec douceur
+professionnelle et tons apaisants. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : illustrated_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans décor illustré fantaisiste avec
+éléments créatifs et ambiance conte de fées. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CATÉGORIE : Maison/Déco
+═══════════════════════════════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : worn_model
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec le produit porté par un modèle dans
+un cadre naturel. Tu peux utiliser un mannequin humain réaliste ou une
+personne pour porter l'article, MAIS l'ouvrage fait main porté doit rester
+EXACTEMENT identique. CRITIQUE : conserve les COULEURS EXACTES, la TEXTURE
+précise, le MOTIF, la FORME et tous les détails de l'ouvrage. Seuls le
+modèle (mannequin humain réaliste), la pose, l'éclairage et
+l'arrière-plan peuvent changer. L'ouvrage lui-même ne doit subir AUCUNE
+modification de couleur ou de texture.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style studio
+professionnel. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo lifestyle chaleureuse avec lumière
+naturelle dorée. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : play_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un jardin ou parc avec lumière
+naturelle mise en scène simple. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : scandinavian
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo scandinave avec tons clairs bois et blanc,
+lumineux et aéré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur surface claire en bois
+ou lin avec lumière douce naturelle. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_texture
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus rapprochée sur surface
+texturée naturelle comme lin ou coton avec éclairage doux. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur table en bois clair
+avec éléments déco minimalistes et ombres douces. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_playful
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus ludique avec jouets et
+couleurs vives sur fond pastel. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus avec éléments bébé doux
+et tons pastel tendres. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : cozy_indoor
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un intérieur cosy chaleureux avec
+textures douces et lumière tamisée. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_soft
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo studio avec éclairage doux et fond neutre
+légèrement texturé. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : pastel_background
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond pastel doux et lumineux style
+moderne épuré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : kids_room
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans une chambre d'enfant colorée et
+joyeuse. IMPORTANT : garde EXACTEMENT le même ouvrage fait main visible
+sur l'image originale. Ne change PAS sa forme, son motif, ses couleurs, sa
+taille ou son apparence. N'AJOUTE PAS de mannequin, de personne, de tête
+ou tout autre élément qui n'était pas présent dans l'image originale.
+Améliore uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage
+doit rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : on_sofa
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un cadre cosy sur canapé avec textures
+douces en arrière-plan. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : warm_light
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec lumière chaude dorée style golden
+hour et ambiance chaleureuse. IMPORTANT : garde EXACTEMENT le même ouvrage
+fait main visible sur l'image originale. Ne change PAS sa forme, son motif,
+ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : natural_tones
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec tons naturels beiges crème et bois
+clair apaisants. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : product_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style e-commerce
+professionnel avec ombres douces. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : editorial
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style éditorial magazine mode avec
+composition artistique et éclairage dramatique. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : seasonal
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec décor saisonnier adapté (feuilles
+automne, neige hiver, fleurs printemps, plage été). IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram lifestyle tendance avec
+props esthétiques et lumière parfaite. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram home decor avec mise en
+scène inspirante et tons harmonieux. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_story
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram storytelling créatif avec
+narratif visuel et composition dynamique. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_parenting
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram parentalité avec ambiance
+douce tendre et moments authentiques. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : premium_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo mise en scène premium haut de gamme avec
+styling sophistiqué et détails soignés. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue décoration avec
+présentation professionnelle et ambiance aspirationnelle. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue bébé avec douceur
+professionnelle et tons apaisants. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : illustrated_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans décor illustré fantaisiste avec
+éléments créatifs et ambiance conte de fées. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CATÉGORIE : Jouets/Peluches
+═══════════════════════════════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : worn_model
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec le produit porté par un modèle dans
+un cadre naturel. Tu peux utiliser un mannequin humain réaliste ou une
+personne pour porter l'article, MAIS l'ouvrage fait main porté doit rester
+EXACTEMENT identique. CRITIQUE : conserve les COULEURS EXACTES, la TEXTURE
+précise, le MOTIF, la FORME et tous les détails de l'ouvrage. Seuls le
+modèle (mannequin humain réaliste), la pose, l'éclairage et
+l'arrière-plan peuvent changer. L'ouvrage lui-même ne doit subir AUCUNE
+modification de couleur ou de texture.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style studio
+professionnel. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo lifestyle chaleureuse avec lumière
+naturelle dorée. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : play_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un jardin ou parc avec lumière
+naturelle mise en scène simple. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : scandinavian
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo scandinave avec tons clairs bois et blanc,
+lumineux et aéré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur surface claire en bois
+ou lin avec lumière douce naturelle. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_texture
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus rapprochée sur surface
+texturée naturelle comme lin ou coton avec éclairage doux. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur table en bois clair
+avec éléments déco minimalistes et ombres douces. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_playful
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus ludique avec jouets et
+couleurs vives sur fond pastel. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus avec éléments bébé doux
+et tons pastel tendres. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : cozy_indoor
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un intérieur cosy chaleureux avec
+textures douces et lumière tamisée. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_soft
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo studio avec éclairage doux et fond neutre
+légèrement texturé. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : pastel_background
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond pastel doux et lumineux style
+moderne épuré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : kids_room
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans une chambre d'enfant colorée et
+joyeuse. IMPORTANT : garde EXACTEMENT le même ouvrage fait main visible
+sur l'image originale. Ne change PAS sa forme, son motif, ses couleurs, sa
+taille ou son apparence. N'AJOUTE PAS de mannequin, de personne, de tête
+ou tout autre élément qui n'était pas présent dans l'image originale.
+Améliore uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage
+doit rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : on_sofa
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un cadre cosy sur canapé avec textures
+douces en arrière-plan. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : warm_light
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec lumière chaude dorée style golden
+hour et ambiance chaleureuse. IMPORTANT : garde EXACTEMENT le même ouvrage
+fait main visible sur l'image originale. Ne change PAS sa forme, son motif,
+ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : natural_tones
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec tons naturels beiges crème et bois
+clair apaisants. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : product_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style e-commerce
+professionnel avec ombres douces. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : editorial
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style éditorial magazine mode avec
+composition artistique et éclairage dramatique. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : seasonal
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec décor saisonnier adapté (feuilles
+automne, neige hiver, fleurs printemps, plage été). IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram lifestyle tendance avec
+props esthétiques et lumière parfaite. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram home decor avec mise en
+scène inspirante et tons harmonieux. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_story
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram storytelling créatif avec
+narratif visuel et composition dynamique. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_parenting
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram parentalité avec ambiance
+douce tendre et moments authentiques. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : premium_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo mise en scène premium haut de gamme avec
+styling sophistiqué et détails soignés. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue décoration avec
+présentation professionnelle et ambiance aspirationnelle. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue bébé avec douceur
+professionnelle et tons apaisants. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : illustrated_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans décor illustré fantaisiste avec
+éléments créatifs et ambiance conte de fées. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CATÉGORIE : Accessoires bébé
+═══════════════════════════════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : worn_model
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec le produit porté par un modèle dans
+un cadre naturel. Tu peux utiliser un mannequin humain réaliste ou une
+personne pour porter l'article, MAIS l'ouvrage fait main porté doit rester
+EXACTEMENT identique. CRITIQUE : conserve les COULEURS EXACTES, la TEXTURE
+précise, le MOTIF, la FORME et tous les détails de l'ouvrage. Seuls le
+modèle (mannequin humain réaliste), la pose, l'éclairage et
+l'arrière-plan peuvent changer. L'ouvrage lui-même ne doit subir AUCUNE
+modification de couleur ou de texture.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style studio
+professionnel. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo lifestyle chaleureuse avec lumière
+naturelle dorée. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : play_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un jardin ou parc avec lumière
+naturelle mise en scène simple. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : scandinavian
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo scandinave avec tons clairs bois et blanc,
+lumineux et aéré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur surface claire en bois
+ou lin avec lumière douce naturelle. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_texture
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus rapprochée sur surface
+texturée naturelle comme lin ou coton avec éclairage doux. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur table en bois clair
+avec éléments déco minimalistes et ombres douces. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_playful
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus ludique avec jouets et
+couleurs vives sur fond pastel. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus avec éléments bébé doux
+et tons pastel tendres. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : cozy_indoor
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un intérieur cosy chaleureux avec
+textures douces et lumière tamisée. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_soft
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo studio avec éclairage doux et fond neutre
+légèrement texturé. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : pastel_background
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond pastel doux et lumineux style
+moderne épuré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : kids_room
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans une chambre d'enfant colorée et
+joyeuse. IMPORTANT : garde EXACTEMENT le même ouvrage fait main visible
+sur l'image originale. Ne change PAS sa forme, son motif, ses couleurs, sa
+taille ou son apparence. N'AJOUTE PAS de mannequin, de personne, de tête
+ou tout autre élément qui n'était pas présent dans l'image originale.
+Améliore uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage
+doit rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : on_sofa
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un cadre cosy sur canapé avec textures
+douces en arrière-plan. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : warm_light
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec lumière chaude dorée style golden
+hour et ambiance chaleureuse. IMPORTANT : garde EXACTEMENT le même ouvrage
+fait main visible sur l'image originale. Ne change PAS sa forme, son motif,
+ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : natural_tones
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec tons naturels beiges crème et bois
+clair apaisants. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : product_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style e-commerce
+professionnel avec ombres douces. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : editorial
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style éditorial magazine mode avec
+composition artistique et éclairage dramatique. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : seasonal
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec décor saisonnier adapté (feuilles
+automne, neige hiver, fleurs printemps, plage été). IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram lifestyle tendance avec
+props esthétiques et lumière parfaite. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram home decor avec mise en
+scène inspirante et tons harmonieux. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_story
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram storytelling créatif avec
+narratif visuel et composition dynamique. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_parenting
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram parentalité avec ambiance
+douce tendre et moments authentiques. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : premium_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo mise en scène premium haut de gamme avec
+styling sophistiqué et détails soignés. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue décoration avec
+présentation professionnelle et ambiance aspirationnelle. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue bébé avec douceur
+professionnelle et tons apaisants. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : illustrated_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans décor illustré fantaisiste avec
+éléments créatifs et ambiance conte de fées. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+
+═══════════════════════════════════════════════════════════════════════════════
+CATÉGORIE : Autre
+═══════════════════════════════════════════════════════════════════════════════
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : worn_model
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec le produit porté par un modèle dans
+un cadre naturel. Tu peux utiliser un mannequin humain réaliste ou une
+personne pour porter l'article, MAIS l'ouvrage fait main porté doit rester
+EXACTEMENT identique. CRITIQUE : conserve les COULEURS EXACTES, la TEXTURE
+précise, le MOTIF, la FORME et tous les détails de l'ouvrage. Seuls le
+modèle (mannequin humain réaliste), la pose, l'éclairage et
+l'arrière-plan peuvent changer. L'ouvrage lui-même ne doit subir AUCUNE
+modification de couleur ou de texture.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style studio
+professionnel. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo lifestyle chaleureuse avec lumière
+naturelle dorée. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : play_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un jardin ou parc avec lumière
+naturelle mise en scène simple. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : scandinavian
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo scandinave avec tons clairs bois et blanc,
+lumineux et aéré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur surface claire en bois
+ou lin avec lumière douce naturelle. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_texture
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus rapprochée sur surface
+texturée naturelle comme lin ou coton avec éclairage doux. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus sur table en bois clair
+avec éléments déco minimalistes et ombres douces. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_playful
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus ludique avec jouets et
+couleurs vives sur fond pastel. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : flat_lay_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo en vue du dessus avec éléments bébé doux
+et tons pastel tendres. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : cozy_indoor
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un intérieur cosy chaleureux avec
+textures douces et lumière tamisée. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : studio_soft
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo studio avec éclairage doux et fond neutre
+légèrement texturé. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : pastel_background
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond pastel doux et lumineux style
+moderne épuré. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : kids_room
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans une chambre d'enfant colorée et
+joyeuse. IMPORTANT : garde EXACTEMENT le même ouvrage fait main visible
+sur l'image originale. Ne change PAS sa forme, son motif, ses couleurs, sa
+taille ou son apparence. N'AJOUTE PAS de mannequin, de personne, de tête
+ou tout autre élément qui n'était pas présent dans l'image originale.
+Améliore uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage
+doit rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : on_sofa
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans un cadre cosy sur canapé avec textures
+douces en arrière-plan. IMPORTANT : garde EXACTEMENT le même ouvrage fait
+main visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : warm_light
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec lumière chaude dorée style golden
+hour et ambiance chaleureuse. IMPORTANT : garde EXACTEMENT le même ouvrage
+fait main visible sur l'image originale. Ne change PAS sa forme, son motif,
+ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : natural_tones
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec tons naturels beiges crème et bois
+clair apaisants. IMPORTANT : garde EXACTEMENT le même ouvrage fait main
+visible sur l'image originale. Ne change PAS sa forme, son motif, ses
+couleurs, sa taille ou son apparence. N'AJOUTE PAS de mannequin, de
+personne, de tête ou tout autre élément qui n'était pas présent dans
+l'image originale. Améliore uniquement l'éclairage, l'ambiance et
+l'arrière-plan. L'ouvrage doit rester seul et identique avec les mêmes
+couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : product_white
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo sur fond blanc pur style e-commerce
+professionnel avec ombres douces. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : editorial
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style éditorial magazine mode avec
+composition artistique et éclairage dramatique. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : seasonal
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo avec décor saisonnier adapté (feuilles
+automne, neige hiver, fleurs printemps, plage été). IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_lifestyle
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram lifestyle tendance avec
+props esthétiques et lumière parfaite. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram home decor avec mise en
+scène inspirante et tons harmonieux. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_story
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram storytelling créatif avec
+narratif visuel et composition dynamique. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : instagram_parenting
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style Instagram parentalité avec ambiance
+douce tendre et moments authentiques. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : premium_styled
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo mise en scène premium haut de gamme avec
+styling sophistiqué et détails soignés. IMPORTANT : garde EXACTEMENT le
+même ouvrage fait main visible sur l'image originale. Ne change PAS sa
+forme, son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_home
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue décoration avec
+présentation professionnelle et ambiance aspirationnelle. IMPORTANT :
+garde EXACTEMENT le même ouvrage fait main visible sur l'image originale.
+Ne change PAS sa forme, son motif, ses couleurs, sa taille ou son
+apparence. N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre
+élément qui n'était pas présent dans l'image originale. Améliore
+uniquement l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit
+rester seul et identique avec les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : catalog_baby
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo style catalogue bébé avec douceur
+professionnelle et tons apaisants. IMPORTANT : garde EXACTEMENT le même
+ouvrage fait main visible sur l'image originale. Ne change PAS sa forme,
+son motif, ses couleurs, sa taille ou son apparence. N'AJOUTE PAS de
+mannequin, de personne, de tête ou tout autre élément qui n'était pas
+présent dans l'image originale. Améliore uniquement l'éclairage,
+l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et identique avec
+les mêmes couleurs.
+
+───────────────────────────────────────────────────────────────────────────────
+Contexte : illustrated_scene
+───────────────────────────────────────────────────────────────────────────────
+Tu dois améliorer cette photo dans décor illustré fantaisiste avec
+éléments créatifs et ambiance conte de fées. IMPORTANT : garde
+EXACTEMENT le même ouvrage fait main visible sur l'image originale. Ne
+change PAS sa forme, son motif, ses couleurs, sa taille ou son apparence.
+N'AJOUTE PAS de mannequin, de personne, de tête ou tout autre élément
+qui n'était pas présent dans l'image originale. Améliore uniquement
+l'éclairage, l'ambiance et l'arrière-plan. L'ouvrage doit rester seul et
+identique avec les mêmes couleurs.
+
+
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                            FIN DU TEST                                        ║
+╚═══════════════════════════════════════════════════════════════════════════════╝

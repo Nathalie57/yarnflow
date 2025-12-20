@@ -405,7 +405,7 @@ const Profile = () => {
                 <ul className="text-sm text-purple-800 mb-3 list-disc list-inside space-y-1">
                   <li>7 projets actifs</li>
                   <li>15 crédits photos par mois</li>
-                  <li>Organisation avancée</li>
+                  <li>Organisation premium</li>
                   <li>Support prioritaire</li>
                 </ul>
                 <p className="text-sm text-purple-700 mt-3">

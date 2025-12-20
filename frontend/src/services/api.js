@@ -1,19 +1,9 @@
 import axios from 'axios'
 
-// Détection automatique de l'environnement
+// Détection automatique de l'environnement via variables d'environnement
 const getAPIUrl = () => {
-  // Si variable d'environnement définie, l'utiliser
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL
-  }
-
-  // Si on est en production (mode build), utiliser l'URL O2Switch
-  if (import.meta.env.PROD) {
-    return 'https://yarnflow.fr/api'
-  }
-
-  // Sinon, utiliser le vhost WAMP pour le développement
-  return 'http://patron-maker.local/api'
+  // Utilise VITE_API_URL défini dans .env.development, .env.staging ou .env.production
+  return import.meta.env.VITE_API_URL || 'http://patron-maker.local/api'
 }
 
 const api = axios.create({
@@ -38,15 +28,108 @@ api.interceptors.request.use(
   }
 )
 
-// Intercepteur pour gérer les erreurs
+// Variable pour éviter les boucles infinies de refresh
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
+// Intercepteur pour gérer les erreurs et rafraîchir le token
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+  async (error) => {
+    console.log('[API Interceptor] Erreur détectée:', error.response?.status)
+    const originalRequest = error.config
+
+    // Si erreur 401 et qu'on n'a pas déjà essayé de rafraîchir
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      console.log('[API Interceptor] Erreur 401, tentative de refresh...')
+      if (isRefreshing) {
+        // Si un refresh est déjà en cours, attendre qu'il se termine
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then(token => {
+          originalRequest.headers.Authorization = 'Bearer ' + token
+          return api(originalRequest)
+        }).catch(err => {
+          return Promise.reject(err)
+        })
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        // Pas de token, déconnecter directement
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+        return Promise.reject(error)
+      }
+
+      try {
+        // Essayer de rafraîchir le token
+        console.log('[API Interceptor] Envoi requête refresh...')
+
+        // Créer une instance axios SANS intercepteur pour éviter la boucle
+        const refreshApi = axios.create({
+          baseURL: getAPIUrl()
+        })
+
+        const response = await refreshApi.post(
+          '/auth/refresh',
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        )
+
+        console.log('[API Interceptor] Réponse refresh:', response.data)
+
+        if (response.data?.data?.token) {
+          const newToken = response.data.data.token
+          localStorage.setItem('token', newToken)
+          console.log('[API Interceptor] ✅ Nouveau token sauvegardé')
+
+          // Mettre à jour le header de la requête originale
+          originalRequest.headers.Authorization = 'Bearer ' + newToken
+
+          // Traiter toutes les requêtes en attente
+          processQueue(null, newToken)
+
+          isRefreshing = false
+
+          // Réessayer la requête originale avec le nouveau token
+          return api(originalRequest)
+        } else {
+          throw new Error('Pas de token dans la réponse')
+        }
+      } catch (refreshError) {
+        // Le refresh a échoué, déconnecter l'utilisateur
+        console.log('[API Interceptor] ❌ Refresh échoué:', refreshError.message)
+        processQueue(refreshError, null)
+        isRefreshing = false
+
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        console.log('[API Interceptor] Redirection vers /login')
+        window.location.href = '/login'
+
+        return Promise.reject(refreshError)
+      }
     }
+
     return Promise.reject(error)
   }
 )
@@ -74,6 +157,7 @@ export const patternsAPI = {
 export const paymentsAPI = {
   checkoutPattern: (data) => api.post('/payments/checkout/pattern', data),
   checkoutSubscription: (data) => api.post('/payments/checkout/subscription', data),
+  checkoutCredits: (data) => api.post('/payments/checkout/credits', data),
   checkStatus: (sessionId) => api.get(`/payments/status/${sessionId}`),
   getHistory: (params) => api.get('/payments/history', { params })
 }
@@ -94,6 +178,9 @@ export const adminAPI = {
   getUsers: (params) => api.get('/admin/users', { params }),
   getUserDetails: (id) => api.get(`/admin/users/${id}`),
   updateUserSubscription: (id, data) => api.put(`/admin/users/${id}/subscription`, data),
+  manageUserCredits: (id, data) => api.post(`/admin/users/${id}/credits`, data),
+  updateUserRole: (id, data) => api.put(`/admin/users/${id}/role`, data),
+  toggleBan: (id, data) => api.put(`/admin/users/${id}/ban`, data),
   getPatterns: (params) => api.get('/admin/patterns', { params }),
   deletePattern: (id) => api.delete(`/admin/patterns/${id}`),
   getTemplates: (params) => api.get('/admin/templates', { params }),

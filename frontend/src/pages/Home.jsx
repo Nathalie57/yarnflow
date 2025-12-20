@@ -634,8 +634,17 @@ export default function Home() {
           <p className="text-gray-500 text-sm mb-2">
             Tracker de projets • AI Photo Studio • Statistiques • Communauté
           </p>
+          <p className="text-sm text-gray-400 mb-2">
+            <Link to="/privacy" className="hover:text-primary-300 transition">Politique de confidentialité</Link>
+            {' · '}
+            <Link to="/cgu" className="hover:text-primary-300 transition">Conditions d'utilisation</Link>
+            {' · '}
+            <Link to="/mentions" className="hover:text-primary-300 transition">Mentions légales</Link>
+            {' · '}
+            <Link to="/contact" className="hover:text-primary-300 transition">Contact</Link>
+          </p>
           <p className="text-gray-600 text-xs">
-            Créé par Nathalie avec Claude Code • v0.10.0 - YARNFLOW
+            Créé par Nathalie avec Claude Code • v0.15.0 - YARNFLOW
           </p>
         </div>
       </footer>

@@ -17,11 +17,16 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
+import ProjectFilters from '../components/ProjectFilters'
+import TagInput from '../components/TagInput'
+import TagBadge from '../components/TagBadge'
+import UpgradePrompt from '../components/UpgradePrompt'
 
 const MyProjects = () => {
   const { user } = useAuth()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('') // Recherche par nom/description
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -85,6 +90,20 @@ const MyProjects = () => {
   const [photoFile, setPhotoFile] = useState(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
+  // [AI:Claude] Tags et filtres (v0.15.0)
+  const [projectTags, setProjectTags] = useState([]) // Tags du projet en cours de création
+  const [availableTags, setAvailableTags] = useState([]) // Tous les tags de l'utilisateur
+  const [popularTags, setPopularTags] = useState([]) // Suggestions de tags
+  const [canUseTags, setCanUseTags] = useState(false)
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [filters, setFilters] = useState({
+    status: null,
+    favorite: null,
+    tags: [],
+    sort: 'updated_desc'
+  })
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+
   // [AI:Claude] Détecter mobile au montage
   useEffect(() => {
     const checkMobile = () => {
@@ -107,19 +126,119 @@ const MyProjects = () => {
     fetchCredits()
   }, [])
 
+  // [AI:Claude] Charger les tags populaires et permissions (v0.15.0)
+  useEffect(() => {
+    checkUserPermissions()
+    fetchPopularTags()
+  }, [user])
+
+  // [AI:Claude] Recharger les projets quand les filtres changent (v0.15.0)
+  useEffect(() => {
+    fetchProjects()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.status, filters.favorite, filters.sort, JSON.stringify(filters.tags)])
+
   const fetchProjects = async () => {
     try {
       setLoading(true)
       setError(null)
 
-      const response = await api.get('/projects')
+      // [AI:Claude] Construire les paramètres de filtrage
+      const params = new URLSearchParams()
+
+      if (filters.status) params.append('status', filters.status)
+      if (filters.favorite !== null) params.append('favorite', filters.favorite)
+      if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags.join(','))
+      if (filters.sort) params.append('sort', filters.sort)
+
+      const response = await api.get(`/projects?${params.toString()}`)
 
       setProjects(response.data.projects || [])
+
+      // [AI:Claude] Extraire tous les tags disponibles pour le filtrage
+      if (response.data.projects) {
+        const allTags = {}
+        response.data.projects.forEach(project => {
+          if (project.tags) {
+            project.tags.forEach(tag => {
+              allTags[tag] = (allTags[tag] || 0) + 1
+            })
+          }
+        })
+        setAvailableTags(
+          Object.entries(allTags).map(([tag_name, count]) => ({ tag_name, count }))
+        )
+      }
     } catch (err) {
       console.error('Erreur chargement projets:', err)
       setError('Impossible de charger vos projets')
     } finally {
       setLoading(false)
+      setHasLoadedOnce(true)
+    }
+  }
+
+  // [AI:Claude] Récupérer les tags populaires pour suggestions (v0.15.0)
+  const fetchPopularTags = async () => {
+    if (!canUseTags) return
+
+    try {
+      const response = await api.get('/user/tags/popular')
+      if (response.data.success) {
+        setPopularTags(response.data.popular_tags || [])
+      }
+    } catch (err) {
+      console.error('Erreur chargement tags populaires:', err)
+    }
+  }
+
+  // [AI:Claude] Vérifier les permissions utilisateur (v0.15.0)
+  const checkUserPermissions = () => {
+    if (user) {
+      // Les plans PLUS, PRO et Early Bird ont accès aux tags
+      const tier = user.subscription_type || 'free'
+      const hasTags = ['plus', 'plus_annual', 'pro', 'pro_annual', 'early_bird'].includes(tier)
+      setCanUseTags(hasTags)
+    }
+  }
+
+  // [AI:Claude] Normaliser le plan utilisateur pour les composants (free, plus, pro)
+  const getUserPlan = () => {
+    if (!user) return 'free'
+    const tier = user.subscription_type || 'free'
+
+    if (tier.startsWith('plus') || tier === 'plus_annual') return 'plus'
+    if (tier.startsWith('pro') || tier === 'pro_annual') return 'pro'
+    if (tier === 'early_bird') return 'pro' // Early Bird = fonctionnalités PRO
+
+    return 'free'
+  }
+
+  // [AI:Claude] Ajouter un tag au projet en création (v0.15.0)
+  const handleAddTag = (tag) => {
+    if (!canUseTags) {
+      setShowUpgradePrompt(true)
+      return
+    }
+
+    if (!projectTags.includes(tag)) {
+      setProjectTags([...projectTags, tag])
+    }
+  }
+
+  // [AI:Claude] Supprimer un tag du projet en création (v0.15.0)
+  const handleRemoveTag = (tag) => {
+    setProjectTags(projectTags.filter(t => t !== tag))
+  }
+
+  // [AI:Claude] Sauvegarder les tags après création de projet (v0.15.0)
+  const saveProjectTags = async (projectId, tags) => {
+    if (!canUseTags || tags.length === 0) return
+
+    try {
+      await api.post(`/projects/${projectId}/tags`, { tags })
+    } catch (err) {
+      console.error('Erreur sauvegarde tags:', err)
     }
   }
 
@@ -128,14 +247,11 @@ const MyProjects = () => {
     try {
       setLoadingStats(true)
       const response = await api.get('/user/dashboard')
-      console.log('[DEBUG] Response complète:', response.data)
-      console.log('[DEBUG] Response.data.data:', response.data.data)
 
       // [AI:Claude] L'API retourne { success, data: { stats, user } }
       if (response.data && response.data.data && response.data.data.stats) {
         setDashboardStats(response.data.data.stats)
       } else {
-        console.warn('[DEBUG] Stats non trouvées dans la réponse')
         setDashboardStats({
           total_projects: 0,
           total_photos: 0,
@@ -143,8 +259,6 @@ const MyProjects = () => {
         })
       }
     } catch (err) {
-      console.error('[DEBUG] Erreur chargement stats:', err)
-      console.error('[DEBUG] Erreur détails:', err.response?.data)
       // [AI:Claude] Même en cas d'erreur, mettre des stats par défaut
       setDashboardStats({
         total_projects: 0,
@@ -160,11 +274,8 @@ const MyProjects = () => {
   const fetchCredits = async () => {
     try {
       const response = await api.get('/photos/credits')
-      console.log('[DEBUG] Crédits reçus:', response.data)
       setCredits(response.data.credits)
     } catch (err) {
-      console.error('[DEBUG] Erreur chargement crédits:', err)
-      console.error('[DEBUG] Détails erreur:', err.response?.data)
       setCredits({
         monthly_credits: 0,
         purchased_credits: 0,
@@ -208,15 +319,15 @@ const MyProjects = () => {
   // [AI:Claude] Marquer comme favori
   const handleToggleFavorite = async (projectId, currentValue) => {
     try {
-      await api.put(`/projects/${projectId}`, {
-        is_favorite: !currentValue
-      })
+      // [AI:Claude] v0.15.0 : Utiliser la nouvelle route dédiée
+      await api.put(`/projects/${projectId}/favorite`)
 
       setProjects(projects.map(p =>
         p.id === projectId ? { ...p, is_favorite: !currentValue } : p
       ))
     } catch (err) {
       console.error('Erreur favori:', err)
+      showAlert('Erreur', 'Impossible de modifier le favori')
     }
   }
 
@@ -284,7 +395,6 @@ const MyProjects = () => {
     try {
       // [AI:Claude] ÉTAPE 1 : Création du projet
       currentStep = 'création du projet'
-      console.log('[PROJECT CREATE] Étape 1: Création du projet...', formData)
 
       const projectData = {
         name: formData.name,
@@ -301,21 +411,17 @@ const MyProjects = () => {
 
       if (hasYarnData || hasNeedlesData || hasGaugeData) {
         projectData.technical_details = JSON.stringify(technicalForm)
-        console.log('[PROJECT CREATE] Détails techniques inclus:', technicalForm)
       }
 
       const response = await api.post('/projects', projectData)
       newProject = response.data.project
-      console.log('[PROJECT CREATE] ✓ Projet créé avec ID:', newProject.id)
 
       // [AI:Claude] ÉTAPE 2 : Créer les sections si définies
       if (sections.length > 0) {
         currentStep = 'création des sections'
         setCreatingStep(`Création de ${sections.length} section(s)...`)
-        console.log('[PROJECT CREATE] Étape 2: Création de', sections.length, 'section(s)...')
 
         for (let i = 0; i < sections.length; i++) {
-          console.log(`[PROJECT CREATE] Création section ${i + 1}/${sections.length}:`, sections[i].name)
           await api.post(`/projects/${newProject.id}/sections`, {
             name: sections[i].name,
             description: sections[i].description || null,
@@ -323,18 +429,12 @@ const MyProjects = () => {
             display_order: i
           })
         }
-        console.log('[PROJECT CREATE] ✓ Sections créées')
       }
 
       // [AI:Claude] ÉTAPE 3 : Upload du patron si fourni
       if (patternType === 'file' && patternFile) {
         currentStep = 'upload du fichier patron'
         setCreatingStep('Upload du patron...')
-        console.log('[PROJECT CREATE] Étape 3: Upload du patron (fichier)...', {
-          name: patternFile.name,
-          type: patternFile.type,
-          size: patternFile.size
-        })
 
         const formDataPattern = new FormData()
         formDataPattern.append('pattern', patternFile)
@@ -343,34 +443,41 @@ const MyProjects = () => {
         await api.post(`/projects/${newProject.id}/pattern`, formDataPattern, {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
-        console.log('[PROJECT CREATE] ✓ Patron uploadé')
       } else if (patternType === 'url' && patternUrl.trim()) {
         currentStep = 'enregistrement du lien patron'
         setCreatingStep('Enregistrement du lien patron...')
-        console.log('[PROJECT CREATE] Étape 3: Enregistrement du lien patron...', patternUrl)
 
         await api.post(`/projects/${newProject.id}/pattern-url`, {
           pattern_url: patternUrl
         })
-        console.log('[PROJECT CREATE] ✓ Lien patron enregistré')
       } else if (patternType === 'text' && patternText.trim()) {
         currentStep = 'enregistrement du texte patron'
         setCreatingStep('Enregistrement du patron texte...')
-        console.log('[PROJECT CREATE] Étape 3: Enregistrement du patron texte...')
 
         await api.post(`/projects/${newProject.id}/pattern-text`, {
           pattern_text: patternText
         })
-        console.log('[PROJECT CREATE] ✓ Patron texte enregistré')
       } else if (patternType === 'library' && selectedLibraryPattern) {
         currentStep = 'liaison du patron depuis la bibliothèque'
         setCreatingStep('Liaison du patron...')
-        console.log('[PROJECT CREATE] Étape 3: Liaison patron depuis bibliothèque...', selectedLibraryPattern.id)
 
         await api.post(`/projects/${newProject.id}/pattern-from-library`, {
           pattern_library_id: selectedLibraryPattern.id
         })
-        console.log('[PROJECT CREATE] ✓ Patron lié depuis bibliothèque')
+      }
+
+      // [AI:Claude] ÉTAPE 4 : Sauvegarder les tags (v0.15.0)
+      if (projectTags.length > 0) {
+        currentStep = 'sauvegarde des tags'
+        setCreatingStep('Ajout des tags...')
+        await saveProjectTags(newProject.id, projectTags)
+      }
+
+      // [AI:Claude] ÉTAPE 5 : Marquer comme favori (v0.15.0)
+      if (isFavorite) {
+        currentStep = 'marquage favori'
+        setCreatingStep('Marquage comme favori...')
+        await api.put(`/projects/${newProject.id}/favorite`)
       }
 
       // [AI:Claude] Ajouter à la liste
@@ -397,9 +504,9 @@ const MyProjects = () => {
       setPatternSearchQuery('')
       setSections([])
       setShowSections(false)
+      setProjectTags([])
+      setIsFavorite(false)
       setShowCreateModal(false)
-
-      console.log('[PROJECT CREATE] ✓ Projet créé avec succès!')
 
       // [AI:Claude] Rediriger vers le compteur
       showConfirm(
@@ -410,9 +517,6 @@ const MyProjects = () => {
         }
       )
     } catch (err) {
-      console.error(`[PROJECT CREATE] ❌ Erreur lors de la ${currentStep}:`, err)
-      console.error('[PROJECT CREATE] Détails erreur:', err.response?.data)
-
       // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
       let errorMessage = ''
       const apiError = err.response?.data?.error || err.response?.data?.message
@@ -431,7 +535,6 @@ const MyProjects = () => {
 
       // [AI:Claude] Si le projet a été créé, l'ajouter quand même à la liste
       if (newProject) {
-        console.log('[PROJECT CREATE] Projet partiellement créé, ajout à la liste...')
         setProjects([newProject, ...projects])
         setShowCreateModal(false)
       }
@@ -603,7 +706,7 @@ const MyProjects = () => {
                       </Link>
                     </p>
                     <Link
-                      to="/subscription"
+                      to="/subscription#credits"
                       className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-xs font-bold rounded-lg hover:from-primary-700 hover:to-primary-800 transition focus:outline-none focus:ring-2 focus:ring-primary-300"
                       title="Acheter des crédits"
                     >
@@ -663,6 +766,30 @@ const MyProjects = () => {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <p className="text-red-800">{error}</p>
+        </div>
+      )}
+
+      {/* Filtres (v0.15.0) - Reste visible pendant le filtrage pour éviter les "sauts" */}
+      {hasLoadedOnce && !error && (
+        <div className="mb-6">
+          <ProjectFilters
+            onFilterChange={setFilters}
+            availableTags={availableTags}
+            canUseTags={canUseTags}
+            onUpgradeClick={() => setShowUpgradePrompt(true)}
+            userPlan={getUserPlan()}
+          />
+        </div>
+      )}
+
+      {/* Indicateur de chargement pendant filtrage */}
+      {loading && hasLoadedOnce && (
+        <div className="flex items-center justify-center py-4 text-primary-600">
+          <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span className="text-sm font-medium">Filtrage en cours...</span>
         </div>
       )}
 
@@ -766,6 +893,20 @@ const MyProjects = () => {
                         {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
                       </span>
                     </div>
+
+                    {/* Tags (v0.15.0) */}
+                    {project.tags && project.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {project.tags.slice(0, 3).map((tag, idx) => (
+                          <TagBadge key={idx} tag={tag} className="text-xs" />
+                        ))}
+                        {project.tags.length > 3 && (
+                          <span className="text-xs text-gray-500 px-2 py-1">
+                            +{project.tags.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     {/* Description */}
                     {project.description && (
@@ -1279,6 +1420,58 @@ const MyProjects = () => {
                 )}
               </div>
 
+              {/* Tags et Favoris (v0.15.0) */}
+              <div className="mb-6 border-t pt-4 space-y-4">
+                {/* Favori (tous plans) */}
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={isFavorite}
+                    onChange={(e) => setIsFavorite(e.target.checked)}
+                    className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary focus:ring-2"
+                  />
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-primary transition">
+                    ⭐ Marquer comme favori
+                  </span>
+                </label>
+
+                {/* Tags (PLUS/PRO uniquement) */}
+                {canUseTags ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      🏷️ Tags
+                    </label>
+                    <TagInput
+                      tags={projectTags}
+                      onAddTag={handleAddTag}
+                      onRemoveTag={handleRemoveTag}
+                      suggestions={popularTags.map(t => t.tag_name)}
+                      placeholder="Ex: cadeau, bébé, urgent..."
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-sage/10 rounded-lg p-4 border border-sage/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg">🏷️</span>
+                      <span className="font-medium text-gray-800">Tags - Disponible en PLUS</span>
+                      <span className="ml-auto text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                        Premium
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Organisez vos projets avec des étiquettes personnalisées pour les retrouver facilement
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setShowUpgradePrompt(true)}
+                      className="text-sm text-primary hover:underline font-medium"
+                    >
+                      En savoir plus →
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Sections/Parties du projet (optionnel) */}
               <div className="mb-6 border-t pt-4">
                 <div className="flex items-center justify-between mb-3">
@@ -1414,7 +1607,6 @@ const MyProjects = () => {
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        console.log('[DEBUG] Clic sur bibliothèque')
                         setShowPatternLibraryModal(true)
                         fetchLibraryPatterns()
                       }}
@@ -1495,7 +1687,6 @@ const MyProjects = () => {
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        console.log('[DEBUG] Clic sur URL')
                         setShowPatternUrlModal(true)
                       }}
                       className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'url' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
@@ -1531,7 +1722,6 @@ const MyProjects = () => {
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        console.log('[DEBUG] Clic sur Texte')
                         setShowPatternTextModal(true)
                       }}
                       className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'text' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
@@ -1996,6 +2186,13 @@ Rang 4 : *2ms, aug* x6 (24)
           </div>
         </div>
       )}
+
+      {/* Upgrade Prompt (v0.15.0) */}
+      <UpgradePrompt
+        isOpen={showUpgradePrompt}
+        onClose={() => setShowUpgradePrompt(false)}
+        feature="tags"
+      />
     </div>
   )
 }

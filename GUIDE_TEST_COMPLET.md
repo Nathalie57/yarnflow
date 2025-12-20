@@ -971,7 +971,7 @@ npm run dev
 3. 🧠 **Contextes intelligents** - Adaptation selon type de projet (bonnet vs amigurumi)
 4. 💰 **Tarification -20%** - 5 photos = 4 crédits
 5. 💳 **Système PLUS/PRO** - FREE (5 crédits), PLUS (15 crédits), PRO (30 crédits)
-6. 📦 **Système de sections** - Organisation avancée des projets
+6. 📦 **Système de sections** - Organisation premium des projets
 7. 🔒 **Générateur admin-only** - Masqué pour utilisateurs normaux
 8. 🎨 **Navigation active dynamique** - Onglet actif suit la page
 

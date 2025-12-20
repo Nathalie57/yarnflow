@@ -13,6 +13,18 @@ const Subscription = () => {
     loadSubscription()
   }, [])
 
+  // Scroll vers la section crédits si le hash #credits est présent
+  useEffect(() => {
+    if (window.location.hash === '#credits') {
+      setTimeout(() => {
+        const creditsSection = document.getElementById('credits-packs')
+        if (creditsSection) {
+          creditsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100) // Petit délai pour que la page soit bien chargée
+    }
+  }, [])
+
   const loadSubscription = async () => {
     try {
       const response = await userAPI.getSubscription()
@@ -35,13 +47,29 @@ const Subscription = () => {
         subscriptionType = 'pro_annual'
       }
 
-      const response = await paymentsAPI.checkoutSubscription({ subscription_type: subscriptionType })
+      const response = await paymentsAPI.checkoutSubscription({ type: subscriptionType })
       const { checkout_url } = response.data.data
 
       // Rediriger vers Stripe Checkout
       window.location.href = checkout_url
     } catch (error) {
       console.error('Erreur checkout:', error)
+      alert(error.response?.data?.message || 'Erreur lors de la création du paiement')
+      setProcessing(false)
+    }
+  }
+
+  const handleBuyCredits = async (amount) => {
+    setProcessing(true)
+    try {
+      // Le backend attend 'pack' au format string '50' ou '150'
+      const response = await paymentsAPI.checkoutCredits({ pack: String(amount) })
+      const { checkout_url } = response.data.data
+
+      // Rediriger vers Stripe Checkout
+      window.location.href = checkout_url
+    } catch (error) {
+      console.error('Erreur checkout crédits:', error)
       alert(error.response?.data?.message || 'Erreur lors de la création du paiement')
       setProcessing(false)
     }
@@ -77,7 +105,7 @@ const Subscription = () => {
         '7 projets actifs',
         'Patrons illimités',
         'Compteur de rangs',
-        'Organisation avancée',
+        'Organisation premium',
         '15 crédits photos/mois'
       ],
       popular: true,
@@ -94,7 +122,7 @@ const Subscription = () => {
         'Projets illimités',
         'Patrons illimités',
         'Compteur de rangs',
-        'Organisation avancée',
+        'Organisation premium',
         '30 crédits photos/mois',
         'Support prioritaire',
         'Accès premium aux nouveautés'
@@ -280,6 +308,95 @@ const Subscription = () => {
             )}
           </div>
         ))}
+      </div>
+
+      {/* Packs de crédits photos */}
+      <div id="credits-packs" className="mb-8 scroll-mt-20">
+        <h2 className="text-2xl font-bold mb-2 text-center">📸 Besoin de plus de crédits photos ?</h2>
+        <p className="text-gray-600 text-center mb-6">
+          Achetez des crédits supplémentaires à tout moment, sans abonnement
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          {/* Pack 50 crédits */}
+          <div className="card border border-gray-200">
+            <div className="text-center mb-4">
+              <h3 className="text-xl font-bold mb-2">Pack 50 crédits</h3>
+              <div className="flex items-baseline justify-center mb-2">
+                <span className="text-3xl font-bold">4,99€</span>
+              </div>
+              <p className="text-sm text-gray-600">Paiement unique</p>
+            </div>
+
+            <ul className="space-y-2 mb-6">
+              <li className="flex items-start">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-sm text-gray-700">50 crédits photos IA</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-sm text-gray-700">Valables à vie (pas d'expiration)</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-sm text-gray-700">Cumulables avec vos crédits mensuels</span>
+              </li>
+            </ul>
+
+            <button
+              onClick={() => handleBuyCredits(50)}
+              disabled={processing}
+              className="btn-primary w-full"
+            >
+              {processing ? 'Chargement...' : 'Acheter 50 crédits'}
+            </button>
+          </div>
+
+          {/* Pack 150 crédits */}
+          <div className="card border-2 border-primary-500 relative">
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+              <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                Meilleur prix
+              </span>
+            </div>
+
+            <div className="text-center mb-4">
+              <h3 className="text-xl font-bold mb-2">Pack 150 crédits</h3>
+              <div className="flex items-baseline justify-center mb-2">
+                <span className="text-3xl font-bold">9,99€</span>
+              </div>
+              <p className="text-sm text-green-600 font-medium">0,07€ par crédit (au lieu de 0,10€)</p>
+              <p className="text-sm text-gray-600">Paiement unique</p>
+            </div>
+
+            <ul className="space-y-2 mb-6">
+              <li className="flex items-start">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-sm text-gray-700">150 crédits photos IA</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-sm text-gray-700">Valables à vie (pas d'expiration)</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-sm text-gray-700">Cumulables avec vos crédits mensuels</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-green-500 mr-2">✓</span>
+                <span className="text-sm text-gray-700 font-bold">Économisez 4,50€ vs 3× Pack 50</span>
+              </li>
+            </ul>
+
+            <button
+              onClick={() => handleBuyCredits(150)}
+              disabled={processing}
+              className="btn-primary w-full"
+            >
+              {processing ? 'Chargement...' : 'Acheter 150 crédits'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* FAQ simplifiée */}
