@@ -458,7 +458,7 @@ const ProjectCounter = () => {
     setLocalTags(newTags)
 
     try {
-      await api.put(`/projects/${projectId}`, { tags: newTags })
+      await api.post(`/projects/${projectId}/tags`, { tags: [tag] })
       setProject({ ...project, tags: newTags })
     } catch (err) {
       console.error('Erreur ajout tag:', err)
@@ -472,7 +472,7 @@ const ProjectCounter = () => {
     setLocalTags(newTags)
 
     try {
-      await api.put(`/projects/${projectId}`, { tags: newTags })
+      await api.delete(`/projects/${projectId}/tags/${encodeURIComponent(tagToRemove)}`)
       setProject({ ...project, tags: newTags })
     } catch (err) {
       console.error('Erreur suppression tag:', err)
