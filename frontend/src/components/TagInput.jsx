@@ -52,12 +52,29 @@ const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder =
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' || e.key === ',') {
+    // Support clavier desktop et mobile
+    if (e.key === 'Enter' || e.key === ',' || e.keyCode === 188 || e.keyCode === 13) {
       e.preventDefault()
       if (inputValue.trim()) {
         handleAddTag(inputValue)
       }
     }
+  }
+
+  const handleInputChange = (e) => {
+    const value = e.target.value
+
+    // Détecter la virgule dans le texte (pour mobile/PWA)
+    if (value.includes(',')) {
+      const textBeforeComma = value.split(',')[0].trim()
+      if (textBeforeComma) {
+        handleAddTag(textBeforeComma)
+      }
+      // Ne pas garder la virgule dans l'input
+      return
+    }
+
+    setInputValue(value)
   }
 
   const handleSuggestionClick = (suggestion) => {
@@ -67,26 +84,44 @@ const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder =
 
   return (
     <div className="space-y-2">
-      {/* Input */}
+      {/* Input avec bouton d'ajout */}
       <div className="relative">
-        <input
-          ref={inputRef}
-          type="text"
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => {
-            if (inputValue.length >= 2 && filteredSuggestions.length > 0) {
-              setShowSuggestions(true)
-            }
-          }}
-          onBlur={() => {
-            // Délai pour permettre le clic sur les suggestions
-            setTimeout(() => setShowSuggestions(false), 200)
-          }}
-          placeholder={placeholder}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-        />
+        <div className="flex gap-2">
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              if (inputValue.length >= 2 && filteredSuggestions.length > 0) {
+                setShowSuggestions(true)
+              }
+            }}
+            onBlur={() => {
+              // Délai pour permettre le clic sur les suggestions
+              setTimeout(() => setShowSuggestions(false), 200)
+            }}
+            placeholder={placeholder}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+
+          {/* Bouton d'ajout manuel (utile sur mobile) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (inputValue.trim()) {
+                handleAddTag(inputValue)
+              }
+            }}
+            disabled={!inputValue.trim() || inputValue.trim().length < 2}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            aria-label="Ajouter le tag"
+          >
+            +
+          </button>
+        </div>
 
         {/* Suggestions autocomplete */}
         {showSuggestions && (
