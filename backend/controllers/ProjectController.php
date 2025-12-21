@@ -767,11 +767,11 @@ class ProjectController
             }
             $log("[PATTERN UPLOAD] Type validé");
 
-            // [AI:Claude] Validation de la taille (max 10MB)
-            $maxSize = 10 * 1024 * 1024;
+            // [AI:Claude] Validation de la taille (max 50MB) - Augmenté le 2025-12-21
+            $maxSize = 50 * 1024 * 1024;
             $log("[PATTERN UPLOAD] Taille: {$file['size']} bytes (max: $maxSize)");
             if ($file['size'] > $maxSize)
-                throw new \Exception('Fichier trop volumineux (max 10MB)');
+                throw new \Exception('Fichier trop volumineux (max 50MB)');
             $log("[PATTERN UPLOAD] Taille validée");
 
             // [AI:Claude] Déterminer l'extension
@@ -885,7 +885,7 @@ class ProjectController
             // Validation de la taille (max 10MB)
             $maxSize = 10 * 1024 * 1024;
             if ($file['size'] > $maxSize) {
-                throw new \Exception('Fichier trop volumineux (max 10MB)');
+                throw new \Exception('Fichier trop volumineux (max 50MB)');
             }
 
             // Déterminer l'extension

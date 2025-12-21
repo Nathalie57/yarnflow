@@ -371,10 +371,10 @@ class PatternLibraryController
         if (!in_array($file['type'], $allowedTypes))
             throw new \InvalidArgumentException('Type de fichier non autorisé. Utilisez PDF ou images (JPG, PNG, WEBP)');
 
-        // [AI:Claude] Validation de la taille (max 10MB)
-        $maxSize = 10 * 1024 * 1024;
+        // [AI:Claude] Validation de la taille (max 50MB) - Augmenté le 2025-12-21
+        $maxSize = 50 * 1024 * 1024;
         if ($file['size'] > $maxSize)
-            throw new \Exception('Fichier trop volumineux (max 10MB)');
+            throw new \Exception('Fichier trop volumineux (max 50MB)');
 
         // [AI:Claude] Déterminer le type de fichier et l'extension
         $isPdf = $file['type'] === 'application/pdf';
