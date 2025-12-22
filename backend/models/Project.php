@@ -837,8 +837,15 @@ class Project extends BaseModel
      */
     public function deleteSection(int $sectionId): bool
     {
-        $query = "DELETE FROM project_sections WHERE id = :id";
+        // [AI:Claude] Avant de supprimer, remettre à NULL le current_section_id
+        // des projets qui utilisent cette section comme section courante
+        $queryResetCurrent = "UPDATE projects SET current_section_id = NULL WHERE current_section_id = :section_id";
+        $stmtReset = $this->db->prepare($queryResetCurrent);
+        $stmtReset->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+        $stmtReset->execute();
 
+        // [AI:Claude] Supprimer la section
+        $query = "DELETE FROM project_sections WHERE id = :id";
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':id', $sectionId, PDO::PARAM_INT);
 
