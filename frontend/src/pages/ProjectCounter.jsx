@@ -1902,15 +1902,18 @@ const ProjectCounter = () => {
       `Êtes-vous sûr de vouloir supprimer la section "${section.name}" ? Tous les rangs associés seront dissociés de cette section.`,
       async () => {
         try {
-          await api.delete(`/projects/${projectId}/sections/${section.id}`)
-          await fetchSections()
-          // [AI:Claude] Rafraîchir le projet pour mettre à jour current_section_id
-          await fetchProject()
+          // [AI:Claude] IMPORTANT : Réinitialiser currentSectionId AVANT de supprimer
+          // pour éviter l'affichage de données obsolètes pendant le rafraîchissement
           if (currentSectionId === section.id) {
             setCurrentSectionId(null)
             // [AI:Claude] Nettoyer le localStorage si on supprime la section active
             localStorage.removeItem(`currentSection_${projectId}`)
           }
+
+          await api.delete(`/projects/${projectId}/sections/${section.id}`)
+          await fetchSections()
+          // [AI:Claude] Rafraîchir le projet pour mettre à jour current_section_id
+          await fetchProject()
           showAlert('Section supprimée avec succès', 'success')
         } catch (err) {
           console.error('Erreur suppression section:', err)
