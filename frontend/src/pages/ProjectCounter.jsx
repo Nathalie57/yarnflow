@@ -1902,12 +1902,28 @@ const ProjectCounter = () => {
       `Êtes-vous sûr de vouloir supprimer la section "${section.name}" ? Tous les rangs associés seront dissociés de cette section.`,
       async () => {
         try {
-          // [AI:Claude] IMPORTANT : Réinitialiser currentSectionId AVANT de supprimer
-          // pour éviter l'affichage de données obsolètes pendant le rafraîchissement
+          // [AI:Claude] Si on supprime la section courante, trouver la prochaine section à activer
+          let nextSectionId = null
           if (currentSectionId === section.id) {
-            setCurrentSectionId(null)
-            // [AI:Claude] Nettoyer le localStorage si on supprime la section active
-            localStorage.removeItem(`currentSection_${projectId}`)
+            // Chercher une autre section non terminée
+            const otherSections = sections.filter(s =>
+              s.id !== section.id && // Pas la section supprimée
+              s.is_completed !== 1    // Pas terminée
+            )
+
+            if (otherSections.length > 0) {
+              // Prendre la première section non terminée
+              nextSectionId = otherSections[0].id
+            }
+
+            // Mettre à jour immédiatement pour éviter l'affichage de données obsolètes
+            setCurrentSectionId(nextSectionId)
+
+            if (nextSectionId) {
+              localStorage.setItem(`currentSection_${projectId}`, nextSectionId.toString())
+            } else {
+              localStorage.removeItem(`currentSection_${projectId}`)
+            }
           }
 
           await api.delete(`/projects/${projectId}/sections/${section.id}`)
