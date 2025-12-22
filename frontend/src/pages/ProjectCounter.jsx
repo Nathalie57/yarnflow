@@ -1904,6 +1904,8 @@ const ProjectCounter = () => {
         try {
           await api.delete(`/projects/${projectId}/sections/${section.id}`)
           await fetchSections()
+          // [AI:Claude] Rafraîchir le projet pour mettre à jour current_section_id
+          await fetchProject()
           if (currentSectionId === section.id) {
             setCurrentSectionId(null)
             // [AI:Claude] Nettoyer le localStorage si on supprime la section active
