@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:staging": "vite build --mode staging",
     "build:prod": "vite build --mode production",
+    "validate:env": "node validate-env.js",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "pwa:validate": "node validate-pwa.cjs"
