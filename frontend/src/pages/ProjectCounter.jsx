@@ -167,6 +167,9 @@ const ProjectCounter = () => {
     description: '',
     total_rows: ''
   })
+  // [AI:Claude] v0.16.2: Modale de confirmation pour attribuer les rangs existants
+  const [showRowsConfirmModal, setShowRowsConfirmModal] = useState(false)
+  const [rowsConfirmResolve, setRowsConfirmResolve] = useState(null)
   const [savingSection, setSavingSection] = useState(false)
 
   // [AI:Claude] Modal pour ajouter le patron à la bibliothèque
@@ -1428,7 +1431,6 @@ const ProjectCounter = () => {
 
     const newRow = currentRow + 1
     const oldRow = currentRow
-    setCurrentRow(newRow)
 
     // [AI:Claude] Sauvegarder directement sans ouvrir la modal
     try {
@@ -1443,7 +1445,8 @@ const ProjectCounter = () => {
 
       await api.post(`/projects/${projectId}/rows`, rowData)
 
-      // [AI:Claude] Mettre à jour la progression de la section localement
+      // [AI:Claude] FIX v0.16.2: Mettre à jour sections/project AVANT setCurrentRow
+      // pour éviter que le useEffect n'écrase avec l'ancienne valeur
       if (currentSectionId) {
         setSections(prevSections =>
           prevSections.map(s =>
@@ -1459,6 +1462,9 @@ const ProjectCounter = () => {
           current_row: newRow
         }))
       }
+
+      // [AI:Claude] Mettre à jour currentRow APRÈS sections pour que useEffect lise la bonne valeur
+      setCurrentRow(newRow)
 
       // [AI:Claude] Si on vient de terminer, marquer comme terminé automatiquement
       if (maxRows !== null && newRow === maxRows) {
@@ -1857,6 +1863,24 @@ const ProjectCounter = () => {
       return
     }
 
+    // [AI:Claude] v0.16.2: Variable locale pour stocker le current_row à utiliser
+    let initialCurrentRow = 0
+
+    // [AI:Claude] v0.16.2: Si c'est la première section ET qu'il y a déjà des rangs au compteur global
+    // Demander à l'utilisateur quoi faire avec les rangs existants
+    if (!editingSection && sections.length === 0 && project.current_row > 0) {
+      const choice = await new Promise((resolve) => {
+        setRowsConfirmResolve(() => resolve)
+        setShowRowsConfirmModal(true)
+      })
+
+      if (choice === 'assign') {
+        // L'utilisateur veut attribuer les rangs à la section
+        initialCurrentRow = project.current_row
+      }
+      // Sinon (reset), on laisse la section démarrer à 0 normalement
+    }
+
     setSavingSection(true)
 
     try {
@@ -1864,7 +1888,8 @@ const ProjectCounter = () => {
         name: sectionForm.name.trim(),
         description: sectionForm.description.trim() || null,
         total_rows: sectionForm.total_rows ? parseInt(sectionForm.total_rows) : null,
-        display_order: editingSection ? editingSection.display_order : sections.length
+        display_order: editingSection ? editingSection.display_order : sections.length,
+        current_row: initialCurrentRow // Attribuer les rangs si demandé
       }
 
       if (editingSection) {
@@ -1873,19 +1898,23 @@ const ProjectCounter = () => {
         showAlert('Section modifiée avec succès', 'success')
       } else {
         // Création
-        await api.post(`/projects/${projectId}/sections`, sectionData)
+        const response = await api.post(`/projects/${projectId}/sections`, sectionData)
 
         // Si le projet était terminé, le remettre en cours
         if (project.status === 'completed') {
           await api.put(`/projects/${projectId}`, { status: 'in_progress' })
-          await fetchProject()
         }
-
-        showAlert('Section créée avec succès', 'success')
       }
 
-      await fetchSections()
-      await fetchProject() // [AI:Claude] Rafraîchir le projet pour récupérer le current_section_id mis à jour
+      // [AI:Claude] FIX v0.16.2: fetchProject AVANT fetchSections pour que current_section_id soit défini
+      const projectData = await fetchProject() // Rafraîchir le projet pour récupérer le current_section_id mis à jour
+      await fetchSections(projectData?.current_section_id) // Passer directement le current_section_id récupéré
+
+      // [AI:Claude] v0.16.2: Mettre à jour currentRow avec la valeur de la section nouvellement créée
+      if (!editingSection) {
+        setCurrentRow(initialCurrentRow)
+      }
+
       setShowAddSectionModal(false)
       setSectionForm({ name: '', description: '', total_rows: '' })
       setEditingSection(null)
@@ -1919,7 +1948,6 @@ const ProjectCounter = () => {
           // [AI:Claude] Rafraîchir les données
           await fetchSections()
           await fetchProject()
-          showAlert('Section supprimée avec succès', 'success')
         } catch (err) {
           console.error('Erreur suppression section:', err)
           showAlert('Erreur lors de la suppression de la section', 'error')
@@ -4380,6 +4408,7 @@ Rang 3 : *1ms, aug* x6 (18)
                 rows={4}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="Décrivez votre projet..."
+                autoFocus
               />
             </div>
 
@@ -4477,6 +4506,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="Description générale du projet, notes personnelles..."
+                  autoFocus
                 />
               </div>
 
@@ -5221,6 +5251,57 @@ Rang 3 : *1ms, aug* x6 (18)
         }}
         onFeedbackSubmitted={handleFeedbackSubmitted}
       />
+
+      {/* [AI:Claude] v0.16.2: Modale de confirmation pour attribuer les rangs existants */}
+      {showRowsConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-4">🤔</div>
+              <h2 className="text-2xl font-bold mb-2 text-gray-900">
+                Que faire avec les rangs existants ?
+              </h2>
+              <p className="text-gray-600">
+                Vous avez déjà <span className="font-bold text-primary-600">{project.current_row} rang{project.current_row > 1 ? 's' : ''}</span> au compteur.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowRowsConfirmModal(false)
+                  rowsConfirmResolve('assign')
+                }}
+                className="w-full px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition shadow-lg font-semibold text-left flex items-center gap-3"
+              >
+                <span className="text-2xl">✅</span>
+                <div>
+                  <div className="font-bold">Attribuer à la section</div>
+                  <div className="text-sm text-primary-100">
+                    La section "{sectionForm.name}" démarrera à {project.current_row} rangs
+                  </div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowRowsConfirmModal(false)
+                  rowsConfirmResolve('reset')
+                }}
+                className="w-full px-6 py-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold text-left flex items-center gap-3"
+              >
+                <span className="text-2xl">🔄</span>
+                <div>
+                  <div className="font-bold">Remettre à zéro</div>
+                  <div className="text-sm text-gray-500">
+                    La section commencera à 0 (les rangs précédents étaient du test)
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

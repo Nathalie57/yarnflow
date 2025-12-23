@@ -1304,7 +1304,8 @@ class ProjectController
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'display_order' => $data['display_order'] ?? 0,
-                'total_rows' => $data['total_rows'] ?? null
+                'total_rows' => $data['total_rows'] ?? null,
+                'current_row' => $data['current_row'] ?? 0  // [AI:Claude] v0.16.2: Support affectation rangs
             ];
 
             $sectionId = $this->projectModel->createSection($id, $sectionData);
