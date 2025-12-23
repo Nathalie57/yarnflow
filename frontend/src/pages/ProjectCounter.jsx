@@ -1885,6 +1885,7 @@ const ProjectCounter = () => {
       }
 
       await fetchSections()
+      await fetchProject() // [AI:Claude] Rafraîchir le projet pour récupérer le current_section_id mis à jour
       setShowAddSectionModal(false)
       setSectionForm({ name: '', description: '', total_rows: '' })
       setEditingSection(null)
@@ -1902,33 +1903,21 @@ const ProjectCounter = () => {
       `Êtes-vous sûr de vouloir supprimer la section "${section.name}" ? Tous les rangs associés seront dissociés de cette section.`,
       async () => {
         try {
-          // [AI:Claude] Si on supprime la section courante, trouver la prochaine section à activer
-          let nextSectionId = null
-          if (currentSectionId === section.id) {
-            // Chercher une autre section non terminée
-            const otherSections = sections.filter(s =>
-              s.id !== section.id && // Pas la section supprimée
-              s.is_completed !== 1    // Pas terminée
-            )
+          // [AI:Claude] Supprimer la section - le backend retourne le projet mis à jour
+          const response = await api.delete(`/projects/${projectId}/sections/${section.id}`)
+          const updatedProject = response.data.project
 
-            if (otherSections.length > 0) {
-              // Prendre la première section non terminée
-              nextSectionId = otherSections[0].id
-            }
-
-            // Mettre à jour immédiatement pour éviter l'affichage de données obsolètes
-            setCurrentSectionId(nextSectionId)
-
-            if (nextSectionId) {
-              localStorage.setItem(`currentSection_${projectId}`, nextSectionId.toString())
-            } else {
-              localStorage.removeItem(`currentSection_${projectId}`)
-            }
+          // [AI:Claude] Mettre à jour currentSectionId depuis le projet retourné
+          if (updatedProject && updatedProject.current_section_id) {
+            setCurrentSectionId(updatedProject.current_section_id)
+            localStorage.setItem(`currentSection_${projectId}`, updatedProject.current_section_id.toString())
+          } else {
+            setCurrentSectionId(null)
+            localStorage.removeItem(`currentSection_${projectId}`)
           }
 
-          await api.delete(`/projects/${projectId}/sections/${section.id}`)
+          // [AI:Claude] Rafraîchir les données
           await fetchSections()
-          // [AI:Claude] Rafraîchir le projet pour mettre à jour current_section_id
           await fetchProject()
           showAlert('Section supprimée avec succès', 'success')
         } catch (err) {

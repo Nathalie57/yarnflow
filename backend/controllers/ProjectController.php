@@ -56,11 +56,41 @@ class ProjectController
             if ($limit > 100)
                 $limit = 100;
 
-            // [AI:Claude] Construction de la requête avec filtres
+            // [AI:Claude] Construction de la requête avec filtres (v0.16.1 - FIX: LEFT JOIN pour afficher section courante)
             $db = \App\Config\Database::getInstance()->getConnection();
 
-            $query = "SELECT DISTINCT p.*
-                      FROM projects p";
+            $query = "SELECT p.*,
+                      CONCAT(
+                          FLOOR(
+                              CASE
+                                  WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                                      COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                                  ELSE p.total_time
+                              END / 3600
+                          ), 'h ',
+                          FLOOR(
+                              (CASE
+                                  WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                                      COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                                  ELSE p.total_time
+                              END % 3600) / 60
+                          ), 'min'
+                      ) as time_formatted,
+                      CASE
+                          WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                              (SELECT CASE
+                                  WHEN SUM(total_rows) > 0 THEN ROUND((SUM(current_row) / SUM(total_rows)) * 100, 1)
+                                  ELSE NULL
+                              END FROM project_sections WHERE project_id = p.id)
+                          WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
+                          ELSE NULL
+                      END as completion_percentage,
+                      ps.name as current_section_name,
+                      ps.current_row as current_section_row,
+                      ps.total_rows as current_section_total_rows,
+                      (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) as sections_count
+                      FROM projects p
+                      LEFT JOIN project_sections ps ON p.current_section_id = ps.id";
 
             // [AI:Claude] JOIN pour filtrer par tags
             if (!empty($tags)) {
@@ -92,6 +122,9 @@ class ProjectController
                 }
                 $query .= " AND pt.tag_name IN (" . implode(', ', $tagPlaceholders) . ")";
             }
+
+            // [AI:Claude] GROUP BY pour éviter les doublons dus aux JOINs
+            $query .= " GROUP BY p.id";
 
             // [AI:Claude] Tri
             $orderBy = match($sort) {
@@ -1415,9 +1448,13 @@ class ProjectController
                 return;
             }
 
+            // [AI:Claude] Retourner le projet mis à jour avec la nouvelle current_section_id
+            $project = $this->projectModel->getProjectById($projectId);
+
             $this->sendResponse(200, [
                 'success' => true,
-                'message' => 'Section supprimée avec succès'
+                'message' => 'Section supprimée avec succès',
+                'project' => $project
             ]);
         } catch (\Exception $e) {
             $this->sendResponse(500, [

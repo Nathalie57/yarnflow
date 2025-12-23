@@ -14,7 +14,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import ProjectFilters from '../components/ProjectFilters'
@@ -24,6 +24,7 @@ import UpgradePrompt from '../components/UpgradePrompt'
 
 const MyProjects = () => {
   const { user } = useAuth()
+  const location = useLocation()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
@@ -115,10 +116,25 @@ const MyProjects = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // [AI:Claude] Charger les projets au montage
+  // [AI:Claude] Rafraîchir les projets quand on revient sur /my-projects
   useEffect(() => {
-    fetchProjects()
-  }, [])
+    if (location.pathname === '/my-projects') {
+      fetchProjects()
+    }
+  }, [location.pathname])
+
+  // [AI:Claude] Rafraîchir les projets quand la page devient visible (après navigation)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && location.pathname === '/my-projects') {
+        // La page est redevenue visible, rafraîchir les projets
+        fetchProjects()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [location.pathname, filters])
 
   // [AI:Claude] Charger les stats du dashboard au montage
   useEffect(() => {

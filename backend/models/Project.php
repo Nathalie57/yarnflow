@@ -77,21 +77,36 @@ class Project extends BaseModel
         $query = "SELECT p.*,
                   COUNT(DISTINCT pr.id) as rows_count,
                   CONCAT(
-                      FLOOR(p.total_time / 3600), 'h ',
-                      FLOOR((p.total_time % 3600) / 60), 'min ',
-                      (p.total_time % 60), 's'
+                      FLOOR(
+                          CASE
+                              WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                                  COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                              ELSE p.total_time
+                          END / 3600
+                      ), 'h ',
+                      FLOOR(
+                          (CASE
+                              WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                                  COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                              ELSE p.total_time
+                          END % 3600) / 60
+                      ), 'min'
                   ) as time_formatted,
                   CASE
+                      WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                          (SELECT CASE
+                              WHEN SUM(total_rows) > 0 THEN ROUND((SUM(current_row) / SUM(total_rows)) * 100, 1)
+                              ELSE NULL
+                          END FROM project_sections WHERE project_id = p.id)
                       WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
                       ELSE NULL
                   END as completion_percentage,
-                  ps.name as current_section_name,
-                  ps.current_row as current_section_row,
-                  ps.total_rows as current_section_total_rows,
+                  (SELECT name FROM project_sections WHERE id = p.current_section_id) as current_section_name,
+                  (SELECT current_row FROM project_sections WHERE id = p.current_section_id) as current_section_row,
+                  (SELECT total_rows FROM project_sections WHERE id = p.current_section_id) as current_section_total_rows,
                   (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) as sections_count
                   FROM {$this->table} p
                   LEFT JOIN project_rows pr ON p.id = pr.project_id
-                  LEFT JOIN project_sections ps ON p.current_section_id = ps.id
                   WHERE p.user_id = :user_id";
 
         if ($status !== null)
@@ -125,14 +140,34 @@ class Project extends BaseModel
         $query = "SELECT p.*,
                   COUNT(DISTINCT pr.id) as rows_count,
                   CONCAT(
-                      FLOOR(p.total_time / 3600), 'h ',
-                      FLOOR((p.total_time % 3600) / 60), 'min ',
-                      (p.total_time % 60), 's'
+                      FLOOR(
+                          CASE
+                              WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                                  COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                              ELSE p.total_time
+                          END / 3600
+                      ), 'h ',
+                      FLOOR(
+                          (CASE
+                              WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                                  COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                              ELSE p.total_time
+                          END % 3600) / 60
+                      ), 'min'
                   ) as time_formatted,
                   CASE
+                      WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                          (SELECT CASE
+                              WHEN SUM(total_rows) > 0 THEN ROUND((SUM(current_row) / SUM(total_rows)) * 100, 1)
+                              ELSE NULL
+                          END FROM project_sections WHERE project_id = p.id)
                       WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
                       ELSE NULL
-                  END as completion_percentage
+                  END as completion_percentage,
+                  (SELECT name FROM project_sections WHERE id = p.current_section_id) as current_section_name,
+                  (SELECT current_row FROM project_sections WHERE id = p.current_section_id) as current_section_row,
+                  (SELECT total_rows FROM project_sections WHERE id = p.current_section_id) as current_section_total_rows,
+                  (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) as sections_count
                   FROM {$this->table} p
                   LEFT JOIN project_rows pr ON p.id = pr.project_id
                   WHERE p.id = :id
@@ -743,8 +778,26 @@ class Project extends BaseModel
             ':total_rows' => $sectionData['total_rows'] ?? null
         ];
 
-        if ($stmt->execute($params))
-            return (int) $this->db->lastInsertId();
+        if ($stmt->execute($params)) {
+            $sectionId = (int) $this->db->lastInsertId();
+
+            // [AI:Claude] Si le projet n'a pas de section courante, définir automatiquement cette nouvelle section
+            $checkQuery = "SELECT current_section_id FROM projects WHERE id = :project_id";
+            $checkStmt = $this->db->prepare($checkQuery);
+            $checkStmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+            $checkStmt->execute();
+            $project = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($project && $project['current_section_id'] === null) {
+                $updateQuery = "UPDATE projects SET current_section_id = :section_id WHERE id = :project_id";
+                $updateStmt = $this->db->prepare($updateQuery);
+                $updateStmt->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+                $updateStmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+                $updateStmt->execute();
+            }
+
+            return $sectionId;
+        }
 
         return false;
     }
@@ -837,12 +890,41 @@ class Project extends BaseModel
      */
     public function deleteSection(int $sectionId): bool
     {
-        // [AI:Claude] Avant de supprimer, remettre à NULL le current_section_id
-        // des projets qui utilisent cette section comme section courante
-        $queryResetCurrent = "UPDATE projects SET current_section_id = NULL WHERE current_section_id = :section_id";
-        $stmtReset = $this->db->prepare($queryResetCurrent);
-        $stmtReset->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
-        $stmtReset->execute();
+        // [AI:Claude] Récupérer le project_id avant de supprimer la section
+        $queryGetProject = "SELECT project_id FROM project_sections WHERE id = :section_id";
+        $stmtGetProject = $this->db->prepare($queryGetProject);
+        $stmtGetProject->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+        $stmtGetProject->execute();
+        $result = $stmtGetProject->fetch(PDO::FETCH_ASSOC);
+        $projectId = $result ? $result['project_id'] : null;
+
+        // [AI:Claude] Trouver la prochaine section non terminée à activer
+        $nextSectionId = null;
+        if ($projectId) {
+            $queryNextSection = "SELECT id FROM project_sections
+                                WHERE project_id = :project_id
+                                AND id != :section_id
+                                AND is_completed = 0
+                                ORDER BY display_order ASC, id ASC
+                                LIMIT 1";
+            $stmtNext = $this->db->prepare($queryNextSection);
+            $stmtNext->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+            $stmtNext->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+            $stmtNext->execute();
+            $nextSection = $stmtNext->fetch(PDO::FETCH_ASSOC);
+            $nextSectionId = $nextSection ? $nextSection['id'] : null;
+        }
+
+        // [AI:Claude] Mettre à jour le current_section_id vers la prochaine section ou NULL
+        if ($projectId) {
+            $queryResetCurrent = "UPDATE projects
+                                 SET current_section_id = :next_section_id
+                                 WHERE current_section_id = :section_id";
+            $stmtReset = $this->db->prepare($queryResetCurrent);
+            $stmtReset->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+            $stmtReset->bindValue(':next_section_id', $nextSectionId, PDO::PARAM_INT);
+            $stmtReset->execute();
+        }
 
         // [AI:Claude] Supprimer la section
         $query = "DELETE FROM project_sections WHERE id = :id";
