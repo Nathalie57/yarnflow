@@ -22,6 +22,13 @@ const Contact = () => {
   useEffect(() => {
     // Récupérer les infos de l'utilisateur si connecté
     const fetchUser = async () => {
+      // Vérifier d'abord si un token existe
+      const token = localStorage.getItem('token');
+      if (!token) {
+        // Pas de token, utilisateur non connecté
+        return;
+      }
+
       try {
         const response = await api.get('/auth/me');
         const userData = response.data.data.user;
@@ -32,7 +39,8 @@ const Contact = () => {
           email: userData.email || ''
         }));
       } catch (error) {
-        // Utilisateur non connecté, pas de problème
+        // Erreur lors de la récupération (token invalide ou expiré)
+        // L'intercepteur va gérer la déconnexion
       }
     };
 
@@ -117,14 +125,14 @@ const Contact = () => {
       // Scroll en haut pour voir le message de succès
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
-      // Rediriger après 3 secondes (vers dashboard si connecté, sinon landing)
+      // Rediriger après 7 secondes (vers dashboard si connecté, sinon landing)
       redirectTimeoutRef.current = setTimeout(() => {
         if (user) {
           navigate('/my-projects');
         } else {
           navigate('/');
         }
-      }, 3000);
+      }, 7000);
 
     } catch (error) {
       if (error.response?.status === 429) {
