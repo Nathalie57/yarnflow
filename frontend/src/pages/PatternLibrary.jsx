@@ -57,6 +57,7 @@ const PatternLibrary = () => {
   })
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
+  const [validationErrors, setValidationErrors] = useState({})
 
   useEffect(() => {
     fetchPatterns()
@@ -131,8 +132,106 @@ const PatternLibrary = () => {
     }
   }
 
+  const validateForm = () => {
+    const errors = {}
+
+    // Validation selon le type de patron
+    if (editingPattern) {
+      // Mode édition
+      const sourceType = editingPattern.source_type
+
+      if (sourceType === 'file' && file) {
+        // Si un nouveau fichier est uploadé en édition, le valider
+        const maxSize = 10 * 1024 * 1024 // 10MB
+        if (file.size > maxSize) {
+          errors.file = `⚠️ Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)}MB). Taille maximum: 10MB`
+        }
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        if (!allowedTypes.includes(file.type)) {
+          errors.file = `⚠️ Type de fichier non autorisé. Formats acceptés: PDF, JPG, PNG, WEBP`
+        }
+      } else if (sourceType === 'url') {
+        // URL obligatoire en édition
+        if (!formData.url || !formData.url.trim()) {
+          errors.url = '⚠️ Veuillez entrer une URL'
+        } else {
+          try {
+            new URL(formData.url)
+            if (!formData.url.startsWith('http://') && !formData.url.startsWith('https://')) {
+              errors.url = '⚠️ L\'URL doit commencer par http:// ou https://'
+            }
+          } catch {
+            errors.url = '⚠️ L\'URL n\'est pas valide. Exemple: https://www.exemple.com'
+          }
+        }
+      } else if (sourceType === 'text') {
+        // Texte obligatoire en édition
+        if (!formData.pattern_text || !formData.pattern_text.trim()) {
+          errors.pattern_text = '⚠️ Veuillez entrer le texte du patron'
+        } else if (formData.pattern_text.trim().length < 10) {
+          errors.pattern_text = '⚠️ Le texte du patron doit contenir au moins 10 caractères'
+        }
+      }
+    } else {
+      // Mode ajout
+      if (addType === 'file') {
+        if (!file) {
+          errors.file = '⚠️ Veuillez sélectionner un fichier (PDF, JPG, PNG ou WEBP)'
+        } else {
+          const maxSize = 10 * 1024 * 1024 // 10MB
+          if (file.size > maxSize) {
+            errors.file = `⚠️ Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)}MB). Taille maximum: 10MB`
+          }
+          const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+          if (!allowedTypes.includes(file.type)) {
+            errors.file = `⚠️ Type de fichier non autorisé. Formats acceptés: PDF, JPG, PNG, WEBP`
+          }
+        }
+      } else if (addType === 'url') {
+        if (!formData.url || !formData.url.trim()) {
+          errors.url = '⚠️ Veuillez entrer une URL'
+        } else {
+          try {
+            new URL(formData.url)
+            if (!formData.url.startsWith('http://') && !formData.url.startsWith('https://')) {
+              errors.url = '⚠️ L\'URL doit commencer par http:// ou https://'
+            }
+          } catch {
+            errors.url = '⚠️ L\'URL n\'est pas valide. Exemple: https://www.exemple.com'
+          }
+        }
+      } else if (addType === 'text') {
+        if (!formData.pattern_text || !formData.pattern_text.trim()) {
+          errors.pattern_text = '⚠️ Veuillez entrer le texte du patron'
+        } else if (formData.pattern_text.trim().length < 10) {
+          errors.pattern_text = '⚠️ Le texte du patron doit contenir au moins 10 caractères'
+        }
+      }
+    }
+
+    // Validation du nom (obligatoire pour tous les types)
+    if (!formData.name || !formData.name.trim()) {
+      errors.name = '⚠️ Le nom du patron est obligatoire'
+    } else if (formData.name.trim().length < 2) {
+      errors.name = '⚠️ Le nom doit contenir au moins 2 caractères'
+    } else if (formData.name.length > 200) {
+      errors.name = '⚠️ Le nom ne peut pas dépasser 200 caractères'
+    }
+
+    setValidationErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   const handleAddPattern = async (e) => {
     e.preventDefault()
+
+    // Valider avant de soumettre
+    if (!validateForm()) {
+      // Scroller vers la première erreur
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
     setUploading(true)
 
     try {
@@ -200,6 +299,66 @@ const PatternLibrary = () => {
     }
   }
 
+  const handleEditPattern = (pattern) => {
+    setEditingPattern(pattern)
+    setFormData({
+      name: pattern.name || '',
+      description: pattern.description || '',
+      url: pattern.url || '',
+      pattern_text: pattern.pattern_text || '',
+      category: pattern.category || '',
+      technique: pattern.technique || '',
+      difficulty: pattern.difficulty || '',
+      notes: pattern.notes || ''
+    })
+    setShowEditModal(true)
+  }
+
+  const handleUpdatePattern = async (e) => {
+    e.preventDefault()
+
+    // Valider avant de soumettre
+    if (!validateForm()) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      // Si c'est un fichier et qu'un nouveau fichier a été uploadé
+      if (editingPattern.source_type === 'file' && file) {
+        const formDataUpload = new FormData()
+        formDataUpload.append('file', file)
+        formDataUpload.append('name', formData.name)
+        if (formData.description) formDataUpload.append('description', formData.description)
+        if (formData.category) formDataUpload.append('category', formData.category)
+        if (formData.technique) formDataUpload.append('technique', formData.technique)
+        if (formData.difficulty) formDataUpload.append('difficulty', formData.difficulty)
+        if (formData.notes) formDataUpload.append('notes', formData.notes)
+
+        await api.put(`/pattern-library/${editingPattern.id}`, formDataUpload, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+      } else {
+        // Sinon mise à jour simple des métadonnées (et éventuellement URL ou texte)
+        await api.put(`/pattern-library/${editingPattern.id}`, formData)
+      }
+
+      // Refresh et reset
+      fetchPatterns()
+      resetForm()
+      setShowEditModal(false)
+      setEditingPattern(null)
+    } catch (err) {
+      console.error('Erreur modification patron:', err)
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Erreur lors de la modification du patron'
+      alert(errorMessage)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -213,6 +372,7 @@ const PatternLibrary = () => {
     })
     setFile(null)
     setAddType('file')
+    setValidationErrors({})
   }
 
   const resetFilters = () => {
@@ -596,6 +756,14 @@ const PatternLibrary = () => {
                       )}
 
                       <button
+                        onClick={() => handleEditPattern(pattern)}
+                        className="px-3 py-2 border border-primary-300 text-primary-600 rounded-lg hover:bg-primary-50 transition"
+                        title="Modifier"
+                      >
+                        ✏️
+                      </button>
+
+                      <button
                         onClick={() => handleDelete(pattern.id)}
                         className="px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition"
                         title="Supprimer"
@@ -628,7 +796,10 @@ const PatternLibrary = () => {
                 <div className="grid grid-cols-3 gap-4">
                   <button
                     type="button"
-                    onClick={() => setAddType('file')}
+                    onClick={() => {
+                      setAddType('file')
+                      setValidationErrors({})
+                    }}
                     className={`p-4 border-2 rounded-lg transition ${
                       addType === 'file'
                         ? 'border-primary-600 bg-primary-50'
@@ -642,7 +813,10 @@ const PatternLibrary = () => {
 
                   <button
                     type="button"
-                    onClick={() => setAddType('url')}
+                    onClick={() => {
+                      setAddType('url')
+                      setValidationErrors({})
+                    }}
                     className={`p-4 border-2 rounded-lg transition ${
                       addType === 'url'
                         ? 'border-primary-600 bg-primary-50'
@@ -656,7 +830,10 @@ const PatternLibrary = () => {
 
                   <button
                     type="button"
-                    onClick={() => setAddType('text')}
+                    onClick={() => {
+                      setAddType('text')
+                      setValidationErrors({})
+                    }}
                     className={`p-4 border-2 rounded-lg transition ${
                       addType === 'text'
                         ? 'border-primary-600 bg-primary-50'
@@ -678,12 +855,39 @@ const PatternLibrary = () => {
                   </label>
                   <input
                     type="file"
+                    id="pattern-file-input"
                     accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
-                    onChange={(e) => setFile(e.target.files[0])}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    onChange={(e) => {
+                      setFile(e.target.files[0])
+                      setValidationErrors({ ...validationErrors, file: '' })
+                    }}
+                    className="hidden"
                   />
-                  <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG, WEBP (max 10MB)</p>
+                  <label
+                    htmlFor="pattern-file-input"
+                    className={`flex items-center justify-center gap-3 w-full px-6 py-4 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition cursor-pointer ${
+                      validationErrors.file ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      {file ? (
+                        <>
+                          <div className="text-4xl mb-2">✅</div>
+                          <p className="font-medium text-gray-900">{file.name}</p>
+                          <p className="text-sm text-gray-600 mt-1">Cliquer pour changer le fichier</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-4xl mb-2">📎</div>
+                          <p className="font-medium text-gray-900">Choisir un fichier</p>
+                          <p className="text-sm text-gray-600 mt-1">PDF, JPG, PNG, WEBP (max 10MB)</p>
+                        </>
+                      )}
+                    </div>
+                  </label>
+                  {validationErrors.file && (
+                    <p className="mt-2 text-sm text-red-600">{validationErrors.file}</p>
+                  )}
                 </div>
               )}
 
@@ -696,11 +900,18 @@ const PatternLibrary = () => {
                   <input
                     type="url"
                     value={formData.url}
-                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                    required
+                    onChange={(e) => {
+                      setFormData({ ...formData, url: e.target.value })
+                      setValidationErrors({ ...validationErrors, url: '' })
+                    }}
                     placeholder="https://..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                      validationErrors.url ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
                   />
+                  {validationErrors.url && (
+                    <p className="mt-2 text-sm text-red-600">{validationErrors.url}</p>
+                  )}
                 </div>
               )}
 
@@ -712,15 +923,23 @@ const PatternLibrary = () => {
                   </label>
                   <textarea
                     value={formData.pattern_text}
-                    onChange={(e) => setFormData({ ...formData, pattern_text: e.target.value })}
-                    required
+                    onChange={(e) => {
+                      setFormData({ ...formData, pattern_text: e.target.value })
+                      setValidationErrors({ ...validationErrors, pattern_text: '' })
+                    }}
                     rows={15}
                     placeholder="Collez ici le texte de votre patron...&#10;&#10;Exemple :&#10;Rang 1 : 6 mailles serrées dans un cercle magique&#10;Rang 2 : 2ms dans chaque maille (12)&#10;Rang 3 : *1ms, aug* x6 (18)&#10;..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm"
+                    className={`w-full px-4 py-2 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 ${
+                      validationErrors.pattern_text ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    💡 Vous pouvez copier-coller le texte depuis n'importe quelle source
-                  </p>
+                  {validationErrors.pattern_text ? (
+                    <p className="mt-2 text-sm text-red-600">{validationErrors.pattern_text}</p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">
+                      💡 Vous pouvez copier-coller le texte depuis n'importe quelle source
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -732,11 +951,19 @@ const PatternLibrary = () => {
                 <input
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value })
+                    setValidationErrors({ ...validationErrors, name: '' })
+                  }}
                   placeholder="Ex: Pull irlandais"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  autoFocus
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                    validationErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
                 />
+                {validationErrors.name && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.name}</p>
+                )}
               </div>
 
               {/* Description */}
@@ -840,6 +1067,256 @@ const PatternLibrary = () => {
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
                   {uploading ? 'Ajout en cours...' : '✨ Ajouter'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'édition */}
+      {showEditModal && editingPattern && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-content-mobile">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
+              <h2 className="text-2xl font-bold text-gray-900">✏️ Modifier le patron</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {editingPattern.source_type === 'file' && '📎 Fichier'}
+                {editingPattern.source_type === 'url' && '🔗 Lien web'}
+                {editingPattern.source_type === 'text' && '📝 Texte'}
+              </p>
+            </div>
+
+            <form onSubmit={handleUpdatePattern} className="p-6">
+              {/* Modification du fichier si source_type = file */}
+              {editingPattern.source_type === 'file' && (
+                <div className="mb-6 pb-6 border-b border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Remplacer le fichier (optionnel)
+                  </label>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Fichier actuel : <strong>{editingPattern.file_name || 'Non disponible'}</strong>
+                  </p>
+                  <input
+                    type="file"
+                    id="pattern-file-edit-input"
+                    accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={(e) => {
+                      setFile(e.target.files[0])
+                      setValidationErrors({ ...validationErrors, file: '' })
+                    }}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="pattern-file-edit-input"
+                    className={`flex items-center justify-center gap-3 w-full px-6 py-4 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition cursor-pointer ${
+                      validationErrors.file ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
+                  >
+                    <div className="text-center">
+                      {file ? (
+                        <>
+                          <div className="text-4xl mb-2">✅</div>
+                          <p className="font-medium text-gray-900">{file.name}</p>
+                          <p className="text-sm text-gray-600 mt-1">Nouveau fichier sélectionné</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-4xl mb-2">📎</div>
+                          <p className="font-medium text-gray-900">Choisir un nouveau fichier</p>
+                          <p className="text-sm text-gray-600 mt-1">PDF, JPG, PNG, WEBP (max 10MB)</p>
+                        </>
+                      )}
+                    </div>
+                  </label>
+                  {validationErrors.file && (
+                    <p className="mt-2 text-sm text-red-600">{validationErrors.file}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Modification de l'URL si source_type = url */}
+              {editingPattern.source_type === 'url' && (
+                <div className="mb-6 pb-6 border-b border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    URL <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.url}
+                    onChange={(e) => {
+                      setFormData({ ...formData, url: e.target.value })
+                      setValidationErrors({ ...validationErrors, url: '' })
+                    }}
+                    placeholder="https://..."
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                      validationErrors.url ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
+                  />
+                  {validationErrors.url && (
+                    <p className="mt-2 text-sm text-red-600">{validationErrors.url}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Modification du texte si source_type = text */}
+              {editingPattern.source_type === 'text' && (
+                <div className="mb-6 pb-6 border-b border-gray-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Texte du patron <span className="text-red-600">*</span>
+                  </label>
+                  <textarea
+                    value={formData.pattern_text}
+                    onChange={(e) => {
+                      setFormData({ ...formData, pattern_text: e.target.value })
+                      setValidationErrors({ ...validationErrors, pattern_text: '' })
+                    }}
+                    rows={15}
+                    placeholder="Collez ici le texte de votre patron..."
+                    className={`w-full px-4 py-2 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 ${
+                      validationErrors.pattern_text ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
+                  />
+                  {validationErrors.pattern_text && (
+                    <p className="mt-2 text-sm text-red-600">{validationErrors.pattern_text}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Nom */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom du patron <span className="text-red-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value })
+                    setValidationErrors({ ...validationErrors, name: '' })
+                  }}
+                  placeholder="Ex: Pull irlandais"
+                  autoFocus
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                    validationErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                />
+                {validationErrors.name && (
+                  <p className="mt-2 text-sm text-red-600">{validationErrors.name}</p>
+                )}
+              </div>
+
+              {/* Description */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  placeholder="Description du patron..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              {/* Grille de métadonnées */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                {/* Catégorie */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Catégorie
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">-- Sélectionner --</option>
+                    <option value="Vêtements">🧥 Vêtements</option>
+                    <option value="Accessoires">👜 Accessoires</option>
+                    <option value="Maison/Déco">🏠 Maison/Déco</option>
+                    <option value="Jouets/Peluches">🧸 Jouets/Peluches</option>
+                    <option value="Accessoires bébé">👶 Accessoires bébé</option>
+                  </select>
+                </div>
+
+                {/* Technique */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Technique
+                  </label>
+                  <select
+                    value={formData.technique}
+                    onChange={(e) => setFormData({ ...formData, technique: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">-- Sélectionner --</option>
+                    <option value="tricot">🧶 Tricot</option>
+                    <option value="crochet">🪡 Crochet</option>
+                  </select>
+                </div>
+
+                {/* Niveau */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Niveau
+                  </label>
+                  <select
+                    value={formData.difficulty}
+                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  >
+                    <option value="">-- Sélectionner --</option>
+                    <option value="Débutant">⭐ Débutant</option>
+                    <option value="Intermédiaire">⭐⭐ Intermédiaire</option>
+                    <option value="Avancé">⭐⭐⭐ Avancé</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes personnelles
+                </label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  rows={3}
+                  placeholder="Vos notes personnelles..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+
+              {/* Message encouragement */}
+              {(!formData.category || !formData.technique || !formData.difficulty) && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Astuce :</strong> Remplir la catégorie, la technique et le niveau facilite la recherche et le filtrage de vos patrons.
+                  </p>
+                </div>
+              )}
+
+              {/* Boutons */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingPattern(null)
+                    resetForm()
+                  }}
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploading}
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                >
+                  {uploading ? 'Enregistrement...' : '✅ Enregistrer'}
                 </button>
               </div>
             </form>
