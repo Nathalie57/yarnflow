@@ -1067,6 +1067,15 @@ const PatternLibrary = () => {
                 />
               </div>
 
+              {/* Message encouragement */}
+              {(!formData.category || !formData.technique || !formData.difficulty) && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Astuce :</strong> Remplir la catégorie, la technique et le niveau facilite la recherche et le filtrage de vos patrons.
+                  </p>
+                </div>
+              )}
+
               {/* Boutons */}
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 modal-actions-mobile">
                 <button
