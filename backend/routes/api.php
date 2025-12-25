@@ -195,6 +195,9 @@ function route(string $method, string $uri): void
         $method === 'PUT' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->update((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->delete((int)$matches[1]),
 
+        // [AI:Claude] Route pour servir les fichiers uploads (patterns de projets)
+        $method === 'GET' && preg_match('/^uploads\/patterns\/(.+)$/', $uri, $matches) => serveUploadFile('patterns', $matches[1]),
+
         // [AI:Claude] Routes de récupération de contenu web externe
         $method === 'POST' && $uri === 'web-fetch' => (new WebFetchController())->fetch(),
         $method === 'POST' && $uri === 'web-fetch/metadata' => (new WebFetchController())->fetchMetadata(),
@@ -207,6 +210,46 @@ function route(string $method, string $uri): void
 
         default => notFound()
     };
+}
+
+/**
+ * [AI:Claude] Servir un fichier upload de manière sécurisée
+ *
+ * @param string $folder Dossier (patterns, photos, etc.)
+ * @param string $filename Nom du fichier
+ * @return void
+ */
+function serveUploadFile(string $folder, string $filename): void
+{
+    // [AI:Claude] Nettoyer le nom de fichier pour éviter les attaques de traversée de répertoire
+    $filename = basename($filename);
+
+    // [AI:Claude] Construire le chemin du fichier
+    $filePath = __DIR__.'/../public/uploads/'.$folder.'/'.$filename;
+
+    // [AI:Claude] Vérifier que le fichier existe
+    if (!file_exists($filePath)) {
+        http_response_code(404);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'error' => 'Fichier introuvable'
+        ]);
+        exit;
+    }
+
+    // [AI:Claude] Déterminer le type MIME
+    $mimeType = mime_content_type($filePath);
+
+    // [AI:Claude] Envoyer les headers appropriés
+    header('Content-Type: '.$mimeType);
+    header('Content-Length: '.filesize($filePath));
+    header('Cache-Control: public, max-age=31536000'); // Cache 1 an
+    header('Access-Control-Allow-Origin: *');
+
+    // [AI:Claude] Envoyer le fichier
+    readfile($filePath);
+    exit;
 }
 
 /**
