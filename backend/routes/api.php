@@ -195,8 +195,11 @@ function route(string $method, string $uri): void
         $method === 'PUT' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->update((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->delete((int)$matches[1]),
 
-        // [AI:Claude] Route pour servir les fichiers uploads (patterns de projets)
+        // [AI:Claude] Routes pour servir les fichiers uploads de manière sécurisée
         $method === 'GET' && preg_match('/^uploads\/patterns\/(.+)$/', $uri, $matches) => serveUploadFile('patterns', $matches[1]),
+        $method === 'GET' && preg_match('/^uploads\/photos\/(.+)$/', $uri, $matches) => serveUploadFile('photos', $matches[1]),
+        $method === 'GET' && preg_match('/^uploads\/projects\/(.+)$/', $uri, $matches) => serveUploadFile('projects', $matches[1]),
+        $method === 'GET' && preg_match('/^uploads\/pattern-library\/(.+)$/', $uri, $matches) => serveUploadFile('pattern-library', $matches[1]),
 
         // [AI:Claude] Routes de récupération de contenu web externe
         $method === 'POST' && $uri === 'web-fetch' => (new WebFetchController())->fetch(),
