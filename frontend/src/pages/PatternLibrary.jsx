@@ -27,6 +27,7 @@ const PatternLibrary = () => {
   const [filterCategory, setFilterCategory] = useState('')
   const [filterTechnique, setFilterTechnique] = useState('')
   const [filterFavorite, setFilterFavorite] = useState(false)
+  const [filterSourceType, setFilterSourceType] = useState('') // 'file', 'url', 'text' ou ''
   const [searchQuery, setSearchQuery] = useState('')
 
   // [AI:Claude] Cache des aperçus (blob URLs)
@@ -62,7 +63,7 @@ const PatternLibrary = () => {
 
   useEffect(() => {
     fetchPatterns()
-  }, [filterCategory, filterTechnique, filterFavorite, searchQuery])
+  }, [filterCategory, filterTechnique, filterFavorite, filterSourceType, searchQuery])
 
   // [AI:Claude] Charger les aperçus des images avec authentification
   useEffect(() => {
@@ -119,6 +120,7 @@ const PatternLibrary = () => {
       if (filterCategory) params.category = filterCategory
       if (filterTechnique) params.technique = filterTechnique
       if (filterFavorite) params.favorite = 'true'
+      if (filterSourceType) params.source_type = filterSourceType
       if (searchQuery) params.search = searchQuery
 
       const response = await api.get('/pattern-library', { params })
@@ -397,6 +399,7 @@ const PatternLibrary = () => {
     setFilterCategory('')
     setFilterTechnique('')
     setFilterFavorite(false)
+    setFilterSourceType('')
     setSearchQuery('')
   }
 
@@ -454,29 +457,85 @@ const PatternLibrary = () => {
           </button>
         </div>
 
-        {/* Stats */}
+        {/* Stats - Cliquables pour filtrer */}
         {!loading && stats && (
           <div className="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            {/* Total - Reset tous les filtres */}
+            <button
+              onClick={resetFilters}
+              className={`bg-white rounded-lg border p-4 text-left transition hover:shadow-md ${
+                !filterSourceType && !filterFavorite && !filterCategory && !filterTechnique && !searchQuery
+                  ? 'border-primary-600 ring-2 ring-primary-600 ring-opacity-50'
+                  : 'border-gray-200 hover:border-primary-400'
+              }`}
+            >
               <p className="text-sm text-gray-600">Total</p>
               <p className="text-2xl font-bold text-primary-600">{stats.total_patterns || 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            </button>
+
+            {/* Fichiers */}
+            <button
+              onClick={() => {
+                setFilterSourceType(filterSourceType === 'file' ? '' : 'file')
+                setFilterFavorite(false)
+              }}
+              className={`bg-white rounded-lg border p-4 text-left transition hover:shadow-md ${
+                filterSourceType === 'file'
+                  ? 'border-primary-600 ring-2 ring-primary-600 ring-opacity-50'
+                  : 'border-gray-200 hover:border-primary-400'
+              }`}
+            >
               <p className="text-sm text-gray-600">Fichiers</p>
               <p className="text-2xl font-bold text-primary-600">{stats.file_patterns || 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            </button>
+
+            {/* Liens */}
+            <button
+              onClick={() => {
+                setFilterSourceType(filterSourceType === 'url' ? '' : 'url')
+                setFilterFavorite(false)
+              }}
+              className={`bg-white rounded-lg border p-4 text-left transition hover:shadow-md ${
+                filterSourceType === 'url'
+                  ? 'border-green-600 ring-2 ring-green-600 ring-opacity-50'
+                  : 'border-gray-200 hover:border-green-400'
+              }`}
+            >
               <p className="text-sm text-gray-600">Liens</p>
               <p className="text-2xl font-bold text-green-600">{stats.url_patterns || 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            </button>
+
+            {/* Textes */}
+            <button
+              onClick={() => {
+                setFilterSourceType(filterSourceType === 'text' ? '' : 'text')
+                setFilterFavorite(false)
+              }}
+              className={`bg-white rounded-lg border p-4 text-left transition hover:shadow-md ${
+                filterSourceType === 'text'
+                  ? 'border-blue-600 ring-2 ring-blue-600 ring-opacity-50'
+                  : 'border-gray-200 hover:border-blue-400'
+              }`}
+            >
               <p className="text-sm text-gray-600">Textes</p>
               <p className="text-2xl font-bold text-blue-600">{stats.text_patterns || 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            </button>
+
+            {/* Favoris */}
+            <button
+              onClick={() => {
+                setFilterFavorite(!filterFavorite)
+                setFilterSourceType('')
+              }}
+              className={`bg-white rounded-lg border p-4 text-left transition hover:shadow-md ${
+                filterFavorite
+                  ? 'border-amber-600 ring-2 ring-amber-600 ring-opacity-50'
+                  : 'border-gray-200 hover:border-amber-400'
+              }`}
+            >
               <p className="text-sm text-gray-600">Favoris</p>
               <p className="text-2xl font-bold text-amber-600">{stats.favorite_patterns || 0}</p>
-            </div>
+            </button>
           </div>
         )}
 
@@ -565,7 +624,7 @@ const PatternLibrary = () => {
             ))}
 
             {/* Reset */}
-            {(filterCategory || filterTechnique || filterFavorite || searchQuery) && (
+            {(filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery) && (
               <button
                 onClick={resetFilters}
                 className="px-3 py-1.5 rounded-full text-sm font-medium text-red-600 hover:bg-red-50 transition"
@@ -592,16 +651,16 @@ const PatternLibrary = () => {
             <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
               <div className="text-6xl mb-4">📚</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {filterCategory || filterTechnique || filterFavorite || searchQuery
+                {filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery
                   ? 'Aucun patron trouvé'
                   : 'Aucun patron dans votre bibliothèque'}
               </h3>
               <p className="text-gray-600 mb-6">
-                {filterCategory || filterTechnique || filterFavorite || searchQuery
+                {filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery
                   ? 'Aucun patron ne correspond aux filtres sélectionnés'
                   : 'Commencez par ajouter votre premier patron !'}
               </p>
-              {!(filterCategory || filterTechnique || filterFavorite || searchQuery) && (
+              {!(filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery) && (
                 <button
                   onClick={() => setShowAddModal(true)}
                   className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"

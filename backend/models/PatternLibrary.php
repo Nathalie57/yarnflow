@@ -51,6 +51,11 @@ class PatternLibrary
             $params[':technique'] = $filters['technique'];
         }
 
+        if (!empty($filters['source_type'])) {
+            $conditions[] = 'source_type = :source_type';
+            $params[':source_type'] = $filters['source_type'];
+        }
+
         if (isset($filters['favorite']) && $filters['favorite']) {
             $conditions[] = 'is_favorite = 1';
         }
