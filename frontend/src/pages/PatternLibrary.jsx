@@ -45,6 +45,7 @@ const PatternLibrary = () => {
 
   // [AI:Claude] Formulaire d'ajout
   const [addType, setAddType] = useState('file') // 'file', 'url' ou 'text'
+  const [editType, setEditType] = useState('file') // 'file', 'url' ou 'text' en mode édition
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -137,18 +138,27 @@ const PatternLibrary = () => {
 
     // Validation selon le type de patron
     if (editingPattern) {
-      // Mode édition
-      const sourceType = editingPattern.source_type
+      // Mode édition - utiliser editType pour gérer le changement de type
+      const sourceType = editType
 
-      if (sourceType === 'file' && file) {
-        // Si un nouveau fichier est uploadé en édition, le valider
-        const maxSize = 10 * 1024 * 1024 // 10MB
-        if (file.size > maxSize) {
-          errors.file = `⚠️ Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)}MB). Taille maximum: 10MB`
-        }
-        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-        if (!allowedTypes.includes(file.type)) {
-          errors.file = `⚠️ Type de fichier non autorisé. Formats acceptés: PDF, JPG, PNG, WEBP`
+      if (sourceType === 'file') {
+        // Si on change vers 'file' OU qu'on reste en 'file', un fichier est requis
+        // SAUF si on reste sur le même type et qu'on ne change pas le fichier
+        const isChangingToFile = editingPattern.source_type !== 'file'
+
+        if (isChangingToFile && !file) {
+          // Si on change vers 'file', un fichier est obligatoire
+          errors.file = '⚠️ Veuillez sélectionner un fichier (PDF, JPG, PNG ou WEBP)'
+        } else if (file) {
+          // Si un fichier est fourni, le valider
+          const maxSize = 10 * 1024 * 1024 // 10MB
+          if (file.size > maxSize) {
+            errors.file = `⚠️ Le fichier est trop volumineux (${(file.size / 1024 / 1024).toFixed(2)}MB). Taille maximum: 10MB`
+          }
+          const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+          if (!allowedTypes.includes(file.type)) {
+            errors.file = `⚠️ Type de fichier non autorisé. Formats acceptés: PDF, JPG, PNG, WEBP`
+          }
         }
       } else if (sourceType === 'url') {
         // URL obligatoire en édition
@@ -301,6 +311,7 @@ const PatternLibrary = () => {
 
   const handleEditPattern = (pattern) => {
     setEditingPattern(pattern)
+    setEditType(pattern.source_type) // Initialiser avec le type actuel
     setFormData({
       name: pattern.name || '',
       description: pattern.description || '',
@@ -311,6 +322,7 @@ const PatternLibrary = () => {
       difficulty: pattern.difficulty || '',
       notes: pattern.notes || ''
     })
+    setFile(null) // Réinitialiser le fichier
     setShowEditModal(true)
   }
 
@@ -326,8 +338,8 @@ const PatternLibrary = () => {
     setUploading(true)
 
     try {
-      // Si c'est un fichier et qu'un nouveau fichier a été uploadé
-      if (editingPattern.source_type === 'file' && file) {
+      // Si le type est 'file' et qu'un fichier est fourni
+      if (editType === 'file' && file) {
         const formDataUpload = new FormData()
         formDataUpload.append('file', file)
         formDataUpload.append('name', formData.name)
@@ -341,8 +353,13 @@ const PatternLibrary = () => {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
       } else {
-        // Sinon mise à jour simple des métadonnées (et éventuellement URL ou texte)
-        await api.put(`/pattern-library/${editingPattern.id}`, formData)
+        // Mise à jour avec source_type pour gérer le changement de type
+        const updateData = {
+          ...formData,
+          source_type: editType
+        }
+
+        await api.put(`/pattern-library/${editingPattern.id}`, updateData)
       }
 
       // Refresh et reset
@@ -372,6 +389,7 @@ const PatternLibrary = () => {
     })
     setFile(null)
     setAddType('file')
+    setEditType('file')
     setValidationErrors({})
   }
 
@@ -1081,22 +1099,87 @@ const PatternLibrary = () => {
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
               <h2 className="text-2xl font-bold text-gray-900">✏️ Modifier le patron</h2>
               <p className="text-sm text-gray-600 mt-1">
-                {editingPattern.source_type === 'file' && '📎 Fichier'}
-                {editingPattern.source_type === 'url' && '🔗 Lien web'}
-                {editingPattern.source_type === 'text' && '📝 Texte'}
+                Vous pouvez modifier le type de patron si besoin
               </p>
             </div>
 
             <form onSubmit={handleUpdatePattern} className="p-6">
-              {/* Modification du fichier si source_type = file */}
-              {editingPattern.source_type === 'file' && (
+              {/* Sélection du type de patron */}
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Type de patron
+                </label>
+                <div className="grid grid-cols-3 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditType('file')
+                      setValidationErrors({})
+                    }}
+                    className={`p-4 border-2 rounded-lg transition ${
+                      editType === 'file'
+                        ? 'border-primary-600 bg-primary-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="text-3xl mb-2">📎</div>
+                    <p className="font-medium">Fichier</p>
+                    <p className="text-xs text-gray-600">PDF, JPG, PNG</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditType('url')
+                      setValidationErrors({})
+                    }}
+                    className={`p-4 border-2 rounded-lg transition ${
+                      editType === 'url'
+                        ? 'border-primary-600 bg-primary-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="text-3xl mb-2">🔗</div>
+                    <p className="font-medium">Lien web</p>
+                    <p className="text-xs text-gray-600">YouTube, blog...</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditType('text')
+                      setValidationErrors({})
+                    }}
+                    className={`p-4 border-2 rounded-lg transition ${
+                      editType === 'text'
+                        ? 'border-primary-600 bg-primary-50'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <div className="text-3xl mb-2">📝</div>
+                    <p className="font-medium">Texte</p>
+                    <p className="text-xs text-gray-600">Copier/coller</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Modification du fichier si editType = file */}
+              {editType === 'file' && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Remplacer le fichier (optionnel)
+                    {editingPattern.source_type === 'file' ? 'Remplacer le fichier (optionnel)' : 'Fichier '}
+                    {editingPattern.source_type !== 'file' && <span className="text-red-600">*</span>}
                   </label>
-                  <p className="text-xs text-gray-600 mb-3">
-                    Fichier actuel : <strong>{editingPattern.file_name || 'Non disponible'}</strong>
-                  </p>
+                  {editingPattern.source_type === 'file' && (
+                    <p className="text-xs text-gray-600 mb-3">
+                      Fichier actuel : <strong>{editingPattern.file_name || 'Non disponible'}</strong>
+                    </p>
+                  )}
+                  {editingPattern.source_type !== 'file' && (
+                    <p className="text-xs text-gray-600 mb-3">
+                      Vous changez le type de patron vers "Fichier". Un fichier est requis.
+                    </p>
+                  )}
                   <input
                     type="file"
                     id="pattern-file-edit-input"
@@ -1135,8 +1218,8 @@ const PatternLibrary = () => {
                 </div>
               )}
 
-              {/* Modification de l'URL si source_type = url */}
-              {editingPattern.source_type === 'url' && (
+              {/* Modification de l'URL si editType = url */}
+              {editType === 'url' && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     URL <span className="text-red-600">*</span>
@@ -1159,8 +1242,8 @@ const PatternLibrary = () => {
                 </div>
               )}
 
-              {/* Modification du texte si source_type = text */}
-              {editingPattern.source_type === 'text' && (
+              {/* Modification du texte si editType = text */}
+              {editType === 'text' && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Texte du patron <span className="text-red-600">*</span>
