@@ -70,8 +70,8 @@ function route(string $method, string $uri): void
 
     match(true) {
         // [AI:Claude] Routes d'authentification (avec rate limiting)
-        $method === 'POST' && $uri === 'auth/register' => (applyRateLimit('/api/auth/register'), (new AuthController())->register()),
-        $method === 'POST' && $uri === 'auth/login' => (applyRateLimit('/api/auth/login'), (new AuthController())->login()),
+        $method === 'POST' && $uri === 'auth/register' => (function() { applyRateLimit('/api/auth/register'); return (new AuthController())->register(); })(),
+        $method === 'POST' && $uri === 'auth/login' => (function() { applyRateLimit('/api/auth/login'); return (new AuthController())->login(); })(),
         $method === 'GET' && $uri === 'auth/me' => (new AuthController())->me(),
         $method === 'POST' && $uri === 'auth/refresh' => (new AuthController())->refresh(),
 
@@ -82,7 +82,7 @@ function route(string $method, string $uri): void
         $method === 'GET' && $uri === 'auth/facebook/callback' => (new AuthController())->facebookCallback(),
 
         // [AI:Claude] Routes de réinitialisation de mot de passe (avec rate limiting)
-        $method === 'POST' && $uri === 'auth/forgot-password' => (applyRateLimit('/api/auth/forgot-password'), (new PasswordResetController())->requestReset()),
+        $method === 'POST' && $uri === 'auth/forgot-password' => (function() { applyRateLimit('/api/auth/forgot-password'); return (new PasswordResetController())->requestReset(); })(),
         $method === 'POST' && $uri === 'auth/verify-reset-token' => (new PasswordResetController())->verifyToken(),
         $method === 'POST' && $uri === 'auth/reset-password' => (new PasswordResetController())->resetPassword(),
 
