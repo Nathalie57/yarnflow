@@ -14,6 +14,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
+import ImageLightbox from '../components/ImageLightbox'
+import ProxyViewer from '../components/ProxyViewer'
 
 const PatternLibraryDetail = () => {
   const { id } = useParams()
@@ -25,6 +27,19 @@ const PatternLibraryDetail = () => {
   const [error, setError] = useState(null)
   const [fileUrl, setFileUrl] = useState(null)
   const [loadingFile, setLoadingFile] = useState(false)
+
+  // Traduction des catégories
+  const getCategoryLabel = (category) => {
+    const translations = {
+      'other': 'Autre',
+      'Vêtements': 'Vêtements',
+      'Accessoires': 'Accessoires',
+      'Maison/Déco': 'Maison/Déco',
+      'Jouets/Peluches': 'Jouets/Peluches',
+      'Accessoires bébé': 'Accessoires bébé'
+    }
+    return translations[category] || category
+  }
 
   // États pour la modale d'édition
   const [showEditModal, setShowEditModal] = useState(false)
@@ -42,6 +57,11 @@ const PatternLibraryDetail = () => {
   const [uploading, setUploading] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
   const [editType, setEditType] = useState('file')
+
+  // États pour l'affichage plein écran
+  const [showFullscreen, setShowFullscreen] = useState(false)
+  const [showImageLightbox, setShowImageLightbox] = useState(false)
+  const [showTextFullscreen, setShowTextFullscreen] = useState(false)
 
   useEffect(() => {
     fetchPattern()
@@ -333,7 +353,7 @@ const PatternLibraryDetail = () => {
           )}
           {pattern.category && (
             <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium">
-              📁 {pattern.category}
+              📁 {getCategoryLabel(pattern.category)}
             </span>
           )}
           {pattern.difficulty && (
@@ -359,6 +379,18 @@ const PatternLibraryDetail = () => {
         {/* Fichier PDF */}
         {pattern.source_type === 'file' && pattern.file_type === 'pdf' && (
           <div className="min-h-[600px]">
+            {/* Bouton ouvrir en grand */}
+            {fileUrl && !loadingFile && (
+              <div className="p-4 border-b bg-gray-50 flex justify-end">
+                <button
+                  onClick={() => setShowFullscreen(true)}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium flex items-center gap-2"
+                >
+                  🔍 Ouvrir en grand
+                </button>
+              </div>
+            )}
+
             {loadingFile ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -375,61 +407,71 @@ const PatternLibraryDetail = () => {
 
         {/* Fichier Image */}
         {pattern.source_type === 'file' && pattern.file_type === 'image' && (
-          <div className="p-8">
-            {loadingFile ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-              </div>
-            ) : fileUrl ? (
-              <div className="flex items-center justify-center">
-                <img
-                  src={fileUrl}
-                  alt={pattern.name}
-                  className="max-w-full max-h-[800px] object-contain shadow-lg rounded-lg"
-                />
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-600">
-                Impossible de charger l'image
+          <div>
+            {/* Bouton ouvrir en grand */}
+            {fileUrl && !loadingFile && (
+              <div className="p-4 border-b bg-gray-50 flex justify-end">
+                <button
+                  onClick={() => setShowImageLightbox(true)}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium flex items-center gap-2"
+                >
+                  🔍 Ouvrir en grand
+                </button>
               </div>
             )}
+
+            <div className="p-8">
+              {loadingFile ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                </div>
+              ) : fileUrl ? (
+                <div
+                  className="flex items-center justify-center cursor-pointer"
+                  onClick={() => setShowImageLightbox(true)}
+                  title="Cliquez pour agrandir"
+                >
+                  <img
+                    src={fileUrl}
+                    alt={pattern.name}
+                    className="max-w-full max-h-[800px] object-contain shadow-lg rounded-lg hover:opacity-90 transition"
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-600">
+                  Impossible de charger l'image
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Lien URL */}
         {pattern.source_type === 'url' && pattern.url && (
-          <div className="p-8 text-center">
-            <div className="mb-6">
-              <div className="text-6xl mb-4">🔗</div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Lien web</h2>
-              <p className="text-gray-600 mb-6">Ce patron est disponible sur un site web externe</p>
-            </div>
-
-            <a
-              href={pattern.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
-            >
-              🌐 Ouvrir le lien
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-
-            <div className="mt-4">
-              <p className="text-sm text-gray-500 break-all">{pattern.url}</p>
-            </div>
+          <div>
+            <ProxyViewer url={pattern.url} />
           </div>
         )}
 
         {/* Texte */}
         {pattern.source_type === 'text' && pattern.pattern_text && (
-          <div className="p-8">
-            <div className="max-w-3xl mx-auto bg-gray-50 rounded-lg p-6">
-              <pre className="whitespace-pre-wrap font-sans text-gray-800 leading-relaxed">
-                {pattern.pattern_text}
-              </pre>
+          <div>
+            {/* Bouton ouvrir en grand */}
+            <div className="p-4 border-b bg-gray-50 flex justify-end">
+              <button
+                onClick={() => setShowTextFullscreen(true)}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium flex items-center gap-2"
+              >
+                🔍 Ouvrir en grand
+              </button>
+            </div>
+
+            <div className="p-8">
+              <div className="max-w-3xl mx-auto bg-gray-50 rounded-lg p-6">
+                <pre className="whitespace-pre-wrap font-sans text-gray-800 leading-relaxed">
+                  {pattern.pattern_text}
+                </pre>
+              </div>
             </div>
           </div>
         )}
@@ -479,6 +521,55 @@ const PatternLibraryDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Modale plein écran pour PDF */}
+      {showFullscreen && pattern && fileUrl && (
+        <div className="fixed inset-0 bg-white z-[70] flex flex-col">
+          <div className="bg-gray-900 text-white p-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold">{pattern.name}</h2>
+            <button
+              onClick={() => setShowFullscreen(false)}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition"
+            >
+              ✕ Fermer
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <PDFViewer url={fileUrl} fileName={pattern.name} />
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox pour images */}
+      {showImageLightbox && pattern && fileUrl && (
+        <ImageLightbox
+          src={fileUrl}
+          alt={pattern.name}
+          onClose={() => setShowImageLightbox(false)}
+        />
+      )}
+
+      {/* Modale plein écran pour texte */}
+      {showTextFullscreen && pattern && pattern.pattern_text && (
+        <div className="fixed inset-0 bg-white z-[70] flex flex-col">
+          <div className="bg-gray-900 text-white p-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold">{pattern.name}</h2>
+            <button
+              onClick={() => setShowTextFullscreen(false)}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition"
+            >
+              ✕ Fermer
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto p-8 bg-gray-50">
+            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+              <pre className="whitespace-pre-wrap font-sans text-gray-800 leading-relaxed text-lg">
+                {pattern.pattern_text}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modale d'édition */}
       {showEditModal && pattern && (

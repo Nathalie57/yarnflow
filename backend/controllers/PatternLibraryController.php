@@ -48,7 +48,8 @@ class PatternLibraryController
                 'technique' => $params['technique'] ?? null,
                 'source_type' => $params['source_type'] ?? null,
                 'favorite' => isset($params['favorite']) && $params['favorite'] === 'true',
-                'search' => $params['search'] ?? null
+                'search' => $params['search'] ?? null,
+                'sort' => $params['sort'] ?? 'date_desc'
             ];
 
             $limit = isset($params['limit']) ? (int)$params['limit'] : 50;
