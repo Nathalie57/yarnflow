@@ -101,10 +101,8 @@ class PhotoController
                 throw new \Exception('Erreur lors de l\'upload - Code: ' . $file['error']);
             }
 
-            // [AI:Claude] Valider le fichier
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            if (!in_array($file['type'], $allowedTypes))
-                throw new \InvalidArgumentException('Type de fichier non supporté');
+            // [AI:Claude] Valider le fichier de manière sécurisée
+            $this->validateImageFile($file);
 
             // [AI:Claude] Sauvegarder le fichier
             $originalPath = $this->saveUploadedFile($file, $userId);
@@ -798,6 +796,66 @@ class PhotoController
     /**
      * [AI:Claude] Sauvegarder un fichier uploadé
      */
+    /**
+     * [AI:Claude] Valider un fichier image de manière sécurisée
+     *
+     * @param array $file Fichier uploadé ($_FILES)
+     * @return void
+     * @throws \InvalidArgumentException Si le fichier est invalide
+     */
+    private function validateImageFile(array $file): void
+    {
+        // [AI:Claude] 1. Vérifier la taille du fichier (max 10 MB)
+        $maxSize = 10 * 1024 * 1024; // 10 MB
+        if ($file['size'] > $maxSize) {
+            throw new \InvalidArgumentException('Fichier trop volumineux. Taille maximale : 10 MB');
+        }
+
+        if ($file['size'] === 0) {
+            throw new \InvalidArgumentException('Fichier vide');
+        }
+
+        // [AI:Claude] 2. Vérifier le type MIME réel (pas juste le type déclaré)
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!in_array($mimeType, $allowedMimes)) {
+            throw new \InvalidArgumentException('Type de fichier invalide. Formats acceptés : JPEG, PNG, WebP');
+        }
+
+        // [AI:Claude] 3. Vérifier que c'est vraiment une image avec getimagesize()
+        $imageInfo = @getimagesize($file['tmp_name']);
+        if ($imageInfo === false) {
+            throw new \InvalidArgumentException('Fichier image corrompu ou invalide');
+        }
+
+        // [AI:Claude] 4. Vérifier les dimensions (max 8000x8000 pixels)
+        [$width, $height] = $imageInfo;
+        if ($width > 8000 || $height > 8000) {
+            throw new \InvalidArgumentException('Image trop grande. Dimensions maximales : 8000x8000 pixels');
+        }
+
+        if ($width < 10 || $height < 10) {
+            throw new \InvalidArgumentException('Image trop petite. Dimensions minimales : 10x10 pixels');
+        }
+
+        // [AI:Claude] 5. Vérifier que le type MIME correspond bien au format détecté
+        $detectedType = $imageInfo[2]; // IMAGETYPE_* constant
+        $validTypes = [
+            IMAGETYPE_JPEG => 'image/jpeg',
+            IMAGETYPE_PNG => 'image/png',
+            IMAGETYPE_WEBP => 'image/webp'
+        ];
+
+        if (!isset($validTypes[$detectedType]) || $validTypes[$detectedType] !== $mimeType) {
+            throw new \InvalidArgumentException('Le type de fichier ne correspond pas au contenu');
+        }
+
+        error_log("[PHOTO VALIDATION] Fichier validé : {$mimeType}, {$width}x{$height}, " . round($file['size'] / 1024, 2) . " KB");
+    }
+
     private function saveUploadedFile(array $file, int $userId): string
     {
         // [AI:Claude] Sauvegarder dans public/uploads pour accès web

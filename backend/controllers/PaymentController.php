@@ -360,6 +360,20 @@ class PaymentController
         $patternId = isset($data['pattern_id']) ? (int)$data['pattern_id'] : null;
         $paymentType = $data['payment_type'];
 
+        // [AI:Claude] SÉCURITÉ: Vérifier que le montant payé correspond au prix attendu
+        if (isset($data['amount'])) {
+            $expectedAmount = $this->getExpectedAmount($paymentType);
+            $actualAmount = $data['amount'];
+
+            // Tolérance de 0.01€ pour les arrondis
+            if ($expectedAmount !== null && abs($expectedAmount - $actualAmount) > 0.01) {
+                error_log("[PAYMENT SECURITY] ALERTE: Montant incorrect pour {$paymentType}. Attendu: {$expectedAmount}€, Reçu: {$actualAmount}€");
+                error_log("[PAYMENT SECURITY] Session ID: " . ($data['session_id'] ?? 'N/A') . ", User ID: {$userId}");
+                // Ne pas traiter le paiement si le montant est incorrect
+                return;
+            }
+        }
+
         // [AI:Claude] Mettre à jour le paiement en base
         $payment = $this->paymentModel->findOne(['stripe_session_id' => $data['session_id'] ?? '']);
 
@@ -494,6 +508,26 @@ class PaymentController
         );
 
         error_log("[Payment] Utilisateur {$user['id']} ({$user['email']}) rétrogradé à FREE suite à annulation");
+    }
+
+    /**
+     * [AI:Claude] Obtenir le montant attendu pour un type de paiement
+     *
+     * @param string $paymentType Type de paiement
+     * @return float|null Montant attendu en euros, null si inconnu
+     */
+    private function getExpectedAmount(string $paymentType): ?float
+    {
+        return match($paymentType) {
+            'subscription_plus' => 2.99,
+            'subscription_plus_annual' => 29.99,
+            'subscription_pro' => 4.99,
+            'subscription_pro_annual' => 49.99,
+            'subscription_early_bird' => 2.99,
+            PAYMENT_CREDITS_PACK_50 => 4.99,
+            PAYMENT_CREDITS_PACK_150 => 9.99,
+            default => null // Patron personnalisé, pas de montant fixe
+        };
     }
 
     /**

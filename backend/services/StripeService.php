@@ -42,8 +42,18 @@ class StripeService
 
     public function __construct()
     {
+        // [AI:Claude] Sécurité : Les clés Stripe doivent être configurées
         $this->secretKey = $_ENV['STRIPE_SECRET_KEY'] ?? '';
         $this->webhookSecret = $_ENV['STRIPE_WEBHOOK_SECRET'] ?? '';
+
+        if (empty($this->secretKey)) {
+            throw new \RuntimeException('STRIPE_SECRET_KEY must be configured in environment variables');
+        }
+
+        if (empty($this->webhookSecret)) {
+            throw new \RuntimeException('STRIPE_WEBHOOK_SECRET must be configured for webhook security');
+        }
+
         $this->successUrl = $_ENV['FRONTEND_URL'].'/payment/success?session_id={CHECKOUT_SESSION_ID}';
         $this->cancelUrl = $_ENV['FRONTEND_URL'].'/payment/cancel';
 

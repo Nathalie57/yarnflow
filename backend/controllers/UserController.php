@@ -213,8 +213,15 @@ class UserController
     }
 
     /**
-     * [AI:Claude] Supprimer le compte utilisateur
+     * [AI:Claude] Supprimer le compte utilisateur (RGPD compliant)
      * DELETE /api/user/account
+     *
+     * Cette fonction effectue une suppression complète et conforme RGPD :
+     * 1. Annule l'abonnement Stripe si actif
+     * 2. Supprime tous les projets et données associées
+     * 3. Supprime toutes les photos
+     * 4. Supprime la bibliothèque de patrons
+     * 5. Anonymise l'utilisateur (au lieu de supprimer pour traçabilité légale)
      */
     public function deleteAccount(): void
     {
@@ -241,20 +248,98 @@ class UserController
         if (!password_verify($data['password'], $user['password']))
             Response::error('Mot de passe incorrect', HTTP_UNAUTHORIZED);
 
+        $db = \App\Config\Database::getInstance()->getConnection();
+
         try {
-            // [AI:Claude] Supprimer tous les patrons de l'utilisateur
-            $patterns = $this->patternModel->findByUserId($userData['user_id'], 1000);
+            $db->beginTransaction();
+            $userId = $userData['user_id'];
+
+            // [AI:Claude] 1. Annuler l'abonnement Stripe si actif
+            if (!empty($user['stripe_customer_id']) && !empty($user['stripe_subscription_id'])) {
+                try {
+                    $stripeService = new \App\Services\StripeService();
+                    $stripeService->cancelSubscription($user['stripe_subscription_id']);
+                    error_log("[UserController] Abonnement Stripe annulé pour user_id: $userId");
+                } catch (\Exception $e) {
+                    error_log("[UserController] Erreur annulation Stripe : " . $e->getMessage());
+                    // Continuer même si Stripe échoue
+                }
+            }
+
+            // [AI:Claude] 2. Supprimer toutes les photos utilisateur
+            $db->prepare("DELETE FROM user_photos WHERE user_id = ?")->execute([$userId]);
+
+            // [AI:Claude] 3. Supprimer les crédits photos
+            $db->prepare("DELETE FROM user_photo_credits WHERE user_id = ?")->execute([$userId]);
+
+            // [AI:Claude] 4. Supprimer les données de projets (cascade)
+            // 4a. Supprimer les rows de projets
+            $db->prepare("DELETE FROM project_rows WHERE project_id IN (SELECT id FROM projects WHERE user_id = ?)")->execute([$userId]);
+
+            // 4b. Supprimer les sections de projets
+            $db->prepare("DELETE FROM project_sections WHERE project_id IN (SELECT id FROM projects WHERE user_id = ?)")->execute([$userId]);
+
+            // 4c. Supprimer les tags de projets
+            $db->prepare("DELETE FROM project_tags WHERE project_id IN (SELECT id FROM projects WHERE user_id = ?)")->execute([$userId]);
+
+            // 4d. Supprimer les stats de projets
+            $db->prepare("DELETE FROM project_stats WHERE project_id IN (SELECT id FROM projects WHERE user_id = ?)")->execute([$userId]);
+
+            // 4e. Supprimer les sessions de projets
+            $db->prepare("DELETE FROM project_sessions WHERE project_id IN (SELECT id FROM projects WHERE user_id = ?)")->execute([$userId]);
+
+            // 4f. Supprimer les projets
+            $db->prepare("DELETE FROM projects WHERE user_id = ?")->execute([$userId]);
+
+            // [AI:Claude] 5. Supprimer la bibliothèque de patrons
+            $db->prepare("DELETE FROM pattern_library WHERE user_id = ?")->execute([$userId]);
+
+            // [AI:Claude] 6. Supprimer tous les anciens patrons
+            $patterns = $this->patternModel->findByUserId($userId, 1000);
             foreach ($patterns as $pattern) {
                 $this->patternModel->delete($pattern['id']);
             }
 
-            // [AI:Claude] Supprimer l'utilisateur
-            $this->userModel->delete($userData['user_id']);
+            // [AI:Claude] 7. Anonymiser les paiements (garder pour comptabilité légale)
+            $db->prepare("
+                UPDATE payments
+                SET user_email = CONCAT('deleted_', user_id, '@anonymized.local')
+                WHERE user_id = ?
+            ")->execute([$userId]);
 
+            // [AI:Claude] 8. Anonymiser les messages de contact
+            $db->prepare("
+                UPDATE contact_messages
+                SET name = 'Utilisateur supprimé',
+                    email = CONCAT('deleted_', user_id, '@anonymized.local'),
+                    message = '[Message supprimé - compte utilisateur supprimé]'
+                WHERE user_id = ?
+            ")->execute([$userId]);
+
+            // [AI:Claude] 9. Anonymiser l'utilisateur (au lieu de supprimer complètement)
+            // Cela permet de garder une trace pour la comptabilité et les logs
+            $db->prepare("
+                UPDATE users
+                SET email = CONCAT('deleted_', id, '@anonymized.local'),
+                    first_name = 'Utilisateur',
+                    last_name = 'Supprimé',
+                    password = NULL,
+                    stripe_customer_id = NULL,
+                    stripe_subscription_id = NULL,
+                    google_id = NULL,
+                    facebook_id = NULL,
+                    updated_at = NOW()
+                WHERE id = ?
+            ")->execute([$userId]);
+
+            $db->commit();
+
+            error_log("[UserController] Compte utilisateur $userId supprimé avec succès (RGPD)");
             Response::success([], HTTP_OK, 'Compte supprimé avec succès');
 
         } catch (\Exception $e) {
-            error_log('[UserController] Erreur suppression compte : '.$e->getMessage());
+            $db->rollBack();
+            error_log('[UserController] Erreur suppression compte : ' . $e->getMessage());
             Response::serverError('Erreur lors de la suppression du compte');
         }
     }
