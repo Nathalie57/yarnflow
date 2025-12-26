@@ -560,13 +560,13 @@ const Gallery = () => {
               {getFilteredPhotos().map(photo => (
                 <div
                   key={photo.id}
-                  className="relative rounded-lg overflow-hidden group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow"
+                  className="relative rounded-lg group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow"
                 >
                   {/* Photo IA générée */}
                   <img
                     src={`${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`}
                     alt={photo.item_name || 'Photo IA'}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-lg"
                     onError={(e) => {
                       console.error('Erreur chargement image:', photo.enhanced_path)
                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
@@ -574,7 +574,7 @@ const Gallery = () => {
                   />
 
                   {/* Overlay minimaliste au hover */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg">
                     {/* Nom de la photo */}
                     <div className="absolute top-3 left-3 right-3">
                       <p className="text-white text-sm font-semibold drop-shadow-lg line-clamp-1">
@@ -633,7 +633,7 @@ const Gallery = () => {
 
                         {/* Dropdown menu */}
                         {openMenuId === photo.id && (
-                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-white rounded-lg shadow-2xl border border-gray-200 py-2 z-10">
+                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-warm-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
                             {/* Photo de couverture */}
                             {photo.project_id && (
                               <button
@@ -650,7 +650,7 @@ const Gallery = () => {
                                     alert('❌ Erreur lors de la mise à jour')
                                   }
                                 }}
-                                className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                                className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
                               >
                                 <span className="text-lg">📸</span>
                                 <span>Définir comme couverture</span>
@@ -658,11 +658,11 @@ const Gallery = () => {
                             )}
 
                             {/* Divider */}
-                            {photo.project_id && <div className="border-t border-gray-200 my-1"></div>}
+                            {photo.project_id && <div className="border-t border-primary-200 my-1"></div>}
 
                             {/* Section Partage */}
                             <div className="px-4 py-1.5">
-                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Partager</p>
+                              <p className="text-xs font-semibold text-primary-700 uppercase tracking-wider">Partager</p>
                             </div>
 
                             {/* Instagram */}
@@ -700,9 +700,21 @@ const Gallery = () => {
                                   setOpenMenuId(null)
                                 }
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
                             >
-                              <span className="text-lg">📷</span>
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                <defs>
+                                  <radialGradient id="instagram-gradient" cx="30%" cy="107%" r="150%">
+                                    <stop offset="0%" stopColor="#FDF497" />
+                                    <stop offset="5%" stopColor="#FDF497" />
+                                    <stop offset="45%" stopColor="#FD5949" />
+                                    <stop offset="60%" stopColor="#D6249F" />
+                                    <stop offset="90%" stopColor="#285AEB" />
+                                  </radialGradient>
+                                </defs>
+                                <rect width="24" height="24" rx="5.4" fill="url(#instagram-gradient)"/>
+                                <path d="M12 8.75a3.25 3.25 0 100 6.5 3.25 3.25 0 000-6.5zm0 5.36a2.11 2.11 0 110-4.22 2.11 2.11 0 010 4.22zM16.5 8.58a.76.76 0 11-1.52 0 .76.76 0 011.52 0zm2.16.76c-.05-1.06-.3-2-1.1-2.8-.8-.8-1.74-1.05-2.8-1.1C13.68 5.4 10.32 5.4 9.24 5.44c-1.06.05-2 .3-2.8 1.1-.8.8-1.05 1.74-1.1 2.8C5.4 10.32 5.4 13.68 5.44 14.76c.05 1.06.3 2 1.1 2.8.8.8 1.74 1.05 2.8 1.1 1.08.04 4.44.04 5.52 0 1.06-.05 2-.3 2.8-1.1.8-.8 1.05-1.74 1.1-2.8.04-1.08.04-4.44 0-5.52zM17.23 15.9c-.24.6-.7 1.06-1.3 1.3-1.02.4-3.44.31-4.57.31-1.13 0-3.55.09-4.57-.31a2.3 2.3 0 01-1.3-1.3c-.4-1.02-.31-3.44-.31-4.57 0-1.13-.09-3.55.31-4.57.24-.6.7-1.06 1.3-1.3C7.81 5.06 10.23 5.15 11.36 5.15c1.13 0 3.55-.09 4.57.31.6.24 1.06.7 1.3 1.3.4 1.02.31 3.44.31 4.57 0 1.13.09 3.55-.31 4.57z" fill="white"/>
+                              </svg>
                               <span>Instagram</span>
                             </button>
 
@@ -715,9 +727,12 @@ const Gallery = () => {
                                 window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(url)}&description=${encodeURIComponent(description)}`, '_blank')
                                 setOpenMenuId(null)
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
                             >
-                              <span className="text-lg">📌</span>
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="12" fill="#E60023"/>
+                                <path d="M12.7 7.2c-2.5 0-3.8 1.8-3.8 3.3 0 .9.3 1.6.9 1.9.1 0 .2.1.3 0 0-.1.1-.4.1-.5 0-.1 0-.2 0-.3-.2-.3-.4-.7-.4-1.3 0-1.6 1.2-3.1 3.1-3.1 1.7 0 2.6 1 2.6 2.4 0 1.8-.8 3.3-2 3.3-.6 0-1.1-.5-1-1.1.2-.7.5-1.5.5-2 0-1.2-1.8-1-1.8.5 0 .4.1.7.1.7s-.5 2-.6 2.4c-.2.7 0 1.7.1 2.3 0 .1.1.1.2.1h.1c.1-.2 1-1.2 1.2-2 .1-.3.3-1.2.3-1.2.2.3.7.6 1.2.6 1.6 0 2.8-1.5 2.8-3.4 0-1.5-1.2-2.8-3-2.8z" fill="white"/>
+                              </svg>
                               <span>Pinterest</span>
                             </button>
 
@@ -728,9 +743,12 @@ const Gallery = () => {
                                 window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')
                                 setOpenMenuId(null)
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
                             >
-                              <span className="text-lg">👥</span>
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="12" fill="#1877F2"/>
+                                <path d="M16.671 15.469l.575-3.75h-3.602V9.406c0-1.026.503-2.027 2.116-2.027h1.636V4.203S15.924 4 14.5 4c-2.973 0-4.917 1.801-4.917 5.062v2.857H6.188v3.75h3.395v9.066c.682.107 1.379.165 2.089.165.71 0 1.407-.058 2.089-.165v-9.066h3.027z" fill="white"/>
+                              </svg>
                               <span>Facebook</span>
                             </button>
 
@@ -742,9 +760,12 @@ const Gallery = () => {
                                 window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank')
                                 setOpenMenuId(null)
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
                             >
-                              <span className="text-lg">𝕏</span>
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="12" fill="#000000"/>
+                                <path d="M13.355 10.874L17.866 5.5h-1.069l-3.915 4.494L9.933 5.5H6.5l4.731 6.888L6.5 18.5h1.069l4.135-4.748L14.567 18.5H18l-4.645-7.626zm-1.464 1.68l-.479-.685L7.665 6.319h1.64l3.073 4.393.479.685 3.997 5.715h-1.64l-3.262-4.658z" fill="white"/>
+                              </svg>
                               <span>Twitter / X</span>
                             </button>
 
@@ -762,14 +783,17 @@ const Gallery = () => {
                                   alert('❌ Impossible de copier le lien')
                                 }
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
                             >
-                              <span className="text-lg">🔗</span>
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="12" fill="#6B7280"/>
+                                <path d="M13.544 10.456a4.368 4.368 0 00-6.176 0l-1.5 1.5a4.368 4.368 0 006.176 6.176l.834-.834m2.666-10.842a4.368 4.368 0 016.176 0l1.5 1.5a4.368 4.368 0 01-6.176 6.176l-.834-.834" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
                               <span>Copier le lien</span>
                             </button>
 
                             {/* Divider */}
-                            <div className="border-t border-gray-200 my-1"></div>
+                            <div className="border-t border-primary-200 my-1"></div>
 
                             {/* Supprimer */}
                             <button
@@ -778,7 +802,7 @@ const Gallery = () => {
                                 setOpenMenuId(null)
                                 handleDelete(photo.id)
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 font-medium"
+                              className="w-full px-4 py-2.5 text-left text-sm text-red-700 hover:bg-red-100 flex items-center gap-3 font-medium transition-colors"
                             >
                               <span className="text-lg">🗑️</span>
                               <span>Supprimer</span>

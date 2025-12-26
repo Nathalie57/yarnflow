@@ -242,10 +242,27 @@ function route(string $method, string $uri): void
 function serveUploadFile(string $folder, string $filename): void
 {
     // [AI:Claude] Nettoyer le nom de fichier pour éviter les attaques de traversée de répertoire
-    $filename = basename($filename);
+    // Autoriser les sous-dossiers enhanced/ et original/ mais bloquer les tentatives de traversée (..)
+    $filename = str_replace(['..', '\\'], '', $filename);
+    $filename = ltrim($filename, '/');
 
     // [AI:Claude] Construire le chemin du fichier
-    $filePath = __DIR__.'/../public/uploads/'.$folder.'/'.$filename;
+    $basePath = __DIR__.'/../public/uploads/'.$folder.'/';
+    $filePath = $basePath.$filename;
+
+    // [AI:Claude] SÉCURITÉ: Vérifier que le chemin final est bien dans le dossier uploads (prévenir traversée)
+    $realBasePath = realpath($basePath);
+    $realFilePath = realpath($filePath);
+
+    if (!$realFilePath || !str_starts_with($realFilePath, $realBasePath)) {
+        http_response_code(403);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'error' => 'Accès interdit'
+        ]);
+        exit;
+    }
 
     // [AI:Claude] Vérifier que le fichier existe
     if (!file_exists($filePath)) {
