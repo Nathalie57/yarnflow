@@ -23,6 +23,22 @@ use App\Controllers\WaitlistController;
 use App\Controllers\PasswordResetController;
 use App\Controllers\WebFetchController;
 use App\Controllers\ContactController;
+use App\Middleware\RateLimitMiddleware;
+
+/**
+ * [AI:Claude] Appliquer le rate limiting sur un endpoint
+ *
+ * @param string $endpoint Endpoint à protéger
+ * @return void
+ */
+function applyRateLimit(string $endpoint): void
+{
+    static $rateLimiter = null;
+    if ($rateLimiter === null) {
+        $rateLimiter = new RateLimitMiddleware();
+    }
+    $rateLimiter->check($endpoint);
+}
 
 /**
  * [AI:Claude] Router simple basé sur les méthodes HTTP et les URIs
@@ -53,9 +69,9 @@ function route(string $method, string $uri): void
     }
 
     match(true) {
-        // [AI:Claude] Routes d'authentification
-        $method === 'POST' && $uri === 'auth/register' => (new AuthController())->register(),
-        $method === 'POST' && $uri === 'auth/login' => (new AuthController())->login(),
+        // [AI:Claude] Routes d'authentification (avec rate limiting)
+        $method === 'POST' && $uri === 'auth/register' => (applyRateLimit('/api/auth/register'), (new AuthController())->register()),
+        $method === 'POST' && $uri === 'auth/login' => (applyRateLimit('/api/auth/login'), (new AuthController())->login()),
         $method === 'GET' && $uri === 'auth/me' => (new AuthController())->me(),
         $method === 'POST' && $uri === 'auth/refresh' => (new AuthController())->refresh(),
 
@@ -65,8 +81,8 @@ function route(string $method, string $uri): void
         $method === 'GET' && $uri === 'auth/facebook/url' => (new AuthController())->facebookAuthUrl(),
         $method === 'GET' && $uri === 'auth/facebook/callback' => (new AuthController())->facebookCallback(),
 
-        // [AI:Claude] Routes de réinitialisation de mot de passe
-        $method === 'POST' && $uri === 'auth/forgot-password' => (new PasswordResetController())->requestReset(),
+        // [AI:Claude] Routes de réinitialisation de mot de passe (avec rate limiting)
+        $method === 'POST' && $uri === 'auth/forgot-password' => (applyRateLimit('/api/auth/forgot-password'), (new PasswordResetController())->requestReset()),
         $method === 'POST' && $uri === 'auth/verify-reset-token' => (new PasswordResetController())->verifyToken(),
         $method === 'POST' && $uri === 'auth/reset-password' => (new PasswordResetController())->resetPassword(),
 

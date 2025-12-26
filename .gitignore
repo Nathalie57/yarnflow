@@ -111,3 +111,26 @@ frontend/dev-dist/
 import_mysql_railway.sh
 import_railway.sh
 import_railway_simple.sh
+
+# Diagnostic and deployment files (2025-12-26 Security audit)
+CHECKLIST*.md
+COMMANDES_*.sh
+CORRECTIFS_*.md
+GUIDE_*.md
+INIT_*.md
+INSTRUCTIONS_*.md
+VERIFICATION_*.md
+check-*.sh
+check-*.php
+diagnose-*.sh
+diagnose-*.php
+test-*.php
+test-*.sh
+verify-*.php
+verify-*.sh
+fix-*.php
+compare-*.php
+generate-*.sh
+get-*.php
+info.php
+database/fix_*.sql

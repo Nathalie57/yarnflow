@@ -27,7 +27,22 @@ class JWTService
 
     public function __construct()
     {
-        $this->secret = $_ENV['JWT_SECRET'] ?? 'change_this_secret_key';
+        $secret = $_ENV['JWT_SECRET'] ?? null;
+
+        // [AI:Claude] Sécurité : Le secret JWT doit être configuré en production
+        if (empty($secret)) {
+            throw new \RuntimeException('JWT_SECRET must be configured in environment variables');
+        }
+
+        if ($secret === 'change_this_secret_key') {
+            throw new \RuntimeException('JWT_SECRET cannot use the default value. Please generate a strong secret.');
+        }
+
+        if (strlen($secret) < 32) {
+            throw new \RuntimeException('JWT_SECRET must be at least 32 characters long for security');
+        }
+
+        $this->secret = $secret;
         $this->expiration = (int)($_ENV['JWT_EXPIRATION'] ?? 604800);
     }
 
