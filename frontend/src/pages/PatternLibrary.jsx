@@ -793,61 +793,13 @@ const PatternLibrary = () => {
                       </p>
                     )}
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      {pattern.source_type === 'file' && pattern.file_path && (
-                        <button
-                          onClick={() => handleOpenFile(pattern)}
-                          className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition text-sm"
-                        >
-                          📥 Ouvrir
-                        </button>
-                      )}
-
-                      {pattern.source_type === 'url' && pattern.url && (
-                        <a
-                          href={pattern.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition text-sm"
-                        >
-                          🔗 Voir le lien
-                        </a>
-                      )}
-
-                      {pattern.source_type === 'text' && pattern.pattern_text && (
-                        <button
-                          onClick={() => {
-                            setViewerData({
-                              url: '',
-                              fileName: pattern.name,
-                              type: 'text',
-                              text: pattern.pattern_text
-                            })
-                            setShowViewerModal(true)
-                          }}
-                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-center font-medium hover:bg-blue-700 transition text-sm"
-                        >
-                          📝 Lire
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => handleEditPattern(pattern)}
-                        className="px-3 py-2 border border-primary-300 text-primary-600 rounded-lg hover:bg-primary-50 transition"
-                        title="Modifier"
-                      >
-                        ✏️
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(pattern.id)}
-                        className="px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition"
-                        title="Supprimer"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                    {/* Action */}
+                    <Link
+                      to={`/pattern-library/${pattern.id}`}
+                      className="block w-full px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition text-sm"
+                    >
+                      👁️ Voir les détails
+                    </Link>
                   </div>
                 </div>
               ))}

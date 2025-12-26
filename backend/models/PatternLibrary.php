@@ -154,7 +154,8 @@ class PatternLibrary
     {
         $allowedFields = [
             'name', 'description', 'category', 'technique', 'difficulty',
-            'thumbnail_path', 'tags', 'notes', 'is_favorite'
+            'thumbnail_path', 'tags', 'notes', 'is_favorite',
+            'source_type', 'url', 'pattern_text', 'file_path', 'file_type'
         ];
 
         $updates = [];

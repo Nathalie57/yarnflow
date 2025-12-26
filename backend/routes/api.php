@@ -192,6 +192,7 @@ function route(string $method, string $uri): void
         $method === 'POST' && $uri === 'pattern-library' => (new PatternLibraryController())->create(),
         $method === 'GET' && preg_match('/^pattern-library\/(\d+)\/file$/', $uri, $matches) => (new PatternLibraryController())->downloadFile((int)$matches[1]),
         $method === 'GET' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->show((int)$matches[1]),
+        $method === 'POST' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->update((int)$matches[1]), // POST pour upload avec _method=PUT
         $method === 'PUT' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->update((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->delete((int)$matches[1]),
 
