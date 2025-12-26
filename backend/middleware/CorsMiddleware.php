@@ -18,30 +18,45 @@ class CorsMiddleware
 {
     /**
      * [AI:Claude] Configurer les headers CORS
+     * SÉCURITÉ: Les origines sont strictement contrôlées même en développement
      */
     public static function handle(): void
     {
         // Récupérer l'origine de la requête
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
         $isDev = ($_ENV['APP_ENV'] ?? 'production') === 'development';
 
-        // En développement, accepter TOUTES les origines
-        // En production, n'accepter que le frontend configuré
+        // [AI:Claude] SÉCURITÉ: Whitelist stricte d'origines autorisées
         if ($isDev) {
-            // Mode développement : accepter n'importe quelle origine
-            header('Access-Control-Allow-Origin: ' . $origin);
+            // Mode développement : origines de développement autorisées
+            $allowedOrigins = [
+                'http://localhost:3000',
+                'http://localhost:5173',
+                'http://localhost:8080',
+                'http://127.0.0.1:3000',
+                'http://127.0.0.1:5173',
+                'http://127.0.0.1:8080',
+                $_ENV['FRONTEND_URL'] ?? ''
+            ];
         } else {
             // Mode production : restreindre aux domaines autorisés
             $allowedOrigins = [
                 $_ENV['FRONTEND_URL'] ?? 'https://yarnflow.fr',
                 'https://yarnflow.fr',
-                'https://www.yarnflow.fr'
+                'https://www.yarnflow.fr',
+                'https://staging.yarnflow.fr'
             ];
+        }
 
-            if (in_array($origin, $allowedOrigins)) {
-                header('Access-Control-Allow-Origin: ' . $origin);
-            }
+        // [AI:Claude] SÉCURITÉ: Valider l'origine avant de l'accepter
+        // CRITIQUE: Ne JAMAIS utiliser Access-Control-Allow-Origin: * avec Access-Control-Allow-Credentials: true
+        if (!empty($origin) && in_array($origin, $allowedOrigins, true)) {
+            header('Access-Control-Allow-Origin: ' . $origin);
+        } else {
+            // [AI:Claude] Si l'origine n'est pas autorisée, ne pas set le header
+            // Cela empêchera le navigateur d'envoyer les credentials
+            error_log("[CORS] Origin non autorisée: $origin");
         }
 
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, PATCH');
