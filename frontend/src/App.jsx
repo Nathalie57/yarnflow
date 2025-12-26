@@ -24,6 +24,7 @@ import ProjectCounter from './pages/ProjectCounter'
 import Stats from './pages/Stats'
 import Gallery from './pages/Gallery'
 import PatternLibrary from './pages/PatternLibrary'
+import PatternLibraryDetail from './pages/PatternLibraryDetail'
 import PaymentSuccess from './pages/PaymentSuccess'
 
 // Pages légales
@@ -90,6 +91,7 @@ function App() {
 
             {/* Routes bibliothèque de patrons */}
             <Route path="/pattern-library" element={<PatternLibrary />} />
+            <Route path="/pattern-library/:id" element={<PatternLibraryDetail />} />
 
             {/* Routes admin */}
             <Route path="/admin" element={<AdminDashboard />} />

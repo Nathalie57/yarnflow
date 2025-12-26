@@ -27,7 +27,9 @@ const PatternLibrary = () => {
   const [filterCategory, setFilterCategory] = useState('')
   const [filterTechnique, setFilterTechnique] = useState('')
   const [filterFavorite, setFilterFavorite] = useState(false)
+  const [filterSourceType, setFilterSourceType] = useState('') // 'file', 'url', 'text' ou ''
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState('date_desc') // 'date_desc', 'date_asc', 'name_asc', 'name_desc'
 
   // [AI:Claude] Cache des aperçus (blob URLs)
   const [previewUrls, setPreviewUrls] = useState({})
@@ -60,9 +62,22 @@ const PatternLibrary = () => {
   const [uploading, setUploading] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
 
+  // Traduction des catégories
+  const getCategoryLabel = (category) => {
+    const translations = {
+      'other': 'Autre',
+      'Vêtements': 'Vêtements',
+      'Accessoires': 'Accessoires',
+      'Maison/Déco': 'Maison/Déco',
+      'Jouets/Peluches': 'Jouets/Peluches',
+      'Accessoires bébé': 'Accessoires bébé'
+    }
+    return translations[category] || category
+  }
+
   useEffect(() => {
     fetchPatterns()
-  }, [filterCategory, filterTechnique, filterFavorite, searchQuery])
+  }, [filterCategory, filterTechnique, filterFavorite, filterSourceType, searchQuery, sortBy])
 
   // [AI:Claude] Charger les aperçus des images avec authentification
   useEffect(() => {
@@ -119,7 +134,9 @@ const PatternLibrary = () => {
       if (filterCategory) params.category = filterCategory
       if (filterTechnique) params.technique = filterTechnique
       if (filterFavorite) params.favorite = 'true'
+      if (filterSourceType) params.source_type = filterSourceType
       if (searchQuery) params.search = searchQuery
+      if (sortBy) params.sort = sortBy
 
       const response = await api.get('/pattern-library', { params })
 
@@ -397,7 +414,9 @@ const PatternLibrary = () => {
     setFilterCategory('')
     setFilterTechnique('')
     setFilterFavorite(false)
+    setFilterSourceType('')
     setSearchQuery('')
+    setSortBy('date_desc')
   }
 
   const handleOpenFile = async (pattern) => {
@@ -442,6 +461,9 @@ const PatternLibrary = () => {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">📚 Bibliothèque de patrons</h1>
             <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
+              {stats ? (
+                <span>{stats.total_patterns || 0} patron{(stats.total_patterns || 0) > 1 ? 's' : ''} • </span>
+              ) : null}
               Centralisez tous vos patrons et liez-les à vos projets
             </p>
           </div>
@@ -453,62 +475,30 @@ const PatternLibrary = () => {
             ➕ Ajouter un patron
           </button>
         </div>
-
-        {/* Stats */}
-        {!loading && stats && (
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-4">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-primary-600">{stats.total_patterns || 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600">Fichiers</p>
-              <p className="text-2xl font-bold text-primary-600">{stats.file_patterns || 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600">Liens</p>
-              <p className="text-2xl font-bold text-green-600">{stats.url_patterns || 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600">Textes</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.text_patterns || 0}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <p className="text-sm text-gray-600">Favoris</p>
-              <p className="text-2xl font-bold text-amber-600">{stats.favorite_patterns || 0}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Info : Patrons illimités pour tous */}
-        {!loading && stats && (
-          <div className="mt-4 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-300 rounded-lg p-4">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">📚</span>
-              <div>
-                <p className="font-semibold text-blue-900">
-                  {stats.total_patterns || 0} patron{(stats.total_patterns || 0) > 1 ? 's' : ''} sauvegardé{(stats.total_patterns || 0) > 1 ? 's' : ''}
-                </p>
-                <p className="text-sm text-blue-700">
-                  Patrons illimités pour tous les plans
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Filtres et recherche */}
       <div className="mb-6 space-y-4">
-        {/* Barre de recherche */}
-        <div>
+        {/* Barre de recherche et tri */}
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             placeholder="🔍 Rechercher un patron..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+          >
+            <option value="date_desc">📅 Plus récents</option>
+            <option value="date_asc">📅 Plus anciens</option>
+            <option value="name_asc">🔤 A → Z</option>
+            <option value="name_desc">🔤 Z → A</option>
+          </select>
         </div>
 
         {/* Filtres pills */}
@@ -560,12 +550,12 @@ const PatternLibrary = () => {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                {cat}
+                {getCategoryLabel(cat)}
               </button>
             ))}
 
             {/* Reset */}
-            {(filterCategory || filterTechnique || filterFavorite || searchQuery) && (
+            {(filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery) && (
               <button
                 onClick={resetFilters}
                 className="px-3 py-1.5 rounded-full text-sm font-medium text-red-600 hover:bg-red-50 transition"
@@ -592,16 +582,16 @@ const PatternLibrary = () => {
             <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
               <div className="text-6xl mb-4">📚</div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {filterCategory || filterTechnique || filterFavorite || searchQuery
+                {filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery
                   ? 'Aucun patron trouvé'
                   : 'Aucun patron dans votre bibliothèque'}
               </h3>
               <p className="text-gray-600 mb-6">
-                {filterCategory || filterTechnique || filterFavorite || searchQuery
+                {filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery
                   ? 'Aucun patron ne correspond aux filtres sélectionnés'
                   : 'Commencez par ajouter votre premier patron !'}
               </p>
-              {!(filterCategory || filterTechnique || filterFavorite || searchQuery) && (
+              {!(filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery) && (
                 <button
                   onClick={() => setShowAddModal(true)}
                   className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
@@ -717,7 +707,7 @@ const PatternLibrary = () => {
                       )}
                       {pattern.category && (
                         <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                          {pattern.category}
+                          {getCategoryLabel(pattern.category)}
                         </span>
                       )}
                       {pattern.difficulty && (
@@ -734,61 +724,13 @@ const PatternLibrary = () => {
                       </p>
                     )}
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                      {pattern.source_type === 'file' && pattern.file_path && (
-                        <button
-                          onClick={() => handleOpenFile(pattern)}
-                          className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition text-sm"
-                        >
-                          📥 Ouvrir
-                        </button>
-                      )}
-
-                      {pattern.source_type === 'url' && pattern.url && (
-                        <a
-                          href={pattern.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition text-sm"
-                        >
-                          🔗 Voir le lien
-                        </a>
-                      )}
-
-                      {pattern.source_type === 'text' && pattern.pattern_text && (
-                        <button
-                          onClick={() => {
-                            setViewerData({
-                              url: '',
-                              fileName: pattern.name,
-                              type: 'text',
-                              text: pattern.pattern_text
-                            })
-                            setShowViewerModal(true)
-                          }}
-                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-center font-medium hover:bg-blue-700 transition text-sm"
-                        >
-                          📝 Lire
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => handleEditPattern(pattern)}
-                        className="px-3 py-2 border border-primary-300 text-primary-600 rounded-lg hover:bg-primary-50 transition"
-                        title="Modifier"
-                      >
-                        ✏️
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(pattern.id)}
-                        className="px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition"
-                        title="Supprimer"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                    {/* Action */}
+                    <Link
+                      to={`/pattern-library/${pattern.id}`}
+                      className="block w-full px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition text-sm"
+                    >
+                      👁️ Voir les détails
+                    </Link>
                   </div>
                 </div>
               ))}

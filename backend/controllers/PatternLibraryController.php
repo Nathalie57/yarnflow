@@ -46,8 +46,10 @@ class PatternLibraryController
             $filters = [
                 'category' => $params['category'] ?? null,
                 'technique' => $params['technique'] ?? null,
+                'source_type' => $params['source_type'] ?? null,
                 'favorite' => isset($params['favorite']) && $params['favorite'] === 'true',
-                'search' => $params['search'] ?? null
+                'search' => $params['search'] ?? null,
+                'sort' => $params['sort'] ?? 'date_desc'
             ];
 
             $limit = isset($params['limit']) ? (int)$params['limit'] : 50;
@@ -175,7 +177,6 @@ class PatternLibraryController
         try {
             $userId = $this->getUserIdFromAuth();
             $this->checkSubscriptionAccess($userId, false);
-            $data = $this->getJsonInput();
 
             // [AI:Claude] Vérifier que le patron appartient à l'utilisateur
             if (!$this->patternLibrary->belongsToUser($id, $userId)) {
@@ -186,22 +187,43 @@ class PatternLibraryController
                 return;
             }
 
-            $success = $this->patternLibrary->updatePattern($id, $data);
+            // [AI:Claude] DEBUG: Logger les infos de la requête
+            error_log('[PatternLibrary UPDATE] Pattern ID: ' . $id);
+            error_log('[PatternLibrary UPDATE] Content-Type: ' . ($_SERVER['CONTENT_TYPE'] ?? 'not set'));
+            error_log('[PatternLibrary UPDATE] Has FILES: ' . (isset($_FILES['file']) ? 'yes' : 'no'));
 
-            if (!$success) {
-                $this->sendResponse(400, [
-                    'success' => false,
-                    'error' => 'Aucune modification à effectuer'
+            // [AI:Claude] Gérer upload fichier ou données JSON
+            if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+                // Upload de fichier pour mise à jour
+                error_log('[PatternLibrary UPDATE] Handling file upload');
+                $this->handleFileUpdateWithUpload($id, $userId);
+            } else {
+                // Mise à jour JSON (sans changement de fichier)
+                error_log('[PatternLibrary UPDATE] Handling JSON update');
+                $data = $this->getJsonInput();
+                error_log('[PatternLibrary UPDATE] Data received: ' . json_encode($data));
+                $success = $this->patternLibrary->updatePattern($id, $data);
+
+                if (!$success) {
+                    $this->sendResponse(400, [
+                        'success' => false,
+                        'error' => 'Aucune modification à effectuer'
+                    ]);
+                    return;
+                }
+
+                $pattern = $this->patternLibrary->getPatternById($id);
+
+                $this->sendResponse(200, [
+                    'success' => true,
+                    'message' => 'Patron mis à jour avec succès',
+                    'pattern' => $pattern
                 ]);
-                return;
             }
-
-            $pattern = $this->patternLibrary->getPatternById($id);
-
-            $this->sendResponse(200, [
-                'success' => true,
-                'message' => 'Patron mis à jour avec succès',
-                'pattern' => $pattern
+        } catch (\InvalidArgumentException $e) {
+            $this->sendResponse(400, [
+                'success' => false,
+                'error' => $e->getMessage()
             ]);
         } catch (\Exception $e) {
             $this->sendResponse(500, [
@@ -607,6 +629,94 @@ class PatternLibraryController
     }
 
     /**
+     * [AI:Claude] Gérer la mise à jour avec upload de nouveau fichier
+     *
+     * @param int $id ID du patron
+     * @param int $userId ID de l'utilisateur
+     * @return void
+     */
+    private function handleFileUpdateWithUpload(int $id, int $userId): void
+    {
+        $file = $_FILES['file'];
+
+        // [AI:Claude] Validation du type de fichier
+        $allowedTypes = [
+            'application/pdf',
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/webp'
+        ];
+
+        if (!in_array($file['type'], $allowedTypes))
+            throw new \InvalidArgumentException('Type de fichier non autorisé. Utilisez PDF ou images (JPG, PNG, WEBP)');
+
+        // [AI:Claude] Validation de la taille (max 50MB)
+        $maxSize = 50 * 1024 * 1024;
+        if ($file['size'] > $maxSize)
+            throw new \Exception('Fichier trop volumineux (max 50MB)');
+
+        // [AI:Claude] Déterminer le type de fichier et l'extension
+        $isPdf = $file['type'] === 'application/pdf';
+        $fileType = $isPdf ? 'pdf' : 'image';
+
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ($extension === 'jpg')
+            $extension = 'jpeg';
+
+        // [AI:Claude] Créer le dossier d'uploads s'il n'existe pas
+        $uploadDir = __DIR__.'/../public/uploads/patterns';
+        if (!is_dir($uploadDir))
+            mkdir($uploadDir, 0755, true);
+
+        // [AI:Claude] Nom de fichier unique
+        $filename = 'pattern_'.$userId.'_'.time().'.'.$extension;
+        $destination = $uploadDir.'/'.$filename;
+
+        // [AI:Claude] Déplacer le fichier uploadé
+        if (!move_uploaded_file($file['tmp_name'], $destination))
+            throw new \Exception('Erreur lors de l\'enregistrement du fichier');
+
+        // [AI:Claude] Chemin relatif
+        $relativePath = '/uploads/patterns/'.$filename;
+
+        // [AI:Claude] Récupérer les autres données du formulaire
+        $updateData = [
+            'name' => $_POST['name'] ?? null,
+            'description' => $_POST['description'] ?? null,
+            'category' => $_POST['category'] ?? null,
+            'technique' => $_POST['technique'] ?? null,
+            'difficulty' => $_POST['difficulty'] ?? null,
+            'notes' => $_POST['notes'] ?? null,
+            'source_type' => 'file',
+            'file_path' => $relativePath,
+            'file_type' => $fileType,
+            'url' => null,
+            'pattern_text' => null
+        ];
+
+        // [AI:Claude] Supprimer l'ancien fichier
+        $oldPattern = $this->patternLibrary->getPatternById($id);
+        if ($oldPattern && $oldPattern['file_path']) {
+            $this->deletePatternFiles($oldPattern);
+        }
+
+        // [AI:Claude] Mettre à jour le patron
+        $success = $this->patternLibrary->updatePattern($id, $updateData);
+
+        if (!$success)
+            throw new \Exception('Erreur lors de la mise à jour du patron');
+
+        $pattern = $this->patternLibrary->getPatternById($id);
+
+        $this->sendResponse(200, [
+            'success' => true,
+            'message' => 'Patron mis à jour avec succès',
+            'pattern' => $pattern
+        ]);
+    }
+
+    /**
      * [AI:Claude] Supprimer les fichiers d'un patron
      *
      * @param array $pattern Données du patron
@@ -669,10 +779,19 @@ class PatternLibraryController
     private function getJsonInput(): array
     {
         $json = file_get_contents('php://input');
+
+        // [AI:Claude] Si le body est vide, retourner un tableau vide (requête valide sans body)
+        if (empty($json) || trim($json) === '') {
+            return [];
+        }
+
         $data = json_decode($json, true);
 
-        if (json_last_error() !== JSON_ERROR_NONE)
-            throw new \InvalidArgumentException('JSON invalide');
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log('[PatternLibrary] JSON decode error: ' . json_last_error_msg());
+            error_log('[PatternLibrary] JSON received: ' . substr($json, 0, 200));
+            throw new \InvalidArgumentException('JSON invalide: ' . json_last_error_msg());
+        }
 
         return $data ?? [];
     }

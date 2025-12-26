@@ -51,6 +51,11 @@ class PatternLibrary
             $params[':technique'] = $filters['technique'];
         }
 
+        if (!empty($filters['source_type'])) {
+            $conditions[] = 'source_type = :source_type';
+            $params[':source_type'] = $filters['source_type'];
+        }
+
         if (isset($filters['favorite']) && $filters['favorite']) {
             $conditions[] = 'is_favorite = 1';
         }
@@ -62,9 +67,30 @@ class PatternLibrary
 
         $whereClause = implode(' AND ', $conditions);
 
+        // [AI:Claude] Gérer le tri
+        $orderBy = 'created_at DESC'; // Par défaut
+        if (!empty($filters['sort'])) {
+            switch ($filters['sort']) {
+                case 'date_asc':
+                    $orderBy = 'created_at ASC';
+                    break;
+                case 'date_desc':
+                    $orderBy = 'created_at DESC';
+                    break;
+                case 'name_asc':
+                    $orderBy = 'name ASC';
+                    break;
+                case 'name_desc':
+                    $orderBy = 'name DESC';
+                    break;
+                default:
+                    $orderBy = 'created_at DESC';
+            }
+        }
+
         $query = "SELECT * FROM {$this->table}
                   WHERE $whereClause
-                  ORDER BY is_favorite DESC, created_at DESC
+                  ORDER BY $orderBy
                   LIMIT :limit OFFSET :offset";
 
         $stmt = $this->db->prepare($query);
@@ -149,7 +175,8 @@ class PatternLibrary
     {
         $allowedFields = [
             'name', 'description', 'category', 'technique', 'difficulty',
-            'thumbnail_path', 'tags', 'notes', 'is_favorite'
+            'thumbnail_path', 'tags', 'notes', 'is_favorite',
+            'source_type', 'url', 'pattern_text', 'file_path', 'file_type'
         ];
 
         $updates = [];
