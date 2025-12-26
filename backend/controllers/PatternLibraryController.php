@@ -17,6 +17,7 @@ namespace App\Controllers;
 use App\Models\PatternLibrary;
 use App\Models\User;
 use App\Middleware\AuthMiddleware;
+use App\Helpers\SecurityHelper;
 
 class PatternLibraryController
 {
@@ -295,9 +296,12 @@ class PatternLibraryController
             $mimeType = mime_content_type($filePath);
             $filename = basename($filePath);
 
+            // [AI:Claude] SÉCURITÉ: Échapper le filename pour prévenir HTTP Response Splitting
+            $safeFilename = SecurityHelper::escapeFilename($filename);
+
             // [AI:Claude] Headers pour le téléchargement
             header('Content-Type: '.$mimeType);
-            header('Content-Disposition: inline; filename="'.$filename.'"');
+            header('Content-Disposition: inline; filename="'.$safeFilename.'"');
             header('Content-Length: '.filesize($filePath));
             header('Cache-Control: public, max-age=3600');
 

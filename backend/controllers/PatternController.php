@@ -24,6 +24,7 @@ use App\Services\PDFService;
 use App\Middleware\AuthMiddleware;
 use App\Utils\Response;
 use App\Utils\Validator;
+use App\Helpers\SecurityHelper;
 
 /**
  * [AI:Claude] Contrôleur de gestion des patrons
@@ -270,8 +271,11 @@ class PatternController
 
             $filepath = $result['filepath'];
 
+            // [AI:Claude] SÉCURITÉ: Échapper le filename pour prévenir HTTP Response Splitting
+            $safeFilename = SecurityHelper::escapeFilename($result['filename']);
+
             header('Content-Type: application/pdf');
-            header('Content-Disposition: attachment; filename="'.$result['filename'].'"');
+            header('Content-Disposition: attachment; filename="'.$safeFilename.'"');
             header('Content-Length: '.$result['size']);
 
             readfile($filepath);

@@ -62,7 +62,9 @@ class PatternLibrary
 
         if (!empty($filters['search'])) {
             $conditions[] = '(name LIKE :search OR description LIKE :search)';
-            $params[':search'] = '%'.$filters['search'].'%';
+            // [AI:Claude] SÉCURITÉ: Échapper les wildcards LIKE pour éviter les recherches non intentionnelles
+            $searchTerm = $this->escapeLikeWildcards($filters['search']);
+            $params[':search'] = '%'.$searchTerm.'%';
         }
 
         $whereClause = implode(' AND ', $conditions);
@@ -327,5 +329,22 @@ class PatternLibrary
         $stmt->execute();
 
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * [AI:Claude] Échapper les caractères wildcards LIKE pour éviter les recherches non intentionnelles
+     *
+     * @param string $value Valeur à échapper
+     * @return string Valeur échappée
+     */
+    private function escapeLikeWildcards(string $value): string
+    {
+        // [AI:Claude] Échapper les caractères spéciaux LIKE: % et _
+        // ainsi que le caractère d'échappement \ lui-même
+        return str_replace(
+            ['\\', '%', '_'],
+            ['\\\\', '\\%', '\\_'],
+            $value
+        );
     }
 }

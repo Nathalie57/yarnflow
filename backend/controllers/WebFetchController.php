@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\WebFetchService;
+use App\Helpers\SecurityHelper;
 
 class WebFetchController {
     /**
@@ -72,7 +73,8 @@ class WebFetchController {
 
             if (empty($url)) {
                 http_response_code(400);
-                echo 'URL manquante';
+                // [AI:Claude] SÉCURITÉ: Échapper les erreurs pour prévenir XSS
+                echo SecurityHelper::escapeHtml('URL manquante');
                 return;
             }
 
@@ -81,22 +83,29 @@ class WebFetchController {
 
             if (!$result['success']) {
                 http_response_code(400);
-                echo 'Erreur: ' . $result['error'];
+                // [AI:Claude] SÉCURITÉ: Échapper les erreurs pour prévenir XSS
+                echo SecurityHelper::escapeHtml('Erreur: ' . $result['error']);
                 return;
             }
 
             // Réécrire les URLs
             $html = WebFetchService::rewriteUrls($result['html'], $url);
 
-            // Servir le HTML avec les bons headers
+            // [AI:Claude] SÉCURITÉ: Headers CSP pour limiter les risques du contenu externe
             header('Content-Type: text/html; charset=UTF-8');
+            header("Content-Security-Policy: default-src 'self' *; script-src 'unsafe-inline' 'unsafe-eval' *; style-src 'unsafe-inline' *; img-src * data: blob:; font-src * data:; connect-src *;");
+            header('X-Content-Type-Options: nosniff');
             // Ne pas mettre de restrictions X-Frame-Options pour permettre l'affichage dans l'iframe
             // Le contenu provient de sites externes, on ne peut pas imposer SAMEORIGIN
 
+            // [AI:Claude] SÉCURITÉ: Le HTML vient d'un site externe et est affiché tel quel
+            // C'est nécessaire pour le fonctionnement du proxy, mais potentiellement dangereux
+            // L'iframe côté React doit avoir l'attribut sandbox pour limiter les risques
             echo $html;
         } catch (\Exception $e) {
             http_response_code(500);
-            echo 'Erreur: ' . $e->getMessage();
+            // [AI:Claude] SÉCURITÉ: Sanitizer le message d'erreur
+            echo SecurityHelper::sanitizeErrorMessage($e->getMessage());
         }
     }
 

@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Services\AIPhotoService;
 use App\Services\CreditManager;
 use App\Middleware\AuthMiddleware;
+use App\Helpers\SecurityHelper;
 use App\Config\Database;
 use PDO;
 
@@ -504,9 +505,12 @@ class PhotoController
             // Déterminer le nom du fichier
             $filename = basename($filePath);
 
+            // [AI:Claude] SÉCURITÉ: Échapper le filename pour prévenir HTTP Response Splitting
+            $safeFilename = SecurityHelper::escapeFilename($filename);
+
             // Forcer le téléchargement
             header('Content-Type: application/octet-stream');
-            header('Content-Disposition: attachment; filename="' . $filename . '"');
+            header('Content-Disposition: attachment; filename="' . $safeFilename . '"');
             header('Content-Length: ' . filesize($fullPath));
             header('Cache-Control: no-cache, must-revalidate');
             header('Pragma: public');
