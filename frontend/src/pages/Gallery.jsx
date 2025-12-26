@@ -11,7 +11,7 @@
  *   2025-11-14 [AI:Claude] Création initiale avec upload + génération IA Gemini
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useImagePreview } from '../hooks/useImagePreview'
@@ -42,6 +42,10 @@ const Gallery = () => {
   const [showEnhanceModal, setShowEnhanceModal] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState(null)
 
+  // [AI:Claude] Menu dropdown pour actions secondaires
+  const [openMenuId, setOpenMenuId] = useState(null)
+  const menuRef = useRef(null)
+
   // [AI:Claude] Upload de photo
   const [uploadData, setUploadData] = useState({
     photo: null,
@@ -71,6 +75,18 @@ const Gallery = () => {
   useEffect(() => {
     fetchPhotos()
     fetchCredits()
+  }, [])
+
+  // [AI:Claude] Fermer le menu si clic à l'extérieur
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuId(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   const fetchPhotos = async () => {
@@ -544,227 +560,231 @@ const Gallery = () => {
               {getFilteredPhotos().map(photo => (
                 <div
                   key={photo.id}
-                  className="relative rounded-lg overflow-hidden group aspect-square bg-gray-100"
+                  className="relative rounded-lg overflow-hidden group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow"
                 >
                   {/* Photo IA générée */}
                   <img
                     src={`${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`}
                     alt={photo.item_name || 'Photo IA'}
-                    className="w-full h-full object-cover cursor-pointer"
-                    onClick={() => window.open(`${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`, '_blank')}
+                    className="w-full h-full object-cover"
                     onError={(e) => {
                       console.error('Erreur chargement image:', photo.enhanced_path)
                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
                     }}
                   />
 
-                  {/* Overlay avec actions au hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    {/* Info en haut */}
-                    <div className="absolute top-3 right-3 left-3">
-                      <p className="text-white text-sm font-bold drop-shadow-lg line-clamp-1">
+                  {/* Overlay minimaliste au hover */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {/* Nom de la photo */}
+                    <div className="absolute top-3 left-3 right-3">
+                      <p className="text-white text-sm font-semibold drop-shadow-lg line-clamp-1">
                         {photo.item_name || 'Sans nom'}
                       </p>
                     </div>
 
-                    {/* Boutons en bas */}
-                    <div className="absolute bottom-0 inset-x-0 p-4">
-                      {/* Boutons principaux */}
-                      <div className="flex flex-col gap-2 mb-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              window.open(`${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`, '_blank')
-                            }}
-                            className="flex-1 px-4 py-2 bg-white text-gray-900 rounded-lg font-bold hover:bg-gray-100 transition text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-                          >
-                            📥 Télécharger
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDelete(photo.id)
-                            }}
-                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-red-300"
-                            title="Supprimer"
-                          >
-                            🗑️
-                          </button>
-                        </div>
+                    {/* Actions principales (3 boutons) */}
+                    <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center gap-3">
+                      {/* Voir en grand */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          window.open(`${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`, '_blank')
+                        }}
+                        className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                        title="Voir en grand"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
 
-                        {/* Bouton "Définir comme photo de couverture" si photo liée à un projet */}
-                        {photo.project_id && (
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              try {
-                                await api.put(`/projects/${photo.project_id}/set-cover-photo`, {
-                                  photo_id: photo.id
-                                })
-                                alert('✅ Photo de couverture mise à jour !')
-                              } catch (err) {
-                                console.error('Erreur:', err)
-                                alert('❌ Erreur lors de la mise à jour')
-                              }
-                            }}
-                            className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-300"
-                            title="Définir comme photo de couverture du projet"
-                          >
-                            📸 Définir comme couverture
-                          </button>
-                        )}
-                      </div>
+                      {/* Télécharger */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const link = document.createElement('a')
+                          link.href = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
+                          link.download = `${photo.item_name || 'photo'}.jpg`
+                          link.click()
+                        }}
+                        className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                        title="Télécharger"
+                      >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </button>
 
-                      {/* Boutons partage réseaux sociaux */}
-                      <div className="flex items-center justify-center gap-2">
-                        <span className="text-white text-xs font-medium mr-1">Partager:</span>
-
-                        {/* Instagram */}
+                      {/* Menu actions (dropdown) */}
+                      <div className="relative" ref={openMenuId === photo.id ? menuRef : null}>
                         <button
-                          onClick={async (e) => {
+                          onClick={(e) => {
                             e.stopPropagation()
-                            const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
+                            setOpenMenuId(openMenuId === photo.id ? null : photo.id)
+                          }}
+                          className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                          title="Plus d'actions"
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                          </svg>
+                        </button>
 
-                            // [AI:Claude] Sur mobile, utiliser Web Share API
-                            if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                              try {
-                                // Récupérer l'image en blob
-                                const response = await fetch(url)
-                                const blob = await response.blob()
-                                const file = new File([blob], `${photo.item_name || 'photo'}.jpg`, { type: 'image/jpeg' })
+                        {/* Dropdown menu */}
+                        {openMenuId === photo.id && (
+                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-white rounded-lg shadow-2xl border border-gray-200 py-2 z-10">
+                            {/* Photo de couverture */}
+                            {photo.project_id && (
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  try {
+                                    await api.put(`/projects/${photo.project_id}/set-cover-photo`, {
+                                      photo_id: photo.id
+                                    })
+                                    alert('✅ Photo de couverture mise à jour !')
+                                    setOpenMenuId(null)
+                                  } catch (err) {
+                                    console.error('Erreur:', err)
+                                    alert('❌ Erreur lors de la mise à jour')
+                                  }
+                                }}
+                                className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                              >
+                                <span className="text-lg">📸</span>
+                                <span>Définir comme couverture</span>
+                              </button>
+                            )}
 
-                                await navigator.share({
-                                  files: [file],
-                                  title: photo.item_name || 'Ma photo tricot/crochet',
-                                  text: `Découvrez mon ${photo.item_name || 'ouvrage'} ! 🧶✨`
-                                })
-                              } catch (err) {
-                                if (err.name !== 'AbortError') {
-                                  console.error('Erreur partage:', err)
-                                  alert('Impossible de partager. Téléchargement de l\'image...')
+                            {/* Divider */}
+                            {photo.project_id && <div className="border-t border-gray-200 my-1"></div>}
+
+                            {/* Section Partage */}
+                            <div className="px-4 py-1.5">
+                              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Partager</p>
+                            </div>
+
+                            {/* Instagram */}
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
+
+                                if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                                  try {
+                                    const response = await fetch(url)
+                                    const blob = await response.blob()
+                                    const file = new File([blob], `${photo.item_name || 'photo'}.jpg`, { type: 'image/jpeg' })
+                                    await navigator.share({
+                                      files: [file],
+                                      title: photo.item_name || 'Ma photo tricot/crochet',
+                                      text: `Découvrez mon ${photo.item_name || 'ouvrage'} ! 🧶✨`
+                                    })
+                                    setOpenMenuId(null)
+                                  } catch (err) {
+                                    if (err.name !== 'AbortError') {
+                                      console.error('Erreur partage:', err)
+                                      const link = document.createElement('a')
+                                      link.href = url
+                                      link.download = `${photo.item_name || 'photo'}-instagram.jpg`
+                                      link.click()
+                                    }
+                                  }
+                                } else {
                                   const link = document.createElement('a')
                                   link.href = url
                                   link.download = `${photo.item_name || 'photo'}-instagram.jpg`
                                   link.click()
+                                  alert('📸 Image téléchargée pour Instagram !')
+                                  setOpenMenuId(null)
                                 }
-                              }
-                            } else {
-                              // Desktop : télécharger l'image
-                              const link = document.createElement('a')
-                              link.href = url
-                              link.download = `${photo.item_name || 'photo'}-instagram.jpg`
-                              link.click()
-                              alert('📸 Image téléchargée !')
-                            }
-                          }}
-                          className="w-8 h-8 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 hover:from-primary-700 hover:via-primary-800 hover:to-primary-900 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary-300"
-                          title="Partager sur Instagram"
-                        >
-                          IG
-                        </button>
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                            >
+                              <span className="text-lg">📷</span>
+                              <span>Instagram</span>
+                            </button>
 
-                        {/* TikTok */}
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
+                            {/* Pinterest */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
+                                const description = photo.item_name || 'Photo tricot/crochet'
+                                window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(url)}&description=${encodeURIComponent(description)}`, '_blank')
+                                setOpenMenuId(null)
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                            >
+                              <span className="text-lg">📌</span>
+                              <span>Pinterest</span>
+                            </button>
 
-                            // [AI:Claude] Sur mobile, utiliser Web Share API
-                            if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                              try {
-                                // Récupérer l'image en blob
-                                const response = await fetch(url)
-                                const blob = await response.blob()
-                                const file = new File([blob], `${photo.item_name || 'photo'}.jpg`, { type: 'image/jpeg' })
+                            {/* Facebook */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')
+                                setOpenMenuId(null)
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                            >
+                              <span className="text-lg">👥</span>
+                              <span>Facebook</span>
+                            </button>
 
-                                await navigator.share({
-                                  files: [file],
-                                  title: photo.item_name || 'Ma photo tricot/crochet',
-                                  text: `Découvrez mon ${photo.item_name || 'ouvrage'} ! 🧶✨`
-                                })
-                              } catch (err) {
-                                if (err.name !== 'AbortError') {
-                                  console.error('Erreur partage:', err)
-                                  alert('Impossible de partager. Téléchargement de l\'image...')
-                                  const link = document.createElement('a')
-                                  link.href = url
-                                  link.download = `${photo.item_name || 'photo'}-tiktok.jpg`
-                                  link.click()
+                            {/* Twitter/X */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                const text = `Découvrez mon ${photo.item_name || 'ouvrage'} ! 🧶✨`
+                                window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank')
+                                setOpenMenuId(null)
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                            >
+                              <span className="text-lg">𝕏</span>
+                              <span>Twitter / X</span>
+                            </button>
+
+                            {/* Copier lien */}
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
+                                try {
+                                  await navigator.clipboard.writeText(url)
+                                  alert('✅ Lien copié !')
+                                  setOpenMenuId(null)
+                                } catch (err) {
+                                  console.error('Erreur copie:', err)
+                                  alert('❌ Impossible de copier le lien')
                                 }
-                              }
-                            } else {
-                              // Desktop : télécharger l'image
-                              const link = document.createElement('a')
-                              link.href = url
-                              link.download = `${photo.item_name || 'photo'}-tiktok.jpg`
-                              link.click()
-                              alert('📸 Image téléchargée !')
-                            }
-                          }}
-                          className="w-8 h-8 bg-black hover:bg-gray-900 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs font-bold"
-                          title="Partager sur TikTok"
-                        >
-                          TT
-                        </button>
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-3"
+                            >
+                              <span className="text-lg">🔗</span>
+                              <span>Copier le lien</span>
+                            </button>
 
-                        {/* Pinterest */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
-                            const description = photo.item_name || 'Photo tricot/crochet'
-                            window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(url)}&description=${encodeURIComponent(description)}`, '_blank')
-                          }}
-                          className="w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs focus:outline-none focus:ring-2 focus:ring-red-300"
-                          title="Partager sur Pinterest"
-                        >
-                          📌
-                        </button>
+                            {/* Divider */}
+                            <div className="border-t border-gray-200 my-1"></div>
 
-                        {/* Facebook */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')
-                          }}
-                          className="w-8 h-8 bg-primary-600 hover:bg-primary-700 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary-300"
-                          title="Partager sur Facebook"
-                        >
-                          f
-                        </button>
-
-                        {/* Twitter/X */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            const text = `Découvrez mon ${photo.item_name || 'ouvrage'} ! 🧶✨`
-                            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank')
-                          }}
-                          className="w-8 h-8 bg-black hover:bg-gray-800 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs font-bold"
-                          title="Partager sur X (Twitter)"
-                        >
-                          𝕏
-                        </button>
-
-                        {/* Copier lien */}
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
-                            try {
-                              await navigator.clipboard.writeText(url)
-                              alert('Lien copié dans le presse-papier !')
-                            } catch (err) {
-                              console.error('Erreur copie:', err)
-                              alert('Impossible de copier le lien')
-                            }
-                          }}
-                          className="w-8 h-8 bg-gray-700 hover:bg-gray-600 text-white rounded-full flex items-center justify-center transition shadow-lg text-xs focus:outline-none focus:ring-2 focus:ring-gray-400"
-                          title="Copier le lien"
-                        >
-                          🔗
-                        </button>
+                            {/* Supprimer */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOpenMenuId(null)
+                                handleDelete(photo.id)
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 font-medium"
+                            >
+                              <span className="text-lg">🗑️</span>
+                              <span>Supprimer</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
