@@ -31,42 +31,65 @@ ini_set('display_errors', $_ENV['APP_DEBUG'] === 'true' ? '1' : '0');
 
 header('Content-Type: application/json; charset=utf-8');
 
+// [AI:Claude] SÉCURITÉ: Appliquer les middlewares de sécurité
 use App\Middleware\CorsMiddleware;
+use App\Middleware\SecurityHeadersMiddleware;
+
+SecurityHeadersMiddleware::handle();
+SecurityHeadersMiddleware::hideServerInfo();
 CorsMiddleware::handle();
 
+// [AI:Claude] SÉCURITÉ: Error handler qui ne révèle pas d'informations sensibles
 set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+    // [AI:Claude] Toujours logger l'erreur complète côté serveur
     error_log("[Error] {$errstr} in {$errfile} on line {$errline}");
-    if ($_ENV['APP_DEBUG'] === 'true') {
+
+    // [AI:Claude] SÉCURITÉ: En production, ne jamais révéler les chemins de fichiers ou détails techniques
+    $isDebug = ($_ENV['APP_DEBUG'] ?? 'false') === 'true';
+
+    if ($isDebug) {
+        // [AI:Claude] Mode debug: montrer les détails (dev uniquement)
         http_response_code(500);
         echo json_encode([
             'success' => false,
             'message' => 'Erreur serveur',
             'debug' => [
                 'error' => $errstr,
-                'file' => $errfile,
+                'file' => basename($errfile),  // Seulement le nom du fichier, pas le chemin complet
                 'line' => $errline
             ]
         ]);
         exit;
+    } else {
+        // [AI:Claude] Mode production: message générique uniquement
+        // Ne rien afficher ici, laisser l'application continuer
+        return false;  // Laisser le error handler par défaut gérer si nécessaire
     }
 });
 
 set_exception_handler(function ($exception) {
-    error_log("[Exception] ".$exception->getMessage());
+    // [AI:Claude] Logger l'exception complète avec stack trace
+    error_log("[Exception] " . $exception->getMessage());
+    error_log("[Exception Stack] " . $exception->getTraceAsString());
+
     http_response_code(500);
+
+    $isDebug = ($_ENV['APP_DEBUG'] ?? 'false') === 'true';
 
     $response = [
         'success' => false,
-        'message' => 'Erreur serveur'
+        'message' => 'Une erreur est survenue. Veuillez réessayer ultérieurement.'
     ];
 
-    if ($_ENV['APP_DEBUG'] === 'true') {
+    // [AI:Claude] SÉCURITÉ: Ne montrer les détails qu'en mode debug
+    if ($isDebug) {
         $response['debug'] = [
             'message' => $exception->getMessage(),
-            'file' => $exception->getFile(),
+            'file' => basename($exception->getFile()),  // Seulement le nom du fichier
             'line' => $exception->getLine(),
-            'trace' => $exception->getTraceAsString()
+            'trace' => explode("\n", $exception->getTraceAsString())  // Format tableau pour meilleure lisibilité
         ];
+        $response['warning'] = 'DEBUG MODE: Ces informations ne doivent pas être visibles en production';
     }
 
     echo json_encode($response);
