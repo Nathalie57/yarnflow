@@ -141,8 +141,9 @@ class AIPhotoService
                 error_log("[GEMINI] Using UPSCALE prompt (from preview)");
             } else {
                 $itemName = $options['item_name'] ?? '';
-                $prompt = $this->buildPrompt($projectType, $context, $itemName);
-                error_log("[GEMINI] Using GENERATION prompt (from original)");
+                $modelGender = $options['model_gender'] ?? 'person'; // person, male, female
+                $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender);
+                error_log("[GEMINI] Using GENERATION prompt (from original) - Model gender: $modelGender");
             }
 
             // [AI:Claude] Mode simulation (pour tester sans API)
@@ -204,12 +205,21 @@ class AIPhotoService
      *
      * @param string $type Type de projet (Vêtements, Accessoires, etc.)
      * @param string $context Contexte visuel (studio_white, product_white, etc.)
+     * @param string $itemName Nom de l'article (optionnel)
+     * @param string $modelGender Genre du modèle : 'person' (neutre), 'male' (homme), 'female' (femme)
      * @return string Prompt optimisé
      */
-    private function buildPrompt(string $type, string $context, string $itemName = ''): string
+    private function buildPrompt(string $type, string $context, string $itemName = '', string $modelGender = 'person'): string
     {
         // [AI:Claude] Récupérer la description du contexte
         $contextDescription = self::CONTEXTS[$context] ?? self::CONTEXTS['lifestyle'];
+
+        // [AI:Claude] Déterminer le texte pour le modèle selon le genre choisi
+        $modelText = match($modelGender) {
+            'male' => 'un homme (modèle masculin)',
+            'female' => 'une femme (modèle féminin)',
+            default => 'une vraie personne (modèle humain vivant)'
+        };
 
         // [AI:Claude] v0.14.0 - Prompt ULTRA STRICT spécifique pour photos portées
         $isWornContext = in_array($context, [
@@ -230,8 +240,8 @@ class AIPhotoService
         ]);
 
         if ($isWornContext) {
-            // Pour photos portées : préciser qu'on veut une vraie personne (pas un mannequin de vitrine)
-            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. L'article doit être porté par une vraie personne (modèle humain vivant), PAS un mannequin de vitrine en plastique. ÉTAPES CRITIQUES : 1) Garde l'ouvrage fait main porté par le modèle. 2) RETIRE tous les éléments parasites : mains qui tiennent artificiellement l'ouvrage (sauf si elles font naturellement partie de la pose), objets indésirables, fond original moche. 3) Place le modèle portant l'ouvrage dans le nouveau contexte avec une pose naturelle et appropriée. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la pose du modèle, la position dans l'espace pour créer une belle composition naturelle, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage lui-même (couleurs, motifs, texture). L'ouvrage porté doit être bien mis en valeur dans une scène réaliste.";
+            // Pour photos portées : préciser le genre du modèle si demandé
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. L'article doit être porté par {$modelText}, PAS un mannequin de vitrine en plastique. ÉTAPES CRITIQUES : 1) Garde l'ouvrage fait main porté par le modèle. 2) RETIRE tous les éléments parasites : mains qui tiennent artificiellement l'ouvrage (sauf si elles font naturellement partie de la pose), objets indésirables, fond original moche. 3) Place le modèle portant l'ouvrage dans le nouveau contexte avec une pose naturelle et appropriée. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la pose du modèle, la position dans l'espace pour créer une belle composition naturelle, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage lui-même (couleurs, motifs, texture). L'ouvrage porté doit être bien mis en valeur dans une scène réaliste.";
         }
 
         // [AI:Claude] v0.14.0 - Prompt spécifique pour tous les accessoires bébé (toujours à plat)
@@ -556,8 +566,9 @@ class AIPhotoService
             $projectType = $options['project_type'] ?? 'handmade craft';
             $context = $options['context'] ?? 'lifestyle';
             $itemName = $options['item_name'] ?? '';
+            $modelGender = $options['model_gender'] ?? 'person'; // person, male, female
 
-            $prompt = $this->buildPrompt($projectType, $context, $itemName);
+            $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender);
 
             // [AI:Claude] Mode simulation (pour tester sans API)
             if ($this->simulationMode) {
