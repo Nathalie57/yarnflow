@@ -1,5 +1,9 @@
 ---
 deployment:
   tasks:
-    # Déploiement backend - détecte automatiquement staging ou production
-    - /bin/bash -c "BRANCH=$(git branch --show-current); if [ \"$BRANCH\" = \"staging\" ]; then rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/staging.yarnflow.fr/api/; elif [ \"$BRANCH\" = \"main\" ]; then rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/public_html/api/; else echo 'Erreur: branche non autorisee' && exit 1; fi"
+    # Déployer UNIQUEMENT le backend (exclure vendor/ et uploads/)
+    - /bin/bash -c "rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/public_html/api/"
+
+    # Frontend : déployé manuellement via FTP (npm run build + upload dist/)
+    # (La ligne ci-dessous est commentée car dist/ n'est pas dans Git)
+    # - /bin/bash -c "rsync -av --delete --exclude='api/' /home/najo1022/repositories/yarnflow/frontend/dist/ /home/najo1022/public_html/"
