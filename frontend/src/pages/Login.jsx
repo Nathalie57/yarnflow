@@ -126,22 +126,7 @@ const Login = () => {
           {oauthLoading ? 'Connexion...' : 'Continuer avec Google'}
         </button>
 
-        {/* [AI:Claude] DÉSACTIVÉ POUR LA BETA - Lien S'inscrire */}
-        {/* Seules les personnes avec un code beta peuvent s'inscrire via le lien email */}
-        {/*
-        <p className="text-center mt-6 text-gray-600">
-          Pas encore de compte ?{' '}
-          <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
-            S'inscrire
-          </Link>
-        </p>
-        */}
-
-        <p className="text-center mt-6 text-gray-600">
-          🔒 Phase Beta - Inscription sur invitation uniquement
-        </p>
-
-        <p className="text-center mt-4 text-sm text-gray-500">
+        <p className="text-center mt-6 text-sm text-gray-500">
           Besoin d'aide ?{' '}
           <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
             Contactez-nous
