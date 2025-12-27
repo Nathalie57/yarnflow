@@ -4088,36 +4088,82 @@ Rang 3 : *1ms, aug* x6 (18)
                 </label>
                 <div className="space-y-2">
                   {getAvailableStyles(detectProjectCategory(project?.type || '')).map(style => (
-                    <label
-                      key={style.key}
-                      className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
-                        selectedContext?.key === style.key
-                          ? 'border-primary-600 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="style"
-                        value={style.key}
-                        checked={selectedContext?.key === style.key}
-                        onChange={() => setSelectedContext(style)}
-                        className="text-primary-600 focus:ring-primary-500"
-                      />
-                      <span className="text-2xl">{style.icon}</span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900">{style.label}</p>
-                          {style.tier === 'plus' && (
-                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">PLUS</span>
-                          )}
-                          {style.tier === 'pro' && (
-                            <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
-                          )}
+                    <div key={style.key}>
+                      <label
+                        className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
+                          selectedContext?.key === style.key
+                            ? 'border-primary-600 bg-primary-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="style"
+                          value={style.key}
+                          checked={selectedContext?.key === style.key}
+                          onChange={() => setSelectedContext(style)}
+                          className="text-primary-600 focus:ring-primary-500"
+                        />
+                        <span className="text-2xl">{style.icon}</span>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-900">{style.label}</p>
+                            {style.tier === 'plus' && (
+                              <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">PLUS</span>
+                            )}
+                            {style.tier === 'pro' && (
+                              <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600">{style.desc}</p>
                         </div>
-                        <p className="text-sm text-gray-600">{style.desc}</p>
-                      </div>
-                    </label>
+                      </label>
+
+                      {/* Sélecteur de genre intégré pour styles "Porté" */}
+                      {selectedContext?.key === style.key && style.label && style.label.includes('Porté') && (
+                        <div className="mt-2 ml-11 p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">👤 Genre du modèle :</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <label
+                              className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
+                                modelGender === 'male'
+                                  ? 'border-primary-600 bg-white ring-2 ring-primary-300'
+                                  : 'border-gray-300 bg-white hover:border-primary-400'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="modelGender"
+                                value="male"
+                                checked={modelGender === 'male'}
+                                onChange={(e) => setModelGender(e.target.value)}
+                                className="sr-only"
+                              />
+                              <span className="text-2xl">👨</span>
+                              <span className="text-xs font-semibold text-gray-900">Homme</span>
+                            </label>
+                            <label
+                              className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
+                                modelGender === 'female'
+                                  ? 'border-primary-600 bg-white ring-2 ring-primary-300'
+                                  : 'border-gray-300 bg-white hover:border-primary-400'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="modelGender"
+                                value="female"
+                                checked={modelGender === 'female'}
+                                onChange={(e) => setModelGender(e.target.value)}
+                                className="sr-only"
+                              />
+                              <span className="text-2xl">👩</span>
+                              <span className="text-xs font-semibold text-gray-900">Femme</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
 
@@ -4145,56 +4191,6 @@ Rang 3 : *1ms, aug* x6 (18)
                   </div>
                 )}
               </div>
-
-              {/* Choix du genre du modèle (uniquement pour styles avec modèle "Porté") */}
-              {selectedContext && selectedContext.label && selectedContext.label.includes('Porté') && (
-                <div className="mb-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    👤 Genre du modèle :
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <label
-                      className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition ${
-                        modelGender === 'male'
-                          ? 'border-primary-600 bg-primary-50 ring-2 ring-primary-300'
-                          : 'border-gray-300 bg-white hover:border-primary-400'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="modelGender"
-                        value="male"
-                        checked={modelGender === 'male'}
-                        onChange={(e) => setModelGender(e.target.value)}
-                        className="sr-only"
-                      />
-                      <span className="text-4xl">👨</span>
-                      <span className="text-sm font-semibold text-gray-900">Homme</span>
-                    </label>
-                    <label
-                      className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition ${
-                        modelGender === 'female'
-                          ? 'border-primary-600 bg-primary-50 ring-2 ring-primary-300'
-                          : 'border-gray-300 bg-white hover:border-primary-400'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="modelGender"
-                        value="female"
-                        checked={modelGender === 'female'}
-                        onChange={(e) => setModelGender(e.target.value)}
-                        className="sr-only"
-                      />
-                      <span className="text-4xl">👩</span>
-                      <span className="text-sm font-semibold text-gray-900">Femme</span>
-                    </label>
-                  </div>
-                  <p className="mt-3 text-xs text-blue-700 font-medium">
-                    💡 Choisissez le genre du modèle qui portera votre création
-                  </p>
-                </div>
-              )}
 
               {/* Aperçu gratuit - DÉSACTIVÉ pour économiser les coûts API */}
               {/*
