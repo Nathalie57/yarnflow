@@ -102,9 +102,7 @@ const Login = () => {
           </div>
         </form>
 
-        {/* [AI:Claude] DÉSACTIVÉ POUR LA BETA - OAuth Google */}
-        {/* Les utilisateurs beta doivent se connecter avec l'email exact qui a reçu le code */}
-        {/*
+        {/* [AI:Claude] OAuth Google */}
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300"></div>
@@ -127,7 +125,6 @@ const Login = () => {
           </svg>
           {oauthLoading ? 'Connexion...' : 'Continuer avec Google'}
         </button>
-        */}
 
         {/* [AI:Claude] DÉSACTIVÉ POUR LA BETA - Lien S'inscrire */}
         {/* Seules les personnes avec un code beta peuvent s'inscrire via le lien email */}
