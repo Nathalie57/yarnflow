@@ -67,6 +67,8 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Photos du projet
   const [projectPhotos, setProjectPhotos] = useState([])
+  const [openMenuId, setOpenMenuId] = useState(null) // [AI:Claude] Menu dropdown pour actions photo
+  const menuRef = useRef(null) // [AI:Claude] Ref pour fermer le menu au clic extérieur
 
   // [AI:Claude] Patron (PDF, Image ou URL)
   const [patternFile, setPatternFile] = useState(null)
@@ -102,6 +104,7 @@ const ProjectCounter = () => {
   const [enhancing, setEnhancing] = useState(false)
   const [credits, setCredits] = useState(null)
   const [hideAIWarning, setHideAIWarning] = useState(false) // [AI:Claude] Cacher l'avertissement IA si l'utilisateur a coché "Ne plus afficher"
+  const [showInstagramModal, setShowInstagramModal] = useState(false) // [AI:Claude] Modale Instagram pour partage
 
   // [AI:Claude] Modales de confirmation et alertes
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -307,6 +310,28 @@ const ProjectCounter = () => {
       return () => document.removeEventListener('click', handleClickOutside)
     }
   }, [showTechniqueMenu, showTypeMenu])
+
+  // [AI:Claude] Fermer le menu photo dropdown au clic extérieur
+  useEffect(() => {
+    if (!openMenuId) return
+
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenuId(null)
+      }
+    }
+
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('touchstart', handleClickOutside)
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [openMenuId])
 
   // [AI:Claude] Mettre à jour currentRow UNIQUEMENT quand on change de section
   // [AI:Claude] FIX BUG: Ajouter 'sections' dans les dépendances pour éviter la propagation
@@ -3047,96 +3072,276 @@ const ProjectCounter = () => {
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {photoVariations.map((variation) => (
-                                <div key={variation.id} className="group relative">
+                                <div key={variation.id} className="relative rounded-lg group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow">
+                                  {/* Photo IA générée */}
                                   <img
                                     src={`${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`}
                                     alt={`Variation ${variation.ai_style || 'IA'}`}
-                                    className="w-full h-64 object-cover rounded-lg border-2 border-primary-300 group-hover:border-primary-500 transition cursor-pointer shadow-md hover:shadow-xl"
-                                    onClick={() => setLightboxImage(`${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`)}
+                                    className="w-full h-full object-cover rounded-lg"
+                                    onError={(e) => {
+                                      console.error('Erreur chargement image:', variation.enhanced_path)
+                                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
+                                    }}
                                   />
-                                  <div className="absolute top-3 left-3 bg-primary-600 text-white text-sm px-3 py-1.5 rounded-lg font-semibold shadow-lg flex items-center gap-1">
+
+                                  {/* Badge style IA en haut */}
+                                  <div className="absolute top-3 left-3 bg-primary-600 text-white text-xs px-3 py-1 rounded-lg font-semibold shadow-lg">
                                     {getStyleLabel(variation.ai_style)}
                                   </div>
 
-                                  {/* Overlay voir en grand (z-index 10) */}
-                                  <button
-                                    onClick={() => setLightboxImage(`${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`)}
-                                    className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 z-10"
-                                  >
-                                    <span className="text-white font-bold bg-black bg-opacity-75 px-4 py-2 rounded-lg text-base">
-                                      🔍 Voir en grand
-                                    </span>
-                                  </button>
+                                  {/* Overlay minimaliste au hover */}
+                                  <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 rounded-lg ${openMenuId === variation.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                    {/* Actions principales (3 boutons circulaires) */}
+                                    <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center gap-3">
+                                      {/* Voir en grand */}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setLightboxImage(`${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`)
+                                        }}
+                                        className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                                        title="Voir en grand"
+                                      >
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                      </button>
 
-                                  {/* Boutons actions (z-index 20 pour être au-dessus) */}
-                                  <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition z-20">
-                                    {/* Bouton télécharger */}
-                                    <button
-                                      onClick={async (e) => {
-                                        e.stopPropagation()
-                                        try {
-                                          const token = localStorage.getItem('token')
-                                          const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/photos/${variation.id}/download`, {
-                                            headers: {
-                                              'Authorization': `Bearer ${token}`
-                                            }
-                                          })
-
-                                          if (!response.ok) throw new Error('Erreur téléchargement')
-
-                                          const blob = await response.blob()
-                                          const url = window.URL.createObjectURL(blob)
+                                      {/* Télécharger */}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
                                           const link = document.createElement('a')
-                                          link.href = url
+                                          link.href = `${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`
                                           link.download = `${project.name.replace(/[^a-z0-9]/gi, '_')}_${variation.ai_style || 'photo'}.jpg`
-                                          document.body.appendChild(link)
                                           link.click()
-                                          document.body.removeChild(link)
-                                          window.URL.revokeObjectURL(url)
-                                        } catch (err) {
-                                          console.error('Erreur:', err)
-                                          alert('❌ Erreur lors du téléchargement')
-                                        }
-                                      }}
-                                      className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg text-center"
-                                      title="Télécharger cette photo"
-                                    >
-                                      📥 Télécharger
-                                    </button>
+                                        }}
+                                        className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                                        title="Télécharger"
+                                      >
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                        </svg>
+                                      </button>
 
-                                    {/* Bouton photo de couverture */}
-                                    <button
-                                      onClick={async (e) => {
-                                        e.stopPropagation()
-                                        try {
-                                          await api.put(`/projects/${project.id}/set-cover-photo`, {
-                                            photo_id: variation.id
-                                          })
-                                          alert('✅ Photo de couverture mise à jour !')
-                                          // Rafraîchir le projet
-                                          fetchProject()
-                                        } catch (err) {
-                                          console.error('Erreur:', err)
-                                          alert('❌ Erreur lors de la mise à jour')
-                                        }
-                                      }}
-                                      className="w-full bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
-                                      title="Définir comme photo de couverture"
-                                    >
-                                      📸 Définir comme couverture
-                                    </button>
+                                      {/* Menu actions (dropdown) */}
+                                      <div className="relative" ref={openMenuId === variation.id ? menuRef : null}>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            setOpenMenuId(openMenuId === variation.id ? null : variation.id)
+                                          }}
+                                          className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                                          title="Plus d'actions"
+                                        >
+                                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                          </svg>
+                                        </button>
 
-                                    {/* Bouton supprimer */}
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleDeletePhoto(variation.id)
-                                      }}
-                                      className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-lg"
-                                      title="Supprimer cette variation"
-                                    >
-                                      🗑️ Supprimer
-                                    </button>
+                                        {/* Dropdown menu */}
+                                        {openMenuId === variation.id && (
+                                          <div className="absolute bottom-full mb-2 right-0 w-56 bg-gradient-to-br from-primary-50 via-warm-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
+                                            {/* Photo de couverture */}
+                                            <button
+                                              onClick={async (e) => {
+                                                e.stopPropagation()
+                                                try {
+                                                  await api.put(`/projects/${project.id}/set-cover-photo`, { photo_id: variation.id })
+                                                  alert('✅ Photo de couverture mise à jour !')
+                                                  fetchProject()
+                                                  setOpenMenuId(null)
+                                                } catch (err) {
+                                                  console.error('Erreur:', err)
+                                                  alert('❌ Erreur lors de la mise à jour')
+                                                }
+                                              }}
+                                              className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
+                                            >
+                                              <span className="text-lg">📸</span>
+                                              <span>Définir comme couverture</span>
+                                            </button>
+
+                                            {/* Divider */}
+                                            <div className="border-t border-primary-200 my-1"></div>
+
+                                            {/* Mobile : un seul bouton "Partager" */}
+                                            {isMobile ? (
+                                              <button
+                                                onClick={async (e) => {
+                                                  e.preventDefault()
+                                                  e.stopPropagation()
+                                                  const url = `${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`
+
+                                                  if (navigator.share) {
+                                                    try {
+                                                      const response = await fetch(url)
+                                                      const blob = await response.blob()
+                                                      const file = new File([blob], `${variation.item_name || 'photo'}.jpg`, { type: 'image/jpeg' })
+                                                      await navigator.share({
+                                                        files: [file],
+                                                        title: variation.item_name || 'Ma photo tricot/crochet',
+                                                        text: `Découvrez mon ${variation.item_name || 'ouvrage'} ! 🧶✨`
+                                                      })
+                                                      setOpenMenuId(null)
+                                                    } catch (err) {
+                                                      if (err.name !== 'AbortError') {
+                                                        console.error('Erreur partage:', err)
+                                                      }
+                                                    }
+                                                  }
+                                                }}
+                                                className="w-full px-4 py-2.5 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors font-medium"
+                                              >
+                                                <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                                </svg>
+                                                <span>Partager</span>
+                                              </button>
+                                            ) : (
+                                              // Desktop : toutes les options individuelles
+                                              <>
+                                                {/* Instagram */}
+                                                <button
+                                                  onClick={async (e) => {
+                                                    e.preventDefault()
+                                                    e.stopPropagation()
+                                                    const url = `${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`
+
+                                                    try {
+                                                      const response = await fetch(url)
+                                                      const blob = await response.blob()
+                                                      const blobUrl = window.URL.createObjectURL(blob)
+
+                                                      const link = document.createElement('a')
+                                                      link.href = blobUrl
+                                                      link.download = `${variation.item_name || 'photo'}-instagram.jpg`
+                                                      document.body.appendChild(link)
+                                                      link.click()
+                                                      document.body.removeChild(link)
+
+                                                      window.URL.revokeObjectURL(blobUrl)
+                                                      setShowInstagramModal(true)
+                                                    } catch (err) {
+                                                      console.error('Erreur téléchargement Instagram:', err)
+                                                      alert('❌ Erreur lors du téléchargement de l\'image')
+                                                    }
+                                                    setOpenMenuId(null)
+                                                  }}
+                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                >
+                                                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                                    <defs>
+                                                      <radialGradient id="instagram-gradient" cx="30%" cy="107%" r="150%">
+                                                        <stop offset="0%" stopColor="#FDF497" />
+                                                        <stop offset="5%" stopColor="#FDF497" />
+                                                        <stop offset="45%" stopColor="#FD5949" />
+                                                        <stop offset="60%" stopColor="#D6249F" />
+                                                        <stop offset="90%" stopColor="#285AEB" />
+                                                      </radialGradient>
+                                                    </defs>
+                                                    <rect width="24" height="24" rx="5.4" fill="url(#instagram-gradient)"/>
+                                                    <path d="M12 8.75a3.25 3.25 0 100 6.5 3.25 3.25 0 000-6.5zm0 5.36a2.11 2.11 0 110-4.22 2.11 2.11 0 010 4.22zM16.5 8.58a.76.76 0 11-1.52 0 .76.76 0 011.52 0zm2.16.76c-.05-1.06-.3-2-1.1-2.8-.8-.8-1.74-1.05-2.8-1.1C13.68 5.4 10.32 5.4 9.24 5.44c-1.06.05-2 .3-2.8 1.1-.8.8-1.05 1.74-1.1 2.8C5.4 10.32 5.4 13.68 5.44 14.76c.05 1.06.3 2 1.1 2.8.8.8 1.74 1.05 2.8 1.1 1.08.04 4.44.04 5.52 0 1.06-.05 2-.3 2.8-1.1.8-.8 1.05-1.74 1.1-2.8.04-1.08.04-4.44 0-5.52zM17.23 15.9c-.24.6-.7 1.06-1.3 1.3-1.02.4-3.44.31-4.57.31-1.13 0-3.55.09-4.57-.31a2.3 2.3 0 01-1.3-1.3c-.4-1.02-.31-3.44-.31-4.57 0-1.13-.09-3.55.31-4.57.24-.6.7-1.06 1.3-1.3C7.81 5.06 10.23 5.15 11.36 5.15c1.13 0 3.55-.09 4.57.31.6.24 1.06.7 1.3 1.3.4 1.02.31 3.44.31 4.57 0 1.13.09 3.55-.31 4.57z" fill="white"/>
+                                                  </svg>
+                                                  <span>Instagram</span>
+                                                </button>
+
+                                                {/* Pinterest */}
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    const url = `${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`
+                                                    const description = variation.item_name || 'Photo tricot/crochet'
+                                                    window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(url)}&description=${encodeURIComponent(description)}`, '_blank')
+                                                    setOpenMenuId(null)
+                                                  }}
+                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                >
+                                                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                                    <circle cx="12" cy="12" r="12" fill="#E60023"/>
+                                                    <path d="M12.7 7.2c-2.5 0-3.8 1.8-3.8 3.3 0 .9.3 1.6.9 1.9.1 0 .2.1.3 0 0-.1.1-.4.1-.5 0-.1 0-.2 0-.3-.2-.3-.4-.7-.4-1.3 0-1.6 1.2-3.1 3.1-3.1 1.7 0 2.6 1 2.6 2.4 0 1.8-.8 3.3-2 3.3-.6 0-1.1-.5-1-1.1.2-.7.5-1.5.5-2 0-1.2-1.8-1-1.8.5 0 .4.1.7.1.7s-.5 2-.6 2.4c-.2.7 0 1.7.1 2.3 0 .1.1.1.2.1h.1c.1-.2 1-1.2 1.2-2 .1-.3.3-1.2.3-1.2.2.3.7.6 1.2.6 1.6 0 2.8-1.5 2.8-3.4 0-1.5-1.2-2.8-3-2.8z" fill="white"/>
+                                                  </svg>
+                                                  <span>Pinterest</span>
+                                                </button>
+
+                                                {/* Facebook */}
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')
+                                                    setOpenMenuId(null)
+                                                  }}
+                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                >
+                                                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                                    <circle cx="12" cy="12" r="12" fill="#1877F2"/>
+                                                    <path d="M16.671 15.469l.575-3.75h-3.602V9.406c0-1.026.503-2.027 2.116-2.027h1.636V4.203S15.924 4 14.5 4c-2.973 0-4.917 1.801-4.917 5.062v2.857H6.188v3.75h3.395v9.066c.682.107 1.379.165 2.089.165.71 0 1.407-.058 2.089-.165v-9.066h3.027z" fill="white"/>
+                                                  </svg>
+                                                  <span>Facebook</span>
+                                                </button>
+
+                                                {/* Twitter/X */}
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    const text = `Découvrez mon ${variation.item_name || 'ouvrage'} ! 🧶✨`
+                                                    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank')
+                                                    setOpenMenuId(null)
+                                                  }}
+                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                >
+                                                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                                    <circle cx="12" cy="12" r="12" fill="#000000"/>
+                                                    <path d="M13.355 10.874L17.866 5.5h-1.069l-3.915 4.494L9.933 5.5H6.5l4.731 6.888L6.5 18.5h1.069l4.135-4.748L14.567 18.5H18l-4.645-7.626zm-1.464 1.68l-.479-.685L7.665 6.319h1.64l3.073 4.393.479.685 3.997 5.715h-1.64l-3.262-4.658z" fill="white"/>
+                                                  </svg>
+                                                  <span>Twitter / X</span>
+                                                </button>
+
+                                                {/* Copier lien */}
+                                                <button
+                                                  onClick={async (e) => {
+                                                    e.stopPropagation()
+                                                    const url = `${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`
+                                                    try {
+                                                      await navigator.clipboard.writeText(url)
+                                                      alert('✅ Lien copié !')
+                                                      setOpenMenuId(null)
+                                                    } catch (err) {
+                                                      console.error('Erreur copie:', err)
+                                                      alert('❌ Impossible de copier le lien')
+                                                    }
+                                                  }}
+                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                >
+                                                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                                                    <circle cx="12" cy="12" r="12" fill="#6B7280"/>
+                                                    <path d="M13.544 10.456a4.368 4.368 0 00-6.176 0l-1.5 1.5a4.368 4.368 0 006.176 6.176l.834-.834m2.666-10.842a4.368 4.368 0 016.176 0l1.5 1.5a4.368 4.368 0 01-6.176 6.176l-.834-.834" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                  </svg>
+                                                  <span>Copier le lien</span>
+                                                </button>
+                                              </>
+                                            )}
+
+                                            {/* Divider */}
+                                            <div className="border-t border-primary-200 my-1"></div>
+
+                                            {/* Supprimer */}
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleDeletePhoto(variation.id)
+                                                setOpenMenuId(null)
+                                              }}
+                                              className="w-full px-4 py-2.5 text-left text-sm text-red-700 hover:bg-red-50 flex items-center gap-3 transition-colors font-medium"
+                                            >
+                                              <span className="text-lg">🗑️</span>
+                                              <span>Supprimer</span>
+                                            </button>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               ))}
@@ -5347,6 +5552,75 @@ Rang 3 : *1ms, aug* x6 (18)
                 </div>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale Instagram */}
+      {showInstagramModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+          onClick={() => setShowInstagramModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-200 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton fermer */}
+            <button
+              onClick={() => setShowInstagramModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Icône Instagram avec gradient */}
+            <div className="flex justify-center mb-6">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center shadow-lg">
+                <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none">
+                  <defs>
+                    <radialGradient id="modal-instagram-gradient" cx="30%" cy="107%" r="150%">
+                      <stop offset="0%" stopColor="#FDF497" />
+                      <stop offset="5%" stopColor="#FDF497" />
+                      <stop offset="45%" stopColor="#FD5949" />
+                      <stop offset="60%" stopColor="#D6249F" />
+                      <stop offset="90%" stopColor="#285AEB" />
+                    </radialGradient>
+                  </defs>
+                  <path d="M12 8.75a3.25 3.25 0 100 6.5 3.25 3.25 0 000-6.5zm0 5.36a2.11 2.11 0 110-4.22 2.11 2.11 0 010 4.22zM16.5 8.58a.76.76 0 11-1.52 0 .76.76 0 011.52 0zm2.16.76c-.05-1.06-.3-2-1.1-2.8-.8-.8-1.74-1.05-2.8-1.1C13.68 5.4 10.32 5.4 9.24 5.44c-1.06.05-2 .3-2.8 1.1-.8.8-1.05 1.74-1.1 2.8C5.4 10.32 5.4 13.68 5.44 14.76c.05 1.06.3 2 1.1 2.8.8.8 1.74 1.05 2.8 1.1 1.08.04 4.44.04 5.52 0 1.06-.05 2-.3 2.8-1.1.8-.8 1.05-1.74 1.1-2.8.04-1.08.04-4.44 0-5.52zM17.23 15.9c-.24.6-.7 1.06-1.3 1.3-1.02.4-3.44.31-4.57.31-1.13 0-3.55.09-4.57-.31a2.3 2.3 0 01-1.3-1.3c-.4-1.02-.31-3.44-.31-4.57 0-1.13-.09-3.55.31-4.57.24-.6.7-1.06 1.3-1.3C7.81 5.06 10.23 5.15 11.36 5.15c1.13 0 3.55-.09 4.57.31.6.24 1.06.7 1.3 1.3.4 1.02.31 3.44.31 4.57 0 1.13.09 3.55-.31 4.57z" fill="white"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* Titre */}
+            <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
+              Image téléchargée !
+            </h3>
+
+            {/* Message */}
+            <div className="text-center mb-8 space-y-3">
+              <p className="text-gray-600 leading-relaxed">
+                Votre image est prête à être partagée !
+              </p>
+              <div className="bg-gradient-to-br from-primary-50 to-warm-50 border-2 border-primary-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700 font-medium">
+                  💡 <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
+                </p>
+              </div>
+            </div>
+
+            {/* Bouton */}
+            <button
+              onClick={() => {
+                window.open('https://www.instagram.com/', '_blank')
+                setShowInstagramModal(false)
+              }}
+              className="w-full py-4 bg-gradient-to-r from-primary-600 to-warm-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-warm-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+            >
+              Ouvrir Instagram
+            </button>
           </div>
         </div>
       )}
