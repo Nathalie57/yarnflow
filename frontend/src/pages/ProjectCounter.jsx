@@ -3060,7 +3060,7 @@ const ProjectCounter = () => {
                     )
 
                     return (
-                      <div key={originalPhoto.id} className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                      <div key={originalPhoto.id} className="border-2 border-gray-200 rounded-lg">
                         {/* [AI:Claude] Variations IA EN HAUT - c'est le résultat principal ! */}
                         {photoVariations.length > 0 && (
                           <div className="p-6 bg-gradient-to-br from-primary-50 to-pink-50">
@@ -3142,7 +3142,7 @@ const ProjectCounter = () => {
 
                                         {/* Dropdown menu */}
                                         {openMenuId === variation.id && (
-                                          <div className="absolute bottom-full mb-2 right-0 w-56 bg-gradient-to-br from-primary-50 via-warm-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
+                                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-warm-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
                                             {/* Photo de couverture */}
                                             <button
                                               onClick={async (e) => {
