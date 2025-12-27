@@ -265,6 +265,7 @@ class PhotoController
             // [AI:Claude] Récupérer les contextes demandés
             $contexts = $data['contexts'] ?? [];
             $projectCategory = $data['project_category'] ?? 'other';
+            $modelGender = $data['model_gender'] ?? 'person'; // person (neutre), male (homme), female (femme)
 
             if (empty($contexts)) {
                 $this->sendResponse(400, [
@@ -334,7 +335,8 @@ class PhotoController
                             'context' => $context,
                             'project_category' => $projectCategory,
                             'from_preview' => false,
-                            'item_name' => $photo['item_name'] ?? ''
+                            'item_name' => $photo['item_name'] ?? '',
+                            'model_gender' => $modelGender
                         ]
                     );
 

@@ -98,6 +98,7 @@ const ProjectCounter = () => {
   const [showStyleExamplesModal, setShowStyleExamplesModal] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
+  const [modelGender, setModelGender] = useState('person') // [AI:Claude] Genre du modèle : person (neutre), male (homme), female (femme)
   const [enhancing, setEnhancing] = useState(false)
   const [credits, setCredits] = useState(null)
   const [hideAIWarning, setHideAIWarning] = useState(false) // [AI:Claude] Cacher l'avertissement IA si l'utilisateur a coché "Ne plus afficher"
@@ -1049,7 +1050,8 @@ const ProjectCounter = () => {
       // [AI:Claude] Appel API pour génération HD
       const response = await api.post(`/photos/${selectedPhoto.id}/enhance-multiple`, {
         contexts: [contextToUse],
-        project_category: detectProjectCategory(project?.type || '')
+        project_category: detectProjectCategory(project?.type || ''),
+        model_gender: modelGender // person (neutre), male (homme), female (femme)
       })
 
       // [AI:Claude] v0.15.0 - Récupérer la photo générée pour la modal de satisfaction
@@ -4143,6 +4145,77 @@ Rang 3 : *1ms, aug* x6 (18)
                   </div>
                 )}
               </div>
+
+              {/* Choix du genre du modèle (uniquement pour contextes portés) */}
+              {selectedContext && (
+                selectedContext.key.includes('wearable_') ||
+                ['accessory_c2', 'accessory_c3', 'accessory_c5', 'accessory_c7', 'accessory_c9'].includes(selectedContext.key)
+              ) && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Genre du modèle :
+                  </label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <label
+                      className={`flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition ${
+                        modelGender === 'person'
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="modelGender"
+                        value="person"
+                        checked={modelGender === 'person'}
+                        onChange={(e) => setModelGender(e.target.value)}
+                        className="sr-only"
+                      />
+                      <span className="text-2xl">👤</span>
+                      <span className="text-sm font-medium text-gray-900">Neutre</span>
+                    </label>
+                    <label
+                      className={`flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition ${
+                        modelGender === 'male'
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="modelGender"
+                        value="male"
+                        checked={modelGender === 'male'}
+                        onChange={(e) => setModelGender(e.target.value)}
+                        className="sr-only"
+                      />
+                      <span className="text-2xl">👨</span>
+                      <span className="text-sm font-medium text-gray-900">Homme</span>
+                    </label>
+                    <label
+                      className={`flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition ${
+                        modelGender === 'female'
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="modelGender"
+                        value="female"
+                        checked={modelGender === 'female'}
+                        onChange={(e) => setModelGender(e.target.value)}
+                        className="sr-only"
+                      />
+                      <span className="text-2xl">👩</span>
+                      <span className="text-sm font-medium text-gray-900">Femme</span>
+                    </label>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">
+                    💡 Choisissez le genre du modèle pour les photos portées
+                  </p>
+                </div>
+              )}
 
               {/* Aperçu gratuit - DÉSACTIVÉ pour économiser les coûts API */}
               {/*
