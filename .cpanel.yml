@@ -1,8 +1,23 @@
 ---
 deployment:
   tasks:
-    # Déployer UNIQUEMENT le backend (exclure vendor/ et uploads/)
-    - /bin/bash -c "rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/public_html/api/"
+    # Déploiement automatique selon la branche (staging ou main/production)
+    - /bin/bash -c "
+      BRANCH=$(git branch --show-current);
+      if [ \"$BRANCH\" = \"staging\" ]; then
+        echo \"🚀 Déploiement STAGING...\";
+        rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/staging.yarnflow.fr/api/;
+        echo \"✅ Backend staging déployé vers staging.yarnflow.fr\";
+      elif [ \"$BRANCH\" = \"main\" ]; then
+        echo \"🚀 Déploiement PRODUCTION...\";
+        rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/public_html/api/;
+        echo \"✅ Backend production déployé vers yarnflow.fr\";
+      else
+        echo \"❌ ERREUR: Branche '$BRANCH' non autorisée pour le déploiement\";
+        echo \"Branches autorisées: staging, main\";
+        exit 1;
+      fi
+      "
 
     # Frontend : déployé manuellement via FTP (npm run build + upload dist/)
     # (La ligne ci-dessous est commentée car dist/ n'est pas dans Git)
