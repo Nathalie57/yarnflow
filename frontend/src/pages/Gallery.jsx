@@ -46,6 +46,9 @@ const Gallery = () => {
   const [openMenuId, setOpenMenuId] = useState(null)
   const menuRef = useRef(null)
 
+  // [AI:Claude] Modale Instagram
+  const [showInstagramModal, setShowInstagramModal] = useState(false)
+
   // [AI:Claude] Upload de photo
   const [uploadData, setUploadData] = useState({
     photo: null,
@@ -79,15 +82,26 @@ const Gallery = () => {
 
   // [AI:Claude] Fermer le menu si clic à l'extérieur
   useEffect(() => {
+    if (!openMenuId) return
+
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setOpenMenuId(null)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    // Petit délai pour éviter que le clic d'ouverture ferme immédiatement le menu
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('touchstart', handleClickOutside)
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [openMenuId])
 
   const fetchPhotos = async () => {
     try {
@@ -574,7 +588,7 @@ const Gallery = () => {
                   />
 
                   {/* Overlay minimaliste au hover */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg">
+                  <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 rounded-lg ${openMenuId === photo.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                     {/* Nom de la photo */}
                     <div className="absolute top-3 left-3 right-3">
                       <p className="text-white text-sm font-semibold drop-shadow-lg line-clamp-1">
@@ -668,10 +682,12 @@ const Gallery = () => {
                             {/* Instagram */}
                             <button
                               onClick={async (e) => {
+                                e.preventDefault()
                                 e.stopPropagation()
                                 const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
 
                                 if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                                  // Mobile : utiliser le menu de partage natif
                                   try {
                                     const response = await fetch(url)
                                     const blob = await response.blob()
@@ -692,11 +708,28 @@ const Gallery = () => {
                                     }
                                   }
                                 } else {
-                                  const link = document.createElement('a')
-                                  link.href = url
-                                  link.download = `${photo.item_name || 'photo'}-instagram.jpg`
-                                  link.click()
-                                  alert('📸 Image téléchargée pour Instagram !')
+                                  // Desktop : télécharger via fetch pour forcer le download
+                                  try {
+                                    const response = await fetch(url)
+                                    const blob = await response.blob()
+                                    const blobUrl = window.URL.createObjectURL(blob)
+
+                                    const link = document.createElement('a')
+                                    link.href = blobUrl
+                                    link.download = `${photo.item_name || 'photo'}-instagram.jpg`
+                                    document.body.appendChild(link)
+                                    link.click()
+                                    document.body.removeChild(link)
+
+                                    // Libérer la mémoire
+                                    window.URL.revokeObjectURL(blobUrl)
+
+                                    // Afficher la modale (Instagram s'ouvrira au clic sur "Compris !")
+                                    setShowInstagramModal(true)
+                                  } catch (err) {
+                                    console.error('Erreur téléchargement Instagram:', err)
+                                    alert('❌ Erreur lors du téléchargement de l\'image')
+                                  }
                                   setOpenMenuId(null)
                                 }
                               }}
@@ -1218,6 +1251,75 @@ const Gallery = () => {
                 )}
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modale Instagram */}
+      {showInstagramModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+          onClick={() => setShowInstagramModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-200 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Bouton fermer */}
+            <button
+              onClick={() => setShowInstagramModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Icône Instagram avec gradient */}
+            <div className="flex justify-center mb-6">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center shadow-lg">
+                <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none">
+                  <defs>
+                    <radialGradient id="modal-instagram-gradient" cx="30%" cy="107%" r="150%">
+                      <stop offset="0%" stopColor="#FDF497" />
+                      <stop offset="5%" stopColor="#FDF497" />
+                      <stop offset="45%" stopColor="#FD5949" />
+                      <stop offset="60%" stopColor="#D6249F" />
+                      <stop offset="90%" stopColor="#285AEB" />
+                    </radialGradient>
+                  </defs>
+                  <path d="M12 8.75a3.25 3.25 0 100 6.5 3.25 3.25 0 000-6.5zm0 5.36a2.11 2.11 0 110-4.22 2.11 2.11 0 010 4.22zM16.5 8.58a.76.76 0 11-1.52 0 .76.76 0 011.52 0zm2.16.76c-.05-1.06-.3-2-1.1-2.8-.8-.8-1.74-1.05-2.8-1.1C13.68 5.4 10.32 5.4 9.24 5.44c-1.06.05-2 .3-2.8 1.1-.8.8-1.05 1.74-1.1 2.8C5.4 10.32 5.4 13.68 5.44 14.76c.05 1.06.3 2 1.1 2.8.8.8 1.74 1.05 2.8 1.1 1.08.04 4.44.04 5.52 0 1.06-.05 2-.3 2.8-1.1.8-.8 1.05-1.74 1.1-2.8.04-1.08.04-4.44 0-5.52zM17.23 15.9c-.24.6-.7 1.06-1.3 1.3-1.02.4-3.44.31-4.57.31-1.13 0-3.55.09-4.57-.31a2.3 2.3 0 01-1.3-1.3c-.4-1.02-.31-3.44-.31-4.57 0-1.13-.09-3.55.31-4.57.24-.6.7-1.06 1.3-1.3C7.81 5.06 10.23 5.15 11.36 5.15c1.13 0 3.55-.09 4.57.31.6.24 1.06.7 1.3 1.3.4 1.02.31 3.44.31 4.57 0 1.13.09 3.55-.31 4.57z" fill="white"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* Titre */}
+            <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
+              Image téléchargée !
+            </h3>
+
+            {/* Message */}
+            <div className="text-center mb-8 space-y-3">
+              <p className="text-gray-600 leading-relaxed">
+                Votre image est prête à être partagée !
+              </p>
+              <div className="bg-gradient-to-br from-primary-50 to-warm-50 border-2 border-primary-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700 font-medium">
+                  💡 <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
+                </p>
+              </div>
+            </div>
+
+            {/* Bouton */}
+            <button
+              onClick={() => {
+                window.open('https://www.instagram.com/', '_blank')
+                setShowInstagramModal(false)
+              }}
+              className="w-full py-4 bg-gradient-to-r from-primary-600 to-warm-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-warm-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+            >
+              Ouvrir Instagram
+            </button>
           </div>
         </div>
       )}
