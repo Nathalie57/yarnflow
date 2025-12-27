@@ -21,7 +21,8 @@
             "App\\Models\\": "models/",
             "App\\Services\\": "services/",
             "App\\Middleware\\": "middleware/",
-            "App\\Utils\\": "utils/"
+            "App\\Utils\\": "utils/",
+            "App\\Helpers\\": "helpers/"
         }
     },
     "autoload-dev": {
