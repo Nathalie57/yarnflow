@@ -74,7 +74,12 @@ class ProjectController
                                       COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
                                   ELSE p.total_time
                               END % 3600) / 60
-                          ), 'min'
+                          ), 'min ',
+                          (CASE
+                              WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                                  COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                              ELSE p.total_time
+                          END % 60), 'sec'
                       ) as time_formatted,
                       CASE
                           WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
