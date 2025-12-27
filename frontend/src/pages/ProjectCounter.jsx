@@ -98,7 +98,7 @@ const ProjectCounter = () => {
   const [showStyleExamplesModal, setShowStyleExamplesModal] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
-  const [modelGender, setModelGender] = useState('person') // [AI:Claude] Genre du modèle : person (neutre), male (homme), female (femme)
+  const [modelGender, setModelGender] = useState('female') // [AI:Claude] Genre du modèle : male (homme), female (femme)
   const [enhancing, setEnhancing] = useState(false)
   const [credits, setCredits] = useState(null)
   const [hideAIWarning, setHideAIWarning] = useState(false) // [AI:Claude] Cacher l'avertissement IA si l'utilisateur a coché "Ne plus afficher"
@@ -4146,39 +4146,18 @@ Rang 3 : *1ms, aug* x6 (18)
                 )}
               </div>
 
-              {/* Choix du genre du modèle (uniquement pour contextes portés) */}
-              {selectedContext && (
-                selectedContext.key.includes('wearable_') ||
-                ['accessory_c2', 'accessory_c3', 'accessory_c5', 'accessory_c7', 'accessory_c9'].includes(selectedContext.key)
-              ) && (
-                <div className="mb-6">
+              {/* Choix du genre du modèle (uniquement pour styles avec modèle "Porté") */}
+              {selectedContext && selectedContext.label && selectedContext.label.includes('Porté') && (
+                <div className="mb-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Genre du modèle :
+                    👤 Genre du modèle :
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <label
-                      className={`flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition ${
-                        modelGender === 'person'
-                          ? 'border-primary-600 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="modelGender"
-                        value="person"
-                        checked={modelGender === 'person'}
-                        onChange={(e) => setModelGender(e.target.value)}
-                        className="sr-only"
-                      />
-                      <span className="text-2xl">👤</span>
-                      <span className="text-sm font-medium text-gray-900">Neutre</span>
-                    </label>
-                    <label
-                      className={`flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition ${
+                      className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition ${
                         modelGender === 'male'
-                          ? 'border-primary-600 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-primary-600 bg-primary-50 ring-2 ring-primary-300'
+                          : 'border-gray-300 bg-white hover:border-primary-400'
                       }`}
                     >
                       <input
@@ -4189,14 +4168,14 @@ Rang 3 : *1ms, aug* x6 (18)
                         onChange={(e) => setModelGender(e.target.value)}
                         className="sr-only"
                       />
-                      <span className="text-2xl">👨</span>
-                      <span className="text-sm font-medium text-gray-900">Homme</span>
+                      <span className="text-4xl">👨</span>
+                      <span className="text-sm font-semibold text-gray-900">Homme</span>
                     </label>
                     <label
-                      className={`flex flex-col items-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition ${
+                      className={`flex flex-col items-center gap-2 p-4 border-2 rounded-lg cursor-pointer transition ${
                         modelGender === 'female'
-                          ? 'border-primary-600 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-primary-600 bg-primary-50 ring-2 ring-primary-300'
+                          : 'border-gray-300 bg-white hover:border-primary-400'
                       }`}
                     >
                       <input
@@ -4207,12 +4186,12 @@ Rang 3 : *1ms, aug* x6 (18)
                         onChange={(e) => setModelGender(e.target.value)}
                         className="sr-only"
                       />
-                      <span className="text-2xl">👩</span>
-                      <span className="text-sm font-medium text-gray-900">Femme</span>
+                      <span className="text-4xl">👩</span>
+                      <span className="text-sm font-semibold text-gray-900">Femme</span>
                     </label>
                   </div>
-                  <p className="mt-2 text-xs text-gray-500">
-                    💡 Choisissez le genre du modèle pour les photos portées
+                  <p className="mt-3 text-xs text-blue-700 font-medium">
+                    💡 Choisissez le genre du modèle qui portera votre création
                   </p>
                 </div>
               )}
