@@ -193,6 +193,9 @@ class AuthController
         if ($user === null)
             Response::error('Email ou mot de passe incorrect', HTTP_UNAUTHORIZED);
 
+        // [AI:Claude] Enregistrer la date/heure de connexion
+        $this->userModel->updateLastLogin($user['id']);
+
         $token = $this->jwtService->generateToken($user);
 
         unset($user['password']);
@@ -360,6 +363,9 @@ class AuthController
                 $oauthData['avatar']
             );
 
+            // [AI:Claude] Enregistrer la date/heure de connexion
+            $this->userModel->updateLastLogin($user['id']);
+
             $token = $this->jwtService->generateToken($user);
 
             unset($user['password']);
@@ -408,6 +414,9 @@ class AuthController
                 $oauthData['last_name'],
                 $oauthData['avatar']
             );
+
+            // [AI:Claude] Enregistrer la date/heure de connexion
+            $this->userModel->updateLastLogin($user['id']);
 
             $token = $this->jwtService->generateToken($user);
 
