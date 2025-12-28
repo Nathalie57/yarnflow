@@ -830,7 +830,7 @@ class Project extends BaseModel
                   CONCAT(
                       FLOOR(s.time_spent / 3600), 'h ',
                       FLOOR((s.time_spent % 3600) / 60), 'min ',
-                      (s.time_spent % 60), 'sec'
+                      FLOOR(s.time_spent % 60), 'sec'
                   ) as time_formatted
                   FROM project_sections s
                   LEFT JOIN project_rows pr ON s.id = pr.section_id
