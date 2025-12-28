@@ -13,6 +13,7 @@ namespace App\Services;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 use PHPMailer\PHPMailer\Exception;
+use PDO;
 
 /**
  * Service d'envoi d'emails avec PHPMailer
@@ -20,12 +21,14 @@ use PHPMailer\PHPMailer\Exception;
 class EmailService
 {
     private PHPMailer $mailer;
+    private ?PDO $db = null;
 
     /**
      * Constructeur - Configure PHPMailer avec les paramètres SMTP
      */
-    public function __construct()
+    public function __construct(?PDO $db = null)
     {
+        $this->db = $db;
         $this->mailer = new PHPMailer(true);
 
         try {
@@ -248,18 +251,72 @@ HTML;
     }
 
     /**
+     * [AI:Claude] Logger l'envoi d'un email dans la base de données
+     *
+     * @param string $recipientEmail Email du destinataire
+     * @param string $recipientName Nom du destinataire
+     * @param string $emailType Type d'email
+     * @param string $subject Sujet de l'email
+     * @param bool $success Statut d'envoi
+     * @param string|null $errorMessage Message d'erreur si échec
+     * @param int|null $userId ID utilisateur (si applicable)
+     * @return void
+     */
+    private function logEmail(
+        string $recipientEmail,
+        string $recipientName,
+        string $emailType,
+        string $subject,
+        bool $success,
+        ?string $errorMessage = null,
+        ?int $userId = null
+    ): void {
+        // Si pas de connexion DB, ne pas logger (mode dégradé)
+        if ($this->db === null) {
+            return;
+        }
+
+        try {
+            $sql = "
+                INSERT INTO emails_sent_log
+                (user_id, recipient_email, recipient_name, email_type, subject, status, error_message, sent_at)
+                VALUES (:user_id, :recipient_email, :recipient_name, :email_type, :subject, :status, :error_message, NOW())
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'user_id' => $userId,
+                'recipient_email' => $recipientEmail,
+                'recipient_name' => $recipientName,
+                'email_type' => $emailType,
+                'subject' => $subject,
+                'status' => $success ? 'sent' : 'failed',
+                'error_message' => $errorMessage
+            ]);
+
+        } catch (\Exception $e) {
+            // Logger l'erreur mais ne pas bloquer l'envoi d'email
+            error_log("[EmailService] Erreur logging email: " . $e->getMessage());
+        }
+    }
+
+    /**
      * [AI:Claude] Envoyer un email de bienvenue après inscription
      *
      * @param string $email Email du destinataire
      * @param string $name Prénom de l'utilisateur
      * @return bool True si envoi réussi
      */
-    public function sendRegistrationWelcomeEmail(string $email, string $name): bool
+    public function sendRegistrationWelcomeEmail(string $email, string $name, ?int $userId = null): bool
     {
+        $subject = '🧶 Bienvenue sur YarnFlow !';
+        $success = false;
+        $errorMessage = null;
+
         try {
             $mail = clone $this->mailer;
             $mail->addAddress($email, $name);
-            $mail->Subject = '🧶 Bienvenue sur YarnFlow !';
+            $mail->Subject = $subject;
 
             // Corps HTML
             $mail->isHTML(true);
@@ -269,13 +326,18 @@ HTML;
             $mail->AltBody = "Bienvenue sur YarnFlow !\n\nBonjour $name,\n\nFélicitations ! Votre compte YarnFlow est maintenant créé.\n\nVous pouvez dès maintenant :\n- Créer vos premiers projets tricot/crochet\n- Utiliser le compteur de rangs intelligent\n- Générer 5 photos IA gratuites par mois\n- Organiser votre bibliothèque de patrons\n\nBesoin d'aide ? Consultez notre guide de démarrage dans l'application ou contactez-nous.\n\nBon tricot !\nL'équipe YarnFlow 🧶";
 
             $mail->send();
+            $success = true;
             error_log("[EMAIL] Email de bienvenue envoyé à: $email");
-            return true;
 
         } catch (Exception $e) {
-            error_log("[EMAIL ERROR] Erreur envoi email de bienvenue: {$mail->ErrorInfo}");
-            return false;
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] Erreur envoi email de bienvenue: {$errorMessage}");
         }
+
+        // Logger dans la BDD
+        $this->logEmail($email, $name, 'registration_welcome', $subject, $success, $errorMessage, $userId);
+
+        return $success;
     }
 
     /**
@@ -516,6 +578,387 @@ HTML;
                             <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 10px; text-align: center;">
                                 L'équipe YarnFlow 🧶
                             </p>
+                            <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * [AI:Claude] Envoyer un email d'onboarding J+3 (aucun projet créé)
+     *
+     * @param string $email Email du destinataire
+     * @param string $name Prénom de l'utilisateur
+     * @return bool True si envoi réussi
+     */
+    public function sendOnboardingDay3Email(string $email, string $name, ?int $userId = null): bool
+    {
+        $subject = '🎓 Besoin d\'aide pour démarrer avec YarnFlow ?';
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+
+            $mail->isHTML(true);
+            $mail->Body = $this->getOnboardingDay3EmailTemplate($name);
+            $mail->AltBody = "Bonjour $name,\n\nVous vous êtes inscrit sur YarnFlow il y a quelques jours, mais nous avons remarqué que vous n'avez pas encore créé votre premier projet.\n\nBesoin d'aide pour démarrer ?\n\nYarnFlow vous permet de :\n- Suivre vos projets tricot et crochet\n- Utiliser un compteur de rangs intelligent\n- Générer des photos IA de vos créations\n\nCréez votre premier projet : https://yarnflow.fr/my-projects\n\nL'équipe YarnFlow";
+
+            $mail->send();
+            $success = true;
+            error_log("[EMAIL] Email onboarding J+3 envoyé à: $email");
+
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] Erreur envoi onboarding J+3: {$errorMessage}");
+        }
+
+        // Logger dans la BDD
+        $this->logEmail($email, $name, 'onboarding_day3', $subject, $success, $errorMessage, $userId);
+
+        return $success;
+    }
+
+    /**
+     * Template HTML pour email onboarding J+3
+     */
+    private function getOnboardingDay3EmailTemplate(string $name): string
+    {
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fef8f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); padding: 40px; text-align: center; border-radius: 12px 12px 0 0;">
+                            <div style="font-size: 56px; margin: 0 0 10px 0;">🎓</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Besoin d'aide pour démarrer ?</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 40px 20px;">
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Bonjour <strong>{$name}</strong>,
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Vous vous êtes inscrit sur YarnFlow il y a quelques jours, mais nous avons remarqué que vous n'avez pas encore créé votre premier projet. 🧶
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
+                                Pas de panique ! On est là pour vous aider à démarrer.
+                            </p>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; border-radius: 8px; margin: 0 0 30px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h3 style="color: #884024; margin: 0 0 16px; font-size: 18px;">✨ YarnFlow vous permet de :</h3>
+                                        <ul style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                                            <li>Suivre tous vos projets tricot et crochet en un seul endroit</li>
+                                            <li>Utiliser un compteur de rangs intelligent avec timer</li>
+                                            <li>Générer des photos IA professionnelles de vos créations</li>
+                                            <li>Organiser votre bibliothèque de patrons</li>
+                                            <li>Consulter vos statistiques de progression</li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding: 0 0 30px;">
+                                        <a href="https://yarnflow.fr/my-projects" style="display: inline-block; background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                                            🚀 Créer mon premier projet
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="color: #075985; font-size: 14px; line-height: 1.6; margin: 0;">
+                                            💡 <strong>Astuce</strong> : Cliquez sur le bouton "?" en haut de l'application pour accéder au guide interactif.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0;">
+                                À vos aiguilles !<br>
+                                <strong>Nathalie</strong><br>
+                                L'équipe YarnFlow
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #fef8f4; padding: 30px 40px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3e8dd;">
+                            <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * [AI:Claude] Envoyer un email de réengagement J+14 (inactif)
+     *
+     * @param string $email Email du destinataire
+     * @param string $name Prénom de l'utilisateur
+     * @param array $projectData Données du projet en cours (nom, rangs restants, etc.)
+     * @return bool True si envoi réussi
+     */
+    public function sendReengagementDay14Email(string $email, string $name, array $projectData = [], ?int $userId = null): bool
+    {
+        $subject = '🧵 Votre tricot vous attend !';
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+
+            $mail->isHTML(true);
+            $mail->Body = $this->getReengagementDay14EmailTemplate($name, $projectData);
+            $mail->AltBody = "Bonjour $name,\n\nCela fait 2 semaines qu'on ne vous a pas vu sur YarnFlow !\n\nVos projets vous attendent. Reprenez là où vous vous êtes arrêté.\n\nContinuer mon projet : https://yarnflow.fr/my-projects\n\nL'équipe YarnFlow";
+
+            $mail->send();
+            $success = true;
+            error_log("[EMAIL] Email réengagement J+14 envoyé à: $email");
+
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] Erreur envoi réengagement J+14: {$errorMessage}");
+        }
+
+        // Logger dans la BDD
+        $this->logEmail($email, $name, 'reengagement_day14', $subject, $success, $errorMessage, $userId);
+
+        return $success;
+    }
+
+    /**
+     * Template HTML pour email réengagement J+14
+     */
+    private function getReengagementDay14EmailTemplate(string $name, array $projectData): string
+    {
+        $projectInfo = '';
+        if (!empty($projectData['name'])) {
+            $projectName = htmlspecialchars($projectData['name']);
+            $progress = $projectData['progress'] ?? 0;
+            $projectInfo = <<<HTML
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; border-radius: 8px; margin: 0 0 30px; border: 2px solid #dd7a4a;">
+                <tr>
+                    <td style="padding: 24px;">
+                        <h3 style="color: #884024; margin: 0 0 12px; font-size: 18px;">📌 Votre projet en cours</h3>
+                        <p style="color: #4b5563; font-size: 16px; margin: 0 0 8px;"><strong>{$projectName}</strong></p>
+                        <div style="background-color: #e5e7eb; border-radius: 999px; height: 8px; overflow: hidden;">
+                            <div style="background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); height: 100%; width: {$progress}%;"></div>
+                        </div>
+                        <p style="color: #6b7280; font-size: 14px; margin: 8px 0 0;">Progression : {$progress}%</p>
+                    </td>
+                </tr>
+            </table>
+HTML;
+        }
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fef8f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); padding: 40px; text-align: center; border-radius: 12px 12px 0 0;">
+                            <div style="font-size: 56px; margin: 0 0 10px 0;">🧵</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Votre tricot vous attend !</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 40px 20px;">
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Bonjour <strong>{$name}</strong>,
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
+                                Cela fait 2 semaines qu'on ne vous a pas vu sur YarnFlow ! Vos projets vous attendent patiemment. 🧶
+                            </p>
+
+                            {$projectInfo}
+
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding: 0 0 30px;">
+                                        <a href="https://yarnflow.fr/my-projects" style="display: inline-block; background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                                            🎯 Continuer mon projet
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
+                                <strong>💡 Le saviez-vous ?</strong> Chaque mois, vous recevez 5 crédits photos gratuits pour embellir vos créations avec notre IA !
+                            </p>
+
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0;">
+                                À bientôt sur YarnFlow !<br>
+                                <strong>Nathalie</strong>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #fef8f4; padding: 30px 40px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3e8dd;">
+                            <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * [AI:Claude] Envoyer un email "On vous manque" J+30 (très inactif)
+     *
+     * @param string $email Email du destinataire
+     * @param string $name Prénom de l'utilisateur
+     * @return bool True si envoi réussi
+     */
+    public function sendMissedYouDay30Email(string $email, string $name, ?int $userId = null): bool
+    {
+        $subject = '💔 Vous nous manquez sur YarnFlow !';
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+
+            $mail->isHTML(true);
+            $mail->Body = $this->getMissedYouDay30EmailTemplate($name);
+            $mail->AltBody = "Bonjour $name,\n\nVoilà plus d'un mois qu'on ne vous a pas vu sur YarnFlow. Vous nous manquez !\n\nDes nouvelles fonctionnalités vous attendent. Revenez nous voir !\n\nReprendre mes projets : https://yarnflow.fr/my-projects\n\nL'équipe YarnFlow";
+
+            $mail->send();
+            $success = true;
+            error_log("[EMAIL] Email 'on vous manque' J+30 envoyé à: $email");
+
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] Erreur envoi 'on vous manque' J+30: {$errorMessage}");
+        }
+
+        // Logger dans la BDD
+        $this->logEmail($email, $name, 'missed_you_day30', $subject, $success, $errorMessage, $userId);
+
+        return $success;
+    }
+
+    /**
+     * Template HTML pour email "On vous manque" J+30
+     */
+    private function getMissedYouDay30EmailTemplate(string $name): string
+    {
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fef8f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); padding: 40px; text-align: center; border-radius: 12px 12px 0 0;">
+                            <div style="font-size: 56px; margin: 0 0 10px 0;">💔</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Vous nous manquez !</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 40px 20px;">
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Bonjour <strong>{$name}</strong>,
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Voilà plus d'un mois qu'on ne vous a pas vu sur YarnFlow. Vous nous manquez ! 🥺
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
+                                Vos projets sont toujours là, bien au chaud, qui vous attendent...
+                            </p>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3cd; border-left: 4px solid #fbbf24; border-radius: 4px; margin: 0 0 30px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="color: #92400e; font-size: 15px; line-height: 1.6; margin: 0;">
+                                            <strong>🎁 En votre absence, on a ajouté :</strong><br>
+                                            • Un système de tags pour mieux organiser vos projets<br>
+                                            • Des filtres avancés<br>
+                                            • Un guide de démarrage interactif<br>
+                                            • Et plein d'autres améliorations !
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding: 0 0 30px;">
+                                        <a href="https://yarnflow.fr/my-projects" style="display: inline-block; background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                                            🧶 Reprendre mes projets
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+                                <em>Si vous ne souhaitez plus recevoir ces emails, vous pouvez vous désinscrire en cliquant <a href="https://yarnflow.fr/unsubscribe" style="color: #dd7a4a; text-decoration: underline;">ici</a>.</em>
+                            </p>
+
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0;">
+                                On espère vous revoir très bientôt !<br>
+                                <strong>Nathalie</strong><br>
+                                L'équipe YarnFlow
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #fef8f4; padding: 30px 40px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3e8dd;">
                             <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
                                 © 2025 YarnFlow - Votre tracker tricot/crochet préféré
                             </p>

@@ -107,9 +107,10 @@ class AuthController
 
             // [AI:Claude] Envoyer l'email de bienvenue (non-bloquant)
             try {
-                $emailService = new \App\Services\EmailService();
+                $db = \App\Config\Database::getInstance()->getConnection();
+                $emailService = new \App\Services\EmailService($db);
                 $userName = $data['first_name'] ?? 'Nouveau membre';
-                $emailService->sendRegistrationWelcomeEmail($data['email'], $userName);
+                $emailService->sendRegistrationWelcomeEmail($data['email'], $userName, $userId);
             } catch (\Exception $e) {
                 // On log l'erreur mais on ne bloque pas l'inscription
                 error_log('[AuthController] Erreur envoi email de bienvenue : ' . $e->getMessage());
