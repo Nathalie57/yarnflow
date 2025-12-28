@@ -307,6 +307,19 @@ class User extends BaseModel
     }
 
     /**
+     * [AI:Claude] Mettre à jour la date de dernière connexion
+     *
+     * @param int $userId ID de l'utilisateur
+     * @return bool Succès de la mise à jour
+     */
+    public function updateLastLogin(int $userId): bool
+    {
+        $sql = "UPDATE {$this->table} SET last_login_at = NOW() WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['id' => $userId]);
+    }
+
+    /**
      * [AI:Claude] Vérifier si l'utilisateur peut utiliser les tags (v0.15.0)
      *
      * @param int $userId ID de l'utilisateur
