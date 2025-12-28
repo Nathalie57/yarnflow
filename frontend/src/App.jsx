@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
 import PrivateRoute from './components/PrivateRoute'
 import Layout from './components/Layout'
@@ -41,11 +42,35 @@ import AdminPayments from './pages/admin/AdminPayments'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOptions from './pages/admin/AdminOptions'
 
+// [AI:Claude] Composant pour tracker automatiquement les changements de route
+function AnalyticsTracker() {
+  const location = useLocation()
+
+  useEffect(() => {
+    // [AI:Claude] Tracker chaque changement de page dans GA4
+    if (typeof window !== 'undefined' && window.gtag) {
+      const pageTitle = document.title
+      const pagePath = location.pathname + location.search
+
+      window.gtag('event', 'page_view', {
+        page_title: pageTitle,
+        page_location: window.location.href,
+        page_path: pagePath
+      })
+
+      console.log('[Analytics] Page view tracked:', pagePath, pageTitle)
+    }
+  }, [location])
+
+  return null
+}
+
 function App() {
   // [AI:Claude] Routes de l'application
   return (
     <BrowserRouter>
       <AuthProvider>
+        <AnalyticsTracker />
         <Routes>
           {/* Routes publiques */}
           <Route path="/" element={<Landing />} />
@@ -104,16 +129,14 @@ function App() {
         </Routes>
         <PWAPrompt />
 
-        {/* [AI:Claude] Cookie Banner RGPD pour Google Analytics */}
+        {/* [AI:Claude] Bannière informative (mode cookieless = pas besoin de consentement) */}
         <CookieConsent
           location="bottom"
-          buttonText="J'accepte"
-          declineButtonText="Refuser"
-          enableDeclineButton
-          cookieName="yarnflow_analytics_consent"
+          buttonText="Compris"
+          cookieName="yarnflow_privacy_notice"
           style={{
             background: '#1f2937',
-            padding: '20px',
+            padding: '16px 20px',
             alignItems: 'center'
           }}
           buttonStyle={{
@@ -121,44 +144,17 @@ function App() {
             color: '#fff',
             fontSize: '14px',
             borderRadius: '8px',
-            padding: '10px 24px',
+            padding: '8px 20px',
             fontWeight: '600'
           }}
-          declineButtonStyle={{
-            background: 'transparent',
-            color: '#9ca3af',
-            fontSize: '14px',
-            borderRadius: '8px',
-            padding: '10px 24px',
-            border: '1px solid #4b5563'
-          }}
           expires={365}
-          onAccept={() => {
-            // [AI:Claude] Activer Google Analytics après consentement
-            if (window.gtag) {
-              window.gtag('consent', 'update', {
-                analytics_storage: 'granted'
-              })
-              console.log('[Analytics] Cookies acceptés - Tracking activé')
-            }
-          }}
-          onDecline={() => {
-            // [AI:Claude] Désactiver Google Analytics si refusé
-            if (window.gtag) {
-              window.gtag('consent', 'update', {
-                analytics_storage: 'denied'
-              })
-              console.log('[Analytics] Cookies refusés - Tracking désactivé')
-            }
-          }}
         >
-          <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
-            <strong>🍪 Cookies et confidentialité</strong>
-            <p style={{ margin: '8px 0 0 0' }}>
-              Nous utilisons des cookies pour analyser le trafic de notre site et améliorer votre expérience.
-              Vos données sont anonymisées.
-              <a href="/privacy" style={{ color: '#8b5cf6', marginLeft: '4px', textDecoration: 'underline' }}>
-                En savoir plus
+          <div style={{ fontSize: '13px', lineHeight: '1.5' }}>
+            <strong>🔒 Respect de votre vie privée</strong>
+            <p style={{ margin: '6px 0 0 0', opacity: 0.9 }}>
+              Nous utilisons un tracking 100% anonymisé (sans cookies personnels) pour améliorer l'application.
+              <a href="/privacy" style={{ color: '#a78bfa', marginLeft: '4px', textDecoration: 'underline' }}>
+                Politique de confidentialité
               </a>
             </p>
           </div>

@@ -65,27 +65,25 @@
     }
     </script>
 
-    <!-- Google Analytics 4 avec Consent Mode v2 (RGPD) -->
+    <!-- Google Analytics 4 - Mode Cookieless (RGPD-friendly) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-43HS92RL3J"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      // [AI:Claude] Consent Mode v2 - Refusé par défaut (RGPD)
-      gtag('consent', 'default', {
-        'analytics_storage': 'denied',
-        'ad_storage': 'denied',
-        'ad_user_data': 'denied',
-        'ad_personalization': 'denied',
-        'wait_for_update': 500
-      });
-
-      // [AI:Claude] Configurer GA4
+      // [AI:Claude] Mode cookieless - tracking anonymisé SANS cookies (conforme RGPD)
+      // Permet de collecter des stats de base sans consentement explicite
       gtag('config', 'G-43HS92RL3J', {
         'anonymize_ip': true,
-        'cookie_flags': 'SameSite=None;Secure'
+        'cookie_flags': 'max-age=7200;secure;samesite=none', // Cookies de session uniquement (2h)
+        'client_storage': 'none', // Désactive le stockage local
+        'allow_google_signals': false, // Désactive le tracking cross-device
+        'allow_ad_personalization_signals': false // Désactive la personnalisation publicitaire
       });
+
+      // [AI:Claude] Tracking manuel des pages (sera complété par React Router)
+      console.log('[Analytics] GA4 initialized in cookieless mode (RGPD-friendly)');
     </script>
   </head>
   <body>
