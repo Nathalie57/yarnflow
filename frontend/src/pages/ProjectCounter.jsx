@@ -1456,8 +1456,8 @@ const ProjectCounter = () => {
       return
     }
 
-    const newRow = currentRow + 1
-    const oldRow = currentRow
+    const newRow = parseInt(currentRow) + 1
+    const oldRow = parseInt(currentRow)
 
     // [AI:Claude] Sauvegarder directement sans ouvrir la modal
     try {
@@ -1572,8 +1572,8 @@ const ProjectCounter = () => {
   // [AI:Claude] Décrémenter le rang (supprime le dernier rang au lieu de créer un nouveau)
   const handleDecrementRow = async () => {
     if (currentRow > 0) {
-      const newRow = currentRow - 1
-      const oldRow = currentRow
+      const newRow = parseInt(currentRow) - 1
+      const oldRow = parseInt(currentRow)
 
       // [AI:Claude] Mettre à jour le compteur immédiatement pour un feedback instantané
       setCurrentRow(newRow)
@@ -2535,6 +2535,17 @@ const ProjectCounter = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* Temps total de la section */}
+                  {currentSection && (
+                    <div className="text-center border-l border-gray-300 pl-3">
+                      <div className="text-lg font-semibold text-primary-700">
+                        {currentSection.time_formatted || '0h 0min 0s'}
+                      </div>
+                      <div className="text-[10px] text-gray-500">Temps total</div>
+                    </div>
+                  )}
+
                   {project.status !== 'completed' && (
                     <>
                       {!isTimerRunning ? (
@@ -2738,9 +2749,7 @@ const ProjectCounter = () => {
                             <span className="text-xs font-medium text-gray-700 min-w-[35px]">
                               {sectionProgress}%
                             </span>
-                            {section.time_spent > 0 && (
-                              <span className="text-xs text-gray-500 ml-2">⏱️ {section.time_formatted}</span>
-                            )}
+                            <span className="text-xs text-gray-500 ml-2">⏱️ {section.time_formatted || '0h 0min 0s'}</span>
                           </div>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
@@ -2914,11 +2923,9 @@ const ProjectCounter = () => {
                         )}
 
                         {/* Temps */}
-                        {section.time_spent > 0 && (
-                          <div className="text-sm text-gray-600">
-                            ⏱️ {section.time_formatted}
-                          </div>
-                        )}
+                        <div className="text-sm text-gray-600">
+                          ⏱️ {section.time_formatted || '0h 0min 0s'}
+                        </div>
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
