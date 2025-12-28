@@ -1935,8 +1935,12 @@ const ProjectCounter = () => {
         name: sectionForm.name.trim(),
         description: sectionForm.description.trim() || null,
         total_rows: sectionForm.total_rows ? parseInt(sectionForm.total_rows) : null,
-        display_order: editingSection ? editingSection.display_order : sections.length,
-        current_row: initialCurrentRow // Attribuer les rangs si demandé
+        display_order: editingSection ? editingSection.display_order : sections.length
+      }
+
+      // [AI:Claude] N'envoyer current_row QUE lors de la création, pas lors de la modification
+      if (!editingSection) {
+        sectionData.current_row = initialCurrentRow // Attribuer les rangs si demandé
       }
 
       if (editingSection) {
