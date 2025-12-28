@@ -2719,7 +2719,7 @@ const ProjectCounter = () => {
                           </span>
                         </div>
                         {section.description && (
-                          <p className="text-xs text-gray-500 mt-0.5">{section.description}</p>
+                          <p className="text-xs text-gray-500 mt-0.5 whitespace-pre-line">{section.description}</p>
                         )}
                       </td>
 
@@ -2875,7 +2875,7 @@ const ProjectCounter = () => {
                       <div className="mt-3 space-y-3">
                         {/* Description */}
                         {section.description && (
-                          <p className="text-sm text-gray-600">{section.description}</p>
+                          <p className="text-sm text-gray-600 whitespace-pre-line">{section.description}</p>
                         )}
 
                         {/* Statut */}
