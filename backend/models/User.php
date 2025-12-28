@@ -320,6 +320,20 @@ class User extends BaseModel
     }
 
     /**
+     * [AI:Claude] Mettre à jour la date de dernière activité
+     * Appelé automatiquement par AuthMiddleware à chaque requête authentifiée
+     *
+     * @param int $userId ID de l'utilisateur
+     * @return bool Succès de la mise à jour
+     */
+    public function updateLastSeen(int $userId): bool
+    {
+        $sql = "UPDATE {$this->table} SET last_seen_at = NOW() WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['id' => $userId]);
+    }
+
+    /**
      * [AI:Claude] Vérifier si l'utilisateur peut utiliser les tags (v0.15.0)
      *
      * @param int $userId ID de l'utilisateur
