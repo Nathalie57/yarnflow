@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
-const Navbar = () => {
+const Navbar = ({ onOpenOnboarding }) => {
   const { user, logout, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showHelpMenu, setShowHelpMenu] = useState(false)
+  const [showHelpMenuDesktop, setShowHelpMenuDesktop] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -27,8 +29,204 @@ const Navbar = () => {
             🧶 YarnFlow
           </Link>
 
+          {/* Help + Menu Burger buttons - Mobile uniquement */}
+          <div className="flex items-center gap-2 md:hidden">
+            {/* Help Button - Mobile uniquement */}
+            <div className="relative">
+              <button
+                onClick={() => setShowHelpMenu(!showHelpMenu)}
+                className="p-2 rounded-full bg-primary-100 hover:bg-primary-200 text-primary-700 transition w-10 h-10 flex items-center justify-center font-bold text-lg"
+                aria-label="Aide"
+              >
+                ?
+              </button>
+
+            {/* Help Menu Dropdown */}
+            {showHelpMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowHelpMenu(false)}
+                />
+                <div className="absolute right-0 top-12 z-50 bg-white rounded-xl shadow-2xl border-2 border-primary-200 w-72 overflow-hidden">
+                  <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3">
+                    <h3 className="text-white font-bold text-lg">Besoin d'aide ?</h3>
+                  </div>
+
+                  <div className="p-2">
+                    <button
+                      onClick={() => {
+                        setShowHelpMenu(false)
+                        if (onOpenOnboarding) {
+                          onOpenOnboarding()
+                        }
+                      }}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                    >
+                      <span className="text-2xl">🎓</span>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                          Guide de démarrage
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Redécouvrez les fonctionnalités
+                        </p>
+                      </div>
+                    </button>
+
+                    <Link
+                      to="/contact"
+                      onClick={() => setShowHelpMenu(false)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                    >
+                      <span className="text-2xl">💬</span>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                          Nous contacter
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Une question ? Un problème ?
+                        </p>
+                      </div>
+                    </Link>
+
+                    <Link
+                      to="/cgu"
+                      onClick={() => setShowHelpMenu(false)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                    >
+                      <span className="text-2xl">📄</span>
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                          CGU & Confidentialité
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Conditions d'utilisation
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+
+                  <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
+                    <p className="text-xs text-gray-500 text-center">
+                      YarnFlow v0.16 • 🧶 Made with ❤️
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+            </div>
+
+            {/* Mobile Menu Button - Mobile uniquement */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                // Close icon
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                // Hamburger icon
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+
           {/* Desktop Navigation - Hidden on mobile */}
           <div className="hidden md:flex items-center space-x-6">
+
+            {/* Help Button Desktop */}
+            <div className="relative">
+              <button
+                onClick={() => setShowHelpMenuDesktop(!showHelpMenuDesktop)}
+                className="p-2 rounded-full bg-primary-100 hover:bg-primary-200 text-primary-700 transition w-10 h-10 flex items-center justify-center font-bold text-lg"
+                aria-label="Aide"
+                title="Aide et guide de démarrage"
+              >
+                ?
+              </button>
+
+              {/* Help Menu Dropdown Desktop */}
+              {showHelpMenuDesktop && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowHelpMenuDesktop(false)}
+                  />
+                  <div className="absolute left-0 top-12 z-50 bg-white rounded-xl shadow-2xl border-2 border-primary-200 w-72 overflow-hidden">
+                    <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3">
+                      <h3 className="text-white font-bold text-lg">Besoin d'aide ?</h3>
+                    </div>
+
+                    <div className="p-2">
+                      <button
+                        onClick={() => {
+                          setShowHelpMenuDesktop(false)
+                          if (onOpenOnboarding) {
+                            onOpenOnboarding()
+                          }
+                        }}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                      >
+                        <span className="text-2xl">🎓</span>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                            Guide de démarrage
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Redécouvrez les fonctionnalités
+                          </p>
+                        </div>
+                      </button>
+
+                      <Link
+                        to="/contact"
+                        onClick={() => setShowHelpMenuDesktop(false)}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                      >
+                        <span className="text-2xl">💬</span>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                            Nous contacter
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Une question ? Un problème ?
+                          </p>
+                        </div>
+                      </Link>
+
+                      <Link
+                        to="/cgu"
+                        onClick={() => setShowHelpMenuDesktop(false)}
+                        className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                      >
+                        <span className="text-2xl">📄</span>
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                            CGU & Confidentialité
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Conditions d'utilisation
+                          </p>
+                        </div>
+                      </Link>
+                    </div>
+
+                    <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
+                      <p className="text-xs text-gray-500 text-center">
+                        YarnFlow v0.16 • 🧶 Made with ❤️
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* PROJETS */}
             <Link
               to="/my-projects"
@@ -144,25 +342,6 @@ const Navbar = () => {
               </div>
             </div>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition"
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? (
-              // Close icon
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              // Hamburger icon
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
         </div>
       </div>
 

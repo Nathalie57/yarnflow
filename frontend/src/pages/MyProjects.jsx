@@ -21,6 +21,7 @@ import ProjectFilters from '../components/ProjectFilters'
 import TagInput from '../components/TagInput'
 import TagBadge from '../components/TagBadge'
 import UpgradePrompt from '../components/UpgradePrompt'
+import Onboarding from '../components/Onboarding'
 
 const MyProjects = () => {
   const { user } = useAuth()
@@ -82,6 +83,9 @@ const MyProjects = () => {
   // [AI:Claude] Modal système pour remplacer alert/confirm
   const [showAlertModal, setShowAlertModal] = useState(false)
   const [alertData, setAlertData] = useState({ title: '', message: '', type: 'info' })
+
+  // [AI:Claude] Onboarding pour nouveaux utilisateurs
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: null })
 
@@ -153,6 +157,34 @@ const MyProjects = () => {
     fetchProjects()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.status, filters.favorite, filters.sort, JSON.stringify(filters.tags)])
+
+  // [AI:Claude] Vérifier si c'est la première visite pour afficher l'onboarding
+  useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem('yarnflow_onboarding_seen')
+
+    // Afficher l'onboarding si l'utilisateur ne l'a jamais vu ET que les données sont chargées
+    if (!hasSeenOnboarding && !loading && hasLoadedOnce) {
+      // Petit délai pour que la page se charge complètement
+      const timer = setTimeout(() => {
+        setShowOnboarding(true)
+      }, 1000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [loading, hasLoadedOnce])
+
+  // [AI:Claude] Vérifier si on doit ouvrir le modal de création depuis l'onboarding
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('openCreateModal') === 'true') {
+      // Ouvrir le modal après un court délai
+      setTimeout(() => {
+        setShowCreateModal(true)
+      }, 300)
+      // Nettoyer l'URL
+      window.history.replaceState({}, '', '/my-projects')
+    }
+  }, [location.search])
 
   const fetchProjects = async () => {
     try {
@@ -2208,6 +2240,13 @@ Rang 4 : *2ms, aug* x6 (24)
         isOpen={showUpgradePrompt}
         onClose={() => setShowUpgradePrompt(false)}
         feature="tags"
+      />
+
+      {/* Onboarding pour nouveaux utilisateurs */}
+      <Onboarding
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onCreateProject={() => setShowCreateModal(true)}
       />
     </div>
   )
