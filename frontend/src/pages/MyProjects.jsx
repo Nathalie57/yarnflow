@@ -1010,44 +1010,49 @@ const MyProjects = () => {
                       </div>
                     )}
 
-                    {/* Barre de progression */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-600">Progression</span>
-                        {project.status === 'completed' ? (
-                          <span className="text-xs font-bold text-green-600">
-                            100%
-                          </span>
-                        ) : project.completion_percentage !== null ? (
-                          <span className="text-xs font-bold text-primary-600">
-                            {project.completion_percentage}%
-                          </span>
-                        ) : (
-                          <span className="text-xs text-gray-500">
+                    {/* Barre de progression (uniquement si total_rows défini ou projet terminé) */}
+                    {(project.status === 'completed' || project.completion_percentage !== null) ? (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-600">Progression</span>
+                          {project.status === 'completed' ? (
+                            <span className="text-xs font-bold text-green-600">
+                              100%
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold text-primary-600">
+                              {project.completion_percentage}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              project.status === 'completed' ? 'bg-green-600' : 'bg-primary-600'
+                            }`}
+                            style={{
+                              width: project.status === 'completed'
+                                ? '100%'
+                                : `${project.completion_percentage}%`
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600">Rangs tricotés</span>
+                          <span className="text-xs font-bold text-gray-700">
                             {project.current_row || 0} rang{(project.current_row || 0) > 1 ? 's' : ''}
                           </span>
+                        </div>
+                        {project.current_row === 0 && (
+                          <p className="text-xs text-gray-400 mt-1 text-center">
+                            Commencez à compter vos rangs
+                          </p>
                         )}
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all ${
-                            project.status === 'completed' ? 'bg-green-600' : 'bg-primary-600'
-                          }`}
-                          style={{
-                            width: project.status === 'completed'
-                              ? '100%'
-                              : project.completion_percentage !== null
-                                ? `${project.completion_percentage}%`
-                                : '0%'
-                          }}
-                        ></div>
-                      </div>
-                      {project.completion_percentage === null && project.current_row === 0 && (
-                        <p className="text-xs text-gray-400 mt-1 text-center">
-                          Commencez à compter vos rangs
-                        </p>
-                      )}
-                    </div>
+                    )}
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
