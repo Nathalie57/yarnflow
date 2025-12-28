@@ -13,6 +13,7 @@ namespace App\Middleware;
 
 use App\Services\JWTService;
 use App\Utils\Response;
+use App\Models\User;
 
 /**
  * [AI:Claude] Middleware pour protéger les routes avec JWT
@@ -20,10 +21,12 @@ use App\Utils\Response;
 class AuthMiddleware
 {
     private JWTService $jwtService;
+    private User $userModel;
 
     public function __construct()
     {
         $this->jwtService = new JWTService();
+        $this->userModel = new User();
     }
 
     /**
@@ -68,6 +71,12 @@ class AuthMiddleware
         if ($userData === null) {
             Response::error('Token invalide ou expiré', HTTP_UNAUTHORIZED);
             return null;
+        }
+
+        // [AI:Claude] Mettre à jour last_seen_at à chaque requête authentifiée
+        // Permet de tracker l'activité réelle (pas seulement les connexions)
+        if (isset($userData['user_id'])) {
+            $this->userModel->updateLastSeen($userData['user_id']);
         }
 
         return $userData;
