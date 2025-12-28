@@ -2484,140 +2484,161 @@ const ProjectCounter = () => {
 
       {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY avec fond caramel doux */}
       <div className="sticky top-20 z-40 bg-orange-100 bg-opacity-75 backdrop-blur-sm rounded-lg border-2 border-orange-300 p-3 mb-3 shadow-lg">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
-          {/* Section active */}
-          <div className="text-center sm:text-left">
-            <div className="text-xs text-gray-500">Section active</div>
-            <div className="font-semibold text-gray-900">
-              {currentSectionId ? (
-                sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
-              ) : (
-                'Projet global'
-              )}
+        {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
+        <div className="space-y-2 sm:space-y-0">
+          {/* Ligne 1 mobile: Section + Compteur | Desktop: cachée car tout sur une seule ligne */}
+          <div className="flex sm:hidden items-center justify-between gap-2">
+            {/* Section active mobile */}
+            <div className="text-left flex-shrink min-w-0">
+              <div className="text-xs text-gray-500">Section active</div>
+              <div className="font-semibold text-gray-900 text-sm truncate">
+                {currentSectionId ? (
+                  sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
+                ) : (
+                  'Projet global'
+                )}
+              </div>
+            </div>
+
+            {/* Compteur mobile */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button
+                onClick={handleDecrementRow}
+                disabled={currentRow === 0}
+                className="w-8 h-8 bg-red-100 text-red-600 rounded-full text-base font-bold hover:bg-red-200 transition disabled:opacity-50"
+              >
+                −
+              </button>
+              <div className="text-center min-w-[60px]">
+                <div className="text-2xl font-bold text-gray-900">{currentRow}</div>
+                {progressData.total && (
+                  <div className="text-[10px] text-gray-600">/ {progressData.total}</div>
+                )}
+              </div>
+              <button
+                onClick={handleIncrementRow}
+                className="w-9 h-9 bg-primary-600 text-white rounded-full text-xl font-bold hover:bg-primary-700 transition shadow-md"
+              >
+                +
+              </button>
             </div>
           </div>
 
-          {/* Compteur */}
-          <div className="flex items-center justify-center gap-1 sm:gap-2">
-            <button
-              onClick={handleDecrementRow}
-              disabled={currentRow === 0}
-              className="w-8 h-8 sm:w-9 sm:h-9 bg-red-100 text-red-600 rounded-full text-base sm:text-lg font-bold hover:bg-red-200 transition disabled:opacity-50"
-            >
-              −
-            </button>
-            <div className="text-center min-w-[60px] sm:min-w-[80px]">
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900">{currentRow}</div>
-              {progressData.total && (
-                <div className="text-[10px] sm:text-xs text-gray-600">/ {progressData.total}</div>
-              )}
+          {/* Desktop: Tout sur une ligne | Mobile: Ligne 2 (Timers + Bouton) */}
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            {/* Section active - visible uniquement desktop */}
+            <div className="hidden sm:block text-left flex-shrink-0">
+              <div className="text-xs text-gray-500">Section active</div>
+              <div className="font-semibold text-gray-900 text-base">
+                {currentSectionId ? (
+                  sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
+                ) : (
+                  'Projet global'
+                )}
+              </div>
             </div>
-            <button
-              onClick={handleIncrementRow}
-              className="w-9 h-9 sm:w-10 sm:h-10 bg-primary-600 text-white rounded-full text-xl sm:text-2xl font-bold hover:bg-primary-700 transition shadow-md"
-            >
-              +
-            </button>
-          </div>
 
-          {/* Timer de la section */}
-          <div className="flex items-center justify-center gap-3">
-            {(() => {
-              const currentSection = currentSectionId ? sections.find(s => s.id === currentSectionId) : null
-              const isSectionCompleted = currentSection?.is_completed === 1 || project.status === 'completed'
+            {/* Compteur - visible uniquement desktop */}
+            <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={handleDecrementRow}
+                disabled={currentRow === 0}
+                className="w-9 h-9 bg-red-100 text-red-600 rounded-full text-lg font-bold hover:bg-red-200 transition disabled:opacity-50"
+              >
+                −
+              </button>
+              <div className="text-center min-w-[80px]">
+                <div className="text-3xl font-bold text-gray-900">{currentRow}</div>
+                {progressData.total && (
+                  <div className="text-xs text-gray-600">/ {progressData.total}</div>
+                )}
+              </div>
+              <button
+                onClick={handleIncrementRow}
+                className="w-10 h-10 bg-primary-600 text-white rounded-full text-2xl font-bold hover:bg-primary-700 transition shadow-md"
+              >
+                +
+              </button>
+            </div>
 
-              // Si la section est terminée, afficher le temps total uniquement
-              if (isSectionCompleted) {
+            {/* Timers (gauche mobile, centre desktop) */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink">
+              <div className="text-center">
+                <div className="text-base sm:text-xl font-bold text-gray-900">{formatTime(elapsedTime)}</div>
+                <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
+                  Session
+                  {isWakeLockActive && (
+                    <span className="text-green-600" title="Écran maintenu allumé">🔋</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Temps total de la section */}
+              {(() => {
+                const currentSection = currentSectionId ? sections.find(s => s.id === currentSectionId) : null
+                if (!currentSection) return null
+
                 return (
-                  <div className="flex items-center gap-2">
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-green-700">
-                        {currentSection?.time_formatted || '0h 0min 0s'}
-                      </div>
-                      <div className="text-[10px] text-gray-500">Temps total</div>
+                  <div className="text-center border-l border-gray-300 pl-2 sm:pl-3">
+                    <div className="text-sm sm:text-lg font-semibold text-primary-700">
+                      {currentSection.time_formatted || '0h 0min 0s'}
                     </div>
-                    <div className="px-3 py-2 bg-green-100 text-green-700 rounded text-sm font-medium">
-                      ✅ Terminé
-                    </div>
+                    <div className="text-[10px] text-gray-500">Total</div>
                   </div>
                 )
-              }
+              })()}
+            </div>
 
-              // Sinon afficher le timer + boutons normalement
-              return (
+            {/* Boutons (droite mobile, droite desktop) */}
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              {project.status !== 'completed' && (
                 <>
-                  <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-gray-900">{formatTime(elapsedTime)}</div>
-                      <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-                        Temps de session
-                        {isWakeLockActive && (
-                          <span className="text-green-600" title="Écran maintenu allumé">🔋</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Temps total de la section */}
-                    {currentSection && (
-                      <div className="text-center sm:border-l sm:border-gray-300 sm:pl-3">
-                        <div className="text-sm sm:text-lg font-semibold text-primary-700">
-                          {currentSection.time_formatted || '0h 0min 0s'}
-                        </div>
-                        <div className="text-[10px] text-gray-500">Temps total</div>
-                      </div>
-                    )}
-                  </div>
-
-                  {project.status !== 'completed' && (
+                  {!isTimerRunning ? (
+                    <button
+                      onClick={handleStartSession}
+                      className="px-2 sm:px-3 py-1.5 sm:py-2 bg-green-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-green-700 transition whitespace-nowrap"
+                    >
+                      ▶️ Démarrer
+                    </button>
+                  ) : (
                     <>
-                      {!isTimerRunning ? (
+                      {/* Bouton Pause/Reprendre */}
+                      {!isTimerPaused ? (
                         <button
-                          onClick={handleStartSession}
-                          className="px-2 sm:px-3 py-1.5 sm:py-2 bg-green-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-green-700 transition whitespace-nowrap"
+                          onClick={handlePauseSession}
+                          className="px-2 sm:px-3 py-1.5 sm:py-2 bg-orange-500 text-white rounded text-xs sm:text-sm font-medium hover:bg-orange-600 transition whitespace-nowrap"
+                          title="Mettre en pause"
                         >
-                          ▶️ Démarrer
+                          ⏸️ Pause
                         </button>
                       ) : (
-                        <div className="flex items-center gap-1 sm:gap-2">
-                          {/* Bouton Pause/Reprendre */}
-                          {!isTimerPaused ? (
-                            <button
-                              onClick={handlePauseSession}
-                              className="px-2 sm:px-3 py-1.5 sm:py-2 bg-orange-500 text-white rounded text-xs sm:text-sm font-medium hover:bg-orange-600 transition whitespace-nowrap"
-                              title="Mettre en pause"
-                            >
-                              ⏸️ Pause
-                            </button>
-                          ) : (
-                            <button
-                              onClick={handleResumeSession}
-                              className="px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-blue-700 transition whitespace-nowrap"
-                              title="Reprendre"
-                            >
-                              ▶️ Reprendre
-                            </button>
-                          )}
-
-                          {/* Bouton Arrêter */}
-                          <button
-                            onClick={handleEndSession}
-                            className="px-2 sm:px-3 py-1.5 sm:py-2 bg-red-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-red-700 transition whitespace-nowrap"
-                            title="Terminer la session"
-                          >
-                            ⏹️ Arrêter
-                          </button>
-                        </div>
+                        <button
+                          onClick={handleResumeSession}
+                          className="px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-blue-700 transition whitespace-nowrap"
+                          title="Reprendre"
+                        >
+                          ▶️ Reprendre
+                        </button>
                       )}
+
+                      {/* Bouton Arrêter */}
+                      <button
+                        onClick={handleEndSession}
+                        className="px-2 sm:px-3 py-1.5 sm:py-2 bg-red-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-red-700 transition whitespace-nowrap"
+                        title="Terminer la session"
+                      >
+                        ⏹️ Arrêter
+                      </button>
                     </>
                   )}
-                  {project.status === 'completed' && (
-                    <div className="px-3 py-2 bg-green-100 text-green-700 rounded text-sm font-medium">
-                      ✅ Terminé
-                    </div>
-                  )}
                 </>
-              )
-            })()}
+              )}
+              {project.status === 'completed' && (
+                <div className="px-3 py-2 bg-green-100 text-green-700 rounded text-xs sm:text-sm font-medium">
+                  ✅ Terminé
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
