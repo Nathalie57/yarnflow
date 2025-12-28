@@ -175,6 +175,7 @@ const ProjectCounter = () => {
   const [showRowsConfirmModal, setShowRowsConfirmModal] = useState(false)
   const [rowsConfirmResolve, setRowsConfirmResolve] = useState(null)
   const [savingSection, setSavingSection] = useState(false)
+  const [expandedDescriptions, setExpandedDescriptions] = useState(new Set()) // [AI:Claude] IDs des descriptions dépliées
 
   // [AI:Claude] Modal pour ajouter le patron à la bibliothèque
   const [showAddToLibraryModal, setShowAddToLibraryModal] = useState(false)
@@ -1881,6 +1882,25 @@ const ProjectCounter = () => {
     setShowAddSectionModal(true)
   }
 
+  // [AI:Claude] Tronquer description avec limite de caractères
+  const truncateDescription = (description, limit = 150) => {
+    if (!description || description.length <= limit) return description
+    return description.substring(0, limit) + '...'
+  }
+
+  // [AI:Claude] Toggle expansion description de section
+  const toggleDescriptionExpansion = (sectionId) => {
+    setExpandedDescriptions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId)
+      } else {
+        newSet.add(sectionId)
+      }
+      return newSet
+    })
+  }
+
   // [AI:Claude] Sauvegarder une section (création ou modification)
   const handleSaveSection = async (e) => {
     e.preventDefault()
@@ -2464,9 +2484,9 @@ const ProjectCounter = () => {
 
       {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY avec fond caramel doux */}
       <div className="sticky top-20 z-40 bg-orange-100 bg-opacity-75 backdrop-blur-sm rounded-lg border-2 border-orange-300 p-3 mb-3 shadow-lg">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 items-center">
           {/* Section active */}
-          <div className="flex-shrink-0">
+          <div className="text-center sm:text-left">
             <div className="text-xs text-gray-500">Section active</div>
             <div className="font-semibold text-gray-900">
               {currentSectionId ? (
@@ -2478,30 +2498,30 @@ const ProjectCounter = () => {
           </div>
 
           {/* Compteur */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center justify-center gap-1 sm:gap-2">
             <button
               onClick={handleDecrementRow}
               disabled={currentRow === 0}
-              className="w-9 h-9 bg-red-100 text-red-600 rounded-full text-lg font-bold hover:bg-red-200 transition disabled:opacity-50"
+              className="w-8 h-8 sm:w-9 sm:h-9 bg-red-100 text-red-600 rounded-full text-base sm:text-lg font-bold hover:bg-red-200 transition disabled:opacity-50"
             >
               −
             </button>
-            <div className="text-center min-w-[80px]">
-              <div className="text-3xl font-bold text-gray-900">{currentRow}</div>
+            <div className="text-center min-w-[60px] sm:min-w-[80px]">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900">{currentRow}</div>
               {progressData.total && (
-                <div className="text-xs text-gray-600">/ {progressData.total}</div>
+                <div className="text-[10px] sm:text-xs text-gray-600">/ {progressData.total}</div>
               )}
             </div>
             <button
               onClick={handleIncrementRow}
-              className="w-10 h-10 bg-primary-600 text-white rounded-full text-2xl font-bold hover:bg-primary-700 transition shadow-md"
+              className="w-9 h-9 sm:w-10 sm:h-10 bg-primary-600 text-white rounded-full text-xl sm:text-2xl font-bold hover:bg-primary-700 transition shadow-md"
             >
               +
             </button>
           </div>
 
           {/* Timer de la section */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex items-center justify-center gap-3">
             {(() => {
               const currentSection = currentSectionId ? sections.find(s => s.id === currentSectionId) : null
               const isSectionCompleted = currentSection?.is_completed === 1 || project.status === 'completed'
@@ -2526,42 +2546,44 @@ const ProjectCounter = () => {
               // Sinon afficher le timer + boutons normalement
               return (
                 <>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-gray-900">{formatTime(elapsedTime)}</div>
-                    <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-                      Temps de session
-                      {isWakeLockActive && (
-                        <span className="text-green-600" title="Écran maintenu allumé">🔋</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Temps total de la section */}
-                  {currentSection && (
-                    <div className="text-center border-l border-gray-300 pl-3">
-                      <div className="text-lg font-semibold text-primary-700">
-                        {currentSection.time_formatted || '0h 0min 0s'}
+                  <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+                    <div className="text-center">
+                      <div className="text-xl font-bold text-gray-900">{formatTime(elapsedTime)}</div>
+                      <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
+                        Temps de session
+                        {isWakeLockActive && (
+                          <span className="text-green-600" title="Écran maintenu allumé">🔋</span>
+                        )}
                       </div>
-                      <div className="text-[10px] text-gray-500">Temps total</div>
                     </div>
-                  )}
+
+                    {/* Temps total de la section */}
+                    {currentSection && (
+                      <div className="text-center sm:border-l sm:border-gray-300 sm:pl-3">
+                        <div className="text-sm sm:text-lg font-semibold text-primary-700">
+                          {currentSection.time_formatted || '0h 0min 0s'}
+                        </div>
+                        <div className="text-[10px] text-gray-500">Temps total</div>
+                      </div>
+                    )}
+                  </div>
 
                   {project.status !== 'completed' && (
                     <>
                       {!isTimerRunning ? (
                         <button
                           onClick={handleStartSession}
-                          className="px-3 py-2 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition"
+                          className="px-2 sm:px-3 py-1.5 sm:py-2 bg-green-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-green-700 transition whitespace-nowrap"
                         >
                           ▶️ Démarrer
                         </button>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2">
                           {/* Bouton Pause/Reprendre */}
                           {!isTimerPaused ? (
                             <button
                               onClick={handlePauseSession}
-                              className="px-3 py-2 bg-orange-500 text-white rounded text-sm font-medium hover:bg-orange-600 transition"
+                              className="px-2 sm:px-3 py-1.5 sm:py-2 bg-orange-500 text-white rounded text-xs sm:text-sm font-medium hover:bg-orange-600 transition whitespace-nowrap"
                               title="Mettre en pause"
                             >
                               ⏸️ Pause
@@ -2569,7 +2591,7 @@ const ProjectCounter = () => {
                           ) : (
                             <button
                               onClick={handleResumeSession}
-                              className="px-3 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 transition"
+                              className="px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-blue-700 transition whitespace-nowrap"
                               title="Reprendre"
                             >
                               ▶️ Reprendre
@@ -2579,7 +2601,7 @@ const ProjectCounter = () => {
                           {/* Bouton Arrêter */}
                           <button
                             onClick={handleEndSession}
-                            className="px-3 py-2 bg-red-600 text-white rounded text-sm font-medium hover:bg-red-700 transition"
+                            className="px-2 sm:px-3 py-1.5 sm:py-2 bg-red-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-red-700 transition whitespace-nowrap"
                             title="Terminer la session"
                           >
                             ⏹️ Arrêter
@@ -2730,7 +2752,24 @@ const ProjectCounter = () => {
                           </span>
                         </div>
                         {section.description && (
-                          <p className="text-xs text-gray-500 mt-0.5 whitespace-pre-line">{section.description}</p>
+                          <div className="mt-0.5">
+                            <p className="text-xs text-gray-500 whitespace-pre-line">
+                              {expandedDescriptions.has(section.id)
+                                ? section.description
+                                : truncateDescription(section.description, 100)}
+                            </p>
+                            {section.description.length > 100 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleDescriptionExpansion(section.id)
+                                }}
+                                className="text-xs text-primary-600 hover:text-primary-800 font-medium mt-1"
+                              >
+                                {expandedDescriptions.has(section.id) ? 'Réduire' : 'Lire'}
+                              </button>
+                            )}
+                          </div>
                         )}
                       </td>
 
@@ -2884,7 +2923,21 @@ const ProjectCounter = () => {
                       <div className="mt-3 space-y-3">
                         {/* Description */}
                         {section.description && (
-                          <p className="text-sm text-gray-600 whitespace-pre-line">{section.description}</p>
+                          <div>
+                            <p className="text-sm text-gray-600 whitespace-pre-line">
+                              {expandedDescriptions.has(section.id)
+                                ? section.description
+                                : truncateDescription(section.description, 150)}
+                            </p>
+                            {section.description.length > 150 && (
+                              <button
+                                onClick={() => toggleDescriptionExpansion(section.id)}
+                                className="text-sm text-primary-600 hover:text-primary-800 font-medium mt-1"
+                              >
+                                {expandedDescriptions.has(section.id) ? 'Réduire' : 'Lire'}
+                              </button>
+                            )}
+                          </div>
                         )}
 
                         {/* Statut */}
