@@ -105,6 +105,16 @@ class AuthController
                 $data['last_name'] ?? null
             );
 
+            // [AI:Claude] Envoyer l'email de bienvenue (non-bloquant)
+            try {
+                $emailService = new \App\Services\EmailService();
+                $userName = $data['first_name'] ?? 'Nouveau membre';
+                $emailService->sendRegistrationWelcomeEmail($data['email'], $userName);
+            } catch (\Exception $e) {
+                // On log l'erreur mais on ne bloque pas l'inscription
+                error_log('[AuthController] Erreur envoi email de bienvenue : ' . $e->getMessage());
+            }
+
             // [AI:Claude] Si code Beta valide, appliquer les bénéfices
             if ($betaAccess) {
                 try {

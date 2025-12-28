@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { userAPI } from '../services/api'
+import Onboarding from '../components/Onboarding'
 
 const Profile = () => {
   const { user, updateUser, logout } = useAuth()
@@ -26,6 +27,9 @@ const Profile = () => {
   // Messages
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+
+  // Onboarding
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
     loadProfile()
@@ -325,6 +329,30 @@ const Profile = () => {
                   </div>
                 )}
               </div>
+
+              {/* Aide & Assistance */}
+              <div className="border-t pt-6 mt-6">
+                <h3 className="text-lg font-bold mb-4">📖 Aide & Assistance</h3>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => setShowOnboarding(true)}
+                    className="flex items-center gap-3 p-4 bg-gradient-to-r from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 rounded-lg transition-all text-left group"
+                  >
+                    <span className="text-3xl">🎓</span>
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900 group-hover:text-purple-700">
+                        Revoir le guide de démarrage
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Redécouvrez les fonctionnalités principales de YarnFlow
+                      </p>
+                    </div>
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -518,6 +546,13 @@ const Profile = () => {
           💡 Vous recevrez une confirmation par email avant la suppression définitive.
         </p>
       </div>
+
+      {/* Onboarding */}
+      <Onboarding
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        forceShow={true}
+      />
     </div>
   )
 }
