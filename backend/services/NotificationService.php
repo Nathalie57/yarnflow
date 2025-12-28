@@ -28,7 +28,7 @@ class NotificationService
     }
 
     /**
-     * Envoyer les emails d'onboarding J+3 (utilisateurs sans projet)
+     * Envoyer les emails d'onboarding J+3 (utilisateurs inactifs depuis inscription)
      *
      * @return array Résultat de l'envoi
      */
@@ -39,13 +39,13 @@ class NotificationService
         $failed = 0;
 
         try {
-            // Trouver les utilisateurs inscrits il y a 3 jours qui n'ont aucun projet
+            // Trouver les utilisateurs inactifs depuis 3 jours (avec ou sans projet)
             $sql = "
-                SELECT u.id, u.email, u.first_name
+                SELECT u.id, u.email, u.first_name,
+                       (SELECT COUNT(*) FROM projects WHERE user_id = u.id) as project_count
                 FROM users u
-                LEFT JOIN projects p ON p.user_id = u.id
                 WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 3 DAY)
-                  AND p.id IS NULL
+                  AND (u.last_seen_at IS NULL OR u.last_seen_at <= DATE_SUB(NOW(), INTERVAL 3 DAY))
                   AND u.email_notifications = 1
                   AND NOT EXISTS (
                       SELECT 1 FROM email_notifications_sent
@@ -61,7 +61,14 @@ class NotificationService
 
             foreach ($users as $user) {
                 $name = $user['first_name'] ?? 'Nouveau membre';
-                $success = $this->emailService->sendOnboardingDay3Email($user['email'], $name, $user['id']);
+                $hasProjects = $user['project_count'] > 0;
+
+                $success = $this->emailService->sendOnboardingDay3Email(
+                    $user['email'],
+                    $name,
+                    $user['id'],
+                    $hasProjects
+                );
 
                 if ($success) {
                     $this->recordEmailSent($user['id'], 'onboarding_day3', '🎓 Besoin d\'aide pour démarrer avec YarnFlow ?');
@@ -89,29 +96,29 @@ class NotificationService
     }
 
     /**
-     * Envoyer les emails de réengagement J+14 (utilisateurs inactifs)
+     * Envoyer les emails de réengagement J+7 (utilisateurs inactifs)
      *
      * @return array Résultat de l'envoi
      */
-    public function sendReengagementDay14Emails(): array
+    public function sendReengagementDay7Emails(): array
     {
         $sent = 0;
         $skipped = 0;
         $failed = 0;
 
         try {
-            // Trouver les utilisateurs inactifs depuis 14 jours qui ont au moins 1 projet
+            // Trouver les utilisateurs inactifs depuis 7 jours qui ont au moins 1 projet
             $sql = "
                 SELECT u.id, u.email, u.first_name,
                        (SELECT COUNT(*) FROM projects WHERE user_id = u.id) as project_count
                 FROM users u
-                WHERE u.last_seen_at <= DATE_SUB(NOW(), INTERVAL 14 DAY)
+                WHERE u.last_seen_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)
                   AND u.email_notifications = 1
                   AND EXISTS (SELECT 1 FROM projects WHERE user_id = u.id)
                   AND NOT EXISTS (
                       SELECT 1 FROM email_notifications_sent
                       WHERE user_id = u.id
-                        AND notification_type = 'reengagement_day14'
+                        AND notification_type = 'reengagement_day7'
                         AND sent_year = YEAR(NOW())
                         AND sent_month = MONTH(NOW())
                   )
@@ -126,7 +133,7 @@ class NotificationService
                 // Récupérer le projet en cours (dernier modifié, non terminé)
                 $projectData = $this->getActiveProject($user['id']);
 
-                $success = $this->emailService->sendReengagementDay14Email(
+                $success = $this->emailService->sendReengagementDay7Email(
                     $user['email'],
                     $name,
                     $projectData,
@@ -134,7 +141,7 @@ class NotificationService
                 );
 
                 if ($success) {
-                    $this->recordEmailSent($user['id'], 'reengagement_day14', '🧵 Votre tricot vous attend !');
+                    $this->recordEmailSent($user['id'], 'reengagement_day7', '🧵 Votre tricot vous attend !');
                     $sent++;
                 } else {
                     $failed++;
@@ -146,11 +153,11 @@ class NotificationService
                 'sent' => $sent,
                 'skipped' => $skipped,
                 'failed' => $failed,
-                'message' => "Emails réengagement J+14 : {$sent} envoyés, {$failed} échoués"
+                'message' => "Emails réengagement J+7 : {$sent} envoyés, {$failed} échoués"
             ];
 
         } catch (\Exception $e) {
-            error_log("[NotificationService] Erreur envoi réengagement J+14: " . $e->getMessage());
+            error_log("[NotificationService] Erreur envoi réengagement J+7: " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()
@@ -159,27 +166,27 @@ class NotificationService
     }
 
     /**
-     * Envoyer les emails "On vous manque" J+30 (utilisateurs très inactifs)
+     * Envoyer les emails "Besoin d'aide ?" J+21 (utilisateurs très inactifs)
      *
      * @return array Résultat de l'envoi
      */
-    public function sendMissedYouDay30Emails(): array
+    public function sendNeedHelpDay21Emails(): array
     {
         $sent = 0;
         $skipped = 0;
         $failed = 0;
 
         try {
-            // Trouver les utilisateurs inactifs depuis 30 jours
+            // Trouver les utilisateurs inactifs depuis 21 jours
             $sql = "
                 SELECT u.id, u.email, u.first_name
                 FROM users u
-                WHERE u.last_seen_at <= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                WHERE u.last_seen_at <= DATE_SUB(NOW(), INTERVAL 21 DAY)
                   AND u.email_notifications = 1
                   AND NOT EXISTS (
                       SELECT 1 FROM email_notifications_sent
                       WHERE user_id = u.id
-                        AND notification_type = 'missed_you_day30'
+                        AND notification_type = 'need_help_day21'
                         AND sent_year = YEAR(NOW())
                         AND sent_month = MONTH(NOW())
                   )
@@ -190,10 +197,10 @@ class NotificationService
 
             foreach ($users as $user) {
                 $name = $user['first_name'] ?? 'Membre';
-                $success = $this->emailService->sendMissedYouDay30Email($user['email'], $name, $user['id']);
+                $success = $this->emailService->sendNeedHelpDay21Email($user['email'], $name, $user['id']);
 
                 if ($success) {
-                    $this->recordEmailSent($user['id'], 'missed_you_day30', '💔 Vous nous manquez sur YarnFlow !');
+                    $this->recordEmailSent($user['id'], 'need_help_day21', '🆘 Besoin d\'aide avec YarnFlow ?');
                     $sent++;
                 } else {
                     $failed++;
@@ -205,11 +212,11 @@ class NotificationService
                 'sent' => $sent,
                 'skipped' => $skipped,
                 'failed' => $failed,
-                'message' => "Emails 'on vous manque' J+30 : {$sent} envoyés, {$failed} échoués"
+                'message' => "Emails 'besoin d'aide' J+21 : {$sent} envoyés, {$failed} échoués"
             ];
 
         } catch (\Exception $e) {
-            error_log("[NotificationService] Erreur envoi 'on vous manque' J+30: " . $e->getMessage());
+            error_log("[NotificationService] Erreur envoi 'besoin d'aide' J+21: " . $e->getMessage());
             return [
                 'success' => false,
                 'error' => $e->getMessage()
@@ -299,22 +306,22 @@ class NotificationService
         // Onboarding J+3
         $results['onboarding'] = $this->sendOnboardingDay3Emails();
 
-        // Réengagement J+14
-        $results['reengagement'] = $this->sendReengagementDay14Emails();
+        // Réengagement J+7
+        $results['reengagement'] = $this->sendReengagementDay7Emails();
 
-        // On vous manque J+30
-        $results['missed_you'] = $this->sendMissedYouDay30Emails();
+        // Besoin d'aide J+21
+        $results['need_help'] = $this->sendNeedHelpDay21Emails();
 
         // Calcul du total
         $totalSent =
             ($results['onboarding']['sent'] ?? 0) +
             ($results['reengagement']['sent'] ?? 0) +
-            ($results['missed_you']['sent'] ?? 0);
+            ($results['need_help']['sent'] ?? 0);
 
         $totalFailed =
             ($results['onboarding']['failed'] ?? 0) +
             ($results['reengagement']['failed'] ?? 0) +
-            ($results['missed_you']['failed'] ?? 0);
+            ($results['need_help']['failed'] ?? 0);
 
         return [
             'success' => true,

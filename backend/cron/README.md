@@ -8,17 +8,17 @@ Scripts d'automatisation pour les tâches planifiées de YarnFlow.
 
 Le script `send-notifications.php` envoie automatiquement 3 types d'emails :
 
-1. **Onboarding J+3** - Utilisateurs inscrits depuis 3 jours sans aucun projet
+1. **Onboarding J+3** - Utilisateurs inactifs depuis 3 jours (avec ou sans projet)
    - Sujet : "🎓 Besoin d'aide pour démarrer avec YarnFlow ?"
-   - Aide à la prise en main
+   - Aide à la prise en main adaptée selon si l'utilisateur a créé un projet ou non
 
-2. **Réengagement J+14** - Utilisateurs inactifs depuis 14 jours (avec projets)
+2. **Réengagement J+7** - Utilisateurs inactifs depuis 7 jours (avec projets)
    - Sujet : "🧵 Votre tricot vous attend !"
    - Rappel personnalisé avec progression du projet
 
-3. **On vous manque J+30** - Utilisateurs inactifs depuis 30 jours
-   - Sujet : "💔 Vous nous manquez sur YarnFlow !"
-   - Liste des nouvelles fonctionnalités
+3. **Besoin d'aide J+21** - Utilisateurs inactifs depuis 21 jours
+   - Sujet : "🆘 Besoin d'aide avec YarnFlow ?"
+   - Rappel des fonctionnalités et lien vers le support
 
 ### Protection anti-spam
 
@@ -118,15 +118,14 @@ SELECT COUNT(*) FROM users WHERE email_notifications = 0;
 Pour tester, modifier temporairement un utilisateur :
 
 ```sql
--- Simuler un utilisateur inscrit il y a 3 jours sans projet
-UPDATE users SET created_at = DATE_SUB(NOW(), INTERVAL 3 DAY) WHERE id = 123;
-DELETE FROM projects WHERE user_id = 123;
+-- Simuler un utilisateur inscrit il y a 3 jours inactif (avec ou sans projet)
+UPDATE users SET created_at = DATE_SUB(NOW(), INTERVAL 3 DAY), last_seen_at = DATE_SUB(NOW(), INTERVAL 3 DAY) WHERE id = 123;
 
--- Simuler un utilisateur inactif depuis 14 jours
-UPDATE users SET last_seen_at = DATE_SUB(NOW(), INTERVAL 14 DAY) WHERE id = 456;
+-- Simuler un utilisateur inactif depuis 7 jours avec projet
+UPDATE users SET last_seen_at = DATE_SUB(NOW(), INTERVAL 7 DAY) WHERE id = 456;
 
--- Simuler un utilisateur inactif depuis 30 jours
-UPDATE users SET last_seen_at = DATE_SUB(NOW(), INTERVAL 30 DAY) WHERE id = 789;
+-- Simuler un utilisateur inactif depuis 21 jours
+UPDATE users SET last_seen_at = DATE_SUB(NOW(), INTERVAL 21 DAY) WHERE id = 789;
 ```
 
 Puis exécuter :
