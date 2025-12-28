@@ -248,6 +248,154 @@ HTML;
     }
 
     /**
+     * [AI:Claude] Envoyer un email de bienvenue après inscription
+     *
+     * @param string $email Email du destinataire
+     * @param string $name Prénom de l'utilisateur
+     * @return bool True si envoi réussi
+     */
+    public function sendRegistrationWelcomeEmail(string $email, string $name): bool
+    {
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = '🧶 Bienvenue sur YarnFlow !';
+
+            // Corps HTML
+            $mail->isHTML(true);
+            $mail->Body = $this->getRegistrationWelcomeEmailTemplate($name);
+
+            // Version texte
+            $mail->AltBody = "Bienvenue sur YarnFlow !\n\nBonjour $name,\n\nFélicitations ! Votre compte YarnFlow est maintenant créé.\n\nVous pouvez dès maintenant :\n- Créer vos premiers projets tricot/crochet\n- Utiliser le compteur de rangs intelligent\n- Générer 5 photos IA gratuites par mois\n- Organiser votre bibliothèque de patrons\n\nBesoin d'aide ? Consultez notre guide de démarrage dans l'application ou contactez-nous.\n\nBon tricot !\nL'équipe YarnFlow 🧶";
+
+            $mail->send();
+            error_log("[EMAIL] Email de bienvenue envoyé à: $email");
+            return true;
+
+        } catch (Exception $e) {
+            error_log("[EMAIL ERROR] Erreur envoi email de bienvenue: {$mail->ErrorInfo}");
+            return false;
+        }
+    }
+
+    /**
+     * [AI:Claude] Template HTML pour email de bienvenue inscription
+     *
+     * @param string $name Prénom utilisateur
+     * @return string HTML de l'email
+     */
+    private function getRegistrationWelcomeEmailTemplate(string $name): string
+    {
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fef8f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); padding: 40px; text-align: center; border-radius: 12px 12px 0 0;">
+                            <div style="font-size: 56px; margin: 0 0 10px 0;">🧶</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: bold;">
+                                YarnFlow
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px 40px 20px;">
+                            <h2 style="color: #884024; margin: 0 0 20px; font-size: 24px;">
+                                Bienvenue sur YarnFlow ! 🎉
+                            </h2>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Bonjour <strong>{$name}</strong>,
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Félicitations ! Votre compte YarnFlow est maintenant créé et prêt à l'emploi.
+                            </p>
+
+                            <!-- Features Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; border-radius: 8px; margin: 0 0 30px;">
+                                <tr>
+                                    <td style="padding: 24px;">
+                                        <h3 style="color: #884024; margin: 0 0 16px; font-size: 18px;">
+                                            🎁 Ce que vous pouvez faire dès maintenant :
+                                        </h3>
+                                        <ul style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                                            <li><strong>Créer vos projets</strong> tricot et crochet</li>
+                                            <li><strong>Utiliser le compteur</strong> de rangs intelligent avec timer</li>
+                                            <li><strong>Générer 5 photos IA</strong> gratuites chaque mois</li>
+                                            <li><strong>Organiser votre bibliothèque</strong> de patrons</li>
+                                            <li><strong>Suivre vos statistiques</strong> de progression</li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- CTA Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding: 0 0 30px;">
+                                        <a href="https://yarnflow.fr/my-projects" style="display: inline-block; background-color: #dd7a4a; background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                                            🚀 Créer mon premier projet
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Help Box -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px; margin: 0 0 20px;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="color: #075985; font-size: 14px; line-height: 1.6; margin: 0;">
+                                            💡 <strong>Besoin d'aide ?</strong><br>
+                                            Consultez notre guide de démarrage directement dans l'application (bouton "?" en haut) ou contactez-nous via le formulaire de contact.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 20px 0;">
+                                Bon tricot et bonne organisation ! 🧵
+                            </p>
+
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0;">
+                                L'équipe YarnFlow<br>
+                                <strong>Nathalie</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #fef8f4; padding: 30px 40px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3e8dd;">
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 10px; text-align: center;">
+                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
+                            </p>
+                            <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                                <a href="https://yarnflow.fr" style="color: #dd7a4a; text-decoration: none;">yarnflow.fr</a> •
+                                <a href="https://yarnflow.fr/contact" style="color: #dd7a4a; text-decoration: none;">Contact</a> •
+                                <a href="https://yarnflow.fr/cgu" style="color: #dd7a4a; text-decoration: none;">CGU</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
      * [AI:Claude] Envoyer un email de réinitialisation de mot de passe
      *
      * @param string $email Email du destinataire
