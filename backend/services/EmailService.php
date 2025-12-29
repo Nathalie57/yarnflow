@@ -251,6 +251,33 @@ HTML;
     }
 
     /**
+     * [AI:Claude] Ajouter les headers anti-spam recommandés
+     *
+     * @param PHPMailer $mail Instance de PHPMailer
+     * @param string $emailType Type d'email (transactional, marketing, etc.)
+     * @return void
+     */
+    private function addAntiSpamHeaders(PHPMailer $mail, string $emailType = 'transactional'): void
+    {
+        // Headers anti-spam recommandés
+        $mail->addCustomHeader('X-Mailer', 'YarnFlow v1.0');
+        $mail->addCustomHeader('X-Priority', '3'); // Normal priority
+        $mail->addCustomHeader('X-MSMail-Priority', 'Normal');
+        $mail->addCustomHeader('Importance', 'Normal');
+
+        // Type de message
+        if ($emailType === 'transactional') {
+            $mail->addCustomHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
+            $mail->addCustomHeader('Precedence', 'bulk');
+        }
+
+        // Lien de désinscription (List-Unsubscribe)
+        $unsubscribeUrl = 'https://yarnflow.fr/profile'; // Page où l'utilisateur peut gérer ses préférences
+        $mail->addCustomHeader('List-Unsubscribe', "<{$unsubscribeUrl}>");
+        $mail->addCustomHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+    }
+
+    /**
      * [AI:Claude] Logger l'envoi d'un email dans la base de données
      *
      * @param string $recipientEmail Email du destinataire
@@ -317,6 +344,9 @@ HTML;
             $mail = clone $this->mailer;
             $mail->addAddress($email, $name);
             $mail->Subject = $subject;
+
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
 
             // Corps HTML
             $mail->isHTML(true);
@@ -472,6 +502,9 @@ HTML;
             $mail->addAddress($email, $name);
             $mail->Subject = '🔑 Réinitialisation de votre mot de passe YarnFlow';
 
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
+
             // Corps HTML
             $mail->isHTML(true);
             $mail->Body = $this->getPasswordResetEmailTemplate($name, $resetLink);
@@ -610,6 +643,9 @@ HTML;
             $mail->addAddress($email, $name);
             $mail->Subject = $subject;
 
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
+
             $mail->isHTML(true);
             $mail->Body = $this->getOnboardingDay3EmailTemplate($name);
             $mail->AltBody = "Bonjour $name,\n\nVous vous êtes inscrit sur YarnFlow il y a quelques jours, mais nous avons remarqué que vous n'avez pas encore créé votre premier projet.\n\nBesoin d'aide pour démarrer ?\n\nYarnFlow vous permet de :\n- Suivre vos projets tricot et crochet\n- Utiliser un compteur de rangs intelligent\n- Générer des photos IA de vos créations\n\nCréez votre premier projet : https://yarnflow.fr/my-projects\n\nL'équipe YarnFlow";
@@ -741,6 +777,9 @@ HTML;
             $mail->addAddress($email, $name);
             $mail->Subject = $subject;
 
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
+
             $mail->isHTML(true);
             $mail->Body = $this->getReengagementDay14EmailTemplate($name, $projectData);
             $mail->AltBody = "Bonjour $name,\n\nCela fait 2 semaines qu'on ne vous a pas vu sur YarnFlow !\n\nVos projets vous attendent. Reprenez là où vous vous êtes arrêté.\n\nContinuer mon projet : https://yarnflow.fr/my-projects\n\nL'équipe YarnFlow";
@@ -867,6 +906,9 @@ HTML;
             $mail = clone $this->mailer;
             $mail->addAddress($email, $name);
             $mail->Subject = $subject;
+
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
 
             $mail->isHTML(true);
             $mail->Body = $this->getMissedYouDay30EmailTemplate($name);
