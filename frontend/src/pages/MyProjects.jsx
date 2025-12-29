@@ -1010,8 +1010,20 @@ const MyProjects = () => {
                       </div>
                     )}
 
-                    {/* Barre de progression (uniquement si total_rows défini ou projet terminé) */}
-                    {(project.status === 'completed' || project.completion_percentage !== null) ? (
+                    {/* Barre de progression ou nombre de rangs */}
+                    {project.sections_count > 0 ? (
+                      // Projet avec sections : afficher le total de rangs tricotés
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600">Total rangs tricotés</span>
+                          <span className="text-xs font-bold text-gray-700">
+                            {project.current_row || 0} rang{(project.current_row || 0) > 1 ? 's' : ''}
+                            {project.total_rows ? ` / ${project.total_rows}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (project.status === 'completed' || project.completion_percentage !== null) ? (
+                      // Projet sans sections avec total_rows : afficher barre de progression
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs text-gray-600">Progression</span>
@@ -1039,6 +1051,7 @@ const MyProjects = () => {
                         </div>
                       </div>
                     ) : (
+                      // Projet sans sections et sans total_rows : afficher nombre de rangs
                       <div className="mb-4">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-600">Rangs tricotés</span>
