@@ -2454,10 +2454,12 @@ const ProjectCounter = () => {
             percentage: Math.round(((activeSection.current_row || 0) / activeSection.total_rows) * 100)
           }
         }
+        // [AI:Claude] Section sans total_rows : retourner null pour ne pas afficher de total
+        return { current: activeSection.current_row || 0, total: null, percentage: null }
       }
     }
-    // Fallback: projet global
-    if (project) {
+    // Fallback: projet global (seulement si pas de sections)
+    if (project && sections.length === 0) {
       // [AI:Claude] Si le projet est terminé, forcer 100%
       if (project.status === 'completed' && project.total_rows) {
         return {
