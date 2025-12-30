@@ -1019,8 +1019,8 @@ const MyProjects = () => {
                                   ? Number(project.current_row || 0).toFixed(1)
                                   : Math.floor(Number(project.current_row || 0))
                                 }
-                                {/* Ne pas afficher le total si le projet a des sections (car total incomplet) */}
-                                {project.sections_count === 0 && project.total_rows ? (
+                                {/* Afficher total si défini (NULL si projet avec sections incomplètes) */}
+                                {project.total_rows ? (
                                   project.counter_unit === 'cm'
                                     ? ` / ${Number(project.total_rows).toFixed(1)}`
                                     : ` / ${Math.floor(Number(project.total_rows))}`
@@ -1041,7 +1041,7 @@ const MyProjects = () => {
 
                     {/* Barre de progression ou nombre de rangs */}
                     {project.sections_count > 0 ? (
-                      // Projet avec sections : afficher le total de rangs tricotés (sans total global)
+                      // Projet avec sections : afficher le total seulement si toutes les sections ont un total_rows
                       <div className="mb-4">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-600">
@@ -1052,6 +1052,12 @@ const MyProjects = () => {
                               ? `${Number(project.current_row || 0).toFixed(1)} cm`
                               : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
                             }
+                            {/* Afficher total seulement si toutes les sections ont un total (SUM retourne NULL sinon) */}
+                            {project.total_rows ? (
+                              project.counter_unit === 'cm'
+                                ? ` / ${Number(project.total_rows).toFixed(1)} cm`
+                                : ` / ${Math.floor(Number(project.total_rows))}`
+                            ) : ''}
                           </span>
                         </div>
                       </div>
