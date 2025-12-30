@@ -361,6 +361,22 @@ class ProjectController
                 return;
             }
 
+            // [AI:Claude] v0.16.2 - Valider la valeur du compteur selon l'unité
+            if (isset($data['current_row'])) {
+                $project = $this->projectModel->getProjectById($id);
+                $unit = $data['counter_unit'] ?? $project['counter_unit'] ?? 'rows';
+
+                if (!$this->projectModel->validateCounterValue((float)$data['current_row'], $unit)) {
+                    $this->sendResponse(400, [
+                        'success' => false,
+                        'error' => $unit === 'rows'
+                            ? 'Les rangs doivent être des nombres entiers'
+                            : 'Les centimètres doivent être des multiples de 0.5 (ex: 0.0, 0.5, 1.0, 1.5...)'
+                    ]);
+                    return;
+                }
+            }
+
             $success = $this->projectModel->updateProject($id, $data);
 
             if (!$success) {
@@ -447,6 +463,16 @@ class ProjectController
                 $this->sendResponse(403, [
                     'success' => false,
                     'error' => 'Accès non autorisé'
+                ]);
+                return;
+            }
+
+            // [AI:Claude] v0.16.2 - Empêcher l'historique en mode cm
+            $project = $this->projectModel->getProjectById($id);
+            if (($project['counter_unit'] ?? 'rows') === 'cm') {
+                $this->sendResponse(400, [
+                    'success' => false,
+                    'error' => 'L\'historique de rangs n\'est pas disponible en mode centimètres. Utilisez le compteur direct.'
                 ]);
                 return;
             }
@@ -584,6 +610,76 @@ class ProjectController
             $this->sendResponse(500, [
                 'success' => false,
                 'error' => 'Erreur lors de la suppression du rang',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] v0.16.2 - PUT /api/projects/{id}/counter-unit - Changer l'unité du compteur
+     *
+     * @param int $id ID du projet
+     * @return void JSON response
+     */
+    public function switchCounterUnit(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+
+            if (!$this->projectModel->belongsToUser($id, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $newUnit = $data['counter_unit'] ?? null;
+            if (!in_array($newUnit, ['rows', 'cm'])) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Unité invalide (doit être "rows" ou "cm")']);
+                return;
+            }
+
+            // Récupérer le projet actuel
+            $project = $this->projectModel->getProjectById($id);
+            $currentRow = (float)$project['current_row'];
+
+            // Arrondir la valeur actuelle si nécessaire pour la nouvelle unité
+            $validValue = $currentRow;
+            if ($newUnit === 'rows') {
+                // Passer en mode rangs : arrondir à l'entier inférieur
+                $validValue = floor($currentRow);
+            } elseif ($newUnit === 'cm') {
+                // Passer en mode cm : arrondir au multiple de 0.5 le plus proche
+                $validValue = round($currentRow * 2) / 2;
+            }
+
+            // Mettre à jour l'unité et l'incrément
+            $updateData = [
+                'counter_unit' => $newUnit,
+                'counter_unit_increment' => $newUnit === 'cm' ? 0.5 : 1.0
+            ];
+
+            // Si la valeur a été arrondie, l'inclure dans l'update
+            if ($validValue != $currentRow) {
+                $updateData['current_row'] = $validValue;
+            }
+
+            $success = $this->projectModel->updateProject($id, $updateData);
+
+            if (!$success) {
+                throw new \Exception('Erreur lors du changement d\'unité');
+            }
+
+            $updatedProject = $this->projectModel->getProjectById($id);
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => "Unité changée en " . ($newUnit === 'rows' ? 'rangs' : 'centimètres'),
+                'project' => $updatedProject
+            ]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors du changement d\'unité',
                 'message' => $e->getMessage()
             ]);
         }

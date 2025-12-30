@@ -292,11 +292,18 @@ const Stats = () => {
               {isPro ? (
                 <>
                   <div className="text-xs text-gray-600">
-                    Vitesse moyenne : {stats.avg_rows_per_hour || 0} rangs/h
+                    {stats.counter_unit === 'cm' ? (
+                      <>Vitesse moyenne : {stats.avg_cm_per_hour || 0} cm/h</>
+                    ) : (
+                      <>Vitesse moyenne : {stats.avg_rows_per_hour || 0} rangs/h</>
+                    )}
                   </div>
-                  {stats.avg_rows_per_hour > 0 && (
+                  {(stats.avg_rows_per_hour > 0 || stats.avg_cm_per_hour > 0) && (
                     <div className="mt-2 bg-primary-50 rounded px-2 py-1 text-xs text-primary-700 font-medium">
-                      {stats.avg_rows_per_hour >= 20 ? '🚀 Très rapide' : stats.avg_rows_per_hour >= 10 ? '⚡ Bon rythme' : '🐢 Prenez votre temps'}
+                      {stats.counter_unit === 'cm'
+                        ? (stats.avg_cm_per_hour >= 10 ? '🚀 Très rapide' : stats.avg_cm_per_hour >= 5 ? '⚡ Bon rythme' : '🐢 Prenez votre temps')
+                        : (stats.avg_rows_per_hour >= 20 ? '🚀 Très rapide' : stats.avg_rows_per_hour >= 10 ? '⚡ Bon rythme' : '🐢 Prenez votre temps')
+                      }
                     </div>
                   )}
                 </>
@@ -461,8 +468,8 @@ const Stats = () => {
                 <BarChart
                   data={[
                     {
-                      name: 'Rangs/h',
-                      value: stats.avg_rows_per_hour || 0,
+                      name: stats.counter_unit === 'cm' ? 'CM/h' : 'Rangs/h',
+                      value: stats.counter_unit === 'cm' ? (stats.avg_cm_per_hour || 0) : (stats.avg_rows_per_hour || 0),
                       color: '#8b5cf6'
                     },
                     {
@@ -495,7 +502,11 @@ const Stats = () => {
                   />
                   <Bar dataKey="value" radius={[8, 8, 0, 0]}>
                     {[
-                      { name: 'Rangs/h', value: stats.avg_rows_per_hour || 0, color: '#8b5cf6' },
+                      {
+                        name: stats.counter_unit === 'cm' ? 'CM/h' : 'Rangs/h',
+                        value: stats.counter_unit === 'cm' ? (stats.avg_cm_per_hour || 0) : (stats.avg_rows_per_hour || 0),
+                        color: '#8b5cf6'
+                      },
                       {
                         name: 'Mailles/h',
                         value: Math.min(stats.avg_stitches_per_hour || 0, 500),

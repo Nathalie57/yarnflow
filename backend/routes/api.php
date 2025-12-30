@@ -174,6 +174,7 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^projects\/(\d+)\/pattern-from-library$/', $uri, $matches) => (new ProjectController())->linkPatternFromLibrary((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/photo$/', $uri, $matches) => (new ProjectController())->uploadPhoto((int)$matches[1]),
         $method === 'PUT' && preg_match('/^projects\/(\d+)\/set-cover-photo$/', $uri, $matches) => (new ProjectController())->setCoverPhoto((int)$matches[1]),
+        $method === 'PUT' && preg_match('/^projects\/(\d+)\/counter-unit$/', $uri, $matches) => (new ProjectController())->switchCounterUnit((int)$matches[1]),
 
         // [AI:Claude] Routes de gestion des sections de projet
         $method === 'POST' && preg_match('/^projects\/(\d+)\/sections$/', $uri, $matches) => (new ProjectController())->createSection((int)$matches[1]),

@@ -223,6 +223,7 @@ class Project extends BaseModel
         $allowedFields = [
             'name', 'technique', 'type', 'description', 'main_photo', 'status', 'total_rows',
             'current_row', // [AI:Claude] FIX: Permettre la mise à jour du compteur de rangs
+            'counter_unit', 'counter_unit_increment', // [AI:Claude] v0.16.2 - Support unité compteur (rangs/cm)
             'yarn_brand', 'yarn_color', 'yarn_weight', 'hook_size', 'yarn_used_grams',
             'notes', 'pattern_notes', 'is_public', 'is_favorite', 'completed_at',
             'pattern_path', 'pattern_url', 'pattern_text', // [AI:Claude] v0.13.0 - Support texte patron
@@ -250,6 +251,31 @@ class Project extends BaseModel
         $stmt = $this->db->prepare($query);
 
         return $stmt->execute($params);
+    }
+
+    /**
+     * [AI:Claude] v0.16.2 - Valider la valeur du compteur selon l'unité
+     *
+     * @param float $value Valeur du compteur
+     * @param string $unit Unité ('rows' ou 'cm')
+     * @return bool Valide ou non
+     */
+    public function validateCounterValue(float $value, string $unit): bool
+    {
+        // Valeur négative invalide
+        if ($value < 0) {
+            return false;
+        }
+
+        if ($unit === 'rows') {
+            // Mode rangs : doit être un entier
+            return floor($value) == $value;
+        } elseif ($unit === 'cm') {
+            // Mode cm : doit être un multiple de 0.5 (0.0, 0.5, 1.0, 1.5...)
+            return ($value * 2) == floor($value * 2);
+        }
+
+        return false;
     }
 
     /**
@@ -696,6 +722,7 @@ class Project extends BaseModel
             'total_stitches' => $totalStitches,
             'completion_rate' => $completionRate,
             'avg_rows_per_hour' => $avgRowsPerHour,
+            'avg_cm_per_hour' => $avgRowsPerHour, // [AI:Claude] v0.16.2 - Même valeur, label différent selon unité
             'avg_stitches_per_hour' => $avgStitchesPerHour,
             'average_session_time' => $avgSessionTime,
             'current_streak' => $currentStreak,
@@ -892,7 +919,7 @@ class Project extends BaseModel
      */
     public function updateSection(int $sectionId, array $data): bool
     {
-        $allowedFields = ['name', 'description', 'display_order', 'total_rows', 'current_row', 'is_completed'];
+        $allowedFields = ['name', 'description', 'display_order', 'total_rows', 'current_row', 'counter_unit', 'is_completed'];
 
         $fields = [];
         $params = [':id' => $sectionId];

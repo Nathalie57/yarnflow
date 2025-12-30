@@ -52,6 +52,10 @@ const ProjectCounter = () => {
   // [AI:Claude] État du compteur
   const [currentRow, setCurrentRow] = useState(0)
   const [stitchCount, setStitchCount] = useState(0)
+  const [counterUnit, setCounterUnit] = useState('rows') // [AI:Claude] v0.16.2 - Unité du compteur (rows/cm)
+  const [counterIncrement, setCounterIncrement] = useState(1.0) // [AI:Claude] v0.16.2 - Incrément par défaut
+  const [isEditingCounter, setIsEditingCounter] = useState(false) // [AI:Claude] v0.16.2 - Mode édition du compteur
+  const [counterInputValue, setCounterInputValue] = useState('') // [AI:Claude] v0.16.2 - Valeur temporaire de l'input
 
   // [AI:Claude] Timer de session
   const [sessionId, setSessionId] = useState(null)
@@ -456,8 +460,10 @@ const ProjectCounter = () => {
       const projectData = response.data.project
 
       setProject(projectData)
-      setCurrentRow(projectData.current_row || 0)
+      setCurrentRow(parseFloat(projectData.current_row) || 0) // [AI:Claude] v0.16.2 - Convertir en nombre
       setNotes(projectData.notes || '')
+      setCounterUnit(projectData.counter_unit || 'rows') // [AI:Claude] v0.16.2 - Charger unité compteur
+      setCounterIncrement(parseFloat(projectData.counter_unit_increment) || 1.0) // [AI:Claude] v0.16.2 - Charger incrément
 
       // [AI:Claude] Sélectionner la section en cours si elle existe
       if (projectData.current_section_id) {
@@ -1438,6 +1444,107 @@ const ProjectCounter = () => {
     }
   }
 
+  // [AI:Claude] v0.16.2 - Handler pour changer l'unité du compteur
+  const handleToggleUnit = async () => {
+    const newUnit = counterUnit === 'rows' ? 'cm' : 'rows'
+
+    try {
+      await api.put(`/projects/${projectId}/counter-unit`, {
+        counter_unit: newUnit
+      })
+
+      // Recharger le projet pour obtenir les nouvelles valeurs
+      await fetchProject()
+    } catch (err) {
+      console.error('Erreur changement unité:', err)
+      showAlert('Erreur lors du changement d\'unité', 'error')
+    }
+  }
+
+  // [AI:Claude] v0.16.2 - Handlers pour input éditable du compteur
+  const handleCounterClick = () => {
+    setIsEditingCounter(true)
+    const numValue = Number(currentRow) || 0
+    setCounterInputValue(counterUnit === 'cm' ? numValue.toFixed(1) : Math.floor(numValue).toString())
+  }
+
+  const handleCounterInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleCounterInputSubmit()
+    } else if (e.key === 'Escape') {
+      setIsEditingCounter(false)
+      setCounterInputValue('')
+    }
+  }
+
+  const handleCounterInputSubmit = async () => {
+    const parsedValue = parseFloat(counterInputValue)
+
+    // Validation
+    if (isNaN(parsedValue) || parsedValue < 0) {
+      showAlert('Valeur invalide', 'error')
+      setIsEditingCounter(false)
+      return
+    }
+
+    // Arrondir selon l'unité
+    let validValue = counterUnit === 'rows'
+      ? Math.floor(parsedValue)
+      : Math.round(parsedValue * 2) / 2 // Arrondir au 0.5 le plus proche
+
+    const oldRow = currentRow
+
+    try {
+      // Mettre à jour l'état local immédiatement
+      setCurrentRow(validValue)
+
+      // Sauvegarder dans la base de données
+      if (currentSectionId) {
+        await api.put(`/projects/${projectId}/sections/${currentSectionId}`, {
+          current_row: validValue
+        })
+        setSections(prevSections =>
+          prevSections.map(s =>
+            s.id === currentSectionId
+              ? { ...s, current_row: validValue }
+              : s
+          )
+        )
+      } else {
+        await api.put(`/projects/${projectId}`, {
+          current_row: validValue
+        })
+        setProject(prevProject => ({
+          ...prevProject,
+          current_row: validValue
+        }))
+      }
+
+      setIsEditingCounter(false)
+      setCounterInputValue('')
+    } catch (err) {
+      console.error('Erreur sauvegarde compteur:', err)
+      showAlert('Erreur lors de la sauvegarde', 'error')
+      // Rollback
+      setCurrentRow(oldRow)
+      if (currentSectionId) {
+        setSections(prevSections =>
+          prevSections.map(s =>
+            s.id === currentSectionId
+              ? { ...s, current_row: oldRow }
+              : s
+          )
+        )
+      } else {
+        setProject(prevProject => ({
+          ...prevProject,
+          current_row: oldRow
+        }))
+      }
+      setIsEditingCounter(false)
+    }
+  }
+
   // [AI:Claude] Incrémenter le rang (sauvegarde directe sans modal)
   const handleIncrementRow = async () => {
     // [AI:Claude] Vérifier si on a atteint le maximum
@@ -1453,14 +1560,94 @@ const ProjectCounter = () => {
 
     // Bloquer si on a atteint le maximum
     if (maxRows !== null && currentRow >= maxRows) {
-      showAlert(`🎉 Vous avez terminé tous les rangs (${maxRows}/${maxRows}) !`, 'success')
+      const numMax = Number(maxRows)
+      const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
+      const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+      showAlert(`🎉 Vous avez terminé (${displayMax}/${displayMax} ${unitLabel}) !`, 'success')
       return
     }
 
-    const newRow = parseInt(currentRow) + 1
-    const oldRow = parseInt(currentRow)
+    // [AI:Claude] v0.16.2 - Calculer newRow selon l'unité
+    const increment = parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0)
+    const newRow = counterUnit === 'rows'
+      ? parseFloat(currentRow) + 1
+      : parseFloat(currentRow) + increment
+    const oldRow = currentRow
 
-    // [AI:Claude] Sauvegarder directement sans ouvrir la modal
+    // [AI:Claude] v0.16.2 - Mode CM : update direct sans historique
+    if (counterUnit === 'cm') {
+      try {
+        if (currentSectionId) {
+          await api.put(`/projects/${projectId}/sections/${currentSectionId}`, {
+            current_row: newRow
+          })
+          setSections(prevSections =>
+            prevSections.map(s =>
+              s.id === currentSectionId
+                ? { ...s, current_row: newRow }
+                : s
+            )
+          )
+        } else {
+          await api.put(`/projects/${projectId}`, {
+            current_row: newRow
+          })
+          setProject(prevProject => ({
+            ...prevProject,
+            current_row: newRow
+          }))
+        }
+        setCurrentRow(newRow)
+
+        // Check completion
+        if (maxRows !== null && newRow >= maxRows) {
+          if (currentSectionId) {
+            await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`)
+            setSections(prevSections =>
+              prevSections.map(s =>
+                s.id === currentSectionId
+                  ? { ...s, is_completed: 1 }
+                  : s
+              )
+            )
+            const numMax = Number(maxRows)
+            const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
+            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+            showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+          } else {
+            await api.put(`/projects/${projectId}`, { status: 'completed' })
+            if (isTimerRunning) {
+              await handleEndSession()
+            }
+            const numMax = Number(maxRows)
+            const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
+            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+            showAlert(`🎉 Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+          }
+        }
+      } catch (err) {
+        console.error('Erreur sauvegarde:', err)
+        showAlert('Erreur lors de la sauvegarde', 'error')
+        setCurrentRow(oldRow)
+        if (currentSectionId) {
+          setSections(prevSections =>
+            prevSections.map(s =>
+              s.id === currentSectionId
+                ? { ...s, current_row: oldRow }
+                : s
+            )
+          )
+        } else {
+          setProject(prevProject => ({
+            ...prevProject,
+            current_row: oldRow
+          }))
+        }
+      }
+      return
+    }
+
+    // [AI:Claude] Mode rangs : sauvegarder avec historique
     try {
       const rowData = {
         row_number: newRow,
@@ -1516,18 +1703,25 @@ const ProjectCounter = () => {
             const updatedSections = await api.get(`/projects/${projectId}/sections`)
             const allCompleted = updatedSections.data.sections?.every(s => s.is_completed === 1)
 
+            const numMax = Number(maxRows)
+            const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
+            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+
             if (allCompleted && sections.length > 0) {
               // Afficher la modale de confirmation au lieu de terminer automatiquement
-              showAlert(`🎉 Section terminée ! (${maxRows}/${maxRows})`, 'success')
+              showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
               await handleAllSectionsCompleted()
             } else {
-              showAlert(`🎉 Section terminée ! (${maxRows}/${maxRows})`, 'success')
+              showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
             }
 
             await fetchProject()
           } catch (err) {
             console.error('Erreur marquage section terminée:', err)
-            showAlert(`🎉 Section terminée ! (${maxRows}/${maxRows})`, 'success')
+            const numMax = Number(maxRows)
+            const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
+            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+            showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           }
         } else {
           // Pas de sections, marquer le projet global comme terminé
@@ -1538,10 +1732,16 @@ const ProjectCounter = () => {
               await handleEndSession()
             }
             await fetchProject()
-            showAlert(`🎉 Projet terminé ! (${maxRows}/${maxRows})`, 'success')
+            const numMax = Number(maxRows)
+            const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
+            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+            showAlert(`🎉 Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           } catch (err) {
             console.error('Erreur marquage projet terminé:', err)
-            showAlert(`🎉 Projet terminé ! (${maxRows}/${maxRows})`, 'success')
+            const numMax = Number(maxRows)
+            const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
+            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+            showAlert(`🎉 Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           }
         }
       }
@@ -1573,8 +1773,12 @@ const ProjectCounter = () => {
   // [AI:Claude] Décrémenter le rang (supprime le dernier rang au lieu de créer un nouveau)
   const handleDecrementRow = async () => {
     if (currentRow > 0) {
-      const newRow = parseInt(currentRow) - 1
-      const oldRow = parseInt(currentRow)
+      // [AI:Claude] v0.16.2 - Calculer newRow selon l'unité
+      const increment = parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0)
+      const newRow = counterUnit === 'rows'
+        ? parseFloat(currentRow) - 1
+        : Math.max(0, parseFloat(currentRow) - increment)
+      const oldRow = currentRow
 
       // [AI:Claude] Mettre à jour le compteur immédiatement pour un feedback instantané
       setCurrentRow(newRow)
@@ -1597,7 +1801,22 @@ const ProjectCounter = () => {
       }
 
       try {
-        // [AI:Claude] Récupérer tous les rangs de cette section
+        // [AI:Claude] v0.16.2 - Mode CM : update direct sans historique
+        if (counterUnit === 'cm') {
+          if (currentSectionId) {
+            await api.put(`/projects/${projectId}/sections/${currentSectionId}`, {
+              current_row: newRow
+            })
+          } else {
+            await api.put(`/projects/${projectId}`, {
+              current_row: newRow
+            })
+          }
+          return
+        }
+
+        // [AI:Claude] Mode rangs : supprimer le dernier rang de l'historique
+        // Récupérer tous les rangs de cette section
         const response = await api.get(`/projects/${projectId}/rows`, {
           params: { section_id: currentSectionId }
         })
@@ -2337,6 +2556,31 @@ const ProjectCounter = () => {
                   </div>
                 )}
               </div>
+
+              {/* [AI:Claude] v0.16.2 - Switch toggle unité */}
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  onClick={handleToggleUnit}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
+                >
+                  <span className="text-xs text-gray-600">Unité :</span>
+                  <div className="flex items-center gap-1.5 font-medium text-xs">
+                    <span className={counterUnit === 'rows' ? 'text-primary-600' : 'text-gray-400'}>
+                      📏 Rangs
+                    </span>
+                    <div className="relative inline-flex items-center h-5 w-9 rounded-full transition-colors"
+                         style={{ backgroundColor: counterUnit === 'cm' ? '#8b5cf6' : '#d1d5db' }}>
+                      <span
+                        className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
+                        style={{ transform: counterUnit === 'cm' ? 'translateX(18px)' : 'translateX(2px)' }}
+                      />
+                    </div>
+                    <span className={counterUnit === 'cm' ? 'text-primary-600' : 'text-gray-400'}>
+                      📐 CM
+                    </span>
+                  </div>
+                </button>
+              </div>
             </div>
 
             {/* Tags (v0.15.0) - Éditable */}
@@ -2505,18 +2749,40 @@ const ProjectCounter = () => {
             </div>
 
             {/* Compteur mobile */}
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={handleDecrementRow}
                 disabled={currentRow === 0}
-                className="w-8 h-8 bg-red-100 text-red-600 rounded-full text-base font-bold hover:bg-red-200 transition disabled:opacity-50"
+                className="w-9 h-9 bg-red-100 text-red-600 rounded-full text-lg font-bold hover:bg-red-200 transition disabled:opacity-50"
               >
                 −
               </button>
-              <div className="text-center min-w-[60px]">
-                <div className="text-2xl font-bold text-gray-900">{currentRow}</div>
+              <div className="text-center min-w-[80px]">
+                {isEditingCounter ? (
+                  <input
+                    type="number"
+                    step={counterUnit === 'cm' ? '0.5' : '1'}
+                    min="0"
+                    value={counterInputValue}
+                    onChange={(e) => setCounterInputValue(e.target.value)}
+                    onKeyDown={handleCounterInputKeyDown}
+                    onBlur={handleCounterInputSubmit}
+                    autoFocus
+                    className="text-3xl font-bold text-gray-900 w-full text-center border-2 border-primary-500 rounded px-1"
+                  />
+                ) : (
+                  <div
+                    onClick={handleCounterClick}
+                    className="text-3xl font-bold text-gray-900 cursor-pointer hover:bg-gray-100 rounded px-2 transition"
+                    title="Cliquer pour modifier"
+                  >
+                    {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
+                  </div>
+                )}
                 {progressData.total && (
-                  <div className="text-[10px] text-gray-600">/ {progressData.total}</div>
+                  <div className="text-xs text-gray-600">
+                    / {counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}
+                  </div>
                 )}
               </div>
               <button

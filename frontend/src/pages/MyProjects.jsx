@@ -46,7 +46,8 @@ const MyProjects = () => {
     name: '',
     technique: 'crochet', // crochet ou tricot
     type: '',
-    description: ''
+    description: '',
+    counter_unit: 'rows' // [AI:Claude] v0.16.2 - Unité de comptage (rows/cm)
   })
   const [creating, setCreating] = useState(false)
   const [creatingStep, setCreatingStep] = useState('') // [AI:Claude] Étape en cours
@@ -449,7 +450,9 @@ const MyProjects = () => {
         technique: formData.technique,
         type: formData.type || null,
         description: formData.description || null,
-        status: 'in_progress'
+        status: 'in_progress',
+        counter_unit: formData.counter_unit || 'rows', // [AI:Claude] v0.16.2 - Unité de comptage
+        counter_unit_increment: formData.counter_unit === 'cm' ? 0.5 : 1.0 // [AI:Claude] v0.16.2 - Incrément selon l'unité
       }
 
       // [AI:Claude] Ajouter les détails techniques si des données ont été saisies
@@ -536,7 +539,8 @@ const MyProjects = () => {
         name: '',
         technique: 'crochet',
         type: '',
-        description: ''
+        description: '',
+        counter_unit: 'rows' // [AI:Claude] v0.16.2 - Reset unité de comptage
       })
       setTechnicalForm({
         yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
@@ -640,7 +644,8 @@ const MyProjects = () => {
       name: '',
       technique: 'crochet',
       type: '',
-      description: ''
+      description: '',
+      counter_unit: 'rows' // [AI:Claude] v0.16.2 - Reset unité de comptage
     })
     setTechnicalForm({
       yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
@@ -940,6 +945,13 @@ const MyProjects = () => {
                       <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold">
                         {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
                       </span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                        project.counter_unit === 'cm'
+                          ? 'bg-purple-50 text-purple-700'
+                          : 'bg-blue-50 text-blue-700'
+                      }`}>
+                        {project.counter_unit === 'cm' ? '📐 CM' : '📏 Rangs'}
+                      </span>
                     </div>
 
                     {/* Tags (v0.15.0) */}
@@ -986,16 +998,32 @@ const MyProjects = () => {
                                 {project.current_section_name}
                               </p>
                               <p className="text-gray-700 text-xs mt-0.5">
-                                {project.current_section_row || 0}
-                                {project.current_section_total_rows ? ` / ${project.current_section_total_rows}` : ''}
+                                {project.counter_unit === 'cm'
+                                  ? Number(project.current_section_row || 0).toFixed(1)
+                                  : Math.floor(Number(project.current_section_row || 0))
+                                }
+                                {project.current_section_total_rows ? (
+                                  project.counter_unit === 'cm'
+                                    ? ` / ${Number(project.current_section_total_rows).toFixed(1)}`
+                                    : ` / ${Math.floor(Number(project.current_section_total_rows))}`
+                                ) : ''}
                               </p>
                             </>
                           ) : (
                             <>
-                              <p className="text-gray-600">Rang actuel</p>
+                              <p className="text-gray-600">
+                                {project.counter_unit === 'cm' ? '📐 Progression (cm)' : '📏 Rang actuel'}
+                              </p>
                               <p className="font-bold text-gray-900">
-                                {project.current_row || 0}
-                                {project.total_rows ? ` / ${project.total_rows}` : ''}
+                                {project.counter_unit === 'cm'
+                                  ? Number(project.current_row || 0).toFixed(1)
+                                  : Math.floor(Number(project.current_row || 0))
+                                }
+                                {project.total_rows ? (
+                                  project.counter_unit === 'cm'
+                                    ? ` / ${Number(project.total_rows).toFixed(1)}`
+                                    : ` / ${Math.floor(Number(project.total_rows))}`
+                                ) : ''}
                               </p>
                             </>
                           )}
@@ -1015,10 +1043,19 @@ const MyProjects = () => {
                       // Projet avec sections : afficher le total de rangs tricotés
                       <div className="mb-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">Total rangs tricotés</span>
+                          <span className="text-xs text-gray-600">
+                            {project.counter_unit === 'cm' ? 'Total progression (cm)' : 'Total rangs tricotés'}
+                          </span>
                           <span className="text-xs font-bold text-gray-700">
-                            {project.current_row || 0} rang{(project.current_row || 0) > 1 ? 's' : ''}
-                            {project.total_rows ? ` / ${project.total_rows}` : ''}
+                            {project.counter_unit === 'cm'
+                              ? `${Number(project.current_row || 0).toFixed(1)} cm`
+                              : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
+                            }
+                            {project.total_rows ? (
+                              project.counter_unit === 'cm'
+                                ? ` / ${Number(project.total_rows).toFixed(1)} cm`
+                                : ` / ${Math.floor(Number(project.total_rows))}`
+                            ) : ''}
                           </span>
                         </div>
                       </div>
@@ -1051,17 +1088,22 @@ const MyProjects = () => {
                         </div>
                       </div>
                     ) : (
-                      // Projet sans sections et sans total_rows : afficher nombre de rangs
+                      // Projet sans sections et sans total_rows : afficher nombre de rangs/cm
                       <div className="mb-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">Rangs tricotés</span>
+                          <span className="text-xs text-gray-600">
+                            {project.counter_unit === 'cm' ? 'Progression (cm)' : 'Rangs tricotés'}
+                          </span>
                           <span className="text-xs font-bold text-gray-700">
-                            {project.current_row || 0} rang{(project.current_row || 0) > 1 ? 's' : ''}
+                            {project.counter_unit === 'cm'
+                              ? `${Number(project.current_row || 0).toFixed(1)} cm`
+                              : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
+                            }
                           </span>
                         </div>
                         {project.current_row === 0 && (
                           <p className="text-xs text-gray-400 mt-1 text-center">
-                            Commencez à compter vos rangs
+                            {project.counter_unit === 'cm' ? 'Commencez à compter' : 'Commencez à compter vos rangs'}
                           </p>
                         )}
                       </div>
@@ -1133,6 +1175,40 @@ const MyProjects = () => {
                   <option value="crochet">🪡 Crochet</option>
                   <option value="tricot">🧶 Tricot</option>
                 </select>
+              </div>
+
+              {/* [AI:Claude] v0.16.2 - Unité de comptage */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Unité de comptage
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="counter_unit"
+                      value="rows"
+                      checked={formData.counter_unit === 'rows'}
+                      onChange={(e) => setFormData({ ...formData, counter_unit: e.target.value })}
+                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">📏 Rangs (entiers)</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="counter_unit"
+                      value="cm"
+                      checked={formData.counter_unit === 'cm'}
+                      onChange={(e) => setFormData({ ...formData, counter_unit: e.target.value })}
+                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-gray-700">📐 Centimètres (0.5)</span>
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Choisissez comment vous voulez compter votre progression
+                </p>
               </div>
 
               {/* Catégorie de projet */}
