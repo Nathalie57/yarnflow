@@ -1019,7 +1019,8 @@ const MyProjects = () => {
                                   ? Number(project.current_row || 0).toFixed(1)
                                   : Math.floor(Number(project.current_row || 0))
                                 }
-                                {project.total_rows ? (
+                                {/* Ne pas afficher le total si le projet a des sections (car total incomplet) */}
+                                {project.sections_count === 0 && project.total_rows ? (
                                   project.counter_unit === 'cm'
                                     ? ` / ${Number(project.total_rows).toFixed(1)}`
                                     : ` / ${Math.floor(Number(project.total_rows))}`
@@ -1040,22 +1041,17 @@ const MyProjects = () => {
 
                     {/* Barre de progression ou nombre de rangs */}
                     {project.sections_count > 0 ? (
-                      // Projet avec sections : afficher le total de rangs tricotés
+                      // Projet avec sections : afficher le total de rangs tricotés (sans total global)
                       <div className="mb-4">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-600">
-                            {project.counter_unit === 'cm' ? 'Total progression (cm)' : 'Total rangs tricotés'}
+                            {project.counter_unit === 'cm' ? 'Progression totale (cm)' : 'Total rangs tricotés'}
                           </span>
                           <span className="text-xs font-bold text-gray-700">
                             {project.counter_unit === 'cm'
                               ? `${Number(project.current_row || 0).toFixed(1)} cm`
                               : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
                             }
-                            {project.total_rows ? (
-                              project.counter_unit === 'cm'
-                                ? ` / ${Number(project.total_rows).toFixed(1)} cm`
-                                : ` / ${Math.floor(Number(project.total_rows))}`
-                            ) : ''}
                           </span>
                         </div>
                       </div>
