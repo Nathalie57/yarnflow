@@ -283,7 +283,7 @@ const Gallery = () => {
       return 'wearable'
 
     if (lower === 'jouets/peluches')
-      return 'amigurumi'
+      return 'toy'
 
     if (lower === 'accessoires')
       return 'accessory'
@@ -296,7 +296,7 @@ const Gallery = () => {
       return 'wearable'
 
     if (lower.match(/amigurumi|peluche|doudou|poupée|ours|animal/))
-      return 'amigurumi'
+      return 'toy'
 
     if (lower.match(/sac|pochette|trousse|panier|cabas/))
       return 'accessory'
@@ -351,7 +351,7 @@ const Gallery = () => {
       { key: 'home_c8', label: 'Minimaliste zen', icon: '🧘', desc: 'Ambiance zen, couleurs neutres', tier: 'pro' },
       { key: 'home_c9', label: 'Éclectique artistique', icon: '🎭', desc: 'Mélange de styles, pièces uniques', tier: 'pro' }
     ],
-    amigurumi: [
+    toy: [
       // FREE (3)
       { key: 'toy_c1', label: 'Classique doux', icon: '🧸', desc: 'Chambre enfantine avec lumière douce', tier: 'free' },
       { key: 'toy_c2', label: 'Contes de fées', icon: '✨', desc: 'Décor fantaisie, couleurs pastel', tier: 'free' },

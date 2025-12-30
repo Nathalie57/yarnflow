@@ -1170,7 +1170,7 @@ const ProjectCounter = () => {
       return 'other'
 
     if (lower === 'jouets/peluches')
-      return 'amigurumi'
+      return 'toy'
 
     if (lower === 'accessoires')
       return 'accessory'
@@ -1183,7 +1183,7 @@ const ProjectCounter = () => {
       return 'wearable'
 
     if (lower.match(/amigurumi|peluche|doudou|poupée|ours|animal/))
-      return 'amigurumi'
+      return 'toy'
 
     if (lower.match(/sac|pochette|trousse|panier|cabas/))
       return 'accessory'
@@ -1238,7 +1238,7 @@ const ProjectCounter = () => {
       { key: 'home_c8', label: 'Minimaliste zen', icon: '🧘', desc: 'Ambiance zen, couleurs neutres', tier: 'pro' },
       { key: 'home_c9', label: 'Atelier créatif', icon: '🎨', desc: 'Table d\'artiste avec fournitures créatives', tier: 'pro' }
     ],
-    amigurumi: [
+    toy: [
       // FREE (3)
       { key: 'toy_c1', label: 'Classique doux', icon: '🧸', desc: 'Chambre enfantine avec lumière douce', tier: 'free' },
       { key: 'toy_c2', label: 'Livre de contes', icon: '📖', desc: 'Décor de conte illustré, aquarelle pastel', tier: 'free' },
