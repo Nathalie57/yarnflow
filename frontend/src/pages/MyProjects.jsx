@@ -1040,29 +1040,8 @@ const MyProjects = () => {
                     )}
 
                     {/* Barre de progression ou nombre de rangs */}
-                    {project.sections_count > 0 ? (
-                      // Projet avec sections : afficher le total seulement si toutes les sections ont un total_rows
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">
-                            {project.counter_unit === 'cm' ? 'Progression totale (cm)' : 'Total rangs tricotés'}
-                          </span>
-                          <span className="text-xs font-bold text-gray-700">
-                            {project.counter_unit === 'cm'
-                              ? `${Number(project.current_row || 0).toFixed(1)} cm`
-                              : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
-                            }
-                            {/* Afficher total seulement si toutes les sections ont un total (SUM retourne NULL sinon) */}
-                            {project.total_rows ? (
-                              project.counter_unit === 'cm'
-                                ? ` / ${Number(project.total_rows).toFixed(1)} cm`
-                                : ` / ${Math.floor(Number(project.total_rows))}`
-                            ) : ''}
-                          </span>
-                        </div>
-                      </div>
-                    ) : (project.status === 'completed' || project.completion_percentage !== null) ? (
-                      // Projet sans sections avec total_rows : afficher barre de progression
+                    {(project.status === 'completed' || project.completion_percentage !== null) ? (
+                      // Projet avec pourcentage calculable : afficher barre de progression
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs text-gray-600">Progression</span>
@@ -1087,6 +1066,21 @@ const MyProjects = () => {
                                 : `${project.completion_percentage}%`
                             }}
                           ></div>
+                        </div>
+                      </div>
+                    ) : project.sections_count > 0 ? (
+                      // Projet avec sections mais sans total complet : afficher texte simple
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-600">
+                            {project.counter_unit === 'cm' ? 'Progression totale (cm)' : 'Total rangs tricotés'}
+                          </span>
+                          <span className="text-xs font-bold text-gray-700">
+                            {project.counter_unit === 'cm'
+                              ? `${Number(project.current_row || 0).toFixed(1)} cm`
+                              : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
+                            }
+                          </span>
                         </div>
                       </div>
                     ) : (
