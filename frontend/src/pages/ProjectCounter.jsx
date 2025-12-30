@@ -2818,9 +2818,31 @@ const ProjectCounter = () => {
                 −
               </button>
               <div className="text-center min-w-[80px]">
-                <div className="text-3xl font-bold text-gray-900">{currentRow}</div>
+                {isEditingCounter ? (
+                  <input
+                    type="number"
+                    step={counterUnit === 'cm' ? '0.5' : '1'}
+                    min="0"
+                    value={counterInputValue}
+                    onChange={(e) => setCounterInputValue(e.target.value)}
+                    onKeyDown={handleCounterInputKeyDown}
+                    onBlur={handleCounterInputSubmit}
+                    autoFocus
+                    className="text-3xl font-bold text-gray-900 w-full text-center border-2 border-primary-500 rounded px-1"
+                  />
+                ) : (
+                  <div
+                    onClick={handleCounterClick}
+                    className="text-3xl font-bold text-gray-900 cursor-pointer hover:bg-gray-100 rounded px-2 transition"
+                    title="Cliquer pour modifier"
+                  >
+                    {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
+                  </div>
+                )}
                 {progressData.total && (
-                  <div className="text-xs text-gray-600">/ {progressData.total}</div>
+                  <div className="text-xs text-gray-600">
+                    / {counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}
+                  </div>
                 )}
               </div>
               <button
