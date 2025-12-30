@@ -1552,14 +1552,14 @@ const ProjectCounter = () => {
     if (currentSectionId && sections.length > 0) {
       const activeSection = sections.find(s => s.id === currentSectionId)
       if (activeSection && activeSection.total_rows) {
-        maxRows = activeSection.total_rows
+        maxRows = parseFloat(activeSection.total_rows)
       }
     } else if (project && project.total_rows) {
-      maxRows = project.total_rows
+      maxRows = parseFloat(project.total_rows)
     }
 
     // Bloquer si on a atteint le maximum
-    if (maxRows !== null && currentRow >= maxRows) {
+    if (maxRows !== null && parseFloat(currentRow) >= maxRows) {
       const numMax = Number(maxRows)
       const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
       const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
@@ -2000,15 +2000,15 @@ const ProjectCounter = () => {
           // Vérifier si la section est terminée
           const isCompletedA = (a.is_completed === 1 || a.is_completed === true || a.is_completed === '1') ||
                               (a.is_completed !== 0 && a.is_completed !== '0' && a.is_completed !== false &&
-                               ((a.total_rows && a.current_row >= a.total_rows) ||
+                               ((a.total_rows && parseFloat(a.current_row) >= parseFloat(a.total_rows)) ||
                                 (a.completion_percentage && parseFloat(a.completion_percentage) >= 100)))
           const isCompletedB = (b.is_completed === 1 || b.is_completed === true || b.is_completed === '1') ||
                               (b.is_completed !== 0 && b.is_completed !== '0' && b.is_completed !== false &&
-                               ((b.total_rows && b.current_row >= b.total_rows) ||
+                               ((b.total_rows && parseFloat(b.current_row) >= parseFloat(b.total_rows)) ||
                                 (b.completion_percentage && parseFloat(b.completion_percentage) >= 100)))
 
-          const progressA = a.total_rows ? (a.current_row / a.total_rows) * 100 : 0
-          const progressB = b.total_rows ? (b.current_row / b.total_rows) * 100 : 0
+          const progressA = a.total_rows ? (parseFloat(a.current_row) / parseFloat(a.total_rows)) * 100 : 0
+          const progressB = b.total_rows ? (parseFloat(b.current_row) / parseFloat(b.total_rows)) * 100 : 0
 
           // Les sections terminées à la fin, même sans total_rows
           if (isCompletedA && !isCompletedB) return 1
@@ -2024,15 +2024,15 @@ const ProjectCounter = () => {
         return sorted.sort((a, b) => {
           const isCompletedA = (a.is_completed === 1 || a.is_completed === true || a.is_completed === '1') ||
                               (a.is_completed !== 0 && a.is_completed !== '0' && a.is_completed !== false &&
-                               ((a.total_rows && a.current_row >= a.total_rows) ||
+                               ((a.total_rows && parseFloat(a.current_row) >= parseFloat(a.total_rows)) ||
                                 (a.completion_percentage && parseFloat(a.completion_percentage) >= 100)))
           const isCompletedB = (b.is_completed === 1 || b.is_completed === true || b.is_completed === '1') ||
                               (b.is_completed !== 0 && b.is_completed !== '0' && b.is_completed !== false &&
-                               ((b.total_rows && b.current_row >= b.total_rows) ||
+                               ((b.total_rows && parseFloat(b.current_row) >= parseFloat(b.total_rows)) ||
                                 (b.completion_percentage && parseFloat(b.completion_percentage) >= 100)))
 
-          const progressA = a.total_rows ? (a.current_row / a.total_rows) * 100 : 0
-          const progressB = b.total_rows ? (b.current_row / b.total_rows) * 100 : 0
+          const progressA = a.total_rows ? (parseFloat(a.current_row) / parseFloat(a.total_rows)) * 100 : 0
+          const progressB = b.total_rows ? (parseFloat(b.current_row) / parseFloat(b.total_rows)) * 100 : 0
 
           // Les sections terminées à la fin
           if (isCompletedA && !isCompletedB) return 1
@@ -2051,11 +2051,11 @@ const ProjectCounter = () => {
           // Une section est terminée si is_completed = 1 OU (is_completed !== 0 ET progression à 100%)
           const isCompletedA = (a.is_completed === 1 || a.is_completed === true || a.is_completed === '1') ||
                               (a.is_completed !== 0 && a.is_completed !== '0' && a.is_completed !== false &&
-                               ((a.total_rows && a.current_row >= a.total_rows) ||
+                               ((a.total_rows && parseFloat(a.current_row) >= parseFloat(a.total_rows)) ||
                                 (a.completion_percentage && parseFloat(a.completion_percentage) >= 100)))
           const isCompletedB = (b.is_completed === 1 || b.is_completed === true || b.is_completed === '1') ||
                               (b.is_completed !== 0 && b.is_completed !== '0' && b.is_completed !== false &&
-                               ((b.total_rows && b.current_row >= b.total_rows) ||
+                               ((b.total_rows && parseFloat(b.current_row) >= parseFloat(b.total_rows)) ||
                                 (b.completion_percentage && parseFloat(b.completion_percentage) >= 100)))
 
           // En cours d'abord
