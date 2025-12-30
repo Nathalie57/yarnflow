@@ -251,6 +251,33 @@ HTML;
     }
 
     /**
+     * [AI:Claude] Ajouter les headers anti-spam recommandés
+     *
+     * @param PHPMailer $mail Instance de PHPMailer
+     * @param string $emailType Type d'email (transactional, marketing, etc.)
+     * @return void
+     */
+    private function addAntiSpamHeaders(PHPMailer $mail, string $emailType = 'transactional'): void
+    {
+        // Headers anti-spam recommandés
+        $mail->addCustomHeader('X-Mailer', 'YarnFlow v1.0');
+        $mail->addCustomHeader('X-Priority', '3'); // Normal priority
+        $mail->addCustomHeader('X-MSMail-Priority', 'Normal');
+        $mail->addCustomHeader('Importance', 'Normal');
+
+        // Type de message
+        if ($emailType === 'transactional') {
+            $mail->addCustomHeader('X-Auto-Response-Suppress', 'OOF, DR, RN, NRN, AutoReply');
+            $mail->addCustomHeader('Precedence', 'bulk');
+        }
+
+        // Lien de désinscription (List-Unsubscribe)
+        $unsubscribeUrl = 'https://yarnflow.fr/profile'; // Page où l'utilisateur peut gérer ses préférences
+        $mail->addCustomHeader('List-Unsubscribe', "<{$unsubscribeUrl}>");
+        $mail->addCustomHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
+    }
+
+    /**
      * [AI:Claude] Logger l'envoi d'un email dans la base de données
      *
      * @param string $recipientEmail Email du destinataire
@@ -318,12 +345,15 @@ HTML;
             $mail->addAddress($email, $name);
             $mail->Subject = $subject;
 
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
+
             // Corps HTML
             $mail->isHTML(true);
             $mail->Body = $this->getRegistrationWelcomeEmailTemplate($name);
 
             // Version texte
-            $mail->AltBody = "Bienvenue sur YarnFlow !\n\nBonjour $name,\n\nFélicitations ! Votre compte YarnFlow est maintenant créé.\n\nVous pouvez dès maintenant :\n- Créer vos premiers projets tricot/crochet\n- Utiliser le compteur de rangs intelligent\n- Générer 5 photos IA gratuites par mois\n- Organiser votre bibliothèque de patrons\n\nBesoin d'aide ? Consultez notre guide de démarrage dans l'application ou contactez-nous.\n\nBon tricot !\nL'équipe YarnFlow 🧶";
+            $mail->AltBody = "Bienvenue sur YarnFlow !\n\nBonjour $name,\n\nBienvenue ! Ton compte YarnFlow est prêt ✨\nSi tu perds parfois tes rangs, tes notes ou tes patrons… tu es exactement au bon endroit 😉\n\n👉 Par quoi commencer ?\n\nLe plus simple (et le plus utile) : créer ton premier projet, même vide.\nTu pourras ensuite ajouter tes sections, ton compteur et tes notes au fur et à mesure.\n\n🚀 Créer mon premier projet : https://yarnflow.fr/my-projects\n\nCe que YarnFlow peut déjà faire pour toi :\n- Compter tes rangs (avec timer)\n- Organiser tes projets tricot & crochet\n- Centraliser tes patrons\n- Ajouter des notes et suivre ta progression\n- Tester la génération de photos IA (5 crédits gratuits / mois)\n\n💡 Besoin d'un coup de pouce ?\nUn guide rapide est disponible directement dans l'application (bouton « ? » en haut), et tu peux bien sûr me contacter via le formulaire si besoin.\n\nBonne création 🧵\nÀ très vite sur YarnFlow,\n\nNathalie\nFondatrice de YarnFlow 🧶";
 
             $mail->send();
             $success = true;
@@ -374,63 +404,76 @@ HTML;
                     <tr>
                         <td style="padding: 40px 40px 20px;">
                             <h2 style="color: #884024; margin: 0 0 20px; font-size: 24px;">
-                                Bienvenue sur YarnFlow ! 🎉
+                                Bienvenue sur YarnFlow 🎉
                             </h2>
                             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
                                 Bonjour <strong>{$name}</strong>,
                             </p>
-                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                                Félicitations ! Votre compte YarnFlow est maintenant créé et prêt à l'emploi.
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 10px;">
+                                Bienvenue ! Ton compte YarnFlow est prêt ✨
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
+                                Si tu perds parfois tes rangs, tes notes ou tes patrons… tu es exactement au bon endroit 😉
                             </p>
 
-                            <!-- Features Box -->
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; border-radius: 8px; margin: 0 0 30px;">
-                                <tr>
-                                    <td style="padding: 24px;">
-                                        <h3 style="color: #884024; margin: 0 0 16px; font-size: 18px;">
-                                            🎁 Ce que vous pouvez faire dès maintenant :
-                                        </h3>
-                                        <ul style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0; padding-left: 20px;">
-                                            <li><strong>Créer vos projets</strong> tricot et crochet</li>
-                                            <li><strong>Utiliser le compteur</strong> de rangs intelligent avec timer</li>
-                                            <li><strong>Générer 5 photos IA</strong> gratuites chaque mois</li>
-                                            <li><strong>Organiser votre bibliothèque</strong> de patrons</li>
-                                            <li><strong>Suivre vos statistiques</strong> de progression</li>
-                                        </ul>
-                                    </td>
-                                </tr>
-                            </table>
+                            <!-- Start Section -->
+                            <h3 style="color: #884024; font-size: 18px; margin: 0 0 16px;">
+                                👉 Par quoi commencer ?
+                            </h3>
+                            <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 10px;">
+                                Le plus simple (et le plus utile) :<br>
+                                <strong>créer ton premier projet</strong>, même vide.
+                            </p>
+                            <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
+                                Tu pourras ensuite ajouter tes sections, ton compteur et tes notes au fur et à mesure.
+                            </p>
 
                             <!-- CTA Button -->
                             <table width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td align="center" style="padding: 0 0 30px;">
-                                        <a href="https://yarnflow.fr/my-projects" style="display: inline-block; background-color: #dd7a4a; background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                                        <a href="https://yarnflow.fr/my-projects" style="display: inline-block; background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
                                             🚀 Créer mon premier projet
                                         </a>
                                     </td>
                                 </tr>
                             </table>
 
+                            <!-- Features List -->
+                            <h3 style="color: #884024; font-size: 18px; margin: 0 0 16px;">
+                                Ce que YarnFlow peut déjà faire pour toi :
+                            </h3>
+                            <ul style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0 0 30px; padding-left: 20px;">
+                                <li>Compter tes rangs (avec timer)</li>
+                                <li>Organiser tes projets tricot & crochet</li>
+                                <li>Centraliser tes patrons</li>
+                                <li>Ajouter des notes et suivre ta progression</li>
+                                <li>Tester la génération de photos IA (5 crédits gratuits / mois)</li>
+                            </ul>
+
                             <!-- Help Box -->
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px; margin: 0 0 20px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px; margin: 0 0 30px;">
                                 <tr>
                                     <td style="padding: 16px;">
                                         <p style="color: #075985; font-size: 14px; line-height: 1.6; margin: 0;">
-                                            💡 <strong>Besoin d'aide ?</strong><br>
-                                            Consultez notre guide de démarrage directement dans l'application (bouton "?" en haut) ou contactez-nous via le formulaire de contact.
+                                            💡 <strong>Besoin d'un coup de pouce ?</strong><br>
+                                            Un guide rapide est disponible directement dans l'application (bouton « ? » en haut),
+                                            et tu peux bien sûr me contacter via le formulaire si besoin.
                                         </p>
                                     </td>
                                 </tr>
                             </table>
 
-                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 20px 0;">
-                                Bon tricot et bonne organisation ! 🧵
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 10px;">
+                                Bonne création 🧵
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
+                                À très vite sur YarnFlow,
                             </p>
 
-                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0;">
-                                L'équipe YarnFlow<br>
-                                <strong>Nathalie</strong>
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+                                <strong>Nathalie</strong><br>
+                                Fondatrice de YarnFlow 🧶
                             </p>
                         </td>
                     </tr>
@@ -439,7 +482,7 @@ HTML;
                     <tr>
                         <td style="background-color: #fef8f4; padding: 30px 40px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3e8dd;">
                             <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 10px; text-align: center;">
-                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
+                                © 2025 YarnFlow — Votre tracker tricot & crochet
                             </p>
                             <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
                                 <a href="https://yarnflow.fr" style="color: #dd7a4a; text-decoration: none;">yarnflow.fr</a> •
@@ -471,6 +514,9 @@ HTML;
             $mail = clone $this->mailer;
             $mail->addAddress($email, $name);
             $mail->Subject = '🔑 Réinitialisation de votre mot de passe YarnFlow';
+
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
 
             // Corps HTML
             $mail->isHTML(true);
@@ -610,12 +656,12 @@ HTML;
             $mail->addAddress($email, $name);
             $mail->Subject = $subject;
 
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
+
             $mail->isHTML(true);
-            $mail->Body = $this->getOnboardingDay3EmailTemplate($name, $hasProjects);
-            $altText = $hasProjects
-                ? "Bonjour $name,\n\nVous vous êtes inscrit sur YarnFlow il y a quelques jours et avez créé un projet, mais nous avons remarqué que vous n'êtes pas revenu depuis.\n\nBesoin d'aide pour utiliser l'application ?\n\nYarnFlow vous permet de :\n- Suivre tous vos projets tricot et crochet\n- Utiliser un compteur de rangs intelligent\n- Générer des photos IA de vos créations\n\nRetrouvez vos projets : https://yarnflow.fr/my-projects\n\nL'équipe YarnFlow"
-                : "Bonjour $name,\n\nVous vous êtes inscrit sur YarnFlow il y a quelques jours, mais nous avons remarqué que vous n'avez pas encore créé votre premier projet.\n\nBesoin d'aide pour démarrer ?\n\nYarnFlow vous permet de :\n- Suivre vos projets tricot et crochet\n- Utiliser un compteur de rangs intelligent\n- Générer des photos IA de vos créations\n\nCréez votre premier projet : https://yarnflow.fr/my-projects\n\nL'équipe YarnFlow";
-            $mail->AltBody = $altText;
+            $mail->Body = $this->getOnboardingDay3EmailTemplate($name);
+            $mail->AltBody = "Coucou $name,\n\nPetit message rapide, 3 jours après ton inscription 😊\nJe voulais juste m'assurer que tout se passait bien pour toi sur YarnFlow.\n\nSi tu n'as pas encore eu le temps de t'y mettre, c'est totalement normal.\nLe plus simple pour commencer (vraiment) reste toujours le même :\n\n👉 Créer un premier projet, même si tu n'as pas encore ton ouvrage sous la main.\nTu pourras ajouter les sections, les notes et le compteur plus tard, quand tu tricoteras ou crocheteras.\n\n🚀 Créer mon premier projet : https://yarnflow.fr/my-projects\n\n💡 Astuce toute simple\nBeaucoup d'utilisatrices commencent par :\n• créer un projet\n• ajouter une seule section\n• lancer le compteur\nEt c'est tout. Pas besoin d'en faire plus au début.\n\nSi quelque chose te bloque, te semble bizarre ou pas clair, n'hésite surtout pas à me le dire.\nYarnFlow est encore jeune, et chaque retour m'aide énormément à l'améliorer 💛\n\nÀ très vite,\nBonne création 🧵\n\nNathalie\nFondatrice de YarnFlow";
 
             $mail->send();
             $success = true;
@@ -635,16 +681,8 @@ HTML;
     /**
      * Template HTML pour email onboarding J+3
      */
-    private function getOnboardingDay3EmailTemplate(string $name, bool $hasProjects = false): string
+    private function getOnboardingDay3EmailTemplate(string $name): string
     {
-        $message = $hasProjects
-            ? "Vous vous êtes inscrit sur YarnFlow il y a quelques jours et avez créé un projet, mais nous avons remarqué que vous n'êtes pas revenu depuis. 🧶"
-            : "Vous vous êtes inscrit sur YarnFlow il y a quelques jours, mais nous avons remarqué que vous n'avez pas encore créé votre premier projet. 🧶";
-
-        $ctaText = $hasProjects
-            ? "📱 Retrouver mes projets"
-            : "🚀 Créer mon premier projet";
-
         return <<<HTML
 <!DOCTYPE html>
 <html lang="fr">
@@ -659,68 +697,85 @@ HTML;
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     <tr>
                         <td style="background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); padding: 40px; text-align: center; border-radius: 12px 12px 0 0;">
-                            <div style="font-size: 56px; margin: 0 0 10px 0;">🎓</div>
-                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Besoin d'aide pour démarrer ?</h1>
+                            <div style="font-size: 56px; margin: 0 0 10px 0;">🧶</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">YarnFlow</h1>
                         </td>
                     </tr>
                     <tr>
                         <td style="padding: 40px 40px 20px;">
+                            <h2 style="color: #884024; margin: 0 0 20px; font-size: 22px;">
+                                Coucou <strong>{$name}</strong>,
+                            </h2>
                             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                                Bonjour <strong>{$name}</strong>,
+                                Petit message rapide, 3 jours après ton inscription 😊<br>
+                                Je voulais juste m'assurer que tout se passait bien pour toi sur YarnFlow.
                             </p>
-                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                                {$message}
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 10px;">
+                                Si tu n'as pas encore eu le temps de t'y mettre, c'est totalement normal.
                             </p>
                             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
-                                Pas de panique ! On est là pour vous aider à démarrer.
+                                Le plus simple pour commencer (vraiment) reste toujours le même :
                             </p>
 
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; border-radius: 8px; margin: 0 0 30px;">
-                                <tr>
-                                    <td style="padding: 24px;">
-                                        <h3 style="color: #884024; margin: 0 0 16px; font-size: 18px;">✨ YarnFlow vous permet de :</h3>
-                                        <ul style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0; padding-left: 20px;">
-                                            <li>Suivre tous vos projets tricot et crochet en un seul endroit</li>
-                                            <li>Utiliser un compteur de rangs intelligent avec timer</li>
-                                            <li>Générer des photos IA professionnelles de vos créations</li>
-                                            <li>Organiser votre bibliothèque de patrons</li>
-                                            <li>Consulter vos statistiques de progression</li>
-                                        </ul>
-                                    </td>
-                                </tr>
-                            </table>
+                            <p style="color: #884024; font-size: 16px; line-height: 1.6; margin: 0 0 10px;">
+                                <strong>👉 Créer un premier projet</strong>, même si tu n'as pas encore ton ouvrage sous la main.
+                            </p>
+                            <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
+                                Tu pourras ajouter les sections, les notes et le compteur plus tard, quand tu tricoteras ou crocheteras.
+                            </p>
 
                             <table width="100%" cellpadding="0" cellspacing="0">
                                 <tr>
                                     <td align="center" style="padding: 0 0 30px;">
                                         <a href="https://yarnflow.fr/my-projects" style="display: inline-block; background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                                            {$ctaText}
+                                            🚀 Créer mon premier projet
                                         </a>
                                     </td>
                                 </tr>
                             </table>
 
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px; margin: 0 0 30px;">
                                 <tr>
                                     <td style="padding: 16px;">
+                                        <p style="color: #075985; font-size: 14px; line-height: 1.6; margin: 0 0 12px;">
+                                            <strong>💡 Astuce toute simple</strong>
+                                        </p>
                                         <p style="color: #075985; font-size: 14px; line-height: 1.6; margin: 0;">
-                                            💡 <strong>Astuce</strong> : Cliquez sur le bouton "?" en haut de l'application pour accéder au guide interactif.
+                                            Beaucoup d'utilisatrices commencent par :<br>
+                                            • créer un projet<br>
+                                            • ajouter une seule section<br>
+                                            • lancer le compteur<br><br>
+                                            Et c'est tout. Pas besoin d'en faire plus au début.
                                         </p>
                                     </td>
                                 </tr>
                             </table>
 
+                            <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
+                                Si quelque chose te bloque, te semble bizarre ou pas clair, n'hésite surtout pas à me le dire.<br>
+                                YarnFlow est encore jeune, et chaque retour m'aide énormément à l'améliorer 💛
+                            </p>
+
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 10px;">
+                                À très vite,<br>
+                                Bonne création 🧵
+                            </p>
+
                             <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0;">
-                                À vos aiguilles !<br>
                                 <strong>Nathalie</strong><br>
-                                L'équipe YarnFlow
+                                Fondatrice de YarnFlow
                             </p>
                         </td>
                     </tr>
                     <tr>
                         <td style="background-color: #fef8f4; padding: 30px 40px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3e8dd;">
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 10px; text-align: center;">
+                                © 2025 YarnFlow — Votre tracker tricot & crochet
+                            </p>
                             <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
-                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
+                                <a href="https://yarnflow.fr" style="color: #dd7a4a; text-decoration: none;">yarnflow.fr</a> •
+                                <a href="https://yarnflow.fr/contact" style="color: #dd7a4a; text-decoration: none;">Contact</a> •
+                                <a href="https://yarnflow.fr/cgu" style="color: #dd7a4a; text-decoration: none;">CGU</a>
                             </p>
                         </td>
                     </tr>
@@ -752,9 +807,12 @@ HTML;
             $mail->addAddress($email, $name);
             $mail->Subject = $subject;
 
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
+
             $mail->isHTML(true);
             $mail->Body = $this->getReengagementDay7EmailTemplate($name, $projectData);
-            $mail->AltBody = "Bonjour $name,\n\nCela fait une semaine qu'on ne vous a pas vu sur YarnFlow !\n\nVos projets vous attendent. Reprenez là où vous vous êtes arrêté.\n\nContinuer mon projet : https://yarnflow.fr/my-projects\n\nL'équipe YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nCela fait une semaine qu'on ne vous a pas vu sur YarnFlow !\nVos projets vous attendent patiemment. 🧶\n\n🎯 Continuer mon projet : https://yarnflow.fr/my-projects\n\n💡 Le saviez-vous ?\nChaque mois, vous recevez 5 crédits photos gratuits pour sublimer vos créations grâce à notre IA !\n\nÀ très vite sur YarnFlow,\nNathalie";
 
             $mail->send();
             $success = true;
@@ -836,19 +894,24 @@ HTML;
                             </table>
 
                             <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 20px;">
-                                <strong>💡 Le saviez-vous ?</strong> Chaque mois, vous recevez 5 crédits photos gratuits pour embellir vos créations avec notre IA !
+                                <strong>💡 Le saviez-vous ?</strong> Chaque mois, vous recevez 5 crédits photos gratuits pour sublimer vos créations grâce à notre IA !
                             </p>
 
                             <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0;">
-                                À bientôt sur YarnFlow !<br>
+                                À très vite sur YarnFlow,<br>
                                 <strong>Nathalie</strong>
                             </p>
                         </td>
                     </tr>
                     <tr>
                         <td style="background-color: #fef8f4; padding: 30px 40px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3e8dd;">
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 10px; text-align: center;">
+                                © 2025 YarnFlow — Votre tracker tricot & crochet
+                            </p>
                             <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
-                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
+                                <a href="https://yarnflow.fr" style="color: #dd7a4a; text-decoration: none;">yarnflow.fr</a> •
+                                <a href="https://yarnflow.fr/contact" style="color: #dd7a4a; text-decoration: none;">Contact</a> •
+                                <a href="https://yarnflow.fr/cgu" style="color: #dd7a4a; text-decoration: none;">CGU</a>
                             </p>
                         </td>
                     </tr>
@@ -879,9 +942,12 @@ HTML;
             $mail->addAddress($email, $name);
             $mail->Subject = $subject;
 
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
+
             $mail->isHTML(true);
             $mail->Body = $this->getNeedHelpDay21EmailTemplate($name);
-            $mail->AltBody = "Bonjour $name,\n\nCela fait 3 semaines qu'on ne vous a pas vu sur YarnFlow.\n\nBesoin d'aide pour utiliser l'application ?\n\nNous sommes là pour vous aider :\n- Guide interactif disponible (bouton ? dans l'app)\n- Support par email : contact@yarnflow.fr\n- Fonctionnalités : compteur de rangs, photos IA, gestion de projets\n\nRetour sur YarnFlow : https://yarnflow.fr/my-projects\n\nL'équipe YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nCela fait maintenant trois semaines qu'on ne vous a pas vu sur YarnFlow,\net franchement, vous nous manquez ! 🥺\n\nVos projets sont toujours là, bien au chaud, qui n'attendent que vous...\n\n🎁 En votre absence, on a ajouté plein de nouveautés :\n• Un système de tags pour mieux organiser vos projets\n• Des filtres avancés pour trouver facilement ce que vous cherchez\n• Un guide de démarrage interactif pour vous accompagner pas à pas\n• Et plein d'autres améliorations basées sur vos retours !\n\n🧶 Reprendre mes projets : https://yarnflow.fr/my-projects\n\nBesoin d'un coup de main ou d'un petit conseil ? N'hésitez pas à nous contacter, on est là pour vous aider !\n\nSi vous ne souhaitez plus recevoir ces emails, vous pouvez vous désinscrire ici : https://yarnflow.fr/profile\n\nÀ très vite sur YarnFlow,\nNathalie\nL'équipe YarnFlow";
 
             $mail->send();
             $success = true;
@@ -917,8 +983,8 @@ HTML;
                 <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                     <tr>
                         <td style="background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); padding: 40px; text-align: center; border-radius: 12px 12px 0 0;">
-                            <div style="font-size: 56px; margin: 0 0 10px 0;">🆘</div>
-                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Besoin d'aide ?</h1>
+                            <div style="font-size: 56px; margin: 0 0 10px 0;">💔</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Vous nous manquez sur YarnFlow !</h1>
                         </td>
                     </tr>
                     <tr>
@@ -926,22 +992,23 @@ HTML;
                             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
                                 Bonjour <strong>{$name}</strong>,
                             </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 10px;">
+                                Cela fait maintenant trois semaines qu'on ne vous a pas vu sur YarnFlow,<br>
+                                et franchement, vous nous manquez ! 🥺
+                            </p>
                             <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
-                                Cela fait 3 semaines qu'on ne vous a pas vu sur YarnFlow. Peut-être rencontrez-vous des difficultés pour utiliser l'application ? 🤔
+                                Vos projets sont toujours là, bien au chaud, qui n'attendent que vous...
                             </p>
 
                             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; border-radius: 8px; margin: 0 0 30px;">
                                 <tr>
-                                    <td style="padding: 24px;">
-                                        <h3 style="color: #884024; margin: 0 0 16px; font-size: 18px;">💡 Nous sommes là pour vous aider !</h3>
-                                        <p style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0 0 12px;">
-                                            <strong>Guide interactif</strong> : Cliquez sur le bouton <span style="background-color: #dd7a4a; color: #ffffff; padding: 2px 8px; border-radius: 4px; font-weight: bold;">?</span> en haut de l'application
-                                        </p>
-                                        <p style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0 0 12px;">
-                                            <strong>Support email</strong> : contact@yarnflow.fr
-                                        </p>
-                                        <p style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0;">
-                                            <strong>Réponse rapide</strong> : Nous répondons sous 24h
+                                    <td style="padding: 20px;">
+                                        <p style="color: #92400e; font-size: 15px; line-height: 1.6; margin: 0;">
+                                            <strong>🎁 En votre absence, on a ajouté plein de nouveautés :</strong><br>
+                                            • Un système de tags pour mieux organiser vos projets<br>
+                                            • Des filtres avancés pour trouver facilement ce que vous cherchez<br>
+                                            • Un guide de démarrage interactif pour vous accompagner pas à pas<br>
+                                            • Et plein d'autres améliorations basées sur vos retours !
                                         </p>
                                     </td>
                                 </tr>
@@ -972,12 +1039,16 @@ HTML;
                                 </tr>
                             </table>
 
-                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
-                                <em>Si vous ne souhaitez plus recevoir ces emails, vous pouvez désactiver les notifications dans vos <a href="https://yarnflow.fr/profile" style="color: #dd7a4a; text-decoration: underline;">paramètres de profil</a>.</em>
+                            <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
+                                Besoin d'un coup de main ou d'un petit conseil ? N'hésitez pas à nous contacter, on est là pour vous aider !
                             </p>
 
-                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0;">
-                                N'hésitez pas à nous contacter !<br>
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 20px;">
+                                <em>Si vous ne souhaitez plus recevoir ces emails, vous pouvez vous <a href="https://yarnflow.fr/profile" style="color: #dd7a4a; text-decoration: underline;">désinscrire ici</a>.</em>
+                            </p>
+
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0;">
+                                À très vite sur YarnFlow,<br>
                                 <strong>Nathalie</strong><br>
                                 L'équipe YarnFlow
                             </p>
@@ -985,8 +1056,13 @@ HTML;
                     </tr>
                     <tr>
                         <td style="background-color: #fef8f4; padding: 30px 40px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3e8dd;">
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 10px; text-align: center;">
+                                © 2025 YarnFlow — Votre tracker tricot & crochet
+                            </p>
                             <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
-                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
+                                <a href="https://yarnflow.fr" style="color: #dd7a4a; text-decoration: none;">yarnflow.fr</a> •
+                                <a href="https://yarnflow.fr/contact" style="color: #dd7a4a; text-decoration: none;">Contact</a> •
+                                <a href="https://yarnflow.fr/cgu" style="color: #dd7a4a; text-decoration: none;">CGU</a>
                             </p>
                         </td>
                     </tr>

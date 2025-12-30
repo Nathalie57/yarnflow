@@ -90,6 +90,16 @@ class ProjectController
                           WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
                           ELSE NULL
                       END as completion_percentage,
+                      CASE
+                          WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                              COALESCE((SELECT SUM(current_row) FROM project_sections WHERE project_id = p.id), 0)
+                          ELSE p.current_row
+                      END as current_row,
+                      CASE
+                          WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                              (SELECT SUM(total_rows) FROM project_sections WHERE project_id = p.id)
+                          ELSE p.total_rows
+                      END as total_rows,
                       ps.name as current_section_name,
                       ps.current_row as current_section_row,
                       ps.total_rows as current_section_total_rows,

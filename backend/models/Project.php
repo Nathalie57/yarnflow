@@ -106,6 +106,16 @@ class Project extends BaseModel
                       WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
                       ELSE NULL
                   END as completion_percentage,
+                  CASE
+                      WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                          COALESCE((SELECT SUM(current_row) FROM project_sections WHERE project_id = p.id), 0)
+                      ELSE p.current_row
+                  END as current_row,
+                  CASE
+                      WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                          (SELECT SUM(total_rows) FROM project_sections WHERE project_id = p.id)
+                      ELSE p.total_rows
+                  END as total_rows,
                   (SELECT name FROM project_sections WHERE id = p.current_section_id) as current_section_name,
                   (SELECT current_row FROM project_sections WHERE id = p.current_section_id) as current_section_row,
                   (SELECT total_rows FROM project_sections WHERE id = p.current_section_id) as current_section_total_rows,
@@ -174,6 +184,16 @@ class Project extends BaseModel
                       WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
                       ELSE NULL
                   END as completion_percentage,
+                  CASE
+                      WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                          COALESCE((SELECT SUM(current_row) FROM project_sections WHERE project_id = p.id), 0)
+                      ELSE p.current_row
+                  END as current_row,
+                  CASE
+                      WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
+                          (SELECT SUM(total_rows) FROM project_sections WHERE project_id = p.id)
+                      ELSE p.total_rows
+                  END as total_rows,
                   (SELECT name FROM project_sections WHERE id = p.current_section_id) as current_section_name,
                   (SELECT current_row FROM project_sections WHERE id = p.current_section_id) as current_section_row,
                   (SELECT total_rows FROM project_sections WHERE id = p.current_section_id) as current_section_total_rows,
