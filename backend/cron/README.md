@@ -1,182 +1,58 @@
-# Cron Jobs YarnFlow
+# Scripts Cron - Emails de Réengagement
 
-Scripts d'automatisation pour les tâches planifiées de YarnFlow.
+## 📧 Emails automatiques
 
-## 📧 Notifications Email Automatiques
+Ce système envoie automatiquement 3 types d'emails de réengagement :
 
-### Description
-
-Le script `send-notifications.php` envoie automatiquement 3 types d'emails :
-
-1. **Onboarding J+3** - Utilisateurs inactifs depuis 3 jours (avec ou sans projet)
-   - Sujet : "🎓 Besoin d'aide pour démarrer avec YarnFlow ?"
-   - Aide à la prise en main adaptée selon si l'utilisateur a créé un projet ou non
-
-2. **Réengagement J+7** - Utilisateurs inactifs depuis 7 jours (avec projets)
-   - Sujet : "🧵 Votre tricot vous attend !"
-   - Rappel personnalisé avec progression du projet
-
-3. **Besoin d'aide J+21** - Utilisateurs inactifs depuis 21 jours
-   - Sujet : "🆘 Besoin d'aide avec YarnFlow ?"
-   - Rappel des fonctionnalités et lien vers le support
-
-### Protection anti-spam
-
-- **1 email maximum par type par mois** par utilisateur
-- Respect de la préférence `email_notifications` (users.email_notifications = 1)
-- Tracking dans la table `email_notifications_sent`
+- **J+3** (`onboarding_day3`) : Aide au démarrage pour utilisateurs qui n'ont pas encore créé de projet
+- **J+7** (`reengagement_day7`) : Relance pour utilisateurs inactifs depuis 3+ jours
+- **J+21** (`need_help_day21`) : Dernière tentative pour utilisateurs très inactifs (14+ jours)
 
 ## 🚀 Installation
 
-### 1. Appliquer la migration SQL
+### 1. Envoi des emails rétroactifs (une seule fois)
+
+Ce script envoie les emails manquants aux utilisateurs existants :
 
 ```bash
-cd /path/to/pattern-maker
-mysql -u root -p patron_maker < database/add_email_notifications.sql
+cd /path/to/backend/cron
+php send-retroactive-emails.php
 ```
 
-Cela crée :
-- Colonne `email_notifications` dans `users`
-- Table `email_notifications_sent` pour le tracking
+**Attention** : Ce script va envoyer TOUS les emails manquants d'un coup.
 
-### 2. Tester le script manuellement
+### 2. Configuration du cron quotidien
 
 ```bash
-cd /path/to/pattern-maker/backend
-php cron/send-notifications.php
+# Emails de réengagement - tous les jours à 10h00
+0 10 * * * /usr/bin/php /home/VOTRE_USER/www/pattern-maker/backend/cron/send-engagement-emails.php
 ```
 
-### 3. Configurer le cron (production)
+**Sur o2switch** :
+1. Panel o2switch → **Cron jobs**
+2. Créer une nouvelle tâche quotidienne à 10h00
+3. Remplacer `VOTRE_USER` par votre nom d'utilisateur
 
-Ouvrir crontab :
+## 📊 Logs
+
+Les scripts affichent leur progression en temps réel avec résumé final.
+
+## 🔍 Vérifications
+
+### Tester manuellement
 ```bash
-crontab -e
+php send-engagement-emails.php
 ```
 
-Ajouter cette ligne (exécution quotidienne à 9h du matin) :
-```cron
-0 9 * * * /usr/bin/php /chemin/absolu/vers/pattern-maker/backend/cron/send-notifications.php >> /var/log/yarnflow-notifications.log 2>&1
-```
-
-**⚠️ Important** : Remplacer `/chemin/absolu/vers/` par le vrai chemin du projet !
-
-### Exemples de planification
-
-```cron
-# Tous les jours à 9h00
-0 9 * * * /usr/bin/php /path/to/cron/send-notifications.php >> /var/log/yarnflow.log 2>&1
-
-# Tous les jours à 8h30 et 17h00
-30 8,17 * * * /usr/bin/php /path/to/cron/send-notifications.php >> /var/log/yarnflow.log 2>&1
-
-# Du lundi au vendredi à 10h00
-0 10 * * 1-5 /usr/bin/php /path/to/cron/send-notifications.php >> /var/log/yarnflow.log 2>&1
-```
-
-## 📊 Monitoring
-
-### Logs
-
-Les logs sont écrits dans `/var/log/yarnflow-notifications.log` :
-
-```bash
-# Voir les derniers logs
-tail -f /var/log/yarnflow-notifications.log
-
-# Rechercher les erreurs
-grep "❌" /var/log/yarnflow-notifications.log
-
-# Compter les emails envoyés aujourd'hui
-grep "$(date +%Y-%m-%d)" /var/log/yarnflow-notifications.log | grep "envoyés"
-```
-
-### Vérifier en base de données
-
+### Vérifier les emails envoyés
 ```sql
--- Emails envoyés aujourd'hui
-SELECT notification_type, COUNT(*) as count
-FROM email_notifications_sent
-WHERE DATE(sent_at) = CURDATE()
-GROUP BY notification_type;
-
--- Emails envoyés ce mois-ci
-SELECT notification_type, COUNT(*) as count, DATE(sent_at) as date
-FROM email_notifications_sent
-WHERE YEAR(sent_at) = YEAR(NOW())
-  AND MONTH(sent_at) = MONTH(NOW())
-GROUP BY notification_type, DATE(sent_at)
-ORDER BY date DESC;
-
--- Utilisateurs qui ont désactivé les notifications
-SELECT COUNT(*) FROM users WHERE email_notifications = 0;
+SELECT email_type, COUNT(*) as total, status
+FROM emails_sent_log
+WHERE email_type IN ('onboarding_day3', 'reengagement_day7', 'need_help_day21')
+GROUP BY email_type, status;
 ```
 
-## 🧪 Tests
+---
 
-### Test sur compte spécifique
-
-Pour tester, modifier temporairement un utilisateur :
-
-```sql
--- Simuler un utilisateur inscrit il y a 3 jours inactif (avec ou sans projet)
-UPDATE users SET created_at = DATE_SUB(NOW(), INTERVAL 3 DAY), last_seen_at = DATE_SUB(NOW(), INTERVAL 3 DAY) WHERE id = 123;
-
--- Simuler un utilisateur inactif depuis 7 jours avec projet
-UPDATE users SET last_seen_at = DATE_SUB(NOW(), INTERVAL 7 DAY) WHERE id = 456;
-
--- Simuler un utilisateur inactif depuis 21 jours
-UPDATE users SET last_seen_at = DATE_SUB(NOW(), INTERVAL 21 DAY) WHERE id = 789;
-```
-
-Puis exécuter :
-```bash
-php cron/send-notifications.php
-```
-
-## 🔧 Désabonner un utilisateur
-
-### Via SQL
-```sql
-UPDATE users SET email_notifications = 0 WHERE email = 'user@example.com';
-```
-
-### Via API (à implémenter)
-TODO: Créer une route `POST /api/user/unsubscribe` pour permettre aux utilisateurs de se désabonner
-
-## 📝 Notes
-
-- Les emails sont envoyés de manière **non-bloquante** via PHPMailer
-- SMTP configuré dans `.env` (SMTP_HOST, SMTP_USER, SMTP_PASSWORD)
-- Les erreurs sont loggées dans `error_log` PHP
-- Le script retourne un code de sortie 0 (succès) ou 1 (erreur) pour le monitoring cron
-
-## 🆘 Dépannage
-
-### Le cron ne s'exécute pas
-
-1. Vérifier que le cron est bien configuré :
-   ```bash
-   crontab -l
-   ```
-
-2. Vérifier les permissions :
-   ```bash
-   chmod +x backend/cron/send-notifications.php
-   ```
-
-3. Tester manuellement avec le user cron :
-   ```bash
-   sudo -u www-data php backend/cron/send-notifications.php
-   ```
-
-### Les emails ne partent pas
-
-1. Vérifier la config SMTP dans `.env`
-2. Tester la connexion SMTP (voir EmailService::testConnection())
-3. Vérifier les logs d'erreur PHP
-4. Vérifier que `email_notifications = 1` pour les utilisateurs cibles
-
-### Trop d'emails envoyés
-
-- Vérifier la contrainte UNIQUE dans `email_notifications_sent`
-- Vérifier la condition `YEAR(sent_at) = YEAR(NOW()) AND MONTH(sent_at) = MONTH(NOW())`
+**Créé le** : 2026-01-04
+**Version** : 1.0.0
