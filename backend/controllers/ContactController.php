@@ -13,14 +13,17 @@ namespace App\Controllers;
 
 use App\Config\Database;
 use App\Services\JWTService;
+use App\Services\EmailService;
 use PDO;
 use Exception;
 
 class ContactController {
     private PDO $db;
+    private EmailService $emailService;
 
     public function __construct() {
         $this->db = Database::getInstance()->getConnection();
+        $this->emailService = new EmailService($this->db);
     }
 
     /**
@@ -215,8 +218,6 @@ class ContactController {
     private function sendNotificationEmails($messageId, $name, $email, $category, $subject, $message) {
         // CONTACT_EMAIL = adresse qui REÇOIT les messages de contact
         $contactEmail = $_ENV['CONTACT_EMAIL'] ?? 'contact@yarnflow.fr';
-        // FROM_EMAIL = adresse d'expédition (peut être noreply@)
-        $fromEmail = $_ENV['SMTP_FROM_EMAIL'] ?? 'noreply@yarnflow.fr';
         $appName = 'YarnFlow';
 
         // Emoji selon la catégorie
@@ -237,7 +238,7 @@ class ContactController {
         $emoji = $categoryEmoji[$category] ?? '📧';
         $categoryLabel = $categoryLabels[$category] ?? 'Autre';
 
-        // Email à l'admin
+        // Email à l'admin (texte brut)
         $adminSubject = "$emoji [$appName] Nouveau message de contact (#$messageId)";
         $adminBody = "
 Nouveau message de contact reçu :
@@ -269,9 +270,10 @@ $message
 Pour répondre, envoyez un email à : $email
 ";
 
-        $this->sendEmail($contactEmail, $adminSubject, $adminBody);
+        // Envoyer via EmailService (SMTP)
+        $this->emailService->sendEmail($contactEmail, $adminSubject, nl2br($adminBody), 'Admin YarnFlow');
 
-        // Email de confirmation à l'utilisateur
+        // Email de confirmation à l'utilisateur (texte brut)
         $userSubject = "✅ Message reçu - $appName";
         $userBody = "
 Bonjour $name,
@@ -298,31 +300,8 @@ $contactEmail
 https://yarnflow.fr
 ";
 
-        $this->sendEmail($email, $userSubject, $userBody);
-    }
-
-    /**
-     * Envoie un email (wrapper pour faciliter les tests)
-     */
-    private function sendEmail($to, $subject, $body) {
-        $contactEmail = $_ENV['CONTACT_EMAIL'] ?? 'contact@yarnflow.fr';
-
-        $headers = "From: YarnFlow <$contactEmail>\r\n";
-        $headers .= "Reply-To: $contactEmail\r\n";
-        $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
-        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-
-        // En dev, logger au lieu d'envoyer
-        if (($_ENV['APP_ENV'] ?? 'development') === 'development') {
-            error_log("=== EMAIL ===");
-            error_log("To: $to");
-            error_log("Subject: $subject");
-            error_log("Body:\n$body");
-            error_log("=============");
-            return true;
-        }
-
-        return mail($to, $subject, $body, $headers);
+        // Envoyer via EmailService (SMTP)
+        $this->emailService->sendEmail($email, $userSubject, nl2br($userBody), $name);
     }
 
     /**
