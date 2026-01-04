@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { userAPI, paymentsAPI } from '../services/api'
+import { useAnalytics } from '../hooks/useAnalytics'
 
 const Subscription = () => {
   const { user } = useAuth()
+  const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick, trackBillingPeriodChange } = useAnalytics()
   const [subscription, setSubscription] = useState(null)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
@@ -38,6 +40,10 @@ const Subscription = () => {
 
   const handleSubscribe = async (planType) => {
     setProcessing(true)
+
+    // Track subscription click
+    trackSubscriptionClick(planType, billingPeriod, 'subscription')
+
     try {
       // Déterminer le type d'abonnement selon le plan et la période
       let subscriptionType = planType
@@ -47,8 +53,16 @@ const Subscription = () => {
         subscriptionType = 'pro_annual'
       }
 
+      // Calculer le montant pour le tracking
+      const amount = planType === 'plus'
+        ? (billingPeriod === 'monthly' ? 2.99 : 29.99)
+        : (billingPeriod === 'monthly' ? 4.99 : 49.99)
+
       const response = await paymentsAPI.checkoutSubscription({ type: subscriptionType })
       const { checkout_url } = response.data.data
+
+      // Track begin checkout
+      trackBeginCheckout('subscription', subscriptionType, amount)
 
       // Rediriger vers Stripe Checkout
       window.location.href = checkout_url
@@ -61,10 +75,18 @@ const Subscription = () => {
 
   const handleBuyCredits = async (amount) => {
     setProcessing(true)
+
+    // Track credits click
+    trackCreditsClick(amount, 'subscription')
+
     try {
       // Le backend attend 'pack' au format string '50' ou '150'
       const response = await paymentsAPI.checkoutCredits({ pack: String(amount) })
       const { checkout_url } = response.data.data
+
+      // Track begin checkout
+      const price = amount === 50 ? 4.99 : 9.99
+      trackBeginCheckout('credits', String(amount), price)
 
       // Rediriger vers Stripe Checkout
       window.location.href = checkout_url
@@ -159,7 +181,10 @@ const Subscription = () => {
       {/* Toggle Mensuel/Annuel */}
       <div className="flex justify-center items-center gap-4 mb-8">
         <button
-          onClick={() => setBillingPeriod('monthly')}
+          onClick={() => {
+            setBillingPeriod('monthly')
+            trackBillingPeriodChange('monthly')
+          }}
           className={`px-6 py-2 rounded-lg font-medium transition ${
             billingPeriod === 'monthly'
               ? 'bg-primary-600 text-white'
@@ -169,7 +194,10 @@ const Subscription = () => {
           Mensuel
         </button>
         <button
-          onClick={() => setBillingPeriod('annual')}
+          onClick={() => {
+            setBillingPeriod('annual')
+            trackBillingPeriodChange('annual')
+          }}
           className={`px-6 py-2 rounded-lg font-medium transition relative ${
             billingPeriod === 'annual'
               ? 'bg-primary-600 text-white'

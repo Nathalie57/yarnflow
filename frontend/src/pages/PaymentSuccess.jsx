@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { paymentsAPI } from '../services/api'
+import { useAnalytics } from '../hooks/useAnalytics'
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { trackPurchase } = useAnalytics()
   const [status, setStatus] = useState('loading') // loading, success, error
   const [paymentInfo, setPaymentInfo] = useState(null)
   const [countdown, setCountdown] = useState(5)
@@ -26,6 +28,13 @@ export default function PaymentSuccess() {
         if (data.status === 'completed' || data.status === 'paid') {
           setStatus('success')
           setPaymentInfo(data)
+
+          // Track successful purchase
+          const type = data.type || 'subscription' // 'subscription' ou 'credits'
+          const plan = data.subscription_type || data.pack || 'unknown'
+          const amount = data.amount || 0
+
+          trackPurchase(type, plan, amount, sessionId)
         } else {
           setStatus('error')
         }

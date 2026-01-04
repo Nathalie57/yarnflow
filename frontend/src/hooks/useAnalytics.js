@@ -82,12 +82,108 @@ export const useAnalytics = () => {
     })
   }
 
+  /**
+   * Tracker un clic sur bouton d'abonnement
+   * @param {string} plan - 'plus' ou 'pro'
+   * @param {string} period - 'monthly' ou 'annual'
+   * @param {string} location - 'landing', 'subscription', 'upgrade_prompt', etc.
+   */
+  const trackSubscriptionClick = (plan, period, location = 'unknown') => {
+    trackEvent('subscription_click', {
+      event_category: 'conversion',
+      event_label: `${plan}_${period}`,
+      plan: plan,
+      billing_period: period,
+      location: location,
+      value: plan === 'plus' ? (period === 'monthly' ? 2.99 : 29.99) : (period === 'monthly' ? 4.99 : 49.99)
+    })
+  }
+
+  /**
+   * Tracker le début d'un checkout Stripe
+   * @param {string} type - 'subscription' ou 'credits'
+   * @param {string} plan - 'plus', 'pro', '50', '150'
+   * @param {number} amount - Montant en euros
+   */
+  const trackBeginCheckout = (type, plan, amount) => {
+    trackEvent('begin_checkout', {
+      event_category: 'ecommerce',
+      event_label: `${type}_${plan}`,
+      checkout_type: type,
+      plan: plan,
+      value: amount,
+      currency: 'EUR'
+    })
+  }
+
+  /**
+   * Tracker un achat réussi (conversion finale)
+   * @param {string} type - 'subscription' ou 'credits'
+   * @param {string} plan - 'plus', 'pro', '50', '150'
+   * @param {number} amount - Montant en euros
+   * @param {string} transactionId - ID de transaction Stripe
+   */
+  const trackPurchase = (type, plan, amount, transactionId = null) => {
+    trackEvent('purchase', {
+      event_category: 'ecommerce',
+      event_label: `${type}_${plan}`,
+      transaction_id: transactionId,
+      purchase_type: type,
+      plan: plan,
+      value: amount,
+      currency: 'EUR'
+    })
+
+    // Aussi envoyer une conversion pour Google Ads si configuré
+    if (window.gtag) {
+      window.gtag('event', 'conversion', {
+        send_to: 'AW-CONVERSION_ID/CONVERSION_LABEL', // À remplacer si Google Ads
+        value: amount,
+        currency: 'EUR',
+        transaction_id: transactionId
+      })
+    }
+  }
+
+  /**
+   * Tracker un clic sur achat de crédits photos
+   * @param {number} amount - Nombre de crédits (50 ou 150)
+   * @param {string} location - 'subscription', 'gallery', etc.
+   */
+  const trackCreditsClick = (amount, location = 'unknown') => {
+    const price = amount === 50 ? 4.99 : 9.99
+    trackEvent('credits_click', {
+      event_category: 'conversion',
+      event_label: `credits_${amount}`,
+      credits_amount: amount,
+      location: location,
+      value: price
+    })
+  }
+
+  /**
+   * Tracker un changement de période de facturation
+   * @param {string} period - 'monthly' ou 'annual'
+   */
+  const trackBillingPeriodChange = (period) => {
+    trackEvent('billing_period_change', {
+      event_category: 'engagement',
+      event_label: period,
+      billing_period: period
+    })
+  }
+
   return {
     trackEvent,
     trackPageView,
     trackWaitlistSignup,
     trackScrollDepth,
-    trackOutboundLink
+    trackOutboundLink,
+    trackSubscriptionClick,
+    trackBeginCheckout,
+    trackPurchase,
+    trackCreditsClick,
+    trackBillingPeriodChange
   }
 }
 

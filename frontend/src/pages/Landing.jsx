@@ -13,7 +13,7 @@ const Landing = () => {
   const [billingPeriod, setBillingPeriod] = useState('monthly') // 'monthly' ou 'annual'
 
   // Analytics
-  const { trackPageView } = useAnalytics()
+  const { trackPageView, trackSubscriptionClick, trackBillingPeriodChange } = useAnalytics()
   useScrollTracking()
 
   useEffect(() => {
@@ -70,7 +70,10 @@ const Landing = () => {
         {/* Toggle Mensuel/Annuel */}
         <div className="flex justify-center items-center gap-4 mb-8">
           <button
-            onClick={() => setBillingPeriod('monthly')}
+            onClick={() => {
+              setBillingPeriod('monthly')
+              trackBillingPeriodChange('monthly')
+            }}
             className={`px-6 py-2 rounded-lg font-medium transition ${
               billingPeriod === 'monthly'
                 ? 'bg-primary-600 text-white'
@@ -80,7 +83,10 @@ const Landing = () => {
             Mensuel
           </button>
           <button
-            onClick={() => setBillingPeriod('annual')}
+            onClick={() => {
+              setBillingPeriod('annual')
+              trackBillingPeriodChange('annual')
+            }}
             className={`px-6 py-2 rounded-lg font-medium transition ${
               billingPeriod === 'annual'
                 ? 'bg-primary-600 text-white'
@@ -176,6 +182,7 @@ const Landing = () => {
 
             <Link
               to="/register"
+              onClick={() => trackSubscriptionClick('plus', billingPeriod, 'landing')}
               className="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-lg transition"
             >
               Choisir PLUS
@@ -233,6 +240,7 @@ const Landing = () => {
 
             <Link
               to="/register"
+              onClick={() => trackSubscriptionClick('pro', billingPeriod, 'landing')}
               className="block w-full text-center bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 rounded-lg transition"
             >
               Choisir PRO
