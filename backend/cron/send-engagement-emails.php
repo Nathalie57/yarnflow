@@ -49,6 +49,10 @@ try {
             WHERE email_type = 'onboarding_day3'
             AND user_id IS NOT NULL
         )
+        AND u.id NOT IN (
+            SELECT DISTINCT user_id
+            FROM projects
+        )
         AND u.email_verified = 1
     ");
     $stmt->execute();

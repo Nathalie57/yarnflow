@@ -28,37 +28,38 @@ const Landing = () => {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🧶</span>
-            <span className="font-bold text-xl text-gray-900">YarnFlow</span>
+            <span className="font-bold text-lg md:text-xl text-gray-900">YarnFlow</span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <Link
               to="/contact"
-              className="text-gray-700 hover:text-primary-600 font-medium transition"
+              className="text-gray-700 hover:text-primary-600 font-medium transition text-sm md:text-base hidden sm:block"
             >
               Contact
             </Link>
             <Link
               to="/login"
-              className="text-gray-700 hover:text-primary-600 font-medium transition"
+              className="text-gray-700 hover:text-primary-600 font-medium transition text-sm md:text-base"
             >
               Connexion
             </Link>
             <Link
               to="/register"
-              className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition"
+              className="bg-primary-600 hover:bg-primary-700 text-white px-3 py-2 md:px-4 rounded-lg font-medium transition text-sm md:text-base whitespace-nowrap"
             >
-              Créer un compte
+              <span className="hidden sm:inline">Créer un compte</span>
+              <span className="sm:hidden">Inscription</span>
             </Link>
           </div>
         </div>
       </header>
 
       {/* Section Héros */}
-      <section className="max-w-4xl mx-auto px-4 py-16 md:py-24 text-center">
+      <section className="max-w-4xl mx-auto px-4 py-12 md:py-16 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
           Simplifiez votre tricot & crochet
         </h1>
@@ -85,9 +86,9 @@ const Landing = () => {
       </section>
 
       {/* Section Fonctionnalités clés */}
-      <section className="bg-warm-50 py-16">
+      <section className="bg-warm-50 py-12">
         <div className="max-w-6xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8">
             Ce que YarnFlow fait pour vous
           </h2>
 
@@ -136,6 +137,148 @@ const Landing = () => {
               <p className="text-gray-600 leading-relaxed">
                 Votre vitesse, votre historique, vos statistiques… sans aucune saisie manuelle.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section Visuels */}
+      <section className="py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">
+            Découvrez YarnFlow en images
+          </h2>
+          <p className="text-center text-gray-600 mb-12 text-lg">
+            Voici à quoi ressemble YarnFlow au quotidien
+          </p>
+
+          {/* Compteur de rangs */}
+          <div className="mb-16">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="order-2 md:order-1">
+                <div className="rounded-2xl overflow-hidden shadow-lg">
+                  <img
+                    src="/screenshots/counter-mobile.jpg"
+                    alt="Compteur de rangs YarnFlow sur mobile"
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              </div>
+              <div className="order-1 md:order-2">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  Comptez vos rangs en un clic
+                </h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Interface simple et intuitive : gros boutons +/-, timer automatique qui mesure
+                  votre vitesse, progression visuelle. Tout ce dont vous avez besoin, rien de plus.
+                </p>
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex items-start">
+                    <span className="text-primary-600 mr-2">✓</span>
+                    <span>Timer automatique dès le premier rang</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary-600 mr-2">✓</span>
+                    <span>Gros boutons faciles à taper sans regarder</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary-600 mr-2">✓</span>
+                    <span>Wake lock : l'écran reste allumé pendant que vous tricotez</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Photo Studio - Avant/Après */}
+          <div className="mb-16">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  Vos photos sublimées par l'IA
+                </h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Transformez vos photos ordinaires en images professionnelles. L'IA améliore
+                  l'éclairage, nettoie l'arrière-plan et sublime les couleurs — votre ouvrage
+                  reste 100% authentique.
+                </p>
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex items-start">
+                    <span className="text-primary-600 mr-2">✓</span>
+                    <span>9 styles disponibles (Lifestyle, Studio, Scandinavian...)</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary-600 mr-2">✓</span>
+                    <span>Parfait pour Etsy, Instagram ou vos archives</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary-600 mr-2">✓</span>
+                    <span>Générez jusqu'à 5 variations en un clic</span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="relative">
+                    <img
+                      src="/screenshots/photo_before.jpg"
+                      alt="Photo avant amélioration IA"
+                      className="w-full h-full object-cover rounded-xl shadow-md"
+                    />
+                    <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-75 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                      AVANT
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <img
+                      src="/screenshots/photo-after.jpg"
+                      alt="Photo après amélioration IA"
+                      className="w-full h-full object-cover rounded-xl shadow-md"
+                    />
+                    <div className="absolute top-2 left-2 bg-primary-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                      APRÈS ✨
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Organisation avec tags */}
+          <div className="mb-0">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="order-2 md:order-1">
+                <div className="rounded-2xl overflow-hidden shadow-lg">
+                  <img
+                    src="/screenshots/myprojects-tags.jpg"
+                    alt="Organisation des projets avec tags personnalisés"
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              </div>
+              <div className="order-1 md:order-2">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  Organisation intelligente avec tags
+                </h3>
+                <p className="text-gray-600 leading-relaxed mb-4">
+                  Retrouvez vos projets en un instant grâce aux tags personnalisés, filtres avancés
+                  et tri intelligent. Réservé aux plans PLUS et PRO.
+                </p>
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex items-start">
+                    <span className="text-primary-600 mr-2">✓</span>
+                    <span>Tags illimités (cadeau, bébé, urgent, Noël...)</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary-600 mr-2">✓</span>
+                    <span>Filtrage multi-tags et favoris</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary-600 mr-2">✓</span>
+                    <span>Suggestions intelligentes basées sur vos habitudes</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -321,7 +464,7 @@ const Landing = () => {
               <div className="mb-6 p-4 bg-warm-50 rounded-lg">
                 <p className="text-sm font-semibold text-gray-900 mb-1">Quand payez-vous ?</p>
                 <p className="text-sm text-gray-700">
-                  Après avoir utilisé <strong>7 projets actifs</strong> ou <strong>15 crédits photos/mois</strong>
+                  Quand vous dépassez les limites du plan PLUS (7 projets, 15 crédits)
                 </p>
               </div>
 

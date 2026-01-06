@@ -690,86 +690,96 @@ const MyProjects = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Header - Responsive mobile */}
       <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">📸 Mes Projets</h1>
-            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
-              Tous vos projets tricot & crochet avec photos et suivi de progression
-            </p>
-          </div>
-
-          {canCreateProject ? (
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800"
-            >
-              ➕ Nouveau Projet
-            </button>
-          ) : (
-            <Link
-              to="/subscription"
-              className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-bold transition touch-manipulation bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 active:from-primary-800 active:to-primary-900 text-center flex items-center gap-2 justify-center focus:outline-none focus:ring-4 focus:ring-primary-300"
-            >
-              <span>✨ Débloquer plus de projets</span>
-            </Link>
-          )}
-        </div>
-
-        {/* Stats inline compacte */}
-        {!loadingStats && dashboardStats && (
-          <div className="mt-6 bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
-              {/* Projets */}
-              <div className="flex items-center gap-3 flex-1">
-                <span className="text-3xl">📋</span>
-                <div className="flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold text-primary-600">
-                      {quota.max === 999 ? quota.total : quota.current}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      / {quota.max === 999 ? '∞' : quota.max} projet{quota.max > 1 ? 's' : ''} {quota.max < 999 ? 'actifs' : ''}
-                    </span>
-                  </div>
-                  {quota.max < 999 && quota.total > 0 && (
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {quota.total} projet{quota.total > 1 ? 's' : ''} au total
-                    </p>
-                  )}
-                </div>
+        {/* Afficher header complet uniquement si des projets existent */}
+        {projects.length > 0 ? (
+          <>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">🧶 Mes Projets</h1>
+                <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
+                  Tous vos projets tricot & crochet avec photos et suivi de progression
+                </p>
               </div>
 
-              {/* Séparateur vertical */}
-              <div className="hidden sm:block w-px h-12 bg-gray-200"></div>
-
-              {/* Photos IA */}
-              <div className="flex items-center gap-3 flex-1">
-                <span className="text-3xl">📸</span>
-                <div className="flex-1">
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-2xl font-bold text-primary-600">{credits?.total_available || 0}</span>
-                    <span className="text-sm text-gray-500">crédit{(credits?.total_available || 0) > 1 ? 's' : ''} photos</span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-xs text-gray-500">
-                      {credits?.monthly_credits || 0} mensuels + {credits?.purchased_credits || 0} achetés
-                      {' • '}
-                      <Link to="/gallery" className="underline font-medium text-primary-600 hover:text-primary-700">
-                        Galerie
-                      </Link>
-                    </p>
-                    <Link
-                      to="/subscription#credits"
-                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-xs font-bold rounded-lg hover:from-primary-700 hover:to-primary-800 transition focus:outline-none focus:ring-2 focus:ring-primary-300"
-                      title="Acheter des crédits"
-                    >
-                      <span>+</span>
-                      <span className="hidden sm:inline">Acheter</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              {canCreateProject ? (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800"
+                >
+                  ➕ Nouveau Projet
+                </button>
+              ) : (
+                <Link
+                  to="/subscription"
+                  className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-bold transition touch-manipulation bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 active:from-primary-800 active:to-primary-900 text-center flex items-center gap-2 justify-center focus:outline-none focus:ring-4 focus:ring-primary-300"
+                >
+                  <span>✨ Débloquer plus de projets</span>
+                </Link>
+              )}
             </div>
+
+            {/* Stats inline compacte */}
+            {!loadingStats && dashboardStats && (
+              <div className="mt-6 bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
+                  {/* Projets */}
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-3xl">📋</span>
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-bold text-primary-600">
+                          {quota.max === 999 ? quota.total : quota.current}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          / {quota.max === 999 ? '∞' : quota.max} projet{quota.max > 1 ? 's' : ''} {quota.max < 999 ? 'actifs' : ''}
+                        </span>
+                      </div>
+                      {quota.max < 999 && quota.total > 0 && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {quota.total} projet{quota.total > 1 ? 's' : ''} au total
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Séparateur vertical */}
+                  <div className="hidden sm:block w-px h-12 bg-gray-200"></div>
+
+                  {/* Photos IA */}
+                  <div className="flex items-center gap-3 flex-1">
+                    <span className="text-3xl">📸</span>
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-2xl font-bold text-primary-600">{credits?.total_available || 0}</span>
+                        <span className="text-sm text-gray-500">crédit{(credits?.total_available || 0) > 1 ? 's' : ''} photo{(credits?.total_available || 0) > 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs text-gray-500">
+                          {credits?.monthly_credits || 0} mensuels + {credits?.purchased_credits || 0} achetés
+                          {' • '}
+                          <Link to="/gallery" className="underline font-medium text-primary-600 hover:text-primary-700">
+                            Galerie
+                          </Link>
+                        </p>
+                        <Link
+                          to="/subscription#credits"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-xs font-bold rounded-lg hover:from-primary-700 hover:to-primary-800 transition focus:outline-none focus:ring-2 focus:ring-primary-300"
+                          title="Acheter des crédits"
+                        >
+                          <span>+</span>
+                          <span className="hidden sm:inline">Acheter</span>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Header minimaliste pour empty state */
+          <div className="text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">🧶 Mes Projets</h1>
           </div>
         )}
       </div>
@@ -822,8 +832,8 @@ const MyProjects = () => {
         </div>
       )}
 
-      {/* Filtres (v0.15.0) - Reste visible pendant le filtrage pour éviter les "sauts" */}
-      {hasLoadedOnce && !error && (
+      {/* Filtres (v0.15.0) - Affichés uniquement si des projets existent */}
+      {hasLoadedOnce && !error && projects.length > 0 && (
         <div className="mb-6">
           <ProjectFilters
             onFilterChange={setFilters}
@@ -850,38 +860,156 @@ const MyProjects = () => {
       {!loading && !error && (
         <>
           {projects.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border-2 border-gray-200">
-              <div className="text-6xl mb-4">📸</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Aucun projet
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Commencez votre premier projet et immortalisez-le en photos !
+            <div className="max-w-2xl mx-auto text-center py-16 px-6 bg-gradient-to-br from-warm-50 to-white rounded-2xl border-2 border-primary-200 shadow-sm">
+              <div className="text-7xl mb-6">🧶</div>
+
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                Commençons votre premier projet !
+              </h2>
+
+              <p className="text-gray-700 text-lg leading-relaxed mb-8 max-w-xl mx-auto">
+                <strong>Un projet = un ouvrage</strong> (pull, amigurumi, couverture...).
+                <br className="hidden sm:block" />
+                YarnFlow compte vos rangs, suit votre progression, et vous aide à reprendre sans jamais vous perdre.
               </p>
+
               {canCreateProject && (
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
+                  className="px-8 py-4 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300 shadow-lg hover:shadow-xl text-lg mb-6"
                 >
-                  ➕ Créer un projet
+                  ➕ Créer mon premier projet
                 </button>
               )}
+
+              {/* Section "Comment ça marche" - Déplié par défaut */}
+              <details open className="bg-white rounded-xl p-6 text-left max-w-md mx-auto border border-primary-100 shadow-sm mb-4">
+                <summary className="font-semibold text-primary-700 cursor-pointer hover:text-primary-800 transition list-none flex items-center justify-between">
+                  <span>Comment ça marche ?</span>
+                  <span className="text-xl">🤔</span>
+                </summary>
+                <ol className="mt-4 space-y-3 text-gray-700 text-sm">
+                  <li className="flex items-start">
+                    <span className="text-primary-600 font-bold mr-3 text-base">1️⃣</span>
+                    <span>Créez un projet pour votre ouvrage</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary-600 font-bold mr-3 text-base">2️⃣</span>
+                    <span>Ajoutez une ou plusieurs sections (rangs ou centimètres)</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary-600 font-bold mr-3 text-base">3️⃣</span>
+                    <span>Utilisez le compteur pendant que vous tricotez ou crochetez</span>
+                  </li>
+                </ol>
+              </details>
+
+              {/* Exemple de projet */}
+              <p className="text-sm text-gray-500">
+                💡 Besoin d'un exemple ?
+                <button
+                  onClick={() => {
+                    showAlert(
+                      "Exemple concret : Pull en cours",
+                      <div className="text-left space-y-4">
+                        {/* Étape 1 : Création */}
+                        <div className="bg-primary-50 rounded-lg p-4 border-l-4 border-primary-600">
+                          <p className="font-bold text-primary-900 mb-2">📝 Vous créez un projet</p>
+                          <div className="bg-white rounded p-3 text-sm">
+                            <p className="font-semibold text-gray-900">Nom : Pull rayé automne</p>
+                            <p className="text-gray-600 text-xs mt-1">Technique : Tricot • Type : Pull</p>
+                          </div>
+                        </div>
+
+                        {/* Étape 2 : Ajout sections */}
+                        <div className="bg-sage-50 rounded-lg p-4 border-l-4 border-sage-600">
+                          <p className="font-bold text-sage-900 mb-2">➕ Vous ajoutez des sections</p>
+                          <p className="text-xs text-gray-600 mb-3 italic">
+                            Une section = une partie de votre ouvrage
+                          </p>
+                          <div className="space-y-2 text-sm">
+                            <div className="bg-white rounded p-3">
+                              <p className="font-semibold text-gray-700">Section : Dos</p>
+                              <p className="text-gray-600 text-xs">120 rangs à faire</p>
+                            </div>
+                            <div className="bg-white rounded p-3">
+                              <p className="font-semibold text-gray-700">Section : Devant</p>
+                              <p className="text-gray-600 text-xs">120 rangs à faire</p>
+                            </div>
+                            <div className="bg-white rounded p-3">
+                              <p className="font-semibold text-gray-700">Section : Manches (×2)</p>
+                              <p className="text-gray-600 text-xs">80 rangs chacune</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Étape 3 : Utilisation compteur */}
+                        <div className="bg-warm-50 rounded-lg p-4 border-l-4 border-warm-600">
+                          <p className="font-bold text-warm-900 mb-2">🧶 Vous tricotez avec le compteur</p>
+                          <div className="bg-white rounded-lg p-4 border-2 border-dashed border-gray-300">
+                            <div className="text-center mb-3">
+                              <p className="text-xs text-gray-500 font-semibold">Section : Dos</p>
+                              <p className="text-4xl font-bold text-primary-600 my-2">47</p>
+                              <p className="text-xs text-gray-500">sur 120 rangs</p>
+                              <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+                                <div className="bg-primary-600 h-2 rounded-full" style={{width: '39%'}}></div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 justify-center mt-4">
+                              <div className="bg-gray-300 rounded-lg px-6 py-2 text-2xl font-bold text-gray-500">−</div>
+                              <div className="bg-primary-600 rounded-lg px-6 py-2 text-2xl font-bold text-white">+</div>
+                            </div>
+                            <p className="text-xs text-gray-500 text-center mt-3 italic">
+                              À chaque rang terminé, vous tapez sur +
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Avantages */}
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <p className="font-semibold text-gray-900 mb-2 text-sm">✨ Ce que YarnFlow fait pour vous :</p>
+                          <ul className="text-xs text-gray-600 space-y-1.5">
+                            <li>• Calcule votre vitesse automatiquement (rangs/heure)</li>
+                            <li>• Garde l'écran allumé pendant que vous tricotez</li>
+                            <li>• Suit la progression de chaque section séparément</li>
+                            <li>• Vous permet d'ajouter des notes et photos</li>
+                          </ul>
+                        </div>
+                      </div>,
+                      'info'
+                    )
+                  }}
+                  className="text-primary-600 hover:text-primary-700 font-medium underline ml-1 transition"
+                >
+                  Voir un exemple concret
+                </button>
+              </p>
             </div>
           ) : filteredProjects.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border-2 border-gray-200">
+            <div className="max-w-xl mx-auto text-center py-12 px-6 bg-white rounded-xl border-2 border-gray-200">
               <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
                 Aucun projet trouvé
               </h3>
-              <p className="text-gray-600 mb-4">
-                Aucun projet ne correspond à votre recherche "{searchQuery}"
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                Aucun projet ne correspond à <strong>"{searchQuery}"</strong>
               </p>
-              <button
-                onClick={() => setSearchQuery('')}
-                className="px-6 py-3 bg-gray-600 text-white rounded-lg font-bold hover:bg-gray-700 transition focus:outline-none focus:ring-4 focus:ring-gray-400"
-              >
-                ✕ Effacer la recherche
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition focus:outline-none focus:ring-4 focus:ring-gray-300"
+                >
+                  ✕ Effacer la recherche
+                </button>
+                {canCreateProject && (
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
+                  >
+                    ➕ Créer un projet
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1914,15 +2042,15 @@ const MyProjects = () => {
 
       {/* Modal d'alerte personnalisée */}
       {showAlertModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 sticky top-0 bg-white pb-3 border-b">
               {alertData.title}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <div className="text-gray-600 mb-6">
               {alertData.message}
-            </p>
-            <div className="flex justify-end">
+            </div>
+            <div className="flex justify-end sticky bottom-0 bg-white pt-3 border-t">
               <button
                 onClick={() => setShowAlertModal(false)}
                 className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"

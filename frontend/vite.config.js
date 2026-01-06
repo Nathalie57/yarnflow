@@ -166,7 +166,7 @@ export default defineConfig({
         ]
       },
       devOptions: {
-        enabled: true,
+        enabled: false, // Désactivé en dev pour éviter les refresh en boucle
         type: 'module'
       }
     })
@@ -174,6 +174,11 @@ export default defineConfig({
   server: {
     host: true, // Accepter les connexions depuis le réseau local
     port: 5173,
+    // Configuration pour WSL (évite les faux positifs du file watcher)
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
     proxy: {
       '/api': {
         target: 'http://patron-maker.local',
