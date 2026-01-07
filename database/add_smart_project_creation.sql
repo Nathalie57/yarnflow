@@ -98,25 +98,13 @@ COMMENT='Tracking des imports de patrons par IA (quotas mensuels par plan)';
 
 -- 3. Vérification
 -- =====================================================
-
--- Vérifier les nouvelles colonnes projects
-SELECT
-    COLUMN_NAME,
-    COLUMN_TYPE,
-    COLUMN_DEFAULT,
-    COLUMN_COMMENT
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_SCHEMA = DATABASE()
-  AND TABLE_NAME = 'projects'
-  AND COLUMN_NAME IN ('craft_type', 'gauge_stitches', 'gauge_rows', 'gauge_size_cm', 'source_type', 'source_url')
-ORDER BY ORDINAL_POSITION;
-
--- Vérifier la table ai_pattern_imports
-DESCRIBE ai_pattern_imports;
-
-SELECT
-    COUNT(*) as total_imports,
-    ai_status,
-    source_type
-FROM ai_pattern_imports
-GROUP BY ai_status, source_type;
+-- Exécuter ces commandes manuellement après la migration pour vérifier :
+--
+-- SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_DEFAULT, COLUMN_COMMENT
+-- FROM INFORMATION_SCHEMA.COLUMNS
+-- WHERE TABLE_SCHEMA = DATABASE()
+--   AND TABLE_NAME = 'projects'
+--   AND COLUMN_NAME IN ('craft_type', 'gauge_stitches', 'gauge_rows', 'gauge_size_cm', 'source_type', 'source_url')
+-- ORDER BY ORDINAL_POSITION;
+--
+-- DESCRIBE ai_pattern_imports;
