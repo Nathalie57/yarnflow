@@ -60,12 +60,12 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
     {
       "name": "nom de la section (ex: Corps, Manches, Assemblage)",
       "unit": "rangs" | "cm",
-      "target": nombre (int ou null),
-      "description": "instructions brèves (string ou null)"
+      "target": nombre total de rangs ou cm pour cette section (int ou null),
+      "description": "TOUTES les instructions complètes de cette section, rang par rang ou étape par étape (string)"
     }
   ],
 
-  "pattern_notes": "notes importantes du patron (string ou null)"
+  "pattern_notes": "notes importantes du patron (conseils généraux, modifications possibles, etc.)"
 }
 
 RÈGLES STRICTES :
@@ -73,6 +73,9 @@ RÈGLES STRICTES :
 - craft_type : détecter selon vocabulaire (ms/ml/mc/bride = crochet, m/end/env/jersey = tricot)
 - category : utiliser les catégories YarnFlow existantes uniquement
 - sections : découper logiquement (Corps, Manches, Col, Assemblage, Finitions...)
+- sections.description : INCLURE TOUTES LES INSTRUCTIONS détaillées de cette section (tous les rangs, toutes les étapes)
+- Conserver les abréviations du patron (ms, ml, mc, m, end, env, etc.)
+- Numéroter les rangs/tours si présents (ex: "Rang 1: ..., Rang 2: ..., etc.")
 - Privilégier "rangs" pour crochet, "cm" pour tricot (sauf si explicite dans le patron)
 - gauge : toujours ramener à 10cm (si échantillon donné pour 5cm, multiplier par 2)
 - yarn.weight : utiliser uniquement les catégories standard (pas de "moyen", "épais" français)
@@ -200,7 +203,7 @@ PROMPT;
                 'temperature' => 0.1, // Faible pour extraction factuelle
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 2048
+                'maxOutputTokens' => 8192 // Augmenté pour inclure toutes les instructions
             ]
         ];
 
@@ -238,7 +241,7 @@ PROMPT;
                 'temperature' => 0.1,
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 2048
+                'maxOutputTokens' => 8192 // Augmenté pour inclure toutes les instructions
             ]
         ];
 

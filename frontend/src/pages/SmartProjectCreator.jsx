@@ -537,44 +537,46 @@ export default function SmartProjectCreator() {
 
               <div className="space-y-3">
                 {sections.map((section, index) => (
-                  <div key={index} className="flex gap-2 items-start border border-gray-200 rounded-lg p-3">
-                    <div className="flex-1 grid grid-cols-4 gap-2">
-                      <input
-                        type="text"
-                        value={section.name}
-                        onChange={(e) => updateSection(index, 'name', e.target.value)}
-                        placeholder="Nom section"
-                        className="px-2 py-1 border border-gray-300 rounded text-sm"
-                      />
-                      <select
-                        value={section.unit}
-                        onChange={(e) => updateSection(index, 'unit', e.target.value)}
-                        className="px-2 py-1 border border-gray-300 rounded text-sm"
+                  <div key={index} className="border border-gray-200 rounded-lg p-3">
+                    <div className="flex gap-2 items-start mb-2">
+                      <div className="flex-1 grid grid-cols-3 gap-2">
+                        <input
+                          type="text"
+                          value={section.name}
+                          onChange={(e) => updateSection(index, 'name', e.target.value)}
+                          placeholder="Nom section (ex: Corps)"
+                          className="px-2 py-1 border border-gray-300 rounded text-sm"
+                        />
+                        <select
+                          value={section.unit}
+                          onChange={(e) => updateSection(index, 'unit', e.target.value)}
+                          className="px-2 py-1 border border-gray-300 rounded text-sm"
+                        >
+                          <option value="rangs">Rangs</option>
+                          <option value="cm">Centimètres</option>
+                        </select>
+                        <input
+                          type="number"
+                          value={section.target || ''}
+                          onChange={(e) => updateSection(index, 'target', e.target.value ? parseInt(e.target.value) : null)}
+                          placeholder="Objectif"
+                          className="px-2 py-1 border border-gray-300 rounded text-sm"
+                        />
+                      </div>
+                      <button
+                        onClick={() => removeSection(index)}
+                        className="px-2 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
                       >
-                        <option value="rangs">Rangs</option>
-                        <option value="cm">Centimètres</option>
-                      </select>
-                      <input
-                        type="number"
-                        value={section.target || ''}
-                        onChange={(e) => updateSection(index, 'target', e.target.value ? parseInt(e.target.value) : null)}
-                        placeholder="Objectif"
-                        className="px-2 py-1 border border-gray-300 rounded text-sm"
-                      />
-                      <input
-                        type="text"
-                        value={section.description || ''}
-                        onChange={(e) => updateSection(index, 'description', e.target.value)}
-                        placeholder="Description"
-                        className="px-2 py-1 border border-gray-300 rounded text-sm"
-                      />
+                        ✕
+                      </button>
                     </div>
-                    <button
-                      onClick={() => removeSection(index)}
-                      className="px-2 py-1 text-red-600 hover:bg-red-50 rounded"
-                    >
-                      ✕
-                    </button>
+                    <textarea
+                      value={section.description || ''}
+                      onChange={(e) => updateSection(index, 'description', e.target.value)}
+                      placeholder="Instructions complètes de cette section (tous les rangs/tours, étapes détaillées...)"
+                      rows="4"
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm font-mono"
+                    />
                   </div>
                 ))}
               </div>
