@@ -426,12 +426,13 @@ class SmartProjectController
      */
     private function getUserIdFromAuth(): int
     {
-        $headers = getallheaders();
-        $token = $headers['Authorization'] ?? '';
-        $token = str_replace('Bearer ', '', $token);
+        $userData = $this->authMiddleware->authenticate();
 
-        $decoded = $this->authMiddleware->verifyToken($token);
-        return $decoded['user_id'];
+        if ($userData === null) {
+            throw new \Exception('Non authentifié');
+        }
+
+        return (int)$userData['user_id'];
     }
 
     /**
