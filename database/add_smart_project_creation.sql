@@ -7,35 +7,56 @@
 -- 1. Ajout de colonnes à la table projects pour détails techniques
 -- =====================================================
 
-ALTER TABLE projects
-ADD COLUMN IF NOT EXISTS craft_type ENUM('tricot', 'crochet', 'autre') DEFAULT NULL
-    COMMENT 'Type de projet détecté par IA ou saisi manuellement'
-AFTER type;
+-- Procédure pour ajouter une colonne seulement si elle n'existe pas
+DELIMITER $$
 
-ALTER TABLE projects
-ADD COLUMN IF NOT EXISTS gauge_stitches INT DEFAULT NULL
-    COMMENT 'Échantillon : nombre de mailles sur gauge_size_cm'
-AFTER yarn_used_grams;
+DROP PROCEDURE IF EXISTS add_column_if_not_exists$$
+CREATE PROCEDURE add_column_if_not_exists(
+    IN p_table VARCHAR(64),
+    IN p_column VARCHAR(64),
+    IN p_definition TEXT
+)
+BEGIN
+    DECLARE column_exists INT DEFAULT 0;
 
-ALTER TABLE projects
-ADD COLUMN IF NOT EXISTS gauge_rows INT DEFAULT NULL
-    COMMENT 'Échantillon : nombre de rangs sur gauge_size_cm'
-AFTER gauge_stitches;
+    SELECT COUNT(*)
+    INTO column_exists
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = p_table
+      AND COLUMN_NAME = p_column;
 
-ALTER TABLE projects
-ADD COLUMN IF NOT EXISTS gauge_size_cm INT DEFAULT 10
-    COMMENT 'Taille de l échantillon en cm (généralement 10)'
-AFTER gauge_rows;
+    IF column_exists = 0 THEN
+        SET @sql = CONCAT('ALTER TABLE ', p_table, ' ADD COLUMN ', p_column, ' ', p_definition);
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END$$
 
-ALTER TABLE projects
-ADD COLUMN IF NOT EXISTS source_type ENUM('pdf', 'url', 'manual') DEFAULT 'manual'
-    COMMENT 'Origine du projet : importé depuis PDF, URL ou créé manuellement'
-AFTER pattern_notes;
+DELIMITER ;
 
-ALTER TABLE projects
-ADD COLUMN IF NOT EXISTS source_url VARCHAR(500) DEFAULT NULL
-    COMMENT 'URL source ou nom du fichier PDF original'
-AFTER source_type;
+-- Ajouter les colonnes avec vérification
+CALL add_column_if_not_exists('projects', 'craft_type',
+    "ENUM('tricot', 'crochet', 'autre') DEFAULT NULL COMMENT 'Type de projet détecté par IA ou saisi manuellement' AFTER type");
+
+CALL add_column_if_not_exists('projects', 'gauge_stitches',
+    "INT DEFAULT NULL COMMENT 'Échantillon : nombre de mailles sur gauge_size_cm' AFTER yarn_used_grams");
+
+CALL add_column_if_not_exists('projects', 'gauge_rows',
+    "INT DEFAULT NULL COMMENT 'Échantillon : nombre de rangs sur gauge_size_cm' AFTER gauge_stitches");
+
+CALL add_column_if_not_exists('projects', 'gauge_size_cm',
+    "INT DEFAULT 10 COMMENT 'Taille de l échantillon en cm (généralement 10)' AFTER gauge_rows");
+
+CALL add_column_if_not_exists('projects', 'source_type',
+    "ENUM('pdf', 'url', 'manual') DEFAULT 'manual' COMMENT 'Origine du projet : importé depuis PDF, URL ou créé manuellement' AFTER pattern_notes");
+
+CALL add_column_if_not_exists('projects', 'source_url',
+    "VARCHAR(500) DEFAULT NULL COMMENT 'URL source ou nom du fichier PDF original' AFTER source_type");
+
+-- Nettoyer la procédure temporaire
+DROP PROCEDURE IF EXISTS add_column_if_not_exists;
 
 
 -- 2. Création de la table ai_pattern_imports (tracking quotas)
