@@ -93,7 +93,20 @@ class AIPhotoService
         // ACCESSOIRES BÉBÉ - PRO
         'baby_c7' => 'posé à plat dans ou à côté d\'un emballage cadeau élégant avec papier doux pastel, ruban satiné et petite carte avec lumière douce',
         'baby_c8' => 'posé à plat en mise en scène lifestyle premium avec accessoires complémentaires raffinés et éclairage professionnel doux',
-        'baby_c9' => 'posé complètement à plat horizontalement sur une étagère murale blanche dans une nursery épurée avec autres accessoires bébé posés à plat et lumière naturelle douce'
+        'baby_c9' => 'posé complètement à plat horizontalement sur une étagère murale blanche dans une nursery épurée avec autres accessoires bébé posés à plat et lumière naturelle douce',
+
+        // VÊTEMENTS BÉBÉ - FREE (v0.16.1)
+        'baby_garment_c1' => 'porté par un bébé (vrai bébé humain) allongé sur un lit blanc avec draps doux en tons pastel et lumière naturelle douce, photo douce et naturelle',
+        'baby_garment_c2' => 'posé à plat sur fond pastel uni doux (rose poudré, bleu ciel ou beige) avec éclairage studio uniforme et ombres délicates',
+        'baby_garment_c3' => 'posé complètement à plat horizontalement sur une table à langer en bois clair dans une nursery scandinave épurée avec berceau blanc visible en arrière-plan et lumière naturelle douce',
+        // VÊTEMENTS BÉBÉ - PLUS
+        'baby_garment_c4' => 'porté par un bébé (vrai bébé humain) assis ou allongé confortablement avec jouets en bois doux autour, ambiance naturelle lifestyle avec lumière douce',
+        'baby_garment_c5' => 'en flat lay lifestyle avec jouets en bois artisanaux, peluches douces, petites chaussures bébé et surface texturée naturelle',
+        'baby_garment_c6' => 'posé à plat dans un panier en osier vintage avec tissus lin beige, ruban satiné et lumière chaude dorée',
+        // VÊTEMENTS BÉBÉ - PRO
+        'baby_garment_c7' => 'porté par un bébé (vrai bébé humain) dans les bras d\'un parent (mains adultes visibles tenant délicatement le bébé), photo lifestyle douce et émouvante avec lumière naturelle',
+        'baby_garment_c8' => 'posé à plat en mise en scène lifestyle premium avec accessoires naissance haut de gamme, fleurs séchées délicates et éclairage professionnel doux',
+        'baby_garment_c9' => 'porté par un bébé (vrai bébé humain) confortablement installé sur un tapis de jeu moelleux dans une nursery bohème chic avec plantes vertes, coussins doux et lumière naturelle chaleureuse'
     ];
 
 
@@ -221,7 +234,20 @@ class AIPhotoService
             default => 'une vraie personne (modèle humain vivant)'
         };
 
-        // [AI:Claude] v0.14.0 - Prompt ULTRA STRICT spécifique pour photos portées
+        // [AI:Claude] v0.16.1 - Contextes de vêtements bébé PORTÉS
+        $babyGarmentWornContexts = [
+            'baby_garment_c1', // Bébé allongé sur lit
+            'baby_garment_c4', // Bébé assis/allongé avec jouets
+            'baby_garment_c7', // Bébé dans bras parent
+            'baby_garment_c9'  // Bébé allongé sur commode
+        ];
+
+        if (in_array($context, $babyGarmentWornContexts)) {
+            error_log("[PROMPT] Vêtement bébé '{$itemName}' - PORTÉ PAR BÉBÉ");
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. Le vêtement doit être porté par un VRAI BÉBÉ HUMAIN (pas une poupée, pas un mannequin). ÉTAPES CRITIQUES : 1) Garde le vêtement fait main porté par le bébé. 2) RETIRE tous les éléments parasites : objets indésirables, fond original moche. 3) Place le bébé portant le vêtement dans le nouveau contexte avec une pose naturelle, confortable et sécurisante pour un bébé. RÈGLE ABSOLUE sur les détails visuels du vêtement porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la position du bébé dans l'espace pour créer une belle composition naturelle et douce, mais tu NE PEUX PAS changer l'apparence visuelle du vêtement lui-même (couleurs, motifs, texture). Le vêtement porté doit être bien mis en valeur dans une scène réaliste et attendrissante.";
+        }
+
+        // [AI:Claude] v0.14.0 - Prompt ULTRA STRICT spécifique pour photos portées (adultes)
         $isWornContext = in_array($context, [
             'worn_model',
             'mannequin',
@@ -244,12 +270,14 @@ class AIPhotoService
             return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. L'article doit être porté par {$modelText}, PAS un mannequin de vitrine en plastique. ÉTAPES CRITIQUES : 1) Garde l'ouvrage fait main porté par le modèle. 2) RETIRE tous les éléments parasites : mains qui tiennent artificiellement l'ouvrage (sauf si elles font naturellement partie de la pose), objets indésirables, fond original moche. 3) Place le modèle portant l'ouvrage dans le nouveau contexte avec une pose naturelle et appropriée. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la pose du modèle, la position dans l'espace pour créer une belle composition naturelle, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage lui-même (couleurs, motifs, texture). L'ouvrage porté doit être bien mis en valeur dans une scène réaliste.";
         }
 
-        // [AI:Claude] v0.14.0 - Prompt spécifique pour tous les accessoires bébé (toujours à plat)
+        // [AI:Claude] v0.14.0 - Prompt spécifique pour accessoires bébé et vêtements bébé À PLAT
         $isBabyContext = str_starts_with($context, 'baby_');
+        $isBabyGarmentFlatContext = str_starts_with($context, 'baby_garment_') && !in_array($context, $babyGarmentWornContexts);
 
-        if ($isBabyContext) {
-            error_log("[PROMPT] Accessoire bébé '{$itemName}' - Utilisation du prompt FLAT LAY strict");
-            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement l'accessoire bébé visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place l'accessoire isolé complètement à plat sur la surface horizontale dans le nouveau contexte, comme s'il était naturellement posé par gravité, JAMAIS debout ou en position verticale. RÈGLE ABSOLUE sur les détails visuels : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels de l'ouvrage. Tu PEUX changer l'angle de vue (vue du dessus, légèrement de côté, etc.) et la position sur la surface pour que ce soit naturel et bien composé, mais l'accessoire doit toujours rester à plat horizontalement. Tu NE PEUX PAS changer l'apparence visuelle (couleurs, motifs, texture). L'accessoire doit être seul et bien mis en scène.";
+        if ($isBabyContext || $isBabyGarmentFlatContext) {
+            $itemType = $isBabyGarmentFlatContext ? 'vêtement bébé' : 'accessoire bébé';
+            error_log("[PROMPT] {$itemType} '{$itemName}' - Utilisation du prompt FLAT LAY strict");
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement le {$itemType} visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place le {$itemType} isolé complètement à plat sur la surface horizontale dans le nouveau contexte, comme s'il était naturellement posé par gravité, JAMAIS debout ou en position verticale. RÈGLE ABSOLUE sur les détails visuels : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels de l'ouvrage. Tu PEUX changer l'angle de vue (vue du dessus, légèrement de côté, etc.) et la position sur la surface pour que ce soit naturel et bien composé, mais le {$itemType} doit toujours rester à plat horizontalement. Tu NE PEUX PAS changer l'apparence visuelle (couleurs, motifs, texture). Le {$itemType} doit être seul et bien mis en scène.";
         }
 
         // [AI:Claude] Prompt standard pour autres contextes (produit seul)

@@ -728,7 +728,8 @@ const PatternLibraryDetail = () => {
                     <option value="Accessoires">👜 Accessoires</option>
                     <option value="Maison/Déco">🏠 Maison/Déco</option>
                     <option value="Jouets/Peluches">🧸 Jouets/Peluches</option>
-                    <option value="Accessoires bébé">👶 Accessoires bébé</option>
+                    <option value="Vêtements bébé">👶 Vêtements bébé</option>
+                    <option value="Accessoires bébé">🍼 Accessoires bébé</option>
                   </select>
                 </div>
 

@@ -767,7 +767,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Liste des types (identique à la création de projet)
   const getProjectTypes = () => {
-    return ['Vêtements', 'Accessoires', 'Maison/Déco', 'Jouets/Peluches', 'Accessoires bébé']
+    return ['Vêtements', 'Accessoires', 'Maison/Déco', 'Jouets/Peluches', 'Vêtements bébé', 'Accessoires bébé']
   }
 
   // [AI:Claude] Upload patron (PDF ou Image)
@@ -1162,9 +1162,16 @@ const ProjectCounter = () => {
   const detectProjectCategory = (itemType) => {
     const lower = itemType.toLowerCase()
 
+    console.log('[ProjectCounter] detectProjectCategory:', itemType, '→ lowercase:', lower)
+
     // [AI:Claude] Nouvelles catégories depuis la base de données
     if (lower === 'vêtements' || lower === 'vetements')
       return 'wearable'
+
+    if (lower === 'vêtements bébé' || lower === 'vetements bebe' || lower === 'baby_garment') {
+      console.log('[ProjectCounter] Détecté comme baby_garment')
+      return 'baby_garment'
+    }
 
     if (lower === 'accessoires bébé' || lower === 'accessoires bebe')
       return 'other'
@@ -1191,6 +1198,7 @@ const ProjectCounter = () => {
     if (lower.match(/couverture|plaid|coussin|tapis|déco|nappe/))
       return 'home_decor'
 
+    console.log('[ProjectCounter] Aucune catégorie trouvée, retourne "other"')
     return 'other'
   }
 
@@ -1251,6 +1259,20 @@ const ProjectCounter = () => {
       { key: 'toy_c7', label: 'Boutique premium', icon: '🏪', desc: 'Boutique artisanale avec étagères et fond pastel', tier: 'pro' },
       { key: 'toy_c8', label: 'Aventure jungle', icon: '🦁', desc: 'Jungle tropicale avec plantes exotiques', tier: 'pro' },
       { key: 'toy_c9', label: 'Cirque vintage', icon: '🎪', desc: 'Chapiteau rétro avec rayures et paillettes', tier: 'pro' }
+    ],
+    baby_garment: [
+      // FREE (3)
+      { key: 'baby_garment_c1', label: 'Bébé sur lit 👶', icon: '🛏️', desc: 'Porté par bébé allongé sur lit pastel', tier: 'free' },
+      { key: 'baby_garment_c2', label: 'Studio pastel', icon: '✨', desc: 'À plat sur fond uni doux', tier: 'free' },
+      { key: 'baby_garment_c3', label: 'Nursery scandinave', icon: '🏠', desc: 'À plat sur table à langer en bois clair', tier: 'free' },
+      // PLUS (+3)
+      { key: 'baby_garment_c4', label: 'Bébé lifestyle 👶', icon: '🧸', desc: 'Porté par bébé avec jouets bois', tier: 'plus' },
+      { key: 'baby_garment_c5', label: 'Flat lay naturel', icon: '🌿', desc: 'À plat avec accessoires lifestyle', tier: 'plus' },
+      { key: 'baby_garment_c6', label: 'Panier vintage', icon: '🧺', desc: 'À plat dans osier avec lin', tier: 'plus' },
+      // PRO (+3)
+      { key: 'baby_garment_c7', label: 'Dans bras parent 👶', icon: '💝', desc: 'Porté par bébé tenu par parent', tier: 'pro' },
+      { key: 'baby_garment_c8', label: 'Premium flat lay', icon: '💎', desc: 'À plat avec fleurs séchées', tier: 'pro' },
+      { key: 'baby_garment_c9', label: 'Tapis de jeu 👶', icon: '🌸', desc: 'Porté par bébé sur tapis moelleux', tier: 'pro' }
     ],
     other: [
       // FREE (3)
@@ -5056,7 +5078,8 @@ Rang 3 : *1ms, aug* x6 (18)
                 <option value="Accessoires">👜 Accessoires</option>
                 <option value="Maison/Déco">🏠 Maison/Déco</option>
                 <option value="Jouets/Peluches">🧸 Jouets/Peluches</option>
-                <option value="Accessoires bébé">👶 Accessoires bébé</option>
+                <option value="Vêtements bébé">👶 Vêtements bébé</option>
+                <option value="Accessoires bébé">🍼 Accessoires bébé</option>
               </select>
             </div>
 

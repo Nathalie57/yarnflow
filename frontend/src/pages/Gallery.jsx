@@ -275,9 +275,15 @@ const Gallery = () => {
   const detectProjectCategory = (itemType) => {
     const lower = itemType.toLowerCase()
 
+    // DEBUG: Afficher dans la console pour comprendre le problème
+    console.log('[DETECT CATEGORY] item_type reçu:', itemType, '| lowercase:', lower)
+
     // [AI:Claude] Nouvelles catégories depuis la base de données
     if (lower === 'vêtements' || lower === 'vetements')
       return 'wearable'
+
+    if (lower === 'vêtements bébé' || lower === 'vetements bebe' || lower === 'baby_garment')
+      return 'baby_garment'
 
     if (lower === 'accessoires bébé' || lower === 'accessoires bebe')
       return 'wearable'
@@ -290,6 +296,12 @@ const Gallery = () => {
 
     if (lower === 'maison/déco' || lower === 'maison/deco')
       return 'home_decor'
+
+    // [AI:Claude] Détection par mots-clés pour vêtements bébé
+    if (lower.match(/body bébé|barboteuse|gilet bébé|chaussons bébé|bonnet bébé|couverture bébé|body bebe|gilet bebe|chaussons bebe|bonnet bebe|couverture bebe/)) {
+      console.log('[DETECT CATEGORY] Détecté comme baby_garment via regex')
+      return 'baby_garment'
+    }
 
     // [AI:Claude] Détection par mots-clés (fallback)
     if (lower.match(/bonnet|écharpe|pull|chaussette|gilet|châle|snood|mitaine/))
@@ -364,6 +376,20 @@ const Gallery = () => {
       { key: 'toy_c7', label: 'Luxe pour enfant', icon: '👑', desc: 'Studio avec décor chic', tier: 'pro' },
       { key: 'toy_c8', label: 'Fantaisie magique', icon: '✨', desc: 'Ambiance féérique, lumières tamisées', tier: 'pro' },
       { key: 'toy_c9', label: 'Personnalisé unique', icon: '🎭', desc: 'Mise en scène personnalisée', tier: 'pro' }
+    ],
+    baby_garment: [
+      // FREE (3)
+      { key: 'baby_garment_c1', label: 'Bébé sur lit 👶', icon: '🛏️', desc: 'Porté par bébé allongé sur lit pastel', tier: 'free' },
+      { key: 'baby_garment_c2', label: 'Studio pastel', icon: '✨', desc: 'À plat sur fond uni doux', tier: 'free' },
+      { key: 'baby_garment_c3', label: 'Nursery scandinave', icon: '🏠', desc: 'À plat sur table à langer en bois clair', tier: 'free' },
+      // PLUS (+3)
+      { key: 'baby_garment_c4', label: 'Bébé lifestyle 👶', icon: '🧸', desc: 'Porté par bébé avec jouets bois', tier: 'plus' },
+      { key: 'baby_garment_c5', label: 'Flat lay naturel', icon: '🌿', desc: 'À plat avec accessoires lifestyle', tier: 'plus' },
+      { key: 'baby_garment_c6', label: 'Panier vintage', icon: '🧺', desc: 'À plat dans osier avec lin', tier: 'plus' },
+      // PRO (+3)
+      { key: 'baby_garment_c7', label: 'Dans bras parent 👶', icon: '💝', desc: 'Porté par bébé tenu par parent', tier: 'pro' },
+      { key: 'baby_garment_c8', label: 'Premium flat lay', icon: '💎', desc: 'À plat avec fleurs séchées', tier: 'pro' },
+      { key: 'baby_garment_c9', label: 'Tapis de jeu 👶', icon: '🌸', desc: 'Porté par bébé sur tapis moelleux', tier: 'pro' }
     ],
     other: [
       // FREE (3)
@@ -954,6 +980,14 @@ const Gallery = () => {
                       <option value="pull">Pull</option>
                       <option value="chaussettes">Chaussettes</option>
                       <option value="snood">Snood</option>
+                    </optgroup>
+                    <optgroup label="👶 Vêtements bébé">
+                      <option value="body bébé">Body bébé</option>
+                      <option value="barboteuse">Barboteuse</option>
+                      <option value="gilet bébé">Gilet bébé</option>
+                      <option value="chaussons bébé">Chaussons bébé</option>
+                      <option value="bonnet bébé">Bonnet bébé</option>
+                      <option value="couverture bébé">Couverture bébé</option>
                     </optgroup>
                     <optgroup label="🧸 Amigurumis">
                       <option value="amigurumi">Amigurumi</option>
