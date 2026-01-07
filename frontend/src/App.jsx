@@ -22,6 +22,7 @@ import Subscription from './pages/Subscription'
 import Profile from './pages/Profile'
 import MyProjects from './pages/MyProjects'
 import ProjectCounter from './pages/ProjectCounter'
+import SmartProjectCreator from './pages/SmartProjectCreator'
 import Stats from './pages/Stats'
 import Gallery from './pages/Gallery'
 import PatternLibrary from './pages/PatternLibrary'
@@ -109,6 +110,7 @@ function App() {
             <Route path="/my-projects" element={<MyProjects />} />
             <Route path="/projects/:projectId" element={<ProjectCounter />} />
             <Route path="/projects/:projectId/counter" element={<ProjectCounter />} />
+            <Route path="/smart-project-creator" element={<SmartProjectCreator />} />
             <Route path="/stats" element={<Stats />} />
 
             {/* Routes galerie photos IA (v0.10.0) */}

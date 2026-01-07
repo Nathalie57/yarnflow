@@ -670,12 +670,20 @@ const MyProjects = () => {
               </div>
 
               {canCreateProject ? (
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800"
-                >
-                  ➕ Nouveau Projet
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800"
+                  >
+                    ➕ Nouveau Projet
+                  </button>
+                  <Link
+                    to="/smart-project-creator"
+                    className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation bg-gradient-to-r from-purple-600 to-primary-600 text-white hover:from-purple-700 hover:to-primary-700 active:from-purple-800 active:to-primary-800 flex items-center gap-2"
+                  >
+                    ✨ Création Intelligente
+                  </Link>
+                </div>
               ) : (
                 <Link
                   to="/subscription"
