@@ -170,7 +170,7 @@ class SmartProjectController
                 $result = $this->extractorService->extractFromURL($sourceName);
             }
 
-            $processingTime = isset($result['processing_time_ms']) ? $result['processing_time_ms'] : round((microtime(true) - $extractionStart) * 1000);
+            $processingTime = isset($result['processing_time_ms']) ? (int)$result['processing_time_ms'] : (int)round((microtime(true) - $extractionStart) * 1000);
 
             // Logger l'import (même si échec partiel)
             $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'] ?? 'failed', $result['raw_response'] ?? null, $processingTime, $result['error'] ?? null);
