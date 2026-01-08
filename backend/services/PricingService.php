@@ -300,19 +300,19 @@ class PricingService
         'pro' => [
             'active_projects_max' => 999999, // Illimité
             'photo_credits_monthly' => 30,
-            'ai_pattern_imports_monthly' => 999999, // Illimité - [AI:Claude] v0.17.0
+            'ai_pattern_imports_monthly' => 20, // [AI:Claude] v0.17.0 - Limite raisonnable
             'can_use_tags' => true
         ],
         'pro_annual' => [
             'active_projects_max' => 999999,
             'photo_credits_monthly' => 30,
-            'ai_pattern_imports_monthly' => 999999, // Illimité - [AI:Claude] v0.17.0
+            'ai_pattern_imports_monthly' => 20, // [AI:Claude] v0.17.0 - Limite raisonnable
             'can_use_tags' => true
         ],
         'early_bird' => [
             'active_projects_max' => 999999,
             'photo_credits_monthly' => 30,
-            'ai_pattern_imports_monthly' => 999999, // Illimité - [AI:Claude] v0.17.0
+            'ai_pattern_imports_monthly' => 20, // [AI:Claude] v0.17.0 - Limite raisonnable
             'can_use_tags' => true
         ]
     ];
