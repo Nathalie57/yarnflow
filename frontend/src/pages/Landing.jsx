@@ -73,6 +73,30 @@ const Landing = () => {
           compter vos rangs, organiser vos patrons, et sublimer vos photos.
         </p>
 
+        {/* Points clés avant CTA */}
+        <div className="mb-8 max-w-2xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-4 text-center">
+            <div className="bg-primary-50 rounded-lg p-4">
+              <div className="text-2xl mb-2">🎯</div>
+              <p className="text-sm font-semibold text-gray-900">
+                Comptez vos rangs sans jamais les perdre
+              </p>
+            </div>
+            <div className="bg-warm-50 rounded-lg p-4">
+              <div className="text-2xl mb-2">⚡</div>
+              <p className="text-sm font-semibold text-gray-900">
+                Créez votre premier projet en 30 secondes
+              </p>
+            </div>
+            <div className="bg-sage-50 rounded-lg p-4">
+              <div className="text-2xl mb-2">🧶</div>
+              <p className="text-sm font-semibold text-gray-900">
+                Le compteur pensé pour le crochet & le tricot
+              </p>
+            </div>
+          </div>
+        </div>
+
         <Link
           to="/register"
           className="inline-block bg-primary-600 hover:bg-primary-700 text-white text-lg px-8 py-4 rounded-lg font-semibold transition shadow-lg hover:shadow-xl"
@@ -553,9 +577,8 @@ const Landing = () => {
               </button>
               {openFAQ === 1 && (
                 <div className="px-6 pb-6 text-gray-600 leading-relaxed">
-                  YarnFlow est accessible sur tous les navigateurs (mobile, tablette, ordinateur)
-                  et fonctionne aussi hors ligne grâce à sa technologie PWA. Vous pouvez même
-                  installer l'application sur votre téléphone comme une vraie app !
+                  YarnFlow est accessible sur tous les navigateurs (mobile, tablette, ordinateur).
+                  Vous pouvez même installer l'application sur votre téléphone comme une vraie app !
                 </div>
               )}
             </div>
