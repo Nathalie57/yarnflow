@@ -1,8 +1,8 @@
 # CLAUDE.md - YarnFlow
 
 **Stack** : PHP 8.1+ / React 18 / MySQL 8.0
-**Version** : 0.16.0 (2025-12-20)
-**Baseline** : Tracker tricot/crochet avec stats Strava + AI Photo Studio + Tags & Filtres + Contact
+**Version** : 0.17.0 (2026-01-14)
+**Baseline** : Tracker tricot/crochet avec stats Strava + AI Photo Studio + Tags & Filtres + Contact + Emails d'engagement
 
 ---
 
@@ -142,6 +142,51 @@ GET    /api/projects?tags=a,b&favorite=true # Filtrer projets
 
 ---
 
+## 📧 Système d'emails d'engagement (v0.17.1)
+
+**Cron automatisé** : `backend/cron/send-engagement-emails.php` (exécuté quotidiennement à 10h)
+
+### Emails envoyés automatiquement
+
+1. **J+3 - Onboarding** (`onboarding_day3`)
+   - Utilisateurs inscrits il y a 3 jours sans aucun projet créé
+   - Email d'encouragement à créer le premier projet
+
+2. **J+7 - Réengagement** (`reengagement_day7`)
+   - Utilisateurs inactifs depuis 3+ jours
+   - Rappel avec progression du projet en cours si disponible
+
+3. **J+21 - Besoin d'aide** (`need_help_day21`)
+   - Utilisateurs très inactifs (14+ jours sans connexion)
+   - Email "vous nous manquez" avec nouveautés
+
+4. **Projet sans compteur** (`project_start_reminder`) - **NOUVEAU**
+   - Utilisateurs ayant créé un projet il y a 2+ jours mais 0 rangs comptés
+   - Email personnalisé avec le nom du projet
+   - Explique comment utiliser le compteur simplement
+
+### Configuration cron
+
+```bash
+# Exécution quotidienne à 10h00
+0 10 * * * /usr/bin/php /path/to/backend/cron/send-engagement-emails.php
+
+# Test manuel
+php backend/cron/send-engagement-emails.php
+
+# One-shot pour rattrapage users existants (exécuter UNE FOIS)
+php backend/cron/oneshot-project-start-reminder.php --dry-run  # Test d'abord
+php backend/cron/oneshot-project-start-reminder.php            # Envoi réel
+```
+
+### Logs et traçabilité
+
+- Table `emails_sent_log` : historique complet de tous les emails
+- Prévention des doublons via `email_type` + `user_id` + `DATE(sent_at)`
+- Rate limiting : 2 secondes entre chaque email (protection SMTP)
+
+---
+
 ## ⚙️ Config (.env)
 
 ```ini
@@ -174,13 +219,18 @@ cd frontend && npm install && npm run dev
 
 ---
 
-## 📝 État (v0.16.0)
+## 📝 État (v0.17.0)
 
-**✅ Prêt** : Backend 100%, Frontend 100%, Database optimisée, Système d'abonnements sécurisé, Tags & Filtres, Système de contact complet
+**✅ Prêt** : Backend 100%, Frontend 100%, Database optimisée, Système d'abonnements sécurisé, Tags & Filtres, Système de contact complet, Emails d'engagement automatisés
 **⚠️ Manque prod** : Gemini API réelle, Stripe prod keys, Email SMTP, CGU/RGPD, Hébergement SSL
 **Lancement** : Phase 1 BETA fermée (20-50 testeurs) → Phase 2 Public (Stripe, SEO) → Phase 3 Croissance
 
-**Derniers ajouts (v0.16.0)** :
+**Derniers ajouts (v0.17.0)** :
+- ✅ **Célébration premier rang** : Modal non-bloquant après le 1er rang compté (auto-fermeture 4s)
+- ✅ **Suppression popup bloquante** : Plus de blocage forcé à la création de projet
+- ✅ **Emails d'engagement rationalisés** : J+3, J+7, J+21 (suppression du J+1 non pertinent pour tricot)
+
+**Ajouts v0.16.0** :
 - ✅ **Système de contact complet** : Formulaire avec 4 catégories (Bug, Question, Suggestion, Autre)
 - ✅ **Rate limiting anti-spam** : 3 messages/heure par IP
 - ✅ **Emails automatiques** : Confirmation utilisateur + notification admin

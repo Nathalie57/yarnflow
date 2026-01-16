@@ -2,9 +2,11 @@
 <?php
 /**
  * @file send-engagement-emails.php
- * @brief Script cron pour envoyer les emails de réengagement (J+3, J+7, J+21)
+ * @brief Script cron pour envoyer les emails de réengagement (J+3, J+7, J+21, Projet sans compteur)
  * @author YarnFlow Team + AI:Claude
  * @created 2026-01-04
+ * @modified 2026-01-14 - Suppression rappel J+1 (pas pertinent pour projets tricot)
+ * @modified 2026-01-16 - Ajout email project_start_reminder (projet créé mais jamais utilisé)
  *
  * Usage: php send-engagement-emails.php
  * Cron: 0 10 * * * /usr/bin/php /path/to/backend/cron/send-engagement-emails.php
@@ -31,7 +33,8 @@ try {
     $stats = [
         'day3' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'day7' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
-        'day21' => ['sent' => 0, 'skipped' => 0, 'errors' => 0]
+        'day21' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'project_start' => ['sent' => 0, 'skipped' => 0, 'errors' => 0]
     ];
 
     // =========================================
@@ -203,18 +206,89 @@ try {
     }
 
     // =========================================
+    // EMAIL PROJECT_START : Projets créés il y a 2+ jours sans aucun rang compté
+    // =========================================
+    echo "\n[PROJECT_START] Recherche des projets créés sans utilisation du compteur...\n";
+
+    // Les rangs peuvent être dans : projects.current_row, project_sections.current_row, ou project_rows
+    $stmt = $db->prepare("
+        SELECT
+            u.id AS user_id,
+            u.email,
+            u.first_name,
+            p.id AS project_id,
+            p.name AS project_name,
+            p.created_at AS project_created_at
+        FROM users u
+        INNER JOIN projects p ON p.user_id = u.id
+        WHERE p.created_at <= DATE_SUB(NOW(), INTERVAL 2 DAY)
+        AND p.status = 'active'
+        AND u.id NOT IN (
+            SELECT user_id
+            FROM emails_sent_log
+            WHERE email_type = 'project_start_reminder'
+            AND user_id IS NOT NULL
+        )
+        AND COALESCE(p.current_row, 0) = 0
+        AND COALESCE((SELECT SUM(current_row) FROM project_sections ps WHERE ps.project_id = p.id), 0) = 0
+        AND (SELECT COUNT(*) FROM project_rows pr WHERE pr.project_id = p.id) = 0
+        ORDER BY p.created_at DESC
+    ");
+    $stmt->execute();
+    $projectsWithoutRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo "[PROJECT_START] Trouvé " . count($projectsWithoutRows) . " projet(s) éligible(s)\n";
+
+    // Un seul email par utilisateur (le projet le plus récent)
+    $usersEmailed = [];
+    foreach ($projectsWithoutRows as $row) {
+        $userId = (int)$row['user_id'];
+
+        // Éviter d'envoyer plusieurs emails au même utilisateur
+        if (in_array($userId, $usersEmailed)) {
+            continue;
+        }
+
+        echo "[PROJECT_START] Envoi à {$row['email']} (projet: {$row['project_name']})... ";
+
+        try {
+            $success = $emailService->sendProjectStartReminderEmail(
+                $row['email'],
+                $row['first_name'] ?? 'Utilisateur',
+                $row['project_name'],
+                $userId
+            );
+
+            if ($success) {
+                echo "✓ Envoyé\n";
+                $stats['project_start']['sent']++;
+                $usersEmailed[] = $userId;
+            } else {
+                echo "✗ Échec\n";
+                $stats['project_start']['errors']++;
+            }
+        } catch (Exception $e) {
+            echo "✗ Erreur: {$e->getMessage()}\n";
+            $stats['project_start']['errors']++;
+        }
+
+        sleep(2);
+    }
+
+    // =========================================
     // RÉSUMÉ
     // =========================================
     echo "\n" . str_repeat("=", 60) . "\n";
     echo "RÉSUMÉ DES ENVOIS\n";
     echo str_repeat("=", 60) . "\n";
-    echo sprintf("J+3  : %d envoyés, %d erreurs\n", $stats['day3']['sent'], $stats['day3']['errors']);
-    echo sprintf("J+7  : %d envoyés, %d erreurs\n", $stats['day7']['sent'], $stats['day7']['errors']);
-    echo sprintf("J+21 : %d envoyés, %d erreurs\n", $stats['day21']['sent'], $stats['day21']['errors']);
+    echo sprintf("J+3  : %d envoyés, %d erreurs (onboarding)\n", $stats['day3']['sent'], $stats['day3']['errors']);
+    echo sprintf("J+7  : %d envoyés, %d erreurs (réengagement)\n", $stats['day7']['sent'], $stats['day7']['errors']);
+    echo sprintf("J+21 : %d envoyés, %d erreurs (besoin d'aide)\n", $stats['day21']['sent'], $stats['day21']['errors']);
+    echo sprintf("PROJ : %d envoyés, %d erreurs (projet sans compteur)\n", $stats['project_start']['sent'], $stats['project_start']['errors']);
     echo str_repeat("=", 60) . "\n";
 
-    $totalSent = $stats['day3']['sent'] + $stats['day7']['sent'] + $stats['day21']['sent'];
-    $totalErrors = $stats['day3']['errors'] + $stats['day7']['errors'] + $stats['day21']['errors'];
+    $totalSent = $stats['day3']['sent'] + $stats['day7']['sent'] + $stats['day21']['sent'] + $stats['project_start']['sent'];
+    $totalErrors = $stats['day3']['errors'] + $stats['day7']['errors'] + $stats['day21']['errors'] + $stats['project_start']['errors'];
 
     echo "TOTAL : {$totalSent} emails envoyés, {$totalErrors} erreurs\n";
     echo "[CRON] Terminé - " . date('Y-m-d H:i:s') . "\n\n";

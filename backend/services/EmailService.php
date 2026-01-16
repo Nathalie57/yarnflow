@@ -965,6 +965,156 @@ HTML;
     }
 
     /**
+     * [AI:Claude] Envoyer un email de rappel pour utiliser le compteur (projet créé mais jamais utilisé)
+     *
+     * @param string $email Email du destinataire
+     * @param string $name Prénom de l'utilisateur
+     * @param string $projectName Nom du projet créé
+     * @param int|null $userId ID utilisateur
+     * @return bool True si envoi réussi
+     */
+    public function sendProjectStartReminderEmail(string $email, string $name, string $projectName, ?int $userId = null): bool
+    {
+        $subject = '🧶 Votre projet "' . mb_substr($projectName, 0, 30) . '" vous attend !';
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
+
+            $mail->isHTML(true);
+            $mail->Body = $this->getProjectStartReminderEmailTemplate($name, $projectName);
+            $mail->AltBody = "Coucou $name,\n\nTu as créé le projet \"$projectName\" sur YarnFlow, mais tu n'as pas encore compté ton premier rang !\n\n🎯 Utiliser le compteur est super simple :\n1. Ouvre ton projet\n2. Clique sur le bouton ▶️ du compteur\n3. À chaque rang terminé, appuie sur + (ou tape n'importe où sur l'écran !)\n\nC'est tout ! Le compteur garde le fil à ta place 🧵\n\n👉 Compter mon premier rang : https://yarnflow.fr/my-projects\n\n💡 Astuce : Tu peux aussi lancer le timer pour chronométrer ton temps de tricot et voir ta vitesse moyenne.\n\nÀ très vite,\nNathalie\nFondatrice de YarnFlow";
+
+            $mail->send();
+            $success = true;
+            error_log("[EMAIL] Email project_start_reminder envoyé à: $email (projet: $projectName)");
+
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] Erreur envoi project_start_reminder: {$errorMessage}");
+        }
+
+        // Logger dans la BDD
+        $this->logEmail($email, $name, 'project_start_reminder', $subject, $success, $errorMessage, $userId);
+
+        return $success;
+    }
+
+    /**
+     * Template HTML pour email rappel projet (projet créé mais jamais utilisé)
+     */
+    private function getProjectStartReminderEmailTemplate(string $name, string $projectName): string
+    {
+        $projectNameEscaped = htmlspecialchars($projectName);
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #fef8f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); padding: 40px; text-align: center; border-radius: 12px 12px 0 0;">
+                            <div style="font-size: 56px; margin: 0 0 10px 0;">🧶</div>
+                            <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: bold;">Votre projet vous attend !</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 40px 20px;">
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Coucou <strong>{$name}</strong>,
+                            </p>
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
+                                Tu as créé le projet <strong style="color: #884024;">"{$projectNameEscaped}"</strong> sur YarnFlow, mais tu n'as pas encore compté ton premier rang !
+                            </p>
+
+                            <!-- Project Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef8f4; border-radius: 8px; margin: 0 0 30px; border: 2px dashed #dd7a4a;">
+                                <tr>
+                                    <td style="padding: 24px; text-align: center;">
+                                        <div style="font-size: 40px; margin: 0 0 12px;">📌</div>
+                                        <p style="color: #884024; font-size: 18px; font-weight: bold; margin: 0;">{$projectNameEscaped}</p>
+                                        <p style="color: #6b7280; font-size: 14px; margin: 8px 0 0;">0 rang compté</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <h3 style="color: #884024; font-size: 18px; margin: 0 0 16px;">
+                                🎯 Utiliser le compteur est super simple :
+                            </h3>
+                            <ol style="color: #4b5563; font-size: 15px; line-height: 1.8; margin: 0 0 30px; padding-left: 20px;">
+                                <li>Ouvre ton projet</li>
+                                <li>Clique sur le bouton <strong>▶️</strong> du compteur</li>
+                                <li>À chaque rang terminé, appuie sur <strong>+</strong> (ou tape n'importe où sur l'écran !)</li>
+                            </ol>
+                            <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 30px;">
+                                C'est tout ! Le compteur garde le fil à ta place 🧵
+                            </p>
+
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding: 0 0 30px;">
+                                        <a href="https://yarnflow.fr/my-projects" style="display: inline-block; background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
+                                            ▶️ Compter mon premier rang
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #e0f2fe; border-left: 4px solid #0284c7; border-radius: 4px; margin: 0 0 30px;">
+                                <tr>
+                                    <td style="padding: 16px;">
+                                        <p style="color: #075985; font-size: 14px; line-height: 1.6; margin: 0;">
+                                            <strong>💡 Astuce</strong><br>
+                                            Tu peux aussi lancer le <strong>timer</strong> pour chronométrer ton temps de tricot et voir ta vitesse moyenne !
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 10px;">
+                                À très vite,
+                            </p>
+
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 30px 0 0;">
+                                <strong>Nathalie</strong><br>
+                                Fondatrice de YarnFlow
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #fef8f4; padding: 30px 40px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3e8dd;">
+                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 10px; text-align: center;">
+                                © 2025 YarnFlow — Votre tracker tricot & crochet
+                            </p>
+                            <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                                <a href="https://yarnflow.fr" style="color: #dd7a4a; text-decoration: none;">yarnflow.fr</a> •
+                                <a href="https://yarnflow.fr/contact" style="color: #dd7a4a; text-decoration: none;">Contact</a> •
+                                <a href="https://yarnflow.fr/cgu" style="color: #dd7a4a; text-decoration: none;">CGU</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
      * Template HTML pour email "Besoin d'aide ?" J+21
      */
     private function getNeedHelpDay21EmailTemplate(string $name): string
