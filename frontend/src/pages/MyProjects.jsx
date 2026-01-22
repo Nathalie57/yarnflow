@@ -435,6 +435,18 @@ const MyProjects = () => {
       const response = await api.post('/projects', projectData)
       newProject = response.data.project
 
+      // [AI:Claude] v0.17.0 - Tracker l'événement project_created
+      try {
+        await api.post('/analytics/track-event', {
+          event_name: 'project_created',
+          project_id: newProject.id,
+          technique: newProject.technique,
+          counter_unit: newProject.counter_unit
+        })
+      } catch (err) {
+        console.error('Erreur tracking project_created:', err)
+      }
+
       // [AI:Claude] ÉTAPE 2 : Créer les sections si définies
       if (sections.length > 0) {
         currentStep = 'création des sections'
@@ -528,14 +540,14 @@ const MyProjects = () => {
       setIsFavorite(false)
       setShowCreateModal(false)
 
-      // [AI:Claude] Rediriger vers le compteur
-      showConfirm(
-        '🎉 Projet créé !',
-        'Votre projet a été créé avec succès. Voulez-vous ouvrir le compteur maintenant ?',
-        () => {
-          window.location.href = `/projects/${newProject.id}/counter`
-        }
-      )
+      // [AI:Claude] v0.17.1 - Si c'est le premier projet, stocker un flag pour afficher le tip
+      if (projects.length === 0) {
+        sessionStorage.setItem('showFirstProjectTip', 'true')
+      }
+
+      // [AI:Claude] v0.17.0 - Redirection automatique vers le compteur pour onboarding "premier rang"
+      // Objectif : faire compter le 1er rang le plus vite possible
+      window.location.href = `/projects/${newProject.id}/counter`
     } catch (err) {
       // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
       let errorMessage = ''
@@ -653,6 +665,10 @@ const MyProjects = () => {
   }
 
   const filteredProjects = getFilteredProjects()
+
+  // [AI:Claude] v0.17.0 - Vérifier si l'utilisateur a au moins un projet avec current_row > 0
+  // Pour débloquer les filtres/organisation avancée
+  const hasStartedAtLeastOneProject = projects.some(p => (p.current_row || 0) > 0)
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -800,17 +816,28 @@ const MyProjects = () => {
         </div>
       )}
 
-      {/* Filtres (v0.15.0) - Affichés uniquement si des projets existent */}
+      {/* Filtres (v0.15.0) - Affichés uniquement si des projets existent ET si au moins un projet a été commencé */}
       {hasLoadedOnce && !error && projects.length > 0 && (
-        <div className="mb-6">
-          <ProjectFilters
-            onFilterChange={setFilters}
-            availableTags={availableTags}
-            canUseTags={canUseTags}
-            onUpgradeClick={() => setShowUpgradePrompt(true)}
-            userPlan={getUserPlan()}
-          />
-        </div>
+        hasStartedAtLeastOneProject ? (
+          <div className="mb-6">
+            <ProjectFilters
+              onFilterChange={setFilters}
+              availableTags={availableTags}
+              canUseTags={canUseTags}
+              onUpgradeClick={() => setShowUpgradePrompt(true)}
+              userPlan={getUserPlan()}
+            />
+          </div>
+        ) : (
+          <div className="mb-6 bg-[#F5F3EF] border-l-4 border-[#8B7355] p-4 rounded-lg">
+            <p className="text-sm text-gray-700 flex items-center gap-2">
+              <span className="text-lg">🔒</span>
+              <span>
+                <strong>Filtres et organisation</strong> débloqués après ton premier rang compté
+              </span>
+            </p>
+          </div>
+        )
       )}
 
       {/* Indicateur de chargement pendant filtrage */}
@@ -829,128 +856,32 @@ const MyProjects = () => {
         <>
           {projects.length === 0 ? (
             <div className="max-w-2xl mx-auto text-center py-16 px-6 bg-gradient-to-br from-warm-50 to-white rounded-2xl border-2 border-primary-200 shadow-sm">
-              <div className="text-7xl mb-6">🧶</div>
+              <div className="text-6xl mb-6">☕</div>
 
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                Commençons votre premier projet !
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 leading-snug">
+                Un appel, une pause café, une discussion…
+                <br />
+                <span className="text-primary-600">« Mince, j'en étais où ? »</span>
               </h2>
 
               <p className="text-gray-700 text-lg leading-relaxed mb-8 max-w-xl mx-auto">
-                <strong>Un projet = un ouvrage</strong> (pull, amigurumi, couverture...).
+                YarnFlow garde le fil pour vous.
                 <br className="hidden sm:block" />
-                YarnFlow compte vos rangs, suit votre progression, et vous aide à reprendre sans jamais vous perdre.
+                Plus jamais besoin de recompter vos rangs.
               </p>
 
               {canCreateProject && (
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="px-8 py-4 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300 shadow-lg hover:shadow-xl text-lg mb-6"
+                  className="px-8 py-4 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300 shadow-lg hover:shadow-xl text-lg mb-8"
                 >
-                  ➕ Créer mon premier projet
+                  🧵 Créer mon premier projet
                 </button>
               )}
 
-              {/* Section "Comment ça marche" - Déplié par défaut */}
-              <details open className="bg-white rounded-xl p-6 text-left max-w-md mx-auto border border-primary-100 shadow-sm mb-4">
-                <summary className="font-semibold text-primary-700 cursor-pointer hover:text-primary-800 transition list-none flex items-center justify-between">
-                  <span>Comment ça marche ?</span>
-                  <span className="text-xl">🤔</span>
-                </summary>
-                <ol className="mt-4 space-y-3 text-gray-700 text-sm">
-                  <li className="flex items-start">
-                    <span className="text-primary-600 font-bold mr-3 text-base">1️⃣</span>
-                    <span>Créez un projet pour votre ouvrage</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-primary-600 font-bold mr-3 text-base">2️⃣</span>
-                    <span>Ajoutez une ou plusieurs sections (rangs ou centimètres)</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-primary-600 font-bold mr-3 text-base">3️⃣</span>
-                    <span>Utilisez le compteur pendant que vous tricotez ou crochetez</span>
-                  </li>
-                </ol>
-              </details>
-
-              {/* Exemple de projet */}
+              {/* Mention discrète de la bibliothèque */}
               <p className="text-sm text-gray-500">
-                💡 Besoin d'un exemple ?
-                <button
-                  onClick={() => {
-                    showAlert(
-                      "Exemple concret : Pull en cours",
-                      <div className="text-left space-y-4">
-                        {/* Étape 1 : Création */}
-                        <div className="bg-primary-50 rounded-lg p-4 border-l-4 border-primary-600">
-                          <p className="font-bold text-primary-900 mb-2">📝 Vous créez un projet</p>
-                          <div className="bg-white rounded p-3 text-sm">
-                            <p className="font-semibold text-gray-900">Nom : Pull rayé automne</p>
-                            <p className="text-gray-600 text-xs mt-1">Technique : Tricot • Type : Pull</p>
-                          </div>
-                        </div>
-
-                        {/* Étape 2 : Ajout sections */}
-                        <div className="bg-sage-50 rounded-lg p-4 border-l-4 border-sage-600">
-                          <p className="font-bold text-sage-900 mb-2">➕ Vous ajoutez des sections</p>
-                          <p className="text-xs text-gray-600 mb-3 italic">
-                            Une section = une partie de votre ouvrage
-                          </p>
-                          <div className="space-y-2 text-sm">
-                            <div className="bg-white rounded p-3">
-                              <p className="font-semibold text-gray-700">Section : Dos</p>
-                              <p className="text-gray-600 text-xs">120 rangs à faire</p>
-                            </div>
-                            <div className="bg-white rounded p-3">
-                              <p className="font-semibold text-gray-700">Section : Devant</p>
-                              <p className="text-gray-600 text-xs">120 rangs à faire</p>
-                            </div>
-                            <div className="bg-white rounded p-3">
-                              <p className="font-semibold text-gray-700">Section : Manches (×2)</p>
-                              <p className="text-gray-600 text-xs">80 rangs chacune</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Étape 3 : Utilisation compteur */}
-                        <div className="bg-warm-50 rounded-lg p-4 border-l-4 border-warm-600">
-                          <p className="font-bold text-warm-900 mb-2">🧶 Vous tricotez avec le compteur</p>
-                          <div className="bg-white rounded-lg p-4 border-2 border-dashed border-gray-300">
-                            <div className="text-center mb-3">
-                              <p className="text-xs text-gray-500 font-semibold">Section : Dos</p>
-                              <p className="text-4xl font-bold text-primary-600 my-2">47</p>
-                              <p className="text-xs text-gray-500">sur 120 rangs</p>
-                              <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                                <div className="bg-primary-600 h-2 rounded-full" style={{width: '39%'}}></div>
-                              </div>
-                            </div>
-                            <div className="flex gap-2 justify-center mt-4">
-                              <div className="bg-gray-300 rounded-lg px-6 py-2 text-2xl font-bold text-gray-500">−</div>
-                              <div className="bg-primary-600 rounded-lg px-6 py-2 text-2xl font-bold text-white">+</div>
-                            </div>
-                            <p className="text-xs text-gray-500 text-center mt-3 italic">
-                              À chaque rang terminé, vous tapez sur +
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Avantages */}
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="font-semibold text-gray-900 mb-2 text-sm">✨ Ce que YarnFlow fait pour vous :</p>
-                          <ul className="text-xs text-gray-600 space-y-1.5">
-                            <li>• Calcule votre vitesse automatiquement (rangs/heure)</li>
-                            <li>• Garde l'écran allumé pendant que vous tricotez</li>
-                            <li>• Suit la progression de chaque section séparément</li>
-                            <li>• Vous permet d'ajouter des notes et photos</li>
-                          </ul>
-                        </div>
-                      </div>,
-                      'info'
-                    )
-                  }}
-                  className="text-primary-600 hover:text-primary-700 font-medium underline ml-1 transition"
-                >
-                  Voir un exemple concret
-                </button>
+                Besoin d'organiser vos patrons PDF ? <Link to="/pattern-library" className="text-primary-600 hover:text-primary-700 underline">Découvrir la bibliothèque</Link>
               </p>
             </div>
           ) : filteredProjects.length === 0 ? (

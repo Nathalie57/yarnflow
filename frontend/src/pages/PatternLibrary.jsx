@@ -579,27 +579,47 @@ const PatternLibrary = () => {
       {!loading && (
         <>
           {patterns.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <div className="text-6xl mb-4">📚</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery
-                  ? 'Aucun patron trouvé'
-                  : 'Aucun patron dans votre bibliothèque'}
-              </h3>
-              <p className="text-gray-600 mb-6">
-                {filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery
-                  ? 'Aucun patron ne correspond aux filtres sélectionnés'
-                  : 'Commencez par ajouter votre premier patron !'}
-              </p>
-              {!(filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery) && (
+            filterCategory || filterTechnique || filterFavorite || filterSourceType || searchQuery ? (
+              /* Empty state avec filtres actifs */
+              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Aucun patron trouvé
+                </h3>
+                <p className="text-gray-600">
+                  Aucun patron ne correspond aux filtres sélectionnés
+                </p>
+              </div>
+            ) : (
+              /* Empty state sans filtres - Accueil bibliothèque */
+              <div className="max-w-2xl mx-auto text-center py-16 px-6 bg-gradient-to-br from-warm-50 to-white rounded-2xl border-2 border-primary-200 shadow-sm">
+                <div className="text-6xl mb-6">📂</div>
+
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 leading-snug">
+                  Vos patrons éparpillés partout ?
+                  <br />
+                  <span className="text-primary-600">Rassemblez-les ici.</span>
+                </h2>
+
+                <p className="text-gray-700 text-lg leading-relaxed mb-8 max-w-xl mx-auto">
+                  PDF, liens Ravelry, notes perso…
+                  <br className="hidden sm:block" />
+                  Tout au même endroit, accessible sur tous vos appareils.
+                </p>
+
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                  className="px-8 py-4 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300 shadow-lg hover:shadow-xl text-lg mb-8"
                 >
-                  ➕ Ajouter un patron
+                  📚 Ajouter mon premier patron
                 </button>
-              )}
-            </div>
+
+                {/* Mention discrète des projets */}
+                <p className="text-sm text-gray-500">
+                  Envie de compter vos rangs ? <Link to="/projects" className="text-primary-600 hover:text-primary-700 underline">Créer un projet</Link>
+                </p>
+              </div>
+            )
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {patterns.map(pattern => (
