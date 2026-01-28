@@ -18,9 +18,9 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import ProjectFilters from '../components/ProjectFilters'
-import TagInput from '../components/TagInput'
 import TagBadge from '../components/TagBadge'
 import UpgradePrompt from '../components/UpgradePrompt'
+import CreateProjectWizard from '../components/CreateProjectWizard'
 
 const MyProjects = () => {
   const { user } = useAuth()
@@ -40,24 +40,9 @@ const MyProjects = () => {
   const [loadingStats, setLoadingStats] = useState(true)
   const [credits, setCredits] = useState(null)
 
-  // [AI:Claude] Formulaire de création de projet
-  const [formData, setFormData] = useState({
-    name: '',
-    technique: 'crochet', // crochet ou tricot
-    type: '',
-    description: '',
-    counter_unit: 'rows' // [AI:Claude] v0.16.2 - Unité de comptage (rows/cm)
-  })
+  // [AI:Claude] Création de projet via wizard
   const [creating, setCreating] = useState(false)
   const [creatingStep, setCreatingStep] = useState('') // [AI:Claude] Étape en cours
-
-  // [AI:Claude] Détails techniques du projet
-  const [technicalForm, setTechnicalForm] = useState({
-    yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
-    needles: [{ type: '', size: '', length: '' }],
-    gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
-  })
-  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false)
 
   // [AI:Claude] Import de patron
   const [patternFile, setPatternFile] = useState(null)
@@ -76,10 +61,6 @@ const MyProjects = () => {
   const [showPatternTextModal, setShowPatternTextModal] = useState(false)
   const [patternSearchQuery, setPatternSearchQuery] = useState('') // Pour recherche Google/Ravelry
 
-  // [AI:Claude] Sections/parties du projet (face, dos, manches, etc.)
-  const [sections, setSections] = useState([])
-  const [showSections, setShowSections] = useState(false)
-
   // [AI:Claude] Modal système pour remplacer alert/confirm
   const [showAlertModal, setShowAlertModal] = useState(false)
   const [alertData, setAlertData] = useState({ title: '', message: '', type: 'info' })
@@ -93,11 +74,9 @@ const MyProjects = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   // [AI:Claude] Tags et filtres (v0.15.0)
-  const [projectTags, setProjectTags] = useState([]) // Tags du projet en cours de création
   const [availableTags, setAvailableTags] = useState([]) // Tous les tags de l'utilisateur
   const [popularTags, setPopularTags] = useState([]) // Suggestions de tags
   const [canUseTags, setCanUseTags] = useState(false)
-  const [isFavorite, setIsFavorite] = useState(false)
   const [filters, setFilters] = useState({
     status: null,
     favorite: null,
@@ -229,23 +208,6 @@ const MyProjects = () => {
     if (tier === 'early_bird') return 'pro' // Early Bird = fonctionnalités PRO
 
     return 'free'
-  }
-
-  // [AI:Claude] Ajouter un tag au projet en création (v0.15.0)
-  const handleAddTag = (tag) => {
-    if (!canUseTags) {
-      setShowUpgradePrompt(true)
-      return
-    }
-
-    if (!projectTags.includes(tag)) {
-      setProjectTags([...projectTags, tag])
-    }
-  }
-
-  // [AI:Claude] Supprimer un tag du projet en création (v0.15.0)
-  const handleRemoveTag = (tag) => {
-    setProjectTags(projectTags.filter(t => t !== tag))
   }
 
   // [AI:Claude] Sauvegarder les tags après création de projet (v0.15.0)
@@ -400,12 +362,12 @@ const MyProjects = () => {
     }
   }
 
-  // [AI:Claude] Créer un nouveau projet avec patron optionnel
-  const handleCreateProject = async (e) => {
-    e.preventDefault()
+  // [AI:Claude] Créer un nouveau projet via le wizard
+  const handleCreateProject = async (wizardData) => {
     setCreating(true)
     setCreatingStep('Création du projet...')
 
+    const { formData, sections, technicalForm, isFavorite, projectTags } = wizardData
     let currentStep = ''
     let newProject = null
 
@@ -419,8 +381,8 @@ const MyProjects = () => {
         type: formData.type || null,
         description: formData.description || null,
         status: 'in_progress',
-        counter_unit: formData.counter_unit || 'rows', // [AI:Claude] v0.16.2 - Unité de comptage
-        counter_unit_increment: formData.counter_unit === 'cm' ? 0.5 : 1.0 // [AI:Claude] v0.16.2 - Incrément selon l'unité
+        counter_unit: formData.counter_unit || 'rows',
+        counter_unit_increment: formData.counter_unit === 'cm' ? 0.5 : 1.0
       }
 
       // [AI:Claude] Ajouter les détails techniques si des données ont été saisies
@@ -435,7 +397,7 @@ const MyProjects = () => {
       const response = await api.post('/projects', projectData)
       newProject = response.data.project
 
-      // [AI:Claude] v0.17.0 - Tracker l'événement project_created
+      // [AI:Claude] Tracker l'événement project_created
       try {
         await api.post('/analytics/track-event', {
           event_name: 'project_created',
@@ -497,14 +459,14 @@ const MyProjects = () => {
         })
       }
 
-      // [AI:Claude] ÉTAPE 4 : Sauvegarder les tags (v0.15.0)
+      // [AI:Claude] ÉTAPE 4 : Sauvegarder les tags
       if (projectTags.length > 0) {
         currentStep = 'sauvegarde des tags'
         setCreatingStep('Ajout des tags...')
         await saveProjectTags(newProject.id, projectTags)
       }
 
-      // [AI:Claude] ÉTAPE 5 : Marquer comme favori (v0.15.0)
+      // [AI:Claude] ÉTAPE 5 : Marquer comme favori
       if (isFavorite) {
         currentStep = 'marquage favori'
         setCreatingStep('Marquage comme favori...')
@@ -514,39 +476,21 @@ const MyProjects = () => {
       // [AI:Claude] Ajouter à la liste
       setProjects([newProject, ...projects])
 
-      // [AI:Claude] Reset et fermer
-      setFormData({
-        name: '',
-        technique: 'crochet',
-        type: '',
-        description: '',
-        counter_unit: 'rows' // [AI:Claude] v0.16.2 - Reset unité de comptage
-      })
-      setTechnicalForm({
-        yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
-        needles: [{ type: '', size: '', length: '' }],
-        gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
-      })
-      setShowTechnicalDetails(false)
+      // [AI:Claude] Reset patron state et fermer
       setPatternFile(null)
       setPatternText('')
       setPatternUrl('')
       setPatternType('')
       setSelectedLibraryPattern(null)
       setPatternSearchQuery('')
-      setSections([])
-      setShowSections(false)
-      setProjectTags([])
-      setIsFavorite(false)
       setShowCreateModal(false)
 
-      // [AI:Claude] v0.17.1 - Si c'est le premier projet, stocker un flag pour afficher le tip
+      // [AI:Claude] Si c'est le premier projet, stocker un flag pour afficher le tip
       if (projects.length === 0) {
         sessionStorage.setItem('showFirstProjectTip', 'true')
       }
 
-      // [AI:Claude] v0.17.0 - Redirection automatique vers le compteur pour onboarding "premier rang"
-      // Objectif : faire compter le 1er rang le plus vite possible
+      // [AI:Claude] Redirection automatique vers le compteur pour onboarding "premier rang"
       window.location.href = `/projects/${newProject.id}/counter`
     } catch (err) {
       // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
@@ -618,29 +562,14 @@ const MyProjects = () => {
   const quota = getProjectQuota()
   const canCreateProject = quota.current < quota.max
 
-  // [AI:Claude] Fonction pour reset le formulaire de création
+  // [AI:Claude] Fonction pour reset le formulaire de création (wizard)
   const handleCancelModal = () => {
-    setFormData({
-      name: '',
-      technique: 'crochet',
-      type: '',
-      description: '',
-      counter_unit: 'rows' // [AI:Claude] v0.16.2 - Reset unité de comptage
-    })
-    setTechnicalForm({
-      yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
-      needles: [{ type: '', size: '', length: '' }],
-      gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
-    })
-    setShowTechnicalDetails(false)
     setPatternFile(null)
     setPatternUrl('')
     setPatternText('')
     setPatternType('')
     setSelectedLibraryPattern(null)
     setPatternSearchQuery('')
-    setSections([])
-    setShowSections(false)
     setShowCreateModal(false)
     setShowPatternUrlModal(false)
     setShowPatternTextModal(false)
@@ -1157,788 +1086,30 @@ const MyProjects = () => {
         </>
       )}
 
-      {/* Modal de création de projet */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-content-mobile">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
-              <h2 className="text-2xl font-bold text-gray-900">🧶 Nouveau projet</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Créez un projet pour suivre vos rangs et votre progression
-              </p>
-            </div>
-
-            <form onSubmit={handleCreateProject} className="p-6">
-              {/* Nom du projet (obligatoire) */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom du projet <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Ex: Bonnet slouchy rouge"
-                />
-              </div>
-
-              {/* Technique (Tricot ou Crochet) - [AI:Claude] YarnFlow v0.9.0 */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Technique <span className="text-red-600">*</span>
-                </label>
-                <select
-                  value={formData.technique}
-                  onChange={(e) => setFormData({ ...formData, technique: e.target.value })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                >
-                  <option value="crochet">🪡 Crochet</option>
-                  <option value="tricot">🧶 Tricot</option>
-                </select>
-              </div>
-
-              {/* [AI:Claude] v0.16.2 - Unité de comptage */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Unité de comptage
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="counter_unit"
-                      value="rows"
-                      checked={formData.counter_unit === 'rows'}
-                      onChange={(e) => setFormData({ ...formData, counter_unit: e.target.value })}
-                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-700">📏 Rangs (entiers)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="counter_unit"
-                      value="cm"
-                      checked={formData.counter_unit === 'cm'}
-                      onChange={(e) => setFormData({ ...formData, counter_unit: e.target.value })}
-                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-700">📐 Centimètres (0.5)</span>
-                  </label>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Choisissez comment vous voulez compter votre progression
-                </p>
-              </div>
-
-              {/* Catégorie de projet */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Catégorie de projet <span className="text-red-600">*</span>
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  required
-                >
-                  <option value="">-- Sélectionner une catégorie --</option>
-                  <option value="Vêtements">🧥 Vêtements</option>
-                  <option value="Accessoires">👜 Accessoires</option>
-                  <option value="Maison/Déco">🏠 Maison/Déco</option>
-                  <option value="Jouets/Peluches">🧸 Jouets/Peluches</option>
-                  <option value="Vêtements bébé">👶 Vêtements bébé</option>
-                  <option value="Accessoires bébé">🍼 Accessoires bébé</option>
-                </select>
-              </div>
-
-              {/* Description */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Ex: Bonnet décontracté pour l'hiver"
-                />
-              </div>
-
-              {/* Détails techniques (optionnel) */}
-              <div className="mb-6 border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      🔧 Détails techniques (optionnel)
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Laine, aiguilles/crochets, échantillon
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
-                    className="px-3 py-1.5 text-sm border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition"
-                  >
-                    {showTechnicalDetails ? '✕ Masquer' : '➕ Ajouter détails'}
-                  </button>
-                </div>
-
-                {showTechnicalDetails && (
-                  <div className="space-y-4">
-                    {/* LAINE / YARN */}
-                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-gray-900">
-                          🧶 {formData.technique === 'tricot' ? 'Laine' : 'Fil'}
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => setTechnicalForm({
-                            ...technicalForm,
-                            yarn: [...technicalForm.yarn, { brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }]
-                          })}
-                          className="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
-                        >
-                          + Ajouter
-                        </button>
-                      </div>
-                      {technicalForm.yarn.map((y, yIdx) => (
-                        <div key={yIdx} className="mb-3 p-3 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-gray-700">
-                              {formData.technique === 'tricot' ? 'Laine' : 'Fil'} #{yIdx + 1}
-                            </span>
-                            {technicalForm.yarn.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => setTechnicalForm({
-                                  ...technicalForm,
-                                  yarn: technicalForm.yarn.filter((_, i) => i !== yIdx)
-                                })}
-                                className="text-red-600 hover:text-red-700 text-xs"
-                              >
-                                ✕ Supprimer
-                              </button>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 mb-2">
-                            <input
-                              type="text"
-                              value={y.brand}
-                              onChange={(e) => {
-                                const newYarn = [...technicalForm.yarn]
-                                newYarn[yIdx].brand = e.target.value
-                                setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                              }}
-                              className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                              placeholder="Marque (ex: DROPS)"
-                            />
-                            <input
-                              type="text"
-                              value={y.name}
-                              onChange={(e) => {
-                                const newYarn = [...technicalForm.yarn]
-                                newYarn[yIdx].name = e.target.value
-                                setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                              }}
-                              className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                              placeholder="Nom (ex: ALPACA)"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            {y.quantities.map((q, qIdx) => (
-                              <div key={qIdx} className="p-2 bg-gray-50 rounded border border-gray-200">
-                                {/* Ligne 1: Quantité + Unité */}
-                                <div className="grid grid-cols-[1fr,auto] gap-2 mb-2">
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Quantité</label>
-                                    <input
-                                      type="text"
-                                      value={q.amount}
-                                      onChange={(e) => {
-                                        const newYarn = [...technicalForm.yarn]
-                                        newYarn[yIdx].quantities[qIdx].amount = e.target.value
-                                        setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                      }}
-                                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                      placeholder="Ex: 3, 150-200"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Unité</label>
-                                    <div className="flex border border-gray-300 rounded overflow-hidden">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newYarn = [...technicalForm.yarn]
-                                          newYarn[yIdx].quantities[qIdx].unit = 'pelotes'
-                                          setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                        }}
-                                        className={`px-2 py-1.5 text-[10px] font-medium transition ${
-                                          (q.unit || 'pelotes') === 'pelotes'
-                                            ? 'bg-primary-600 text-white'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50'
-                                        }`}
-                                      >
-                                        Pelotes
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newYarn = [...technicalForm.yarn]
-                                          newYarn[yIdx].quantities[qIdx].unit = 'grammes'
-                                          setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                        }}
-                                        className={`px-2 py-1.5 text-[10px] font-medium transition border-l border-gray-300 ${
-                                          (q.unit || 'pelotes') === 'grammes'
-                                            ? 'bg-primary-600 text-white'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50'
-                                        }`}
-                                      >
-                                        Grammes
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                                {/* Ligne 2: Coloris + Supprimer */}
-                                <div className="flex gap-1 items-end">
-                                  <div className="flex-1">
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Coloris</label>
-                                    <input
-                                      type="text"
-                                      value={q.color}
-                                      onChange={(e) => {
-                                        const newYarn = [...technicalForm.yarn]
-                                        newYarn[yIdx].quantities[qIdx].color = e.target.value
-                                        setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                      }}
-                                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                      placeholder="Ex: Rouge, Bleu"
-                                    />
-                                  </div>
-                                  {y.quantities.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newYarn = [...technicalForm.yarn]
-                                        newYarn[yIdx].quantities = newYarn[yIdx].quantities.filter((_, i) => i !== qIdx)
-                                        setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                      }}
-                                      className="text-red-500 hover:text-red-700 text-xs px-1 py-1.5"
-                                      title="Supprimer ce coloris"
-                                    >
-                                      ✕
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newYarn = [...technicalForm.yarn]
-                                newYarn[yIdx].quantities.push({ amount: '', unit: 'pelotes', color: '' })
-                                setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                              }}
-                              className="text-purple-600 hover:text-purple-700 text-xs"
-                            >
-                              + Ajouter coloris
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* AIGUILLES / CROCHETS */}
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-gray-900">
-                          {formData.technique === 'tricot' ? '🪡 Aiguilles' : '🪝 Crochets'}
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => setTechnicalForm({
-                            ...technicalForm,
-                            needles: [...technicalForm.needles, { type: '', size: '', length: '' }]
-                          })}
-                          className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                        >
-                          + Ajouter
-                        </button>
-                      </div>
-                      {technicalForm.needles.map((n, nIdx) => (
-                        <div key={nIdx} className="mb-2 p-3 bg-white rounded-lg shadow-sm">
-                          {(technicalForm.needles.length > 1 || formData.technique === 'tricot') && (
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium text-gray-700">
-                                {formData.technique === 'tricot' ? `Aiguille #${nIdx + 1}` : `Crochet #${nIdx + 1}`}
-                              </span>
-                              {technicalForm.needles.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setTechnicalForm({
-                                    ...technicalForm,
-                                    needles: technicalForm.needles.filter((_, i) => i !== nIdx)
-                                  })}
-                                  className="text-red-600 hover:text-red-700 text-xs"
-                                >
-                                  ✕ Supprimer
-                                </button>
-                              )}
-                            </div>
-                          )}
-                          <div className={`grid gap-2 ${formData.technique === 'tricot' ? 'grid-cols-3' : 'grid-cols-1'}`}>
-                            {formData.technique === 'tricot' && (
-                              <input
-                                type="text"
-                                value={n.type}
-                                onChange={(e) => {
-                                  const newNeedles = [...technicalForm.needles]
-                                  newNeedles[nIdx].type = e.target.value
-                                  setTechnicalForm({ ...technicalForm, needles: newNeedles })
-                                }}
-                                className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="Type (Circulaires)"
-                              />
-                            )}
-                            <input
-                              type="text"
-                              value={n.size}
-                              onChange={(e) => {
-                                const newNeedles = [...technicalForm.needles]
-                                newNeedles[nIdx].size = e.target.value
-                                setTechnicalForm({ ...technicalForm, needles: newNeedles })
-                              }}
-                              className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                              placeholder="Taille mm (ex: 4, 5)"
-                            />
-                            {formData.technique === 'tricot' && (
-                              <input
-                                type="text"
-                                value={n.length}
-                                onChange={(e) => {
-                                  const newNeedles = [...technicalForm.needles]
-                                  newNeedles[nIdx].length = e.target.value
-                                  setTechnicalForm({ ...technicalForm, needles: newNeedles })
-                                }}
-                                className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="Longueur (40cm)"
-                              />
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* ÉCHANTILLON */}
-                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-3">📏 Échantillon</h4>
-                      <div className="grid grid-cols-3 gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={technicalForm.gauge.stitches}
-                          onChange={(e) => setTechnicalForm({
-                            ...technicalForm,
-                            gauge: { ...technicalForm.gauge, stitches: e.target.value }
-                          })}
-                          className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                          placeholder="Largeur (17 mailles)"
-                        />
-                        <input
-                          type="text"
-                          value={technicalForm.gauge.rows}
-                          onChange={(e) => setTechnicalForm({
-                            ...technicalForm,
-                            gauge: { ...technicalForm.gauge, rows: e.target.value }
-                          })}
-                          className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                          placeholder="Hauteur (22 rangs)"
-                        />
-                        <input
-                          type="text"
-                          value={technicalForm.gauge.dimensions}
-                          onChange={(e) => setTechnicalForm({
-                            ...technicalForm,
-                            gauge: { ...technicalForm.gauge, dimensions: e.target.value }
-                          })}
-                          className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                          placeholder="10 x 10 cm"
-                        />
-                      </div>
-                      <textarea
-                        value={technicalForm.gauge.notes}
-                        onChange={(e) => setTechnicalForm({
-                          ...technicalForm,
-                          gauge: { ...technicalForm.gauge, notes: e.target.value }
-                        })}
-                        rows={2}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
-                        placeholder="Notes sur l'échantillon..."
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Tags et Favoris (v0.15.0) */}
-              <div className="mb-6 border-t pt-4 space-y-4">
-                {/* Favori (tous plans) */}
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={isFavorite}
-                    onChange={(e) => setIsFavorite(e.target.checked)}
-                    className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary focus:ring-2"
-                  />
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-primary transition">
-                    ⭐ Marquer comme favori
-                  </span>
-                </label>
-
-                {/* Tags (PLUS/PRO uniquement) */}
-                {canUseTags ? (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      🏷️ Tags
-                    </label>
-                    <TagInput
-                      tags={projectTags}
-                      onAddTag={handleAddTag}
-                      onRemoveTag={handleRemoveTag}
-                      suggestions={popularTags.map(t => t.tag_name)}
-                      placeholder="Ex: cadeau, bébé, urgent..."
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-sage/10 rounded-lg p-4 border border-sage/30">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">🏷️</span>
-                      <span className="font-medium text-gray-800">Tags - Disponible en PLUS</span>
-                      <span className="ml-auto text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                        Premium
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Organisez vos projets avec des étiquettes personnalisées pour les retrouver facilement
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowUpgradePrompt(true)}
-                      className="text-sm text-primary hover:underline font-medium"
-                    >
-                      En savoir plus →
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Sections/Parties du projet (optionnel) */}
-              <div className="mb-6 border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Sections du projet (optionnel)
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Pour les projets complexes : face, dos, manches, etc.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowSections(!showSections)}
-                    className="px-3 py-1.5 text-sm border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition"
-                  >
-                    {showSections ? '✕ Masquer' : '➕ Ajouter sections'}
-                  </button>
-                </div>
-
-                {showSections && (
-                  <div className="space-y-3">
-                    {/* Boutons exemples rapides */}
-                    {sections.length === 0 && (
-                      <div className="bg-primary-50 border-2 border-primary-200 rounded-lg p-3 mb-3">
-                        <p className="text-xs text-primary-800 font-bold mb-2">Exemples rapides :</p>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setSections([
-                              { name: 'Face', description: '', total_rows: null },
-                              { name: 'Dos', description: '', total_rows: null },
-                              { name: 'Manche gauche', description: '', total_rows: null },
-                              { name: 'Manche droite', description: '', total_rows: null }
-                            ])}
-                            className="px-3 py-1 text-xs bg-white border-2 border-primary-300 text-primary-700 rounded-lg hover:bg-primary-50 transition focus:outline-none focus:ring-2 focus:ring-primary-300 font-bold"
-                          >
-                            🧥 Pull/Gilet
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSections([
-                              { name: 'Corps', description: '', total_rows: null },
-                              { name: 'Tête', description: '', total_rows: null },
-                              { name: 'Bras (x2)', description: '', total_rows: null },
-                              { name: 'Jambes (x2)', description: '', total_rows: null }
-                            ])}
-                            className="px-3 py-1 text-xs bg-white border-2 border-primary-300 text-primary-700 rounded-lg hover:bg-primary-50 transition focus:outline-none focus:ring-2 focus:ring-primary-300 font-bold"
-                          >
-                            🧸 Amigurumi
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Liste des sections */}
-                    {sections.map((section, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
-                            <input
-                              type="text"
-                              placeholder="Nom (ex: Face)"
-                              value={section.name}
-                              onChange={(e) => {
-                                const newSections = [...sections]
-                                newSections[index].name = e.target.value
-                                setSections(newSections)
-                              }}
-                              className="px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Description (optionnel)"
-                              value={section.description}
-                              onChange={(e) => {
-                                const newSections = [...sections]
-                                newSections[index].description = e.target.value
-                                setSections(newSections)
-                              }}
-                              className="px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500"
-                            />
-                            <input
-                              type="number"
-                              placeholder="Nb rangs (optionnel)"
-                              value={section.total_rows || ''}
-                              onChange={(e) => {
-                                const newSections = [...sections]
-                                newSections[index].total_rows = e.target.value ? parseInt(e.target.value) : null
-                                setSections(newSections)
-                              }}
-                              className="px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newSections = sections.filter((_, i) => i !== index)
-                              setSections(newSections)
-                            }}
-                            className="px-2 py-1.5 text-red-600 hover:bg-red-50 rounded transition"
-                            title="Supprimer"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Bouton ajouter section */}
-                    <button
-                      type="button"
-                      onClick={() => setSections([...sections, { name: '', description: '', total_rows: null }])}
-                      className="w-full px-4 py-2 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50 transition text-sm"
-                    >
-                      ➕ Ajouter une section
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Import de patron (optionnel) */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Patron (optionnel)
-                </label>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Option 1: Bibliothèque */}
-                  <div className="relative h-full">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setShowPatternLibraryModal(true)
-                        fetchLibraryPatterns()
-                      }}
-                      className={`w-full h-full min-h-[140px] border-2 border-dashed border-primary-300 rounded-lg p-4 hover:border-primary-500 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'library' ? 'ring-2 ring-primary-600 bg-primary-50' : 'border-gray-300'}`}
-                    >
-                      <div className="text-3xl mb-2 text-center">📚</div>
-                      <p className="text-sm font-medium text-center mb-1">
-                        Depuis ma bibliothèque
-                      </p>
-                      <p className="text-xs text-gray-500 text-center">
-                        {selectedLibraryPattern ? `✓ ${selectedLibraryPattern.name}` : 'Patrons sauvegardés'}
-                      </p>
-                    </button>
-                    {selectedLibraryPattern && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedLibraryPattern(null)
-                          setPatternType('')
-                        }}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
-                        title="Annuler la sélection"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Option 2: Upload fichier */}
-                  <div className={`relative h-full ${patternType === 'file' ? 'ring-2 ring-primary-600 rounded-lg' : ''}`}>
-                    <label className="cursor-pointer block h-full">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition h-full min-h-[140px] flex flex-col justify-center">
-                        <div className="text-3xl mb-2 text-center">📎</div>
-                        <p className="text-sm font-medium text-center mb-1">
-                          Importer un fichier
-                        </p>
-                        <p className="text-xs text-gray-500 text-center">
-                          {patternFile ? `✓ ${patternFile.name}` : 'PDF, JPG, PNG, WEBP'}
-                        </p>
-                      </div>
-                      <input
-                        type="file"
-                        accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={(e) => {
-                          const file = e.target.files[0]
-                          if (file) {
-                            setPatternFile(file)
-                            setPatternType('file')
-                            setPatternUrl('')
-                            setPatternText('')
-                            setSelectedLibraryPattern(null)
-                          }
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                    {patternFile && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPatternFile(null)
-                          setPatternType('')
-                        }}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
-                        title="Supprimer le fichier"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Option 3: URL */}
-                  <div className="relative h-full">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setShowPatternUrlModal(true)
-                      }}
-                      className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'url' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
-                    >
-                      <div className="text-3xl mb-2 text-center">🔗</div>
-                      <p className="text-sm font-medium text-center mb-1">
-                        Lien web
-                      </p>
-                      <p className="text-xs text-gray-500 text-center">
-                        {patternUrl ? `✓ ${patternUrl.substring(0, 30)}...` : 'YouTube, Pinterest, blog...'}
-                      </p>
-                    </button>
-                    {patternUrl && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPatternUrl('')
-                          setPatternType('')
-                        }}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
-                        title="Effacer l'URL"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Option 4: Texte */}
-                  <div className="relative h-full">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setShowPatternTextModal(true)
-                      }}
-                      className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'text' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
-                    >
-                      <div className="text-3xl mb-2 text-center">📝</div>
-                      <p className="text-sm font-medium text-center mb-1">
-                        Texte
-                      </p>
-                      <p className="text-xs text-gray-500 text-center">
-                        {patternText ? `✓ ${patternText.substring(0, 30)}...` : 'Copier-coller le patron'}
-                      </p>
-                    </button>
-                    {patternText && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPatternText('')
-                          setPatternType('')
-                        }}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
-                        title="Effacer le texte"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Boutons */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 modal-actions-mobile">
-                <button
-                  type="button"
-                  onClick={handleCancelModal}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-primary-300"
-                >
-                  {creating ? (creatingStep || 'Création...') : '✨ Créer le projet'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Wizard de création de projet */}
+      <CreateProjectWizard
+        isOpen={showCreateModal}
+        onClose={handleCancelModal}
+        onSubmit={handleCreateProject}
+        isSubmitting={creating}
+        submitLabel={creatingStep || 'Création...'}
+        canUseTags={canUseTags}
+        popularTags={popularTags}
+        onShowUpgradePrompt={() => setShowUpgradePrompt(true)}
+        onOpenLibraryModal={() => {
+          setShowPatternLibraryModal(true)
+          fetchLibraryPatterns()
+        }}
+        onOpenUrlModal={() => setShowPatternUrlModal(true)}
+        onOpenTextModal={() => setShowPatternTextModal(true)}
+        patternType={patternType}
+        setPatternType={setPatternType}
+        patternFile={patternFile}
+        setPatternFile={setPatternFile}
+        patternUrl={patternUrl}
+        patternText={patternText}
+        selectedLibraryPattern={selectedLibraryPattern}
+      />
 
       {/* Modal d'alerte personnalisée */}
       {showAlertModal && (
