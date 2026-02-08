@@ -23,6 +23,7 @@ import ProxyViewer from '../components/ProxyViewer'
 import TagBadge from '../components/TagBadge'
 import TagInput from '../components/TagInput'
 import SatisfactionModal from '../components/SatisfactionModal'
+import FirstRowCelebration from '../components/FirstRowCelebration' // [AI:Claude] v0.17.0 - Célébration premier rang
 
 const ProjectCounter = () => {
   const { projectId } = useParams()
@@ -121,6 +122,10 @@ const ProjectCounter = () => {
   const [showSatisfactionModal, setShowSatisfactionModal] = useState(false)
   const [generatedPhoto, setGeneratedPhoto] = useState(null)
 
+  // [AI:Claude] v0.17.0 - Célébration premier rang
+  const [showFirstRowCelebration, setShowFirstRowCelebration] = useState(false)
+  const [showFirstProjectTip, setShowFirstProjectTip] = useState(false) // [AI:Claude] v0.17.1 - Tip premier projet
+
   // [AI:Claude] Modal d'édition du projet
   const [showEditModal, setShowEditModal] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -212,6 +217,12 @@ const ProjectCounter = () => {
       fetchCredits()
       // Passer le current_section_id du projet fraîchement chargé
       fetchSections(projectData?.current_section_id)
+
+      // [AI:Claude] v0.17.1 - Vérifier si c'est le premier projet (tip onboarding)
+      if (sessionStorage.getItem('showFirstProjectTip') === 'true') {
+        sessionStorage.removeItem('showFirstProjectTip')
+        setShowFirstProjectTip(true)
+      }
 
       // [AI:Claude] Restaurer l'état du timer s'il était en pause
       const savedState = localStorage.getItem(`timerState_${projectId}`)
@@ -1767,6 +1778,33 @@ const ProjectCounter = () => {
           }
         }
       }
+
+      // [AI:Claude] v0.17.0 - Célébration du premier rang compté
+      if (oldRow === 0 || parseFloat(oldRow) === 0) {
+        setShowFirstRowCelebration(true)
+
+        // Tracker l'événement first_row_counted
+        try {
+          await api.post('/analytics/track-event', {
+            event_name: 'first_row_counted',
+            project_id: projectId,
+            counter_unit: counterUnit
+          })
+        } catch (err) {
+          console.error('Erreur tracking first_row_counted:', err)
+        }
+      } else if (oldRow > 0 || parseFloat(oldRow) > 0) {
+        // Tracker project_worked_again à chaque incrémentation après le premier rang
+        try {
+          await api.post('/analytics/track-event', {
+            event_name: 'project_worked_again',
+            project_id: projectId,
+            current_row: newRow
+          })
+        } catch (err) {
+          console.error('Erreur tracking project_worked_again:', err)
+        }
+      }
     } catch (err) {
       console.error('Erreur sauvegarde rang:', err)
       console.error('Détails erreur:', err.response?.data)
@@ -2509,6 +2547,38 @@ const ProjectCounter = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-3">
+      {/* [AI:Claude] v0.17.0 - Célébration premier rang compté */}
+      {showFirstRowCelebration && (
+        <FirstRowCelebration
+          onClose={() => setShowFirstRowCelebration(false)}
+          counterUnit={counterUnit}
+        />
+      )}
+
+      {/* [AI:Claude] v0.17.1 - Tip premier projet */}
+      {showFirstProjectTip && (
+        <div className="mb-4 bg-primary-50 border border-primary-200 rounded-xl p-4 relative">
+          <button
+            onClick={() => setShowFirstProjectTip(false)}
+            className="absolute top-2 right-2 text-primary-400 hover:text-primary-600 text-xl leading-none"
+            aria-label="Fermer"
+          >
+            ×
+          </button>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">💡</span>
+            <div>
+              <p className="font-semibold text-primary-800 mb-1">Astuce</p>
+              <p className="text-primary-700 text-sm leading-relaxed">
+                YarnFlow est surtout utile quand vous êtes interrompue.
+                <br />
+                Laissez-le ouvert pendant que vous tricotez — même si vous faites des pauses.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* [AI:Claude] Header ultra-compact */}
       <div className="mb-3">
         <div>

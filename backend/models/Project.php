@@ -713,6 +713,18 @@ class Project extends BaseModel
             $longestStreak = max($longestStreak, $tempStreak);
         }
 
+        // [AI:Claude] v0.17.0 - Vérifier si l'utilisateur a au moins un projet avec current_row > 0
+        $hasStartedQuery = "SELECT COUNT(*) > 0 as has_started_rows
+                            FROM {$this->table}
+                            WHERE user_id = :user_id
+                            AND current_row > 0";
+
+        $stmt = $this->db->prepare($hasStartedQuery);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $hasStartedResult = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $hasStartedRows = (bool)($hasStartedResult['has_started_rows'] ?? false);
+
         return [
             'total_projects' => $totalProjects,
             'completed_projects' => $completedProjects,
@@ -727,7 +739,8 @@ class Project extends BaseModel
             'average_session_time' => $avgSessionTime,
             'current_streak' => $currentStreak,
             'longest_streak' => $longestStreak,
-            'period' => $period
+            'period' => $period,
+            'has_started_rows' => $hasStartedRows // [AI:Claude] v0.17.0 - Onboarding premier rang
         ];
     }
 
