@@ -61,6 +61,7 @@ const Gallery = () => {
 
   // [AI:Claude] Embellissement IA - v0.12.1 SIMPLIFIÉ (1 photo, preset auto)
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
+  const [selectedSeason, setSelectedSeason] = useState(null) // [AI:Claude] Saison optionnelle (spring, summer, autumn, winter)
   const [enhancing, setEnhancing] = useState(false)
 
   // [AI:Claude] Détecter mobile au montage
@@ -201,7 +202,7 @@ const Gallery = () => {
   const handleGeneratePreview = async () => {
     if (!selectedPhoto || !selectedContext) return
 
-    const result = await generatePreview(selectedPhoto.id, selectedContext.key)
+    const result = await generatePreview(selectedPhoto.id, selectedContext.key, selectedSeason)
 
     if (!result.success) {
       alert(result.error || 'Erreur lors de la génération de la preview')
@@ -229,7 +230,8 @@ const Gallery = () => {
       // [AI:Claude] Appel API pour génération HD avec le même context que la preview
       const response = await api.post(`/photos/${selectedPhoto.id}/enhance-multiple`, {
         contexts: [contextToUse],
-        project_category: detectProjectCategory(selectedPhoto.item_type || '')
+        project_category: detectProjectCategory(selectedPhoto.item_type || ''),
+        season: selectedSeason // Saison optionnelle
       })
 
       await fetchPhotos()
@@ -265,6 +267,7 @@ const Gallery = () => {
   const openEnhanceModal = (photo) => {
     setSelectedPhoto(photo)
     clearPreview() // [AI:Claude] Réinitialiser la preview
+    setSelectedSeason(null) // [AI:Claude] Réinitialiser la saison
     const category = detectProjectCategory(photo.item_type || '')
     const styles = getAvailableStyles(category)
     setSelectedContext(styles[0]) // Premier style par défaut
@@ -318,6 +321,17 @@ const Gallery = () => {
 
     return 'other'
   }
+
+  // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
+  const seasons = [
+    { key: 'spring', label: 'Printemps', icon: '🌸', desc: 'Fleurs, bourgeons, lumière douce' },
+    { key: 'summer', label: 'Été', icon: '☀️', desc: 'Lumière dorée, végétation luxuriante' },
+    { key: 'autumn', label: 'Automne', icon: '🍂', desc: 'Feuilles dorées, tons chauds' },
+    { key: 'winter', label: 'Hiver', icon: '❄️', desc: 'Neige, givre, ambiance cocooning' }
+  ]
+
+  // [AI:Claude] Catégories qui supportent les saisons
+  const seasonCategories = ['wearable', 'accessory', 'home_decor', 'toy', 'baby_garment', 'baby', 'other']
 
   // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
   const stylesByCategory = {
@@ -438,7 +452,6 @@ const Gallery = () => {
       return allStyles // PRO accède à tout
     }
   }
-
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -1157,6 +1170,53 @@ const Gallery = () => {
                   </div>
                 )}
               </div>
+
+              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel) */}
+              {seasonCategories.includes(detectProjectCategory(selectedPhoto.item_type || '')) && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Ambiance saisonnière <span className="text-gray-400 font-normal">(optionnel)</span> :
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {/* Option "Aucune" */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSeason(null)}
+                      className={`flex flex-col items-center gap-1 p-3 border-2 rounded-lg transition ${
+                        selectedSeason === null
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className="text-2xl">🎨</span>
+                      <span className="text-xs font-medium text-gray-700">Aucune</span>
+                    </button>
+
+                    {/* Options de saisons */}
+                    {seasons.map(season => (
+                      <button
+                        key={season.key}
+                        type="button"
+                        onClick={() => setSelectedSeason(season.key)}
+                        className={`flex flex-col items-center gap-1 p-3 border-2 rounded-lg transition ${
+                          selectedSeason === season.key
+                            ? 'border-primary-600 bg-primary-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        title={season.desc}
+                      >
+                        <span className="text-2xl">{season.icon}</span>
+                        <span className="text-xs font-medium text-gray-700">{season.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {selectedSeason && (
+                    <p className="text-xs text-primary-600 mt-2">
+                      {seasons.find(s => s.key === selectedSeason)?.desc}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Zone de preview */}
               {previewImage && !enhancing && (

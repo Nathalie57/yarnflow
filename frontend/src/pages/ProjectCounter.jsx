@@ -106,6 +106,7 @@ const ProjectCounter = () => {
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
   const [modelGender, setModelGender] = useState('female') // [AI:Claude] Genre du modèle : male (homme), female (femme)
+  const [selectedSeason, setSelectedSeason] = useState(null) // [AI:Claude] v0.17.1 - Saison optionnelle
   const [enhancing, setEnhancing] = useState(false)
   const [credits, setCredits] = useState(null)
   const [hideAIWarning, setHideAIWarning] = useState(false) // [AI:Claude] Cacher l'avertissement IA si l'utilisateur a coché "Ne plus afficher"
@@ -1094,7 +1095,8 @@ const ProjectCounter = () => {
       const response = await api.post(`/photos/${selectedPhoto.id}/enhance-multiple`, {
         contexts: [contextToUse],
         project_category: detectProjectCategory(project?.type || ''),
-        model_gender: modelGender // person (neutre), male (homme), female (femme)
+        model_gender: modelGender, // person (neutre), male (homme), female (femme)
+        season: selectedSeason // spring, summer, autumn, winter (optionnel)
       })
 
       // [AI:Claude] v0.15.0 - Récupérer la photo générée pour la modal de satisfaction
@@ -1162,6 +1164,7 @@ const ProjectCounter = () => {
   // [AI:Claude] Ouvrir modal d'embellissement avec sélection du premier style par défaut
   const openEnhanceModal = (photo) => {
     setSelectedPhoto(photo)
+    setSelectedSeason(null) // [AI:Claude] v0.17.1 - Réinitialiser la saison
     // clearPreview() // [AI:Claude] Désactivé car preview désactivée
     const category = detectProjectCategory(project?.type || '')
     const styles = getAvailableStyles(category)
@@ -1212,6 +1215,14 @@ const ProjectCounter = () => {
     console.log('[ProjectCounter] Aucune catégorie trouvée, retourne "other"')
     return 'other'
   }
+
+  // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
+  const seasons = [
+    { key: 'spring', label: 'Printemps', icon: '🌸', desc: 'Fleurs, bourgeons, lumière douce' },
+    { key: 'summer', label: 'Été', icon: '☀️', desc: 'Lumière dorée, végétation luxuriante' },
+    { key: 'autumn', label: 'Automne', icon: '🍂', desc: 'Feuilles dorées, tons chauds' },
+    { key: 'winter', label: 'Hiver', icon: '❄️', desc: 'Neige, givre, ambiance cocooning' }
+  ]
 
   // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
   const stylesByCategory = {
@@ -4861,6 +4872,51 @@ Rang 3 : *1ms, aug* x6 (18)
                       </a>
                     </p>
                   </div>
+                )}
+              </div>
+
+              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel) */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Ambiance saisonnière <span className="text-gray-400 font-normal">(optionnel)</span> :
+                </label>
+                <div className="grid grid-cols-5 gap-2">
+                  {/* Option "Aucune" */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSeason(null)}
+                    className={`flex flex-col items-center gap-1 p-2 border-2 rounded-lg transition ${
+                      selectedSeason === null
+                        ? 'border-primary-600 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="text-xl">🎨</span>
+                    <span className="text-xs font-medium text-gray-700">Aucune</span>
+                  </button>
+
+                  {/* Options de saisons */}
+                  {seasons.map(season => (
+                    <button
+                      key={season.key}
+                      type="button"
+                      onClick={() => setSelectedSeason(season.key)}
+                      className={`flex flex-col items-center gap-1 p-2 border-2 rounded-lg transition ${
+                        selectedSeason === season.key
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      title={season.desc}
+                    >
+                      <span className="text-xl">{season.icon}</span>
+                      <span className="text-xs font-medium text-gray-700">{season.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {selectedSeason && (
+                  <p className="text-xs text-primary-600 mt-2">
+                    {seasons.find(s => s.key === selectedSeason)?.desc}
+                  </p>
                 )}
               </div>
 

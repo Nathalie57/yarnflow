@@ -155,8 +155,9 @@ class AIPhotoService
             } else {
                 $itemName = $options['item_name'] ?? '';
                 $modelGender = $options['model_gender'] ?? 'person'; // person, male, female
-                $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender);
-                error_log("[GEMINI] Using GENERATION prompt (from original) - Model gender: $modelGender");
+                $season = $options['season'] ?? null; // spring, summer, autumn, winter
+                $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender, $season);
+                error_log("[GEMINI] Using GENERATION prompt (from original) - Model gender: $modelGender" . ($season ? " - Season: $season" : ""));
             }
 
             // [AI:Claude] Mode simulation (pour tester sans API)
@@ -213,6 +214,29 @@ class AIPhotoService
     }
 
     /**
+     * [AI:Claude] Descriptions saisonnières pour enrichir les prompts
+     * Utilisées pour ajouter une ambiance saisonnière aux photos
+     */
+    private const SEASONS = [
+        'spring' => 'dans une ambiance PRINTANIÈRE avec fleurs fraîches, bourgeons, lumière douce et claire, tons pastel et végétation naissante',
+        'summer' => 'dans une ambiance ESTIVALE avec lumière chaude et dorée, ciel bleu, végétation luxuriante, tons chauds et ensoleillés',
+        'autumn' => 'dans une ambiance AUTOMNALE avec feuilles dorées et orangées, lumière chaude et douce, tons chauds (orange, marron, bordeaux), ambiance cosy',
+        'winter' => 'dans une ambiance HIVERNALE avec neige, givre, lumière douce et froide, tons blancs et bleutés, ambiance chaleureuse et cocooning'
+    ];
+
+    /**
+     * [AI:Claude] Catégories où les saisons sont pertinentes
+     */
+    private const SEASON_CATEGORIES = [
+        'wearable',      // Vêtements portés en extérieur
+        'accessory',     // Bonnets/écharpes en hiver, chapeaux en été
+        'home',          // Décoration de saison
+        'toy',           // Décor extérieur peut varier
+        'baby_garment',  // Vêtements bébé
+        'baby'           // Accessoires bébé
+    ];
+
+    /**
      * [AI:Claude] Construire le prompt de génération - Format SIMPLE qui fonctionne
      * Basé sur le prompt testé avec succès par l'utilisatrice sur Gemini
      *
@@ -220,12 +244,24 @@ class AIPhotoService
      * @param string $context Contexte visuel (studio_white, product_white, etc.)
      * @param string $itemName Nom de l'article (optionnel)
      * @param string $modelGender Genre du modèle : 'person' (neutre), 'male' (homme), 'female' (femme)
+     * @param string|null $season Saison optionnelle : 'spring', 'summer', 'autumn', 'winter'
      * @return string Prompt optimisé
      */
-    private function buildPrompt(string $type, string $context, string $itemName = '', string $modelGender = 'person'): string
+    private function buildPrompt(string $type, string $context, string $itemName = '', string $modelGender = 'person', ?string $season = null): string
     {
         // [AI:Claude] Récupérer la description du contexte
         $contextDescription = self::CONTEXTS[$context] ?? self::CONTEXTS['lifestyle'];
+
+        // [AI:Claude] Ajouter l'ambiance saisonnière si applicable
+        $seasonDescription = '';
+        if ($season && isset(self::SEASONS[$season])) {
+            // Vérifier si la catégorie supporte les saisons
+            $contextCategory = explode('_', $context)[0]; // ex: 'wearable' from 'wearable_c1'
+            if (in_array($contextCategory, self::SEASON_CATEGORIES)) {
+                $seasonDescription = ' ' . self::SEASONS[$season];
+                error_log("[PROMPT] Saison ajoutée: {$season} pour catégorie {$contextCategory}");
+            }
+        }
 
         // [AI:Claude] Déterminer le texte pour le modèle selon le genre choisi
         $modelText = match($modelGender) {
@@ -243,8 +279,8 @@ class AIPhotoService
         ];
 
         if (in_array($context, $babyGarmentWornContexts)) {
-            error_log("[PROMPT] Vêtement bébé '{$itemName}' - PORTÉ PAR BÉBÉ");
-            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. Le vêtement doit être porté par un VRAI BÉBÉ HUMAIN (pas une poupée, pas un mannequin). ÉTAPES CRITIQUES : 1) Garde le vêtement fait main porté par le bébé. 2) RETIRE tous les éléments parasites : objets indésirables, fond original moche. 3) Place le bébé portant le vêtement dans le nouveau contexte avec une pose naturelle, confortable et sécurisante pour un bébé. RÈGLE ABSOLUE sur les détails visuels du vêtement porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la position du bébé dans l'espace pour créer une belle composition naturelle et douce, mais tu NE PEUX PAS changer l'apparence visuelle du vêtement lui-même (couleurs, motifs, texture). Le vêtement porté doit être bien mis en valeur dans une scène réaliste et attendrissante.";
+            error_log("[PROMPT] Vêtement bébé '{$itemName}' - PORTÉ PAR BÉBÉ" . ($season ? " - Saison: {$season}" : ""));
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. Le vêtement doit être porté par un VRAI BÉBÉ HUMAIN (pas une poupée, pas un mannequin). ÉTAPES CRITIQUES : 1) Garde le vêtement fait main porté par le bébé. 2) RETIRE tous les éléments parasites : objets indésirables, fond original moche. 3) Place le bébé portant le vêtement dans le nouveau contexte avec une pose naturelle, confortable et sécurisante pour un bébé. RÈGLE ABSOLUE sur les détails visuels du vêtement porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la position du bébé dans l'espace pour créer une belle composition naturelle et douce, mais tu NE PEUX PAS changer l'apparence visuelle du vêtement lui-même (couleurs, motifs, texture). Le vêtement porté doit être bien mis en valeur dans une scène réaliste et attendrissante.";
         }
 
         // [AI:Claude] v0.14.0 - Prompt ULTRA STRICT spécifique pour photos portées (adultes)
@@ -267,7 +303,8 @@ class AIPhotoService
 
         if ($isWornContext) {
             // Pour photos portées : préciser le genre du modèle si demandé
-            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. L'article doit être porté par {$modelText}, PAS un mannequin de vitrine en plastique. ÉTAPES CRITIQUES : 1) Garde l'ouvrage fait main porté par le modèle. 2) RETIRE tous les éléments parasites : mains qui tiennent artificiellement l'ouvrage (sauf si elles font naturellement partie de la pose), objets indésirables, fond original moche. 3) Place le modèle portant l'ouvrage dans le nouveau contexte avec une pose naturelle et appropriée. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la pose du modèle, la position dans l'espace pour créer une belle composition naturelle, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage lui-même (couleurs, motifs, texture). L'ouvrage porté doit être bien mis en valeur dans une scène réaliste.";
+            error_log("[PROMPT] Contexte porté" . ($season ? " - Saison: {$season}" : ""));
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. L'article doit être porté par {$modelText}, PAS un mannequin de vitrine en plastique. ÉTAPES CRITIQUES : 1) Garde l'ouvrage fait main porté par le modèle. 2) RETIRE tous les éléments parasites : mains qui tiennent artificiellement l'ouvrage (sauf si elles font naturellement partie de la pose), objets indésirables, fond original moche. 3) Place le modèle portant l'ouvrage dans le nouveau contexte avec une pose naturelle et appropriée. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la pose du modèle, la position dans l'espace pour créer une belle composition naturelle, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage lui-même (couleurs, motifs, texture). L'ouvrage porté doit être bien mis en valeur dans une scène réaliste.";
         }
 
         // [AI:Claude] v0.14.0 - Prompt spécifique pour accessoires bébé et vêtements bébé À PLAT
@@ -276,12 +313,15 @@ class AIPhotoService
 
         if ($isBabyContext || $isBabyGarmentFlatContext) {
             $itemType = $isBabyGarmentFlatContext ? 'vêtement bébé' : 'accessoire bébé';
-            error_log("[PROMPT] {$itemType} '{$itemName}' - Utilisation du prompt FLAT LAY strict");
-            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement le {$itemType} visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place le {$itemType} isolé complètement à plat sur la surface horizontale dans le nouveau contexte, comme s'il était naturellement posé par gravité, JAMAIS debout ou en position verticale. RÈGLE ABSOLUE sur les détails visuels : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels de l'ouvrage. Tu PEUX changer l'angle de vue (vue du dessus, légèrement de côté, etc.) et la position sur la surface pour que ce soit naturel et bien composé, mais le {$itemType} doit toujours rester à plat horizontalement. Tu NE PEUX PAS changer l'apparence visuelle (couleurs, motifs, texture). Le {$itemType} doit être seul et bien mis en scène.";
+            error_log("[PROMPT] {$itemType} '{$itemName}' - Utilisation du prompt FLAT LAY strict" . ($season ? " - Saison: {$season}" : ""));
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement le {$itemType} visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place le {$itemType} isolé complètement à plat sur la surface horizontale dans le nouveau contexte, comme s'il était naturellement posé par gravité, JAMAIS debout ou en position verticale. RÈGLE ABSOLUE sur les détails visuels : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels de l'ouvrage. Tu PEUX changer l'angle de vue (vue du dessus, légèrement de côté, etc.) et la position sur la surface pour que ce soit naturel et bien composé, mais le {$itemType} doit toujours rester à plat horizontalement. Tu NE PEUX PAS changer l'apparence visuelle (couleurs, motifs, texture). Le {$itemType} doit être seul et bien mis en scène.";
         }
 
         // [AI:Claude] Prompt standard pour autres contextes (produit seul)
-        return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement l'ouvrage fait main visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place l'ouvrage isolé dans le nouveau contexte avec une position, un angle et une pose NATURELS et APPROPRIÉS pour le contexte demandé. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF, la FORME et tous les détails visuels. Tu PEUX changer la position, l'angle de vue, l'orientation pour que ce soit naturel dans le nouveau contexte, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage (couleurs, motifs, texture). L'ouvrage doit être seul et bien mis en scène.";
+        if ($season) {
+            error_log("[PROMPT] Contexte standard - Saison: {$season}");
+        }
+        return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement l'ouvrage fait main visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place l'ouvrage isolé dans le nouveau contexte avec une position, un angle et une pose NATURELS et APPROPRIÉS pour le contexte demandé. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF, la FORME et tous les détails visuels. Tu PEUX changer la position, l'angle de vue, l'orientation pour que ce soit naturel dans le nouveau contexte, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage (couleurs, motifs, texture). L'ouvrage doit être seul et bien mis en scène.";
     }
 
     /**
@@ -595,8 +635,9 @@ class AIPhotoService
             $context = $options['context'] ?? 'lifestyle';
             $itemName = $options['item_name'] ?? '';
             $modelGender = $options['model_gender'] ?? 'person'; // person, male, female
+            $season = $options['season'] ?? null; // spring, summer, autumn, winter
 
-            $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender);
+            $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender, $season);
 
             // [AI:Claude] Mode simulation (pour tester sans API)
             if ($this->simulationMode) {
@@ -758,5 +799,50 @@ class AIPhotoService
     public static function getAvailableContexts(): array
     {
         return array_keys(self::CONTEXTS);
+    }
+
+    /**
+     * [AI:Claude] Obtenir les saisons disponibles pour le frontend
+     *
+     * @return array Liste des saisons avec leurs descriptions
+     */
+    public static function getAvailableSeasons(): array
+    {
+        return [
+            'spring' => [
+                'key' => 'spring',
+                'label' => 'Printemps',
+                'icon' => '🌸',
+                'description' => 'Fleurs, bourgeons, lumière douce'
+            ],
+            'summer' => [
+                'key' => 'summer',
+                'label' => 'Été',
+                'icon' => '☀️',
+                'description' => 'Lumière dorée, végétation luxuriante'
+            ],
+            'autumn' => [
+                'key' => 'autumn',
+                'label' => 'Automne',
+                'icon' => '🍂',
+                'description' => 'Feuilles dorées, tons chauds'
+            ],
+            'winter' => [
+                'key' => 'winter',
+                'label' => 'Hiver',
+                'icon' => '❄️',
+                'description' => 'Neige, givre, ambiance cocooning'
+            ]
+        ];
+    }
+
+    /**
+     * [AI:Claude] Obtenir les catégories qui supportent les saisons
+     *
+     * @return array Liste des catégories
+     */
+    public static function getSeasonCategories(): array
+    {
+        return self::SEASON_CATEGORIES;
     }
 }

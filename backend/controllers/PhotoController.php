@@ -266,6 +266,7 @@ class PhotoController
             $contexts = $data['contexts'] ?? [];
             $projectCategory = $data['project_category'] ?? 'other';
             $modelGender = $data['model_gender'] ?? 'person'; // person (neutre), male (homme), female (femme)
+            $season = $data['season'] ?? null; // spring, summer, autumn, winter (optionnel)
 
             if (empty($contexts)) {
                 $this->sendResponse(400, [
@@ -336,7 +337,8 @@ class PhotoController
                             'project_category' => $projectCategory,
                             'from_preview' => false,
                             'item_name' => $photo['item_name'] ?? '',
-                            'model_gender' => $modelGender
+                            'model_gender' => $modelGender,
+                            'season' => $season
                         ]
                     );
 
@@ -571,8 +573,9 @@ class PhotoController
                 file_put_contents($cacheFile, json_encode([time()]));
             }
 
-            // [AI:Claude] Récupérer le contexte
+            // [AI:Claude] Récupérer le contexte et la saison
             $context = $data['context'] ?? 'lifestyle';
+            $season = $data['season'] ?? null; // spring, summer, autumn, winter (optionnel)
 
             // [AI:Claude] Récupérer le type du projet
             $projectType = 'handmade craft';
@@ -595,7 +598,8 @@ class PhotoController
             // [AI:Claude] Générer la preview (pas de crédit consommé)
             $result = $this->photoService->generatePreview($imagePath, [
                 'project_type' => $projectType,
-                'context' => $context
+                'context' => $context,
+                'season' => $season
             ]);
 
             if (!$result['success']) {
