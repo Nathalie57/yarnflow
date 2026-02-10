@@ -5987,7 +5987,8 @@ Rang 3 : *1ms, aug* x6 (18)
         />
       )}
 
-      {/* [AI:Claude] Bouton flottant pour les notes - toujours accessible */}
+      {/* [AI:Claude] Bouton flottant pour les notes - masqué quand popup ouverte */}
+      {!showNotes && (
       <button
         onClick={handleOpenNotes}
         className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-2xl px-4 py-3 flex items-center gap-3"
@@ -6017,6 +6018,7 @@ Rang 3 : *1ms, aug* x6 (18)
           </svg>
         </span>
       </button>
+      )}
 
       {/* [AI:Claude] v0.15.0 - Modal de satisfaction post-génération */}
       <SatisfactionModal
