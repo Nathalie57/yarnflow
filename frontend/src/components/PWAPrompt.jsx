@@ -147,32 +147,6 @@ export default function PWAPrompt() {
         </div>
       )}
 
-      {/* Offline Ready */}
-      {offlineReady && (
-        <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-green-600 text-white rounded-lg shadow-2xl p-4 z-50 animate-slide-down">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold mb-1">
-                Mode hors ligne activé
-              </h3>
-              <p className="text-sm text-green-100 mb-3">
-                YarnFlow est maintenant disponible hors ligne !
-              </p>
-              <button
-                onClick={handleDismissOffline}
-                className="text-sm text-green-100 hover:text-white transition-colors"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <style>{`
         @keyframes slide-up {
