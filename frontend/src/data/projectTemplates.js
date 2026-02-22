@@ -182,17 +182,56 @@ export const PROJECT_CATEGORIES = [
     ]
   },
   {
+    id: 'vetements-enfant',
+    value: 'Vêtements enfant',
+    icon: '👧',
+    description: 'Pull, gilet, robe enfant (2-10 ans)...',
+    sectionPresets: [
+      {
+        name: 'Pull enfant',
+        icon: '🧶',
+        sections: [
+          { name: 'Face', description: '', total_rows: null },
+          { name: 'Dos', description: '', total_rows: null },
+          { name: 'Manche gauche', description: '', total_rows: null },
+          { name: 'Manche droite', description: '', total_rows: null }
+        ]
+      },
+      {
+        name: 'Gilet enfant',
+        icon: '🧥',
+        sections: [
+          { name: 'Face gauche', description: '', total_rows: null },
+          { name: 'Face droite', description: '', total_rows: null },
+          { name: 'Dos', description: '', total_rows: null },
+          { name: 'Manche gauche', description: '', total_rows: null },
+          { name: 'Manche droite', description: '', total_rows: null }
+        ]
+      },
+      {
+        name: 'Robe enfant',
+        icon: '👗',
+        sections: [
+          { name: 'Corsage', description: '', total_rows: null },
+          { name: 'Jupe', description: '', total_rows: null },
+          { name: 'Manche gauche', description: '', total_rows: null },
+          { name: 'Manche droite', description: '', total_rows: null }
+        ]
+      },
+      {
+        name: 'Personnalisé',
+        icon: '✨',
+        sections: [
+          { name: '', description: '', total_rows: null }
+        ]
+      }
+    ]
+  },
+  {
     id: 'maison',
     value: 'Maison/Déco',
     icon: '🏠',
     description: 'Coussin, plaid, napperon...',
-    sectionPresets: []
-  },
-  {
-    id: 'custom',
-    value: 'Autre',
-    icon: '✨',
-    description: 'Projet libre, sans catégorie',
     sectionPresets: []
   }
 ]

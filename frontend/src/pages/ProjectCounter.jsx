@@ -16,7 +16,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useImagePreview } from '../hooks/useImagePreview'
 import { useWakeLock } from '../hooks/useWakeLock'
-import api from '../services/api'
+import api, { networkUtils } from '../services/api'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import ProxyViewer from '../components/ProxyViewer'
@@ -57,6 +57,8 @@ const ProjectCounter = () => {
   const [counterIncrement, setCounterIncrement] = useState(1.0) // [AI:Claude] v0.16.2 - Incrément par défaut
   const [isEditingCounter, setIsEditingCounter] = useState(false) // [AI:Claude] v0.16.2 - Mode édition du compteur
   const [counterInputValue, setCounterInputValue] = useState('') // [AI:Claude] v0.16.2 - Valeur temporaire de l'input
+  const [isSavingRow, setIsSavingRow] = useState(false) // [AI:Claude] Anti double-clic sur compteur
+  const [isOnline, setIsOnline] = useState(networkUtils.isOnline()) // [AI:Claude] Détection hors-ligne
 
   // [AI:Claude] Timer de session
   const [sessionId, setSessionId] = useState(null)
@@ -208,6 +210,13 @@ const ProjectCounter = () => {
     checkMobile()
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // [AI:Claude] Détection connexion réseau
+  useEffect(() => {
+    return networkUtils.onConnectionChange((online) => {
+      setIsOnline(online)
+    })
   }, [])
 
   // [AI:Claude] Charger le projet au montage
@@ -779,7 +788,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Liste des types (identique à la création de projet)
   const getProjectTypes = () => {
-    return ['Vêtements', 'Accessoires', 'Maison/Déco', 'Jouets/Peluches', 'Vêtements bébé', 'Accessoires bébé']
+    return ['Vêtements', 'Accessoires', 'Jouets/Peluches', 'Vêtements bébé', 'Accessoires bébé', 'Vêtements enfant', 'Maison/Déco', 'Autre']
   }
 
   // [AI:Claude] Upload patron (PDF ou Image)
@@ -1187,6 +1196,11 @@ const ProjectCounter = () => {
       return 'baby_garment'
     }
 
+    if (lower === 'vêtements enfant' || lower === 'vetements enfant' || lower === 'child_garment') {
+      console.log('[ProjectCounter] Détecté comme child_garment')
+      return 'child_garment'
+    }
+
     if (lower === 'accessoires bébé' || lower === 'accessoires bebe')
       return 'other'
 
@@ -1212,8 +1226,8 @@ const ProjectCounter = () => {
     if (lower.match(/couverture|plaid|coussin|tapis|déco|nappe/))
       return 'home_decor'
 
-    console.log('[ProjectCounter] Aucune catégorie trouvée, retourne "other"')
-    return 'other'
+    console.log('[ProjectCounter] Aucune catégorie trouvée, retourne "accessory"')
+    return 'accessory' // Fallback vers accessoire (le plus générique)
   }
 
   // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
@@ -1222,6 +1236,22 @@ const ProjectCounter = () => {
     { key: 'summer', label: 'Été', icon: '☀️', desc: 'Lumière dorée, végétation luxuriante' },
     { key: 'autumn', label: 'Automne', icon: '🍂', desc: 'Feuilles dorées, tons chauds' },
     { key: 'winter', label: 'Hiver', icon: '❄️', desc: 'Neige, givre, ambiance cocooning' }
+  ]
+
+  // [AI:Claude] Thèmes qui supportent les saisons (extérieur, nature, lumière naturelle)
+  const seasonStyles = [
+    // Wearable - extérieur/nature
+    'wearable_c1', 'wearable_c3', 'wearable_c4', 'wearable_c6', 'wearable_c9',
+    // Accessory - extérieur/nature
+    'accessory_c2', 'accessory_c3', 'accessory_c6', 'accessory_c9',
+    // Home decor - ambiance saisonnière
+    'home_c4', 'home_c5', 'home_c6',
+    // Toy - extérieur/nature
+    'toy_c5', 'toy_c8',
+    // Baby garment - extérieur/nature
+    'baby_garment_c1', 'baby_garment_c4', 'baby_garment_c7', 'baby_garment_c9',
+    // Child garment - extérieur/nature/urbain
+    'child_garment_c1', 'child_garment_c6', 'child_garment_c9'
   ]
 
   // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
@@ -1296,19 +1326,19 @@ const ProjectCounter = () => {
       { key: 'baby_garment_c8', label: 'Premium flat lay', icon: '💎', desc: 'À plat avec fleurs séchées', tier: 'pro' },
       { key: 'baby_garment_c9', label: 'Tapis de jeu 👶', icon: '🌸', desc: 'Porté par bébé sur tapis moelleux', tier: 'pro' }
     ],
-    other: [
+    child_garment: [
       // FREE (3)
-      { key: 'baby_c1', label: 'Lit bébé doux', icon: '🛏️', desc: 'Plié sur lit avec draps blancs et peluches', tier: 'free' },
-      { key: 'baby_c2', label: 'Fond pastel épuré', icon: '📸', desc: 'Flat lay sur fond pastel studio', tier: 'free' },
-      { key: 'baby_c3', label: 'Berceau cosy', icon: '👶', desc: 'Dans berceau avec jouets en bois', tier: 'free' },
+      { key: 'child_garment_c1', label: 'Parc/jardin 👧', icon: '🌿', desc: 'Porté par enfant dans un parc ou jardin', tier: 'free' },
+      { key: 'child_garment_c2', label: 'Studio blanc', icon: '📸', desc: 'À plat sur fond blanc studio professionnel', tier: 'free' },
+      { key: 'child_garment_c3', label: 'Chambre enfant', icon: '🛏️', desc: 'À plat sur lit coloré avec peluches', tier: 'free' },
       // PLUS (+3)
-      { key: 'baby_c4', label: 'Flat lay naturel', icon: '🌿', desc: 'Avec jouets en bois et plantes', tier: 'plus' },
-      { key: 'baby_c5', label: 'Table à langer', icon: '🏠', desc: 'Style scandinave minimaliste', tier: 'plus' },
-      { key: 'baby_c6', label: 'Panier vintage', icon: '🧺', desc: 'Osier avec tissus lin naturel', tier: 'plus' },
+      { key: 'child_garment_c4', label: 'Enfant jouant 👧', icon: '🧸', desc: 'Porté par enfant avec jouets en bois', tier: 'plus' },
+      { key: 'child_garment_c5', label: 'Flat lay coloré', icon: '🎨', desc: 'À plat avec crayons et accessoires enfant', tier: 'plus' },
+      { key: 'child_garment_c6', label: 'Urbain/street 👧', icon: '🏙️', desc: 'Porté par enfant, décor urbain style street photo', tier: 'plus' },
       // PRO (+3)
-      { key: 'baby_c7', label: 'Cadeau emballé', icon: '🎁', desc: 'Emballage élégant avec ruban et carte', tier: 'pro' },
-      { key: 'baby_c8', label: 'Lifestyle premium', icon: '✨', desc: 'Mise en scène raffinée avec accessoires', tier: 'pro' },
-      { key: 'baby_c9', label: 'Étagère nursery', icon: '📚', desc: 'Sur étagère murale blanche organisée', tier: 'pro' }
+      { key: 'child_garment_c7', label: 'Mode enfant 👧', icon: '✨', desc: 'Shooting mode avec éclairage studio créatif', tier: 'pro' },
+      { key: 'child_garment_c8', label: 'Premium boutique', icon: '💎', desc: 'À plat mise en scène boutique haut de gamme', tier: 'pro' },
+      { key: 'child_garment_c9', label: 'Promenade famille 👧', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
     ]
   }
 
@@ -1591,6 +1621,10 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Incrémenter le rang (sauvegarde directe sans modal)
   const handleIncrementRow = async () => {
+    // [AI:Claude] Anti double-clic
+    if (isSavingRow) return
+    setIsSavingRow(true)
+
     // [AI:Claude] Vérifier si on a atteint le maximum
     let maxRows = null
     if (currentSectionId && sections.length > 0) {
@@ -1687,6 +1721,8 @@ const ProjectCounter = () => {
             current_row: oldRow
           }))
         }
+      } finally {
+        setIsSavingRow(false)
       }
       return
     }
@@ -1838,12 +1874,18 @@ const ProjectCounter = () => {
           current_row: oldRow
         }))
       }
+    } finally {
+      setIsSavingRow(false)
     }
   }
 
   // [AI:Claude] Décrémenter le rang (supprime le dernier rang au lieu de créer un nouveau)
   const handleDecrementRow = async () => {
+    // [AI:Claude] Anti double-clic
+    if (isSavingRow) return
+
     if (currentRow > 0) {
+      setIsSavingRow(true)
       // [AI:Claude] v0.16.2 - Calculer newRow selon l'unité
       const increment = parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0)
       const newRow = counterUnit === 'rows'
@@ -1942,6 +1984,8 @@ const ProjectCounter = () => {
             current_row: oldRow
           }))
         }
+      } finally {
+        setIsSavingRow(false)
       }
     }
   }
@@ -2564,6 +2608,17 @@ const ProjectCounter = () => {
           onClose={() => setShowFirstRowCelebration(false)}
           counterUnit={counterUnit}
         />
+      )}
+
+      {/* [AI:Claude] Indicateur hors-ligne */}
+      {!isOnline && (
+        <div className="mb-4 bg-amber-50 border border-amber-300 rounded-xl p-3 flex items-center gap-3">
+          <span className="text-xl">📡</span>
+          <div className="flex-1">
+            <p className="font-medium text-amber-800">Mode hors-ligne</p>
+            <p className="text-amber-700 text-sm">Vos modifications seront synchronisées au retour de la connexion.</p>
+          </div>
+        </div>
       )}
 
       {/* [AI:Claude] v0.17.1 - Tip premier projet */}
@@ -4802,10 +4857,12 @@ Rang 3 : *1ms, aug* x6 (18)
                         </div>
                       </label>
 
-                      {/* Sélecteur de genre intégré pour styles "Porté" */}
-                      {selectedContext?.key === style.key && style.label && style.label.includes('Porté') && (
+                      {/* Sélecteur de genre intégré pour styles "Porté" ou enfant porté */}
+                      {selectedContext?.key === style.key && style.label && (style.label.includes('Porté') || style.key.startsWith('child_garment_c') && ['child_garment_c1', 'child_garment_c4', 'child_garment_c6', 'child_garment_c7', 'child_garment_c9'].includes(style.key)) && (
                         <div className="mt-2 ml-11 p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
-                          <p className="text-xs font-semibold text-gray-700 mb-2">👤 Genre du modèle :</p>
+                          <p className="text-xs font-semibold text-gray-700 mb-2">
+                            {style.key.startsWith('child_garment_') ? '👧 Genre de l\'enfant :' : '👤 Genre du modèle :'}
+                          </p>
                           <div className="grid grid-cols-2 gap-2">
                             <label
                               className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
@@ -4822,8 +4879,8 @@ Rang 3 : *1ms, aug* x6 (18)
                                 onChange={(e) => setModelGender(e.target.value)}
                                 className="sr-only"
                               />
-                              <span className="text-2xl">👨</span>
-                              <span className="text-xs font-semibold text-gray-900">Homme</span>
+                              <span className="text-2xl">{style.key.startsWith('child_garment_') ? '👦' : '👨'}</span>
+                              <span className="text-xs font-semibold text-gray-900">{style.key.startsWith('child_garment_') ? 'Garçon' : 'Homme'}</span>
                             </label>
                             <label
                               className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
@@ -4840,8 +4897,8 @@ Rang 3 : *1ms, aug* x6 (18)
                                 onChange={(e) => setModelGender(e.target.value)}
                                 className="sr-only"
                               />
-                              <span className="text-2xl">👩</span>
-                              <span className="text-xs font-semibold text-gray-900">Femme</span>
+                              <span className="text-2xl">{style.key.startsWith('child_garment_') ? '👧' : '👩'}</span>
+                              <span className="text-xs font-semibold text-gray-900">{style.key.startsWith('child_garment_') ? 'Fille' : 'Femme'}</span>
                             </label>
                           </div>
                         </div>
@@ -4875,7 +4932,8 @@ Rang 3 : *1ms, aug* x6 (18)
                 )}
               </div>
 
-              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel) */}
+              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel, uniquement pour thèmes extérieur/nature) */}
+              {selectedContext && seasonStyles.includes(selectedContext.key) && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Ambiance saisonnière <span className="text-gray-400 font-normal">(optionnel)</span> :
@@ -4919,6 +4977,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   </p>
                 )}
               </div>
+              )}
 
               {/* Aperçu gratuit - DÉSACTIVÉ pour économiser les coûts API */}
               {/*
@@ -5202,10 +5261,12 @@ Rang 3 : *1ms, aug* x6 (18)
                 <option value="">-- Sélectionner une catégorie --</option>
                 <option value="Vêtements">🧥 Vêtements</option>
                 <option value="Accessoires">👜 Accessoires</option>
-                <option value="Maison/Déco">🏠 Maison/Déco</option>
                 <option value="Jouets/Peluches">🧸 Jouets/Peluches</option>
                 <option value="Vêtements bébé">👶 Vêtements bébé</option>
                 <option value="Accessoires bébé">🍼 Accessoires bébé</option>
+                <option value="Vêtements enfant">👧 Vêtements enfant</option>
+                <option value="Maison/Déco">🏠 Maison/Déco</option>
+                <option value="Autre">✨ Autre</option>
               </select>
             </div>
 

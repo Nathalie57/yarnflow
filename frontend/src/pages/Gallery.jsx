@@ -62,6 +62,7 @@ const Gallery = () => {
   // [AI:Claude] Embellissement IA - v0.12.1 SIMPLIFIÉ (1 photo, preset auto)
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
   const [selectedSeason, setSelectedSeason] = useState(null) // [AI:Claude] Saison optionnelle (spring, summer, autumn, winter)
+  const [modelGender, setModelGender] = useState('female') // [AI:Claude] Genre du modèle (male, female)
   const [enhancing, setEnhancing] = useState(false)
 
   // [AI:Claude] Détecter mobile au montage
@@ -231,7 +232,8 @@ const Gallery = () => {
       const response = await api.post(`/photos/${selectedPhoto.id}/enhance-multiple`, {
         contexts: [contextToUse],
         project_category: detectProjectCategory(selectedPhoto.item_type || ''),
-        season: selectedSeason // Saison optionnelle
+        season: selectedSeason, // Saison optionnelle
+        model_gender: modelGender // Genre du modèle (male, female)
       })
 
       await fetchPhotos()
@@ -288,6 +290,9 @@ const Gallery = () => {
     if (lower === 'vêtements bébé' || lower === 'vetements bebe' || lower === 'baby_garment')
       return 'baby_garment'
 
+    if (lower === 'vêtements enfant' || lower === 'vetements enfant' || lower === 'child_garment')
+      return 'child_garment'
+
     if (lower === 'accessoires bébé' || lower === 'accessoires bebe')
       return 'wearable'
 
@@ -319,7 +324,7 @@ const Gallery = () => {
     if (lower.match(/couverture|plaid|coussin|tapis|déco|nappe/))
       return 'home_decor'
 
-    return 'other'
+    return 'accessory' // Fallback vers accessoire (le plus générique)
   }
 
   // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
@@ -330,8 +335,21 @@ const Gallery = () => {
     { key: 'winter', label: 'Hiver', icon: '❄️', desc: 'Neige, givre, ambiance cocooning' }
   ]
 
-  // [AI:Claude] Catégories qui supportent les saisons
-  const seasonCategories = ['wearable', 'accessory', 'home_decor', 'toy', 'baby_garment', 'baby', 'other']
+  // [AI:Claude] Thèmes qui supportent les saisons (extérieur, nature, lumière naturelle)
+  const seasonStyles = [
+    // Wearable - extérieur/nature
+    'wearable_c1', 'wearable_c3', 'wearable_c4', 'wearable_c6', 'wearable_c9',
+    // Accessory - extérieur/nature
+    'accessory_c2', 'accessory_c3', 'accessory_c6', 'accessory_c9',
+    // Home decor - ambiance saisonnière
+    'home_c4', 'home_c5', 'home_c6',
+    // Toy - extérieur/nature
+    'toy_c5', 'toy_c8',
+    // Baby garment - extérieur/nature
+    'baby_garment_c1', 'baby_garment_c4', 'baby_garment_c7', 'baby_garment_c9',
+    // Child garment - extérieur/nature/urbain
+    'child_garment_c1', 'child_garment_c6', 'child_garment_c9'
+  ]
 
   // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
   const stylesByCategory = {
@@ -343,7 +361,7 @@ const Gallery = () => {
       // PLUS (+3)
       { key: 'wearable_c4', label: 'Bohème chic', icon: '🌼', desc: 'Ambiance vintage avec décor rétro', tier: 'plus' },
       { key: 'wearable_c5', label: 'Sportif élégant', icon: '💡', desc: 'Studio lumière chaude', tier: 'plus' },
-      { key: 'wearable_c6', label: 'Minimaliste graphique', icon: '🌿', desc: 'Portrait en nature, lumière dorée', tier: 'plus' },
+      { key: 'wearable_c6', label: 'Nature', icon: '🌿', desc: 'Portrait en pleine nature', tier: 'plus' },
       // PRO (+3)
       { key: 'wearable_c7', label: 'Haute couture sophistiquée', icon: '👗', desc: 'Studio fond texturé sombre', tier: 'pro' },
       { key: 'wearable_c8', label: 'Rétro années 70', icon: '✨', desc: 'Ambiance soirée/décontractée', tier: 'pro' },
@@ -405,19 +423,19 @@ const Gallery = () => {
       { key: 'baby_garment_c8', label: 'Premium flat lay', icon: '💎', desc: 'À plat avec fleurs séchées', tier: 'pro' },
       { key: 'baby_garment_c9', label: 'Tapis de jeu 👶', icon: '🌸', desc: 'Porté par bébé sur tapis moelleux', tier: 'pro' }
     ],
-    other: [
+    child_garment: [
       // FREE (3)
-      { key: 'baby_c1', label: 'Doux naturel', icon: '👶', desc: 'Studio lumière douce et pastel', tier: 'free' },
-      { key: 'baby_c2', label: 'Bio organique', icon: '🌿', desc: 'Décor naturel, plantes', tier: 'free' },
-      { key: 'baby_c3', label: 'Classique enfantin', icon: '✨', desc: 'Ambiance joyeuse et lumineuse', tier: 'free' },
+      { key: 'child_garment_c1', label: 'Parc/jardin 👧', icon: '🌿', desc: 'Porté par enfant dans un parc ou jardin', tier: 'free' },
+      { key: 'child_garment_c2', label: 'Studio blanc', icon: '📸', desc: 'À plat sur fond blanc studio professionnel', tier: 'free' },
+      { key: 'child_garment_c3', label: 'Chambre enfant', icon: '🛏️', desc: 'À plat sur lit coloré avec peluches', tier: 'free' },
       // PLUS (+3)
-      { key: 'baby_c4', label: 'Moderne épuré', icon: '🏠', desc: 'Style minimaliste blanc', tier: 'plus' },
-      { key: 'baby_c5', label: 'Coloré gai', icon: '🎨', desc: 'Couleurs vives, ambiance joyeuse', tier: 'plus' },
-      { key: 'baby_c6', label: 'Vintage doux', icon: '🧸', desc: 'Décor rétro, lumière chaude', tier: 'plus' },
+      { key: 'child_garment_c4', label: 'Enfant jouant 👧', icon: '🧸', desc: 'Porté par enfant avec jouets en bois', tier: 'plus' },
+      { key: 'child_garment_c5', label: 'Flat lay coloré', icon: '🎨', desc: 'À plat avec crayons et accessoires enfant', tier: 'plus' },
+      { key: 'child_garment_c6', label: 'Urbain/street 👧', icon: '🏙️', desc: 'Porté par enfant, décor urbain style street photo', tier: 'plus' },
       // PRO (+3)
-      { key: 'baby_c7', label: 'Luxe contemporain', icon: '💎', desc: 'Studio avec accessoires premium', tier: 'pro' },
-      { key: 'baby_c8', label: 'Ambiance conte de fées', icon: '✨', desc: 'Décor féérique doux', tier: 'pro' },
-      { key: 'baby_c9', label: 'Personnalisé moderne', icon: '🎭', desc: 'Mise en scène personnalisée', tier: 'pro' }
+      { key: 'child_garment_c7', label: 'Mode enfant 👧', icon: '✨', desc: 'Shooting mode avec éclairage studio créatif', tier: 'pro' },
+      { key: 'child_garment_c8', label: 'Premium boutique', icon: '💎', desc: 'À plat mise en scène boutique haut de gamme', tier: 'pro' },
+      { key: 'child_garment_c9', label: 'Promenade famille 👧', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
     ]
   }
 
@@ -1146,6 +1164,27 @@ const Gallery = () => {
                   ))}
                 </div>
 
+                {/* Sélecteur de genre pour styles portés (adultes et enfants) */}
+                {selectedContext && (selectedContext.label?.includes('Porté') || ['child_garment_c1', 'child_garment_c4', 'child_garment_c6', 'child_garment_c7', 'child_garment_c9'].includes(selectedContext.key)) && (
+                  <div className="mt-3 p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                    <p className="text-sm font-semibold text-gray-700 mb-2">
+                      {selectedContext.key?.startsWith('child_garment_') ? '👧 Genre de l\'enfant :' : '👤 Genre du modèle :'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'male' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
+                        <input type="radio" name="modelGender" value="male" checked={modelGender === 'male'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
+                        <span className="text-2xl">{selectedContext.key?.startsWith('child_garment_') ? '👦' : '👨'}</span>
+                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Garçon' : 'Homme'}</span>
+                      </label>
+                      <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'female' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
+                        <input type="radio" name="modelGender" value="female" checked={modelGender === 'female'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
+                        <span className="text-2xl">{selectedContext.key?.startsWith('child_garment_') ? '👧' : '👩'}</span>
+                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Fille' : 'Femme'}</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
                 {/* Message upgrade pour FREE */}
                 {user?.subscription_type === 'free' && (
                   <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-primary-50 border border-purple-200 rounded-lg">
@@ -1171,8 +1210,8 @@ const Gallery = () => {
                 )}
               </div>
 
-              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel) */}
-              {seasonCategories.includes(detectProjectCategory(selectedPhoto.item_type || '')) && (
+              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel, uniquement pour thèmes extérieur/nature) */}
+              {selectedContext && seasonStyles.includes(selectedContext.key) && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
                     Ambiance saisonnière <span className="text-gray-400 font-normal">(optionnel)</span> :

@@ -79,7 +79,7 @@ class AIPhotoService
         'toy_c6' => 'dans un décor cartoon coloré avec fond uni vif et éléments graphiques ludiques style dessin animé',
         // JOUETS/PELUCHES - PRO
         'toy_c7' => 'dans une boutique de jouets artisanaux premium avec étagères en bois clair, fond pastel élégant et éclairage doux professionnel',
-        'toy_c8' => 'dans un décor d\'aventure jungle tropicale avec plantes exotiques, accessoires d\'exploration et lumière naturelle dorée',
+        'toy_c8' => 'dans un décor d\'aventure jungle tropicale avec plantes exotiques et accessoires d\'exploration',
         'toy_c9' => 'dans une ambiance cirque vintage avec rayures rouge et blanc, paillettes dorées, projecteurs et décor de chapiteau rétro festif',
 
         // ACCESSOIRES BÉBÉ - FREE
@@ -106,7 +106,20 @@ class AIPhotoService
         // VÊTEMENTS BÉBÉ - PRO
         'baby_garment_c7' => 'porté par un bébé (vrai bébé humain) dans les bras d\'un parent (mains adultes visibles tenant délicatement le bébé), photo lifestyle douce et émouvante avec lumière naturelle',
         'baby_garment_c8' => 'posé à plat en mise en scène lifestyle premium avec accessoires naissance haut de gamme, fleurs séchées délicates et éclairage professionnel doux',
-        'baby_garment_c9' => 'porté par un bébé (vrai bébé humain) confortablement installé sur un tapis de jeu moelleux dans une nursery bohème chic avec plantes vertes, coussins doux et lumière naturelle chaleureuse'
+        'baby_garment_c9' => 'porté par un bébé (vrai bébé humain) confortablement installé sur un tapis de jeu moelleux dans une nursery bohème chic avec plantes vertes, coussins doux et lumière naturelle chaleureuse',
+
+        // VÊTEMENTS ENFANT - FREE (v0.17.1)
+        'child_garment_c1' => 'porté par un enfant (vrai enfant humain de 3-8 ans) dans un parc ou jardin, pose joyeuse naturelle avec lumière douce',
+        'child_garment_c2' => 'posé à plat sur fond blanc studio avec éclairage uniforme professionnel et ombres douces, présentation produit épurée',
+        'child_garment_c3' => 'posé à plat sur un lit d\'enfant coloré avec coussins, peluches et couvertures douces en arrière-plan, ambiance chambre enfant joyeuse',
+        // VÊTEMENTS ENFANT - PLUS
+        'child_garment_c4' => 'porté par un enfant (vrai enfant humain de 3-8 ans) en train de jouer avec des jouets en bois naturel, ambiance lifestyle chaleureuse avec lumière naturelle',
+        'child_garment_c5' => 'en flat lay coloré avec accessoires enfant (crayons de couleur, petits jouets, livres illustrés) sur surface bois naturel clair',
+        'child_garment_c6' => 'porté par un enfant (vrai enfant humain de 3-8 ans) dans un décor urbain (rue piétonne, trottoir, place de ville), style street photo avec arrière-plan ville flou',
+        // VÊTEMENTS ENFANT - PRO
+        'child_garment_c7' => 'porté par un enfant (vrai enfant humain de 3-8 ans) dans un shooting mode professionnel avec pose naturelle et dynamique, éclairage studio créatif et fond neutre élégant',
+        'child_garment_c8' => 'posé à plat en mise en scène boutique haut de gamme avec accessoires raffinés, surface texturée noble et éclairage professionnel sophistiqué',
+        'child_garment_c9' => 'porté par un enfant (vrai enfant humain de 3-8 ans) tenant la main d\'un parent adulte pendant une promenade, les deux personnes visibles en entier ou en partie haute du corps, ambiance familiale complice et chaleureuse avec lumière naturelle douce'
     ];
 
 
@@ -218,22 +231,23 @@ class AIPhotoService
      * Utilisées pour ajouter une ambiance saisonnière aux photos
      */
     private const SEASONS = [
-        'spring' => 'dans une ambiance PRINTANIÈRE avec fleurs fraîches, bourgeons, lumière douce et claire, tons pastel et végétation naissante',
-        'summer' => 'dans une ambiance ESTIVALE avec lumière chaude et dorée, ciel bleu, végétation luxuriante, tons chauds et ensoleillés',
-        'autumn' => 'dans une ambiance AUTOMNALE avec feuilles dorées et orangées, lumière chaude et douce, tons chauds (orange, marron, bordeaux), ambiance cosy',
-        'winter' => 'dans une ambiance HIVERNALE avec neige, givre, lumière douce et froide, tons blancs et bleutés, ambiance chaleureuse et cocooning'
+        'spring' => '. SAISON OBLIGATOIRE: Le décor DOIT être PRINTANIER avec fleurs fraîches en floraison, bourgeons sur les arbres, herbe verte tendre, lumière douce et claire, tons pastel',
+        'summer' => '. SAISON OBLIGATOIRE: Le décor DOIT être ESTIVAL avec végétation luxuriante et verte, ciel bleu lumineux, lumière chaude et dorée, tons chauds et ensoleillés',
+        'autumn' => '. SAISON OBLIGATOIRE: Le décor DOIT être AUTOMNAL avec feuilles mortes dorées/orangées au sol et sur les arbres, lumière chaude et douce, tons chauds (orange, marron, bordeaux)',
+        'winter' => '. SAISON OBLIGATOIRE: Le décor DOIT être HIVERNAL avec neige au sol, arbres dénudés ou enneigés, givre visible, lumière froide et douce, tons blancs et bleutés'
     ];
 
     /**
      * [AI:Claude] Catégories où les saisons sont pertinentes
      */
     private const SEASON_CATEGORIES = [
-        'wearable',      // Vêtements portés en extérieur
-        'accessory',     // Bonnets/écharpes en hiver, chapeaux en été
-        'home',          // Décoration de saison
-        'toy',           // Décor extérieur peut varier
-        'baby_garment',  // Vêtements bébé
-        'baby'           // Accessoires bébé
+        'wearable',       // Vêtements portés en extérieur
+        'accessory',      // Bonnets/écharpes en hiver, chapeaux en été
+        'home',           // Décoration de saison
+        'toy',            // Décor extérieur peut varier
+        'baby_garment',   // Vêtements bébé
+        'baby',           // Accessoires bébé
+        'child_garment'   // Vêtements enfant
     ];
 
     /**
@@ -256,9 +270,17 @@ class AIPhotoService
         $seasonDescription = '';
         if ($season && isset(self::SEASONS[$season])) {
             // Vérifier si la catégorie supporte les saisons
-            $contextCategory = explode('_', $context)[0]; // ex: 'wearable' from 'wearable_c1'
+            // Pour child_garment_c6 → child_garment, pour wearable_c1 → wearable
+            $parts = explode('_', $context);
+            $lastPart = end($parts);
+            // Si le dernier élément commence par 'c' suivi d'un chiffre (c1, c2...), c'est un suffixe de style
+            if (preg_match('/^c\d+$/', $lastPart)) {
+                array_pop($parts);
+            }
+            $contextCategory = implode('_', $parts);
+
             if (in_array($contextCategory, self::SEASON_CATEGORIES)) {
-                $seasonDescription = ' ' . self::SEASONS[$season];
+                $seasonDescription = self::SEASONS[$season];
                 error_log("[PROMPT] Saison ajoutée: {$season} pour catégorie {$contextCategory}");
             }
         }
@@ -281,6 +303,39 @@ class AIPhotoService
         if (in_array($context, $babyGarmentWornContexts)) {
             error_log("[PROMPT] Vêtement bébé '{$itemName}' - PORTÉ PAR BÉBÉ" . ($season ? " - Saison: {$season}" : ""));
             return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. Le vêtement doit être porté par un VRAI BÉBÉ HUMAIN (pas une poupée, pas un mannequin). ÉTAPES CRITIQUES : 1) Garde le vêtement fait main porté par le bébé. 2) RETIRE tous les éléments parasites : objets indésirables, fond original moche. 3) Place le bébé portant le vêtement dans le nouveau contexte avec une pose naturelle, confortable et sécurisante pour un bébé. RÈGLE ABSOLUE sur les détails visuels du vêtement porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la position du bébé dans l'espace pour créer une belle composition naturelle et douce, mais tu NE PEUX PAS changer l'apparence visuelle du vêtement lui-même (couleurs, motifs, texture). Le vêtement porté doit être bien mis en valeur dans une scène réaliste et attendrissante.";
+        }
+
+        // [AI:Claude] v0.17.1 - Contextes de vêtements enfant PORTÉS
+        $childGarmentWornContexts = [
+            'child_garment_c1', // Enfant parc/jardin
+            'child_garment_c4', // Enfant jouant
+            'child_garment_c6', // Enfant urbain/street
+            'child_garment_c7', // Mode enfant
+            'child_garment_c9'  // Promenade famille
+        ];
+
+        if (in_array($context, $childGarmentWornContexts)) {
+            // [AI:Claude] Déterminer le genre de l'enfant
+            $childText = match($modelGender) {
+                'male' => 'un petit garçon (vrai enfant humain masculin)',
+                'female' => 'une petite fille (vrai enfant humain féminin)',
+                default => 'un enfant (vrai enfant humain)'
+            };
+            $childAge = 'âgé de 3 à 8 ans environ';
+
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. Le vêtement doit être porté par {$childText} {$childAge} (pas une poupée, pas un mannequin). ÉTAPES CRITIQUES : 1) Garde le vêtement fait main porté par l'enfant. 2) RETIRE tous les éléments parasites : objets indésirables, fond original moche. 3) Place l'enfant portant le vêtement dans le nouveau contexte avec une pose naturelle, joyeuse et adaptée à son âge (debout, jouant, courant...). RÈGLE ABSOLUE sur les détails visuels du vêtement porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la position de l'enfant dans l'espace pour créer une belle composition naturelle et dynamique, mais tu NE PEUX PAS changer l'apparence visuelle du vêtement lui-même (couleurs, motifs, texture). Le vêtement porté doit être bien mis en valeur dans une scène réaliste et joyeuse.";
+        }
+
+        // [AI:Claude] v0.17.1 - Contextes de vêtements enfant À PLAT
+        $childGarmentFlatContexts = [
+            'child_garment_c2', // Studio blanc
+            'child_garment_c3', // Chambre enfant
+            'child_garment_c5', // Flat lay coloré
+            'child_garment_c8'  // Premium boutique
+        ];
+
+        if (in_array($context, $childGarmentFlatContexts)) {
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement le vêtement enfant visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place le vêtement enfant isolé complètement à plat sur la surface horizontale dans le nouveau contexte, comme s'il était naturellement posé par gravité, JAMAIS debout ou en position verticale. RÈGLE ABSOLUE sur les détails visuels : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels de l'ouvrage. Tu PEUX changer l'angle de vue (vue du dessus, légèrement de côté, etc.) et la position sur la surface pour que ce soit naturel et bien composé, mais le vêtement doit toujours rester à plat horizontalement. Tu NE PEUX PAS changer l'apparence visuelle (couleurs, motifs, texture). Le vêtement enfant doit être seul et bien mis en scène.";
         }
 
         // [AI:Claude] v0.14.0 - Prompt ULTRA STRICT spécifique pour photos portées (adultes)
