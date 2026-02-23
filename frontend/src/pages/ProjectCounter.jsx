@@ -184,7 +184,8 @@ const ProjectCounter = () => {
   const [sectionForm, setSectionForm] = useState({
     name: '',
     description: '',
-    total_rows: ''
+    total_rows: '',
+    notes: ''
   })
   // [AI:Claude] v0.16.2: Modale de confirmation pour attribuer les rangs existants
   const [showRowsConfirmModal, setShowRowsConfirmModal] = useState(false)
@@ -2203,7 +2204,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Ouvrir modal d'ajout de section
   const openAddSectionModal = () => {
-    setSectionForm({ name: '', description: '', total_rows: '' })
+    setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
     setEditingSection(null)
     setShowAddSectionModal(true)
   }
@@ -2213,7 +2214,8 @@ const ProjectCounter = () => {
     setSectionForm({
       name: section.name,
       description: section.description || '',
-      total_rows: section.total_rows || ''
+      total_rows: section.total_rows || '',
+      notes: section.notes || ''
     })
     setEditingSection(section)
     setShowAddSectionModal(true)
@@ -2272,7 +2274,8 @@ const ProjectCounter = () => {
         name: sectionForm.name.trim(),
         description: sectionForm.description.trim() || null,
         total_rows: sectionForm.total_rows ? parseInt(sectionForm.total_rows) : null,
-        display_order: editingSection ? editingSection.display_order : sections.length
+        display_order: editingSection ? editingSection.display_order : sections.length,
+        notes: sectionForm.notes.trim() || null
       }
 
       // [AI:Claude] N'envoyer current_row QUE lors de la création, pas lors de la modification
@@ -2304,7 +2307,7 @@ const ProjectCounter = () => {
       }
 
       setShowAddSectionModal(false)
-      setSectionForm({ name: '', description: '', total_rows: '' })
+      setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
       setEditingSection(null)
     } catch (err) {
       console.error('Erreur sauvegarde section:', err)
@@ -5948,7 +5951,7 @@ Rang 3 : *1ms, aug* x6 (18)
                 onClick={() => {
                   setShowProjectCompletionModal(false)
                   setShowAddSectionModal(true)
-                  setSectionForm({ name: '', description: '', total_rows: '' })
+                  setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
                   setEditingSection(null)
                 }}
                 className="flex-1 px-6 py-4 border-2 border-primary-600 text-primary-600 rounded-lg font-bold hover:bg-primary-50 transition text-center"
@@ -6012,7 +6015,7 @@ Rang 3 : *1ms, aug* x6 (18)
               </div>
 
               {/* Nombre de rangs */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nombre total de rangs (optionnel)
                 </label>
@@ -6026,13 +6029,27 @@ Rang 3 : *1ms, aug* x6 (18)
                 />
               </div>
 
+              {/* Notes */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-amber-700 mb-2">
+                  📝 Notes (optionnel)
+                </label>
+                <textarea
+                  value={sectionForm.notes}
+                  onChange={(e) => setSectionForm({ ...sectionForm, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-amber-50"
+                  placeholder="Instructions particulières, rappels, modifications..."
+                />
+              </div>
+
               {/* Boutons */}
               <div className="flex space-x-3">
                 <button
                   type="button"
                   onClick={() => {
                     setShowAddSectionModal(false)
-                    setSectionForm({ name: '', description: '', total_rows: '' })
+                    setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
                     setEditingSection(null)
                   }}
                   disabled={savingSection}

@@ -6,7 +6,7 @@
 
 const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUnit }) => {
   const handleAddSection = () => {
-    onSectionsChange([...sections, { name: '', description: '', total_rows: null }])
+    onSectionsChange([...sections, { name: '', description: '', total_rows: null, notes: '' }])
   }
 
   const handleRemoveSection = (index) => {
@@ -120,6 +120,13 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
                   value={section.description || ''}
                   onChange={(e) => handleUpdateSection(index, 'description', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                />
+                <textarea
+                  placeholder="📝 Notes (optionnel) - instructions, rappels..."
+                  value={section.notes || ''}
+                  onChange={(e) => handleUpdateSection(index, 'notes', e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-amber-50 text-sm"
                 />
               </div>
 
