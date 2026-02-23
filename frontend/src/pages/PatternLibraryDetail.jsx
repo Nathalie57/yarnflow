@@ -726,10 +726,11 @@ const PatternLibraryDetail = () => {
                     <option value="">-- Sélectionner --</option>
                     <option value="Vêtements">🧥 Vêtements</option>
                     <option value="Accessoires">👜 Accessoires</option>
-                    <option value="Maison/Déco">🏠 Maison/Déco</option>
                     <option value="Jouets/Peluches">🧸 Jouets/Peluches</option>
                     <option value="Vêtements bébé">👶 Vêtements bébé</option>
                     <option value="Accessoires bébé">🍼 Accessoires bébé</option>
+                    <option value="Vêtements enfant">👧 Vêtements enfant</option>
+                    <option value="Maison/Déco">🏠 Maison/Déco</option>
                   </select>
                 </div>
 

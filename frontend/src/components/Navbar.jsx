@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
-const Navbar = ({ onOpenOnboarding }) => {
+const Navbar = () => {
   const { user, logout, isAdmin } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -54,26 +54,6 @@ const Navbar = ({ onOpenOnboarding }) => {
                   </div>
 
                   <div className="p-2">
-                    <button
-                      onClick={() => {
-                        setShowHelpMenu(false)
-                        if (onOpenOnboarding) {
-                          onOpenOnboarding()
-                        }
-                      }}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
-                    >
-                      <span className="text-2xl">🎓</span>
-                      <div className="flex-1">
-                        <p className="font-semibold text-gray-900 group-hover:text-primary-700">
-                          Guide de démarrage
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          Redécouvrez les fonctionnalités
-                        </p>
-                      </div>
-                    </button>
-
                     <Link
                       to="/contact"
                       onClick={() => setShowHelpMenu(false)}
@@ -164,26 +144,6 @@ const Navbar = ({ onOpenOnboarding }) => {
                     </div>
 
                     <div className="p-2">
-                      <button
-                        onClick={() => {
-                          setShowHelpMenuDesktop(false)
-                          if (onOpenOnboarding) {
-                            onOpenOnboarding()
-                          }
-                        }}
-                        className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
-                      >
-                        <span className="text-2xl">🎓</span>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900 group-hover:text-primary-700">
-                            Guide de démarrage
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            Redécouvrez les fonctionnalités
-                          </p>
-                        </div>
-                      </button>
-
                       <Link
                         to="/contact"
                         onClick={() => setShowHelpMenuDesktop(false)}

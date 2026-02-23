@@ -834,9 +834,9 @@ class Project extends BaseModel
     public function createSection(int $projectId, array $sectionData): int|false
     {
         $query = "INSERT INTO project_sections
-                  (project_id, name, description, display_order, total_rows, current_row)
+                  (project_id, name, description, notes, display_order, total_rows, current_row)
                   VALUES
-                  (:project_id, :name, :description, :display_order, :total_rows, :current_row)";
+                  (:project_id, :name, :description, :notes, :display_order, :total_rows, :current_row)";
 
         $stmt = $this->db->prepare($query);
 
@@ -844,6 +844,7 @@ class Project extends BaseModel
             ':project_id' => $projectId,
             ':name' => $sectionData['name'],
             ':description' => $sectionData['description'] ?? null,
+            ':notes' => $sectionData['notes'] ?? null,
             ':display_order' => $sectionData['display_order'] ?? 0,
             ':total_rows' => $sectionData['total_rows'] ?? null,
             ':current_row' => $sectionData['current_row'] ?? 0  // [AI:Claude] v0.16.2: Support initial row count
@@ -932,7 +933,7 @@ class Project extends BaseModel
      */
     public function updateSection(int $sectionId, array $data): bool
     {
-        $allowedFields = ['name', 'description', 'display_order', 'total_rows', 'current_row', 'counter_unit', 'is_completed'];
+        $allowedFields = ['name', 'description', 'notes', 'display_order', 'total_rows', 'current_row', 'counter_unit', 'is_completed'];
 
         $fields = [];
         $params = [':id' => $sectionId];

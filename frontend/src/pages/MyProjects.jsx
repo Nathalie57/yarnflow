@@ -538,15 +538,27 @@ const MyProjects = () => {
     )
   }
 
-  // [AI:Claude] Quota utilisateur (v0.14.0 - FREE/PLUS/PRO)
+  // [AI:Claude] Quota utilisateur (v0.14.0 - FREE/PLUS/PRO) + v0.17.1 vérification expiration
   const getProjectQuota = () => {
-    if (!user) return { current: 0, max: 3, total: 0 }
+    if (!user) return { current: 0, max: 3, total: 0, expired: false, effectiveType: 'free' }
 
-    const max = user.subscription_type === 'free' ? 3
-      : (user.subscription_type === 'plus' || user.subscription_type === 'plus_annual') ? 7
-      : user.subscription_type === 'pro' ? 999
-      : user.subscription_type === 'pro_annual' ? 999
-      : user.subscription_type === 'early_bird' ? 999
+    // [AI:Claude] Vérifier si l'abonnement est expiré
+    let effectiveType = user.subscription_type || 'free'
+    let isExpired = false
+
+    if (effectiveType !== 'free' && user.subscription_expires_at) {
+      const expiresAt = new Date(user.subscription_expires_at)
+      if (expiresAt <= new Date()) {
+        isExpired = true
+        effectiveType = 'free' // Traiter comme free si expiré
+      }
+    }
+
+    const max = effectiveType === 'free' ? 3
+      : (effectiveType === 'plus' || effectiveType === 'plus_annual') ? 7
+      : effectiveType === 'pro' ? 999
+      : effectiveType === 'pro_annual' ? 999
+      : effectiveType === 'early_bird' ? 999
       : 999
 
     // [AI:Claude] Compter uniquement les projets ACTIFS (non terminés)
@@ -555,7 +567,10 @@ const MyProjects = () => {
     return {
       current: activeProjectsCount,
       max,
-      total: projects.length
+      total: projects.length,
+      expired: isExpired,
+      effectiveType,
+      originalType: user.subscription_type
     }
   }
 
@@ -622,12 +637,29 @@ const MyProjects = () => {
                   ➕ Nouveau Projet
                 </button>
               ) : (
-                <Link
-                  to="/subscription"
-                  className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-bold transition touch-manipulation bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 active:from-primary-800 active:to-primary-900 text-center flex items-center gap-2 justify-center focus:outline-none focus:ring-4 focus:ring-primary-300"
-                >
-                  <span>✨ Débloquer plus de projets</span>
-                </Link>
+                <div className="flex flex-col items-end gap-2">
+                  <button
+                    disabled
+                    className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
+                    title={`Quota atteint : ${quota.current}/${quota.max} projets actifs`}
+                  >
+                    ➕ Nouveau Projet
+                  </button>
+                  <div className="text-right">
+                    <p className="text-xs text-red-600 font-medium">
+                      {quota.expired
+                        ? `⚠️ Abonnement ${quota.originalType} expiré`
+                        : `Quota atteint (${quota.current}/${quota.max})`
+                      }
+                    </p>
+                    <Link
+                      to="/subscription"
+                      className="text-xs text-primary-600 hover:text-primary-700 font-semibold underline"
+                    >
+                      {quota.expired ? 'Renouveler mon abonnement →' : 'Passer au niveau supérieur →'}
+                    </Link>
+                  </div>
+                </div>
               )}
             </div>
 

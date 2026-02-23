@@ -49,6 +49,9 @@ const ProjectCounter = () => {
   const [expandedSections, setExpandedSections] = useState(new Set()) // [AI:Claude] Sections dépliées
   const [sectionsCollapsed, setSectionsCollapsed] = useState(true) // [AI:Claude] Tout le bloc sections replié/déplié par défaut
   const [sectionsSortBy, setSectionsSortBy] = useState('created') // [AI:Claude] Tri des sections (v0.14.0 - défaut: ordre de création)
+  const [expandedNotesSection, setExpandedNotesSection] = useState(null) // [AI:Claude] Section avec notes dépliées
+  const [sectionNotesText, setSectionNotesText] = useState('') // [AI:Claude] Texte des notes en cours d'édition
+  const [isSavingSectionNotes, setIsSavingSectionNotes] = useState(false) // [AI:Claude] Sauvegarde en cours
 
   // [AI:Claude] État du compteur
   const [currentRow, setCurrentRow] = useState(0)
@@ -2311,6 +2314,45 @@ const ProjectCounter = () => {
     }
   }
 
+  // [AI:Claude] Toggle notes de section (dépliable)
+  const toggleSectionNotes = (section) => {
+    if (expandedNotesSection === section.id) {
+      // Fermer
+      setExpandedNotesSection(null)
+      setSectionNotesText('')
+    } else {
+      // Ouvrir
+      setExpandedNotesSection(section.id)
+      setSectionNotesText(section.notes || '')
+    }
+  }
+
+  // [AI:Claude] Sauvegarder les notes de section
+  const saveSectionNotes = async (sectionId) => {
+    setIsSavingSectionNotes(true)
+    try {
+      await api.put(`/projects/${projectId}/sections/${sectionId}`, {
+        notes: sectionNotesText
+      })
+
+      // Mettre à jour localement
+      setSections(prevSections =>
+        prevSections.map(s =>
+          s.id === sectionId
+            ? { ...s, notes: sectionNotesText }
+            : s
+        )
+      )
+
+      showAlert('Notes sauvegardées', 'success')
+    } catch (err) {
+      console.error('Erreur sauvegarde notes section:', err)
+      showAlert('Erreur lors de la sauvegarde des notes', 'error')
+    } finally {
+      setIsSavingSectionNotes(false)
+    }
+  }
+
   // [AI:Claude] Supprimer une section
   const handleDeleteSection = (section) => {
     showConfirm(
@@ -3244,6 +3286,27 @@ const ProjectCounter = () => {
                             )}
                           </div>
                         )}
+
+                        {/* Zone notes dépliable */}
+                        {expandedNotesSection === section.id && (
+                          <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg" onClick={(e) => e.stopPropagation()}>
+                            <textarea
+                              value={sectionNotesText}
+                              onChange={(e) => setSectionNotesText(e.target.value)}
+                              placeholder="Notes pour cette section..."
+                              className="w-full h-24 p-2 text-sm border border-amber-300 rounded resize-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
+                            />
+                            <div className="flex items-center justify-end mt-2">
+                              <button
+                                onClick={() => saveSectionNotes(section.id)}
+                                disabled={isSavingSectionNotes}
+                                className="px-3 py-1 text-sm bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50 transition"
+                              >
+                                {isSavingSectionNotes ? '...' : 'Sauvegarder'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </td>
 
                       {/* Progression */}
@@ -3322,6 +3385,28 @@ const ProjectCounter = () => {
                           >
                             🗑️
                           </button>
+                          {/* Séparateur + Bouton Notes */}
+                          <div className="ml-3 pl-3 border-l border-gray-200">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleSectionNotes(section)
+                              }}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition shadow-sm ${
+                                expandedNotesSection === section.id
+                                  ? 'bg-amber-500 text-white shadow-amber-200'
+                                  : section.notes
+                                    ? 'bg-amber-500 text-white shadow-amber-200'
+                                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
+                              }`}
+                              title={expandedNotesSection === section.id ? 'Fermer les notes' : section.notes ? 'Voir/modifier les notes' : 'Ajouter des notes'}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="text-xs font-semibold">Notes</span>
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -3386,6 +3471,25 @@ const ProjectCounter = () => {
                         </h3>
                         {!isActive && isCompleted && <span className="text-green-600 text-xs">✓</span>}
                       </div>
+                      {/* Bouton notes dans le header - style bulle */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleSectionNotes(section)
+                        }}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full transition shadow-sm ${
+                          expandedNotesSection === section.id
+                            ? 'bg-amber-500 text-white shadow-amber-200'
+                            : section.notes
+                              ? 'bg-amber-500 text-white shadow-amber-200'
+                              : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
+                        }`}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-xs font-semibold">Notes</span>
+                      </button>
                       <span className="text-gray-400 p-1">
                         {isExpanded ? '▾' : '▸'}
                       </span>
@@ -3487,6 +3591,28 @@ const ProjectCounter = () => {
                             title="Supprimer"
                           >
                             🗑️
+                          </button>
+                        </div>
+
+                      </div>
+                    )}
+
+                    {/* Zone notes dépliable (mobile) - toujours accessible */}
+                    {expandedNotesSection === section.id && (
+                      <div className="mt-2 mx-4 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <textarea
+                          value={sectionNotesText}
+                          onChange={(e) => setSectionNotesText(e.target.value)}
+                          placeholder="Notes pour cette section..."
+                          className="w-full h-28 p-2 text-sm border border-amber-300 rounded resize-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
+                        />
+                        <div className="flex items-center justify-end mt-2">
+                          <button
+                            onClick={() => saveSectionNotes(section.id)}
+                            disabled={isSavingSectionNotes}
+                            className="px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 transition"
+                          >
+                            {isSavingSectionNotes ? '...' : 'Sauvegarder'}
                           </button>
                         </div>
                       </div>

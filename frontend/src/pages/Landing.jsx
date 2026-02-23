@@ -133,10 +133,10 @@ const Landing = () => {
             <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition">
               <div className="text-4xl mb-4">📚</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                Tous vos patrons au même endroit
+                Centralisez tous vos patrons
               </h3>
               <p className="text-gray-600 leading-relaxed">
-                Importez vos PDF, ajoutez des liens, organisez facilement votre bibliothèque.
+                PDF, liens Ravelry, notes personnelles… Tous vos patrons réunis et accessibles en un clic, même sans projet en cours.
               </p>
             </div>
 

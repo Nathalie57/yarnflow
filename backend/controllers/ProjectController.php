@@ -230,15 +230,29 @@ class ProjectController
             error_log("[PROJECT CREATE] Can create: ".($this->canCreateProject($user, $activeProjectCount) ? 'YES' : 'NO'));
 
             if (!$this->canCreateProject($user, $activeProjectCount)) {
-                $maxProjects = match($user['subscription_type']) {
+                // [AI:Claude] Déterminer le vrai type d'abonnement (en tenant compte de l'expiration)
+                $effectiveSubscription = $user['subscription_type'] ?? 'free';
+                if ($effectiveSubscription !== 'free' && isset($user['subscription_expires_at']) && $user['subscription_expires_at'] !== null) {
+                    if (strtotime($user['subscription_expires_at']) <= time()) {
+                        $effectiveSubscription = 'free'; // Abonnement expiré
+                    }
+                }
+
+                $maxProjects = match($effectiveSubscription) {
                     'free' => 3,
                     'plus', 'plus_annual' => 7,
                     default => 999
                 };
-                $upgradeMessage = $user['subscription_type'] === 'free'
+
+                $subscriptionLabel = $effectiveSubscription;
+                if ($effectiveSubscription === 'free' && $user['subscription_type'] !== 'free') {
+                    $subscriptionLabel = 'free (abonnement ' . $user['subscription_type'] . ' expiré)';
+                }
+
+                $upgradeMessage = $effectiveSubscription === 'free'
                     ? 'Passez à PLUS (2.99€/mois, 7 projets) ou PRO (4.99€/mois, illimité)'
                     : 'Passez à PRO (4.99€/mois) pour des projets illimités';
-                throw new \Exception("Quota de projets actifs atteint. Vous avez $activeProjectCount projet(s) actif(s), maximum autorisé: $maxProjects (abonnement: {$user['subscription_type']}). Terminez un projet ou $upgradeMessage.");
+                throw new \Exception("Quota de projets actifs atteint. Vous avez $activeProjectCount projet(s) actif(s), maximum autorisé: $maxProjects (abonnement: {$subscriptionLabel}). Terminez un projet ou $upgradeMessage.");
             }
 
             // [AI:Claude] Préparation des données

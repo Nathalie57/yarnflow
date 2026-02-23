@@ -25,7 +25,7 @@ class RateLimiter
     // Configuration des limites par endpoint
     private const LIMITS = [
         '/api/auth/login' => [5, 900],      // 5 requêtes / 15 minutes
-        '/api/auth/register' => [3, 3600],  // 3 requêtes / 1 heure
+        '/api/auth/register' => [10, 3600],  // 10 requêtes / 1 heure (augmenté pour éviter blocage double-submit)
         '/api/auth/forgot-password' => [3, 3600], // 3 requêtes / 1 heure
         '/api/photos/upload' => [10, 300],  // 10 requêtes / 5 minutes
         '/api/contact' => [3, 3600],        // 3 requêtes / 1 heure (déjà existant)

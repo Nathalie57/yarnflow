@@ -33,18 +33,33 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // [AI:Claude] Empêcher double-submit
+    if (loading) {
+      console.log('[Register] Double-submit bloqué')
+      return
+    }
+
     setError('')
     setLoading(true)
 
-    const result = await register(formData)
+    console.log('[Register] Envoi inscription...', formData.email)
 
-    if (result.success) {
-      navigate('/dashboard')
-    } else {
-      setError(result.error)
+    try {
+      const result = await register(formData)
+      console.log('[Register] Résultat:', result)
+
+      if (result.success) {
+        navigate('/dashboard')
+      } else {
+        setError(result.error)
+        setLoading(false)
+      }
+    } catch (err) {
+      console.error('[Register] Exception:', err)
+      setError('Erreur inattendue')
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   // [AI:Claude] Gestion OAuth Google
