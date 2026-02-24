@@ -419,7 +419,8 @@ const MyProjects = () => {
             name: sections[i].name,
             description: sections[i].description || null,
             total_rows: sections[i].total_rows || null,
-            display_order: i
+            display_order: i,
+            notes: sections[i].notes || null
           })
         }
       }
