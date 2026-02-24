@@ -2517,6 +2517,10 @@ const ProjectCounter = () => {
       // Sinon on ouvre uniquement celle-ci
       if (!prev.has(sectionId)) {
         newSet.add(sectionId)
+      } else {
+        // Fermer aussi les notes si on replie la section
+        setExpandedNotesSection(null)
+        setSectionNotesText('')
       }
       return newSet
     })
