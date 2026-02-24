@@ -1996,6 +1996,10 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Changer la section en cours
   const handleChangeSection = async (sectionId) => {
+    // [AI:Claude] Fermer les notes quand on change de section
+    setExpandedNotesSection(null)
+    setSectionNotesText('')
+
     try {
       // [AI:Claude] FIX BUG x4: Vérifier si on est déjà en train de terminer une session
       const wasTimerRunning = isTimerRunning
