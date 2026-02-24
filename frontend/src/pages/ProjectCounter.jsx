@@ -2511,16 +2511,15 @@ const ProjectCounter = () => {
   // [AI:Claude] Déplier/replier une section (accordéon - une seule ouverte à la fois)
   const toggleSectionExpanded = (sectionId, e) => {
     if (e) e.stopPropagation()
+    // Fermer les notes de toute section quand on change de section
+    setExpandedNotesSection(null)
+    setSectionNotesText('')
     setExpandedSections(prev => {
       const newSet = new Set()
       // Si la section était déjà ouverte, on la ferme (newSet reste vide)
       // Sinon on ouvre uniquement celle-ci
       if (!prev.has(sectionId)) {
         newSet.add(sectionId)
-      } else {
-        // Fermer aussi les notes si on replie la section
-        setExpandedNotesSection(null)
-        setSectionNotesText('')
       }
       return newSet
     })
