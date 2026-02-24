@@ -89,5 +89,33 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- [AI:Claude] Force la mise à jour du Service Worker pour tous les utilisateurs -->
+    <script>
+      const SW_VERSION = '2024022401'; // Incrémenter à chaque déploiement majeur
+      const STORED_VERSION = localStorage.getItem('sw_version');
+
+      if (STORED_VERSION !== SW_VERSION) {
+        // Nouvelle version détectée - nettoyer les caches
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            registrations.forEach(registration => {
+              registration.unregister();
+            });
+          });
+          // Vider les caches
+          if ('caches' in window) {
+            caches.keys().then(names => {
+              names.forEach(name => caches.delete(name));
+            });
+          }
+        }
+        localStorage.setItem('sw_version', SW_VERSION);
+        // Recharger si c'était une ancienne version (pas premier visit)
+        if (STORED_VERSION) {
+          window.location.reload(true);
+        }
+      }
+    </script>
   </body>
 </html>
