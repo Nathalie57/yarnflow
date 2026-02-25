@@ -24,6 +24,7 @@ import TagBadge from '../components/TagBadge'
 import TagInput from '../components/TagInput'
 import SatisfactionModal from '../components/SatisfactionModal'
 import FirstRowCelebration from '../components/FirstRowCelebration' // [AI:Claude] v0.17.0 - Célébration premier rang
+import InfoBubble from '../components/InfoBubble' // [AI:Claude] Bulles d'info contextuelles
 
 const ProjectCounter = () => {
   const { projectId } = useParams()
@@ -3077,6 +3078,11 @@ const ProjectCounter = () => {
                   {isWakeLockActive && (
                     <span className="text-green-600" title="Écran maintenu allumé">🔋</span>
                   )}
+                  <InfoBubble
+                    text="Quand le timer tourne, l'écran reste allumé. Vous pouvez utiliser votre téléphone normalement (appels, SMS, musique)."
+                    position="bottom"
+                    size="sm"
+                  />
                 </div>
               </div>
 
@@ -3161,6 +3167,11 @@ const ProjectCounter = () => {
             <h2 className="text-sm font-semibold text-gray-900">
               🧩 Sections du projet {sections.length > 0 && `(${sections.length})`}
             </h2>
+            <InfoBubble
+              text="Divisez votre projet en parties (corps, manches, bordure...) pour suivre la progression de chaque étape séparément."
+              position="bottom"
+              size="sm"
+            />
           </div>
           <button
             onClick={(e) => {
