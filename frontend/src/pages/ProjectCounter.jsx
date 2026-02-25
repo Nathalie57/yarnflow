@@ -52,6 +52,7 @@ const ProjectCounter = () => {
   const [expandedNotesSection, setExpandedNotesSection] = useState(null) // [AI:Claude] Section avec notes dépliées
   const [sectionNotesText, setSectionNotesText] = useState('') // [AI:Claude] Texte des notes en cours d'édition
   const [isSavingSectionNotes, setIsSavingSectionNotes] = useState(false) // [AI:Claude] Sauvegarde en cours
+  const [openSectionMenu, setOpenSectionMenu] = useState(null) // [AI:Claude] Menu "..." ouvert pour quelle section
 
   // [AI:Claude] État du compteur
   const [currentRow, setCurrentRow] = useState(0)
@@ -1996,9 +1997,10 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Changer la section en cours
   const handleChangeSection = async (sectionId) => {
-    // [AI:Claude] Fermer les notes quand on change de section
+    // [AI:Claude] Fermer les notes et le menu quand on change de section
     setExpandedNotesSection(null)
     setSectionNotesText('')
+    setOpenSectionMenu(null)
 
     try {
       // [AI:Claude] FIX BUG x4: Vérifier si on est déjà en train de terminer une session
@@ -2515,9 +2517,10 @@ const ProjectCounter = () => {
   // [AI:Claude] Déplier/replier une section (accordéon - une seule ouverte à la fois)
   const toggleSectionExpanded = (sectionId, e) => {
     if (e) e.stopPropagation()
-    // Fermer les notes de toute section quand on change de section
+    // Fermer les notes et le menu de toute section quand on change de section
     setExpandedNotesSection(null)
     setSectionNotesText('')
+    setOpenSectionMenu(null)
     setExpandedSections(prev => {
       const newSet = new Set()
       // Si la section était déjà ouverte, on la ferme (newSet reste vide)
@@ -3582,26 +3585,58 @@ const ProjectCounter = () => {
                           >
                             {isCompleted ? '✅ Terminée' : '✓ Marquer terminée'}
                           </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openEditSectionModal(section)
-                            }}
-                            className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
-                            title="Modifier"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteSection(section)
-                            }}
-                            className="p-2 bg-gray-100 text-red-600 rounded-lg hover:bg-red-50 transition"
-                            title="Supprimer"
-                          >
-                            🗑️
-                          </button>
+                          {/* Menu "..." pour modifier/supprimer */}
+                          <div className="relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOpenSectionMenu(openSectionMenu === section.id ? null : section.id)
+                              }}
+                              className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
+                            >
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                              </svg>
+                            </button>
+                            {/* Menu déroulant */}
+                            {openSectionMenu === section.id && (
+                              <>
+                                {/* Overlay pour fermer */}
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setOpenSectionMenu(null)
+                                  }}
+                                />
+                                {/* Menu */}
+                                <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setOpenSectionMenu(null)
+                                      openEditSectionModal(section)
+                                    }}
+                                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition"
+                                  >
+                                    <span>✏️</span>
+                                    <span>Modifier</span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setOpenSectionMenu(null)
+                                      handleDeleteSection(section)
+                                    }}
+                                    className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 border-t border-gray-100 transition"
+                                  >
+                                    <span>🗑️</span>
+                                    <span>Supprimer</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
 
                       </div>
