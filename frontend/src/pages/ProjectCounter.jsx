@@ -16,6 +16,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useImagePreview } from '../hooks/useImagePreview'
 import { useWakeLock } from '../hooks/useWakeLock'
+import { useHints } from '../hooks/useHints'
 import api, { networkUtils } from '../services/api'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
@@ -39,6 +40,7 @@ const ProjectCounter = () => {
     clearPreview
   } = useImagePreview()
   const { isSupported: isWakeLockSupported, isActive: isWakeLockActive, request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
+  const { triggerOnce } = useHints() // [AI:Claude] Hints contextuels
 
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -1415,6 +1417,9 @@ const ProjectCounter = () => {
 
       // [AI:Claude] Activer le wake lock pour garder l'écran allumé
       await requestWakeLock()
+
+      // [AI:Claude] Hint contextuel expliquant le wake lock (1ère fois uniquement)
+      triggerOnce('timer_wake_lock')
     } catch (err) {
       console.error('Erreur démarrage session:', err)
       showAlert('Erreur lors du démarrage de la session', 'error')
@@ -3007,6 +3012,11 @@ const ProjectCounter = () => {
               >
                 +
               </button>
+              <InfoBubble
+                text="Cliquez directement sur le nombre pour le modifier manuellement (pratique si vous avez tricoté plusieurs rangs d'affilée)."
+                position="bottom"
+                size="sm"
+              />
             </div>
           </div>
 
@@ -3739,7 +3749,14 @@ const ProjectCounter = () => {
                 <div>
                   {projectPhotos.length > 0 && (
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold text-gray-900">Galerie photos</h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-lg font-semibold text-gray-900">Galerie photos</h2>
+                        <InfoBubble
+                          text="Ajoutez vos photos puis embellissez-les avec notre IA ! Elle peut transformer vos créations en images professionnelles pour Etsy, Instagram..."
+                          position="bottom"
+                          size="sm"
+                        />
+                      </div>
                       <button
                         onClick={() => setShowPhotoUploadModal(true)}
                         className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"

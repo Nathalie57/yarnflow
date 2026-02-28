@@ -18,6 +18,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import ProjectFilters from '../components/ProjectFilters'
+import InfoBubble from '../components/InfoBubble'
 import TagBadge from '../components/TagBadge'
 import UpgradePrompt from '../components/UpgradePrompt'
 import CreateProjectWizard from '../components/CreateProjectWizard'
@@ -782,6 +783,14 @@ const MyProjects = () => {
       {hasLoadedOnce && !error && projects.length > 0 && (
         hasStartedAtLeastOneProject ? (
           <div className="mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm font-medium text-gray-600">Filtrer et trier</span>
+              <InfoBubble
+                text="Filtrez vos projets par statut (en cours, terminés), favoris ou tags. Les tags personnalisés sont disponibles avec le plan PLUS."
+                position="right"
+                size="sm"
+              />
+            </div>
             <ProjectFilters
               onFilterChange={setFilters}
               availableTags={availableTags}

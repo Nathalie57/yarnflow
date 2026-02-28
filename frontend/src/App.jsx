@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
+import { HintsProvider } from './contexts/HintsContext'
 import PrivateRoute from './components/PrivateRoute'
 import Layout from './components/Layout'
 import PWAPrompt from './components/PWAPrompt'
+import ContextualHint from './components/ContextualHint'
 import CookieConsent from 'react-cookie-consent'
 
 // Pages
@@ -70,6 +72,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <HintsProvider>
         <AnalyticsTracker />
         <Routes>
           {/* Routes publiques */}
@@ -128,6 +131,7 @@ function App() {
           </Route>
         </Routes>
         <PWAPrompt />
+        <ContextualHint />
 
         {/* [AI:Claude] Bannière informative (mode cookieless = pas besoin de consentement) */}
         <CookieConsent
@@ -159,6 +163,7 @@ function App() {
             </p>
           </div>
         </CookieConsent>
+        </HintsProvider>
       </AuthProvider>
     </BrowserRouter>
   )

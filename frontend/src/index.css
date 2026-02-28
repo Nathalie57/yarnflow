@@ -64,3 +64,29 @@
     transform: translateY(0);
   }
 }
+
+/* Animation ring pulsant pour InfoBubble */
+@keyframes info-ping {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75%, 100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.info-bubble-ping::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background-color: rgb(59 130 246 / 0.5); /* blue-500 */
+  animation: info-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.info-bubble-ping:hover::before {
+  animation: none;
+  opacity: 0;
+}

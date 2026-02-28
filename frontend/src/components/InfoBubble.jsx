@@ -4,7 +4,7 @@
  * @created 2026-02-25 by [AI:Claude]
  */
 
-import { useState } from 'react'
+import { useState, useEffect, useId, useRef } from 'react'
 
 /**
  * Bulle d'info contextuelle
@@ -16,11 +16,80 @@ import { useState } from 'react'
  */
 const InfoBubble = ({ text, position = 'top', size = 'sm' }) => {
   const [isOpen, setIsOpen] = useState(false)
+  const [bubblePosition, setBubblePosition] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef(null)
+  const bubbleId = useId()
+
+  // Écouter les autres bulles qui s'ouvrent pour se fermer
+  useEffect(() => {
+    const handleOtherBubbleOpen = (e) => {
+      if (e.detail !== bubbleId && isOpen) {
+        setIsOpen(false)
+      }
+    }
+    window.addEventListener('infobubble-open', handleOtherBubbleOpen)
+    return () => window.removeEventListener('infobubble-open', handleOtherBubbleOpen)
+  }, [bubbleId, isOpen])
+
+  // Fermer si on clique n'importe où dans l'app
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleClickOutside = () => {
+      setIsOpen(false)
+    }
+    // Petit délai pour éviter de fermer immédiatement à l'ouverture
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside)
+    }, 10)
+
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [isOpen])
+
+  // Calculer la position de la bulle quand elle s'ouvre
+  useEffect(() => {
+    if (!isOpen || !buttonRef.current) return
+
+    const rect = buttonRef.current.getBoundingClientRect()
+    const bubbleWidth = 256 // w-64 = 16rem = 256px
+
+    let top, left
+
+    switch (position) {
+      case 'top':
+        top = rect.top - 8 // mb-2
+        left = rect.left + rect.width / 2 - bubbleWidth / 2
+        break
+      case 'bottom':
+        top = rect.bottom + 8 // mt-2
+        left = rect.left + rect.width / 2 - bubbleWidth / 2
+        break
+      case 'left':
+        top = rect.top + rect.height / 2
+        left = rect.left - bubbleWidth - 8 // mr-2
+        break
+      case 'right':
+        top = rect.top + rect.height / 2
+        left = rect.right + 8 // ml-2
+        break
+      default:
+        top = rect.bottom + 8
+        left = rect.left + rect.width / 2 - bubbleWidth / 2
+    }
+
+    // S'assurer que la bulle reste dans le viewport
+    left = Math.max(8, Math.min(left, window.innerWidth - bubbleWidth - 8))
+
+    setBubblePosition({ top, left })
+  }, [isOpen, position])
 
   const sizeClasses = {
-    sm: 'w-4 h-4 text-xs',
-    md: 'w-5 h-5 text-sm',
-    lg: 'w-6 h-6 text-base'
+    sm: 'w-5 h-5 text-xs',
+    md: 'w-6 h-6 text-sm',
+    lg: 'w-7 h-7 text-base'
   }
 
   const positionClasses = {
@@ -40,42 +109,38 @@ const InfoBubble = ({ text, position = 'top', size = 'sm' }) => {
   return (
     <div className="relative inline-flex items-center">
       <button
+        ref={buttonRef}
         type="button"
         onClick={(e) => {
           e.stopPropagation()
           e.preventDefault()
+          if (!isOpen) {
+            // Notifier les autres bulles de se fermer
+            window.dispatchEvent(new CustomEvent('infobubble-open', { detail: bubbleId }))
+          }
           setIsOpen(!isOpen)
         }}
-        className={`${sizeClasses[size]} rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 hover:text-gray-800 flex items-center justify-center transition-colors font-semibold`}
+        className={`${sizeClasses[size]} relative rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors font-semibold info-bubble-ping`}
         aria-label="Plus d'informations"
       >
         ?
       </button>
 
       {isOpen && (
-        <>
-          {/* Overlay pour fermer au clic */}
-          <div
-            className="fixed inset-0 z-40"
-            onClick={(e) => {
-              e.stopPropagation()
-              setIsOpen(false)
-            }}
-          />
-
-          {/* Bulle */}
-          <div
-            className={`absolute z-50 ${positionClasses[position]} w-64 max-w-xs`}
-          >
-            <div className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 shadow-lg">
-              {text}
-              {/* Flèche */}
-              <div
-                className={`absolute w-0 h-0 border-4 ${arrowClasses[position]}`}
-              />
-            </div>
+        <div
+          className="fixed z-[100] w-64"
+          style={{
+            top: position === 'top' ? 'auto' : bubblePosition.top,
+            bottom: position === 'top' ? `calc(100vh - ${bubblePosition.top}px)` : 'auto',
+            left: bubblePosition.left,
+            transform: position === 'left' || position === 'right' ? 'translateY(-50%)' : 'none'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 shadow-lg">
+            {text}
           </div>
-        </>
+        </div>
       )}
     </div>
   )

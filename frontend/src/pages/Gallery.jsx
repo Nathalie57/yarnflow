@@ -14,6 +14,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import InfoBubble from '../components/InfoBubble'
 import { useImagePreview } from '../hooks/useImagePreview'
 import api from '../services/api'
 
@@ -493,7 +494,14 @@ const Gallery = () => {
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-2xl">✨</span>
                 <div>
-                  <h3 className="font-bold text-lg text-gray-900">Crédits Photos IA</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-gray-900">Crédits Photos IA</h3>
+                    <InfoBubble
+                      text="1 crédit = 1 photo générée par l'IA. Vos crédits mensuels se rechargent le 1er de chaque mois. Vous pouvez aussi acheter des packs supplémentaires."
+                      position="right"
+                      size="sm"
+                    />
+                  </div>
                   <p className="text-sm text-gray-600">
                     {(() => {
                       const subType = user?.subscription_type;
