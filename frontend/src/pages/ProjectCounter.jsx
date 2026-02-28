@@ -3014,7 +3014,7 @@ const ProjectCounter = () => {
               </button>
               <InfoBubble
                 text="Cliquez directement sur le nombre pour le modifier manuellement (pratique si vous avez tricoté plusieurs rangs d'affilée)."
-                position="bottom"
+                position="right"
                 size="sm"
               />
             </div>
@@ -3090,7 +3090,7 @@ const ProjectCounter = () => {
                   )}
                   <InfoBubble
                     text="Quand le timer tourne, l'écran reste allumé. Vous pouvez utiliser votre téléphone normalement (appels, SMS, musique)."
-                    position="bottom"
+                    position="right"
                     size="sm"
                   />
                 </div>
@@ -3181,6 +3181,7 @@ const ProjectCounter = () => {
               text="Divisez votre projet en parties (corps, manches, bordure...) pour suivre la progression de chaque étape séparément."
               position="bottom"
               size="sm"
+              portal
             />
           </div>
           <button
