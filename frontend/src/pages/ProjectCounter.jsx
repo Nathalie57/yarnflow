@@ -1047,6 +1047,8 @@ const ProjectCounter = () => {
     formData.append('photo', file)
     formData.append('project_id', projectId)
     formData.append('item_name', project.name)
+    if (project.type) formData.append('item_type', project.type)
+    if (project.technique) formData.append('technique', project.technique)
 
     try {
       await api.post('/photos/upload', formData, {

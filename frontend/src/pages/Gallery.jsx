@@ -15,29 +15,25 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import InfoBubble from '../components/InfoBubble'
-import { useImagePreview } from '../hooks/useImagePreview'
 import api from '../services/api'
 
 const Gallery = () => {
   const { user } = useAuth()
-  const {
-    previewImage,
-    isGeneratingPreview,
-    previewError,
-    previewContext,
-    generatePreview,
-    clearPreview
-  } = useImagePreview()
   const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [credits, setCredits] = useState(null)
 
+  // [AI:Claude] Projets de l'utilisateur (pour lier une photo à un projet)
+  const [projects, setProjects] = useState([])
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+
   // [AI:Claude] Détecter si on est sur mobile
   const [isMobile, setIsMobile] = useState(false)
 
-  // [AI:Claude] Recherche
+  // [AI:Claude] Recherche et filtres
   const [searchQuery, setSearchQuery] = useState('')
+  const [styleFilter, setStyleFilter] = useState(null)
 
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showEnhanceModal, setShowEnhanceModal] = useState(false)
@@ -55,8 +51,7 @@ const Gallery = () => {
     photo: null,
     item_name: '',
     item_type: '',
-    technique: '',
-    description: ''
+    technique: ''
   })
   const [uploading, setUploading] = useState(false)
 
@@ -77,10 +72,11 @@ const Gallery = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // [AI:Claude] Charger les photos et crédits au montage
+  // [AI:Claude] Charger les photos, crédits et projets au montage
   useEffect(() => {
     fetchPhotos()
     fetchCredits()
+    fetchProjects()
   }, [])
 
   // [AI:Claude] Fermer le menu si clic à l'extérieur
@@ -144,18 +140,44 @@ const Gallery = () => {
     }
   }
 
-  // [AI:Claude] Filtrer les photos par recherche
+  // [AI:Claude] Charger les projets de l'utilisateur
+  const fetchProjects = async () => {
+    try {
+      const response = await api.get('/projects')
+      setProjects(response.data.projects || [])
+    } catch (err) {
+      console.error('Erreur chargement projets:', err)
+      setProjects([])
+    }
+  }
+
+  const CATEGORY_LABELS = {
+    wearable:      { label: 'Vêtements',  emoji: '🧣' },
+    baby_garment:  { label: 'Bébé',       emoji: '👶' },
+    child_garment: { label: 'Enfant',     emoji: '🧒' },
+    toy:           { label: 'Amigurumis', emoji: '🧸' },
+    home_decor:    { label: 'Déco',       emoji: '🏠' },
+    accessory:     { label: 'Accessoires',emoji: '👜' },
+  }
+
+  // [AI:Claude] Catégories présentes dans la galerie (pour les pills de filtre)
+  const getAvailableCategoryFilters = () => {
+    const cats = [...new Set(photos.map(p => detectProjectCategory(p.item_type || '')).filter(Boolean))]
+    return cats.filter(c => CATEGORY_LABELS[c])
+  }
+
+  // [AI:Claude] Filtrer les photos par recherche et catégorie
   const getFilteredPhotos = () => {
     return photos.filter(photo => {
+      if (styleFilter && detectProjectCategory(photo.item_type || '') !== styleFilter) return false
+
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         const matchName = photo.item_name?.toLowerCase().includes(query)
         const matchType = photo.item_type?.toLowerCase().includes(query)
-        const matchStyle = photo.ai_style?.toLowerCase().includes(query)
-        const matchDescription = photo.description?.toLowerCase().includes(query)
         const matchTechnique = photo.technique?.toLowerCase().includes(query)
 
-        if (!matchName && !matchType && !matchStyle && !matchDescription && !matchTechnique)
+        if (!matchName && !matchType && !matchTechnique)
           return false
       }
       return true
@@ -170,10 +192,19 @@ const Gallery = () => {
     try {
       const formData = new FormData()
       formData.append('photo', uploadData.photo)
-      formData.append('item_name', uploadData.item_name)
-      formData.append('item_type', uploadData.item_type)
-      formData.append('technique', uploadData.technique)
-      formData.append('description', uploadData.description || '')
+
+      // [AI:Claude] Si projet sélectionné, utiliser ses infos, sinon les champs du formulaire
+      if (selectedProjectId) {
+        const selectedProject = projects.find(p => String(p.id) === String(selectedProjectId))
+        formData.append('item_name', selectedProject?.name || '')
+        formData.append('item_type', selectedProject?.type || '')
+        formData.append('technique', selectedProject?.technique || '')
+        formData.append('project_id', selectedProjectId)
+      } else {
+        formData.append('item_name', uploadData.item_name)
+        formData.append('item_type', uploadData.item_type)
+        formData.append('technique', uploadData.technique)
+      }
 
       const response = await api.post('/photos/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -186,12 +217,15 @@ const Gallery = () => {
         photo: null,
         item_name: '',
         item_type: '',
-        technique: '',
-        description: ''
+        technique: ''
       })
+      setSelectedProjectId('')
       setShowUploadModal(false)
 
       console.log('Photo uploadée avec succès:', newPhoto)
+
+      // [AI:Claude] Enchaîner directement vers l'embellissement IA
+      openEnhanceModal(newPhoto)
     } catch (err) {
       console.error('Erreur upload:', err)
       alert(err.response?.data?.error || 'Erreur lors de l\'upload')
@@ -200,18 +234,7 @@ const Gallery = () => {
     }
   }
 
-  // [AI:Claude] Générer une preview gratuite
-  const handleGeneratePreview = async () => {
-    if (!selectedPhoto || !selectedContext) return
-
-    const result = await generatePreview(selectedPhoto.id, selectedContext.key, selectedSeason)
-
-    if (!result.success) {
-      alert(result.error || 'Erreur lors de la génération de la preview')
-    }
-  }
-
-  // [AI:Claude] Embellir avec IA - v0.12.1 SIMPLIFIÉ
+  // [AI:Claude] Embellir avec IA
   const handleEnhance = async (e) => {
     e.preventDefault()
 
@@ -226,12 +249,9 @@ const Gallery = () => {
     setEnhancing(true)
 
     try {
-      // [AI:Claude] Utiliser le context de la preview si disponible, sinon le context sélectionné
-      const contextToUse = previewContext || selectedContext.key
-
-      // [AI:Claude] Appel API pour génération HD avec le même context que la preview
+      // [AI:Claude] Appel API pour génération IA
       const response = await api.post(`/photos/${selectedPhoto.id}/enhance-multiple`, {
-        contexts: [contextToUse],
+        contexts: [selectedContext.key],
         project_category: detectProjectCategory(selectedPhoto.item_type || ''),
         season: selectedSeason, // Saison optionnelle
         model_gender: modelGender // Genre du modèle (male, female)
@@ -241,7 +261,6 @@ const Gallery = () => {
       await fetchCredits()
       setShowEnhanceModal(false)
       setSelectedPhoto(null)
-      clearPreview()
 
       alert(`✨ Photo générée avec succès !`)
     } catch (err) {
@@ -269,7 +288,6 @@ const Gallery = () => {
   // [AI:Claude] Ouvrir modal d'embellissement avec sélection du premier style par défaut
   const openEnhanceModal = (photo) => {
     setSelectedPhoto(photo)
-    clearPreview() // [AI:Claude] Réinitialiser la preview
     setSelectedSeason(null) // [AI:Claude] Réinitialiser la saison
     const category = detectProjectCategory(photo.item_type || '')
     const styles = getAvailableStyles(category)
@@ -325,7 +343,7 @@ const Gallery = () => {
     if (lower.match(/couverture|plaid|coussin|tapis|déco|nappe/))
       return 'home_decor'
 
-    return 'accessory' // Fallback vers accessoire (le plus générique)
+    return null // Type inconnu ou vide : pas de catégorie
   }
 
   // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
@@ -553,6 +571,17 @@ const Gallery = () => {
         </div>
       )}
 
+      {/* Bouton CTA pour générer une photo IA */}
+      <div className="mb-6 flex justify-center">
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+        >
+          <span className="text-2xl">✨</span>
+          <span>Générer une nouvelle photo IA</span>
+        </button>
+      </div>
+
       {/* Loading */}
       {loading && (
         <div className="text-center py-12">
@@ -568,9 +597,9 @@ const Gallery = () => {
         </div>
       )}
 
-      {/* Barre de recherche */}
+      {/* Barre de recherche + filtres style */}
       {!loading && !error && photos.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-6 space-y-3">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -596,6 +625,38 @@ const Gallery = () => {
               </button>
             )}
           </div>
+
+          {/* Pills filtre par catégorie */}
+          {getAvailableCategoryFilters().length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setStyleFilter(null)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                  styleFilter === null
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Tous
+              </button>
+              {getAvailableCategoryFilters().map(cat => {
+                const meta = CATEGORY_LABELS[cat]
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setStyleFilter(styleFilter === cat ? null : cat)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                      styleFilter === cat
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {meta.emoji} {meta.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -625,13 +686,13 @@ const Gallery = () => {
                 Aucun résultat
               </h3>
               <p className="text-gray-600 mb-4">
-                Aucune photo ne correspond à votre recherche "{searchQuery}"
+                Aucune photo ne correspond à vos filtres actifs
               </p>
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => { setSearchQuery(''); setStyleFilter(null) }}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
               >
-                Effacer la recherche
+                Effacer les filtres
               </button>
             </div>
           ) : (
@@ -985,99 +1046,133 @@ const Gallery = () => {
                 </p>
               </div>
 
-              {/* Nom de l'ouvrage */}
+              {/* Projet (optionnel) - PLACÉ EN PREMIER */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom de l'ouvrage <span className="text-red-600">*</span>
+                  📁 Lier à un projet <span className="text-gray-400">(optionnel)</span>
                 </label>
-                <input
-                  type="text"
-                  value={uploadData.item_name}
-                  onChange={(e) => setUploadData({ ...uploadData, item_name: e.target.value })}
-                  required
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Ex: Mon bonnet rouge"
-                />
+                >
+                  <option value="">Aucun projet - saisir les infos manuellement</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name} {project.type ? `(${project.type})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {selectedProjectId
+                    ? '✓ Les infos du projet seront utilisées automatiquement'
+                    : 'Sélectionnez un projet ou remplissez les champs ci-dessous'
+                  }
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {/* Type d'ouvrage */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type d'ouvrage <span className="text-red-600">*</span>
-                  </label>
-                  <select
-                    value={uploadData.item_type}
-                    onChange={(e) => setUploadData({ ...uploadData, item_type: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="">-- Sélectionner --</option>
-                    <optgroup label="🧢 Vêtements">
-                      <option value="bonnet">Bonnet</option>
-                      <option value="écharpe">Écharpe</option>
-                      <option value="pull">Pull</option>
-                      <option value="chaussettes">Chaussettes</option>
-                      <option value="snood">Snood</option>
-                    </optgroup>
-                    <optgroup label="👶 Vêtements bébé">
-                      <option value="body bébé">Body bébé</option>
-                      <option value="barboteuse">Barboteuse</option>
-                      <option value="gilet bébé">Gilet bébé</option>
-                      <option value="chaussons bébé">Chaussons bébé</option>
-                      <option value="bonnet bébé">Bonnet bébé</option>
-                      <option value="couverture bébé">Couverture bébé</option>
-                    </optgroup>
-                    <optgroup label="🧸 Amigurumis">
-                      <option value="amigurumi">Amigurumi</option>
-                      <option value="peluche">Peluche</option>
-                      <option value="doudou">Doudou</option>
-                    </optgroup>
-                    <optgroup label="👜 Accessoires">
-                      <option value="sac">Sac</option>
-                      <option value="pochette">Pochette</option>
-                      <option value="trousse">Trousse</option>
-                    </optgroup>
-                    <optgroup label="🏠 Déco maison">
-                      <option value="couverture">Couverture</option>
-                      <option value="plaid">Plaid</option>
-                      <option value="coussin">Coussin</option>
-                    </optgroup>
-                    <option value="autre">Autre</option>
-                  </select>
-                </div>
+              {/* Affichage du projet sélectionné */}
+              {selectedProjectId && (() => {
+                const selectedProject = projects.find(p => String(p.id) === String(selectedProjectId))
+                return selectedProject ? (
+                  <div className="mb-4 p-4 bg-primary-50 rounded-lg border border-primary-200">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{selectedProject.technique === 'tricot' ? '🧶' : '🪡'}</span>
+                      <div>
+                        <p className="font-semibold text-primary-900">{selectedProject.name}</p>
+                        <p className="text-sm text-primary-700">
+                          {selectedProject.type && <span className="mr-2">{selectedProject.type}</span>}
+                          {selectedProject.technique && <span>• {selectedProject.technique === 'tricot' ? 'Tricot' : 'Crochet'}</span>}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null
+              })()}
 
-                {/* Technique */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Technique
-                  </label>
-                  <select
-                    value={uploadData.technique}
-                    onChange={(e) => setUploadData({ ...uploadData, technique: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="">-- Sélectionner --</option>
-                    <option value="crochet">🪡 Crochet</option>
-                    <option value="tricot">🧶 Tricot</option>
-                    <option value="autre">Autre</option>
-                  </select>
-                </div>
-              </div>
+              {/* Champs manuels - uniquement si pas de projet sélectionné */}
+              {!selectedProjectId && (
+                <>
+                  {/* Nom de l'ouvrage */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nom de l'ouvrage <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={uploadData.item_name}
+                      onChange={(e) => setUploadData({ ...uploadData, item_name: e.target.value })}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Ex: Mon bonnet rouge"
+                    />
+                  </div>
 
-              {/* Description */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={uploadData.description}
-                  onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
-                  rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Ex: Bonnet slouchy en laine mérinos, fait main"
-                />
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {/* Type d'ouvrage */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Type d'ouvrage <span className="text-red-600">*</span>
+                      </label>
+                      <select
+                        value={uploadData.item_type}
+                        onChange={(e) => setUploadData({ ...uploadData, item_type: e.target.value })}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="">-- Sélectionner --</option>
+                        <optgroup label="🧢 Vêtements">
+                          <option value="bonnet">Bonnet</option>
+                          <option value="écharpe">Écharpe</option>
+                          <option value="pull">Pull</option>
+                          <option value="chaussettes">Chaussettes</option>
+                          <option value="snood">Snood</option>
+                        </optgroup>
+                        <optgroup label="👶 Vêtements bébé">
+                          <option value="body bébé">Body bébé</option>
+                          <option value="barboteuse">Barboteuse</option>
+                          <option value="gilet bébé">Gilet bébé</option>
+                          <option value="chaussons bébé">Chaussons bébé</option>
+                          <option value="bonnet bébé">Bonnet bébé</option>
+                          <option value="couverture bébé">Couverture bébé</option>
+                        </optgroup>
+                        <optgroup label="🧸 Amigurumis">
+                          <option value="amigurumi">Amigurumi</option>
+                          <option value="peluche">Peluche</option>
+                          <option value="doudou">Doudou</option>
+                        </optgroup>
+                        <optgroup label="👜 Accessoires">
+                          <option value="sac">Sac</option>
+                          <option value="pochette">Pochette</option>
+                          <option value="trousse">Trousse</option>
+                        </optgroup>
+                        <optgroup label="🏠 Déco maison">
+                          <option value="couverture">Couverture</option>
+                          <option value="plaid">Plaid</option>
+                          <option value="coussin">Coussin</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {/* Technique */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Technique
+                      </label>
+                      <select
+                        value={uploadData.technique}
+                        onChange={(e) => setUploadData({ ...uploadData, technique: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="">-- Sélectionner --</option>
+                        <option value="crochet">🪡 Crochet</option>
+                        <option value="tricot">🧶 Tricot</option>
+                        <option value="autre">Autre</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Boutons */}
               <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
@@ -1090,10 +1185,14 @@ const Gallery = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={uploading}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-primary-300"
+                  disabled={
+                    uploading ||
+                    !uploadData.photo ||
+                    (!selectedProjectId && (!uploadData.item_name || !uploadData.item_type))
+                  }
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
-                  {uploading ? 'Upload...' : '📤 Uploader'}
+                  {uploading ? 'Chargement...' : '✨ Embellir avec l\'IA'}
                 </button>
               </div>
             </form>
@@ -1113,21 +1212,14 @@ const Gallery = () => {
             </div>
 
             <form onSubmit={handleEnhance} className="p-6">
-              {/* Photo actuelle (remplacée par preview pendant génération HD) */}
-              <div className={`mb-6 rounded-lg border-2 p-4 relative ${enhancing && previewImage ? 'bg-green-50 border-green-400' : 'bg-gray-100 border-gray-200'}`}>
-                {enhancing && previewImage && (
-                  <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    Upscaling en cours...
-                  </div>
-                )}
+              {/* Photo originale */}
+              <div className="mb-6 rounded-lg border-2 p-4 bg-gray-100 border-gray-200">
                 <img
-                  src={(enhancing && previewImage) ? previewImage : `${import.meta.env.VITE_BACKEND_URL}${selectedPhoto.original_path}`}
+                  src={`${import.meta.env.VITE_BACKEND_URL}${selectedPhoto.original_path}`}
                   alt={selectedPhoto.item_name}
                   className="max-h-48 w-auto object-contain rounded-lg mx-auto"
                   onError={(e) => {
-                    if (!(enhancing && previewImage)) {
-                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
-                    }
+                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
                   }}
                 />
               </div>
@@ -1265,56 +1357,26 @@ const Gallery = () => {
                 </div>
               )}
 
-              {/* Zone de preview */}
-              {previewImage && !enhancing && (
-                <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                    ✨ Aperçu (preview gratuite)
-                  </h3>
-                  <div className="relative">
-                    <img
-                      src={previewImage}
-                      alt="Preview IA"
-                      className="w-full h-auto rounded-lg border-2 border-primary-300"
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                    <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                      0 crédit
-                    </div>
-                  </div>
-                  <p className="text-xs text-green-700 mt-2 font-medium">
-                    ✓ L'image HD sera générée à partir de cette preview en haute résolution
-                  </p>
-                </div>
-              )}
-
-              {/* Erreur preview */}
-              {previewError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-800">{previewError}</p>
-                </div>
-              )}
-
               {/* Progression de génération HD */}
               {enhancing && (
                 <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                     <div>
-                      <h4 className="font-semibold text-primary-900">🎨 Génération HD en cours...</h4>
+                      <h4 className="font-semibold text-primary-900">🎨 Génération en cours...</h4>
                       <p className="text-sm text-gray-600">Cela peut prendre quelques secondes</p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Résumé des crédits - uniquement si preview existe */}
-              {!enhancing && previewImage && credits && (
+              {/* Résumé des crédits */}
+              {!enhancing && credits && (
                 <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        💎 Génération HD = 1 crédit
+                        💎 Génération = 1 crédit
                       </p>
                       <p className="text-xs text-gray-600 mt-1">
                         Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
@@ -1330,66 +1392,24 @@ const Gallery = () => {
 
               {/* Boutons */}
               <div className="flex items-center gap-3">
-                {!previewImage ? (
-                  // Bouton Preview gratuite
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowEnhanceModal(false)
-                        setSelectedPhoto(null)
-                        clearPreview()
-                      }}
-                      disabled={isGeneratingPreview}
-                      className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleGeneratePreview}
-                      disabled={!selectedContext || isGeneratingPreview}
-                      className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isGeneratingPreview ? (
-                        <>🔄 Génération preview...</>
-                      ) : (
-                        <>✨ Aperçu gratuit (0 crédit)</>
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  // Après preview : boutons Nouvelle preview + HD
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowEnhanceModal(false)
-                        setSelectedPhoto(null)
-                        clearPreview()
-                      }}
-                      disabled={enhancing}
-                      className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleGeneratePreview}
-                      disabled={enhancing || isGeneratingPreview}
-                      className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
-                    >
-                      {isGeneratingPreview ? '🔄 Génération...' : '🔄 Nouvelle preview'}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={enhancing || !credits || credits.total_available < 1}
-                      className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                    >
-                      {enhancing ? '⏳ Génération HD...' : '🎨 Générer en HD (1 crédit)'}
-                    </button>
-                  </>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEnhanceModal(false)
+                    setSelectedPhoto(null)
+                  }}
+                  disabled={enhancing}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={enhancing || !selectedContext || !credits || credits.total_available < 1}
+                  className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                >
+                  {enhancing ? '⏳ Génération...' : '✨ Générer (1 crédit)'}
+                </button>
               </div>
             </form>
           </div>
