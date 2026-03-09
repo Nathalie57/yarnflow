@@ -3348,7 +3348,7 @@ const ProjectCounter = () => {
                 </div>
                 <button
                   onClick={() => { setSecondaryActive(false); setSecondaryCount(0); setSecondarySuccess(false); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
-                  className="text-gray-300 hover:text-gray-500 text-lg leading-none transition"
+                  className="text-gray-500 hover:text-gray-800 text-lg leading-none transition"
                   title="Désactiver le compteur secondaire"
                 >
                   ×
