@@ -1888,7 +1888,11 @@ const ProjectCounter = () => {
       }
 
       // [AI:Claude] v0.17.0 - Célébration du premier rang compté
-      if (oldRow === 0 || parseFloat(oldRow) === 0) {
+      // Vérifier le total projet (pas juste la section active) pour éviter les faux positifs
+      const totalProjectRows = sections.length > 0
+        ? sections.reduce((sum, s) => sum + (parseFloat(s.current_row) || 0), 0)
+        : parseFloat(oldRow) || 0
+      if (totalProjectRows === 0) {
         setShowFirstRowCelebration(true)
 
         // Tracker l'événement first_row_counted
@@ -1901,7 +1905,7 @@ const ProjectCounter = () => {
         } catch (err) {
           console.error('Erreur tracking first_row_counted:', err)
         }
-      } else if (oldRow > 0 || parseFloat(oldRow) > 0) {
+      } else if (totalProjectRows > 0) {
         // Tracker project_worked_again à chaque incrémentation après le premier rang
         try {
           await api.post('/analytics/track-event', {
