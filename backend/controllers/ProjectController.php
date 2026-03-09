@@ -497,14 +497,17 @@ class ProjectController
 
             $rowData = [
                 'row_number' => (int)$data['row_number'],
-                'section_id' => $data['section_id'] ?? null, // [AI:Claude] Support des sections
+                'section_id' => $data['section_id'] ?? null,
                 'stitch_count' => $data['stitch_count'] ?? null,
                 'stitch_type' => $data['stitch_type'] ?? null,
                 'duration' => $data['duration'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'difficulty_rating' => $data['difficulty_rating'] ?? null,
                 'photo' => $data['photo'] ?? null,
-                'completed_at' => $data['completed_at'] ?? date('Y-m-d H:i:s')
+                'completed_at' => $data['completed_at'] ?? date('Y-m-d H:i:s'),
+                'secondary_count' => isset($data['secondary_count']) ? (int)$data['secondary_count'] : null,
+                'secondary_target' => isset($data['secondary_target']) ? (int)$data['secondary_target'] : null,
+                'secondary_label' => isset($data['secondary_label']) ? trim($data['secondary_label']) : null,
             ];
 
             $rowId = $this->projectModel->addRow($id, $rowData);

@@ -67,6 +67,16 @@ const ProjectCounter = () => {
   const [isSavingRow, setIsSavingRow] = useState(false) // [AI:Claude] Anti double-clic sur compteur
   const [isOnline, setIsOnline] = useState(networkUtils.isOnline()) // [AI:Claude] Détection hors-ligne
 
+  // [AI:Claude] Compteur secondaire (PLUS/PRO)
+  const [secondaryActive, setSecondaryActive] = useState(false)
+  const [secondaryCount, setSecondaryCount] = useState(0)
+  const [secondaryTarget, setSecondaryTarget] = useState(null)
+  const [secondaryLabel, setSecondaryLabel] = useState('')
+  const [secondarySuccess, setSecondarySuccess] = useState(false) // feedback ✓ 1.5s
+  const [isEditingSecondary, setIsEditingSecondary] = useState(false)
+  const [secondaryLabelInput, setSecondaryLabelInput] = useState('')
+  const [secondaryTargetInput, setSecondaryTargetInput] = useState('')
+
   // [AI:Claude] Timer de session
   const [sessionId, setSessionId] = useState(null)
   const [sessionStartTime, setSessionStartTime] = useState(null)
@@ -78,6 +88,8 @@ const ProjectCounter = () => {
 
   // [AI:Claude] FIX BUG x4: Ref pour éviter les multiples appels à endSession
   const isEndingSessionRef = useRef(false)
+  // [AI:Claude] Ref pour le timeout du compteur secondaire (évite les conflits sur spam)
+  const secondaryTimeoutRef = useRef(null)
 
   // [AI:Claude] Photos du projet
   const [projectPhotos, setProjectPhotos] = useState([])
@@ -603,6 +615,10 @@ const ProjectCounter = () => {
       // [AI:Claude] Pas d'erreur fatale si pas de sections
     }
   }
+
+  // [AI:Claude] Plan payant (PLUS/PRO/Early Bird)
+  const isPaidPlan = ['plus', 'plus_annual', 'pro', 'pro_annual', 'early_bird'].includes(user?.subscription_type || 'free')
+
 
   const fetchProjectPhotos = async () => {
     try {
@@ -1737,6 +1753,13 @@ const ProjectCounter = () => {
       } finally {
         setIsSavingRow(false)
       }
+      // [AI:Claude] Reset secondaire en mode CM (pas de project_rows, reset silencieux)
+      if (secondaryActive) {
+        setSecondaryActive(false)
+        setSecondaryCount(0)
+        setSecondaryTarget(null)
+        setSecondaryLabel('')
+      }
       return
     }
 
@@ -1748,10 +1771,35 @@ const ProjectCounter = () => {
         stitch_count: null,
         duration: null,
         notes: null,
-        difficulty_rating: null
+        difficulty_rating: null,
+        secondary_count: secondaryActive ? secondaryCount : null,
+        secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
+        secondary_label: secondaryActive && secondaryLabel ? secondaryLabel : null,
       }
 
       await api.post(`/projects/${projectId}/rows`, rowData)
+
+      // [AI:Claude] Reset complet du compteur secondaire après incrément
+      if (secondaryActive) {
+        if (secondaryCount > 0) {
+          // Annuler tout timeout précédent avant d'en lancer un nouveau
+          if (secondaryTimeoutRef.current) clearTimeout(secondaryTimeoutRef.current)
+          setSecondarySuccess(true)
+          secondaryTimeoutRef.current = setTimeout(() => {
+            setSecondaryActive(false)
+            setSecondaryCount(0)
+            setSecondaryTarget(null)
+            setSecondaryLabel('')
+            setSecondarySuccess(false)
+            secondaryTimeoutRef.current = null
+          }, 1500)
+        } else {
+          // Pas utilisé sur ce rang : désactivation silencieuse
+          setSecondaryActive(false)
+          setSecondaryTarget(null)
+          setSecondaryLabel('')
+        }
+      }
 
       // [AI:Claude] FIX v0.16.2: Mettre à jour sections/project AVANT setCurrentRow
       // pour éviter que le useEffect n'écrase avec l'ancienne valeur
@@ -2009,6 +2057,16 @@ const ProjectCounter = () => {
     setExpandedNotesSection(null)
     setSectionNotesText('')
     setOpenSectionMenu(null)
+
+    // [AI:Claude] Reset complet du compteur secondaire au changement de section
+    setSecondaryActive(false)
+    setSecondaryCount(0)
+    setSecondaryTarget(null)
+    setSecondaryLabel('')
+    setSecondarySuccess(false)
+    setIsEditingSecondary(false)
+    setSecondaryLabelInput('')
+    setSecondaryTargetInput('')
 
     try {
       // [AI:Claude] FIX BUG x4: Vérifier si on est déjà en train de terminer une session
@@ -3166,6 +3224,139 @@ const ProjectCounter = () => {
             </div>
           </div>
         </div>
+
+        {/* [AI:Claude] Compteur secondaire (PLUS/PRO) */}
+        {!isPaidPlan ? (
+          <div className="pt-2 border-t border-orange-200">
+            <button
+              onClick={() => showAlert('Le compteur secondaire est disponible avec les plans PLUS et PRO. Passez à un plan supérieur pour compter vos augmentations, diminutions et répétitions par rang.', 'info', '🔒 Fonctionnalité PLUS/PRO')}
+              className="text-xs text-gray-400 flex items-center gap-1 hover:text-gray-600 transition"
+              title="Disponible avec PLUS ou PRO"
+            >
+              🔒 Compteur secondaire — réservé PLUS/PRO
+            </button>
+          </div>
+        ) : !secondaryActive ? (
+          <div className="pt-2 border-t border-orange-200">
+            <button
+              onClick={() => { setSecondaryLabelInput(''); setSecondaryTargetInput(''); setSecondaryActive(true); setIsEditingSecondary(true) }}
+              className="text-xs text-primary-700 flex items-center gap-1 hover:text-primary-900 transition font-medium"
+            >
+              ＋ Ajouter un compteur secondaire
+            </button>
+          </div>
+        ) : (
+          <div className="pt-2 border-t border-orange-200">
+            {isEditingSecondary ? (
+              // Mode édition label + cible
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="text"
+                  value={secondaryLabelInput}
+                  onChange={e => setSecondaryLabelInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') { setSecondaryLabel(secondaryLabelInput); setSecondaryTarget(secondaryTargetInput ? Number(secondaryTargetInput) : null); setIsEditingSecondary(false) }
+                    if (e.key === 'Escape') setIsEditingSecondary(false)
+                  }}
+                  placeholder="ex: Dim."
+                  maxLength={20}
+                  autoFocus
+                  className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <input
+                  type="number"
+                  value={secondaryTargetInput}
+                  onChange={e => setSecondaryTargetInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') { setSecondaryLabel(secondaryLabelInput); setSecondaryTarget(secondaryTargetInput ? Number(secondaryTargetInput) : null); setIsEditingSecondary(false) }
+                    if (e.key === 'Escape') setIsEditingSecondary(false)
+                  }}
+                  placeholder="Objectif (opt.)"
+                  min="1"
+                  className="w-28 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <button
+                  onClick={() => {
+                    setSecondaryLabel(secondaryLabelInput)
+                    setSecondaryTarget(secondaryTargetInput ? Number(secondaryTargetInput) : null)
+                    setIsEditingSecondary(false)
+                  }}
+                  className="px-2 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 transition"
+                >
+                  OK
+                </button>
+                <button
+                  onClick={() => setIsEditingSecondary(false)}
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                >
+                  Annuler
+                </button>
+              </div>
+            ) : secondarySuccess ? (
+              // Feedback ✓ après incrément principal
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-green-700 font-semibold text-sm animate-pulse">
+                  <span>{secondaryLabel || 'Compteur'}</span>
+                  <span className="text-green-600">
+                    ✓ {secondaryCount}{secondaryTarget ? `/${secondaryTarget}` : ''}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              // Compteur secondaire actif
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {secondaryLabel && (
+                    <span className="text-sm font-semibold text-gray-700">
+                      {secondaryLabel}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setSecondaryCount(prev => Math.max(0, prev - 1))}
+                    className="w-7 h-7 bg-red-100 text-red-600 rounded-full text-sm font-bold hover:bg-red-200 transition"
+                  >
+                    −
+                  </button>
+                  <div className="text-center min-w-[44px]">
+                    <span className="font-bold text-base text-gray-900">
+                      {secondaryCount}
+                      {secondaryTarget ? <span className="text-gray-500 font-normal text-sm">/{secondaryTarget}</span> : ''}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setSecondaryCount(prev => prev + 1)}
+                    disabled={secondaryTarget !== null && secondaryCount >= secondaryTarget}
+                    className={`w-7 h-7 rounded-full text-sm font-bold transition ${
+                      secondaryTarget !== null && secondaryCount >= secondaryTarget
+                        ? 'bg-green-500 text-white cursor-not-allowed'
+                        : 'bg-primary-600 text-white hover:bg-primary-700'
+                    }`}
+                  >
+                    {secondaryTarget !== null && secondaryCount >= secondaryTarget ? '✓' : '+'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSecondaryLabelInput(secondaryLabel)
+                      setSecondaryTargetInput(secondaryTarget ? String(secondaryTarget) : '')
+                      setIsEditingSecondary(true)
+                    }}
+                    className="text-gray-400 hover:text-gray-600 text-sm transition"
+                    title="Modifier le label et l'objectif"
+                  >
+                    ✎
+                  </button>
+                </div>
+                <button
+                  onClick={() => { setSecondaryActive(false); setSecondaryCount(0); setSecondarySuccess(false); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
+                  className="text-gray-300 hover:text-gray-500 text-lg leading-none transition"
+                  title="Désactiver le compteur secondaire"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* [AI:Claude] Tableau des sections */}

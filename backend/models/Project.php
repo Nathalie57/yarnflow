@@ -320,9 +320,11 @@ class Project extends BaseModel
     public function addRow(int $projectId, array $rowData): int|false
     {
         $query = "INSERT INTO project_rows
-                  (project_id, section_id, row_num, stitch_count, stitch_type, duration, notes, difficulty_rating, photo, completed_at)
+                  (project_id, section_id, row_num, stitch_count, stitch_type, duration, notes, difficulty_rating, photo, completed_at,
+                   secondary_count, secondary_target, secondary_label)
                   VALUES
-                  (:project_id, :section_id, :row_num, :stitch_count, :stitch_type, :duration, :notes, :difficulty_rating, :photo, :completed_at)
+                  (:project_id, :section_id, :row_num, :stitch_count, :stitch_type, :duration, :notes, :difficulty_rating, :photo, :completed_at,
+                   :secondary_count, :secondary_target, :secondary_label)
                   ON DUPLICATE KEY UPDATE
                   section_id = VALUES(section_id),
                   stitch_count = VALUES(stitch_count),
@@ -331,7 +333,10 @@ class Project extends BaseModel
                   notes = VALUES(notes),
                   difficulty_rating = VALUES(difficulty_rating),
                   photo = VALUES(photo),
-                  completed_at = VALUES(completed_at)";
+                  completed_at = VALUES(completed_at),
+                  secondary_count = VALUES(secondary_count),
+                  secondary_target = VALUES(secondary_target),
+                  secondary_label = VALUES(secondary_label)";
 
         $stmt = $this->db->prepare($query);
 
@@ -345,7 +350,10 @@ class Project extends BaseModel
             ':notes' => $rowData['notes'] ?? null,
             ':difficulty_rating' => $rowData['difficulty_rating'] ?? null,
             ':photo' => $rowData['photo'] ?? null,
-            ':completed_at' => $rowData['completed_at'] ?? date('Y-m-d H:i:s')
+            ':completed_at' => $rowData['completed_at'] ?? date('Y-m-d H:i:s'),
+            ':secondary_count' => $rowData['secondary_count'] ?? null,
+            ':secondary_target' => $rowData['secondary_target'] ?? null,
+            ':secondary_label' => $rowData['secondary_label'] ?? null,
         ];
 
         if (!$stmt->execute($params))
