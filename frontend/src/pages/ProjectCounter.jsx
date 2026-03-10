@@ -30,7 +30,7 @@ import InfoBubble from '../components/InfoBubble' // [AI:Claude] Bulles d'info c
 const ProjectCounter = () => {
   const { projectId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, hasActiveSubscription } = useAuth()
   const {
     previewImage,
     isGeneratingPreview,
@@ -616,8 +616,8 @@ const ProjectCounter = () => {
     }
   }
 
-  // [AI:Claude] Plan payant (PLUS/PRO/Early Bird)
-  const isPaidPlan = ['plus', 'plus_annual', 'pro', 'pro_annual', 'early_bird'].includes(user?.subscription_type || 'free')
+  // [AI:Claude] Plan payant actif (PLUS/PRO/Early Bird non expiré)
+  const isPaidPlan = hasActiveSubscription()
 
 
   const fetchProjectPhotos = async () => {
