@@ -14,11 +14,11 @@ import { createPortal } from 'react-dom'
  * @param {string} text - Le texte à afficher dans la bulle
  * @param {string} position - Position de la bulle: 'top' | 'bottom' | 'left' | 'right' (défaut: 'top')
  * @param {string} size - Taille de l'icône: 'sm' | 'md' | 'lg' (défaut: 'sm')
- * @param {boolean} portal - Si true, rend la bulle dans un portail (pour éviter overflow: hidden)
+ * @param {boolean} portal - Si true, rend la bulle dans un portail (évite overflow: hidden). Défaut: true.
  */
-const InfoBubble = ({ text, position = 'top', size = 'sm', portal = false }) => {
+const InfoBubble = ({ text, position = 'top', size = 'sm', portal = true }) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [portalPosition, setPortalPosition] = useState({ top: 0, left: 0 })
+  const [bubblePosition, setBubblePosition] = useState({ top: 0, left: 0 })
   const buttonRef = useRef(null)
   const bubbleId = useId()
 
@@ -51,13 +51,13 @@ const InfoBubble = ({ text, position = 'top', size = 'sm', portal = false }) => 
     }
   }, [isOpen])
 
-  // Calculer la position pour le mode portail
-  const calculatePortalPosition = () => {
+  // Calculer la position avec clamping viewport (empêche le débordement sur mobile)
+  const calculatePosition = () => {
     if (!buttonRef.current) return
 
     const rect = buttonRef.current.getBoundingClientRect()
     const bubbleWidth = 256
-    const bubbleHeight = 80
+    const bubbleHeight = 100 // estimation conservative
 
     let top, left
 
@@ -83,11 +83,11 @@ const InfoBubble = ({ text, position = 'top', size = 'sm', portal = false }) => 
         left = rect.left + rect.width / 2 - bubbleWidth / 2
     }
 
-    // S'assurer que la bulle reste dans le viewport
+    // Clamping — bulle toujours dans le viewport
     left = Math.max(8, Math.min(left, window.innerWidth - bubbleWidth - 8))
     top = Math.max(8, Math.min(top, window.innerHeight - bubbleHeight - 8))
 
-    setPortalPosition({ top, left })
+    setBubblePosition({ top, left })
   }
 
   const sizeClasses = {
@@ -96,21 +96,11 @@ const InfoBubble = ({ text, position = 'top', size = 'sm', portal = false }) => 
     lg: 'w-7 h-7 text-base'
   }
 
-  const positionClasses = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2'
-  }
-
   const handleClick = (e) => {
     e.stopPropagation()
     e.preventDefault()
     if (!isOpen) {
-      if (portal) {
-        calculatePortalPosition()
-      }
-      // Notifier les autres bulles de se fermer
+      calculatePosition()
       window.dispatchEvent(new CustomEvent('infobubble-open', { detail: bubbleId }))
     }
     setIsOpen(!isOpen)
@@ -134,19 +124,10 @@ const InfoBubble = ({ text, position = 'top', size = 'sm', portal = false }) => 
         ?
       </button>
 
-      {isOpen && !portal && (
-        <div
-          className={`absolute z-[9999] ${positionClasses[position]} w-64 max-w-xs`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {bubbleContent}
-        </div>
-      )}
-
-      {isOpen && portal && createPortal(
+      {isOpen && createPortal(
         <div
           className="fixed z-[9999] w-64"
-          style={{ top: portalPosition.top, left: portalPosition.left }}
+          style={{ top: bubblePosition.top, left: bubblePosition.left }}
           onClick={(e) => e.stopPropagation()}
         >
           {bubbleContent}
