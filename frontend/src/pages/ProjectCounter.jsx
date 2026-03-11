@@ -4544,7 +4544,7 @@ const ProjectCounter = () => {
                   </div>
                   <input
                     type="file"
-                    accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+                    accept="image/*,.pdf,application/pdf"
                     onChange={handlePatternUpload}
                     className="hidden"
                     disabled={uploadingPattern}
@@ -4968,7 +4968,7 @@ const ProjectCounter = () => {
                 </div>
                 <input
                   type="file"
-                  accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+                  accept="image/*,.pdf,application/pdf"
                   onChange={(e) => {
                     setShowPatternEditChoiceModal(false)
                     handlePatternUpload(e)

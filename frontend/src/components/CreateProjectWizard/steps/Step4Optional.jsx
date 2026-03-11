@@ -145,7 +145,7 @@ const Step4Optional = ({
             {/* [AI:Claude] Extensions + MIME types pour meilleure compatibilité Android */}
             <input
               type="file"
-              accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+              accept="image/*,.pdf,application/pdf"
               onChange={(e) => {
                 const file = e.target.files[0]
                 if (file) {

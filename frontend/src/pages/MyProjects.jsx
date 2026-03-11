@@ -1535,7 +1535,7 @@ Rang 4 : *2ms, aug* x6 (24)
                 <input
                   ref={(el) => (window.cameraInputProjects = el)}
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  accept="image/*"
                   capture="environment"
                   onChange={(e) => setPhotoFile(e.target.files[0])}
                   className="hidden"
@@ -1543,7 +1543,7 @@ Rang 4 : *2ms, aug* x6 (24)
                 <input
                   ref={(el) => (window.galleryInputProjects = el)}
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  accept="image/*"
                   onChange={(e) => setPhotoFile(e.target.files[0])}
                   className="hidden"
                 />

@@ -592,7 +592,7 @@ const PatternLibraryDetail = () => {
                   <input
                     type="file"
                     id="pattern-file-edit-input"
-                    accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+                    accept="image/*,.pdf,application/pdf"
                     onChange={(e) => {
                       setFile(e.target.files[0])
                       setValidationErrors({ ...validationErrors, file: '' })

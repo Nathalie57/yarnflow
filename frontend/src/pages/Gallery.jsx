@@ -1000,7 +1000,7 @@ const Gallery = () => {
                 <input
                   ref={(el) => (window.cameraInputGallery = el)}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/*"
                   capture="environment"
                   onChange={(e) => setUploadData({ ...uploadData, photo: e.target.files[0] })}
                   className="hidden"
@@ -1008,7 +1008,7 @@ const Gallery = () => {
                 <input
                   ref={(el) => (window.galleryInputGallery = el)}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/*"
                   onChange={(e) => setUploadData({ ...uploadData, photo: e.target.files[0] })}
                   className="hidden"
                 />
