@@ -4455,11 +4455,12 @@ const ProjectCounter = () => {
                     // Image avec lightbox
                     <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
                       <img
-                        src={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}`}
+                        key={project.pattern_path}
+                        src={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`}
                         alt="Patron"
                         className="w-full h-auto cursor-zoom-in hover:opacity-95 transition"
                         onClick={() => setLightboxImage({
-                          src: `${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}`,
+                          src: `${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`,
                           alt: 'Patron'
                         })}
                       />
@@ -4479,7 +4480,8 @@ const ProjectCounter = () => {
                     // PDF avec viewer interactif
                     <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
                       <PDFViewer
-                        url={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}`}
+                        key={project.pattern_path}
+                        url={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`}
                         fileName={project.name ? `${project.name}-patron.pdf` : 'patron.pdf'}
                       />
                     </div>
