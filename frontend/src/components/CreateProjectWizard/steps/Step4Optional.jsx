@@ -136,14 +136,16 @@ const Step4Optional = ({
           <label className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${patternType === 'file' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
             <span className="text-2xl mb-1">📎</span>
             <span className="text-xs font-medium">Fichier</span>
+            <span className="text-xs text-gray-400 mt-0.5">PDF ou image</span>
             {patternFile && (
               <span className="text-xs text-primary-600 mt-1 truncate max-w-full">
                 ✓ {patternFile.name.substring(0, 15)}...
               </span>
             )}
+            {/* [AI:Claude] Extensions + MIME types pour meilleure compatibilité Android */}
             <input
               type="file"
-              accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+              accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
               onChange={(e) => {
                 const file = e.target.files[0]
                 if (file) {

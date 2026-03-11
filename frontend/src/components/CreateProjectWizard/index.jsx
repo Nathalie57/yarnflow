@@ -13,6 +13,13 @@ import Step3Sections from './steps/Step3Sections'
 import Step4Optional from './steps/Step4Optional'
 
 const TOTAL_STEPS = 4
+const DRAFT_KEY = 'yf_wizard'
+
+const DEFAULT_TECHNICAL_FORM = {
+  yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
+  needles: [{ type: '', size: '', length: '' }],
+  gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
+}
 
 const CreateProjectWizard = ({
   isOpen,
@@ -37,28 +44,42 @@ const CreateProjectWizard = ({
   patternText,
   selectedLibraryPattern
 }) => {
-  const [currentStep, setCurrentStep] = useState(1)
+  // [AI:Claude] Lire le brouillon une seule fois au montage (survie aux rechargements mobile)
+  const [draft] = useState(() => {
+    try {
+      const s = sessionStorage.getItem(DRAFT_KEY)
+      return s ? JSON.parse(s) : {}
+    } catch { return {} }
+  })
 
-  // État du wizard
-  const [selectedCategory, setSelectedCategory] = useState(null)
-  const [formData, setFormData] = useState({
+  const [currentStep, setCurrentStep] = useState(draft.currentStep || 1)
+
+  // État du wizard — initialisé depuis sessionStorage si disponible
+  const [selectedCategory, setSelectedCategory] = useState(draft.selectedCategory || null)
+  const [formData, setFormData] = useState(draft.formData || {
     name: '',
     technique: 'crochet',
     type: '',
     counter_unit: 'rows'
   })
-  const [sections, setSections] = useState([])
-  const [description, setDescription] = useState('')
-  const [isFavorite, setIsFavorite] = useState(false)
-  const [projectTags, setProjectTags] = useState([])
+  const [sections, setSections] = useState(draft.sections || [])
+  const [description, setDescription] = useState(draft.description || '')
+  const [isFavorite, setIsFavorite] = useState(draft.isFavorite || false)
+  const [projectTags, setProjectTags] = useState(draft.projectTags || [])
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false)
-  const [technicalForm, setTechnicalForm] = useState({
-    yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
-    needles: [{ type: '', size: '', length: '' }],
-    gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
-  })
+  const [technicalForm, setTechnicalForm] = useState(draft.technicalForm || DEFAULT_TECHNICAL_FORM)
 
-  // Reset quand on ferme le wizard
+  // [AI:Claude] Sauvegarde continue dans sessionStorage tant que le wizard est ouvert
+  useEffect(() => {
+    if (!isOpen) return
+    try {
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+        currentStep, selectedCategory, formData, sections, description, isFavorite, projectTags, technicalForm
+      }))
+    } catch {}
+  }, [isOpen, currentStep, selectedCategory, formData, sections, description, isFavorite, projectTags, technicalForm])
+
+  // Reset + suppression du brouillon quand on ferme le wizard
   useEffect(() => {
     if (!isOpen) {
       setCurrentStep(1)
@@ -74,11 +95,8 @@ const CreateProjectWizard = ({
       setIsFavorite(false)
       setProjectTags([])
       setShowTechnicalDetails(false)
-      setTechnicalForm({
-        yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
-        needles: [{ type: '', size: '', length: '' }],
-        gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
-      })
+      setTechnicalForm(DEFAULT_TECHNICAL_FORM)
+      try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
     }
   }, [isOpen])
 

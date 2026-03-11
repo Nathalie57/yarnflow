@@ -86,6 +86,41 @@ const MyProjects = () => {
   })
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
 
+  // [AI:Claude] Restaurer le brouillon de création si la page a été rechargée (tab mobile)
+  useEffect(() => {
+    try {
+      const wizardDraft = sessionStorage.getItem('yf_wizard')
+      const patternDraft = sessionStorage.getItem('yf_wizard_pattern')
+      if (wizardDraft || patternDraft) {
+        setShowCreateModal(true)
+        if (patternDraft) {
+          const d = JSON.parse(patternDraft)
+          if (d.patternUrl) setPatternUrl(d.patternUrl)
+          if (d.patternText) setPatternText(d.patternText)
+          if (d.patternType && ['url', 'text'].includes(d.patternType)) setPatternType(d.patternType)
+        }
+      }
+    } catch {}
+  }, [])
+
+  // [AI:Claude] Sauvegarder l'état patron dans sessionStorage tant que le wizard est ouvert
+  useEffect(() => {
+    if (!showCreateModal) return
+    try {
+      sessionStorage.setItem('yf_wizard_pattern', JSON.stringify({ patternUrl, patternText, patternType }))
+    } catch {}
+  }, [showCreateModal, patternUrl, patternText, patternType])
+
+  // [AI:Claude] Bouton retour Android : fermer le modal au lieu de quitter l'app
+  useEffect(() => {
+    if (showCreateModal) {
+      window.history.pushState({ modal: 'createProject' }, '')
+      const handlePopState = () => handleCancelModal()
+      window.addEventListener('popstate', handlePopState)
+      return () => window.removeEventListener('popstate', handlePopState)
+    }
+  }, [showCreateModal])
+
   // [AI:Claude] Détecter mobile au montage
   useEffect(() => {
     const checkMobile = () => {
@@ -486,6 +521,7 @@ const MyProjects = () => {
       setSelectedLibraryPattern(null)
       setPatternSearchQuery('')
       setShowCreateModal(false)
+      try { sessionStorage.removeItem('yf_wizard_pattern') } catch {}
 
       // [AI:Claude] Si c'est le premier projet, stocker un flag pour afficher le tip
       if (projects.length === 0) {
@@ -590,6 +626,7 @@ const MyProjects = () => {
     setShowCreateModal(false)
     setShowPatternUrlModal(false)
     setShowPatternTextModal(false)
+    try { sessionStorage.removeItem('yf_wizard_pattern') } catch {}
   }
 
   // [AI:Claude] Filtrer les projets par recherche
@@ -1297,13 +1334,18 @@ const MyProjects = () => {
             {/* Workflow rapide */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
               <p className="text-sm text-blue-800">
-                💡 <strong>Workflow rapide :</strong>
+                💡 <strong>Pour un patron en ligne (page web gratuite) :</strong>
               </p>
               <ol className="text-xs text-blue-700 mt-2 ml-4 list-decimal space-y-1">
-                <li>Cherchez votre patron avec les boutons Google ou Ravelry ci-dessous</li>
-                <li>Copiez l'URL du patron trouvé</li>
-                <li>Revenez ici et collez dans le champ (appui long ou Ctrl+V)</li>
+                <li>Trouvez la page du patron (ex : site Drops, blog...)</li>
+                <li>Copiez l'adresse depuis la barre de votre navigateur</li>
+                <li>Collez-la dans le champ ci-dessus</li>
               </ol>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-amber-800">
+                📎 <strong>Patron PDF (Ravelry, téléchargement...) ?</strong> Utilisez plutôt le bouton <strong>Fichier</strong> pour l'importer directement.
+              </p>
             </div>
 
             {/* Champ URL */}
