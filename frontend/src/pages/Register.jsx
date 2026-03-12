@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
+import PasswordInput from '../components/PasswordInput'
 
 const Register = () => {
   const [searchParams] = useSearchParams()
@@ -134,8 +135,7 @@ const Register = () => {
 
           <div className="mb-4">
             <label className="block text-gray-700 mb-2">Mot de passe</label>
-            <input
-              type="password"
+            <PasswordInput
               name="password"
               className="input-field"
               value={formData.password}

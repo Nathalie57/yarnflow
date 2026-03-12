@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { userAPI } from '../services/api'
+import PasswordInput from '../components/PasswordInput'
 
 const Profile = () => {
   const { user, updateUser, logout } = useAuth()
@@ -478,8 +479,7 @@ const Profile = () => {
           <form onSubmit={handleChangePassword}>
             <div className="mb-4">
               <label className="block text-gray-700 mb-2">Mot de passe actuel</label>
-              <input
-                type="password"
+              <PasswordInput
                 className="input-field"
                 value={passwordData.current_password}
                 onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
@@ -489,8 +489,7 @@ const Profile = () => {
 
             <div className="mb-4">
               <label className="block text-gray-700 mb-2">Nouveau mot de passe</label>
-              <input
-                type="password"
+              <PasswordInput
                 className="input-field"
                 value={passwordData.new_password}
                 onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
@@ -502,8 +501,7 @@ const Profile = () => {
 
             <div className="mb-6">
               <label className="block text-gray-700 mb-2">Confirmer le nouveau mot de passe</label>
-              <input
-                type="password"
+              <PasswordInput
                 className="input-field"
                 value={passwordData.confirm_password}
                 onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
+import PasswordInput from '../components/PasswordInput'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -74,8 +75,7 @@ const Login = () => {
 
           <div className="mb-6">
             <label className="block text-gray-700 mb-2">Mot de passe</label>
-            <input
-              type="password"
+            <PasswordInput
               className="input-field"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
