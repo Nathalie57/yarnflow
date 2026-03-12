@@ -6462,7 +6462,7 @@ Rang 3 : *1ms, aug* x6 (18)
       )}
 
       {/* [AI:Claude] Bouton flottant pour les notes - masqué quand popup ouverte */}
-      {!showNotes && (
+      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !showAlertModal && !showConfirmModal && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && (
       <button
         onClick={handleOpenNotes}
         className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-2xl px-4 py-3 flex items-center gap-3"
