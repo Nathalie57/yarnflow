@@ -564,6 +564,7 @@ const ProjectCounter = () => {
       const response = await api.get(`/projects/${projectId}/sections`)
       const loadedSections = response.data.sections || []
       setSections(loadedSections)
+      if (loadedSections.length > 0) setSectionsCollapsed(false)
 
       // [AI:Claude] Vérifier si la section actuelle est toujours valide et non terminée
       let needsNewSection = false
@@ -3543,6 +3544,19 @@ const ProjectCounter = () => {
 
                       {/* Progression */}
                       <td className="px-4 py-3">
+                        {section.total_rows ? (
+                          <span className="text-xs text-gray-500 block mb-1">
+                            {counterUnit === 'cm'
+                              ? `${Number(section.current_row || 0).toFixed(1)} / ${Number(section.total_rows).toFixed(1)} cm`
+                              : `rang ${Math.floor(section.current_row || 0)} / ${Math.floor(section.total_rows)}`}
+                          </span>
+                        ) : section.current_row > 0 ? (
+                          <span className="text-xs text-gray-500 block mb-1">
+                            {counterUnit === 'cm'
+                              ? `${Number(section.current_row).toFixed(1)} cm`
+                              : `rang ${Math.floor(section.current_row)}`}
+                          </span>
+                        ) : null}
                         {sectionProgress !== null ? (
                           <div className="flex items-center gap-2">
                             <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden min-w-[60px]">
@@ -3693,15 +3707,28 @@ const ProjectCounter = () => {
                         }
                       }}
                     >
-                      <div className="flex items-center gap-2 flex-1">
-                        {isActive && !isCompleted && <span className="text-primary-600 font-bold text-xs">●</span>}
-                        {isActive && isCompleted && <span className="text-green-600 font-bold text-xs">●</span>}
-                        <h3 className={`text-sm font-semibold ${
-                          isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
-                        }`}>
-                          {section.name}
-                        </h3>
-                        {!isActive && isCompleted && <span className="text-green-600 text-xs">✓</span>}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {isActive && !isCompleted && <span className="text-primary-600 font-bold text-xs flex-shrink-0">●</span>}
+                        {isActive && isCompleted && <span className="text-green-600 font-bold text-xs flex-shrink-0">●</span>}
+                        <div className="min-w-0">
+                          <h3 className={`text-sm font-semibold truncate ${
+                            isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
+                          }`}>
+                            {section.name}
+                            {!isActive && isCompleted && <span className="text-green-600 text-xs ml-1">✓</span>}
+                          </h3>
+                          {(section.total_rows || section.current_row > 0) && (
+                            <span className="text-xs text-gray-400">
+                              {section.total_rows
+                                ? counterUnit === 'cm'
+                                  ? `${Number(section.current_row || 0).toFixed(1)} / ${Number(section.total_rows).toFixed(1)} cm`
+                                  : `rang ${Math.floor(section.current_row || 0)} / ${Math.floor(section.total_rows)}`
+                                : counterUnit === 'cm'
+                                  ? `${Number(section.current_row).toFixed(1)} cm`
+                                  : `rang ${Math.floor(section.current_row)}`}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {/* Bouton notes dans le header - style bulle */}
                       <button
