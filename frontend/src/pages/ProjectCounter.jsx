@@ -3311,13 +3311,22 @@ const ProjectCounter = () => {
                     ✎
                   </button>
                 </div>
-                <button
-                  onClick={() => { setSecondaryActive(false); setSecondaryCount(0); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
-                  className="text-gray-500 hover:text-gray-800 text-lg leading-none transition"
-                  title="Désactiver le compteur secondaire"
-                >
-                  ×
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSecondaryCount(0)}
+                    className="px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 text-xs font-medium transition"
+                    title="Remettre à zéro"
+                  >
+                    ↺ Remise à 0
+                  </button>
+                  <button
+                    onClick={() => { setSecondaryActive(false); setSecondaryCount(0); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
+                    className="px-2.5 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200 text-xs font-medium transition"
+                    title="Supprimer le compteur secondaire"
+                  >
+                    ✕ Supprimer
+                  </button>
+                </div>
               </div>
             )}
           </div>
