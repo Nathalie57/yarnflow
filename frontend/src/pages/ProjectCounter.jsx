@@ -72,7 +72,6 @@ const ProjectCounter = () => {
   const [secondaryCount, setSecondaryCount] = useState(0)
   const [secondaryTarget, setSecondaryTarget] = useState(null)
   const [secondaryLabel, setSecondaryLabel] = useState('')
-  const [secondarySuccess, setSecondarySuccess] = useState(false) // feedback ✓ 1.5s
   const [isEditingSecondary, setIsEditingSecondary] = useState(false)
   const [secondaryLabelInput, setSecondaryLabelInput] = useState('')
   const [secondaryTargetInput, setSecondaryTargetInput] = useState('')
@@ -89,7 +88,6 @@ const ProjectCounter = () => {
   // [AI:Claude] FIX BUG x4: Ref pour éviter les multiples appels à endSession
   const isEndingSessionRef = useRef(false)
   // [AI:Claude] Ref pour le timeout du compteur secondaire (évite les conflits sur spam)
-  const secondaryTimeoutRef = useRef(null)
 
   // [AI:Claude] Photos du projet
   const [projectPhotos, setProjectPhotos] = useState([])
@@ -1754,13 +1752,6 @@ const ProjectCounter = () => {
       } finally {
         setIsSavingRow(false)
       }
-      // [AI:Claude] Reset secondaire en mode CM (pas de project_rows, reset silencieux)
-      if (secondaryActive) {
-        setSecondaryActive(false)
-        setSecondaryCount(0)
-        setSecondaryTarget(null)
-        setSecondaryLabel('')
-      }
       return
     }
 
@@ -1780,27 +1771,6 @@ const ProjectCounter = () => {
 
       await api.post(`/projects/${projectId}/rows`, rowData)
 
-      // [AI:Claude] Reset complet du compteur secondaire après incrément
-      if (secondaryActive) {
-        if (secondaryCount > 0) {
-          // Annuler tout timeout précédent avant d'en lancer un nouveau
-          if (secondaryTimeoutRef.current) clearTimeout(secondaryTimeoutRef.current)
-          setSecondarySuccess(true)
-          secondaryTimeoutRef.current = setTimeout(() => {
-            setSecondaryActive(false)
-            setSecondaryCount(0)
-            setSecondaryTarget(null)
-            setSecondaryLabel('')
-            setSecondarySuccess(false)
-            secondaryTimeoutRef.current = null
-          }, 1500)
-        } else {
-          // Pas utilisé sur ce rang : désactivation silencieuse
-          setSecondaryActive(false)
-          setSecondaryTarget(null)
-          setSecondaryLabel('')
-        }
-      }
 
       // [AI:Claude] FIX v0.16.2: Mettre à jour sections/project AVANT setCurrentRow
       // pour éviter que le useEffect n'écrase avec l'ancienne valeur
@@ -3297,16 +3267,6 @@ const ProjectCounter = () => {
                   Annuler
                 </button>
               </div>
-            ) : secondarySuccess ? (
-              // Feedback ✓ après incrément principal
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-green-700 font-semibold text-sm animate-pulse">
-                  <span>{secondaryLabel || 'Compteur'}</span>
-                  <span className="text-green-600">
-                    ✓ {secondaryCount}{secondaryTarget ? `/${secondaryTarget}` : ''}
-                  </span>
-                </div>
-              </div>
             ) : (
               // Compteur secondaire actif
               <div className="flex items-center justify-between">
@@ -3352,7 +3312,7 @@ const ProjectCounter = () => {
                   </button>
                 </div>
                 <button
-                  onClick={() => { setSecondaryActive(false); setSecondaryCount(0); setSecondarySuccess(false); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
+                  onClick={() => { setSecondaryActive(false); setSecondaryCount(0); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
                   className="text-gray-500 hover:text-gray-800 text-lg leading-none transition"
                   title="Désactiver le compteur secondaire"
                 >
