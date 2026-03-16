@@ -2038,7 +2038,6 @@ const ProjectCounter = () => {
     setSecondaryCount(0)
     setSecondaryTarget(null)
     setSecondaryLabel('')
-    setSecondarySuccess(false)
     setIsEditingSecondary(false)
     setSecondaryLabelInput('')
     setSecondaryTargetInput('')
