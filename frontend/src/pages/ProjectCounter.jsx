@@ -341,14 +341,26 @@ const ProjectCounter = () => {
   useEffect(() => {
     if (!projectId) return
     const timer = setTimeout(() => {
+      // 1. État courant dans projects (sync multi-appareils)
       api.put(`/projects/${projectId}`, {
         secondary_label: secondaryActive ? (secondaryLabel || null) : null,
         secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
         secondary_count: secondaryActive ? secondaryCount : 0
-      }).catch(() => {}) // silencieux, non bloquant
+      }).catch(() => {})
+
+      // 2. Historique dans project_rows au rang courant (conservation des données)
+      if (secondaryActive && secondaryLabel) {
+        api.post(`/projects/${projectId}/rows`, {
+          row_number: currentRow,
+          section_id: currentSectionId || null,
+          secondary_count: secondaryCount,
+          secondary_target: secondaryTarget,
+          secondary_label: secondaryLabel
+        }).catch(() => {})
+      }
     }, 1500)
     return () => clearTimeout(timer)
-  }, [secondaryActive, secondaryLabel, secondaryTarget, secondaryCount, projectId])
+  }, [secondaryActive, secondaryLabel, secondaryTarget, secondaryCount, projectId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // [AI:Claude] Fermer les menus quand on clique en dehors
   useEffect(() => {
@@ -2397,6 +2409,18 @@ const ProjectCounter = () => {
     }
   }
 
+  // Sauvegarder l'état courant du compteur secondaire dans project_rows (avant reset)
+  const flushSecondaryToHistory = () => {
+    if (!secondaryActive || !secondaryLabel || secondaryCount === 0) return
+    api.post(`/projects/${projectId}/rows`, {
+      row_number: currentRow,
+      section_id: currentSectionId || null,
+      secondary_count: secondaryCount,
+      secondary_target: secondaryTarget,
+      secondary_label: secondaryLabel
+    }).catch(() => {})
+  }
+
   // [AI:Claude] Sauvegarder les notes de section
   const saveSectionNotes = async (sectionId) => {
     setIsSavingSectionNotes(true)
@@ -3333,14 +3357,14 @@ const ProjectCounter = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setSecondaryCount(0)}
+                    onClick={() => { flushSecondaryToHistory(); setSecondaryCount(0) }}
                     className="px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 text-xs font-medium transition"
                     title="Remettre à zéro"
                   >
                     ↺ Remise à 0
                   </button>
                   <button
-                    onClick={() => { setSecondaryActive(false); setSecondaryCount(0); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
+                    onClick={() => { flushSecondaryToHistory(); setSecondaryActive(false); setSecondaryCount(0); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
                     className="px-2.5 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200 text-xs font-medium transition"
                     title="Supprimer le compteur secondaire"
                   >
