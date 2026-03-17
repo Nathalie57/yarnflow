@@ -227,7 +227,8 @@ class Project extends BaseModel
             'yarn_brand', 'yarn_color', 'yarn_weight', 'hook_size', 'yarn_used_grams',
             'notes', 'pattern_notes', 'is_public', 'is_favorite', 'completed_at',
             'pattern_path', 'pattern_url', 'pattern_text', // [AI:Claude] v0.13.0 - Support texte patron
-            'technical_details' // [AI:Claude] v0.13.0 - Détails techniques structurés (laine, aiguilles, échantillon)
+            'technical_details', // [AI:Claude] v0.13.0 - Détails techniques structurés (laine, aiguilles, échantillon)
+            'secondary_label', 'secondary_target', 'secondary_count' // [AI:Claude] Sync compteur secondaire multi-appareils
         ];
 
         $fields = [];

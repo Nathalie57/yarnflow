@@ -337,6 +337,19 @@ const ProjectCounter = () => {
     localStorage.setItem('sectionsSortBy', sectionsSortBy)
   }, [sectionsSortBy])
 
+  // Sync compteur secondaire vers le serveur (multi-appareils) - débounce 1.5s
+  useEffect(() => {
+    if (!projectId) return
+    const timer = setTimeout(() => {
+      api.put(`/projects/${projectId}`, {
+        secondary_label: secondaryActive ? (secondaryLabel || null) : null,
+        secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
+        secondary_count: secondaryActive ? secondaryCount : 0
+      }).catch(() => {}) // silencieux, non bloquant
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [secondaryActive, secondaryLabel, secondaryTarget, secondaryCount, projectId])
+
   // [AI:Claude] Fermer les menus quand on clique en dehors
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -503,6 +516,14 @@ const ProjectCounter = () => {
       setNotes(projectData.notes || '')
       setCounterUnit(projectData.counter_unit || 'rows') // [AI:Claude] v0.16.2 - Charger unité compteur
       setCounterIncrement(parseFloat(projectData.counter_unit_increment) || 1.0) // [AI:Claude] v0.16.2 - Charger incrément
+
+      // Restaurer le compteur secondaire (sync multi-appareils)
+      if (projectData.secondary_label) {
+        setSecondaryLabel(projectData.secondary_label)
+        setSecondaryTarget(projectData.secondary_target || null)
+        setSecondaryCount(projectData.secondary_count || 0)
+        setSecondaryActive(true)
+      }
 
       // [AI:Claude] Sélectionner la section en cours si elle existe
       if (projectData.current_section_id) {
