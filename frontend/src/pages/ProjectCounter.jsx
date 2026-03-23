@@ -244,7 +244,21 @@ const ProjectCounter = () => {
       fetchProjectPhotos()
       fetchCredits()
       // Passer le current_section_id du projet fraîchement chargé
-      fetchSections(projectData?.current_section_id)
+      const loadedSections = await fetchSections(projectData?.current_section_id)
+
+      // Restaurer le compteur secondaire depuis la section active
+      const activeSectionId = projectData?.current_section_id
+      if (activeSectionId && loadedSections?.length > 0) {
+        const activeSection = loadedSections.find(s => s.id === activeSectionId)
+        if (activeSection?.secondary_label) {
+          setSecondaryLabel(activeSection.secondary_label)
+          setSecondaryTarget(activeSection.secondary_target || null)
+          setSecondaryCount(activeSection.secondary_count || 0)
+          setSecondaryActive(true)
+          setSecondaryLabelInput(activeSection.secondary_label)
+          setSecondaryTargetInput(activeSection.secondary_target ? String(activeSection.secondary_target) : '')
+        }
+      }
 
       // [AI:Claude] v0.17.1 - Vérifier si c'est le premier projet (tip onboarding)
       if (sessionStorage.getItem('showFirstProjectTip') === 'true') {
@@ -337,30 +351,22 @@ const ProjectCounter = () => {
     localStorage.setItem('sectionsSortBy', sectionsSortBy)
   }, [sectionsSortBy])
 
-  // Sync compteur secondaire vers le serveur (multi-appareils) - débounce 1.5s
+  // Sync compteur secondaire vers la section courante - débounce 1.5s
+  // On sauvegarde dans project_sections (par section) pour sync multi-appareils.
+  // On ne poste PAS dans project_rows ici : ça écrasait section.current_row avec des valeurs
+  // stale (currentRow et currentSectionId n'étaient pas dans les deps). Les données secondaires
+  // sont déjà enregistrées dans project_rows lors de chaque incrément du compteur principal.
   useEffect(() => {
-    if (!projectId) return
+    if (!projectId || !currentSectionId) return
     const timer = setTimeout(() => {
-      // 1. État courant dans projects (sync multi-appareils)
-      api.put(`/projects/${projectId}`, {
+      api.put(`/projects/${projectId}/sections/${currentSectionId}`, {
         secondary_label: secondaryActive ? (secondaryLabel || null) : null,
         secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
         secondary_count: secondaryActive ? secondaryCount : 0
       }).catch(() => {})
-
-      // 2. Historique dans project_rows au rang courant (conservation des données)
-      if (secondaryActive && secondaryLabel) {
-        api.post(`/projects/${projectId}/rows`, {
-          row_number: currentRow,
-          section_id: currentSectionId || null,
-          secondary_count: secondaryCount,
-          secondary_target: secondaryTarget,
-          secondary_label: secondaryLabel
-        }).catch(() => {})
-      }
     }, 1500)
     return () => clearTimeout(timer)
-  }, [secondaryActive, secondaryLabel, secondaryTarget, secondaryCount, projectId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [secondaryActive, secondaryLabel, secondaryTarget, secondaryCount, projectId, currentSectionId])
 
   // [AI:Claude] Fermer les menus quand on clique en dehors
   useEffect(() => {
@@ -529,13 +535,8 @@ const ProjectCounter = () => {
       setCounterUnit(projectData.counter_unit || 'rows') // [AI:Claude] v0.16.2 - Charger unité compteur
       setCounterIncrement(parseFloat(projectData.counter_unit_increment) || 1.0) // [AI:Claude] v0.16.2 - Charger incrément
 
-      // Restaurer le compteur secondaire (sync multi-appareils)
-      if (projectData.secondary_label) {
-        setSecondaryLabel(projectData.secondary_label)
-        setSecondaryTarget(projectData.secondary_target || null)
-        setSecondaryCount(projectData.secondary_count || 0)
-        setSecondaryActive(true)
-      }
+      // Le compteur secondaire est maintenant géré par section (voir fetchSections / handleChangeSection)
+      // On ne restaure plus depuis le champ global du projet pour éviter les conflits inter-sections
 
       // [AI:Claude] Sélectionner la section en cours si elle existe
       if (projectData.current_section_id) {
@@ -616,7 +617,7 @@ const ProjectCounter = () => {
           const projectSection = loadedSections.find(s => s.id === targetSectionId)
           if (projectSection && !needsNewSection) {
             setCurrentSectionId(projectSection.id)
-            return
+            return loadedSections
           }
         }
 
@@ -627,7 +628,7 @@ const ProjectCounter = () => {
             const savedSection = loadedSections.find(s => s.id === parseInt(savedSectionId))
             if (savedSection && !savedSection.is_completed) {
               setCurrentSectionId(savedSection.id)
-              return
+              return loadedSections
             }
           }
         }
@@ -636,15 +637,18 @@ const ProjectCounter = () => {
         const firstIncomplete = loadedSections.find(s => !s.is_completed)
         if (firstIncomplete) {
           setCurrentSectionId(firstIncomplete.id)
-          return
+          return loadedSections
         }
 
         // Priorité 3 : Première section de la liste (si toutes sont terminées)
         setCurrentSectionId(loadedSections[0].id)
       }
+
+      return loadedSections
     } catch (err) {
       console.error('Erreur chargement sections:', err)
       // [AI:Claude] Pas d'erreur fatale si pas de sections
+      return []
     }
   }
 
@@ -2066,7 +2070,17 @@ const ProjectCounter = () => {
     setSectionNotesText('')
     setOpenSectionMenu(null)
 
-    // [AI:Claude] Reset complet du compteur secondaire au changement de section
+    // Sauvegarder immédiatement l'état du compteur secondaire sur la section qu'on quitte
+    // (la sync debounce ne serait pas encore passée)
+    if (currentSectionId) {
+      api.put(`/projects/${projectId}/sections/${currentSectionId}`, {
+        secondary_label: secondaryActive ? (secondaryLabel || null) : null,
+        secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
+        secondary_count: secondaryActive ? secondaryCount : 0
+      }).catch(() => {})
+    }
+
+    // Reset local du compteur secondaire
     setSecondaryActive(false)
     setSecondaryCount(0)
     setSecondaryTarget(null)
@@ -2146,9 +2160,29 @@ const ProjectCounter = () => {
       // [AI:Claude] Sauvegarder la section active dans localStorage pour la retrouver au retour
       localStorage.setItem(`currentSection_${projectId}`, sectionId.toString())
 
-      // [AI:Claude] Rafraîchir les sections et le projet avec la nouvelle section
-      await fetchSections(sectionId)
+      // Rafraîchir les sections et le projet avec la nouvelle section
+      const loadedSections = await fetchSections(sectionId)
       await fetchProject()
+
+      // Restaurer le compteur secondaire depuis la section cible (données par section en DB)
+      // On écrase ce que fetchProject() a pu restaurer depuis le champ global du projet
+      const targetSection = loadedSections.find(s => s.id === sectionId)
+      if (targetSection?.secondary_label) {
+        setSecondaryLabel(targetSection.secondary_label)
+        setSecondaryTarget(targetSection.secondary_target || null)
+        setSecondaryCount(targetSection.secondary_count || 0)
+        setSecondaryActive(true)
+        setSecondaryLabelInput(targetSection.secondary_label)
+        setSecondaryTargetInput(targetSection.secondary_target ? String(targetSection.secondary_target) : '')
+      } else {
+        setSecondaryActive(false)
+        setSecondaryCount(0)
+        setSecondaryTarget(null)
+        setSecondaryLabel('')
+        setIsEditingSecondary(false)
+        setSecondaryLabelInput('')
+        setSecondaryTargetInput('')
+      }
     } catch (err) {
       console.error('Erreur changement section:', err)
       showAlert('Erreur lors du changement de section', 'error')

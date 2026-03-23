@@ -942,7 +942,8 @@ class Project extends BaseModel
      */
     public function updateSection(int $sectionId, array $data): bool
     {
-        $allowedFields = ['name', 'description', 'notes', 'display_order', 'total_rows', 'current_row', 'counter_unit', 'is_completed'];
+        $allowedFields = ['name', 'description', 'notes', 'display_order', 'total_rows', 'current_row', 'counter_unit', 'is_completed',
+                          'secondary_label', 'secondary_target', 'secondary_count'];
 
         $fields = [];
         $params = [':id' => $sectionId];
