@@ -38,9 +38,13 @@ class AIPhotoService
         'wearable_c3' => 'porté par une personne dans une ambiance urbaine lifestyle avec rue calme et lumière naturelle',
         // VÊTEMENTS À PLAT - PLUS
         'flatlay_c2' => 'posé à plat avec accessoires lifestyle et props décoratifs sur surface naturelle texturée',
-        // VÊTEMENTS PORTÉS - PRO
+        // VÊTEMENTS PORTÉS - PLUS
         'wearable_c4' => 'porté par une personne dans une ambiance vintage avec décor rétro et tons chauds',
+        'wearable_c5' => 'porté par une personne en studio avec éclairage chaud et fond épuré, ambiance sportswear élégant',
+        'wearable_c6' => 'porté par une personne dans un portrait en pleine nature avec arbres, végétation et lumière naturelle filtrée',
+        // VÊTEMENTS PORTÉS - PRO
         'wearable_c7' => 'porté par une personne en studio avec fond texturé sombre et éclairage dramatique sophistiqué',
+        'wearable_c8' => 'porté par une personne dans une ambiance rétro années 70 avec décor vintage, tons orangés et éclairage chaleureux',
         'wearable_c9' => 'porté par une personne dans une ambiance industrielle urbaine avec architecture moderne',
 
         // ACCESSOIRES - FREE
@@ -264,7 +268,7 @@ class AIPhotoService
     private function buildPrompt(string $type, string $context, string $itemName = '', string $modelGender = 'person', ?string $season = null): string
     {
         // [AI:Claude] Récupérer la description du contexte
-        $contextDescription = self::CONTEXTS[$context] ?? self::CONTEXTS['lifestyle'];
+        $contextDescription = self::CONTEXTS[$context] ?? 'dans un contexte lifestyle naturel avec lumière douce';
 
         // [AI:Claude] Ajouter l'ambiance saisonnière si applicable
         $seasonDescription = '';
@@ -346,7 +350,10 @@ class AIPhotoService
             'wearable_c2',
             'wearable_c3',
             'wearable_c4',
+            'wearable_c5',
+            'wearable_c6',
             'wearable_c7',
+            'wearable_c8',
             'wearable_c9',
             // Accessoires portés
             'accessory_c2',
