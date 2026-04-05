@@ -223,6 +223,18 @@ const Navbar = () => {
               📸 Galerie
             </Link>
 
+            {/* OUTILS */}
+            <Link
+              to="/tools"
+              className={`transition flex items-center gap-1 ${
+                location.pathname === '/tools'
+                  ? 'text-primary-600 font-semibold'
+                  : 'text-gray-700 hover:text-primary-600'
+              }`}
+            >
+              🧮 Outils
+            </Link>
+
             {/* STATISTIQUES */}
             <Link
               to="/stats"
@@ -377,6 +389,18 @@ const Navbar = () => {
               }`}
             >
               📸 Galerie Photos IA
+            </Link>
+
+            <Link
+              to="/tools"
+              onClick={closeMobileMenu}
+              className={`block px-4 py-3 rounded-lg transition ${
+                location.pathname === '/tools'
+                  ? 'bg-primary-100 text-primary-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              🧮 Outils
             </Link>
 
             <Link

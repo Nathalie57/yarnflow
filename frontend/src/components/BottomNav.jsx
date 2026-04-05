@@ -17,6 +17,19 @@ const BottomNav = () => {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-50 md:hidden">
       <div className="flex items-center justify-around px-2 py-3">
+        {/* Outils */}
+        <Link
+          to="/tools"
+          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
+            isActive('/tools')
+              ? 'text-primary-600 bg-primary-50'
+              : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
+          }`}
+        >
+          <span className="text-2xl">🧮</span>
+          <span className="text-xs font-medium">Outils</span>
+        </Link>
+
         {/* Projets */}
         <Link
           to="/my-projects"

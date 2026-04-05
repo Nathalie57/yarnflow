@@ -16,6 +16,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useImagePreview } from '../hooks/useImagePreview'
 import { useWakeLock } from '../hooks/useWakeLock'
+import { useMediaSession } from '../hooks/useMediaSession'
 import { useHints } from '../hooks/useHints'
 import api, { networkUtils } from '../services/api'
 import PDFViewer from '../components/PDFViewer'
@@ -41,6 +42,7 @@ const ProjectCounter = () => {
   } = useImagePreview()
   const { isSupported: isWakeLockSupported, isActive: isWakeLockActive, request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
   const { triggerOnce } = useHints() // [AI:Claude] Hints contextuels
+
 
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -2062,6 +2064,19 @@ const ProjectCounter = () => {
       }
     }
   }
+
+  // Écran de verrouillage : affiche le rang courant et les contrôles +/- quand le timer tourne
+  useMediaSession({
+    isActive: isTimerRunning,
+    projectName: project?.name || 'YarnFlow',
+    sectionName: sections.find(s => s.id === currentSectionId)?.name || null,
+    currentRow,
+    targetRows: currentSectionId
+      ? sections.find(s => s.id === currentSectionId)?.total_rows || null
+      : project?.total_rows || null,
+    onIncrement: handleIncrementRow,
+    onDecrement: handleDecrementRow,
+  })
 
   // [AI:Claude] Changer la section en cours
   const handleChangeSection = async (sectionId) => {

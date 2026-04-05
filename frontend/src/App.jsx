@@ -26,6 +26,7 @@ import MyProjects from './pages/MyProjects'
 import ProjectCounter from './pages/ProjectCounter'
 import Stats from './pages/Stats'
 import Gallery from './pages/Gallery'
+import Tools from './pages/Tools'
 import PatternLibrary from './pages/PatternLibrary'
 import PatternLibraryDetail from './pages/PatternLibraryDetail'
 import PaymentSuccess from './pages/PaymentSuccess'
@@ -113,6 +114,7 @@ function App() {
             <Route path="/projects/:projectId" element={<ProjectCounter />} />
             <Route path="/projects/:projectId/counter" element={<ProjectCounter />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/tools" element={<Tools />} />
 
             {/* Routes galerie photos IA (v0.10.0) */}
             <Route path="/gallery" element={<Gallery />} />
