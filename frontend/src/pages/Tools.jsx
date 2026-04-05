@@ -8,6 +8,7 @@ import DistributeIncrDec from '../components/tools/DistributeIncrDec'
 import GaugeCalculator from '../components/tools/GaugeCalculator'
 import NeedleConverter from '../components/tools/NeedleConverter'
 import YarnCalculator from '../components/tools/YarnCalculator'
+import Glossary from '../components/tools/Glossary'
 
 const TOOLS = [
   {
@@ -37,6 +38,13 @@ const TOOLS = [
     title: 'Calculateur de pelotes',
     description: 'Combien de pelotes acheter selon le métrage de votre projet.',
     component: YarnCalculator,
+  },
+  {
+    id: 'glossary',
+    icon: '📖',
+    title: 'Glossaire',
+    description: '66 termes tricot & crochet expliqués en français, avec équivalents anglais.',
+    component: Glossary,
   },
 ]
 

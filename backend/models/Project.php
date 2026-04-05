@@ -650,6 +650,42 @@ class Project extends BaseModel
             ? round($sessionStats['avg_session_duration'] / 60)
             : 0;
 
+        // Meilleure heure de la journée (heure avec le plus de rangs/h en moyenne)
+        $bestHourQuery = "SELECT HOUR(ps.started_at) as hour,
+                                 AVG(ps.rows_completed / NULLIF(ps.duration / 3600, 0)) as avg_speed
+                          FROM project_sessions ps
+                          JOIN {$this->table} p ON ps.project_id = p.id
+                          WHERE p.user_id = :user_id
+                          AND ps.ended_at IS NOT NULL
+                          AND ps.duration > 0
+                          AND ps.rows_completed > 0
+                          $dateCondition
+                          GROUP BY HOUR(ps.started_at)
+                          ORDER BY avg_speed DESC
+                          LIMIT 1";
+
+        $stmt = $this->db->prepare($bestHourQuery);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $bestHourResult = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $bestHour = $bestHourResult ? (int)$bestHourResult['hour'] : null;
+
+        // Progression par jour (rangs/cm complétés par jour sur les 30 derniers jours)
+        $progressionQuery = "SELECT DATE(ps.started_at) as day,
+                                    SUM(ps.rows_completed) as rows
+                             FROM project_sessions ps
+                             JOIN {$this->table} p ON ps.project_id = p.id
+                             WHERE p.user_id = :user_id
+                             AND ps.ended_at IS NOT NULL
+                             AND ps.started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                             GROUP BY DATE(ps.started_at)
+                             ORDER BY day ASC";
+
+        $stmt = $this->db->prepare($progressionQuery);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $progressionData = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
         // [AI:Claude] Calcul du streak (jours consécutifs de travail)
         // Récupérer tous les jours distincts où l'utilisateur a travaillé
         $workDaysQuery = "SELECT DISTINCT DATE(ps.started_at) as work_date
@@ -748,6 +784,8 @@ class Project extends BaseModel
             'average_session_time' => $avgSessionTime,
             'current_streak' => $currentStreak,
             'longest_streak' => $longestStreak,
+            'best_hour' => $bestHour,
+            'progression' => $progressionData,
             'period' => $period,
             'has_started_rows' => $hasStartedRows // [AI:Claude] v0.17.0 - Onboarding premier rang
         ];

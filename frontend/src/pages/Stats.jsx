@@ -21,6 +21,8 @@ import {
   Cell,
   BarChart,
   Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -458,6 +460,56 @@ const Stats = () => {
                 </div>
               </div>
             </div>
+
+            {/* Progression sur 30 jours */}
+            {stats.progression && stats.progression.length > 0 && (
+              <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
+                <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  📈 Progression — 30 derniers jours
+                </h3>
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={stats.progression.map(d => ({
+                    day: d.day.slice(5), // MM-DD
+                    rangs: parseInt(d.rows) || 0
+                  }))}>
+                    <defs>
+                      <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="day" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip
+                      content={({ active, payload, label }) => active && payload?.length ? (
+                        <div className="bg-white border-2 border-primary-200 rounded p-2 shadow text-sm">
+                          <p className="font-bold text-gray-700">{label}</p>
+                          <p className="text-primary-600">{payload[0].value} rangs</p>
+                        </div>
+                      ) : null}
+                    />
+                    <Area type="monotone" dataKey="rangs" stroke="#7c3aed" fill="url(#progressGradient)" strokeWidth={2} dot={false} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* Meilleure heure */}
+            {stats.best_hour !== null && stats.best_hour !== undefined && (
+              <div className="bg-white rounded-xl border-2 border-gray-200 p-6 flex items-center gap-5">
+                <div className="text-5xl">🕐</div>
+                <div>
+                  <h3 className="font-bold text-gray-800">Votre meilleure heure</h3>
+                  <p className="text-3xl font-bold text-primary-600 mt-1">
+                    {stats.best_hour}h – {stats.best_hour + 1}h
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    C'est le créneau où vous tricotez le plus vite en moyenne.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Performance - Bar Chart */}
             <div className="bg-white rounded-xl border-2 border-gray-200 p-6">

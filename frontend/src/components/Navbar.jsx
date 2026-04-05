@@ -226,13 +226,16 @@ const Navbar = () => {
             {/* OUTILS */}
             <Link
               to="/tools"
-              className={`transition flex items-center gap-1 ${
+              className={`relative transition flex items-center gap-1 ${
                 location.pathname === '/tools'
                   ? 'text-primary-600 font-semibold'
                   : 'text-gray-700 hover:text-primary-600'
               }`}
             >
               🧮 Outils
+              <span className="absolute -top-2 -right-4 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                NEW
+              </span>
             </Link>
 
             {/* STATISTIQUES */}
@@ -394,13 +397,16 @@ const Navbar = () => {
             <Link
               to="/tools"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-lg transition ${
+              className={`flex items-center justify-between px-4 py-3 rounded-lg transition ${
                 location.pathname === '/tools'
                   ? 'bg-primary-100 text-primary-700 font-semibold'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
             >
               🧮 Outils
+              <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                NEW
+              </span>
             </Link>
 
             <Link

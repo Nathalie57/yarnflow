@@ -20,7 +20,7 @@ const BottomNav = () => {
         {/* Outils */}
         <Link
           to="/tools"
-          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
+          className={`relative flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
             isActive('/tools')
               ? 'text-primary-600 bg-primary-50'
               : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
@@ -28,6 +28,9 @@ const BottomNav = () => {
         >
           <span className="text-2xl">🧮</span>
           <span className="text-xs font-medium">Outils</span>
+          <span className="absolute top-1 right-1 bg-rose-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">
+            NEW
+          </span>
         </Link>
 
         {/* Projets */}
