@@ -22,6 +22,7 @@ use App\Controllers\PatternLibraryController;
 use App\Controllers\WaitlistController;
 use App\Controllers\PasswordResetController;
 use App\Controllers\WebFetchController;
+use App\Controllers\AiAssistantController;
 use App\Controllers\ContactController;
 use App\Middleware\RateLimitMiddleware;
 
@@ -220,6 +221,9 @@ function route(string $method, string $uri): void
         $method === 'GET' && preg_match('/^uploads\/pattern-library\/(.+)$/', $uri, $matches) => serveUploadFile('pattern-library', $matches[1]),
 
         // [AI:Claude] Routes de récupération de contenu web externe
+        $method === 'POST' && $uri === 'ai/assistant' => (new AiAssistantController())->chat(),
+        $method === 'GET' && $uri === 'ai/usage' => (new AiAssistantController())->usage(),
+
         $method === 'POST' && $uri === 'web-fetch' => (new WebFetchController())->fetch(),
         $method === 'POST' && $uri === 'web-fetch/metadata' => (new WebFetchController())->fetchMetadata(),
         $method === 'GET' && $uri === 'web-fetch/proxy' => (new WebFetchController())->proxy(),

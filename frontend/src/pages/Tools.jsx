@@ -9,6 +9,9 @@ import GaugeCalculator from '../components/tools/GaugeCalculator'
 import NeedleConverter from '../components/tools/NeedleConverter'
 import YarnCalculator from '../components/tools/YarnCalculator'
 import Glossary from '../components/tools/Glossary'
+import AiAssistant from '../components/tools/AiAssistant'
+import LengthConverter from '../components/tools/LengthConverter'
+import RemainingYarn from '../components/tools/RemainingYarn'
 
 const TOOLS = [
   {
@@ -45,6 +48,28 @@ const TOOLS = [
     title: 'Glossaire',
     description: '66 termes tricot & crochet expliqués en français, avec équivalents anglais.',
     component: Glossary,
+  },
+  {
+    id: 'length',
+    icon: '📏',
+    title: 'Convertisseur longueur',
+    description: 'Convertir cm, pouces, yards et mètres. Indispensable pour les patrons US/UK.',
+    component: LengthConverter,
+  },
+  {
+    id: 'remaining',
+    icon: '⚖️',
+    title: 'Laine restante',
+    description: 'Pesez votre pelote entamée pour savoir combien de mètres il vous reste.',
+    component: RemainingYarn,
+  },
+  {
+    id: 'ai',
+    icon: '🤖',
+    title: 'Assistant IA',
+    description: 'Posez toutes vos questions sur les techniques, patrons et points. PLUS & PRO.',
+    component: AiAssistant,
+    badge: 'PLUS',
   },
 ]
 
@@ -86,7 +111,12 @@ export default function Tools() {
           >
             <span className="text-4xl">{t.icon}</span>
             <div>
-              <div className="font-semibold text-gray-900 text-sm leading-tight">{t.title}</div>
+              <div className="flex items-center gap-2">
+                <div className="font-semibold text-gray-900 text-sm leading-tight">{t.title}</div>
+                {t.badge && (
+                  <span className="bg-violet-100 text-violet-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>
+                )}
+              </div>
               <div className="text-xs text-gray-500 mt-1 leading-snug">{t.description}</div>
             </div>
           </button>
