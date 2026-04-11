@@ -15,9 +15,11 @@ import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
+import UpgradePrompt from '../components/UpgradePrompt'
 
 const PatternLibrary = () => {
   const { user } = useAuth()
+  const [showUpgradeLibrary, setShowUpgradeLibrary] = useState(false)
   const [patterns, setPatterns] = useState([])
   const [stats, setStats] = useState(null)
   const [categories, setCategories] = useState([])
@@ -291,9 +293,13 @@ const PatternLibrary = () => {
     } catch (err) {
       console.error('Erreur ajout patron:', err)
 
-      // [AI:Claude] Afficher le message détaillé en priorité (ex: limite atteinte)
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Erreur lors de l\'ajout du patron'
-      alert(errorMessage)
+      if (err.response?.data?.upgrade_required) {
+        setShowAddModal(false)
+        setShowUpgradeLibrary(true)
+      } else {
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || "Erreur lors de l'ajout du patron"
+        alert(errorMessage)
+      }
     } finally {
       setUploading(false)
     }
@@ -1459,6 +1465,11 @@ const PatternLibrary = () => {
           </div>
         </div>
       )}
+      <UpgradePrompt
+        isOpen={showUpgradeLibrary}
+        onClose={() => setShowUpgradeLibrary(false)}
+        feature="pattern_library"
+      />
     </div>
   )
 }

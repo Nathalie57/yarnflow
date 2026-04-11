@@ -769,9 +769,31 @@ class PatternLibraryController
         if (!$user)
             throw new \Exception('Utilisateur introuvable');
 
-        // [AI:Claude] Patrons illimités pour tous les plans (v0.16.0+)
-        // Pas de limite sur les patrons de la bibliothèque
-        // Les limites s'appliquent uniquement aux projets actifs (3/7/illimité selon plan)
+        // Limite bibliothèque : FREE = 5 patrons, PRO = illimité
+        if ($isCreating) {
+            $isActive = ($user['subscription_status'] ?? '') === 'active';
+            $plan = $user['subscription_type'] ?? 'free';
+            $isPro = $isActive && in_array($plan, ['pro', 'pro_annual', 'plus', 'plus_annual', 'early_bird', 'monthly', 'annual', 'yearly']);
+
+            if (!$isPro) {
+                $stmt = $this->db->prepare('SELECT COUNT(*) FROM pattern_library WHERE user_id = :uid');
+                $stmt->execute([':uid' => $userId]);
+                $count = (int) $stmt->fetchColumn();
+
+                if ($count >= 5) {
+                    http_response_code(403);
+                    echo json_encode([
+                        'success'          => false,
+                        'error'            => 'Limite atteinte : le plan FREE permet 5 patrons en bibliothèque.',
+                        'upgrade_required' => true,
+                        'required_plan'    => 'pro',
+                        'current_count'    => $count,
+                        'max_count'        => 5,
+                    ]);
+                    exit;
+                }
+            }
+        }
     }
 
     /**

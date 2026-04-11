@@ -12,6 +12,7 @@ import Glossary from '../components/tools/Glossary'
 import AiAssistant from '../components/tools/AiAssistant'
 import LengthConverter from '../components/tools/LengthConverter'
 import RemainingYarn from '../components/tools/RemainingYarn'
+import YarnWeightConverter from '../components/tools/YarnWeightConverter'
 
 const TOOLS = [
   {
@@ -64,12 +65,19 @@ const TOOLS = [
     component: RemainingYarn,
   },
   {
+    id: 'weight',
+    icon: '🧵',
+    title: 'Épaisseur de laine',
+    description: 'Correspondance Lace / Fingering / DK / Worsted / Bulky en FR, US et UK avec aiguilles recommandées.',
+    component: YarnWeightConverter,
+  },
+  {
     id: 'ai',
     icon: '🤖',
     title: 'Assistant IA',
-    description: 'Posez toutes vos questions sur les techniques, patrons et points. PLUS & PRO.',
+    description: 'Posez toutes vos questions sur les techniques, patrons et points. 3/mois en FREE, 30/mois en PRO.',
     component: AiAssistant,
-    badge: 'PLUS',
+    badge: 'PRO',
   },
 ]
 
@@ -114,7 +122,7 @@ export default function Tools() {
               <div className="flex items-center gap-2">
                 <div className="font-semibold text-gray-900 text-sm leading-tight">{t.title}</div>
                 {t.badge && (
-                  <span className="bg-violet-100 text-violet-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>
+                  <span className="bg-primary-100 text-primary-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>
                 )}
               </div>
               <div className="text-xs text-gray-500 mt-1 leading-snug">{t.description}</div>

@@ -27,6 +27,7 @@ import TagInput from '../components/TagInput'
 import SatisfactionModal from '../components/SatisfactionModal'
 import FirstRowCelebration from '../components/FirstRowCelebration' // [AI:Claude] v0.17.0 - Célébration premier rang
 import InfoBubble from '../components/InfoBubble' // [AI:Claude] Bulles d'info contextuelles
+import UpgradePrompt from '../components/UpgradePrompt'
 
 const ProjectCounter = () => {
   const { projectId } = useParams()
@@ -182,6 +183,9 @@ const ProjectCounter = () => {
   const [popularTags, setPopularTags] = useState([])
   const [canUseTags, setCanUseTags] = useState(false)
   const [showTagSection, setShowTagSection] = useState(false)
+
+  // Gate upgrade modal
+  const [upgradeFeature, setUpgradeFeature] = useState(null)
 
   // [AI:Claude] Notes du projet
   const [showNotes, setShowNotes] = useState(false)
@@ -537,6 +541,13 @@ const ProjectCounter = () => {
       setCounterUnit(projectData.counter_unit || 'rows') // [AI:Claude] v0.16.2 - Charger unité compteur
       setCounterIncrement(parseFloat(projectData.counter_unit_increment) || 1.0) // [AI:Claude] v0.16.2 - Charger incrément
 
+      // [AI:Claude] Ouvrir l'onglet le plus pertinent au chargement
+      if (projectData.pattern_path || projectData.pattern_url || projectData.pattern_text) {
+        setActiveTab('patron')
+      } else if (projectData.photos_count > 0) {
+        setActiveTab('photos')
+      }
+
       // Le compteur secondaire est maintenant géré par section (voir fetchSections / handleChangeSection)
       // On ne restaure plus depuis le champ global du projet pour éviter les conflits inter-sections
 
@@ -559,7 +570,7 @@ const ProjectCounter = () => {
   // [AI:Claude] v0.15.0 - Gestion des tags
   const handleAddTag = async (tag) => {
     if (!canUseTags) {
-      showAlert('Tags réservés aux abonnés PLUS/PRO', 'Passez à PLUS ou PRO pour utiliser les tags', 'warning')
+      setUpgradeFeature('tags')
       return
     }
 
@@ -1154,7 +1165,7 @@ const ProjectCounter = () => {
 
     // [AI:Claude] Vérifier les crédits (1 photo = 1 crédit)
     if (!credits || credits.total_available < 1) {
-      showAlert(`Vous n'avez pas assez de crédits. Il vous faut 1 crédit.`, 'error')
+      setUpgradeFeature('photo_credits')
       return
     }
 
@@ -2600,6 +2611,20 @@ const ProjectCounter = () => {
     }
   }
 
+  // Terminer le projet ET ouvrir l'upload photo (moment émotionnel)
+  const handleCompleteAndPhoto = async () => {
+    try {
+      await api.put(`/projects/${projectId}`, { status: 'completed' })
+      await fetchProject()
+      setShowProjectCompletionModal(false)
+      setActiveTab('photos')
+      setShowPhotoUploadModal(true)
+    } catch (err) {
+      console.error('Erreur terminer projet:', err)
+      showAlert('Erreur lors de la finalisation du projet', 'error')
+    }
+  }
+
   // [AI:Claude] Marquer le projet global comme terminé/en cours
   const handleToggleProjectComplete = async () => {
     try {
@@ -2677,9 +2702,35 @@ const ProjectCounter = () => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p className="mt-4 text-gray-600">Chargement du projet...</p>
+      <div className="max-w-7xl mx-auto px-4 py-3 space-y-3">
+        {/* Skeleton header */}
+        <div className="space-y-2">
+          <div className="skeleton h-4 w-16 rounded" />
+          <div className="skeleton h-7 w-48 rounded-lg" />
+          <div className="flex gap-2">
+            <div className="skeleton h-5 w-20 rounded-full" />
+            <div className="skeleton h-5 w-16 rounded-full" />
+          </div>
+        </div>
+        {/* Skeleton barre progression */}
+        <div className="skeleton h-16 w-full rounded-xl" />
+        {/* Skeleton compteur */}
+        <div className="skeleton h-20 w-full rounded-xl" />
+        {/* Skeleton sections */}
+        <div className="skeleton h-12 w-full rounded-xl" />
+        {/* Skeleton tabs */}
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="flex border-b border-gray-100">
+            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="skeleton h-4 w-full rounded" />
+            <div className="skeleton h-4 w-3/4 rounded" />
+            <div className="skeleton h-32 w-full rounded-lg" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -2801,11 +2852,13 @@ const ProjectCounter = () => {
 
       {/* [AI:Claude] Indicateur hors-ligne */}
       {!isOnline && (
-        <div className="mb-4 bg-amber-50 border border-amber-300 rounded-xl p-3 flex items-center gap-3">
-          <span className="text-xl">📡</span>
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
+          <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M12 12h.01M8.464 15.536a5 5 0 010-7.072M5.636 18.364a9 9 0 010-12.728" />
+          </svg>
           <div className="flex-1">
-            <p className="font-medium text-amber-800">Mode hors-ligne</p>
-            <p className="text-amber-700 text-sm">Vos modifications seront synchronisées au retour de la connexion.</p>
+            <p className="font-medium text-amber-800 text-sm">Mode hors-ligne</p>
+            <p className="text-amber-700 text-xs">Vos modifications seront synchronisées au retour de la connexion.</p>
           </div>
         </div>
       )}
@@ -2821,7 +2874,7 @@ const ProjectCounter = () => {
             ×
           </button>
           <div className="flex items-start gap-3">
-            <span className="text-2xl">💡</span>
+            <svg className="w-5 h-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
             <div>
               <p className="font-semibold text-primary-800 mb-1">Astuce</p>
               <p className="text-primary-700 text-sm leading-relaxed">
@@ -2906,35 +2959,40 @@ const ProjectCounter = () => {
                 )}
               </div>
 
-              {/* [AI:Claude] v0.16.2 - Switch toggle unité */}
-              <div className="flex items-center gap-2 ml-auto">
+              {/* [AI:Claude] Toggle unité — concerne tout le projet */}
+              <div className="flex-shrink-0">
                 <button
                   onClick={handleToggleUnit}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs font-medium transition-colors"
+                  title="Changer l'unité de comptage"
                 >
-                  <span className="text-xs text-gray-600">Unité :</span>
-                  <div className="flex items-center gap-1.5 font-medium text-xs">
-                    <span className={counterUnit === 'rows' ? 'text-primary-600' : 'text-gray-400'}>
-                      📏 Rangs
-                    </span>
-                    <div className="relative inline-flex items-center h-5 w-9 rounded-full transition-colors"
-                         style={{ backgroundColor: counterUnit === 'cm' ? '#8b5cf6' : '#d1d5db' }}>
-                      <span
-                        className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                        style={{ transform: counterUnit === 'cm' ? 'translateX(18px)' : 'translateX(2px)' }}
-                      />
-                    </div>
-                    <span className={counterUnit === 'cm' ? 'text-primary-600' : 'text-gray-400'}>
-                      📐 CM
-                    </span>
+                  <span className={counterUnit === 'rows' ? 'text-gray-900 font-semibold' : 'text-gray-400'}>Rangs</span>
+                  <div className="relative inline-flex items-center h-4 w-7 rounded-full transition-colors"
+                       style={{ backgroundColor: counterUnit === 'cm' ? '#557055' : '#9ca3af' }}>
+                    <span
+                      className="inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform"
+                      style={{ transform: counterUnit === 'cm' ? 'translateX(14px)' : 'translateX(2px)' }}
+                    />
                   </div>
+                  <span className={counterUnit === 'cm' ? 'text-gray-900 font-semibold' : 'text-gray-400'}>cm</span>
                 </button>
               </div>
+
             </div>
 
-            {/* Tags (v0.15.0) - Éditable */}
+            {/* Tags */}
             <div className="w-full mt-2">
-              {canUseTags ? (
+              {!canUseTags ? (
+                <button
+                  onClick={() => setUpgradeFeature('tags')}
+                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-primary-600 transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  Tags — PRO
+                </button>
+              ) : (
                 <>
                   {!showTagSection && localTags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 items-center">
@@ -2948,22 +3006,22 @@ const ProjectCounter = () => {
                         onClick={() => setShowTagSection(true)}
                         className="text-xs text-primary-600 hover:text-primary-700 font-medium ml-2"
                       >
-                        ✏️ Modifier
+                        Modifier
                       </button>
                     </div>
                   )}
                   {!showTagSection && localTags.length === 0 && (
                     <button
                       onClick={() => setShowTagSection(true)}
-                      className="text-xs text-gray-500 hover:text-primary-600 font-medium"
+                      className="text-xs text-gray-400 hover:text-primary-600 font-medium"
                     >
-                      🏷️ Ajouter des tags...
+                      + Ajouter des tags
                     </button>
                   )}
                   {showTagSection && (
                     <div className="bg-sage/5 rounded-lg p-3 border border-sage/20">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">🏷️ Tags du projet</span>
+                        <span className="text-sm font-medium text-gray-700">Tags du projet</span>
                         <button
                           onClick={() => setShowTagSection(false)}
                           className="text-xs text-gray-500 hover:text-gray-700"
@@ -2981,106 +3039,98 @@ const ProjectCounter = () => {
                     </div>
                   )}
                 </>
-              ) : (
-                localTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {localTags.slice(0, 5).map((tag, idx) => (
-                      <TagBadge key={idx} tag={tag} className="text-xs" />
-                    ))}
-                    {localTags.length > 5 && (
-                      <span className="text-xs text-gray-500 px-2 py-1">+{localTags.length - 5}</span>
-                    )}
-                  </div>
-                )
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* [AI:Claude] Barre 1 : Progression globale du projet - STICKY */}
-      <div className="sticky top-0 z-40 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-300 p-4 mb-3 shadow-lg">
+      {/* [AI:Claude] Barre 1 : Progression globale du projet */}
+      <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 mb-3 shadow-sm">
         {/* Version Desktop */}
         <div className="hidden sm:flex items-center gap-4">
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-700">Progression totale</span>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-gray-600">Progression totale</span>
               <span className="text-xs font-bold text-primary-700">{globalProgressPercentage || 0}%</span>
             </div>
-            <div className="w-full bg-white/50 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
               <div
-                className={`h-2 rounded-full transition-all ${
-                  project.status === 'completed' ? 'bg-green-600' : 'bg-primary-600'
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  project.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-primary-400 to-primary-600'
                 }`}
                 style={{ width: `${globalProgressPercentage || 0}%` }}
               ></div>
             </div>
           </div>
-          <div className="text-center flex-shrink-0">
-            <div className="text-lg font-bold text-primary-700">
+          <div className="text-center flex-shrink-0 border-l border-gray-100 pl-4">
+            <div className="text-sm font-semibold text-gray-800">
               {(() => {
                 const totalTime = project?.total_time || 0
                 const totalHours = Math.floor(totalTime / 3600)
                 const totalMins = Math.floor((totalTime % 3600) / 60)
-                const totalSecs = totalTime % 60
-                return `${totalHours}h ${totalMins}min ${totalSecs}s`
+                return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
               })()}
             </div>
-            <div className="text-[10px] text-gray-600">Temps total</div>
+            <div className="text-[10px] text-gray-400">Temps total</div>
           </div>
           <button
             onClick={handleToggleProjectComplete}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition whitespace-nowrap ${
+            className={`px-4 py-2 rounded-xl font-medium text-sm transition whitespace-nowrap ${
               project.status === 'completed'
                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             title={project.status === 'completed' ? 'Réouvrir le projet' : 'Marquer le projet comme terminé'}
           >
-            {project.status === 'completed' ? '✅ Terminé' : '✓ Marquer terminé'}
+            {project.status === 'completed' ? (
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                Terminé
+              </span>
+            ) : 'Marquer terminé'}
           </button>
         </div>
 
         {/* Version Mobile - Design simplifié */}
         <div className="sm:hidden space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-gray-700">Progression</span>
+            <span className="font-medium text-gray-600">Progression</span>
             <span className="font-bold text-primary-700">{globalProgressPercentage || 0}%</span>
           </div>
-          <div className="w-full bg-white/50 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
             <div
-              className={`h-2 rounded-full transition-all ${
-                project.status === 'completed' ? 'bg-green-600' : 'bg-primary-600'
+              className={`h-2 rounded-full transition-all duration-500 ${
+                project.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-primary-400 to-primary-600'
               }`}
               style={{ width: `${globalProgressPercentage || 0}%` }}
             ></div>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <div className="text-xs text-gray-600">
-              ⏱️ {(() => {
+            <div className="text-xs text-gray-500">
+              {(() => {
                 const totalTime = project?.total_time || 0
                 const totalHours = Math.floor(totalTime / 3600)
                 const totalMins = Math.floor((totalTime % 3600) / 60)
-                const totalSecs = totalTime % 60
-                return `${totalHours}h ${totalMins}min ${totalSecs}s`
+                return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
               })()}
             </div>
             <button
               onClick={handleToggleProjectComplete}
-              className={`px-3 py-1.5 rounded-lg font-medium text-xs transition ${
+              className={`px-3 py-1.5 rounded-xl font-medium text-xs transition ${
                 project.status === 'completed'
                   ? 'bg-green-100 text-green-800'
-                  : 'bg-white text-gray-700 border border-gray-300'
+                  : 'bg-gray-100 text-gray-700'
               }`}
             >
-              {project.status === 'completed' ? '✅ Terminé' : '✓ Terminé'}
+              {project.status === 'completed' ? '✓ Terminé' : 'Marquer terminé'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY avec fond caramel doux */}
-      <div className="sticky top-20 z-40 bg-orange-100 bg-opacity-75 backdrop-blur-sm rounded-lg border-2 border-orange-300 p-3 mb-3 shadow-lg">
+      {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY */}
+      <div className="sticky top-[52px] z-40 bg-primary-200/70 backdrop-blur-sm rounded-xl border border-primary-200 p-3 mb-3 shadow-sm">
         {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
         <div className="space-y-2 sm:space-y-0">
           {/* Ligne 1 mobile: Section + Compteur | Desktop: cachée car tout sur une seule ligne */}
@@ -3102,11 +3152,15 @@ const ProjectCounter = () => {
               <button
                 onClick={handleDecrementRow}
                 disabled={currentRow === 0}
-                className="w-9 h-9 bg-red-100 text-red-600 rounded-full text-lg font-bold hover:bg-red-200 transition disabled:opacity-50"
+                className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
               >
                 −
               </button>
-              <div className="text-center min-w-[80px]">
+              <div
+                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-3 py-1 min-w-[90px] cursor-pointer"
+                onClick={handleCounterClick}
+                title="Cliquer pour modifier"
+              >
                 {isEditingCounter ? (
                   <input
                     type="number"
@@ -3117,26 +3171,22 @@ const ProjectCounter = () => {
                     onKeyDown={handleCounterInputKeyDown}
                     onBlur={handleCounterInputSubmit}
                     autoFocus
-                    className="text-3xl font-bold text-gray-900 w-full text-center border-2 border-primary-500 rounded px-1"
+                    className="text-3xl font-bold text-gray-900 w-full text-center outline-none tabular-nums"
                   />
                 ) : (
-                  <div
-                    onClick={handleCounterClick}
-                    className="text-3xl font-bold text-gray-900 cursor-pointer hover:bg-gray-100 rounded px-2 transition"
-                    title="Cliquer pour modifier"
-                  >
+                  <div className="text-3xl font-bold text-gray-900 tabular-nums leading-tight">
                     {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
                   </div>
                 )}
-                {progressData.total && (
-                  <div className="text-xs text-gray-600">
-                    / {counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}
-                  </div>
-                )}
+                <div className="text-[10px] text-gray-400 leading-none mt-0.5">
+                  {progressData.total
+                    ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
+                    : counterUnit === 'cm' ? 'cm' : 'rangs'}
+                </div>
               </div>
               <button
                 onClick={handleIncrementRow}
-                className="w-9 h-9 bg-primary-600 text-white rounded-full text-xl font-bold hover:bg-primary-700 transition shadow-md"
+                className="w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
               >
                 +
               </button>
@@ -3167,11 +3217,15 @@ const ProjectCounter = () => {
               <button
                 onClick={handleDecrementRow}
                 disabled={currentRow === 0}
-                className="w-9 h-9 bg-red-100 text-red-600 rounded-full text-lg font-bold hover:bg-red-200 transition disabled:opacity-50"
+                className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
               >
                 −
               </button>
-              <div className="text-center min-w-[80px]">
+              <div
+                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-1.5 min-w-[90px] cursor-pointer"
+                onClick={handleCounterClick}
+                title="Cliquer pour modifier"
+              >
                 {isEditingCounter ? (
                   <input
                     type="number"
@@ -3182,26 +3236,22 @@ const ProjectCounter = () => {
                     onKeyDown={handleCounterInputKeyDown}
                     onBlur={handleCounterInputSubmit}
                     autoFocus
-                    className="text-3xl font-bold text-gray-900 w-full text-center border-2 border-primary-500 rounded px-1"
+                    className="text-3xl font-bold text-gray-900 w-full text-center outline-none tabular-nums"
                   />
                 ) : (
-                  <div
-                    onClick={handleCounterClick}
-                    className="text-3xl font-bold text-gray-900 cursor-pointer hover:bg-gray-100 rounded px-2 transition"
-                    title="Cliquer pour modifier"
-                  >
+                  <div className="text-3xl font-bold text-gray-900 tabular-nums leading-tight">
                     {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
                   </div>
                 )}
-                {progressData.total && (
-                  <div className="text-xs text-gray-600">
-                    / {counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}
-                  </div>
-                )}
+                <div className="text-[10px] text-gray-400 leading-none mt-0.5">
+                  {progressData.total
+                    ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
+                    : counterUnit === 'cm' ? 'cm' : 'rangs'}
+                </div>
               </div>
               <button
                 onClick={handleIncrementRow}
-                className="w-10 h-10 bg-primary-600 text-white rounded-full text-2xl font-bold hover:bg-primary-700 transition shadow-md"
+                className="w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
               >
                 +
               </button>
@@ -3214,7 +3264,9 @@ const ProjectCounter = () => {
                 <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
                   Session
                   {isWakeLockActive && (
-                    <span className="text-green-600" title="Écran maintenu allumé">🔋</span>
+                    <svg className="w-3 h-3 text-green-600" title="Écran maintenu allumé" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm-1 13.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6L17 8.9l-6 6.1z"/>
+                    </svg>
                   )}
                   <InfoBubble
                     text="Quand le timer tourne, l'écran reste allumé. Vous pouvez utiliser votre téléphone normalement (appels, SMS, musique)."
@@ -3247,9 +3299,10 @@ const ProjectCounter = () => {
                   {!isTimerRunning ? (
                     <button
                       onClick={handleStartSession}
-                      className="px-2 sm:px-3 py-1.5 sm:py-2 bg-green-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-green-700 transition whitespace-nowrap"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap shadow-sm"
                     >
-                      ▶️ Démarrer
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      Démarrer
                     </button>
                   ) : (
                     <>
@@ -3257,36 +3310,40 @@ const ProjectCounter = () => {
                       {!isTimerPaused ? (
                         <button
                           onClick={handlePauseSession}
-                          className="px-2 sm:px-3 py-1.5 sm:py-2 bg-orange-500 text-white rounded text-xs sm:text-sm font-medium hover:bg-orange-600 transition whitespace-nowrap"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-amber-600 transition whitespace-nowrap"
                           title="Mettre en pause"
                         >
-                          ⏸️ Pause
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                          Pause
                         </button>
                       ) : (
                         <button
                           onClick={handleResumeSession}
-                          className="px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-blue-700 transition whitespace-nowrap"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
                           title="Reprendre"
                         >
-                          ▶️ Reprendre
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                          Reprendre
                         </button>
                       )}
 
                       {/* Bouton Arrêter */}
                       <button
                         onClick={handleEndSession}
-                        className="px-2 sm:px-3 py-1.5 sm:py-2 bg-red-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-red-700 transition whitespace-nowrap"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs sm:text-sm font-semibold hover:bg-gray-50 transition whitespace-nowrap"
                         title="Terminer la session"
                       >
-                        ⏹️ Arrêter
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+                        Arrêter
                       </button>
                     </>
                   )}
                 </>
               )}
               {project.status === 'completed' && (
-                <div className="px-3 py-2 bg-green-100 text-green-700 rounded text-xs sm:text-sm font-medium">
-                  ✅ Terminé
+                <div className="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-xl text-xs sm:text-sm font-medium">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Terminé
                 </div>
               )}
             </div>
@@ -3295,17 +3352,19 @@ const ProjectCounter = () => {
 
         {/* [AI:Claude] Compteur secondaire (PLUS/PRO) */}
         {!isPaidPlan ? (
-          <div className="pt-2 border-t border-orange-200">
+          <div className="pt-2 border-t border-primary-300/50">
             <button
-              onClick={() => showAlert('Le compteur secondaire est disponible avec les plans PLUS et PRO. Passez à un plan supérieur pour compter vos augmentations, diminutions et répétitions par rang.', 'info', '🔒 Fonctionnalité PLUS/PRO')}
-              className="text-xs text-gray-400 flex items-center gap-1 hover:text-gray-600 transition"
-              title="Disponible avec PLUS ou PRO"
+              onClick={() => setUpgradeFeature('secondary_counter')}
+              className="text-xs text-gray-400 flex items-center gap-1.5 hover:text-primary-600 transition"
             >
-              🔒 Compteur secondaire — réservé PLUS/PRO
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              Compteur secondaire — PRO
             </button>
           </div>
         ) : !secondaryActive ? (
-          <div className="pt-2 border-t border-orange-200">
+          <div className="pt-2 border-t border-primary-300/50">
             <button
               onClick={() => { setSecondaryLabelInput(''); setSecondaryTargetInput(''); setSecondaryActive(true); setIsEditingSecondary(true) }}
               className="text-xs text-primary-700 flex items-center gap-1 hover:text-primary-900 transition font-medium"
@@ -3314,7 +3373,7 @@ const ProjectCounter = () => {
             </button>
           </div>
         ) : (
-          <div className="pt-2 border-t border-orange-200">
+          <div className="pt-2 border-t border-primary-300/50">
             {isEditingSecondary ? (
               // Mode édition label + cible
               <div className="flex items-center gap-2 flex-wrap">
@@ -3426,16 +3485,22 @@ const ProjectCounter = () => {
         )}
       </div>
 
+      <div className="flex flex-col gap-3">
       {/* [AI:Claude] Tableau des sections */}
-      <div className="bg-white rounded-lg border border-gray-200 mb-3 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div
-          className="p-3 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
+          className="px-4 py-3 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
           onClick={() => setSectionsCollapsed(!sectionsCollapsed)}
         >
           <div className="flex items-center gap-2">
-            <span className="text-gray-500 text-lg">{sectionsCollapsed ? '▸' : '▾'}</span>
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform ${sectionsCollapsed ? '' : 'rotate-90'}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
             <h2 className="text-sm font-semibold text-gray-900">
-              🧩 Sections du projet {sections.length > 0 && `(${sections.length})`}
+              Sections {sections.length > 0 && <span className="text-gray-400 font-normal">({sections.length})</span>}
             </h2>
             <InfoBubble
               text="Divisez votre projet en parties (corps, manches, bordure...) pour suivre la progression de chaque étape séparément."
@@ -3449,10 +3514,12 @@ const ProjectCounter = () => {
               e.stopPropagation()
               openAddSectionModal()
             }}
-            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition flex items-center gap-1"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs font-semibold hover:bg-primary-700 transition"
           >
-            <span className="hidden sm:inline">➕ Ajouter une section</span>
-            <span className="sm:hidden">➕</span>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="hidden sm:inline">Ajouter une section</span>
           </button>
         </div>
 
@@ -3460,16 +3527,23 @@ const ProjectCounter = () => {
           <>
             {sections.length === 0 ? (
               <div className="p-8 text-center">
-                <div className="text-5xl mb-3">🧩</div>
-                <p className="text-gray-600 font-medium mb-2">Aucune section</p>
-                <p className="text-sm text-gray-500 mb-4">
-                  Les sections vous permettent de diviser votre projet en parties (face, dos, manches, etc.)
+                <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                </div>
+                <p className="text-gray-700 font-medium mb-1 text-sm">Aucune section</p>
+                <p className="text-xs text-gray-400 mb-4">
+                  Divisez votre projet en parties (face, dos, manches...)
                 </p>
                 <button
                   onClick={openAddSectionModal}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
                 >
-                  ➕ Créer ma première section
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Créer ma première section
                 </button>
               </div>
             ) : (
@@ -3698,16 +3772,19 @@ const ProjectCounter = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
+                                if (!isPaidPlan) { setUpgradeFeature('section_notes'); return }
                                 toggleSectionNotes(section)
                               }}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition shadow-sm ${
-                                expandedNotesSection === section.id
-                                  ? 'bg-amber-500 text-white shadow-amber-200'
-                                  : section.notes
+                                !isPaidPlan
+                                  ? 'bg-gray-100 text-gray-400 border border-gray-200 hover:bg-gray-200'
+                                  : expandedNotesSection === section.id
                                     ? 'bg-amber-500 text-white shadow-amber-200'
-                                    : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
+                                    : section.notes
+                                      ? 'bg-amber-500 text-white shadow-amber-200'
+                                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
                               }`}
-                              title={expandedNotesSection === section.id ? 'Fermer les notes' : section.notes ? 'Voir/modifier les notes' : 'Ajouter des notes'}
+                              title={!isPaidPlan ? 'Notes par section — PRO' : expandedNotesSection === section.id ? 'Fermer les notes' : section.notes ? 'Voir/modifier les notes' : 'Ajouter des notes'}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -3981,49 +4058,47 @@ const ProjectCounter = () => {
       </div>
 
       {/* [AI:Claude] Tabs compacts */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {/* Tabs header */}
-        <div className="border-b border-gray-200">
+        <div className="border-b border-gray-100">
           <div className="flex">
             <button
               onClick={() => setActiveTab('patron')}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium transition ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition ${
                 activeTab === 'patron'
-                  ? 'bg-white text-primary-600 border-b-2 border-primary-600'
-                  : 'bg-gray-50 text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-primary-700 border-b-2 border-primary-600'
+                  : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              📄 Patron
+              Patron
               {(project.pattern_path || project.pattern_url) && (
-                <span className="ml-1 text-green-600 text-sm">✓</span>
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500 align-middle" />
               )}
             </button>
             <button
               onClick={() => setActiveTab('photos')}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium transition ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition ${
                 activeTab === 'photos'
-                  ? 'bg-white text-primary-600 border-b-2 border-primary-600'
-                  : 'bg-gray-50 text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-primary-700 border-b-2 border-primary-600'
+                  : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              📸 Photos
+              Photos IA
               {projectPhotos.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs">
-                  {projectPhotos.length}
-                </span>
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
             </button>
             <button
               onClick={() => setActiveTab('description')}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium transition ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition ${
                 activeTab === 'description'
-                  ? 'bg-white text-primary-600 border-b-2 border-primary-600'
-                  : 'bg-gray-50 text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-primary-700 border-b-2 border-primary-600'
+                  : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              🔧 Détails techniques
+              Détails
               {(project.technical_details || project.description) && (
-                <span className="ml-1 text-green-600 text-sm">✓</span>
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
             </button>
           </div>
@@ -4035,33 +4110,77 @@ const ProjectCounter = () => {
               {activeTab === 'photos' && (
                 <div>
                   {projectPhotos.length > 0 && (
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-semibold text-gray-900">Galerie photos</h2>
-                        <InfoBubble
-                          text="Ajoutez vos photos puis embellissez-les avec notre IA ! Elle peut transformer vos créations en images professionnelles pour Etsy, Instagram..."
-                          position="bottom"
-                          size="sm"
-                        />
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-gray-900">Photos IA</h2>
+                        <button
+                          onClick={() => setShowPhotoUploadModal(true)}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Ajouter
+                        </button>
                       </div>
-                      <button
-                        onClick={() => setShowPhotoUploadModal(true)}
-                        className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
-                      >
-                        ➕ Ajouter photo
-                      </button>
+                      {credits && credits.total_available > 0 && (
+                        <p className="text-xs text-green-700 font-medium mt-1">
+                          {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''} — transformez votre photo avec l'IA
+                        </p>
+                      )}
                     </div>
                   )}
 
 {projectPhotos.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                <div className="text-6xl mb-4">📷</div>
-                <p className="text-gray-600 mb-4">Aucune photo pour ce projet</p>
+              <div className="rounded-xl border border-gray-100 bg-gradient-to-b from-primary-50/40 to-white p-6">
+                {/* Avant/Après visuel */}
+                <div className="flex items-center justify-center gap-3 mb-5">
+                  <div className="flex-1 max-w-[120px] rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                    <div className="bg-gray-100 h-20 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-center text-xs text-gray-400 py-1">Votre photo</p>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span className="text-xs font-bold text-primary-600">IA</span>
+                  </div>
+                  <div className="flex-1 max-w-[120px] rounded-lg overflow-hidden border-2 border-primary-300 shadow-sm">
+                    <div className="bg-gradient-to-br from-primary-100 to-primary-200 h-20 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3l14 9-14 9V3z" />
+                      </svg>
+                    </div>
+                    <p className="text-center text-xs text-primary-600 font-semibold py-1">Résultat IA</p>
+                  </div>
+                </div>
+
+                <h3 className="text-center font-bold text-gray-900 mb-1 text-sm">
+                  Transformez votre photo avec l'IA
+                </h3>
+                <p className="text-center text-xs text-gray-500 mb-4">
+                  Fond professionnel, éclairage studio, prête pour Etsy ou Instagram
+                </p>
+
+                {credits && credits.total_available > 0 && (
+                  <p className="text-center text-xs text-green-700 font-medium mb-3">
+                    {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} photo disponible{credits.total_available > 1 ? 's' : ''}
+                  </p>
+                )}
+
                 <button
                   onClick={() => setShowPhotoUploadModal(true)}
-                  className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
                 >
-                  📸 Ajouter ma première photo
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Ajouter une photo
                 </button>
               </div>
             ) : (
@@ -4183,7 +4302,7 @@ const ProjectCounter = () => {
                                             </button>
 
                                             {/* Divider */}
-                                            <div className="border-t border-primary-200 my-1"></div>
+                                            <div className="border-t border-primary-300/50 my-1"></div>
 
                                             {/* Mobile : un seul bouton "Partager" */}
                                             {isMobile ? (
@@ -4343,7 +4462,7 @@ const ProjectCounter = () => {
                                             )}
 
                                             {/* Divider */}
-                                            <div className="border-t border-primary-200 my-1"></div>
+                                            <div className="border-t border-primary-300/50 my-1"></div>
 
                                             {/* Supprimer */}
                                             <button
@@ -4368,9 +4487,8 @@ const ProjectCounter = () => {
                           </div>
                         )}
 
-                        {/* [AI:Claude] Photo originale EN BAS - juste pour référence */}
-                        <div className="bg-gray-50 p-4 border-t-2 border-gray-200">
-                          {/* [AI:Claude] v0.14.0 - Gérer le cas où la photo originale est manquante */}
+                        {/* Photo originale - référence + CTA embellissement */}
+                        <div className={`p-4 ${photoVariations.length > 0 ? 'bg-gray-50 border-t-2 border-gray-200' : 'bg-white'}`}>
                           <div className="flex items-start gap-4">
                             <div className="relative flex-shrink-0 group">
                               <img
@@ -4387,9 +4505,11 @@ const ProjectCounter = () => {
                                   e.target.onclick = null
                                 }}
                               />
-                              <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-90 text-white text-xs px-2 py-1 rounded font-medium">
-                                📷 Originale
-                              </div>
+                              {photoVariations.length > 0 && (
+                                <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-90 text-white text-xs px-2 py-1 rounded font-medium">
+                                  Photo originale
+                                </div>
+                              )}
                               {/* Overlay "Voir en grand" au survol */}
                               <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                 <span className="text-white font-bold text-xs">
@@ -4456,12 +4576,30 @@ const ProjectCounter = () => {
                                 Ajoutée le {new Date(originalPhoto.created_at).toLocaleDateString('fr-FR')}
                               </p>
 
-                              <button
-                                onClick={() => openEnhanceModal(originalPhoto)}
-                                className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm shadow-md"
-                              >
-                                ✨ Générer plus de variations
-                              </button>
+                              {photoVariations.length === 0 ? (
+                                <button
+                                  onClick={() => openEnhanceModal(originalPhoto)}
+                                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm shadow-sm"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                  </svg>
+                                  Embellir avec l'IA
+                                  {credits && credits.total_available > 0 && (
+                                    <span className="text-xs text-primary-200">· {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''}</span>
+                                  )}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => openEnhanceModal(originalPhoto)}
+                                  className="inline-flex items-center gap-2 px-4 py-2 border border-primary-300 text-primary-700 rounded-lg font-medium hover:bg-primary-50 transition text-sm"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                  </svg>
+                                  Nouvelle variation IA
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -4824,6 +4962,7 @@ const ProjectCounter = () => {
               })()}
             </div>
           </div>
+      </div>{/* fin flex-col-reverse sections/tabs */}
 
       {/* [AI:Claude] Modal d'ajout d'URL de patron */}
       {/* [AI:Claude] Modal sélection patron depuis bibliothèque */}
@@ -5000,91 +5139,68 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal de choix de modification du patron */}
       {showPatternEditChoiceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">
-              ✏️ Modifier le patron
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Choisissez comment vous souhaitez modifier votre patron
-            </p>
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6">
+            <h2 className="text-lg font-bold mb-1 text-gray-900">Modifier le patron</h2>
+            <p className="text-sm text-gray-500 mb-5">Choisissez comment vous souhaitez modifier votre patron</p>
 
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               {/* Option 1: Bibliothèque */}
               <button
-                onClick={() => {
-                  setShowPatternEditChoiceModal(false)
-                  setShowPatternLibraryModal(true)
-                  fetchLibraryPatterns()
-                }}
-                className="w-full border-2 border-dashed border-primary-300 rounded-lg p-6 hover:border-primary-500 hover:bg-primary-50 transition"
+                onClick={() => { setShowPatternEditChoiceModal(false); setShowPatternLibraryModal(true); fetchLibraryPatterns() }}
+                className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                 disabled={uploadingPattern}
               >
-                <div className="text-4xl mb-2">📚</div>
-                <p className="text-gray-700 font-medium mb-1">
-                  Choisir depuis ma bibliothèque
-                </p>
-                <p className="text-xs text-gray-500">
-                  Utilisez un patron déjà sauvegardé
-                </p>
-              </button>
-
-              {/* Option 2: Créer un patron texte */}
-              <button
-                onClick={() => {
-                  setShowPatternEditChoiceModal(false)
-                  handleOpenPatternTextModal()
-                }}
-                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
-                disabled={uploadingPattern}
-              >
-                <div className="text-4xl mb-2">📝</div>
-                <p className="text-gray-700 font-medium mb-1">
-                  Modifier le texte du patron
-                </p>
-                <p className="text-xs text-gray-500">
-                  Coller ou saisir le texte du patron
-                </p>
-              </button>
-
-              {/* Option 3: Upload fichier */}
-              <label className="block cursor-pointer">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition">
-                  <div className="text-4xl mb-2 text-center">📎</div>
-                  <p className="text-gray-700 font-medium text-center mb-1">
-                    Importer un nouveau fichier
-                  </p>
-                  <p className="text-xs text-gray-500 text-center">
-                    PDF, JPG, PNG, WEBP
-                  </p>
+                <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-primary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*,.pdf,application/pdf"
-                  onChange={(e) => {
-                    setShowPatternEditChoiceModal(false)
-                    handlePatternUpload(e)
-                  }}
-                  className="hidden"
-                  disabled={uploadingPattern}
-                />
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">Choisir depuis ma bibliothèque</p>
+                  <p className="text-xs text-gray-500">Utilisez un patron déjà sauvegardé</p>
+                </div>
+              </button>
+
+              {/* Option 2: Texte */}
+              <button
+                onClick={() => { setShowPatternEditChoiceModal(false); handleOpenPatternTextModal() }}
+                className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
+                disabled={uploadingPattern}
+              >
+                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">Modifier le texte du patron</p>
+                  <p className="text-xs text-gray-500">Coller ou saisir le texte du patron</p>
+                </div>
+              </button>
+
+              {/* Option 3: Fichier */}
+              <label className="block cursor-pointer">
+                <div className="flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">Importer un fichier</p>
+                    <p className="text-xs text-gray-500">PDF, JPG, PNG, WEBP</p>
+                  </div>
+                </div>
+                <input type="file" accept="image/*,.pdf,application/pdf" onChange={(e) => { setShowPatternEditChoiceModal(false); handlePatternUpload(e) }} className="hidden" disabled={uploadingPattern} />
               </label>
 
               {/* Option 4: URL */}
               <button
-                onClick={() => {
-                  setShowPatternEditChoiceModal(false)
-                  setShowPatternUrlModal(true)
-                }}
-                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
+                onClick={() => { setShowPatternEditChoiceModal(false); setShowPatternUrlModal(true) }}
+                className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                 disabled={uploadingPattern}
               >
-                <div className="text-4xl mb-2">🔗</div>
-                <p className="text-gray-700 font-medium mb-1">
-                  Lien vers une page web
-                </p>
-                <p className="text-xs text-gray-500">
-                  YouTube, Pinterest, blog...
-                </p>
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">Lien vers une page web</p>
+                  <p className="text-xs text-gray-500">YouTube, Pinterest, blog...</p>
+                </div>
               </button>
             </div>
 
@@ -5105,13 +5221,12 @@ const ProjectCounter = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 flex-shrink-0">
-              <h2 className="text-2xl font-bold">
-                📝 {project.pattern_text ? 'Modifier le patron texte' : 'Créer un patron texte'}
+              <h2 className="text-lg font-bold text-gray-900">
+                {project.pattern_text ? 'Modifier le patron texte' : 'Créer un patron texte'}
               </h2>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-                <p className="text-sm text-blue-800">
-                  💡 <strong>Astuce :</strong> Vous pouvez copier-coller le texte de votre patron ici
-                </p>
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3 mt-3">
+                <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <p className="text-sm text-blue-800"><strong>Astuce :</strong> Vous pouvez copier-coller le texte de votre patron ici</p>
               </div>
             </div>
 
@@ -5160,65 +5275,44 @@ Rang 3 : *1ms, aug* x6 (18)
       {/* [AI:Claude] Modal d'upload de photo */}
       {showPhotoUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">
-              📸 Ajouter une photo
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Sélectionnez une photo de votre projet
-            </p>
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h2 className="text-lg font-bold mb-1 text-gray-900">Ajouter une photo</h2>
+            <p className="text-sm text-gray-500 mb-5">Sélectionnez une photo de votre projet</p>
 
             {/* Inputs cachés */}
-            <input
-              ref={(el) => (window.cameraInputCounter = el)}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handlePhotoUpload}
-              className="hidden"
-              disabled={uploadingPhoto}
-            />
-            <input
-              ref={(el) => (window.galleryInputCounter = el)}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-              disabled={uploadingPhoto}
-            />
+            <input ref={(el) => (window.cameraInputCounter = el)} type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
+            <input ref={(el) => (window.galleryInputCounter = el)} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
 
-            {/* Boutons visibles */}
-            <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mb-3`}>
+            <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mb-4`}>
               {isMobile && (
                 <button
                   type="button"
                   onClick={() => window.cameraInputCounter?.click()}
                   disabled={uploadingPhoto}
-                  className="flex flex-col items-center justify-center gap-2 p-6 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex flex-col items-center justify-center gap-3 p-6 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  <span className="text-4xl">📷</span>
-                  <span className="font-medium">Prendre une photo</span>
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <span className="font-semibold text-sm">Prendre une photo</span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => window.galleryInputCounter?.click()}
                 disabled={uploadingPhoto}
-                className="flex flex-col items-center justify-center gap-2 p-6 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex flex-col items-center justify-center gap-3 p-6 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition disabled:opacity-50"
               >
-                <span className="text-4xl">🖼️</span>
-                <span className="font-medium">Choisir une photo</span>
+                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <span className="font-semibold text-sm">Choisir depuis la galerie</span>
               </button>
             </div>
 
-            <p className="text-xs text-gray-500 text-center">
-              JPG, PNG, WEBP
-            </p>
+            <p className="text-xs text-gray-400 text-center mb-4">JPG, PNG, WEBP</p>
 
             {uploadingPhoto && (
-              <p className="text-sm text-gray-500 text-center mt-4">
-                📤 Upload en cours...
-              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
+                <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                Upload en cours...
+              </div>
             )}
 
             <div className="mt-4">
@@ -5240,14 +5334,14 @@ Rang 3 : *1ms, aug* x6 (18)
           <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-2xl font-bold text-gray-900">✨ Générer une photo IA</h2>
+                <h2 className="text-lg font-bold text-gray-900">Générer une photo IA</h2>
                 <button
                   type="button"
                   onClick={() => setShowStyleExamplesModal(true)}
-                  className="bg-primary-600 text-white text-sm px-3 py-1.5 rounded-lg font-semibold shadow-lg hover:bg-primary-700 transition flex items-center gap-1"
+                  className="flex items-center gap-1.5 bg-primary-600 text-white text-sm px-3 py-1.5 rounded-xl font-semibold hover:bg-primary-700 transition"
                 >
-                  <span>🎨</span>
-                  <span>Exemples de styles</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  Exemples
                 </button>
               </div>
             </div>
@@ -5257,7 +5351,7 @@ Rang 3 : *1ms, aug* x6 (18)
               {!hideAIWarning && (
                 <div className="mb-4 bg-orange-50 border-l-4 border-orange-400 rounded-r-lg p-4">
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">⚠️</span>
+                    <svg className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     <div className="text-sm w-full">
                       <h4 className="font-bold text-orange-900 mb-2">Ce qui va être préservé et ce qui va changer :</h4>
                       <div className="space-y-1.5 text-orange-800">
@@ -5278,7 +5372,7 @@ Rang 3 : *1ms, aug* x6 (18)
                         💡 Conseil : Consultez les exemples de styles pour visualiser le résultat attendu
                       </p>
                       {/* Checkbox "Ne plus afficher" */}
-                      <div className="mt-3 pt-3 border-t border-orange-200">
+                      <div className="mt-3 pt-3 border-t border-primary-300/50">
                         <label className="flex items-center gap-2 cursor-pointer text-xs text-orange-800 hover:text-orange-900">
                           <input
                             type="checkbox"
@@ -5309,11 +5403,16 @@ Rang 3 : *1ms, aug* x6 (18)
 
               {/* Choix du style */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Choisissez un style :
-                </label>
+                <div className="flex items-baseline justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Choisissez un style :
+                  </label>
+                  <span className="text-xs text-primary-600 font-medium">
+                    Sélectionné selon votre projet
+                  </span>
+                </div>
                 <div className="space-y-2">
-                  {getAvailableStyles(detectProjectCategory(project?.type || '')).map(style => (
+                  {getAvailableStyles(detectProjectCategory(project?.type || '')).map((style, styleIdx) => (
                     <div key={style.key}>
                       <label
                         className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
@@ -5332,8 +5431,11 @@ Rang 3 : *1ms, aug* x6 (18)
                         />
                         <span className="text-2xl">{style.icon}</span>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-gray-900">{style.label}</p>
+                            {styleIdx === 0 && (
+                              <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-semibold">Recommandé</span>
+                            )}
                             {style.tier === 'plus' && (
                               <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">PLUS</span>
                             )}
@@ -5561,13 +5663,23 @@ Rang 3 : *1ms, aug* x6 (18)
                   Annuler
                 </button>
 
-                <button
-                  type="submit"
-                  disabled={enhancing || !credits || credits.total_available < 1}
-                  className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                >
-                  {enhancing ? '✨ Génération...' : '✨ Générer en HD (1 crédit)'}
-                </button>
+                {credits && credits.total_available < 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setUpgradeFeature('photo_credits')}
+                    className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition shadow-md"
+                  >
+                    Plus de crédits — PRO
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={enhancing || !credits}
+                    className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  >
+                    {enhancing ? 'Génération...' : 'Générer en HD (1 crédit)'}
+                  </button>
+                )}
               </div>
 
               {/* Message d'information */}
@@ -5620,8 +5732,8 @@ Rang 3 : *1ms, aug* x6 (18)
       {showStyleExamplesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] shadow-xl flex flex-col">
-            <div className="bg-gradient-to-r from-primary-600 to-sage-600 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-lg">
-              <h2 className="text-2xl font-bold">🎨 Exemples de styles IA</h2>
+            <div className="bg-primary-700 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
+              <h2 className="text-lg font-bold">Exemples de styles IA</h2>
               <button
                 onClick={() => setShowStyleExamplesModal(false)}
                 className="text-white hover:bg-white/20 rounded-full p-2 transition"
@@ -5716,9 +5828,7 @@ Rang 3 : *1ms, aug* x6 (18)
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">
-              ✏️ Modifier le projet
-            </h3>
+            <h3 className="text-lg font-bold mb-4 text-gray-900">Modifier le projet</h3>
 
             {/* Description */}
             <div className="mb-4">
@@ -5738,7 +5848,7 @@ Rang 3 : *1ms, aug* x6 (18)
             {/* Catégorie */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                📁 Catégorie <span className="text-red-600">*</span>
+                Catégorie <span className="text-red-600">*</span>
               </label>
               <select
                 value={editForm.type}
@@ -5761,7 +5871,7 @@ Rang 3 : *1ms, aug* x6 (18)
             {/* Taille du crochet */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                🪝 Taille du crochet
+                Taille du crochet
               </label>
               <input
                 type="text"
@@ -5775,7 +5885,7 @@ Rang 3 : *1ms, aug* x6 (18)
             {/* Marque de fil */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                🧶 Marque de fil
+                Marque de fil
               </label>
               <input
                 type="text"
@@ -5812,9 +5922,7 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 border-b border-gray-200 bg-white flex-shrink-0">
-              <h3 className="text-2xl font-bold text-gray-900">
-                🔧 Détails techniques
-              </h3>
+              <h3 className="text-lg font-bold text-gray-900">Détails techniques</h3>
               <p className="text-sm text-gray-600 mt-1">
                 Ajoutez les informations sur la laine, les aiguilles/crochets et l'échantillon
               </p>
@@ -5824,7 +5932,7 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* Description générale */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📝 Description / Notes
+                  Description / Notes
                 </label>
                 <textarea
                   value={technicalForm.description}
@@ -5839,8 +5947,8 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* LAINE / YARN */}
               <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-warm-100 rounded-lg border border-primary-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    🧶 {project.technique === 'tricot' ? 'Laine' : 'Fil'}
+                  <h4 className="text-base font-semibold text-gray-900">
+                    {project.technique === 'tricot' ? 'Laine' : 'Fil'}
                   </h4>
                   <button
                     type="button"
@@ -6013,7 +6121,7 @@ Rang 3 : *1ms, aug* x6 (18)
               <div className="mb-6 p-4 bg-sage-50 rounded-lg border border-sage-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    {project.technique === 'tricot' ? '🪡 Aiguilles' : '🪝 Crochets'}
+                    {project.technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
                   </h4>
                   <button
                     type="button"
@@ -6102,7 +6210,7 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* ÉCHANTILLON / GAUGE */}
               <div className="mb-6 p-4 bg-warm-50 rounded-lg border border-warm-200">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  📏 Échantillon
+                  Échantillon
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                   <div>
@@ -6189,8 +6297,8 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] px-4 pt-4 pb-20">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">
-                📝 Notes du projet
+              <h2 className="text-lg font-bold text-gray-900">
+                Notes du projet
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {project.name}
@@ -6230,7 +6338,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   disabled={savingNotes}
                   className="px-6 py-2 bg-yellow-600 text-white rounded-lg font-bold hover:bg-yellow-700 transition disabled:opacity-50"
                 >
-                  {savingNotes ? 'Sauvegarde...' : '💾 Sauvegarder'}
+                  {savingNotes ? 'Sauvegarde...' : 'Sauvegarder'}
                 </button>
               </div>
             </div>
@@ -6296,16 +6404,50 @@ Rang 3 : *1ms, aug* x6 (18)
       {/* [AI:Claude] Modal de fin de projet - toutes sections terminées */}
       {showProjectCompletionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
-            <h3 className="text-2xl font-bold mb-4 text-gray-900 text-center">
-              🎉 Toutes les sections sont terminées !
-            </h3>
-            <p className="text-gray-700 mb-6 text-center">
-              Félicitations ! Vous avez terminé toutes les sections de votre projet.
-              <br />
-              Que souhaitez-vous faire ?
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-primary-100 flex items-center justify-center">
+                <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">
+                Toutes les sections sont terminées !
+              </h3>
+              <p className="text-gray-500 text-sm mt-1">
+                Félicitations pour votre {project?.name || 'projet'} !
+              </p>
+            </div>
+
+            {/* CTA photo — mis en avant */}
+            {credits && credits.total_available > 0 ? (
+              <button
+                onClick={handleCompleteAndPhoto}
+                className="w-full mb-3 px-5 py-4 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition flex items-center justify-center gap-3"
+              >
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>
+                  Immortaliser avec une photo IA
+                  <span className="block text-xs font-normal text-primary-200">{credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}</span>
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={handleCompleteAndPhoto}
+                className="w-full mb-3 px-5 py-4 bg-primary-50 border-2 border-primary-300 text-primary-700 rounded-xl font-bold hover:bg-primary-100 transition flex items-center justify-center gap-3"
+              >
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Ajouter une photo
+              </button>
+            )}
+
+            <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
                   setShowProjectCompletionModal(false)
@@ -6313,20 +6455,20 @@ Rang 3 : *1ms, aug* x6 (18)
                   setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
                   setEditingSection(null)
                 }}
-                className="flex-1 px-6 py-4 border-2 border-primary-600 text-primary-600 rounded-lg font-bold hover:bg-primary-50 transition text-center"
+                className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
               >
-                ➕ Ajouter une section
+                Ajouter une section
               </button>
               <button
                 onClick={handleCompleteProject}
-                className="flex-1 px-6 py-4 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition text-center"
+                className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
               >
-                ✅ Terminer le projet
+                Terminer sans photo
               </button>
             </div>
             <button
               onClick={() => setShowProjectCompletionModal(false)}
-              className="w-full mt-3 px-4 py-2 text-gray-500 hover:text-gray-700 transition text-sm"
+              className="w-full mt-2 px-4 py-2 text-gray-400 hover:text-gray-600 transition text-xs"
             >
               Annuler (rester en cours)
             </button>
@@ -6713,6 +6855,12 @@ Rang 3 : *1ms, aug* x6 (18)
           </div>
         </div>
       )}
+
+      <UpgradePrompt
+        isOpen={!!upgradeFeature}
+        onClose={() => setUpgradeFeature(null)}
+        feature={upgradeFeature || 'tags'}
+      />
 
     </div>
   )
