@@ -1121,8 +1121,15 @@ const ProjectCounter = () => {
       })
 
       await fetchProjectPhotos()
+      await fetchCredits()
       setShowPhotoUploadModal(false)
-      showAlert('Photo ajoutée avec succès !', 'success')
+      // Ouvrir directement la modale d'embellissement sur la photo qui vient d'être uploadée
+      const photosResponse = await api.get('/photos', { params: { project_id: projectId } })
+      const allPhotos = photosResponse.data.photos || []
+      const newPhoto = allPhotos.filter(p => !p.parent_photo_id).slice(-1)[0]
+      if (newPhoto) {
+        openEnhanceModal(newPhoto)
+      }
     } catch (err) {
       console.error('Erreur upload photo:', err)
       showAlert('Erreur lors de l\'ajout de la photo', 'error')
@@ -1333,87 +1340,87 @@ const ProjectCounter = () => {
   const stylesByCategory = {
     wearable: [
       // FREE (3)
-      { key: 'wearable_c1', label: 'Porté classique', icon: '👤', desc: 'Porté en portrait extérieur, lumière douce', tier: 'free' },
-      { key: 'flatlay_c1', label: 'Produit à plat', icon: '📸', desc: 'Posé à plat sur fond blanc studio', tier: 'free' },
-      { key: 'detail_c1', label: 'Détails texture', icon: '🔍', desc: 'Gros plan macro sur la texture et les points', tier: 'free' },
+      { key: 'wearable_c1', label: 'Porté, lumière naturelle', icon: '👤', desc: 'Portrait extérieur avec lumière douce', tier: 'free' },
+      { key: 'flatlay_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
+      { key: 'detail_c1', label: 'Gros plan sur les points', icon: '🔍', desc: 'Macro sur la texture et le détail du tricot', tier: 'free' },
       // PLUS (+3)
-      { key: 'wearable_c2', label: 'Porté studio', icon: '✨', desc: 'Porté en studio fond blanc neutre', tier: 'plus' },
-      { key: 'wearable_c3', label: 'Porté urbain', icon: '🌆', desc: 'Porté en ambiance urbaine lifestyle', tier: 'plus' },
-      { key: 'flatlay_c2', label: 'Flat lay lifestyle', icon: '🏡', desc: 'Posé à plat avec props décoratifs', tier: 'plus' },
+      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'plus' },
+      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'plus' },
+      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'plus' },
       // PRO (+3)
-      { key: 'wearable_c4', label: 'Bohème chic', icon: '🌼', desc: 'Porté ambiance vintage décor rétro', tier: 'pro' },
-      { key: 'wearable_c7', label: 'Haute couture', icon: '👗', desc: 'Porté studio fond texturé sombre', tier: 'pro' },
-      { key: 'wearable_c9', label: 'Urbain industriel', icon: '🏙️', desc: 'Porté ambiance industrielle', tier: 'pro' }
+      { key: 'wearable_c4', label: 'Porté, ambiance vintage', icon: '🌼', desc: 'Portrait dans un décor rétro chaleureux', tier: 'pro' },
+      { key: 'wearable_c7', label: 'Porté, éclairage dramatique', icon: '👗', desc: 'Portrait studio avec fond texturé sombre', tier: 'pro' },
+      { key: 'wearable_c9', label: 'Porté, décor industriel', icon: '🏙️', desc: 'Portrait en loft ou espace industriel', tier: 'pro' }
     ],
     accessory: [
       // FREE (3)
-      { key: 'accessory_c1', label: 'Studio fond blanc', icon: '📸', desc: 'Flat lay sur fond blanc pur, éclairage studio', tier: 'free' },
-      { key: 'accessory_c2', label: 'Porté naturel', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
-      { key: 'accessory_c3', label: 'Porté studio', icon: '👤', desc: 'Porté sur modèle avec fond neutre', tier: 'free' },
+      { key: 'accessory_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
+      { key: 'accessory_c2', label: 'Porté, lumière naturelle', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
+      { key: 'accessory_c3', label: 'Porté, fond neutre', icon: '👤', desc: 'Porté sur modèle avec fond sobre', tier: 'free' },
       // PLUS (+3)
-      { key: 'accessory_c4', label: 'Flat lay lifestyle', icon: '✨', desc: 'Posé à plat avec accessoires lifestyle', tier: 'plus' },
-      { key: 'accessory_c5', label: 'Porté urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'plus' },
-      { key: 'accessory_c6', label: 'Cosy intérieur', icon: '🏠', desc: 'Posé sur table avec textures douces', tier: 'plus' },
+      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'plus' },
+      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'plus' },
+      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'plus' },
       // PRO (+3)
-      { key: 'accessory_c7', label: 'Porté mode', icon: '💃', desc: 'Shooting mode professionnel avec mise en scène stylée', tier: 'pro' },
-      { key: 'accessory_c8', label: 'Luxe produit', icon: '💎', desc: 'Mise en scène luxe avec fond sombre élégant', tier: 'pro' },
-      { key: 'accessory_c9', label: 'Porté bohème', icon: '🌸', desc: 'Porté dans intérieur bohème avec plantes', tier: 'pro' }
+      { key: 'accessory_c7', label: 'Porté, style éditorial', icon: '💃', desc: 'Portrait avec mise en scène soignée', tier: 'pro' },
+      { key: 'accessory_c8', label: 'À plat, fond sombre élégant', icon: '💎', desc: 'Mise en scène sobre sur fond sombre', tier: 'pro' },
+      { key: 'accessory_c9', label: 'Porté, décor bohème', icon: '🌸', desc: 'Porté dans un intérieur bohème avec plantes', tier: 'pro' }
     ],
     home_decor: [
       // FREE (3)
-      { key: 'home_c1', label: 'Contemporain graphique', icon: '🏠', desc: 'Design moderne avec touches de couleur', tier: 'free' },
-      { key: 'home_c2', label: 'Rustique naturel', icon: '🌿', desc: 'Bois, plantes, lumière naturelle', tier: 'free' },
-      { key: 'home_c3', label: 'Scandinave', icon: '✨', desc: 'Décor épuré blanc/gris', tier: 'free' },
+      { key: 'home_c1', label: 'Intérieur moderne', icon: '🏠', desc: 'Décor contemporain avec touches de couleur', tier: 'free' },
+      { key: 'home_c2', label: 'Ambiance naturelle', icon: '🌿', desc: 'Bois, plantes et lumière naturelle', tier: 'free' },
+      { key: 'home_c3', label: 'Décor épuré', icon: '🪟', desc: 'Style scandinave, blanc et gris doux', tier: 'free' },
       // PLUS (+3)
-      { key: 'home_c4', label: 'Industriel', icon: '🏭', desc: 'Ambiance loft, métal, briques', tier: 'plus' },
-      { key: 'home_c5', label: 'Coloré vintage', icon: '🎨', desc: 'Couleurs chaudes, vintage', tier: 'plus' },
-      { key: 'home_c6', label: 'Bohème cozy', icon: '🛋️', desc: 'Ambiance chaleureuse, tissus doux', tier: 'plus' },
+      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'plus' },
+      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'plus' },
+      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'plus' },
       // PRO (+3)
-      { key: 'home_c7', label: 'Luxe contemporain', icon: '💎', desc: 'Décor moderne avec matériaux nobles', tier: 'pro' },
-      { key: 'home_c8', label: 'Minimaliste zen', icon: '🧘', desc: 'Ambiance zen, couleurs neutres', tier: 'pro' },
-      { key: 'home_c9', label: 'Atelier créatif', icon: '🎨', desc: 'Table d\'artiste avec fournitures créatives', tier: 'pro' }
+      { key: 'home_c7', label: 'Décor élégant', icon: '💎', desc: 'Intérieur contemporain avec matières nobles', tier: 'pro' },
+      { key: 'home_c8', label: 'Ambiance zen', icon: '🧘', desc: 'Décor minimaliste, couleurs neutres apaisantes', tier: 'pro' },
+      { key: 'home_c9', label: 'Table de créatrice', icon: '🎨', desc: 'Posé sur une table avec fils et fournitures', tier: 'pro' }
     ],
     toy: [
       // FREE (3)
-      { key: 'toy_c1', label: 'Classique doux', icon: '🧸', desc: 'Chambre enfantine avec lumière douce', tier: 'free' },
-      { key: 'toy_c2', label: 'Livre de contes', icon: '📖', desc: 'Décor de conte illustré, aquarelle pastel', tier: 'free' },
-      { key: 'toy_c3', label: 'Studio fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
+      { key: 'toy_c1', label: 'Chambre enfant, lumière douce', icon: '🧸', desc: 'Décor de chambre enfantine doux et lumineux', tier: 'free' },
+      { key: 'toy_c2', label: 'Ambiance conte illustré', icon: '📖', desc: 'Décor aquarelle pastel, ambiance féerique', tier: 'free' },
+      { key: 'toy_c3', label: 'À plat, fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
       // PLUS (+3)
-      { key: 'toy_c4', label: 'Vintage peluche', icon: '🧸', desc: 'Ambiance rétro, lumière tamisée', tier: 'plus' },
-      { key: 'toy_c5', label: 'Artisanat naturel', icon: '🌿', desc: 'Bois, tissus naturels', tier: 'plus' },
-      { key: 'toy_c6', label: 'Cartoon coloré', icon: '🎈', desc: 'Couleurs vives, style dessin animé', tier: 'plus' },
+      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'plus' },
+      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'plus' },
+      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'plus' },
       // PRO (+3)
-      { key: 'toy_c7', label: 'Boutique premium', icon: '🏪', desc: 'Boutique artisanale avec étagères et fond pastel', tier: 'pro' },
-      { key: 'toy_c8', label: 'Aventure jungle', icon: '🦁', desc: 'Jungle tropicale avec plantes exotiques', tier: 'pro' },
-      { key: 'toy_c9', label: 'Cirque vintage', icon: '🎪', desc: 'Chapiteau rétro avec rayures et paillettes', tier: 'pro' }
+      { key: 'toy_c7', label: 'Décor boutique artisanale', icon: '🏪', desc: 'Étagères et fond pastel, style créatrice', tier: 'pro' },
+      { key: 'toy_c8', label: 'Décor jungle tropicale', icon: '🦁', desc: 'Plantes exotiques, ambiance aventure', tier: 'pro' },
+      { key: 'toy_c9', label: 'Ambiance fête rétro', icon: '🎪', desc: 'Décor festif vintage coloré', tier: 'pro' }
     ],
     baby_garment: [
       // FREE (3)
-      { key: 'baby_garment_c1', label: 'Bébé sur lit 👶', icon: '🛏️', desc: 'Porté par bébé allongé sur lit pastel', tier: 'free' },
-      { key: 'baby_garment_c2', label: 'Studio pastel', icon: '✨', desc: 'À plat sur fond uni doux', tier: 'free' },
-      { key: 'baby_garment_c3', label: 'Nursery scandinave', icon: '🏠', desc: 'À plat sur table à langer en bois clair', tier: 'free' },
+      { key: 'baby_garment_c1', label: 'Porté par bébé, lit pastel', icon: '🛏️', desc: 'Bébé allongé sur lit aux tons doux', tier: 'free' },
+      { key: 'baby_garment_c2', label: 'À plat, fond doux', icon: '🌸', desc: 'Posé à plat sur fond uni pastel', tier: 'free' },
+      { key: 'baby_garment_c3', label: 'À plat, table à langer', icon: '🏠', desc: 'Sur table à langer en bois clair, style scandinave', tier: 'free' },
       // PLUS (+3)
-      { key: 'baby_garment_c4', label: 'Bébé lifestyle 👶', icon: '🧸', desc: 'Porté par bébé avec jouets bois', tier: 'plus' },
-      { key: 'baby_garment_c5', label: 'Flat lay naturel', icon: '🌿', desc: 'À plat avec accessoires lifestyle', tier: 'plus' },
-      { key: 'baby_garment_c6', label: 'Panier vintage', icon: '🧺', desc: 'À plat dans osier avec lin', tier: 'plus' },
+      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'plus' },
+      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'plus' },
+      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'plus' },
       // PRO (+3)
-      { key: 'baby_garment_c7', label: 'Dans bras parent 👶', icon: '💝', desc: 'Porté par bébé tenu par parent', tier: 'pro' },
-      { key: 'baby_garment_c8', label: 'Premium flat lay', icon: '💎', desc: 'À plat avec fleurs séchées', tier: 'pro' },
-      { key: 'baby_garment_c9', label: 'Tapis de jeu 👶', icon: '🌸', desc: 'Porté par bébé sur tapis moelleux', tier: 'pro' }
+      { key: 'baby_garment_c7', label: 'Porté dans les bras', icon: '💝', desc: 'Bébé tenu par un parent, ambiance tendre', tier: 'pro' },
+      { key: 'baby_garment_c8', label: 'À plat, fleurs séchées', icon: '💎', desc: 'Mise en scène élégante avec fleurs séchées', tier: 'pro' },
+      { key: 'baby_garment_c9', label: 'Porté par bébé, tapis moelleux', icon: '🌸', desc: 'Bébé sur tapis doux et coloré', tier: 'pro' }
     ],
     child_garment: [
       // FREE (3)
-      { key: 'child_garment_c1', label: 'Parc/jardin 👧', icon: '🌿', desc: 'Porté par enfant dans un parc ou jardin', tier: 'free' },
-      { key: 'child_garment_c2', label: 'Studio blanc', icon: '📸', desc: 'À plat sur fond blanc studio professionnel', tier: 'free' },
-      { key: 'child_garment_c3', label: 'Chambre enfant', icon: '🛏️', desc: 'À plat sur lit coloré avec peluches', tier: 'free' },
+      { key: 'child_garment_c1', label: 'Porté, parc ou jardin', icon: '🌿', desc: 'Enfant dans un espace vert, lumière naturelle', tier: 'free' },
+      { key: 'child_garment_c2', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
+      { key: 'child_garment_c3', label: 'À plat, chambre enfant', icon: '🛏️', desc: 'Sur lit coloré avec peluches', tier: 'free' },
       // PLUS (+3)
-      { key: 'child_garment_c4', label: 'Enfant jouant 👧', icon: '🧸', desc: 'Porté par enfant avec jouets en bois', tier: 'plus' },
-      { key: 'child_garment_c5', label: 'Flat lay coloré', icon: '🎨', desc: 'À plat avec crayons et accessoires enfant', tier: 'plus' },
-      { key: 'child_garment_c6', label: 'Urbain/street 👧', icon: '🏙️', desc: 'Porté par enfant, décor urbain style street photo', tier: 'plus' },
+      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'plus' },
+      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'plus' },
+      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'plus' },
       // PRO (+3)
-      { key: 'child_garment_c7', label: 'Mode enfant 👧', icon: '✨', desc: 'Shooting mode avec éclairage studio créatif', tier: 'pro' },
-      { key: 'child_garment_c8', label: 'Premium boutique', icon: '💎', desc: 'À plat mise en scène boutique haut de gamme', tier: 'pro' },
-      { key: 'child_garment_c9', label: 'Promenade famille 👧', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
+      { key: 'child_garment_c7', label: 'Porté, éclairage studio', icon: '📸', desc: 'Portrait soigné avec éclairage studio créatif', tier: 'pro' },
+      { key: 'child_garment_c8', label: 'À plat, mise en scène soignée', icon: '💎', desc: 'Mise en scène boutique haut de gamme', tier: 'pro' },
+      { key: 'child_garment_c9', label: 'Porté, promenade en famille', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
     ]
   }
 
@@ -1870,14 +1877,12 @@ const ProjectCounter = () => {
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
 
             if (allCompleted && sections.length > 0) {
-              // Afficher la modale de confirmation au lieu de terminer automatiquement
-              showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+              // Pas d'alert ici — la modale de complétion prend le relais
               await handleAllSectionsCompleted()
             } else {
               showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+              await fetchProject()
             }
-
-            await fetchProject()
           } catch (err) {
             console.error('Erreur marquage section terminée:', err)
             const numMax = Number(maxRows)
@@ -2569,8 +2574,6 @@ const ProjectCounter = () => {
         const allSectionsCompleted = updatedSections.every(s => s.is_completed === 1)
 
         if (allSectionsCompleted && project.status !== 'completed') {
-          // Afficher la modale de confirmation au lieu de terminer automatiquement
-          showAlert(alertMessage, 'success')
           await handleAllSectionsCompleted()
           return
         }
@@ -4083,7 +4086,7 @@ const ProjectCounter = () => {
                   : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              Photos IA
+              Photos
               {projectPhotos.length > 0 && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
@@ -4112,7 +4115,7 @@ const ProjectCounter = () => {
                   {projectPhotos.length > 0 && (
                     <div className="mb-4">
                       <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-gray-900">Photos IA</h2>
+                        <h2 className="text-lg font-semibold text-gray-900">Photos</h2>
                         <button
                           onClick={() => setShowPhotoUploadModal(true)}
                           className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
@@ -4125,7 +4128,7 @@ const ProjectCounter = () => {
                       </div>
                       {credits && credits.total_available > 0 && (
                         <p className="text-xs text-green-700 font-medium mt-1">
-                          {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''} — transformez votre photo avec l'IA
+                          {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''} pour embellir vos photos
                         </p>
                       )}
                     </div>
@@ -4144,31 +4147,30 @@ const ProjectCounter = () => {
                     <p className="text-center text-xs text-gray-400 py-1">Votre photo</p>
                   </div>
                   <div className="flex flex-col items-center gap-1">
-                    <svg className="w-6 h-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <svg className="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                    <span className="text-xs font-bold text-primary-600">IA</span>
                   </div>
                   <div className="flex-1 max-w-[120px] rounded-lg overflow-hidden border-2 border-primary-300 shadow-sm">
                     <div className="bg-gradient-to-br from-primary-100 to-primary-200 h-20 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3l14 9-14 9V3z" />
+                      <svg className="w-8 h-8 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <p className="text-center text-xs text-primary-600 font-semibold py-1">Résultat IA</p>
+                    <p className="text-center text-xs text-primary-600 font-semibold py-1">Mise en valeur</p>
                   </div>
                 </div>
 
                 <h3 className="text-center font-bold text-gray-900 mb-1 text-sm">
-                  Transformez votre photo avec l'IA
+                  Mettez votre ouvrage en valeur
                 </h3>
                 <p className="text-center text-xs text-gray-500 mb-4">
-                  Fond professionnel, éclairage studio, prête pour Etsy ou Instagram
+                  Fond et éclairage retravaillés — votre création reste identique
                 </p>
 
                 {credits && credits.total_available > 0 && (
                   <p className="text-center text-xs text-green-700 font-medium mb-3">
-                    {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} photo disponible{credits.total_available > 1 ? 's' : ''}
+                    {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}
                   </p>
                 )}
 
@@ -4584,7 +4586,7 @@ const ProjectCounter = () => {
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                   </svg>
-                                  Embellir avec l'IA
+                                  Mettre en valeur
                                   {credits && credits.total_available > 0 && (
                                     <span className="text-xs text-primary-200">· {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''}</span>
                                   )}
@@ -5334,7 +5336,7 @@ Rang 3 : *1ms, aug* x6 (18)
           <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold text-gray-900">Générer une photo IA</h2>
+                <h2 className="text-lg font-bold text-gray-900">Embellir ma photo</h2>
                 <button
                   type="button"
                   onClick={() => setShowStyleExamplesModal(true)}
@@ -5347,43 +5349,33 @@ Rang 3 : *1ms, aug* x6 (18)
             </div>
 
             <form onSubmit={handleEnhancePhoto} className="flex-1 overflow-y-auto p-6 flex flex-col">
-              {/* Avertissement important */}
+              {/* Message rassurant */}
               {!hideAIWarning && (
-                <div className="mb-4 bg-orange-50 border-l-4 border-orange-400 rounded-r-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                    <div className="text-sm w-full">
-                      <h4 className="font-bold text-orange-900 mb-2">Ce qui va être préservé et ce qui va changer :</h4>
-                      <div className="space-y-1.5 text-orange-800">
-                        <p className="flex items-start gap-2">
-                          <span className="text-green-600 font-bold flex-shrink-0">✓</span>
-                          <span><strong>Préservé :</strong> Les couleurs, motifs et texture de votre ouvrage restent identiques</span>
-                        </p>
-                        <p className="flex items-start gap-2">
-                          <span className="text-orange-600 font-bold flex-shrink-0">↻</span>
-                          <span><strong>Modifié :</strong> Le fond, l'éclairage et la position sont adaptés au style choisi</span>
-                        </p>
-                        <p className="flex items-start gap-2">
-                          <span className="text-blue-600 font-bold flex-shrink-0">✂</span>
-                          <span><strong>Retiré :</strong> Les mains, éléments de fond indésirables sont supprimés</span>
-                        </p>
-                      </div>
-                      <p className="mt-2.5 text-xs text-orange-700 font-medium">
-                        💡 Conseil : Consultez les exemples de styles pour visualiser le résultat attendu
-                      </p>
-                      {/* Checkbox "Ne plus afficher" */}
-                      <div className="mt-3 pt-3 border-t border-primary-300/50">
-                        <label className="flex items-center gap-2 cursor-pointer text-xs text-orange-800 hover:text-orange-900">
-                          <input
-                            type="checkbox"
-                            checked={hideAIWarning}
-                            onChange={handleHideAIWarning}
-                            className="rounded border-orange-300 text-primary-600 focus:ring-primary-500"
-                          />
-                          <span className="font-medium">J'ai compris, ne plus afficher cet avertissement</span>
-                        </label>
-                      </div>
-                    </div>
+                <div className="mb-4 bg-primary-50 border border-primary-100 rounded-xl p-4">
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p className="flex items-center gap-2.5">
+                      <svg className="w-4 h-4 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      Votre ouvrage reste intact — couleurs, matière et points sont préservés
+                    </p>
+                    <p className="flex items-center gap-2.5">
+                      <svg className="w-4 h-4 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      Seuls le fond et l'éclairage changent pour valoriser votre création
+                    </p>
+                    <p className="flex items-center gap-2.5">
+                      <svg className="w-4 h-4 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      La photo originale est toujours conservée
+                    </p>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-primary-200">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-500 hover:text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={hideAIWarning}
+                        onChange={handleHideAIWarning}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      Ne plus afficher ce message
+                    </label>
                   </div>
                 </div>
               )}
@@ -6430,8 +6422,8 @@ Rang 3 : *1ms, aug* x6 (18)
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <span>
-                  Immortaliser avec une photo IA
-                  <span className="block text-xs font-normal text-primary-200">{credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}</span>
+                  Mettre mon ouvrage en valeur
+                  <span className="block text-xs font-normal text-primary-200">{credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} photo disponible{credits.total_available > 1 ? 's' : ''}</span>
                 </span>
               </button>
             ) : (
@@ -6463,7 +6455,7 @@ Rang 3 : *1ms, aug* x6 (18)
                 onClick={handleCompleteProject}
                 className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
               >
-                Terminer sans photo
+                Terminer sans ajouter de photo
               </button>
             </div>
             <button

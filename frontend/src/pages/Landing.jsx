@@ -359,7 +359,7 @@ const Landing = () => {
                   'Notes globales',
                   '5 patrons en bibliothèque',
                   '3 questions assistant IA / mois',
-                  '2 crédits photo IA / mois',
+                  '2 crédits photo / mois',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -406,7 +406,7 @@ const Landing = () => {
                   ['Stats complètes + graphiques + badges', true],
                   ['Timer avec historique', true],
                   ['30 questions assistant IA / mois', true],
-                  ['20 crédits photo IA + tous les styles', true],
+                  ['20 crédits photo + tous les styles', true],
                 ].map(([item, highlight], i) => (
                   <li key={i} className={`flex items-start gap-2.5 text-sm ${highlight ? 'text-gray-800 font-medium' : 'text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

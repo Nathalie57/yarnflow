@@ -243,7 +243,7 @@ class CreditManager
                   (user_id, monthly_credits, last_reset_at)
                   VALUES (:user_id, :monthly_credits, NOW())
                   ON DUPLICATE KEY UPDATE
-                  monthly_credits = :monthly_credits";
+                  monthly_credits = VALUES(monthly_credits)";
 
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
