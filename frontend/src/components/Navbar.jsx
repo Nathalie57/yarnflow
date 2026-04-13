@@ -21,12 +21,12 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/my-projects" className="text-2xl font-bold text-primary-600">
-            🧶 YarnFlow
+          <Link to="/my-projects" className="text-xl font-bold text-primary-600 tracking-tight">
+            YarnFlow
           </Link>
 
           {/* Help + Menu Burger buttons - Mobile uniquement */}
@@ -35,10 +35,10 @@ const Navbar = () => {
             <div className="relative">
               <button
                 onClick={() => setShowHelpMenu(!showHelpMenu)}
-                className="p-2 rounded-full bg-primary-100 hover:bg-primary-200 text-primary-700 transition w-10 h-10 flex items-center justify-center font-bold text-lg"
+                className="p-2 rounded-full bg-primary-100 hover:bg-primary-200 text-primary-700 transition w-10 h-10 flex items-center justify-center"
                 aria-label="Aide"
               >
-                ?
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               </button>
 
             {/* Help Menu Dropdown */}
@@ -59,7 +59,9 @@ const Navbar = () => {
                       onClick={() => setShowHelpMenu(false)}
                       className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
                     >
-                      <span className="text-2xl">💬</span>
+                      <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                      </svg>
                       <div className="flex-1">
                         <p className="font-semibold text-gray-900 group-hover:text-primary-700">
                           Nous contacter
@@ -75,7 +77,9 @@ const Navbar = () => {
                       onClick={() => setShowHelpMenu(false)}
                       className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
                     >
-                      <span className="text-2xl">📄</span>
+                      <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                      </svg>
                       <div className="flex-1">
                         <p className="font-semibold text-gray-900 group-hover:text-primary-700">
                           CGU & Confidentialité
@@ -89,7 +93,7 @@ const Navbar = () => {
 
                   <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
                     <p className="text-xs text-gray-500 text-center">
-                      YarnFlow v0.16 • 🧶 Made with ❤️
+                      YarnFlow v0.16 · Made with ♥
                     </p>
                   </div>
                 </div>
@@ -100,7 +104,7 @@ const Navbar = () => {
             {/* Mobile Menu Button - Mobile uniquement */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+              className="md:hidden p-2 rounded-lg text-gray-800 hover:bg-gray-100 transition"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
@@ -149,7 +153,11 @@ const Navbar = () => {
                         onClick={() => setShowHelpMenuDesktop(false)}
                         className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
                       >
-                        <span className="text-2xl">💬</span>
+                        <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        </div>
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900 group-hover:text-primary-700">
                             Nous contacter
@@ -165,7 +173,11 @@ const Navbar = () => {
                         onClick={() => setShowHelpMenuDesktop(false)}
                         className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
                       >
-                        <span className="text-2xl">📄</span>
+                        <div className="w-9 h-9 rounded-lg bg-warm-100 flex items-center justify-center flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-warm-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900 group-hover:text-primary-700">
                             CGU & Confidentialité
@@ -179,7 +191,7 @@ const Navbar = () => {
 
                     <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
                       <p className="text-xs text-gray-500 text-center">
-                        YarnFlow v0.16 • 🧶 Made with ❤️
+                        YarnFlow v0.16 · Made with ♥
                       </p>
                     </div>
                   </div>
@@ -190,93 +202,74 @@ const Navbar = () => {
             {/* PROJETS */}
             <Link
               to="/my-projects"
-              className={`transition flex items-center gap-1 ${
+              className={`text-sm transition-colors ${
                 location.pathname === '/dashboard' || location.pathname === '/my-projects' || location.pathname.startsWith('/projects/')
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-700 hover:text-primary-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              🧶 Projets
+              Projets
             </Link>
 
             {/* BIBLIOTHÈQUE DE PATRONS */}
             <Link
               to="/pattern-library"
-              className={`transition flex items-center gap-1 ${
+              className={`text-sm transition-colors ${
                 location.pathname === '/pattern-library'
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-700 hover:text-primary-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              📚 Patrons
+              Bibliothèque
             </Link>
 
             {/* GALERIE PHOTOS IA */}
             <Link
               to="/gallery"
-              className={`transition flex items-center gap-1 ${
+              className={`text-sm transition-colors ${
                 location.pathname === '/gallery'
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-700 hover:text-primary-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              📸 Galerie
+              Galerie
             </Link>
 
             {/* OUTILS */}
             <Link
               to="/tools"
-              className={`relative transition flex items-center gap-1 ${
+              className={`text-sm transition-colors ${
                 location.pathname === '/tools'
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-700 hover:text-primary-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              🧮 Outils
-              <span className="absolute -top-2 -right-4 bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-                NEW
-              </span>
+              Outils
             </Link>
 
             {/* STATISTIQUES */}
             <Link
               to="/stats"
-              className={`transition flex items-center gap-1 ${
+              className={`text-sm transition-colors ${
                 location.pathname === '/stats'
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-700 hover:text-primary-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              📈 Stats
+              Stats
             </Link>
 
-            {/* ADMIN */}
             {isAdmin() && (
-              <>
-                <Link
-                  to="/generator"
-                  className={`transition flex items-center gap-1 ${
-                    location.pathname === '/generator'
-                      ? 'text-primary-600 font-semibold'
-                      : 'text-gray-700 hover:text-primary-600'
-                  }`}
-                >
-                  🤖 Générer
-                  <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">
-                    ADMIN
-                  </span>
-                </Link>
-                <Link
-                  to="/admin"
-                  className={`transition font-medium ${
-                    location.pathname === '/admin'
-                      ? 'text-primary-600 font-semibold'
-                      : 'text-primary-600 hover:text-primary-700'
-                  }`}
-                >
-                  Admin
-                </Link>
-              </>
+              <Link
+                to="/admin"
+                className={`transition font-medium ${
+                  location.pathname === '/admin'
+                    ? 'text-primary-600 font-semibold'
+                    : 'text-primary-600 hover:text-primary-700'
+                }`}
+              >
+                Admin
+              </Link>
             )}
 
             {/* User menu Desktop */}
@@ -288,31 +281,31 @@ const Navbar = () => {
                 </svg>
               </button>
 
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all">
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all">
                 <Link
                   to="/profile"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 >
-                  ⚙️ Mon profil
+                  Mon profil
                 </Link>
                 <Link
                   to="/subscription"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 >
-                  💎 Abonnement
+                  Abonnement
                 </Link>
                 <Link
                   to="/contact"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 >
-                  📧 Contact
+                  Contact
                 </Link>
-                <hr className="my-2" />
+                <hr className="my-1 border-gray-100" />
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  🚪 Déconnexion
+                  Déconnexion
                 </button>
               </div>
             </div>
@@ -336,7 +329,7 @@ const Navbar = () => {
           {/* Mobile Menu Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="text-xl font-bold text-primary-600">
-              🧶 YarnFlow
+              YarnFlow
             </div>
             <button
               onClick={closeMobileMenu}
@@ -357,129 +350,112 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Menu Links */}
-          <div className="p-4 space-y-2">
+          <div className="p-4 space-y-1">
             <Link
               to="/my-projects"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-lg transition ${
+              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
                 location.pathname === '/my-projects' || location.pathname.startsWith('/projects/')
-                  ? 'bg-primary-100 text-primary-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary-50 text-primary-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              🧶 Mes Projets
+              Mes Projets
             </Link>
 
             <Link
               to="/pattern-library"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-lg transition ${
+              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
                 location.pathname === '/pattern-library'
-                  ? 'bg-primary-100 text-primary-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary-50 text-primary-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              📚 Bibliothèque Patrons
+              Bibliothèque Patrons
             </Link>
 
             <Link
               to="/gallery"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-lg transition ${
+              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
                 location.pathname === '/gallery'
-                  ? 'bg-primary-100 text-primary-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary-50 text-primary-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              📸 Galerie Photos IA
+              Galerie Photos IA
             </Link>
 
             <Link
               to="/tools"
               onClick={closeMobileMenu}
-              className={`flex items-center justify-between px-4 py-3 rounded-lg transition ${
+              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
                 location.pathname === '/tools'
-                  ? 'bg-primary-100 text-primary-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary-50 text-primary-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              🧮 Outils
-              <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
-                NEW
-              </span>
+              Outils
             </Link>
 
             <Link
               to="/stats"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-lg transition ${
+              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
                 location.pathname === '/stats'
-                  ? 'bg-primary-100 text-primary-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary-50 text-primary-700 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              📈 Statistiques
+              Statistiques
             </Link>
 
             {isAdmin() && (
-              <>
-                <Link
-                  to="/generator"
-                  onClick={closeMobileMenu}
-                  className={`block px-4 py-3 rounded-lg transition ${
-                    location.pathname === '/generator'
-                      ? 'bg-primary-100 text-primary-700 font-semibold'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  🤖 Générer <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full ml-2">ADMIN</span>
-                </Link>
-
-                <Link
-                  to="/admin"
-                  onClick={closeMobileMenu}
-                  className={`block px-4 py-3 rounded-lg transition ${
-                    location.pathname === '/admin'
-                      ? 'bg-primary-100 text-primary-700 font-semibold'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  👑 Admin
-                </Link>
-              </>
+              <Link
+                to="/admin"
+                onClick={closeMobileMenu}
+                className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
+                  location.pathname === '/admin'
+                    ? 'bg-primary-50 text-primary-700 font-semibold'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Admin
+              </Link>
             )}
 
-            <hr className="my-4" />
+            <hr className="my-3 border-gray-100" />
 
             <Link
               to="/profile"
               onClick={closeMobileMenu}
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+              className="block px-4 py-3 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              ⚙️ Mon profil
+              Mon profil
             </Link>
 
             <Link
               to="/subscription"
               onClick={closeMobileMenu}
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+              className="block px-4 py-3 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              💎 Abonnement
+              Abonnement
             </Link>
 
             <Link
               to="/contact"
               onClick={closeMobileMenu}
-              className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 transition"
+              className="block px-4 py-3 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              📧 Contact
+              Contact
             </Link>
 
             <button
               onClick={handleLogout}
-              className="w-full text-left px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition font-medium"
+              className="w-full text-left px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
             >
-              🚪 Déconnexion
+              Déconnexion
             </button>
           </div>
         </div>

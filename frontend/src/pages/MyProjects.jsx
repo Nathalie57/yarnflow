@@ -77,7 +77,7 @@ const MyProjects = () => {
   // [AI:Claude] Tags et filtres (v0.15.0)
   const [availableTags, setAvailableTags] = useState([]) // Tous les tags de l'utilisateur
   const [popularTags, setPopularTags] = useState([]) // Suggestions de tags
-  const [canUseTags, setCanUseTags] = useState(false)
+  const canUseTags = !!(user?.subscription_type && user.subscription_type !== 'free')
   const [filters, setFilters] = useState({
     status: null,
     favorite: null,
@@ -85,6 +85,7 @@ const MyProjects = () => {
     sort: 'updated_desc'
   })
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   // [AI:Claude] Restaurer le brouillon de création si la page a été rechargée (tab mobile)
   useEffect(() => {
@@ -158,9 +159,8 @@ const MyProjects = () => {
     fetchCredits()
   }, [])
 
-  // [AI:Claude] Charger les tags populaires et permissions (v0.15.0)
+  // [AI:Claude] Charger les tags populaires (v0.15.0)
   useEffect(() => {
-    checkUserPermissions()
     fetchPopularTags()
   }, [user])
 
@@ -224,26 +224,10 @@ const MyProjects = () => {
     }
   }
 
-  // [AI:Claude] Vérifier les permissions utilisateur (v0.15.0)
-  const checkUserPermissions = () => {
-    if (user) {
-      // Les plans PLUS, PRO et Early Bird ont accès aux tags
-      const tier = user.subscription_type || 'free'
-      const hasTags = ['plus', 'plus_annual', 'pro', 'pro_annual', 'early_bird'].includes(tier)
-      setCanUseTags(hasTags)
-    }
-  }
-
-  // [AI:Claude] Normaliser le plan utilisateur pour les composants (free, plus, pro)
   const getUserPlan = () => {
     if (!user) return 'free'
     const tier = user.subscription_type || 'free'
-
-    if (tier.startsWith('plus') || tier === 'plus_annual') return 'plus'
-    if (tier.startsWith('pro') || tier === 'pro_annual') return 'pro'
-    if (tier === 'early_bird') return 'pro' // Early Bird = fonctionnalités PRO
-
-    return 'free'
+    return tier === 'free' ? 'free' : 'pro'
   }
 
   // [AI:Claude] Sauvegarder les tags après création de projet (v0.15.0)
@@ -528,8 +512,8 @@ const MyProjects = () => {
         sessionStorage.setItem('showFirstProjectTip', 'true')
       }
 
-      // [AI:Claude] Redirection automatique vers le compteur pour onboarding "premier rang"
-      window.location.href = `/projects/${newProject.id}/counter`
+      // [AI:Claude] Redirection automatique vers le projet pour onboarding "premier rang"
+      window.location.href = `/projects/${newProject.id}`
     } catch (err) {
       // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
       let errorMessage = ''
@@ -592,12 +576,7 @@ const MyProjects = () => {
       }
     }
 
-    const max = effectiveType === 'free' ? 3
-      : (effectiveType === 'plus' || effectiveType === 'plus_annual') ? 7
-      : effectiveType === 'pro' ? 999
-      : effectiveType === 'pro_annual' ? 999
-      : effectiveType === 'early_bird' ? 999
-      : 999
+    const max = effectiveType === 'free' ? 3 : 999
 
     // [AI:Claude] Compter uniquement les projets ACTIFS (non terminés)
     const activeProjectsCount = projects.filter(p => p.status !== 'completed').length
@@ -662,27 +641,30 @@ const MyProjects = () => {
           <>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">🧶 Mes Projets</h1>
-                <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
-                  Tous vos projets tricot & crochet avec photos et suivi de progression
-                </p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes projets</h1>
               </div>
 
               {canCreateProject ? (
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800"
+                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm"
                 >
-                  ➕ Nouveau Projet
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  Nouveau projet
                 </button>
               ) : (
                 <div className="flex flex-col items-end gap-2">
                   <button
                     disabled
-                    className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium bg-gray-300 text-gray-500 cursor-not-allowed"
+                    className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm bg-gray-100 text-gray-400 cursor-not-allowed"
                     title={`Quota atteint : ${quota.current}/${quota.max} projets actifs`}
                   >
-                    ➕ Nouveau Projet
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Nouveau projet
                   </button>
                   <div className="text-right">
                     <p className="text-xs text-red-600 font-medium">
@@ -702,61 +684,35 @@ const MyProjects = () => {
               )}
             </div>
 
-            {/* Stats inline compacte */}
+            {/* Stats inline */}
             {!loadingStats && dashboardStats && (
-              <div className="mt-6 bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
-                  {/* Projets */}
-                  <div className="flex items-center gap-3 flex-1">
-                    <span className="text-3xl">📋</span>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-primary-600">
-                          {quota.max === 999 ? quota.total : quota.current}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          / {quota.max === 999 ? '∞' : quota.max} projet{quota.max > 1 ? 's' : ''} {quota.max < 999 ? 'actifs' : ''}
-                        </span>
-                      </div>
-                      {quota.max < 999 && quota.total > 0 && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {quota.total} projet{quota.total > 1 ? 's' : ''} au total
-                        </p>
-                      )}
-                    </div>
-                  </div>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                {/* Projets */}
+                {quota.max === 999 ? (
+                  <span>{quota.total} projet{quota.total !== 1 ? 's' : ''}</span>
+                ) : (() => {
+                  const isAtLimit = quota.current >= quota.max
+                  const isNearLimit = quota.current >= quota.max - 1
+                  return (
+                    <button
+                      onClick={() => setShowUpgradePrompt(true)}
+                      className={`hover:underline ${isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-gray-500'}`}
+                    >
+                      {quota.current}/{quota.max} projets
+                      {isAtLimit && ' — limite atteinte'}
+                    </button>
+                  )
+                })()}
 
-                  {/* Séparateur vertical */}
-                  <div className="hidden sm:block w-px h-12 bg-gray-200"></div>
+                <span className="text-gray-300">·</span>
 
-                  {/* Photos IA */}
-                  <div className="flex items-center gap-3 flex-1">
-                    <span className="text-3xl">📸</span>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-2xl font-bold text-primary-600">{credits?.total_available || 0}</span>
-                        <span className="text-sm text-gray-500">crédit{(credits?.total_available || 0) > 1 ? 's' : ''} photo{(credits?.total_available || 0) > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-xs text-gray-500">
-                          {credits?.monthly_credits || 0} mensuels + {credits?.purchased_credits || 0} achetés
-                          {' • '}
-                          <Link to="/gallery" className="underline font-medium text-primary-600 hover:text-primary-700">
-                            Galerie
-                          </Link>
-                        </p>
-                        <Link
-                          to="/subscription#credits"
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-xs font-bold rounded-lg hover:from-primary-700 hover:to-primary-800 transition focus:outline-none focus:ring-2 focus:ring-primary-300"
-                          title="Acheter des crédits"
-                        >
-                          <span>+</span>
-                          <span className="hidden sm:inline">Acheter</span>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Crédits photos */}
+                <span>
+                  {credits?.total_available || 0} crédit{(credits?.total_available || 0) !== 1 ? 's' : ''} photo
+                </span>
+                <Link to="/subscription#credits" className="text-primary-600 hover:underline text-xs">
+                  + Acheter
+                </Link>
               </div>
             )}
           </>
@@ -777,7 +733,7 @@ const MyProjects = () => {
               placeholder="Rechercher un projet par nom, type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-11 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+              className="w-full px-4 py-2.5 pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition bg-white text-sm"
             />
             <svg
               className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -801,11 +757,27 @@ const MyProjects = () => {
         </div>
       )}
 
-      {/* Loading */}
-      {loading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          <p className="mt-4 text-gray-600">Chargement de vos projets...</p>
+      {/* Skeleton loader */}
+      {loading && !hasLoadedOnce && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+              <div className="h-48 skeleton" />
+              <div className="p-4 space-y-3">
+                <div className="h-5 skeleton rounded-lg w-3/4" />
+                <div className="flex gap-2">
+                  <div className="h-5 skeleton rounded-full w-20" />
+                  <div className="h-5 skeleton rounded-full w-16" />
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="h-12 skeleton rounded-xl" />
+                  <div className="h-12 skeleton rounded-xl" />
+                </div>
+                <div className="h-1.5 skeleton rounded-full" />
+                <div className="h-10 skeleton rounded-xl" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -816,46 +788,40 @@ const MyProjects = () => {
         </div>
       )}
 
-      {/* Filtres (v0.15.0) - Affichés uniquement si des projets existent ET si au moins un projet a été commencé */}
+      {/* Filtres - Affichés si des projets existent */}
       {hasLoadedOnce && !error && projects.length > 0 && (
-        hasStartedAtLeastOneProject ? (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-medium text-gray-600">Filtrer et trier</span>
-              <InfoBubble
-                text="Filtrez vos projets par statut (en cours, terminés), favoris ou tags. Les tags personnalisés sont disponibles avec le plan PLUS."
-                position="right"
-                size="sm"
+        <div className="mb-6">
+          <button
+            onClick={() => setFiltersOpen(o => !o)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors mb-2"
+          >
+            <svg className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+            Filtrer et trier
+            {(filters.status || filters.favorite !== null || filters.tags.length > 0) && (
+              <span className="ml-1 w-2 h-2 rounded-full bg-primary-500 inline-block" />
+            )}
+          </button>
+
+          {filtersOpen && (
+            <div className="animate-fade-in-up">
+              <ProjectFilters
+                onFilterChange={setFilters}
+                availableTags={availableTags}
+                canUseTags={canUseTags}
+                onUpgradeClick={() => setShowUpgradePrompt(true)}
+                userPlan={getUserPlan()}
               />
             </div>
-            <ProjectFilters
-              onFilterChange={setFilters}
-              availableTags={availableTags}
-              canUseTags={canUseTags}
-              onUpgradeClick={() => setShowUpgradePrompt(true)}
-              userPlan={getUserPlan()}
-            />
-          </div>
-        ) : (
-          <div className="mb-6 bg-[#F5F3EF] border-l-4 border-[#8B7355] p-4 rounded-lg">
-            <p className="text-sm text-gray-700 flex items-center gap-2">
-              <span className="text-lg">🔒</span>
-              <span>
-                <strong>Filtres et organisation</strong> débloqués après ton premier rang compté
-              </span>
-            </p>
-          </div>
-        )
+          )}
+        </div>
       )}
 
       {/* Indicateur de chargement pendant filtrage */}
       {loading && hasLoadedOnce && (
-        <div className="flex items-center justify-center py-4 text-primary-600">
-          <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-sm font-medium">Filtrage en cours...</span>
+        <div className="flex items-center justify-center py-3">
+          <div className="w-5 h-5 rounded-full border-2 border-primary-200 border-t-primary-600 animate-spin" />
         </div>
       )}
 
@@ -863,33 +829,73 @@ const MyProjects = () => {
       {!loading && !error && (
         <>
           {projects.length === 0 ? (
-            <div className="max-w-2xl mx-auto text-center py-16 px-6 bg-gradient-to-br from-warm-50 to-white rounded-2xl border-2 border-primary-200 shadow-sm">
-              <div className="text-6xl mb-6">☕</div>
+            <div className="max-w-xl mx-auto py-12 px-6">
 
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 leading-snug">
-                Un appel, une pause café, une discussion…
-                <br />
-                <span className="text-primary-600">« Mince, j'en étais où ? »</span>
-              </h2>
+              {/* Question directe */}
+              <div className="text-center mb-8">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+                  Vous avez un projet en cours ?
+                </h2>
+                <p className="text-gray-600 text-base leading-relaxed">
+                  Notez votre rang actuel en 5 secondes.<br />
+                  La prochaine fois que vous reprenez, vous savez exactement où vous en êtes.
+                </p>
+              </div>
 
-              <p className="text-gray-700 text-lg leading-relaxed mb-8 max-w-xl mx-auto">
-                YarnFlow garde le fil pour vous.
-                <br className="hidden sm:block" />
-                Plus jamais besoin de recompter vos rangs.
-              </p>
-
+              {/* CTA principal */}
               {canCreateProject && (
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="px-8 py-4 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300 shadow-lg hover:shadow-xl text-lg mb-8"
-                >
-                  🧵 Créer mon premier projet
-                </button>
+                <div className="text-center mb-10">
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="px-8 py-4 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition-colors shadow-sm hover:shadow-md text-base"
+                  >
+                    Oui — ajouter mon projet maintenant
+                  </button>
+                </div>
               )}
 
-              {/* Mention discrète de la bibliothèque */}
-              <p className="text-sm text-gray-500">
-                Besoin d'organiser vos patrons PDF ? <Link to="/pattern-library" className="text-primary-600 hover:text-primary-700 underline">Découvrir la bibliothèque</Link>
+              {/* Ce que ça fait concrètement */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+                <div className="flex items-start gap-4 p-4">
+                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Vous êtes interrompue — aucun stress</p>
+                    <p className="text-gray-500 text-sm mt-0.5">Un clic pour mémoriser votre rang. Vous retrouvez exactement là où vous étiez.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-4">
+                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Plusieurs projets en parallèle</p>
+                    <p className="text-gray-500 text-sm mt-0.5">Tricot du soir, cadeau en cours, projet urgent — chacun a son compteur.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-4">
+                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Votre patron toujours avec vous</p>
+                    <p className="text-gray-500 text-sm mt-0.5">Attachez votre PDF ou notez le lien — plus besoin de chercher sur quel onglet il était.</p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-center text-xs text-gray-400 mt-6">
+                Besoin d'organiser vos patrons sans créer de projet ?{' '}
+                <Link to="/pattern-library" className="text-primary-600 hover:text-primary-700 underline">
+                  Bibliothèque de patrons
+                </Link>
               </p>
             </div>
           ) : filteredProjects.length === 0 ? (
@@ -920,13 +926,14 @@ const MyProjects = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProjects.map(project => (
+              {filteredProjects.map((project, index) => (
                 <div
                   key={project.id}
-                  className="bg-white rounded-lg border-2 border-gray-200 hover:shadow-lg transition overflow-hidden"
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden animate-fade-in-up"
+                  style={{ animationDelay: `${index * 55}ms` }}
                 >
-                  {/* Photo principale */}
-                  {project.main_photo ? (
+                  {/* Photo — uniquement si elle existe */}
+                  {project.main_photo && (
                     <div className="h-48 bg-gray-200 relative group">
                       <img
                         src={`${import.meta.env.VITE_BACKEND_URL}${project.main_photo}`}
@@ -935,23 +942,17 @@ const MyProjects = () => {
                       />
                       <button
                         onClick={() => openPhotoUploadModal(project)}
-                        className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                        className="absolute inset-0 bg-black/0 group-hover:bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
                       >
-                        <span className="px-4 py-2 bg-white text-gray-800 rounded-lg font-medium">
-                          📷 Changer la photo
+                        <span className="flex items-center gap-2 px-4 py-2 bg-white/90 text-gray-800 rounded-xl text-sm font-medium">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                          </svg>
+                          Changer la photo
                         </span>
                       </button>
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => openPhotoUploadModal(project)}
-                      className="w-full h-48 bg-gradient-to-br from-primary-100 to-primary-200 hover:from-primary-200 hover:to-primary-300 transition-all flex flex-col items-center justify-center gap-3"
-                    >
-                      <span className="text-5xl">{project.technique === 'tricot' ? '🧶' : '🪡'}</span>
-                      <span className="px-4 py-2 bg-white text-primary-700 rounded-lg font-medium shadow-md hover:shadow-lg transition">
-                        📷 Ajouter une photo
-                      </span>
-                    </button>
                   )}
 
                   {/* Contenu */}
@@ -961,32 +962,49 @@ const MyProjects = () => {
                         {project.name}
                       </h3>
 
-                      <button
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Bouton ajouter photo — discret, visible seulement sans photo */}
+                        {!project.main_photo && (
+                          <button
+                            onClick={() => openPhotoUploadModal(project)}
+                            className="p-1.5 text-gray-300 hover:text-gray-500 transition-colors rounded-lg hover:bg-gray-50"
+                            title="Ajouter une photo"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                            </svg>
+                          </button>
+                        )}
+                        <button
                         onClick={() => handleToggleFavorite(project.id, project.is_favorite)}
-                        className="text-2xl transition hover:scale-110"
+                        className="transition-transform hover:scale-110 active:scale-95"
+                        title={project.is_favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                       >
-                        {project.is_favorite ? '⭐' : '☆'}
+                        {project.is_favorite ? (
+                          <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-gray-300 hover:text-amber-300" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                          </svg>
+                        )}
                       </button>
+                      </div>{/* fin flex boutons droite */}
                     </div>
 
-                    {/* Statut + Type + Technique */}
-                    <div className="flex items-center flex-wrap gap-2 mb-3">
+                    {/* Statut + Technique */}
+                    <div className="flex items-center flex-wrap gap-1.5 mb-3">
                       {getStatusBadge(project.status)}
+                      <span className="px-2 py-0.5 bg-primary-50 text-primary-600 rounded-full text-xs font-medium">
+                        {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
+                      </span>
                       {project.type && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold">
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
                           {project.type}
                         </span>
                       )}
-                      <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold">
-                        {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                        project.counter_unit === 'cm'
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'bg-blue-50 text-blue-700'
-                      }`}>
-                        {project.counter_unit === 'cm' ? '📐 CM' : '📏 Rangs'}
-                      </span>
                     </div>
 
                     {/* Tags (v0.15.0) */}
@@ -1003,97 +1021,50 @@ const MyProjects = () => {
                       </div>
                     )}
 
-                    {/* Description */}
-                    {project.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {project.description}
-                      </p>
-                    )}
-
-                    {/* Stats */}
-                    {project.status === 'completed' ? (
-                      // Projet terminé : afficher seulement le temps
-                      <div className="mb-4 text-sm">
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <p className="text-gray-600">Temps total</p>
-                          <p className="font-bold text-gray-900">
-                            {project.time_formatted || '0h 0min'}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      // Projet en cours : afficher rang/section + temps
-                      <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          {/* Afficher section si présente, sinon rang global */}
-                          {project.sections_count > 0 && project.current_section_name ? (
+                    {/* Stats inline */}
+                    <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
+                      {project.status === 'completed' ? (
+                        <span>{project.time_formatted || '0h 0min'}</span>
+                      ) : (
+                        <>
+                          <span>
+                            {project.sections_count > 0 && project.current_section_name
+                              ? project.current_section_name
+                              : project.counter_unit === 'cm'
+                                ? `${Number(project.current_row || 0).toFixed(1)} cm`
+                                : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
+                            }
+                          </span>
+                          {project.time_formatted && project.time_formatted !== '0h 0min' && (
                             <>
-                              <p className="text-gray-600">Section en cours</p>
-                              <p className="font-bold text-gray-900 text-xs">
-                                {project.current_section_name}
-                              </p>
-                              <p className="text-gray-700 text-xs mt-0.5">
-                                {project.counter_unit === 'cm'
-                                  ? Number(project.current_section_row || 0).toFixed(1)
-                                  : Math.floor(Number(project.current_section_row || 0))
-                                }
-                                {project.current_section_total_rows ? (
-                                  project.counter_unit === 'cm'
-                                    ? ` / ${Number(project.current_section_total_rows).toFixed(1)}`
-                                    : ` / ${Math.floor(Number(project.current_section_total_rows))}`
-                                ) : ''}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-gray-600">
-                                {project.counter_unit === 'cm' ? '📐 Progression (cm)' : '📏 Rang actuel'}
-                              </p>
-                              <p className="font-bold text-gray-900">
-                                {project.counter_unit === 'cm'
-                                  ? Number(project.current_row || 0).toFixed(1)
-                                  : Math.floor(Number(project.current_row || 0))
-                                }
-                                {/* Afficher total si défini (NULL si projet avec sections incomplètes) */}
-                                {project.total_rows ? (
-                                  project.counter_unit === 'cm'
-                                    ? ` / ${Number(project.total_rows).toFixed(1)}`
-                                    : ` / ${Math.floor(Number(project.total_rows))}`
-                                ) : ''}
-                              </p>
+                              <span className="text-gray-200">·</span>
+                              <span>{project.time_formatted}</span>
                             </>
                           )}
-                        </div>
-
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <p className="text-gray-600">Temps</p>
-                          <p className="font-bold text-gray-900">
-                            {project.time_formatted || '0h 0min'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                        </>
+                      )}
+                    </div>
 
                     {/* Barre de progression ou nombre de rangs */}
                     {(project.status === 'completed' || project.completion_percentage !== null) ? (
                       // Projet avec pourcentage calculable : afficher barre de progression
                       <div className="mb-4">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-600">Progression</span>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-gray-400">Progression</span>
                           {project.status === 'completed' ? (
-                            <span className="text-xs font-bold text-green-600">
-                              100%
-                            </span>
+                            <span className="text-xs font-semibold text-green-600">100%</span>
                           ) : (
-                            <span className="text-xs font-bold text-primary-600">
+                            <span className="text-xs font-semibold text-primary-600">
                               {project.completion_percentage}%
                             </span>
                           )}
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                           <div
-                            className={`h-2 rounded-full transition-all ${
-                              project.status === 'completed' ? 'bg-green-600' : 'bg-primary-600'
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              project.status === 'completed'
+                                ? 'bg-gradient-to-r from-green-400 to-emerald-500'
+                                : 'bg-gradient-to-r from-primary-400 to-primary-600'
                             }`}
                             style={{
                               width: project.status === 'completed'
@@ -1144,17 +1115,19 @@ const MyProjects = () => {
                     <div className="flex items-center gap-2">
                       <Link
                         to={`/projects/${project.id}`}
-                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-2 focus:ring-primary-300"
+                        className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-center font-semibold text-sm hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-300"
                       >
-                        📖 Voir le projet
+                        Ouvrir
                       </Link>
 
                       <button
                         onClick={() => handleDeleteProject(project.id)}
-                        className="px-3 py-2 border-2 border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition focus:outline-none focus:ring-2 focus:ring-red-300"
+                        className="px-3 py-2.5 border border-gray-200 text-gray-400 rounded-xl hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"
                         title="Supprimer"
                       >
-                        🗑️
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
                       </button>
                     </div>
                   </div>

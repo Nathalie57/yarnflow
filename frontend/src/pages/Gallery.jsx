@@ -14,7 +14,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import InfoBubble from '../components/InfoBubble'
 import api from '../services/api'
 
 const Gallery = () => {
@@ -376,9 +375,9 @@ const Gallery = () => {
       { key: 'wearable_c1', label: 'Porté, lumière naturelle', icon: '👤', desc: 'Portrait extérieur avec lumière douce', tier: 'free' },
       { key: 'flatlay_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
       { key: 'detail_c1', label: 'Gros plan sur les points', icon: '🔍', desc: 'Macro sur la texture et le détail du tricot', tier: 'free' },
-      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'plus' },
-      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'plus' },
-      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'plus' },
+      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'pro' },
+      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'pro' },
+      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'pro' },
       { key: 'wearable_c4', label: 'Porté, ambiance vintage', icon: '🌼', desc: 'Portrait dans un décor rétro chaleureux', tier: 'pro' },
       { key: 'wearable_c7', label: 'Porté, éclairage dramatique', icon: '👗', desc: 'Portrait studio avec fond texturé sombre', tier: 'pro' },
       { key: 'wearable_c9', label: 'Porté, décor industriel', icon: '🏙️', desc: 'Portrait en loft ou espace industriel', tier: 'pro' }
@@ -387,9 +386,9 @@ const Gallery = () => {
       { key: 'accessory_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
       { key: 'accessory_c2', label: 'Porté, lumière naturelle', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
       { key: 'accessory_c3', label: 'Porté, fond neutre', icon: '👤', desc: 'Porté sur modèle avec fond sobre', tier: 'free' },
-      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'plus' },
-      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'plus' },
-      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'plus' },
+      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'pro' },
+      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'pro' },
+      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'pro' },
       { key: 'accessory_c7', label: 'Porté, style éditorial', icon: '💃', desc: 'Portrait avec mise en scène soignée', tier: 'pro' },
       { key: 'accessory_c8', label: 'À plat, fond sombre élégant', icon: '💎', desc: 'Mise en scène sobre sur fond sombre', tier: 'pro' },
       { key: 'accessory_c9', label: 'Porté, décor bohème', icon: '🌸', desc: 'Porté dans un intérieur bohème avec plantes', tier: 'pro' }
@@ -398,9 +397,9 @@ const Gallery = () => {
       { key: 'home_c1', label: 'Intérieur moderne', icon: '🏠', desc: 'Décor contemporain avec touches de couleur', tier: 'free' },
       { key: 'home_c2', label: 'Ambiance naturelle', icon: '🌿', desc: 'Bois, plantes et lumière naturelle', tier: 'free' },
       { key: 'home_c3', label: 'Décor épuré', icon: '🪟', desc: 'Style scandinave, blanc et gris doux', tier: 'free' },
-      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'plus' },
-      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'plus' },
-      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'plus' },
+      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'pro' },
+      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'pro' },
+      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'pro' },
       { key: 'home_c7', label: 'Décor élégant', icon: '💎', desc: 'Intérieur contemporain avec matières nobles', tier: 'pro' },
       { key: 'home_c8', label: 'Ambiance zen', icon: '🧘', desc: 'Décor minimaliste, couleurs neutres apaisantes', tier: 'pro' },
       { key: 'home_c9', label: 'Table de créatrice', icon: '🎨', desc: 'Posé sur une table avec fils et fournitures', tier: 'pro' }
@@ -409,9 +408,9 @@ const Gallery = () => {
       { key: 'toy_c1', label: 'Chambre enfant, lumière douce', icon: '🧸', desc: 'Décor de chambre enfantine doux et lumineux', tier: 'free' },
       { key: 'toy_c2', label: 'Ambiance conte illustré', icon: '📖', desc: 'Décor aquarelle pastel, ambiance féerique', tier: 'free' },
       { key: 'toy_c3', label: 'À plat, fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
-      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'plus' },
-      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'plus' },
-      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'plus' },
+      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'pro' },
+      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'pro' },
+      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'pro' },
       { key: 'toy_c7', label: 'Décor boutique artisanale', icon: '🏪', desc: 'Étagères et fond pastel, style créatrice', tier: 'pro' },
       { key: 'toy_c8', label: 'Décor jungle tropicale', icon: '🦁', desc: 'Plantes exotiques, ambiance aventure', tier: 'pro' },
       { key: 'toy_c9', label: 'Ambiance fête rétro', icon: '🎪', desc: 'Décor festif vintage coloré', tier: 'pro' }
@@ -420,9 +419,9 @@ const Gallery = () => {
       { key: 'baby_garment_c1', label: 'Porté par bébé, lit pastel', icon: '🛏️', desc: 'Bébé allongé sur lit aux tons doux', tier: 'free' },
       { key: 'baby_garment_c2', label: 'À plat, fond doux', icon: '🌸', desc: 'Posé à plat sur fond uni pastel', tier: 'free' },
       { key: 'baby_garment_c3', label: 'À plat, table à langer', icon: '🏠', desc: 'Sur table à langer en bois clair, style scandinave', tier: 'free' },
-      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'plus' },
-      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'plus' },
-      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'plus' },
+      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'pro' },
+      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'pro' },
+      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'pro' },
       { key: 'baby_garment_c7', label: 'Porté dans les bras', icon: '💝', desc: 'Bébé tenu par un parent, ambiance tendre', tier: 'pro' },
       { key: 'baby_garment_c8', label: 'À plat, fleurs séchées', icon: '💎', desc: 'Mise en scène élégante avec fleurs séchées', tier: 'pro' },
       { key: 'baby_garment_c9', label: 'Porté par bébé, tapis moelleux', icon: '🌸', desc: 'Bébé sur tapis doux et coloré', tier: 'pro' }
@@ -431,9 +430,9 @@ const Gallery = () => {
       { key: 'child_garment_c1', label: 'Porté, parc ou jardin', icon: '🌿', desc: 'Enfant dans un espace vert, lumière naturelle', tier: 'free' },
       { key: 'child_garment_c2', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
       { key: 'child_garment_c3', label: 'À plat, chambre enfant', icon: '🛏️', desc: 'Sur lit coloré avec peluches', tier: 'free' },
-      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'plus' },
-      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'plus' },
-      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'plus' },
+      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'pro' },
+      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'pro' },
+      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'pro' },
       { key: 'child_garment_c7', label: 'Porté, éclairage studio', icon: '📸', desc: 'Portrait soigné avec éclairage studio créatif', tier: 'pro' },
       { key: 'child_garment_c8', label: 'À plat, mise en scène soignée', icon: '💎', desc: 'Mise en scène boutique haut de gamme', tier: 'pro' },
       { key: 'child_garment_c9', label: 'Porté, promenade en famille', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
@@ -448,25 +447,14 @@ const Gallery = () => {
     // Déterminer le tier en fonction du type d'abonnement
     let userTier = 'free'
 
-    // Plans PLUS
-    if (subscriptionType === 'plus' || subscriptionType === 'plus_annual') {
-      userTier = 'plus'
-    }
-    // Plans PRO (tous les variants)
-    else if (
-      subscriptionType === 'pro' ||
-      subscriptionType === 'pro_annual' ||
-      subscriptionType === 'early_bird' ||
-      subscriptionType.toLowerCase().includes('pro')
-    ) {
+    // Plans payants (PLUS legacy + PRO)
+    if (subscriptionType !== 'free') {
       userTier = 'pro'
     }
 
     // Filtrer selon le tier
     if (userTier === 'free') {
       return allStyles.filter(s => s.tier === 'free')
-    } else if (userTier === 'plus') {
-      return allStyles.filter(s => s.tier === 'free' || s.tier === 'plus')
     } else {
       return allStyles // PRO accède à tout
     }
@@ -501,11 +489,7 @@ const Gallery = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-lg text-gray-900">Crédits photos</h3>
-                    <InfoBubble
-                      text="1 crédit = 1 photo embellie. Vos crédits mensuels se rechargent le 1er de chaque mois."
-                      position="right"
-                      size="sm"
-                    />
+                    <span className="text-xs text-gray-500 font-normal">1 crédit = 1 photo embellie</span>
                   </div>
                   <p className="text-sm text-gray-600">
                     {(() => {
@@ -680,7 +664,9 @@ const Gallery = () => {
             </div>
           ) : getFilteredPhotos().length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <div className="text-4xl mb-4">🔍</div>
+              <div className="flex justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 Aucun résultat
               </h3>
@@ -791,7 +777,7 @@ const Gallery = () => {
                                 }}
                                 className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
                               >
-                                <span className="text-lg">📸</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                                 <span>Définir comme couverture</span>
                               </button>
                             )}
@@ -1029,7 +1015,7 @@ const Gallery = () => {
                     onClick={() => window.galleryInputGallery?.click()}
                     className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
                   >
-                    <span className="text-xl">🖼️</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     <span className="font-medium">Choisir une photo</span>
                   </button>
                 </div>
@@ -1191,7 +1177,7 @@ const Gallery = () => {
                   }
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
-                  {uploading ? 'Chargement...' : '✨ Embellir avec l\'IA'}
+                  {uploading ? 'Chargement...' : 'Embellir avec l\'IA'}
                 </button>
               </div>
             </form>
@@ -1246,13 +1232,9 @@ const Gallery = () => {
                         onChange={() => setSelectedContext(style)}
                         className="text-primary-600 focus:ring-primary-500"
                       />
-                      <span className="text-2xl">{style.icon}</span>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-gray-900">{style.label}</p>
-                          {style.tier === 'plus' && (
-                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">PLUS</span>
-                          )}
                           {style.tier === 'pro' && (
                             <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
                           )}
@@ -1265,19 +1247,17 @@ const Gallery = () => {
 
                 {/* Sélecteur de genre pour styles portés (adultes et enfants) */}
                 {selectedContext && (selectedContext.label?.includes('Porté') || ['child_garment_c1', 'child_garment_c4', 'child_garment_c6', 'child_garment_c7', 'child_garment_c9'].includes(selectedContext.key)) && (
-                  <div className="mt-3 p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                  <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                     <p className="text-sm font-semibold text-gray-700 mb-2">
-                      {selectedContext.key?.startsWith('child_garment_') ? '👧 Genre de l\'enfant :' : '👤 Genre du modèle :'}
+                      {selectedContext.key?.startsWith('child_garment_') ? 'Genre de l\'enfant :' : 'Genre du modèle :'}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'male' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
                         <input type="radio" name="modelGender" value="male" checked={modelGender === 'male'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
-                        <span className="text-2xl">{selectedContext.key?.startsWith('child_garment_') ? '👦' : '👨'}</span>
                         <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Garçon' : 'Homme'}</span>
                       </label>
                       <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'female' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
                         <input type="radio" name="modelGender" value="female" checked={modelGender === 'female'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
-                        <span className="text-2xl">{selectedContext.key?.startsWith('child_garment_') ? '👧' : '👩'}</span>
                         <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Fille' : 'Femme'}</span>
                       </label>
                     </div>
@@ -1286,23 +1266,11 @@ const Gallery = () => {
 
                 {/* Message upgrade pour FREE */}
                 {user?.subscription_type === 'free' && (
-                  <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-primary-50 border border-purple-200 rounded-lg">
+                  <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
                     <p className="text-sm text-gray-700">
-                      🎨 <span className="font-semibold">6 styles supplémentaires</span> avec PLUS et <span className="font-semibold">9 styles premium</span> avec PRO !
+                      <span className="font-semibold">9 styles supplémentaires</span> disponibles avec PRO !
                       <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Découvrir les plans
-                      </a>
-                    </p>
-                  </div>
-                )}
-
-                {/* Message upgrade pour PLUS */}
-                {(user?.subscription_type === 'plus' || user?.subscription_type === 'plus_annual') && (
-                  <div className="mt-3 p-3 bg-gradient-to-r from-primary-50 to-sage-50 border border-primary-200 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      ✨ <span className="font-semibold">3 styles premium supplémentaires</span> disponibles avec PRO (Instagram, Catalogues, Saisonnier) !
-                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Passer à PRO
+                        Découvrir le plan PRO
                       </a>
                     </p>
                   </div>
@@ -1326,7 +1294,7 @@ const Gallery = () => {
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
-                      <span className="text-2xl">🎨</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                       <span className="text-xs font-medium text-gray-700">Aucune</span>
                     </button>
 
@@ -1343,7 +1311,6 @@ const Gallery = () => {
                         }`}
                         title={season.desc}
                       >
-                        <span className="text-2xl">{season.icon}</span>
                         <span className="text-xs font-medium text-gray-700">{season.label}</span>
                       </button>
                     ))}
@@ -1362,7 +1329,7 @@ const Gallery = () => {
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                     <div>
-                      <h4 className="font-semibold text-primary-900">🎨 Génération en cours...</h4>
+                      <h4 className="font-semibold text-primary-900">Génération en cours...</h4>
                       <p className="text-sm text-gray-600">Cela peut prendre quelques secondes</p>
                     </div>
                   </div>
@@ -1375,7 +1342,7 @@ const Gallery = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        💎 Génération = 1 crédit
+                        Génération = 1 crédit
                       </p>
                       <p className="text-xs text-gray-600 mt-1">
                         Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
@@ -1407,7 +1374,7 @@ const Gallery = () => {
                   disabled={enhancing || !selectedContext || !credits || credits.total_available < 1}
                   className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
-                  {enhancing ? '⏳ Génération...' : '✨ Générer (1 crédit)'}
+                  {enhancing ? 'Génération...' : 'Générer (1 crédit)'}
                 </button>
               </div>
             </form>
@@ -1465,7 +1432,7 @@ const Gallery = () => {
               </p>
               <div className="bg-gradient-to-br from-primary-50 to-warm-50 border-2 border-primary-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700 font-medium">
-                  💡 <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
+                  <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
                 </p>
               </div>
             </div>

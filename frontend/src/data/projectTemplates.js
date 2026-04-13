@@ -149,7 +149,7 @@ export const PROJECT_CATEGORIES = [
   {
     id: 'accessoires-bebe',
     value: 'Accessoires bébé',
-    icon: '🍼',
+    icon: '🎀',
     description: 'Chaussons, moufles, doudou...',
     sectionPresets: [
       {

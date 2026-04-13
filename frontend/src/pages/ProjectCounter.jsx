@@ -25,8 +25,6 @@ import ProxyViewer from '../components/ProxyViewer'
 import TagBadge from '../components/TagBadge'
 import TagInput from '../components/TagInput'
 import SatisfactionModal from '../components/SatisfactionModal'
-import FirstRowCelebration from '../components/FirstRowCelebration' // [AI:Claude] v0.17.0 - Célébration premier rang
-import InfoBubble from '../components/InfoBubble' // [AI:Claude] Bulles d'info contextuelles
 import UpgradePrompt from '../components/UpgradePrompt'
 
 const ProjectCounter = () => {
@@ -146,8 +144,10 @@ const ProjectCounter = () => {
   const [generatedPhoto, setGeneratedPhoto] = useState(null)
 
   // [AI:Claude] v0.17.0 - Célébration premier rang
-  const [showFirstRowCelebration, setShowFirstRowCelebration] = useState(false)
   const [showFirstProjectTip, setShowFirstProjectTip] = useState(false) // [AI:Claude] v0.17.1 - Tip premier projet
+
+  // Onboarding guidage visuel — affiché une seule fois par projet si rang = 0
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   // [AI:Claude] Modal d'édition du projet
   const [showEditModal, setShowEditModal] = useState(false)
@@ -270,6 +270,14 @@ const ProjectCounter = () => {
       if (sessionStorage.getItem('showFirstProjectTip') === 'true') {
         sessionStorage.removeItem('showFirstProjectTip')
         setShowFirstProjectTip(true)
+      }
+
+      // Guidage visuel première visite — si rang = 0 et jamais vu
+      const onboardingKey = `yf_onboarded_${projectId}`
+      const alreadySeen = localStorage.getItem(onboardingKey)
+      const projectRow = projectData?.current_row ?? 0
+      if (!alreadySeen && Number(projectRow) === 0) {
+        setShowOnboarding(true)
       }
 
       // [AI:Claude] Restaurer l'état du timer s'il était en pause
@@ -1344,9 +1352,9 @@ const ProjectCounter = () => {
       { key: 'flatlay_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
       { key: 'detail_c1', label: 'Gros plan sur les points', icon: '🔍', desc: 'Macro sur la texture et le détail du tricot', tier: 'free' },
       // PLUS (+3)
-      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'plus' },
-      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'plus' },
-      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'plus' },
+      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'pro' },
+      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'pro' },
+      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'pro' },
       // PRO (+3)
       { key: 'wearable_c4', label: 'Porté, ambiance vintage', icon: '🌼', desc: 'Portrait dans un décor rétro chaleureux', tier: 'pro' },
       { key: 'wearable_c7', label: 'Porté, éclairage dramatique', icon: '👗', desc: 'Portrait studio avec fond texturé sombre', tier: 'pro' },
@@ -1358,9 +1366,9 @@ const ProjectCounter = () => {
       { key: 'accessory_c2', label: 'Porté, lumière naturelle', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
       { key: 'accessory_c3', label: 'Porté, fond neutre', icon: '👤', desc: 'Porté sur modèle avec fond sobre', tier: 'free' },
       // PLUS (+3)
-      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'plus' },
-      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'plus' },
-      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'plus' },
+      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'pro' },
+      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'pro' },
+      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'pro' },
       // PRO (+3)
       { key: 'accessory_c7', label: 'Porté, style éditorial', icon: '💃', desc: 'Portrait avec mise en scène soignée', tier: 'pro' },
       { key: 'accessory_c8', label: 'À plat, fond sombre élégant', icon: '💎', desc: 'Mise en scène sobre sur fond sombre', tier: 'pro' },
@@ -1372,9 +1380,9 @@ const ProjectCounter = () => {
       { key: 'home_c2', label: 'Ambiance naturelle', icon: '🌿', desc: 'Bois, plantes et lumière naturelle', tier: 'free' },
       { key: 'home_c3', label: 'Décor épuré', icon: '🪟', desc: 'Style scandinave, blanc et gris doux', tier: 'free' },
       // PLUS (+3)
-      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'plus' },
-      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'plus' },
-      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'plus' },
+      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'pro' },
+      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'pro' },
+      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'pro' },
       // PRO (+3)
       { key: 'home_c7', label: 'Décor élégant', icon: '💎', desc: 'Intérieur contemporain avec matières nobles', tier: 'pro' },
       { key: 'home_c8', label: 'Ambiance zen', icon: '🧘', desc: 'Décor minimaliste, couleurs neutres apaisantes', tier: 'pro' },
@@ -1386,9 +1394,9 @@ const ProjectCounter = () => {
       { key: 'toy_c2', label: 'Ambiance conte illustré', icon: '📖', desc: 'Décor aquarelle pastel, ambiance féerique', tier: 'free' },
       { key: 'toy_c3', label: 'À plat, fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
       // PLUS (+3)
-      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'plus' },
-      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'plus' },
-      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'plus' },
+      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'pro' },
+      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'pro' },
+      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'pro' },
       // PRO (+3)
       { key: 'toy_c7', label: 'Décor boutique artisanale', icon: '🏪', desc: 'Étagères et fond pastel, style créatrice', tier: 'pro' },
       { key: 'toy_c8', label: 'Décor jungle tropicale', icon: '🦁', desc: 'Plantes exotiques, ambiance aventure', tier: 'pro' },
@@ -1400,9 +1408,9 @@ const ProjectCounter = () => {
       { key: 'baby_garment_c2', label: 'À plat, fond doux', icon: '🌸', desc: 'Posé à plat sur fond uni pastel', tier: 'free' },
       { key: 'baby_garment_c3', label: 'À plat, table à langer', icon: '🏠', desc: 'Sur table à langer en bois clair, style scandinave', tier: 'free' },
       // PLUS (+3)
-      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'plus' },
-      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'plus' },
-      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'plus' },
+      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'pro' },
+      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'pro' },
+      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'pro' },
       // PRO (+3)
       { key: 'baby_garment_c7', label: 'Porté dans les bras', icon: '💝', desc: 'Bébé tenu par un parent, ambiance tendre', tier: 'pro' },
       { key: 'baby_garment_c8', label: 'À plat, fleurs séchées', icon: '💎', desc: 'Mise en scène élégante avec fleurs séchées', tier: 'pro' },
@@ -1414,9 +1422,9 @@ const ProjectCounter = () => {
       { key: 'child_garment_c2', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
       { key: 'child_garment_c3', label: 'À plat, chambre enfant', icon: '🛏️', desc: 'Sur lit coloré avec peluches', tier: 'free' },
       // PLUS (+3)
-      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'plus' },
-      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'plus' },
-      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'plus' },
+      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'pro' },
+      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'pro' },
+      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'pro' },
       // PRO (+3)
       { key: 'child_garment_c7', label: 'Porté, éclairage studio', icon: '📸', desc: 'Portrait soigné avec éclairage studio créatif', tier: 'pro' },
       { key: 'child_garment_c8', label: 'À plat, mise en scène soignée', icon: '💎', desc: 'Mise en scène boutique haut de gamme', tier: 'pro' },
@@ -1448,25 +1456,14 @@ const ProjectCounter = () => {
     // Déterminer le tier en fonction du type d'abonnement
     let userTier = 'free'
 
-    // Plans PLUS
-    if (subscriptionType === 'plus' || subscriptionType === 'plus_annual') {
-      userTier = 'plus'
-    }
-    // Plans PRO (tous les variants)
-    else if (
-      subscriptionType === 'pro' ||
-      subscriptionType === 'pro_annual' ||
-      subscriptionType === 'early_bird' ||
-      subscriptionType.toLowerCase().includes('pro')
-    ) {
+    // Plans payants (PLUS legacy + PRO)
+    if (subscriptionType !== 'free') {
       userTier = 'pro'
     }
 
     // Filtrer selon le tier
     if (userTier === 'free') {
       return allStyles.filter(s => s.tier === 'free')
-    } else if (userTier === 'plus') {
-      return allStyles.filter(s => s.tier === 'free' || s.tier === 'plus')
     } else {
       return allStyles // PRO accède à tout
     }
@@ -1710,6 +1707,12 @@ const ProjectCounter = () => {
     if (isSavingRow) return
     setIsSavingRow(true)
 
+    // Masquer le guidage onboarding au premier rang
+    if (showOnboarding) {
+      setShowOnboarding(false)
+      localStorage.setItem(`yf_onboarded_${projectId}`, '1')
+    }
+
     // [AI:Claude] Vérifier si on a atteint le maximum
     let maxRows = null
     if (currentSectionId && sections.length > 0) {
@@ -1919,7 +1922,6 @@ const ProjectCounter = () => {
         ? sections.reduce((sum, s) => sum + (parseFloat(s.current_row) || 0), 0)
         : parseFloat(oldRow) || 0
       if (totalProjectRows === 0) {
-        setShowFirstRowCelebration(true)
 
         // Tracker l'événement first_row_counted
         try {
@@ -2845,26 +2847,6 @@ const ProjectCounter = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-3">
-      {/* [AI:Claude] v0.17.0 - Célébration premier rang compté */}
-      {showFirstRowCelebration && (
-        <FirstRowCelebration
-          onClose={() => setShowFirstRowCelebration(false)}
-          counterUnit={counterUnit}
-        />
-      )}
-
-      {/* [AI:Claude] Indicateur hors-ligne */}
-      {!isOnline && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
-          <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M12 12h.01M8.464 15.536a5 5 0 010-7.072M5.636 18.364a9 9 0 010-12.728" />
-          </svg>
-          <div className="flex-1">
-            <p className="font-medium text-amber-800 text-sm">Mode hors-ligne</p>
-            <p className="text-amber-700 text-xs">Vos modifications seront synchronisées au retour de la connexion.</p>
-          </div>
-        </div>
-      )}
 
       {/* [AI:Claude] v0.17.1 - Tip premier projet */}
       {showFirstProjectTip && (
@@ -3187,17 +3169,20 @@ const ProjectCounter = () => {
                     : counterUnit === 'cm' ? 'cm' : 'rangs'}
                 </div>
               </div>
-              <button
-                onClick={handleIncrementRow}
-                className="w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
-              >
-                +
-              </button>
-              <InfoBubble
-                text="Cliquez directement sur le nombre pour le modifier manuellement (pratique si vous avez tricoté plusieurs rangs d'affilée)."
-                position="right"
-                size="sm"
-              />
+              <div className="relative">
+                <button
+                  onClick={handleIncrementRow}
+                  className={`w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none ${showOnboarding ? 'ring-4 ring-primary-400 ring-offset-2 animate-pulse' : ''}`}
+                >
+                  +
+                </button>
+                {showOnboarding && sections.length === 0 && (
+                  <div className="absolute right-14 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 w-44 shadow-lg pointer-events-none z-50">
+                    Appuyez ici à chaque rang terminé
+                    <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-gray-900" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -3271,11 +3256,6 @@ const ProjectCounter = () => {
                       <path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm-1 13.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6L17 8.9l-6 6.1z"/>
                     </svg>
                   )}
-                  <InfoBubble
-                    text="Quand le timer tourne, l'écran reste allumé. Vous pouvez utiliser votre téléphone normalement (appels, SMS, musique)."
-                    position="right"
-                    size="sm"
-                  />
                 </div>
               </div>
 
@@ -3313,7 +3293,7 @@ const ProjectCounter = () => {
                       {!isTimerPaused ? (
                         <button
                           onClick={handlePauseSession}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-amber-600 transition whitespace-nowrap"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
                           title="Mettre en pause"
                         >
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
@@ -3489,6 +3469,18 @@ const ProjectCounter = () => {
       </div>
 
       <div className="flex flex-col gap-3">
+
+      {/* Guidage sections — première visite avec sections */}
+      {showOnboarding && sections.length > 0 && !currentSectionId && (
+        <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 flex items-start gap-3">
+          <div className="w-6 h-6 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+          <div>
+            <p className="text-sm font-medium text-primary-900">Sur quelle partie travaillez-vous ?</p>
+            <p className="text-xs text-primary-700 mt-0.5">Sélectionnez une section ci-dessous, puis appuyez sur <strong>+</strong> à chaque rang terminé.</p>
+          </div>
+        </div>
+      )}
+
       {/* [AI:Claude] Tableau des sections */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div
@@ -3505,12 +3497,6 @@ const ProjectCounter = () => {
             <h2 className="text-sm font-semibold text-gray-900">
               Sections {sections.length > 0 && <span className="text-gray-400 font-normal">({sections.length})</span>}
             </h2>
-            <InfoBubble
-              text="Divisez votre projet en parties (corps, manches, bordure...) pour suivre la progression de chaque étape séparément."
-              position="bottom"
-              size="sm"
-              portal
-            />
           </div>
           <button
             onClick={(e) => {
@@ -3579,7 +3565,7 @@ const ProjectCounter = () => {
                         to="/subscription"
                         className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                       >
-                        🔒 Plus de tris avec PLUS/PRO
+                        🔒 Plus de tris avec PRO
                       </Link>
                     )}
                   </div>
@@ -3661,18 +3647,18 @@ const ProjectCounter = () => {
 
                         {/* Zone notes dépliable */}
                         {expandedNotesSection === section.id && (
-                          <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg" onClick={(e) => e.stopPropagation()}>
+                          <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg" onClick={(e) => e.stopPropagation()}>
                             <textarea
                               value={sectionNotesText}
                               onChange={(e) => setSectionNotesText(e.target.value)}
                               placeholder="Notes pour cette section..."
-                              className="w-full h-24 p-2 text-sm border border-amber-300 rounded resize-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
+                              className="w-full h-24 p-2 text-sm border border-gray-300 rounded resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
                             />
                             <div className="flex items-center justify-end mt-2">
                               <button
                                 onClick={() => saveSectionNotes(section.id)}
                                 disabled={isSavingSectionNotes}
-                                className="px-3 py-1 text-sm bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50 transition"
+                                className="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50 transition"
                               >
                                 {isSavingSectionNotes ? '...' : 'Sauvegarder'}
                               </button>
@@ -3709,7 +3695,10 @@ const ProjectCounter = () => {
                             <span className="text-xs font-medium text-gray-700 min-w-[35px]">
                               {sectionProgress}%
                             </span>
-                            <span className="text-xs text-gray-500 ml-2">⏱️ {section.time_formatted || '0h 0min 0s'}</span>
+                            <span className="text-xs text-gray-500 ml-2 flex items-center gap-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                              {section.time_formatted || '0h 0min 0s'}
+                            </span>
                           </div>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
@@ -3782,10 +3771,10 @@ const ProjectCounter = () => {
                                 !isPaidPlan
                                   ? 'bg-gray-100 text-gray-400 border border-gray-200 hover:bg-gray-200'
                                   : expandedNotesSection === section.id
-                                    ? 'bg-amber-500 text-white shadow-amber-200'
+                                    ? 'bg-primary-600 text-white shadow-primary-200'
                                     : section.notes
-                                      ? 'bg-amber-500 text-white shadow-amber-200'
-                                      : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
+                                      ? 'bg-primary-600 text-white shadow-primary-200'
+                                      : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
                               }`}
                               title={!isPaidPlan ? 'Notes par section — PRO' : expandedNotesSection === section.id ? 'Fermer les notes' : section.notes ? 'Voir/modifier les notes' : 'Ajouter des notes'}
                             >
@@ -3880,10 +3869,10 @@ const ProjectCounter = () => {
                         }}
                         className={`flex items-center gap-1 px-2.5 py-1 rounded-full transition shadow-sm ${
                           expandedNotesSection === section.id
-                            ? 'bg-amber-500 text-white shadow-amber-200'
+                            ? 'bg-primary-600 text-white shadow-primary-200'
                             : section.notes
-                              ? 'bg-amber-500 text-white shadow-amber-200'
-                              : 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-300'
+                              ? 'bg-primary-600 text-white shadow-primary-200'
+                              : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
                         }`}
                       >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -4032,18 +4021,18 @@ const ProjectCounter = () => {
 
                     {/* Zone notes dépliable (mobile) - toujours accessible */}
                     {expandedNotesSection === section.id && (
-                      <div className="mt-2 mx-4 mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="mt-2 mx-4 mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                         <textarea
                           value={sectionNotesText}
                           onChange={(e) => setSectionNotesText(e.target.value)}
                           placeholder="Notes pour cette section..."
-                          className="w-full h-28 p-2 text-sm border border-amber-300 rounded resize-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
+                          className="w-full h-28 p-2 text-sm border border-gray-300 rounded resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
                         />
                         <div className="flex items-center justify-end mt-2">
                           <button
                             onClick={() => saveSectionNotes(section.id)}
                             disabled={isSavingSectionNotes}
-                            className="px-3 py-1.5 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 transition"
+                            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
                           >
                             {isSavingSectionNotes ? '...' : 'Sauvegarder'}
                           </button>
@@ -4126,11 +4115,6 @@ const ProjectCounter = () => {
                           Ajouter
                         </button>
                       </div>
-                      {credits && credits.total_available > 0 && (
-                        <p className="text-xs text-green-700 font-medium mt-1">
-                          {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''} pour embellir vos photos
-                        </p>
-                      )}
                     </div>
                   )}
 
@@ -4579,18 +4563,22 @@ const ProjectCounter = () => {
                               </p>
 
                               {photoVariations.length === 0 ? (
-                                <button
-                                  onClick={() => openEnhanceModal(originalPhoto)}
-                                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm shadow-sm"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                  </svg>
-                                  Mettre en valeur
+                                <div className="flex flex-col gap-1">
+                                  <button
+                                    onClick={() => openEnhanceModal(originalPhoto)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm shadow-sm"
+                                  >
+                                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    Mettre en valeur
+                                  </button>
                                   {credits && credits.total_available > 0 && (
-                                    <span className="text-xs text-primary-200">· {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''}</span>
+                                    <span className="text-xs text-primary-600 font-medium">
+                                      {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}
+                                    </span>
                                   )}
-                                </button>
+                                </div>
                               ) : (
                                 <button
                                   onClick={() => openEnhanceModal(originalPhoto)}
@@ -4637,12 +4625,13 @@ const ProjectCounter = () => {
                         // Texte existant
                         <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">📝 Texte du patron</h3>
+                            <h3 className="text-lg font-semibold text-gray-900">Texte du patron</h3>
                             <button
                               onClick={handleOpenPatternTextModal}
-                              className="px-4 py-2 text-primary-600 border border-primary-600 rounded-lg font-medium hover:bg-primary-50 transition text-sm"
+                              className="px-4 py-2 text-primary-600 border border-primary-600 rounded-lg font-medium hover:bg-primary-50 transition text-sm flex items-center gap-1.5"
                             >
-                              ✏️ Modifier le texte
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              Modifier le texte
                             </button>
                           </div>
                           <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
@@ -4654,7 +4643,9 @@ const ProjectCounter = () => {
                       ) : proxyError ? (
                         // Pas de texte ET erreur proxy - proposer d'en ajouter
                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 text-center">
-                          <div className="text-4xl mb-3">📝</div>
+                          <div className="flex justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                          </div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">
                             Ajouter le texte du patron
                           </h3>
@@ -4665,7 +4656,7 @@ const ProjectCounter = () => {
                             onClick={handleOpenPatternTextModal}
                             className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
                           >
-                            📝 Ajouter le texte
+                            Ajouter le texte
                           </button>
                         </div>
                       ) : null}
@@ -4673,7 +4664,7 @@ const ProjectCounter = () => {
                   ) : project.pattern_text ? (
                     // Patron texte seul (sans URL ni fichier)
                     <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">📝 Patron</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Patron</h3>
                       <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
                         <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                           {project.pattern_text}
@@ -4699,9 +4690,10 @@ const ProjectCounter = () => {
                             src: `${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}`,
                             alt: 'Patron'
                           })}
-                          className="text-sm text-gray-600 hover:text-primary-600 transition font-medium"
+                          className="text-sm text-gray-600 hover:text-primary-600 transition font-medium flex items-center gap-1.5"
                         >
-                          🔍 Ouvrir en plein écran
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                          Ouvrir en plein écran
                         </button>
                       </div>
                     </div>
@@ -4721,9 +4713,10 @@ const ProjectCounter = () => {
                 <div className="flex justify-center mt-4">
                   <button
                     onClick={() => setShowPatternEditChoiceModal(true)}
-                    className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
+                    className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
                   >
-                    ✏️ Modifier
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Modifier
                   </button>
                 </div>
               </div>
@@ -4738,7 +4731,9 @@ const ProjectCounter = () => {
                   className="w-full border-2 border-dashed border-primary-300 rounded-lg p-6 hover:border-primary-500 hover:bg-primary-50 transition"
                   disabled={uploadingPattern}
                 >
-                  <div className="text-4xl mb-2">📚</div>
+                  <div className="flex justify-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </div>
                   <p className="text-gray-700 font-medium mb-1">
                     Choisir depuis ma bibliothèque
                   </p>
@@ -4753,7 +4748,9 @@ const ProjectCounter = () => {
                   className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
                   disabled={uploadingPattern}
                 >
-                  <div className="text-4xl mb-2">📝</div>
+                  <div className="flex justify-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                  </div>
                   <p className="text-gray-700 font-medium mb-1">
                     Modifier le texte du patron
                   </p>
@@ -4765,7 +4762,9 @@ const ProjectCounter = () => {
                 {/* Option 3: Upload fichier */}
                 <label className="block cursor-pointer">
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition">
-                    <div className="text-4xl mb-2 text-center">📎</div>
+                    <div className="flex justify-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    </div>
                     <p className="text-gray-700 font-medium text-center mb-1">
                       Importer un nouveau fichier
                     </p>
@@ -4788,7 +4787,9 @@ const ProjectCounter = () => {
                   className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
                   disabled={uploadingPattern}
                 >
-                  <div className="text-4xl mb-2">🔗</div>
+                  <div className="flex justify-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  </div>
                   <p className="text-gray-700 font-medium mb-1">
                     Lien vers une page web
                   </p>
@@ -4798,7 +4799,10 @@ const ProjectCounter = () => {
                 </button>
 
                 {uploadingPattern && (
-                  <p className="text-sm text-gray-500 text-center">📤 Envoi en cours...</p>
+                  <p className="text-sm text-gray-500 text-center flex items-center justify-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                    Envoi en cours...
+                  </p>
                 )}
               </div>
             )}
@@ -4829,9 +4833,10 @@ const ProjectCounter = () => {
                           <h2 className="text-lg font-semibold text-gray-900">Détails techniques</h2>
                           <button
                             onClick={openTechnicalDetailsModal}
-                            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
+                            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
                           >
-                            ✏️ Modifier
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Modifier
                           </button>
                         </div>
 
@@ -4841,7 +4846,7 @@ const ProjectCounter = () => {
                           {technicalDetails.description && (
                             <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
                               <div className="flex gap-2">
-                                <span className="text-gray-400 text-sm">💬</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
                                 <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line flex-1">
                                   {technicalDetails.description}
                                 </p>
@@ -4856,7 +4861,7 @@ const ProjectCounter = () => {
                               {technicalDetails.yarn && technicalDetails.yarn.length > 0 && technicalDetails.yarn[0].brand && (
                                 <div className="bg-gradient-to-br from-primary-50 to-warm-100 rounded-lg p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-xl">🧶</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M2 9h20M2 15h20" opacity="0.4"/></svg>
                                     <span className="font-semibold text-primary-700 text-sm">
                                       {project.technique === 'tricot' ? 'Laine' : 'Fil'}
                                     </span>
@@ -4890,7 +4895,7 @@ const ProjectCounter = () => {
                               {technicalDetails.needles && technicalDetails.needles.length > 0 && (technicalDetails.needles[0].type || technicalDetails.needles[0].size) && (
                                 <div className="bg-gradient-to-br from-sage-50 to-sage-100 rounded-lg p-3 border-l-4 border-sage-400">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-xl">{project.technique === 'tricot' ? '🪡' : '🪝'}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-sage-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
                                     <span className="font-semibold text-sage-700 text-sm">
                                       {project.technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
                                     </span>
@@ -4921,7 +4926,7 @@ const ProjectCounter = () => {
                               {technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows) && (
                                 <div className="bg-gradient-to-br from-warm-50 to-warm-200 rounded-lg p-3 border-l-4 border-warm-400">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-xl">📏</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-warm-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="12"/><line x1="15" y1="10" x2="15" y2="14"/><line x1="19" y1="10" x2="19" y2="12"/></svg>
                                     <span className="font-semibold text-warm-700 text-sm">Échantillon</span>
                                   </div>
                                   <div className="bg-white/70 rounded px-3 py-2">
@@ -4949,13 +4954,16 @@ const ProjectCounter = () => {
                       </>
                     ) : (
                       <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                        <div className="text-6xl mb-4">🔧</div>
+                        <div className="flex justify-center mb-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                        </div>
                         <p className="text-gray-600 mb-4">Aucun détail technique pour ce projet</p>
                         <button
                           onClick={openTechnicalDetailsModal}
-                          className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                          className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition flex items-center gap-2 mx-auto"
                         >
-                          ➕ Ajouter les détails techniques
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          Ajouter les détails techniques
                         </button>
                       </div>
                     )}
@@ -5167,8 +5175,8 @@ const ProjectCounter = () => {
                 className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                 disabled={uploadingPattern}
               >
-                <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 </div>
                 <div>
                   <p className="font-medium text-gray-900 text-sm">Modifier le texte du patron</p>
@@ -5421,15 +5429,11 @@ Rang 3 : *1ms, aug* x6 (18)
                           onChange={() => setSelectedContext(style)}
                           className="text-primary-600 focus:ring-primary-500"
                         />
-                        <span className="text-2xl">{style.icon}</span>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-gray-900">{style.label}</p>
                             {styleIdx === 0 && (
                               <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-semibold">Recommandé</span>
-                            )}
-                            {style.tier === 'plus' && (
-                              <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">PLUS</span>
                             )}
                             {style.tier === 'pro' && (
                               <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
@@ -5441,9 +5445,9 @@ Rang 3 : *1ms, aug* x6 (18)
 
                       {/* Sélecteur de genre intégré pour styles "Porté" ou enfant porté */}
                       {selectedContext?.key === style.key && style.label && (style.label.includes('Porté') || style.key.startsWith('child_garment_c') && ['child_garment_c1', 'child_garment_c4', 'child_garment_c6', 'child_garment_c7', 'child_garment_c9'].includes(style.key)) && (
-                        <div className="mt-2 ml-11 p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                        <div className="mt-2 ml-11 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                           <p className="text-xs font-semibold text-gray-700 mb-2">
-                            {style.key.startsWith('child_garment_') ? '👧 Genre de l\'enfant :' : '👤 Genre du modèle :'}
+                            {style.key.startsWith('child_garment_') ? 'Genre de l\'enfant :' : 'Genre du modèle :'}
                           </p>
                           <div className="grid grid-cols-2 gap-2">
                             <label
@@ -5461,7 +5465,6 @@ Rang 3 : *1ms, aug* x6 (18)
                                 onChange={(e) => setModelGender(e.target.value)}
                                 className="sr-only"
                               />
-                              <span className="text-2xl">{style.key.startsWith('child_garment_') ? '👦' : '👨'}</span>
                               <span className="text-xs font-semibold text-gray-900">{style.key.startsWith('child_garment_') ? 'Garçon' : 'Homme'}</span>
                             </label>
                             <label
@@ -5479,7 +5482,6 @@ Rang 3 : *1ms, aug* x6 (18)
                                 onChange={(e) => setModelGender(e.target.value)}
                                 className="sr-only"
                               />
-                              <span className="text-2xl">{style.key.startsWith('child_garment_') ? '👧' : '👩'}</span>
                               <span className="text-xs font-semibold text-gray-900">{style.key.startsWith('child_garment_') ? 'Fille' : 'Femme'}</span>
                             </label>
                           </div>
@@ -5491,23 +5493,11 @@ Rang 3 : *1ms, aug* x6 (18)
 
                 {/* Message upgrade pour FREE */}
                 {user?.subscription_type === 'free' && (
-                  <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-primary-50 border border-purple-200 rounded-lg">
+                  <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
                     <p className="text-sm text-gray-700">
-                      🎨 <span className="font-semibold">6 styles supplémentaires</span> avec PLUS et <span className="font-semibold">9 styles premium</span> avec PRO !
+                      <span className="font-semibold">9 styles supplémentaires</span> disponibles avec PRO !
                       <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Découvrir les plans
-                      </a>
-                    </p>
-                  </div>
-                )}
-
-                {/* Message upgrade pour PLUS */}
-                {(user?.subscription_type === 'plus' || user?.subscription_type === 'plus_annual') && (
-                  <div className="mt-3 p-3 bg-gradient-to-r from-primary-50 to-sage-50 border border-primary-200 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      ✨ <span className="font-semibold">3 styles premium supplémentaires</span> disponibles avec PRO (Instagram, Catalogues, Saisonnier) !
-                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Passer à PRO
+                        Découvrir le plan PRO
                       </a>
                     </p>
                   </div>
@@ -5531,7 +5521,7 @@ Rang 3 : *1ms, aug* x6 (18)
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <span className="text-xl">🎨</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
                     <span className="text-xs font-medium text-gray-700">Aucune</span>
                   </button>
 
@@ -5548,7 +5538,6 @@ Rang 3 : *1ms, aug* x6 (18)
                       }`}
                       title={season.desc}
                     >
-                      <span className="text-xl">{season.icon}</span>
                       <span className="text-xs font-medium text-gray-700">{season.label}</span>
                     </button>
                   ))}
@@ -5612,7 +5601,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                     <div>
-                      <h4 className="font-semibold text-primary-900">🎨 Génération HD en cours...</h4>
+                      <h4 className="font-semibold text-primary-900">Génération HD en cours...</h4>
                       <p className="text-sm text-gray-600">Cela peut prendre quelques secondes</p>
                     </div>
                   </div>
@@ -5675,10 +5664,10 @@ Rang 3 : *1ms, aug* x6 (18)
               </div>
 
               {/* Message d'information */}
-              <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
-                <p className="text-xs text-gray-700 text-center leading-relaxed">
-                  <span className="font-bold text-blue-700">💬 Votre avis compte</span> :
-                  Après génération, vous pourrez noter le résultat et nous aider à améliorer le service.
+              <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-xs text-gray-600 text-center leading-relaxed">
+                  <span className="font-semibold text-gray-700">Votre avis compte</span> :
+                  après génération, vous pourrez noter le résultat et nous aider à améliorer le service.
                 </p>
               </div>
 
@@ -5754,7 +5743,7 @@ Rang 3 : *1ms, aug* x6 (18)
 
               {/* Résultats des 9 styles */}
               <div className="mb-4">
-                <h3 className="text-lg font-bold text-gray-900 text-center">✨ Résultats par style</h3>
+                <h3 className="text-lg font-bold text-gray-900 text-center">Résultats par style</h3>
                 <p className="text-sm text-gray-600 text-center mt-1">Les 9 styles disponibles appliqués à la même photo</p>
               </div>
 
@@ -5774,11 +5763,6 @@ Rang 3 : *1ms, aug* x6 (18)
                           e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EExemple à venir%3C/text%3E%3C/svg%3E'
                         }}
                       />
-                      {style.tier === 'plus' && (
-                        <span className="absolute top-2 right-2 px-2 py-1 bg-purple-600 text-white text-xs font-bold rounded-full shadow">
-                          PLUS
-                        </span>
-                      )}
                       {style.tier === 'pro' && (
                         <span className="absolute top-2 right-2 px-2 py-1 bg-primary-600 text-white text-xs font-bold rounded-full shadow">
                           PRO
@@ -5794,7 +5778,6 @@ Rang 3 : *1ms, aug* x6 (18)
                     {/* Nom et description du style */}
                     <div className="p-3 bg-white">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl">{style.icon}</span>
                         <h3 className="font-bold text-gray-900">{style.label}</h3>
                       </div>
                       <p className="text-xs text-gray-600">{style.desc}</p>
@@ -5849,14 +5832,14 @@ Rang 3 : *1ms, aug* x6 (18)
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">-- Sélectionner une catégorie --</option>
-                <option value="Vêtements">🧥 Vêtements</option>
-                <option value="Accessoires">👜 Accessoires</option>
-                <option value="Jouets/Peluches">🧸 Jouets/Peluches</option>
-                <option value="Vêtements bébé">👶 Vêtements bébé</option>
-                <option value="Accessoires bébé">🍼 Accessoires bébé</option>
-                <option value="Vêtements enfant">👧 Vêtements enfant</option>
-                <option value="Maison/Déco">🏠 Maison/Déco</option>
-                <option value="Autre">✨ Autre</option>
+                <option value="Vêtements">Vêtements</option>
+                <option value="Accessoires">Accessoires</option>
+                <option value="Jouets/Peluches">Jouets/Peluches</option>
+                <option value="Vêtements bébé">Vêtements bébé</option>
+                <option value="Accessoires bébé">Accessoires bébé</option>
+                <option value="Vêtements enfant">Vêtements enfant</option>
+                <option value="Maison/Déco">Maison/Déco</option>
+                <option value="Autre">Autre</option>
               </select>
             </div>
 
@@ -6095,10 +6078,10 @@ Rang 3 : *1ms, aug* x6 (18)
                                   newYarn[yIdx].quantities = newYarn[yIdx].quantities.filter((_, i) => i !== qIdx)
                                   setTechnicalForm({ ...technicalForm, yarn: newYarn })
                                 }}
-                                className="text-red-500 hover:text-red-700 text-sm px-2 py-1.5"
+                                className="text-red-500 hover:text-red-700 px-2 py-1.5"
                                 title="Supprimer ce coloris"
                               >
-                                ✕
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                               </button>
                             )}
                           </div>
@@ -6140,9 +6123,10 @@ Rang 3 : *1ms, aug* x6 (18)
                               ...technicalForm,
                               needles: technicalForm.needles.filter((_, i) => i !== nIdx)
                             })}
-                            className="text-red-600 hover:text-red-700 text-sm"
+                            className="text-red-500 hover:text-red-700 text-sm flex items-center gap-1"
                           >
-                            ✕ Supprimer
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            Supprimer
                           </button>
                         )}
                       </div>
@@ -6276,7 +6260,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   disabled={savingTechnical}
                   className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingTechnical ? 'Enregistrement...' : '💾 Enregistrer'}
+                  {savingTechnical ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </div>
             </div>
@@ -6306,7 +6290,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={12}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                   placeholder="Ajoutez vos notes personnelles sur ce projet :&#10;&#10;• Modifications apportées au patron&#10;• Difficultés rencontrées&#10;• Astuces et conseils&#10;• Idées pour la suite&#10;• Points d'attention..."
                   autoFocus
                 />
@@ -6328,7 +6312,7 @@ Rang 3 : *1ms, aug* x6 (18)
                 <button
                   onClick={handleSaveNotes}
                   disabled={savingNotes}
-                  className="px-6 py-2 bg-yellow-600 text-white rounded-lg font-bold hover:bg-yellow-700 transition disabled:opacity-50"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
                   {savingNotes ? 'Sauvegarde...' : 'Sauvegarder'}
                 </button>
@@ -6473,7 +6457,7 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-2xl font-bold mb-4">
-              {editingSection ? '✏️ Modifier la section' : '➕ Ajouter une section'}
+              {editingSection ? 'Modifier la section' : 'Ajouter une section'}
             </h2>
 
             <form onSubmit={handleSaveSection}>
@@ -6524,14 +6508,14 @@ Rang 3 : *1ms, aug* x6 (18)
 
               {/* Notes */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-amber-700 mb-2">
-                  📝 Notes (optionnel)
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes (optionnel)
                 </label>
                 <textarea
                   value={sectionForm.notes}
                   onChange={(e) => setSectionForm({ ...sectionForm, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-amber-50"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                   placeholder="Instructions particulières, rappels, modifications..."
                 />
               </div>
