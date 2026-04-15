@@ -6,7 +6,7 @@
  * sur un nombre de mailles ou de rangs donné.
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import SaveDistributeToProjectModal from './SaveDistributeToProjectModal'
 
 // Algorithme de répartition de Bresenham adapté au tricot
@@ -58,6 +58,13 @@ export default function DistributeIncrDec() {
 
   const result = useMemo(() => distribute(Number(total), Number(count)), [total, count])
   const explanation = useMemo(() => buildExplanation(result, type, axis), [result, type, axis])
+  const resultRef = useRef(null)
+
+  useEffect(() => {
+    if (result && resultRef.current) {
+      resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [result])
 
   const hasError = total && count && !result
 
@@ -141,7 +148,7 @@ export default function DistributeIncrDec() {
       )}
 
       {result && explanation && (
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-5 space-y-3">
+        <div ref={resultRef} className="bg-primary-50 border border-primary-200 rounded-xl p-5 space-y-3">
           <p className="text-base font-semibold text-primary-900">{explanation}</p>
 
           <div className="flex gap-4 pt-1 text-sm text-primary-700">
