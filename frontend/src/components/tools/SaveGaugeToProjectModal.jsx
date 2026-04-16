@@ -50,8 +50,8 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 pb-20 sm:pb-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 max-h-[80vh] overflow-y-auto">
         <div>
           <h2 className="text-lg font-bold text-gray-900">Enregistrer l'échantillon</h2>
           <p className="text-sm text-gray-500 mt-1">
