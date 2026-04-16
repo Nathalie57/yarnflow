@@ -151,12 +151,12 @@ const Gallery = () => {
   }
 
   const CATEGORY_LABELS = {
-    wearable:      { label: 'Vêtements',  emoji: '🧣' },
-    baby_garment:  { label: 'Bébé',       emoji: '👶' },
-    child_garment: { label: 'Enfant',     emoji: '🧒' },
-    toy:           { label: 'Amigurumis', emoji: '🧸' },
-    home_decor:    { label: 'Déco',       emoji: '🏠' },
-    accessory:     { label: 'Accessoires',emoji: '👜' },
+    wearable:      { label: 'Vêtements'   },
+    baby_garment:  { label: 'Bébé'        },
+    child_garment: { label: 'Enfant'      },
+    toy:           { label: 'Amigurumis'  },
+    home_decor:    { label: 'Déco'        },
+    accessory:     { label: 'Accessoires' },
   }
 
   // [AI:Claude] Catégories présentes dans la galerie (pour les pills de filtre)
@@ -624,7 +624,7 @@ const Gallery = () => {
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    {meta.emoji} {meta.label}
+                    {meta.label}
                   </button>
                 )
               })}
@@ -1006,7 +1006,10 @@ const Gallery = () => {
                       onClick={() => window.cameraInputGallery?.click()}
                       className="flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
                     >
-                      <span className="text-xl">📷</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
                       <span className="font-medium">Prendre une photo</span>
                     </button>
                   )}
@@ -1034,7 +1037,7 @@ const Gallery = () => {
               {/* Projet (optionnel) - PLACÉ EN PREMIER */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📁 Lier à un projet <span className="text-gray-400">(optionnel)</span>
+                  Lier à un projet <span className="text-gray-400">(optionnel)</span>
                 </label>
                 <select
                   value={selectedProjectId}
@@ -1062,7 +1065,11 @@ const Gallery = () => {
                 return selectedProject ? (
                   <div className="mb-4 p-4 bg-primary-50 rounded-lg border border-primary-200">
                     <div className="flex items-center gap-3">
-                      <span className="text-2xl">{selectedProject.technique === 'tricot' ? '🧶' : '🪡'}</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-primary-600">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 3c0 0-3 4-3 9s3 9 3 9"/>
+                        <path d="M3 12h18"/>
+                      </svg>
                       <div>
                         <p className="font-semibold text-primary-900">{selectedProject.name}</p>
                         <p className="text-sm text-primary-700">
@@ -1106,14 +1113,14 @@ const Gallery = () => {
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
                         <option value="">-- Sélectionner --</option>
-                        <optgroup label="🧢 Vêtements">
+                        <optgroup label="Vêtements">
                           <option value="bonnet">Bonnet</option>
                           <option value="écharpe">Écharpe</option>
                           <option value="pull">Pull</option>
                           <option value="chaussettes">Chaussettes</option>
                           <option value="snood">Snood</option>
                         </optgroup>
-                        <optgroup label="👶 Vêtements bébé">
+                        <optgroup label="Vêtements bébé">
                           <option value="body bébé">Body bébé</option>
                           <option value="barboteuse">Barboteuse</option>
                           <option value="gilet bébé">Gilet bébé</option>
@@ -1121,17 +1128,17 @@ const Gallery = () => {
                           <option value="bonnet bébé">Bonnet bébé</option>
                           <option value="couverture bébé">Couverture bébé</option>
                         </optgroup>
-                        <optgroup label="🧸 Amigurumis">
+                        <optgroup label="Amigurumis">
                           <option value="amigurumi">Amigurumi</option>
                           <option value="peluche">Peluche</option>
                           <option value="doudou">Doudou</option>
                         </optgroup>
-                        <optgroup label="👜 Accessoires">
+                        <optgroup label="Accessoires">
                           <option value="sac">Sac</option>
                           <option value="pochette">Pochette</option>
                           <option value="trousse">Trousse</option>
                         </optgroup>
-                        <optgroup label="🏠 Déco maison">
+                        <optgroup label="Déco maison">
                           <option value="couverture">Couverture</option>
                           <option value="plaid">Plaid</option>
                           <option value="coussin">Coussin</option>
@@ -1150,8 +1157,8 @@ const Gallery = () => {
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
                         <option value="">-- Sélectionner --</option>
-                        <option value="crochet">🪡 Crochet</option>
-                        <option value="tricot">🧶 Tricot</option>
+                        <option value="crochet">Crochet</option>
+                        <option value="tricot">Tricot</option>
                         <option value="autre">Autre</option>
                       </select>
                     </div>

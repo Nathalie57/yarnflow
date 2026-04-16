@@ -52,7 +52,7 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
       <div className="card max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center mb-2">🧶 YarnFlow</h1>
+        <h1 className="text-3xl font-bold text-center mb-2">YarnFlow</h1>
         <p className="text-gray-600 text-center mb-6">Connexion à votre compte</p>
 
         {error && (
@@ -126,7 +126,13 @@ const Login = () => {
           {oauthLoading ? 'Connexion...' : 'Continuer avec Google'}
         </button>
 
-        <p className="text-center mt-6 text-sm text-gray-500">
+        <p className="text-center mt-4 text-sm text-gray-500">
+          Pas encore de compte ?{' '}
+          <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
+            Créer un compte
+          </Link>
+        </p>
+        <p className="text-center mt-2 text-sm text-gray-500">
           Besoin d'aide ?{' '}
           <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
             Contactez-nous
