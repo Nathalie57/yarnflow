@@ -95,7 +95,7 @@ export default function DistributeIncrDec() {
         <button
           onClick={() => setAxis('mailles')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
-            axis === 'mailles' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            axis === 'mailles' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           Sur une rangée
@@ -103,7 +103,7 @@ export default function DistributeIncrDec() {
         <button
           onClick={() => setAxis('rangs')}
           className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
-            axis === 'rangs' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            axis === 'rangs' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           Sur des rangs

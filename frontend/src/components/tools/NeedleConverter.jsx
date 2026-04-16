@@ -6,6 +6,8 @@
 import { useState } from 'react'
 
 const KNITTING_NEEDLES = [
+  { mm: 1.5,  us: '000',  uk: '—'  },
+  { mm: 1.75, us: '00',   uk: '—'  },
   { mm: 2.0,  us: '0',    uk: '14' },
   { mm: 2.25, us: '1',    uk: '13' },
   { mm: 2.5,  us: '—',   uk: '12' },
@@ -32,6 +34,12 @@ const KNITTING_NEEDLES = [
 ]
 
 const CROCHET_HOOKS = [
+  { mm: 0.6,  us: '14 (acier)' },
+  { mm: 0.75, us: '12 (acier)' },
+  { mm: 1.0,  us: '11 (acier)' },
+  { mm: 1.25, us: '9 (acier)'  },
+  { mm: 1.5,  us: '7 (acier)'  },
+  { mm: 1.75, us: '5 (acier)'  },
   { mm: 2.0,  us: 'B/1'   },
   { mm: 2.25, us: 'B/1'   },
   { mm: 2.5,  us: 'C/2'   },
@@ -46,6 +54,7 @@ const CROCHET_HOOKS = [
   { mm: 5.5,  us: 'I/9'   },
   { mm: 6.0,  us: 'J/10'  },
   { mm: 6.5,  us: 'K/10½'},
+  { mm: 7.0,  us: '—'     },
   { mm: 8.0,  us: 'L/11'  },
   { mm: 9.0,  us: 'M/13'  },
   { mm: 10.0, us: 'N/15'  },
