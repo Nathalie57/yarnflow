@@ -16,10 +16,6 @@ import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import OAuthCallback from './pages/OAuthCallback'
-import Dashboard from './pages/Dashboard'
-import Generator from './pages/Generator'
-import MyPatterns from './pages/MyPatterns'
-import PatternDetail from './pages/PatternDetail'
 import Subscription from './pages/Subscription'
 import Profile from './pages/Profile'
 import MyProjects from './pages/MyProjects'
@@ -99,20 +95,14 @@ function App() {
 
           {/* Routes protégées */}
           <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-            {/* [AI:Claude] Redirection dashboard vers my-projects (nouveau tableau de bord unifié) */}
             <Route path="/dashboard" element={<Navigate to="/my-projects" replace />} />
             <Route path="/projects" element={<Navigate to="/my-projects" replace />} />
-
-            <Route path="/generator" element={<Generator />} />
-            <Route path="/my-patterns" element={<MyPatterns />} />
-            <Route path="/patterns/:id" element={<PatternDetail />} />
             <Route path="/subscription" element={<Subscription />} />
             <Route path="/profile" element={<Profile />} />
 
             {/* Routes projets (YarnFlow - Dashboard unifié) */}
             <Route path="/my-projects" element={<MyProjects />} />
             <Route path="/projects/:projectId" element={<ProjectCounter />} />
-            <Route path="/projects/:projectId/counter" element={<ProjectCounter />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/tools" element={<Tools />} />
 
