@@ -226,7 +226,7 @@ class Project extends BaseModel
             'counter_unit', 'counter_unit_increment', // [AI:Claude] v0.16.2 - Support unité compteur (rangs/cm)
             'yarn_brand', 'yarn_color', 'yarn_weight', 'hook_size', 'yarn_used_grams',
             'notes', 'pattern_notes', 'is_public', 'is_favorite', 'completed_at',
-            'pattern_path', 'pattern_url', 'pattern_text', // [AI:Claude] v0.13.0 - Support texte patron
+            'pattern_path', 'pattern_url', 'pattern_text', 'pattern_library_id', // [AI:Claude] v0.13.0 - Support texte patron
             'technical_details', // [AI:Claude] v0.13.0 - Détails techniques structurés (laine, aiguilles, échantillon)
             'secondary_label', 'secondary_target', 'secondary_count' // [AI:Claude] Sync compteur secondaire multi-appareils
         ];
@@ -595,19 +595,21 @@ class Project extends BaseModel
             $dateCondition = "AND p.started_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)";
 
         // [AI:Claude] Requête pour calculer les stats de base
+        // total_rows via project_rows pour compter tous les rangs historiques (sections incluses)
         $query = "SELECT
                     COUNT(*) as total_projects,
                     SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END) as completed_projects,
                     SUM(CASE WHEN p.status = 'in_progress' THEN 1 ELSE 0 END) as active_projects,
                     SUM(p.total_time) as total_crochet_time,
                     SUM(p.total_stitches) as total_stitches,
-                    SUM(p.current_row) as total_rows
+                    (SELECT COUNT(*) FROM project_rows pr WHERE pr.project_id IN (SELECT id FROM {$this->table} WHERE user_id = :user_id_rows)) as total_rows
                   FROM {$this->table} p
                   WHERE p.user_id = :user_id
                   $dateCondition";
 
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':user_id_rows', $userId, \PDO::PARAM_INT);
         $stmt->execute();
 
         $stats = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -672,7 +674,7 @@ class Project extends BaseModel
 
         // Progression par jour (rangs/cm complétés par jour sur les 30 derniers jours)
         $progressionQuery = "SELECT DATE(ps.started_at) as day,
-                                    SUM(ps.rows_completed) as rows
+                                    SUM(ps.rows_completed) as `rows`
                              FROM project_sessions ps
                              JOIN {$this->table} p ON ps.project_id = p.id
                              WHERE p.user_id = :user_id
@@ -981,7 +983,7 @@ class Project extends BaseModel
     public function updateSection(int $sectionId, array $data): bool
     {
         $allowedFields = ['name', 'description', 'notes', 'display_order', 'total_rows', 'current_row', 'counter_unit', 'is_completed',
-                          'secondary_label', 'secondary_target', 'secondary_count'];
+                          'secondary_label', 'secondary_target', 'secondary_count', 'secondary_sequence'];
 
         $fields = [];
         $params = [':id' => $sectionId];

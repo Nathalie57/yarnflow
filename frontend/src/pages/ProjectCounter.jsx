@@ -76,6 +76,7 @@ const ProjectCounter = () => {
   const [isEditingSecondary, setIsEditingSecondary] = useState(false)
   const [secondaryLabelInput, setSecondaryLabelInput] = useState('')
   const [secondaryTargetInput, setSecondaryTargetInput] = useState('')
+  const [secondarySequence, setSecondarySequence] = useState(null) // [AI:Claude] v0.18.1 - Séquence structurée
 
   // [AI:Claude] Timer de session
   const [sessionId, setSessionId] = useState(null)
@@ -264,6 +265,15 @@ const ProjectCounter = () => {
           setSecondaryLabelInput(activeSection.secondary_label)
           setSecondaryTargetInput(activeSection.secondary_target ? String(activeSection.secondary_target) : '')
         }
+        // [AI:Claude] v0.18.1 - Restaurer la séquence structurée
+        if (activeSection?.secondary_sequence) {
+          const seq = typeof activeSection.secondary_sequence === 'string'
+            ? JSON.parse(activeSection.secondary_sequence)
+            : activeSection.secondary_sequence
+          setSecondarySequence(seq)
+        } else {
+          setSecondarySequence(null)
+        }
       }
 
       // [AI:Claude] v0.17.1 - Vérifier si c'est le premier projet (tip onboarding)
@@ -373,14 +383,22 @@ const ProjectCounter = () => {
   useEffect(() => {
     if (!projectId || !currentSectionId) return
     const timer = setTimeout(() => {
-      api.put(`/projects/${projectId}/sections/${currentSectionId}`, {
-        secondary_label: secondaryActive ? (secondaryLabel || null) : null,
-        secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
-        secondary_count: secondaryActive ? secondaryCount : 0
-      }).catch(() => {})
+      // [AI:Claude] v0.18.1 - Ne pas écraser les champs secondaires avec null quand le compteur
+      // est inactif : évite la race condition avec SaveSequenceToSectionModal (autre onglet/page)
+      if (secondaryActive) {
+        const debouncePayload = {
+          secondary_label: secondaryLabel || null,
+          secondary_target: secondaryTarget || null,
+          secondary_count: secondaryCount,
+        }
+        if (secondarySequence !== null) {
+          debouncePayload.secondary_sequence = JSON.stringify(secondarySequence)
+        }
+        api.put(`/projects/${projectId}/sections/${currentSectionId}`, debouncePayload).catch(() => {})
+      }
     }, 1500)
     return () => clearTimeout(timer)
-  }, [secondaryActive, secondaryLabel, secondaryTarget, secondaryCount, projectId, currentSectionId])
+  }, [secondaryActive, secondaryLabel, secondaryTarget, secondaryCount, secondarySequence, projectId, currentSectionId])
 
   // [AI:Claude] Fermer les menus quand on clique en dehors
   useEffect(() => {
@@ -2216,6 +2234,15 @@ const ProjectCounter = () => {
         setSecondaryLabelInput('')
         setSecondaryTargetInput('')
       }
+      // [AI:Claude] v0.18.1 - Restaurer la séquence structurée
+      if (targetSection?.secondary_sequence) {
+        const seq = typeof targetSection.secondary_sequence === 'string'
+          ? JSON.parse(targetSection.secondary_sequence)
+          : targetSection.secondary_sequence
+        setSecondarySequence(seq)
+      } else {
+        setSecondarySequence(null)
+      }
     } catch (err) {
       console.error('Erreur changement section:', err)
       showAlert('Erreur lors du changement de section', 'error')
@@ -2486,6 +2513,37 @@ const ProjectCounter = () => {
       secondary_target: secondaryTarget,
       secondary_label: secondaryLabel
     }).catch(() => {})
+  }
+
+  // [AI:Claude] v0.18.1 - Incrémenter le compteur secondaire avec gestion de séquence
+  const handleSecondaryIncrement = () => {
+    if (!secondarySequence) {
+      // Comportement normal sans séquence
+      setSecondaryCount(prev => prev + 1)
+      return
+    }
+
+    const seq = secondarySequence
+    const step = seq.steps[seq.current_step]
+    if (!step) return
+
+    const newDone = seq.current_done + 1
+
+    if (newDone >= step.repeat) {
+      // Étape terminée, passer à la suivante
+      const nextStep = seq.current_step + 1
+      const newSeq = { ...seq, current_step: nextStep, current_done: 0 }
+      setSecondarySequence(newSeq)
+      setSecondaryCount(0)
+      if (nextStep < seq.steps.length) {
+        setSecondaryTarget(seq.steps[nextStep].target)
+      }
+      // La persistence est assurée par le useEffect debounce
+    } else {
+      const newSeq = { ...seq, current_done: newDone }
+      setSecondarySequence(newSeq)
+      setSecondaryCount(prev => prev + 1)
+    }
   }
 
   // [AI:Claude] Sauvegarder les notes de section
@@ -3404,64 +3462,94 @@ const ProjectCounter = () => {
               </div>
             ) : (
               // Compteur secondaire actif
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {secondaryLabel && (
-                    <span className="text-sm font-semibold text-gray-700">
-                      {secondaryLabel}
-                    </span>
-                  )}
+              <div className="space-y-2">
+                {/* Ligne 1 : label + actions */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    {secondaryLabel || 'Compteur'}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        setSecondaryLabelInput(secondaryLabel)
+                        setSecondaryTargetInput(secondaryTarget ? String(secondaryTarget) : '')
+                        setIsEditingSecondary(true)
+                      }}
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+                      title="Modifier"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                    <button
+                      onClick={() => { flushSecondaryToHistory(); setSecondaryCount(0) }}
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-orange-500 hover:bg-orange-100 transition"
+                      title="Remettre à zéro"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    </button>
+                    <button
+                      onClick={() => { flushSecondaryToHistory(); setSecondaryActive(false); setSecondaryCount(0); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput(''); setSecondarySequence(null) }}
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-red-400 hover:bg-red-100 transition"
+                      title="Supprimer le compteur"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ligne 2 : compteur */}
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => setSecondaryCount(prev => Math.max(0, prev - 1))}
-                    className="w-7 h-7 bg-red-100 text-red-600 rounded-full text-sm font-bold hover:bg-red-200 transition"
+                    className="w-8 h-8 bg-red-100 text-red-600 rounded-full text-base font-bold hover:bg-red-200 transition flex-shrink-0"
                   >
                     −
                   </button>
-                  <div className="text-center min-w-[44px]">
-                    <span className="font-bold text-base text-gray-900">
-                      {secondaryCount}
-                      {secondaryTarget ? <span className="text-gray-500 font-normal text-sm">/{secondaryTarget}</span> : ''}
-                    </span>
+                  <div className="flex-1 text-center">
+                    <span className="font-bold text-xl text-gray-900">{secondaryCount}</span>
+                    {secondaryTarget && (
+                      <span className="text-gray-400 font-normal text-sm"> / {secondaryTarget}</span>
+                    )}
                   </div>
                   <button
-                    onClick={() => setSecondaryCount(prev => prev + 1)}
-                    disabled={secondaryTarget !== null && secondaryCount >= secondaryTarget}
-                    className={`w-7 h-7 rounded-full text-sm font-bold transition ${
-                      secondaryTarget !== null && secondaryCount >= secondaryTarget
+                    onClick={handleSecondaryIncrement}
+                    disabled={secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence}
+                    className={`w-8 h-8 rounded-full text-base font-bold transition flex-shrink-0 ${
+                      secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence
                         ? 'bg-green-500 text-white cursor-not-allowed'
                         : 'bg-primary-600 text-white hover:bg-primary-700'
                     }`}
                   >
-                    {secondaryTarget !== null && secondaryCount >= secondaryTarget ? '✓' : '+'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSecondaryLabelInput(secondaryLabel)
-                      setSecondaryTargetInput(secondaryTarget ? String(secondaryTarget) : '')
-                      setIsEditingSecondary(true)
-                    }}
-                    className="text-gray-400 hover:text-gray-600 text-sm transition"
-                    title="Modifier le label et l'objectif"
-                  >
-                    ✎
+                    {secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence ? '✓' : '+'}
                   </button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => { flushSecondaryToHistory(); setSecondaryCount(0) }}
-                    className="px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 text-xs font-medium transition"
-                    title="Remettre à zéro"
-                  >
-                    ↺ Remise à 0
-                  </button>
-                  <button
-                    onClick={() => { flushSecondaryToHistory(); setSecondaryActive(false); setSecondaryCount(0); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
-                    className="px-2.5 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200 text-xs font-medium transition"
-                    title="Supprimer le compteur secondaire"
-                  >
-                    ✕ Supprimer
-                  </button>
-                </div>
+
+                {/* Ligne 3 : infos séquence */}
+                {/* [AI:Claude] v0.18.1 - Affichage séquence structurée */}
+                {secondarySequence && secondarySequence.steps && secondarySequence.current_step < secondarySequence.steps.length && (
+                  <div className="pt-2 border-t border-primary-200/50 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>Étape {secondarySequence.current_step + 1}/{secondarySequence.steps.length} — tous les <strong className="text-gray-700">{secondarySequence.steps[secondarySequence.current_step]?.target}</strong></span>
+                      <span>{secondarySequence.current_done}/{secondarySequence.steps[secondarySequence.current_step]?.repeat}</span>
+                    </div>
+                    {(() => {
+                      const totalReps = secondarySequence.steps.reduce((sum, s) => sum + s.repeat, 0)
+                      const doneBefore = secondarySequence.steps.slice(0, secondarySequence.current_step).reduce((sum, s) => sum + s.repeat, 0)
+                      const totalDone = doneBefore + secondarySequence.current_done
+                      const pct = totalReps > 0 ? Math.round((totalDone / totalReps) * 100) : 0
+                      return (
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div className="bg-primary-500 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+                {secondarySequence && secondarySequence.steps && secondarySequence.current_step >= secondarySequence.steps.length && (
+                  <div className="pt-2 border-t border-green-200">
+                    <p className="text-xs text-green-700 font-medium text-center">✓ Séquence terminée</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

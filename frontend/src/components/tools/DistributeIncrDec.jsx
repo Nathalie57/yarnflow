@@ -7,7 +7,10 @@
  */
 
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import SaveDistributeToProjectModal from './SaveDistributeToProjectModal'
+import SaveSequenceToSectionModal from './SaveSequenceToSectionModal'
 
 // Algorithme de répartition de Bresenham adapté au tricot
 // Retourne un tableau de N intervalles distribués aussi uniformément que possible
@@ -50,10 +53,15 @@ function buildExplanation(result, type, axis) {
 }
 
 export default function DistributeIncrDec() {
+  const { hasActiveSubscription } = useAuth()
+  const navigate = useNavigate()
+  const isPaidPlan = hasActiveSubscription()
+
   const [total, setTotal] = useState('')
   const [count, setCount] = useState('')
   const [type, setType] = useState('aug') // aug | dim
   const [showSaveModal, setShowSaveModal] = useState(false)
+  const [showSequenceModal, setShowSequenceModal] = useState(false)
   const [axis, setAxis] = useState('mailles') // mailles | rangs
 
   const result = useMemo(() => distribute(Number(total), Number(count)), [total, count])
@@ -111,7 +119,7 @@ export default function DistributeIncrDec() {
       </div>
 
       {/* Inputs */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {axis === 'mailles' ? 'Nombre de mailles' : 'Nombre de rangs'}
@@ -173,6 +181,24 @@ export default function DistributeIncrDec() {
           >
             Enregistrer dans un projet →
           </button>
+          {axis === 'rangs' && (
+            isPaidPlan ? (
+              <button
+                onClick={() => setShowSequenceModal(true)}
+                className="w-full py-2 rounded-lg text-sm font-medium bg-white border border-primary-600 text-primary-700 hover:bg-primary-50 transition"
+              >
+                Créer un compteur de section
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/subscription')}
+                className="w-full py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-400 transition flex items-center justify-center gap-2"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                Créer un compteur de section — PRO
+              </button>
+            )
+          )}
         </div>
       )}
 
@@ -180,6 +206,19 @@ export default function DistributeIncrDec() {
         <SaveDistributeToProjectModal
           text={explanation}
           onClose={() => setShowSaveModal(false)}
+        />
+      )}
+
+      {showSequenceModal && result && (
+        <SaveSequenceToSectionModal
+          sequence={{
+            label: type === 'aug' ? 'Augmentations' : 'Diminutions',
+            steps: [
+              { target: result.longInterval, repeat: result.longCount },
+              { target: result.shortInterval, repeat: result.shortCount }
+            ].filter(s => s.repeat > 0)
+          }}
+          onClose={() => setShowSequenceModal(false)}
         />
       )}
     </div>
