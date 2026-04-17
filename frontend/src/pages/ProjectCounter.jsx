@@ -158,6 +158,12 @@ const ProjectCounter = () => {
   // Tip compteur secondaire — affiché une fois pour les PRO sans compteur actif
   const [showSecondaryTip, setShowSecondaryTip] = useState(false)
 
+  // Reminders de rang
+  const [reminders, setReminders] = useState([]) // [{id, row, message, done}]
+  const [activeReminder, setActiveReminder] = useState(null) // reminder déclenché
+  const [showReminderManager, setShowReminderManager] = useState(false)
+  const [reminderForm, setReminderForm] = useState({ row: '', message: '' })
+
   // [AI:Claude] Modal d'édition du projet
   const [showEditModal, setShowEditModal] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -309,6 +315,22 @@ const ProjectCounter = () => {
         } else {
           setSecondarySequence(null)
         }
+
+        // Reminders de la section active
+        if (activeSection?.reminders) {
+          const rem = typeof activeSection.reminders === 'string'
+            ? JSON.parse(activeSection.reminders)
+            : activeSection.reminders
+          setReminders(Array.isArray(rem) ? rem : [])
+        } else {
+          setReminders([])
+        }
+      } else if (projectData?.reminders) {
+        // Reminders du projet (sans sections)
+        const rem = typeof projectData.reminders === 'string'
+          ? JSON.parse(projectData.reminders)
+          : projectData.reminders
+        setReminders(Array.isArray(rem) ? rem : [])
       }
 
       // [AI:Claude] v0.17.1 - Vérifier si c'est le premier projet (tip onboarding)
@@ -1917,6 +1939,10 @@ const ProjectCounter = () => {
       // [AI:Claude] Mettre à jour currentRow APRÈS sections pour que useEffect lise la bonne valeur
       setCurrentRow(newRow)
 
+      // Vérifier si un reminder se déclenche à ce rang
+      const triggered = reminders.find(r => !r.done && r.row === newRow)
+      if (triggered) setActiveReminder(triggered)
+
       // [AI:Claude] Si on vient de terminer, marquer comme terminé automatiquement
       if (maxRows !== null && newRow === maxRows) {
         if (currentSectionId) {
@@ -2295,6 +2321,16 @@ const ProjectCounter = () => {
       } else {
         setSecondarySequence(null)
       }
+      // Reminders de la section
+      if (targetSection?.reminders) {
+        const rem = typeof targetSection.reminders === 'string'
+          ? JSON.parse(targetSection.reminders)
+          : targetSection.reminders
+        setReminders(Array.isArray(rem) ? rem : [])
+      } else {
+        setReminders([])
+      }
+      setActiveReminder(null)
     } catch (err) {
       console.error('Erreur changement section:', err)
       showAlert('Erreur lors du changement de section', 'error')
@@ -2553,6 +2589,45 @@ const ProjectCounter = () => {
       setExpandedNotesSection(section.id)
       setSectionNotesText(section.notes || '')
     }
+  }
+
+  // Sauvegarder les reminders dans la section ou le projet
+  const saveReminders = (newReminders) => {
+    const payload = { reminders: JSON.stringify(newReminders) }
+    if (currentSectionId) {
+      api.put(`/projects/${projectId}/sections/${currentSectionId}`, payload).catch(() => {})
+    } else {
+      api.put(`/projects/${projectId}`, payload).catch(() => {})
+    }
+  }
+
+  const addReminder = () => {
+    const row = parseInt(reminderForm.row)
+    if (!row || row <= 0 || !reminderForm.message.trim()) return
+    const newReminder = { id: Date.now().toString(), row, message: reminderForm.message.trim(), done: false }
+    const newReminders = [...reminders, newReminder].sort((a, b) => a.row - b.row)
+    setReminders(newReminders)
+    saveReminders(newReminders)
+    setReminderForm({ row: '', message: '' })
+  }
+
+  const dismissReminder = (id) => {
+    const newReminders = reminders.map(r => r.id === id ? { ...r, done: true } : r)
+    setReminders(newReminders)
+    saveReminders(newReminders)
+    setActiveReminder(null)
+  }
+
+  const resetReminder = (id) => {
+    const newReminders = reminders.map(r => r.id === id ? { ...r, done: false } : r)
+    setReminders(newReminders)
+    saveReminders(newReminders)
+  }
+
+  const deleteReminder = (id) => {
+    const newReminders = reminders.filter(r => r.id !== id)
+    setReminders(newReminders)
+    saveReminders(newReminders)
   }
 
   // Sauvegarder l'état courant du compteur secondaire dans project_rows (avant reset)
@@ -3300,12 +3375,23 @@ const ProjectCounter = () => {
             {/* Section active mobile */}
             <div className="text-left flex-shrink min-w-0">
               <div className="text-xs text-gray-500">Section active</div>
-              <div className="font-semibold text-gray-900 text-sm truncate">
-                {currentSectionId ? (
-                  sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
-                ) : (
-                  'Projet global'
-                )}
+              <div className="flex items-center gap-1.5">
+                <div className="font-semibold text-gray-900 text-sm truncate">
+                  {currentSectionId ? (
+                    sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
+                  ) : (
+                    'Projet global'
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowReminderManager(true)}
+                  className={`flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-500' : 'text-gray-300 hover:text-gray-500'}`}
+                  title="Rappels de rang"
+                >
+                  <svg className="w-3.5 h-3.5" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </button>
               </div>
             </div>
 
@@ -7058,6 +7144,97 @@ Rang 3 : *1ms, aug* x6 (18)
         onClose={() => setUpgradeFeature(null)}
         feature={upgradeFeature || 'tags'}
       />
+
+      {/* Modale reminder déclenché */}
+      {activeReminder && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center space-y-4">
+            <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
+              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Rappel — rang {activeReminder.row}</p>
+              <p className="text-lg font-bold text-gray-900">{activeReminder.message}</p>
+            </div>
+            <button
+              onClick={() => dismissReminder(activeReminder.id)}
+              className="w-full py-3 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition"
+            >
+              Compris !
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Gestionnaire de reminders */}
+      {showReminderManager && (
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Rappels de rang</h2>
+              <button onClick={() => setShowReminderManager(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+            </div>
+
+            {/* Formulaire ajout */}
+            <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Nouveau rappel</p>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={reminderForm.row}
+                  onChange={e => setReminderForm(f => ({ ...f, row: e.target.value }))}
+                  placeholder="Rang"
+                  className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <input
+                  type="text"
+                  value={reminderForm.message}
+                  onChange={e => setReminderForm(f => ({ ...f, message: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && addReminder()}
+                  placeholder="Ex : Commencer les diminutions"
+                  className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <button
+                onClick={addReminder}
+                disabled={!reminderForm.row || !reminderForm.message.trim()}
+                className="w-full py-1.5 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
+              >
+                Ajouter
+              </button>
+            </div>
+
+            {/* Liste des reminders */}
+            {reminders.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-2">Aucun rappel pour le moment.</p>
+            ) : (
+              <div className="space-y-2">
+                {reminders.map(r => (
+                  <div key={r.id} className={`flex items-start gap-3 p-3 rounded-xl border ${r.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-200'}`}>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 mt-0.5 ${r.done ? 'bg-gray-200 text-gray-500' : 'bg-amber-100 text-amber-700'}`}>
+                      {r.row}
+                    </span>
+                    <p className={`flex-1 text-sm ${r.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{r.message}</p>
+                    <div className="flex gap-1">
+                      {r.done && (
+                        <button onClick={() => resetReminder(r.id)} className="text-gray-400 hover:text-primary-600 transition" title="Réactiver">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        </button>
+                      )}
+                      <button onClick={() => deleteReminder(r.id)} className="text-gray-400 hover:text-red-500 transition" title="Supprimer">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   )

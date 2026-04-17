@@ -228,7 +228,8 @@ class Project extends BaseModel
             'notes', 'pattern_notes', 'is_public', 'is_favorite', 'completed_at',
             'pattern_path', 'pattern_url', 'pattern_text', 'pattern_library_id', // [AI:Claude] v0.13.0 - Support texte patron
             'technical_details', // [AI:Claude] v0.13.0 - Détails techniques structurés (laine, aiguilles, échantillon)
-            'secondary_label', 'secondary_target', 'secondary_count' // [AI:Claude] Sync compteur secondaire multi-appareils
+            'secondary_label', 'secondary_target', 'secondary_count', // [AI:Claude] Sync compteur secondaire multi-appareils
+            'reminders', 'deadline' // Rappels de rang + objectif de date
         ];
 
         $fields = [];
@@ -983,7 +984,8 @@ class Project extends BaseModel
     public function updateSection(int $sectionId, array $data): bool
     {
         $allowedFields = ['name', 'description', 'notes', 'display_order', 'total_rows', 'current_row', 'counter_unit', 'is_completed',
-                          'secondary_label', 'secondary_target', 'secondary_count', 'secondary_sequence'];
+                          'secondary_label', 'secondary_target', 'secondary_count', 'secondary_sequence',
+                          'reminders']; // Rappels de rang
 
         $fields = [];
         $params = [':id' => $sectionId];
