@@ -2546,6 +2546,32 @@ const ProjectCounter = () => {
     }
   }
 
+  // [AI:Claude] v0.18.1 - Décrémenter le compteur secondaire avec gestion de séquence
+  const handleSecondaryDecrement = () => {
+    if (!secondarySequence) {
+      setSecondaryCount(prev => Math.max(0, prev - 1))
+      return
+    }
+
+    const seq = secondarySequence
+
+    if (seq.current_done > 0) {
+      // Reculer dans l'étape courante
+      const newSeq = { ...seq, current_done: seq.current_done - 1 }
+      setSecondarySequence(newSeq)
+      setSecondaryCount(prev => Math.max(0, prev - 1))
+    } else if (seq.current_step > 0) {
+      // Revenir à l'étape précédente, à sa dernière valeur
+      const prevStepIndex = seq.current_step - 1
+      const prevStep = seq.steps[prevStepIndex]
+      const newSeq = { ...seq, current_step: prevStepIndex, current_done: prevStep.repeat - 1 }
+      setSecondarySequence(newSeq)
+      setSecondaryTarget(prevStep.target)
+      setSecondaryCount(prevStep.repeat - 1)
+    }
+    // Déjà au début (étape 0, done 0) : rien à faire
+  }
+
   // [AI:Claude] Sauvegarder les notes de section
   const saveSectionNotes = async (sectionId) => {
     setIsSavingSectionNotes(true)
@@ -3500,16 +3526,18 @@ const ProjectCounter = () => {
                 {/* Ligne 2 : compteur */}
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setSecondaryCount(prev => Math.max(0, prev - 1))}
+                    onClick={handleSecondaryDecrement}
                     className="w-8 h-8 bg-red-100 text-red-600 rounded-full text-base font-bold hover:bg-red-200 transition flex-shrink-0"
                   >
                     −
                   </button>
                   <div className="flex-1 text-center">
                     <span className="font-bold text-xl text-gray-900">{secondaryCount}</span>
-                    {secondaryTarget && (
+                    {secondarySequence && secondarySequence.steps?.[secondarySequence.current_step] ? (
+                      <span className="text-gray-400 font-normal text-sm"> / {secondarySequence.steps[secondarySequence.current_step].repeat}</span>
+                    ) : secondaryTarget ? (
                       <span className="text-gray-400 font-normal text-sm"> / {secondaryTarget}</span>
-                    )}
+                    ) : null}
                   </div>
                   <button
                     onClick={handleSecondaryIncrement}
@@ -3529,8 +3557,7 @@ const ProjectCounter = () => {
                 {secondarySequence && secondarySequence.steps && secondarySequence.current_step < secondarySequence.steps.length && (
                   <div className="pt-2 border-t border-primary-200/50 space-y-1.5">
                     <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>Étape {secondarySequence.current_step + 1}/{secondarySequence.steps.length} — tous les <strong className="text-gray-700">{secondarySequence.steps[secondarySequence.current_step]?.target}</strong></span>
-                      <span>{secondarySequence.current_done}/{secondarySequence.steps[secondarySequence.current_step]?.repeat}</span>
+                      <span>Étape {secondarySequence.current_step + 1}/{secondarySequence.steps.length} — tous les <strong className="text-gray-700">{secondarySequence.steps[secondarySequence.current_step]?.target}</strong> ({secondarySequence.steps[secondarySequence.current_step]?.repeat}×)</span>
                     </div>
                     {(() => {
                       const totalReps = secondarySequence.steps.reduce((sum, s) => sum + s.repeat, 0)
