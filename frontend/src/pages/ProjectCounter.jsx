@@ -67,6 +67,8 @@ const ProjectCounter = () => {
   const [counterInputValue, setCounterInputValue] = useState('') // [AI:Claude] v0.16.2 - Valeur temporaire de l'input
   const [isSavingRow, setIsSavingRow] = useState(false) // [AI:Claude] Anti double-clic sur compteur
   const [isOnline, setIsOnline] = useState(networkUtils.isOnline()) // [AI:Claude] Détection hors-ligne
+  const [pendingSync, setPendingSync] = useState(false) // Actions en attente de sync
+  const pendingRowsRef = useRef([]) // Queue des rows à POSTer quand connexion revient
 
   // [AI:Claude] Compteur secondaire (PLUS/PRO)
   const [secondaryActive, setSecondaryActive] = useState(false)
@@ -243,12 +245,39 @@ const ProjectCounter = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // [AI:Claude] Détection connexion réseau
+  // [AI:Claude] Détection connexion réseau + flush queue offline
   useEffect(() => {
+    // Charger la queue offline depuis localStorage au montage
+    try {
+      const stored = localStorage.getItem(`yf_pending_rows_${projectId}`)
+      if (stored) {
+        const items = JSON.parse(stored)
+        if (items.length > 0) {
+          pendingRowsRef.current = items
+          setPendingSync(true)
+        }
+      }
+    } catch {}
+
+    const flushPendingRows = async () => {
+      if (pendingRowsRef.current.length === 0) return
+      try {
+        for (const row of pendingRowsRef.current) {
+          await api.post(`/projects/${projectId}/rows`, row)
+        }
+        pendingRowsRef.current = []
+        localStorage.removeItem(`yf_pending_rows_${projectId}`)
+        setPendingSync(false)
+      } catch {
+        // Toujours offline, on garde la queue
+      }
+    }
+
     return networkUtils.onConnectionChange((online) => {
       setIsOnline(online)
+      if (online) flushPendingRows()
     })
-  }, [])
+  }, [projectId])
 
   // [AI:Claude] Charger le projet au montage
   useEffect(() => {
@@ -1981,26 +2010,31 @@ const ProjectCounter = () => {
         }
       }
     } catch (err) {
-      console.error('Erreur sauvegarde rang:', err)
-      console.error('Détails erreur:', err.response?.data)
-      const errorMsg = err.response?.data?.message || err.message || 'Erreur inconnue'
-      showAlert(`Erreur lors de la sauvegarde du rang: ${errorMsg}`, 'error')
-      // [AI:Claude] Rollback en cas d'erreur (compteur ET sections)
-      setCurrentRow(oldRow)
-      if (currentSectionId) {
-        setSections(prevSections =>
-          prevSections.map(s =>
-            s.id === currentSectionId
-              ? { ...s, current_row: oldRow }
-              : s
-          )
-        )
+      const isNetworkError = !err.response
+      if (isNetworkError) {
+        // Hors-ligne : garder le nouvel état, queuer pour sync ultérieure
+        pendingRowsRef.current.push(rowData)
+        try {
+          localStorage.setItem(`yf_pending_rows_${projectId}`, JSON.stringify(pendingRowsRef.current))
+        } catch {}
+        setPendingSync(true)
       } else {
-        // [AI:Claude] FIX: Rollback du projet global si pas de sections
-        setProject(prevProject => ({
-          ...prevProject,
-          current_row: oldRow
-        }))
+        // Erreur serveur : rollback
+        console.error('Erreur sauvegarde rang:', err.response?.data)
+        const errorMsg = err.response?.data?.message || err.message || 'Erreur inconnue'
+        showAlert(`Erreur lors de la sauvegarde du rang: ${errorMsg}`, 'error')
+        setCurrentRow(oldRow)
+        if (currentSectionId) {
+          setSections(prevSections =>
+            prevSections.map(s =>
+              s.id === currentSectionId
+                ? { ...s, current_row: oldRow }
+                : s
+            )
+          )
+        } else {
+          setProject(prevProject => ({ ...prevProject, current_row: oldRow }))
+        }
       }
     } finally {
       setIsSavingRow(false)
@@ -2093,24 +2127,25 @@ const ProjectCounter = () => {
           })
         }
       } catch (err) {
-        console.error('Erreur sauvegarde rang:', err)
-        showAlert('Erreur lors de la sauvegarde du rang', 'error')
-        // [AI:Claude] Rollback en cas d'erreur (compteur ET sections)
-        setCurrentRow(oldRow)
-        if (currentSectionId) {
-          setSections(prevSections =>
-            prevSections.map(s =>
-              s.id === currentSectionId
-                ? { ...s, current_row: oldRow }
-                : s
-            )
-          )
+        const isNetworkError = !err.response
+        if (isNetworkError) {
+          // Hors-ligne : garder l'état local, sera synchro à la reconnexion via le debounce PUT
+          setPendingSync(true)
         } else {
-          // [AI:Claude] FIX: Rollback du projet global si pas de sections
-          setProject(prevProject => ({
-            ...prevProject,
-            current_row: oldRow
-          }))
+          console.error('Erreur sauvegarde rang:', err)
+          showAlert('Erreur lors de la sauvegarde du rang', 'error')
+          setCurrentRow(oldRow)
+          if (currentSectionId) {
+            setSections(prevSections =>
+              prevSections.map(s =>
+                s.id === currentSectionId
+                  ? { ...s, current_row: oldRow }
+                  : s
+              )
+            )
+          } else {
+            setProject(prevProject => ({ ...prevProject, current_row: oldRow }))
+          }
         }
       } finally {
         setIsSavingRow(false)
@@ -2991,6 +3026,26 @@ const ProjectCounter = () => {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Indicateur hors-ligne / sync en attente */}
+      {(!isOnline || pendingSync) && (
+        <div className={`mb-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
+          !isOnline
+            ? 'bg-orange-50 text-orange-700 border border-orange-200'
+            : 'bg-blue-50 text-blue-700 border border-blue-200'
+        }`}>
+          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {!isOnline
+              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M12 12h.01M3 3l18 18" />
+              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            }
+          </svg>
+          {!isOnline
+            ? 'Hors ligne — vos rangs sont sauvegardés localement'
+            : 'Synchronisation en cours…'
+          }
         </div>
       )}
 
