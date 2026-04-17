@@ -150,6 +150,12 @@ const ProjectCounter = () => {
   // Onboarding guidage visuel — affiché une seule fois par projet si rang = 0
   const [showOnboarding, setShowOnboarding] = useState(false)
 
+  // Nudge sections — affiché après 5 rangs sans section, une fois par projet
+  const [showSectionsNudge, setShowSectionsNudge] = useState(false)
+
+  // Tip compteur secondaire — affiché une fois pour les PRO sans compteur actif
+  const [showSecondaryTip, setShowSecondaryTip] = useState(false)
+
   // [AI:Claude] Modal d'édition du projet
   const [showEditModal, setShowEditModal] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -288,6 +294,17 @@ const ProjectCounter = () => {
       const projectRow = projectData?.current_row ?? 0
       if (!alreadySeen && Number(projectRow) === 0) {
         setShowOnboarding(true)
+      }
+
+      // Nudge sections — si >= 5 rangs, aucune section, pas encore vu
+      const sectionsNudgeKey = `yf_sections_nudge_${projectId}`
+      if (!localStorage.getItem(sectionsNudgeKey) && Number(projectRow) >= 5 && (!loadedSections || loadedSections.length === 0)) {
+        setShowSectionsNudge(true)
+      }
+
+      // Tip compteur secondaire — une fois pour les PRO, si pas encore vu
+      if (hasActiveSubscription() && !localStorage.getItem('yf_secondary_tip_seen') && !activeSection?.secondary_label) {
+        setShowSecondaryTip(true)
       }
 
       // [AI:Claude] Restaurer l'état du timer s'il était en pause
@@ -2956,6 +2973,27 @@ const ProjectCounter = () => {
         </div>
       )}
 
+      {/* Nudge sections */}
+      {showSectionsNudge && sections.length === 0 && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
+          <button
+            onClick={() => { setShowSectionsNudge(false); localStorage.setItem(`yf_sections_nudge_${projectId}`, '1') }}
+            className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
+            aria-label="Fermer"
+          >×</button>
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10" /></svg>
+            <div>
+              <p className="font-semibold text-amber-800 mb-1 text-sm">Votre projet a plusieurs parties ?</p>
+              <p className="text-amber-700 text-sm leading-relaxed">
+                Créez des <strong>sections</strong> pour suivre chaque partie séparément — dos, devant, manches…
+                Le compteur repart à zéro pour chaque section.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* [AI:Claude] Header ultra-compact */}
       <div className="mb-3">
         <div>
@@ -3432,12 +3470,25 @@ const ProjectCounter = () => {
           </div>
         ) : !secondaryActive ? (
           <div className="pt-2 border-t border-primary-300/50">
-            <button
-              onClick={() => { setSecondaryLabelInput(''); setSecondaryTargetInput(''); setSecondaryActive(true); setIsEditingSecondary(true) }}
-              className="text-xs text-primary-700 flex items-center gap-1 hover:text-primary-900 transition font-medium"
-            >
-              ＋ Ajouter un compteur secondaire
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => { setSecondaryLabelInput(''); setSecondaryTargetInput(''); setSecondaryActive(true); setIsEditingSecondary(true); setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
+                className="text-xs text-primary-700 flex items-center gap-1 hover:text-primary-900 transition font-medium"
+              >
+                ＋ Ajouter un compteur secondaire
+              </button>
+              {showSecondaryTip && (
+                <div className="absolute left-0 top-7 z-20 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 w-56 shadow-lg">
+                  <button
+                    onClick={() => { setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
+                    className="absolute top-1.5 right-2 text-gray-400 hover:text-white leading-none"
+                  >×</button>
+                  <p className="font-semibold mb-1">Compteur secondaire</p>
+                  <p className="text-gray-300 leading-relaxed">Suivez vos augmentations, diminutions ou tout autre comptage en parallèle.</p>
+                  <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="pt-2 border-t border-primary-300/50">

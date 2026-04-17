@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { userAPI } from '../services/api'
 import PasswordInput from '../components/PasswordInput'
-import OnboardingModal from '../components/OnboardingModal'
 
 const Profile = () => {
   const { user, updateUser } = useAuth()
@@ -22,7 +21,6 @@ const Profile = () => {
 
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
-  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => { loadProfile() }, [])
 
@@ -274,19 +272,7 @@ const Profile = () => {
           {/* Aide */}
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Aide & Contact</h2>
-            <button
-              onClick={() => setShowOnboarding(true)}
-              className="w-full flex items-center gap-3 p-4 bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 rounded-lg transition group mb-3"
-            >
-              <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 8v4l3 3"/>
-              </svg>
-              <div className="flex-1 text-left">
-                <p className="font-medium text-gray-900 group-hover:text-primary-700 text-sm">Revoir le tutoriel</p>
-                <p className="text-xs text-gray-500">Redécouvrir les fonctionnalités de l'app</p>
-              </div>
-            </button>
+
             <Link
               to="/contact"
               className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 rounded-lg transition group"
@@ -347,7 +333,7 @@ const Profile = () => {
         </div>
       )}
     </div>
-    {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
+
     </>
   )
 }
