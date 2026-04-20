@@ -49,26 +49,20 @@ const ProjectFilters = ({
   }, [activeFilter, sortBy, selectedTags])
 
   const filters = [
-    { id: 'all', label: 'Tous', icon: '📋' },
-    { id: 'in_progress', label: 'En cours', icon: '🔨' },
-    { id: 'completed', label: 'Terminés', icon: '✅' },
-    { id: 'favorite', label: 'Favoris', icon: '⭐' }
+    { id: 'all', label: 'Tous' },
+    { id: 'in_progress', label: 'En cours' },
+    { id: 'completed', label: 'Terminés' },
+    { id: 'favorite', label: 'Favoris' }
   ]
 
-  // Options de tri : simplifiées pour FREE, complètes pour PLUS/PRO
-  const allSortOptions = [
-    { value: 'updated_desc', label: 'Dernière modification', plans: ['free', 'plus', 'pro'] },
-    { value: 'updated_asc', label: 'Plus anciennes modifications', plans: ['free', 'plus', 'pro'] },
-    { value: 'date_desc', label: 'Plus récents', plans: ['plus', 'pro'] },
-    { value: 'date_asc', label: 'Plus anciens', plans: ['plus', 'pro'] },
-    { value: 'name_asc', label: 'Nom (A-Z)', plans: ['plus', 'pro'] },
-    { value: 'name_desc', label: 'Nom (Z-A)', plans: ['plus', 'pro'] }
+  const sortOptions = [
+    { value: 'updated_desc', label: 'Dernière modification' },
+    { value: 'updated_asc', label: 'Plus anciennes modifications' },
+    { value: 'date_desc', label: 'Plus récents' },
+    { value: 'date_asc', label: 'Plus anciens' },
+    { value: 'name_asc', label: 'Nom (A-Z)' },
+    { value: 'name_desc', label: 'Nom (Z-A)' }
   ]
-
-  // Filtrer selon le plan utilisateur
-  const sortOptions = allSortOptions.filter(option =>
-    option.plans.includes(userPlan)
-  )
 
   const handleTagClick = (tag) => {
     if (!canUseTags) {
@@ -81,7 +75,7 @@ const ProjectFilters = ({
     )
   }
 
-  // Réinitialiser tous les filtres (PLUS/PRO uniquement)
+  // Réinitialiser tous les filtres
   const handleResetFilters = () => {
     setActiveFilter('all')
     setSortBy('updated_desc')
@@ -94,8 +88,8 @@ const ProjectFilters = ({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 md:p-4 space-y-3 relative">
-      {/* Bouton reset (PLUS/PRO uniquement) - Caché sur mobile si espace insuffisant */}
-      {userPlan !== 'free' && (
+      {/* Bouton reset */}
+      {(
         <div className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
           <button
             onClick={handleResetFilters}
@@ -127,7 +121,6 @@ const ProjectFilters = ({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <span className="text-sm md:text-base">{filter.icon}</span>
             <span className="font-medium text-xs md:text-sm">{filter.label}</span>
           </button>
         ))}
@@ -188,8 +181,8 @@ const ProjectFilters = ({
           }`}
         >
           <span>🏷️</span>
-          <span className="text-xs md:text-sm">{canUseTags ? 'Filtrer par tags' : 'Tags (PLUS/PRO)'}</span>
-          {!canUseTags && <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full">Premium</span>}
+          <span className="text-xs md:text-sm">{canUseTags ? 'Filtrer par tags' : 'Tags (PRO)'}</span>
+          {!canUseTags && <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full">PRO</span>}
           {canUseTags && availableTags.length > 0 && (
             <svg
               className={`w-4 h-4 ml-auto transition-transform ${showTagFilter ? 'rotate-180' : ''}`}

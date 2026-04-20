@@ -47,9 +47,9 @@
 ```
 📝 CREDENTIALS MYSQL À NOTER :
 - DB_HOST: localhost
-- DB_NAME: votreuser_yarnflow
-- DB_USER: votreuser_yarnflow_user
-- DB_PASSWORD: [le mot de passe généré]
+- DB_NAME: najo1022_yarnflow
+- DB_USER: najo1022_yarnflow_user
+- DB_PASSWORD: ~*y*HYJ%hYKb
 ```
 
 ---

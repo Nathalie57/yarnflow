@@ -1,84 +1,81 @@
-/**
- * @file BottomNav.jsx
- * @brief Barre de navigation flottante en bas de l'écran (mobile uniquement)
- * @author Nathalie + AI Assistants
- * @created 2025-12-10
- */
-
 import { Link, useLocation } from 'react-router-dom'
 
 const BottomNav = ({ onOpenAi }) => {
   const location = useLocation()
-
   const isActive = (path) => location.pathname === path
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-50 md:hidden">
-      <div className="flex items-center justify-around px-2 py-3">
+    <nav
+      className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 z-50 md:hidden"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
+      <div className="flex items-center justify-around px-1 py-1.5">
 
         {/* Outils */}
-        <Link
-          to="/tools"
-          className={`relative flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
-            isActive('/tools') ? 'text-primary-600 bg-primary-50' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
-          }`}
-        >
-          <span className="text-2xl">🧮</span>
-          <span className="text-xs font-medium">Outils</span>
-          <span className="absolute top-1 right-1 bg-rose-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">
-            NEW
+        <Link to="/tools" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1">
+          <div className={`p-1.5 rounded-xl transition-colors duration-150 ${isActive('/tools') ? 'bg-primary-50' : ''}`}>
+            <svg className={`w-6 h-6 transition-colors duration-150 ${isActive('/tools') ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+            </svg>
+          </div>
+          <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/tools') ? 'text-primary-600' : 'text-gray-400'}`}>
+            Outils
           </span>
         </Link>
 
         {/* Projets */}
-        <Link
-          to="/my-projects"
-          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
-            isActive('/my-projects') ? 'text-primary-600 bg-primary-50' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
-          }`}
-        >
-          <span className="text-2xl">📁</span>
-          <span className="text-xs font-medium">Projets</span>
+        <Link to="/my-projects" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1">
+          <div className={`p-1.5 rounded-xl transition-colors duration-150 ${isActive('/my-projects') ? 'bg-primary-50' : ''}`}>
+            <svg className={`w-6 h-6 transition-colors duration-150 ${isActive('/my-projects') ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            </svg>
+          </div>
+          <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/my-projects') ? 'text-primary-600' : 'text-gray-400'}`}>
+            Projets
+          </span>
         </Link>
 
         {/* Assistant IA — bouton central surélevé */}
         <button
           onClick={onOpenAi}
-          className="relative flex flex-col items-center -mt-6"
+          className="flex flex-col items-center gap-0.5 min-w-[56px] -mt-5"
         >
-          <div className="w-14 h-14 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-transform">
-            🤖
+          <div className="w-14 h-14 bg-primary-600 hover:bg-primary-700 active:scale-95 text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-150">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+            </svg>
           </div>
-          <span className="text-[10px] font-medium text-primary-600 mt-1">Assistant</span>
-          <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">
-            NEW
+          <span className="text-[10px] font-medium text-primary-600 mt-0.5">
+            Assistant
           </span>
         </button>
 
         {/* Bibliothèque */}
-        <Link
-          to="/pattern-library"
-          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
-            isActive('/pattern-library') ? 'text-primary-600 bg-primary-50' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
-          }`}
-        >
-          <span className="text-2xl">📚</span>
-          <span className="text-xs font-medium">Bibliothèque</span>
+        <Link to="/pattern-library" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1">
+          <div className={`p-1.5 rounded-xl transition-colors duration-150 ${isActive('/pattern-library') ? 'bg-primary-50' : ''}`}>
+            <svg className={`w-6 h-6 transition-colors duration-150 ${isActive('/pattern-library') ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+          </div>
+          <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/pattern-library') ? 'text-primary-600' : 'text-gray-400'}`}>
+            Biblio
+          </span>
         </Link>
 
         {/* Galerie */}
-        <Link
-          to="/gallery"
-          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
-            isActive('/gallery') ? 'text-primary-600 bg-primary-50' : 'text-gray-600 hover:text-primary-600 hover:bg-gray-50'
-          }`}
-        >
-          <span className="text-2xl">🖼️</span>
-          <span className="text-xs font-medium">Galerie</span>
+        <Link to="/gallery" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1">
+          <div className={`p-1.5 rounded-xl transition-colors duration-150 ${isActive('/gallery') ? 'bg-primary-50' : ''}`}>
+            <svg className={`w-6 h-6 transition-colors duration-150 ${isActive('/gallery') ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+            </svg>
+          </div>
+          <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/gallery') ? 'text-primary-600' : 'text-gray-400'}`}>
+            Galerie
+          </span>
         </Link>
 
       </div>
-    </div>
+    </nav>
   )
 }
 
