@@ -209,6 +209,15 @@ function route(string $method, string $uri): void
         $method === 'GET' && $uri === 'pattern-library' => (new PatternLibraryController())->index($_GET),
         $method === 'POST' && $uri === 'pattern-library' => (new PatternLibraryController())->create(),
         $method === 'GET' && preg_match('/^pattern-library\/(\d+)\/file$/', $uri, $matches) => (new PatternLibraryController())->downloadFile((int)$matches[1]),
+        // Fichiers additionnels
+        $method === 'POST' && preg_match('/^pattern-library\/(\d+)\/files$/', $uri, $matches) => (new PatternLibraryController())->addFile((int)$matches[1]),
+        $method === 'GET' && preg_match('/^pattern-library\/(\d+)\/files\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->serveAdditionalFile((int)$matches[1], (int)$matches[2]),
+        $method === 'DELETE' && preg_match('/^pattern-library\/(\d+)\/files\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->deleteFile((int)$matches[1], (int)$matches[2]),
+        // Notes d'utilisation (avant la route générique /{id} pour éviter le conflit)
+        $method === 'GET' && preg_match('/^pattern-library\/(\d+)\/notes$/', $uri, $matches) => (new PatternLibraryController())->getNotes((int)$matches[1]),
+        $method === 'POST' && preg_match('/^pattern-library\/(\d+)\/notes$/', $uri, $matches) => (new PatternLibraryController())->createNote((int)$matches[1]),
+        $method === 'PUT' && preg_match('/^pattern-library\/(\d+)\/notes\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->updateNote((int)$matches[1], (int)$matches[2]),
+        $method === 'DELETE' && preg_match('/^pattern-library\/(\d+)\/notes\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->deleteNote((int)$matches[1], (int)$matches[2]),
         $method === 'GET' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->show((int)$matches[1]),
         $method === 'POST' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->update((int)$matches[1]), // POST pour upload avec _method=PUT
         $method === 'PUT' && preg_match('/^pattern-library\/(\d+)$/', $uri, $matches) => (new PatternLibraryController())->update((int)$matches[1]),

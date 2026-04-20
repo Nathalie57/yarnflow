@@ -4,6 +4,7 @@
  * @created 2026-01-27 by [AI:Claude]
  */
 
+import { useState } from 'react'
 import TagInput from '../../TagInput'
 
 const Step4Optional = ({
@@ -37,6 +38,16 @@ const Step4Optional = ({
   description,
   setDescription
 }) => {
+  const [fileDragOver, setFileDragOver] = useState(false)
+
+  const handleFileDrop = (e) => {
+    e.preventDefault()
+    setFileDragOver(false)
+    const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const f = Array.from(e.dataTransfer.files).find(f => allowed.includes(f.type))
+    if (f) { setPatternFile(f); setPatternType('file') }
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="text-center mb-4">
@@ -93,7 +104,7 @@ const Step4Optional = ({
         <div className="bg-sage/10 rounded-lg p-4 border border-sage/30">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-lg">🏷️</span>
-            <span className="font-medium text-gray-800">Tags - Disponible en PLUS</span>
+            <span className="font-medium text-gray-800">Tags - Disponible en PRO</span>
             <span className="ml-auto text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
               Premium
             </span>
@@ -114,7 +125,7 @@ const Step4Optional = ({
       {/* Import de patron */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">
-          📄 Patron (optionnel)
+          Patron (optionnel)
         </label>
         <div className="grid grid-cols-2 gap-3">
           {/* Option 1: Bibliothèque */}
@@ -123,7 +134,9 @@ const Step4Optional = ({
             onClick={onOpenLibraryModal}
             className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'library' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}
           >
-            <span className="text-2xl mb-1">📚</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1 text-gray-500">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+            </svg>
             <span className="text-xs font-medium">Bibliothèque</span>
             {selectedLibraryPattern && (
               <span className="text-xs text-primary-600 mt-1 truncate max-w-full">
@@ -133,25 +146,32 @@ const Step4Optional = ({
           </button>
 
           {/* Option 2: Fichier */}
-          <label className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${patternType === 'file' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
-            <span className="text-2xl mb-1">📎</span>
+          <label
+            onDragOver={(e) => { e.preventDefault(); setFileDragOver(true) }}
+            onDragLeave={() => setFileDragOver(false)}
+            onDrop={handleFileDrop}
+            className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${
+              fileDragOver ? 'border-primary-400 bg-primary-50' :
+              patternType === 'file' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1 text-gray-500">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+            </svg>
             <span className="text-xs font-medium">Fichier</span>
             <span className="text-xs text-gray-400 mt-0.5">PDF ou image</span>
             {patternFile && (
               <span className="text-xs text-primary-600 mt-1 truncate max-w-full">
-                ✓ {patternFile.name.substring(0, 15)}...
+                ✓ {patternFile.name.length > 15 ? patternFile.name.substring(0, 15) + '…' : patternFile.name}
               </span>
             )}
-            {/* [AI:Claude] Extensions + MIME types pour meilleure compatibilité Android */}
             <input
               type="file"
               accept="image/*,.pdf,application/pdf"
+              multiple
               onChange={(e) => {
-                const file = e.target.files[0]
-                if (file) {
-                  setPatternFile(file)
-                  setPatternType('file')
-                }
+                const f = e.target.files[0]
+                if (f) { setPatternFile(f); setPatternType('file') }
               }}
               className="hidden"
             />
@@ -163,7 +183,9 @@ const Step4Optional = ({
             onClick={onOpenUrlModal}
             className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'url' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}
           >
-            <span className="text-2xl mb-1">🔗</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1 text-gray-500">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+            </svg>
             <span className="text-xs font-medium">Lien web</span>
             {patternUrl && (
               <span className="text-xs text-primary-600 mt-1">✓ Lien ajouté</span>
@@ -176,7 +198,9 @@ const Step4Optional = ({
             onClick={onOpenTextModal}
             className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'text' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}
           >
-            <span className="text-2xl mb-1">📝</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1 text-gray-500">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
             <span className="text-xs font-medium">Texte</span>
             {patternText && (
               <span className="text-xs text-primary-600 mt-1">✓ Texte ajouté</span>

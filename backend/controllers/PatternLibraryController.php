@@ -15,6 +15,8 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\PatternLibrary;
+use App\Models\PatternLibraryFile;
+use App\Models\PatternUsageNote;
 use App\Models\User;
 use App\Middleware\AuthMiddleware;
 use App\Helpers\SecurityHelper;
@@ -22,12 +24,16 @@ use App\Helpers\SecurityHelper;
 class PatternLibraryController
 {
     private PatternLibrary $patternLibrary;
+    private PatternLibraryFile $patternFileModel;
+    private PatternUsageNote $usageNoteModel;
     private User $userModel;
     private AuthMiddleware $authMiddleware;
 
     public function __construct()
     {
         $this->patternLibrary = new PatternLibrary();
+        $this->patternFileModel = new PatternLibraryFile();
+        $this->usageNoteModel = new PatternUsageNote();
         $this->userModel = new User();
         $this->authMiddleware = new AuthMiddleware();
     }
@@ -110,9 +116,17 @@ class PatternLibraryController
                 return;
             }
 
+            // Inclure les fichiers additionnels
+            $additionalFiles = $this->patternFileModel->getFilesByPatternId($id);
+
+            // Inclure les projets liés
+            $linkedProjects = $this->patternLibrary->getLinkedProjects($id, $userId);
+
             $this->sendResponse(200, [
                 'success' => true,
-                'pattern' => $pattern
+                'pattern' => $pattern,
+                'additional_files' => $additionalFiles,
+                'linked_projects' => $linkedProjects
             ]);
         } catch (\Exception $e) {
             $this->sendResponse(500, [
@@ -771,14 +785,11 @@ class PatternLibraryController
 
         // Limite bibliothèque : FREE = 5 patrons, PRO = illimité
         if ($isCreating) {
-            $isActive = ($user['subscription_status'] ?? '') === 'active';
             $plan = $user['subscription_type'] ?? 'free';
-            $isPro = $isActive && in_array($plan, ['pro', 'pro_annual', 'plus', 'plus_annual', 'early_bird', 'monthly', 'annual', 'yearly']);
+            $isPro = $plan !== 'free';
 
             if (!$isPro) {
-                $stmt = $this->db->prepare('SELECT COUNT(*) FROM pattern_library WHERE user_id = :uid');
-                $stmt->execute([':uid' => $userId]);
-                $count = (int) $stmt->fetchColumn();
+                $count = $this->patternLibrary->getUserPatternCount($userId);
 
                 if ($count >= 5) {
                     http_response_code(403);
@@ -820,6 +831,294 @@ class PatternLibraryController
         }
 
         return $data ?? [];
+    }
+
+    // -------------------------------------------------------------------------
+    // Fichiers additionnels (multi-fichiers)
+    // -------------------------------------------------------------------------
+
+    /**
+     * POST /api/pattern-library/{id}/files
+     * Ajouter un fichier additionnel à un patron de type 'file'
+     */
+    public function addFile(int $patternId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->patternLibrary->belongsToUser($patternId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $pattern = $this->patternLibrary->getPatternById($patternId);
+            if (!$pattern || $pattern['source_type'] !== 'file') {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Les fichiers additionnels ne sont disponibles que pour les patrons de type fichier']);
+                return;
+            }
+
+            if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Aucun fichier reçu']);
+                return;
+            }
+
+            $file = $_FILES['file'];
+
+            $allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!in_array($file['type'], $allowedTypes))
+                throw new \InvalidArgumentException('Type de fichier non autorisé (PDF, JPG, PNG, WEBP)');
+
+            $maxSize = 50 * 1024 * 1024;
+            if ($file['size'] > $maxSize)
+                throw new \InvalidArgumentException('Fichier trop volumineux (max 50MB)');
+
+            $fileType = $file['type'] === 'application/pdf' ? 'pdf' : 'image';
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            if ($extension === 'jpg') $extension = 'jpeg';
+
+            $uploadDir = __DIR__.'/../public/uploads/pattern-library';
+            if (!is_dir($uploadDir))
+                mkdir($uploadDir, 0755, true);
+
+            $filename = 'pattern_'.$patternId.'_'.uniqid().'.'.$extension;
+            $destination = $uploadDir.'/'.$filename;
+
+            if (!move_uploaded_file($file['tmp_name'], $destination))
+                throw new \Exception("Erreur lors de l'enregistrement du fichier");
+
+            $relativePath = '/uploads/pattern-library/'.$filename;
+            $originalName = $file['name'];
+
+            $fileId = $this->patternFileModel->addFile($patternId, $relativePath, $fileType, $originalName);
+
+            if (!$fileId) {
+                unlink($destination);
+                throw new \Exception('Erreur lors de la création en base de données');
+            }
+
+            $newFile = $this->patternFileModel->getFileById($fileId);
+
+            $this->sendResponse(201, [
+                'success' => true,
+                'message' => 'Fichier ajouté avec succès',
+                'file' => $newFile
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            $this->sendResponse(400, ['success' => false, 'error' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * GET /api/pattern-library/{patternId}/files/{fileId}
+     * Servir un fichier additionnel (blob sécurisé)
+     */
+    public function serveAdditionalFile(int $patternId, int $fileId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->patternLibrary->belongsToUser($patternId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            if (!$this->patternFileModel->belongsToPattern($fileId, $patternId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Fichier introuvable']);
+                return;
+            }
+
+            $file = $this->patternFileModel->getFileById($fileId);
+            $fullPath = __DIR__.'/../public'.$file['file_path'];
+
+            if (!file_exists($fullPath)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Fichier introuvable sur le disque']);
+                return;
+            }
+
+            $mimeType = mime_content_type($fullPath);
+            header('Content-Type: '.$mimeType);
+            header('Content-Length: '.filesize($fullPath));
+            header('Cache-Control: private, max-age=3600');
+            readfile($fullPath);
+            exit;
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * DELETE /api/pattern-library/{patternId}/files/{fileId}
+     * Supprimer un fichier additionnel
+     */
+    public function deleteFile(int $patternId, int $fileId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->patternLibrary->belongsToUser($patternId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            if (!$this->patternFileModel->belongsToPattern($fileId, $patternId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Fichier introuvable']);
+                return;
+            }
+
+            $file = $this->patternFileModel->getFileById($fileId);
+
+            // Supprimer le fichier physique
+            $fullPath = __DIR__.'/../public'.$file['file_path'];
+            if (file_exists($fullPath))
+                unlink($fullPath);
+
+            $this->patternFileModel->deleteFile($fileId);
+
+            $this->sendResponse(200, ['success' => true, 'message' => 'Fichier supprimé']);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Notes d'utilisation (PRO)
+    // -------------------------------------------------------------------------
+
+    /**
+     * GET /api/pattern-library/{id}/notes
+     * Récupérer toutes les notes d'utilisation d'un patron
+     */
+    public function getNotes(int $patternId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->patternLibrary->belongsToUser($patternId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $notes = $this->usageNoteModel->getNotesByPattern($patternId, $userId);
+
+            $this->sendResponse(200, ['success' => true, 'notes' => $notes]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * POST /api/pattern-library/{id}/notes
+     * Créer une note d'utilisation
+     * Body: { note: string, project_id?: int }
+     */
+    public function createNote(int $patternId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->patternLibrary->belongsToUser($patternId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+
+            if (empty($data['note']) || trim($data['note']) === '') {
+                $this->sendResponse(400, ['success' => false, 'error' => 'La note est obligatoire']);
+                return;
+            }
+
+            if (strlen($data['note']) > 2000) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'La note ne peut pas dépasser 2000 caractères']);
+                return;
+            }
+
+            $projectId = isset($data['project_id']) && $data['project_id'] !== null
+                ? (int)$data['project_id']
+                : null;
+
+            $noteId = $this->usageNoteModel->createNote($patternId, $userId, $projectId, trim($data['note']));
+
+            if (!$noteId) {
+                $this->sendResponse(500, ['success' => false, 'error' => 'Erreur lors de la création de la note']);
+                return;
+            }
+
+            $note = $this->usageNoteModel->getNoteById($noteId);
+            $this->sendResponse(201, ['success' => true, 'note' => $note]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * PUT /api/pattern-library/{patternId}/notes/{noteId}
+     * Modifier une note
+     * Body: { note: string }
+     */
+    public function updateNote(int $patternId, int $noteId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->usageNoteModel->belongsToUser($noteId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+
+            if (empty($data['note']) || trim($data['note']) === '') {
+                $this->sendResponse(400, ['success' => false, 'error' => 'La note est obligatoire']);
+                return;
+            }
+
+            if (strlen($data['note']) > 2000) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'La note ne peut pas dépasser 2000 caractères']);
+                return;
+            }
+
+            $success = $this->usageNoteModel->updateNote($noteId, $userId, trim($data['note']));
+
+            if (!$success) {
+                $this->sendResponse(500, ['success' => false, 'error' => 'Erreur lors de la mise à jour']);
+                return;
+            }
+
+            $note = $this->usageNoteModel->getNoteById($noteId);
+            $this->sendResponse(200, ['success' => true, 'note' => $note]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * DELETE /api/pattern-library/{patternId}/notes/{noteId}
+     * Supprimer une note
+     */
+    public function deleteNote(int $patternId, int $noteId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->usageNoteModel->belongsToUser($noteId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $success = $this->usageNoteModel->deleteNote($noteId, $userId);
+
+            if (!$success) {
+                $this->sendResponse(500, ['success' => false, 'error' => 'Erreur lors de la suppression']);
+                return;
+            }
+
+            $this->sendResponse(200, ['success' => true, 'message' => 'Note supprimée']);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
     }
 
     /**

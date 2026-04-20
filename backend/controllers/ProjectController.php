@@ -1349,22 +1349,22 @@ class ProjectController
 
             // [AI:Claude] Mettre à jour le projet avec le patron
             if ($pattern['source_type'] === 'file') {
-                // Lier le fichier
                 $success = $this->projectModel->updateProject($id, [
+                    'pattern_library_id' => $patternLibraryId,
                     'pattern_path' => $pattern['file_path'],
                     'pattern_url' => null,
                     'pattern_text' => null
                 ]);
             } elseif ($pattern['source_type'] === 'text') {
-                // Lier le texte
                 $success = $this->projectModel->updateProject($id, [
+                    'pattern_library_id' => $patternLibraryId,
                     'pattern_text' => $pattern['pattern_text'],
                     'pattern_path' => null,
                     'pattern_url' => null
                 ]);
             } else {
-                // Lier l'URL
                 $success = $this->projectModel->updateProject($id, [
+                    'pattern_library_id' => $patternLibraryId,
                     'pattern_url' => $pattern['url'],
                     'pattern_path' => null,
                     'pattern_text' => null
