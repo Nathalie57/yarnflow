@@ -158,6 +158,10 @@ const ProjectCounter = () => {
   // Tip compteur secondaire — affiché une fois pour les PRO sans compteur actif
   const [showSecondaryTip, setShowSecondaryTip] = useState(false)
 
+  // Deadline (objectif de date)
+  const [deadline, setDeadline] = useState(null) // 'YYYY-MM-DD'
+  const [showDeadlinePicker, setShowDeadlinePicker] = useState(false)
+
   // Reminders de rang
   const [reminders, setReminders] = useState([]) // [{id, row, message, done}]
   const [activeReminder, setActiveReminder] = useState(null) // reminder déclenché
@@ -332,6 +336,9 @@ const ProjectCounter = () => {
           : projectData.reminders
         setReminders(Array.isArray(rem) ? rem : [])
       }
+
+      // Deadline
+      if (projectData?.deadline) setDeadline(projectData.deadline.substring(0, 10))
 
       // [AI:Claude] v0.17.1 - Vérifier si c'est le premier projet (tip onboarding)
       if (sessionStorage.getItem('showFirstProjectTip') === 'true') {
@@ -2591,6 +2598,14 @@ const ProjectCounter = () => {
     }
   }
 
+  // Calcul jours restants pour la deadline
+  const daysUntilDeadline = deadline ? Math.ceil((new Date(deadline) - new Date().setHours(0,0,0,0)) / (1000*60*60*24)) : null
+
+  const saveDeadline = (date) => {
+    setDeadline(date)
+    api.put(`/projects/${projectId}`, { deadline: date || null }).catch(() => {})
+  }
+
   // Sauvegarder les reminders dans la section ou le projet
   const saveReminders = (newReminders) => {
     const payload = { reminders: JSON.stringify(newReminders) }
@@ -3136,6 +3151,29 @@ const ProjectCounter = () => {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
+              {daysUntilDeadline !== null ? (
+                <button
+                  onClick={() => setShowDeadlinePicker(true)}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition ${
+                    daysUntilDeadline < 0 ? 'bg-red-100 text-red-700' :
+                    daysUntilDeadline <= 7 ? 'bg-orange-100 text-orange-700' :
+                    'bg-green-100 text-green-700'
+                  }`}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  {daysUntilDeadline < 0 ? `${Math.abs(daysUntilDeadline)}j de retard` :
+                   daysUntilDeadline === 0 ? "Aujourd'hui !" :
+                   `${daysUntilDeadline}j restants`}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowDeadlinePicker(true)}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  Objectif de date
+                </button>
+              )}
               <div className="relative type-menu">
                 <button
                   onClick={() => setShowTypeMenu(!showTypeMenu)}
@@ -3375,24 +3413,22 @@ const ProjectCounter = () => {
             {/* Section active mobile */}
             <div className="text-left flex-shrink min-w-0">
               <div className="text-xs text-gray-500">Section active</div>
-              <div className="flex items-center gap-1.5">
-                <div className="font-semibold text-gray-900 text-sm truncate">
-                  {currentSectionId ? (
-                    sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
-                  ) : (
-                    'Projet global'
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowReminderManager(true)}
-                  className={`flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                >
-                  <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  Rappels
-                </button>
+              <div className="font-semibold text-gray-900 text-sm truncate max-w-[140px]">
+                {currentSectionId ? (
+                  sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
+                ) : (
+                  'Projet global'
+                )}
               </div>
+              <button
+                onClick={() => setShowReminderManager(true)}
+                className={`mt-0.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+              >
+                <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                Rappels
+              </button>
             </div>
 
             {/* Compteur mobile */}
@@ -7179,6 +7215,15 @@ Rang 3 : *1ms, aug* x6 (18)
         </div>
       )}
 
+      {/* Deadline picker */}
+      {showDeadlinePicker && (
+        <DeadlinePickerModal
+          currentDeadline={deadline}
+          onSave={(date) => { saveDeadline(date); setShowDeadlinePicker(false) }}
+          onClose={() => setShowDeadlinePicker(false)}
+        />
+      )}
+
       {/* Gestionnaire de reminders */}
       {showReminderManager && (
         <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4 bg-black/40">
@@ -7247,6 +7292,49 @@ Rang 3 : *1ms, aug* x6 (18)
         </div>
       )}
 
+    </div>
+  )
+}
+
+function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
+  const [draft, setDraft] = useState(currentDeadline || '')
+  const today = new Date().toISOString().substring(0, 10)
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 mb-16 sm:mb-0">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">Objectif de date</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+        </div>
+        <p className="text-sm text-gray-500">Fixe une date cible pour terminer ce projet. Tu verras le compte à rebours sur le compteur.</p>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Date cible</label>
+          <input
+            type="date"
+            value={draft}
+            min={today}
+            onChange={e => setDraft(e.target.value)}
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+        <div className="flex gap-2">
+          {currentDeadline && (
+            <button
+              onClick={() => onSave(null)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+            >
+              Supprimer
+            </button>
+          )}
+          <button
+            onClick={() => { if (draft) onSave(draft) }}
+            disabled={!draft}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
