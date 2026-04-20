@@ -142,6 +142,9 @@ class UserController
         if (isset($data['email']))
             $updateData['email'] = $data['email'];
 
+        if (isset($data['inactivity_reminder_enabled']))
+            $updateData['inactivity_reminder_enabled'] = $data['inactivity_reminder_enabled'] ? 1 : 0;
+
         if (empty($updateData))
             Response::error('Aucune donnée à mettre à jour', HTTP_UNPROCESSABLE);
 

@@ -21,6 +21,7 @@ const Profile = () => {
 
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [inactivityReminder, setInactivityReminder] = useState(true)
 
   useEffect(() => { loadProfile() }, [])
 
@@ -35,6 +36,7 @@ const Profile = () => {
         last_name: data.user.last_name || '',
         email: data.user.email || ''
       })
+      setInactivityReminder(data.user.inactivity_reminder_enabled !== 0)
     } catch (error) {
       console.error('Erreur chargement profil:', error)
       setErrorMessage('Erreur lors du chargement du profil')
@@ -76,6 +78,15 @@ const Profile = () => {
       setSuccessMessage('Mot de passe modifié avec succès')
     } catch (error) {
       setErrorMessage(error.response?.data?.message || 'Erreur lors du changement de mot de passe')
+    }
+  }
+
+  const handleToggleInactivityReminder = async (value) => {
+    setInactivityReminder(value)
+    try {
+      await userAPI.updateProfile({ inactivity_reminder_enabled: value ? 1 : 0 })
+    } catch {
+      setInactivityReminder(!value)
     }
   }
 
@@ -288,6 +299,25 @@ const Profile = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </Link>
+          </div>
+
+          {/* Notifications */}
+          <div className="card">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notifications</h2>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">Rappel d'inactivité</p>
+                <p className="text-xs text-gray-500 mt-0.5">Reçois un email si tu n'as pas tricoté depuis 7 jours</p>
+              </div>
+              <button
+                onClick={() => handleToggleInactivityReminder(!inactivityReminder)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${inactivityReminder ? 'bg-primary-600' : 'bg-gray-200'}`}
+                role="switch"
+                aria-checked={inactivityReminder}
+              >
+                <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${inactivityReminder ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+            </div>
           </div>
 
           {/* Zone dangereuse */}
