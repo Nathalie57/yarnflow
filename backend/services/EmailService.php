@@ -474,29 +474,28 @@ HTML;
      */
     public function sendPasswordResetEmail(string $email, string $name, string $resetLink): bool
     {
+        $subject = 'Réinitialisation de votre mot de passe YarnFlow';
+        $success = false;
+        $errorMessage = null;
+
         try {
             $mail = clone $this->mailer;
             $mail->addAddress($email, $name);
-            $mail->Subject = '🔑 Réinitialisation de votre mot de passe YarnFlow';
-
-            // Headers anti-spam
+            $mail->Subject = $subject;
             $this->addAntiSpamHeaders($mail, 'transactional');
-
-            // Corps HTML
             $mail->isHTML(true);
             $mail->Body = $this->getPasswordResetEmailTemplate($name, $resetLink);
-
-            // Version texte
-            $mail->AltBody = "Bonjour $name,\n\nVous avez demandé à réinitialiser votre mot de passe YarnFlow.\n\nCliquez sur ce lien pour créer un nouveau mot de passe :\n$resetLink\n\nCe lien est valide pendant 1 heure.\n\nSi vous n'avez pas demandé cette réinitialisation, ignorez cet email.\n\nL'équipe YarnFlow 🧶";
-
+            $mail->AltBody = "Bonjour $name,\n\nVous avez demandé à réinitialiser votre mot de passe YarnFlow.\n\nCliquez sur ce lien pour créer un nouveau mot de passe :\n$resetLink\n\nCe lien est valide pendant 1 heure.\n\nSi vous n'avez pas demandé cette réinitialisation, ignorez cet email.\n\nNathalie — YarnFlow";
             $mail->send();
+            $success = true;
             error_log("[EMAIL] Email de reset password envoyé à: $email");
-            return true;
-
         } catch (Exception $e) {
-            error_log("[EMAIL ERROR] Erreur envoi reset password: {$mail->ErrorInfo}");
-            return false;
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] Erreur envoi reset password: {$errorMessage}");
         }
+
+        $this->logEmail($email, $name, 'password_reset', $subject, $success, $errorMessage);
+        return $success;
     }
 
     /**
@@ -508,95 +507,50 @@ HTML;
      */
     private function getPasswordResetEmailTemplate(string $name, string $resetLink): string
     {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $resetLinkEscaped = htmlspecialchars($resetLink);
         return <<<HTML
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#fef8f4;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef8f4;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
+        Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous — ce lien est valide pendant 1 heure.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="{$resetLinkEscaped}" style="display:inline-block;background:#c86438;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Réinitialiser mon mot de passe
+            </a>
+        </td></tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3e8dd;border-radius:8px;margin:0 0 32px;">
         <tr>
-            <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <!-- Header -->
-                    <tr>
-                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; text-align: center; border-radius: 8px 8px 0 0;">
-                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">
-                                🧶 YarnFlow
-                            </h1>
-                        </td>
-                    </tr>
-
-                    <!-- Body -->
-                    <tr>
-                        <td style="padding: 40px 40px 20px;">
-                            <h2 style="color: #1f2937; margin: 0 0 20px; font-size: 24px;">
-                                Réinitialisation de mot de passe
-                            </h2>
-                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                                Bonjour <strong>{$name}</strong>,
-                            </p>
-                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
-                                Vous avez demandé à réinitialiser votre mot de passe YarnFlow.
-                            </p>
-                            <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px;">
-                                Cliquez sur le bouton ci-dessous pour créer un nouveau mot de passe :
-                            </p>
-
-                            <!-- CTA Button -->
-                            <table width="100%" cellpadding="0" cellspacing="0">
-                                <tr>
-                                    <td align="center" style="padding: 0 0 30px;">
-                                        <a href="{$resetLink}" style="display: inline-block; background-color: #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">
-                                            🔑 Réinitialiser mon mot de passe
-                                        </a>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <!-- Info Box -->
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; margin: 0 0 30px;">
-                                <tr>
-                                    <td style="padding: 16px;">
-                                        <p style="color: #92400e; font-size: 14px; line-height: 1.6; margin: 0;">
-                                            ⏱️ <strong>Ce lien est valide pendant 1 heure.</strong><br>
-                                            Après ce délai, vous devrez demander un nouveau lien.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            <!-- Security Warning -->
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #fee2e2; border-left: 4px solid #ef4444; border-radius: 4px;">
-                                <tr>
-                                    <td style="padding: 16px;">
-                                        <p style="color: #991b1b; font-size: 14px; line-height: 1.6; margin: 0;">
-                                            🔒 <strong>Vous n'avez pas demandé cette réinitialisation ?</strong><br>
-                                            Ignorez cet email. Votre mot de passe actuel reste inchangé.
-                                        </p>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-
-                    <!-- Footer -->
-                    <tr>
-                        <td style="background-color: #f9fafb; padding: 30px 40px; border-radius: 0 0 8px 8px; border-top: 1px solid #e5e7eb;">
-                            <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 10px; text-align: center;">
-                                L'équipe YarnFlow 🧶
-                            </p>
-                            <p style="color: #9ca3af; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
-                                © 2025 YarnFlow - Votre tracker tricot/crochet préféré
-                            </p>
-                        </td>
-                    </tr>
-                </table>
+            <td style="padding:16px 20px;">
+                <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
+                    Si vous n'avez pas demandé cette réinitialisation, ignorez cet email. Votre mot de passe reste inchangé.
+                </p>
             </td>
         </tr>
     </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
 </body>
 </html>
 HTML;
@@ -951,6 +905,88 @@ HTML;
 
     <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
     <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
+     * J+1 : premier projet créé — lien direct vers le compteur
+     */
+    public function sendFirstProjectReadyEmail(string $email, string $name, string $projectName, string $projectUrl, ?int $userId = null): bool
+    {
+        $subject = 'Ton projet "' . mb_substr($projectName, 0, 30) . '" est prêt — voici comment l\'utiliser';
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getFirstProjectReadyTemplate($name, $projectName, $projectUrl);
+            $mail->AltBody = "Bonjour $name,\n\nTon projet \"$projectName\" est prêt.\n\nLa prochaine fois que tu tricotes, ouvre YarnFlow et appuie sur + à chaque rang. Quand tu es interrompue, ton rang est déjà sauvegardé.\n\nOuvrir le compteur : $projectUrl\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+            error_log("[EMAIL] Email first_project_ready envoyé à: $email");
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] Erreur envoi first_project_ready: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'first_project_ready', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getFirstProjectReadyTemplate(string $name, string $projectName, string $projectUrl): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $projectNameEscaped = htmlspecialchars($projectName);
+        $projectUrlEscaped = htmlspecialchars($projectUrl);
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#fef8f4;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef8f4;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
+        Ton projet <strong style="color:#111827;">"{$projectNameEscaped}"</strong> est prêt dans YarnFlow.
+    </p>
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 8px;">
+        Voici comment ça marche en 3 secondes :
+    </p>
+    <ol style="color:#4b5563;font-size:15px;line-height:1.9;margin:0 0 32px;padding-left:24px;">
+        <li>Tu tricotes — tu appuies sur <strong>+</strong> à chaque rang</li>
+        <li>Tu es interrompue — ton rang est déjà sauvegardé</li>
+        <li>Tu reprends — tu sais exactement où tu en es</li>
+    </ol>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="{$projectUrlEscaped}" style="display:inline-block;background:#c86438;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Ouvrir le compteur
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+    <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:0;">
+        <a href="https://yarnflow.fr/profile" style="color:#9ca3af;text-decoration:underline;">Se désinscrire de ces emails</a>
+    </p>
 </td></tr>
 {$footer}
 </table>
