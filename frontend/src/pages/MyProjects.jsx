@@ -51,6 +51,7 @@ const MyProjects = () => {
   const [dashboardStats, setDashboardStats] = useState(null)
   const [loadingStats, setLoadingStats] = useState(true)
   const [credits, setCredits] = useState(null)
+  const [smartQuota, setSmartQuota] = useState(null)
 
   // [AI:Claude] Création de projet via wizard
   const [creating, setCreating] = useState(false)
@@ -168,6 +169,7 @@ const MyProjects = () => {
   useEffect(() => {
     fetchDashboardStats()
     fetchCredits()
+    fetchSmartQuota()
   }, [])
 
   // [AI:Claude] Charger les tags populaires (v0.15.0)
@@ -278,6 +280,13 @@ const MyProjects = () => {
     } finally {
       setLoadingStats(false)
     }
+  }
+
+  const fetchSmartQuota = async () => {
+    try {
+      const response = await api.get('/projects/smart-create/quota')
+      setSmartQuota(response.data.quota)
+    } catch {}
   }
 
   // [AI:Claude] Récupérer les crédits photos IA
@@ -661,13 +670,32 @@ const MyProjects = () => {
                 <Link to="/subscription#credits" className="text-primary-600 hover:underline text-xs">
                   + Acheter
                 </Link>
+
+                {smartQuota && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    {smartQuota.is_pro ? (
+                      <Link to="/smart-project-creator" className="hover:underline">
+                        {smartQuota.remaining} import{smartQuota.remaining !== 1 ? 's' : ''} IA
+                      </Link>
+                    ) : smartQuota.free_trial_used ? (
+                      <Link to="/subscription" className="text-primary-600 hover:underline text-xs">
+                        Essai IA utilisé — PRO
+                      </Link>
+                    ) : (
+                      <Link to="/smart-project-creator" className="text-primary-600 hover:underline text-xs">
+                        1 essai IA gratuit
+                      </Link>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </>
         ) : (
           /* Header minimaliste pour empty state */
           <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">🧶 Mes Projets</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes Projets</h1>
           </div>
         )}
       </div>
