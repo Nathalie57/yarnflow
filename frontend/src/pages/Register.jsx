@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
+import PasswordInput from '../components/PasswordInput'
 
 const Register = () => {
   const [searchParams] = useSearchParams()
@@ -33,18 +34,33 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // [AI:Claude] Empêcher double-submit
+    if (loading) {
+      console.log('[Register] Double-submit bloqué')
+      return
+    }
+
     setError('')
     setLoading(true)
 
-    const result = await register(formData)
+    console.log('[Register] Envoi inscription...', formData.email)
 
-    if (result.success) {
-      navigate('/dashboard')
-    } else {
-      setError(result.error)
+    try {
+      const result = await register(formData)
+      console.log('[Register] Résultat:', result)
+
+      if (result.success) {
+        navigate('/dashboard')
+      } else {
+        setError(result.error)
+        setLoading(false)
+      }
+    } catch (err) {
+      console.error('[Register] Exception:', err)
+      setError('Erreur inattendue')
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   // [AI:Claude] Gestion OAuth Google
@@ -119,8 +135,7 @@ const Register = () => {
 
           <div className="mb-4">
             <label className="block text-gray-700 mb-2">Mot de passe</label>
-            <input
-              type="password"
+            <PasswordInput
               name="password"
               className="input-field"
               value={formData.password}

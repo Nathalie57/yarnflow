@@ -105,6 +105,14 @@ class AuthController
                 $data['last_name'] ?? null
             );
 
+            // Initialiser les crédits photo pour le nouveau compte FREE
+            try {
+                $creditManager = new \App\Services\CreditManager();
+                $creditManager->initializeUserCredits($userId, 'free');
+            } catch (\Exception $e) {
+                error_log('[AuthController] Erreur initialisation crédits : ' . $e->getMessage());
+            }
+
             // [AI:Claude] Envoyer l'email de bienvenue (non-bloquant)
             try {
                 $db = \App\Config\Database::getInstance()->getConnection();
@@ -140,6 +148,8 @@ class AuthController
                     // Compte créé mais code Early Bird non appliqué - on continue quand même
                 }
             }
+
+            $this->userModel->updateLastLogin($userId);
 
             $user = $this->userModel->findById($userId);
             $token = $this->jwtService->generateToken($user);

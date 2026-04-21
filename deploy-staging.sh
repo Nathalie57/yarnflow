@@ -10,8 +10,32 @@ echo "🚀 Déploiement STAGING - YarnFlow"
 echo "=================================="
 echo ""
 
-# 1. Valider les variables d'environnement
-echo "📋 Étape 1/4 : Validation des variables d'environnement..."
+# Vérifier qu'on est sur main
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  echo "❌ Vous n'êtes pas sur la branche main (branche actuelle : $CURRENT_BRANCH)"
+  echo "   Faites 'git checkout main' avant de déployer."
+  exit 1
+fi
+
+# Vérifier qu'il n'y a pas de modifications non commitées
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "❌ Des modifications non commitées existent. Commitez avant de déployer."
+  git status --short
+  exit 1
+fi
+
+# 1. Merge main → staging et push
+echo "📋 Étape 1/3 : Mise à jour de la branche staging..."
+git checkout staging
+git merge main --no-edit
+git push origin staging
+git checkout main
+echo "✅ Branche staging mise à jour et poussée"
+echo ""
+
+# 2. Valider les variables d'environnement
+echo "🏗️  Étape 2/3 : Validation des variables d'environnement..."
 cd frontend
 node validate-env.js
 if [ $? -ne 0 ]; then
@@ -21,30 +45,14 @@ fi
 echo "✅ Variables validées"
 echo ""
 
-# 2. Builder le frontend
-echo "🏗️  Étape 2/4 : Build du frontend pour STAGING..."
-npm run build:staging
-echo "✅ Build terminé"
-echo ""
-
-# 3. Afficher les fichiers générés
-echo "📦 Étape 3/4 : Fichiers générés :"
-ls -lh dist/ | grep -E "index.html|assets"
-echo ""
-
-# 4. Instructions de déploiement
-echo "📤 Étape 4/4 : Instructions de déploiement"
+# 3. Instructions pour le serveur
+cd ..
+echo "📤 Étape 3/3 : Déploiement sur le serveur"
 echo "==========================================="
 echo ""
-echo "Le build est prêt dans : frontend/dist/"
+echo "La branche staging est prête. Pour finir le déploiement :"
 echo ""
-echo "Pour déployer sur staging.yarnflow.fr :"
-echo "  1. Se connecter en SSH ou FTP"
-echo "  2. Uploader TOUT le contenu de frontend/dist/"
-echo "  3. Destination : ~/staging.yarnflow.fr/ (ou chemin configuré)"
-echo "  4. Écraser les fichiers existants"
+echo "  ssh najo1022@staging.yarnflow.fr"
+echo "  cd ~/staging.yarnflow.fr && ./deploy-server.sh"
 echo ""
-echo "Ou via SCP (plus rapide) :"
-echo "  scp -r dist/* najo1022@staging.yarnflow.fr:~/staging.yarnflow.fr/"
-echo ""
-echo "✅ Build STAGING prêt !"
+echo "✅ Staging prêt à déployer !"

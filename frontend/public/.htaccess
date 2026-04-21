@@ -7,6 +7,9 @@
     RewriteCond %{HTTPS} off
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+    # Serve .well-known/ files directly (Digital Asset Links for TWA)
+    RewriteRule ^\.well-known/ - [L]
+
     # Don't rewrite files or directories that exist
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
@@ -16,6 +19,13 @@
 
     # Rewrite everything else to index.html to allow React Router to work
     RewriteRule ^ index.html [L]
+</IfModule>
+
+# Serve assetlinks.json with correct Content-Type (TWA / Digital Asset Links)
+<IfModule mod_headers.c>
+    <FilesMatch "assetlinks\.json$">
+        Header set Content-Type "application/json"
+    </FilesMatch>
 </IfModule>
 
 # Disable directory browsing

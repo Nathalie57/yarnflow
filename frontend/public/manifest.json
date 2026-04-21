@@ -74,6 +74,29 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "/screenshots/counter.jpg",
+      "sizes": "405x874",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Compteur de rangs"
+    },
+    {
+      "src": "/screenshots/studio.jpg",
+      "sizes": "407x876",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "AI Photo Studio"
+    },
+    {
+      "src": "/screenshots/pattern.jpg",
+      "sizes": "405x866",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Bibliothèque de patrons"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Nouveau Projet",

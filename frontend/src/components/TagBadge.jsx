@@ -18,7 +18,7 @@ const TagBadge = ({ tag, onRemove, onClick, className = '' }) => {
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      <span className="select-none">🏷️ {tag}</span>
+      <span className="select-none">{tag}</span>
 
       {onRemove && (
         <button

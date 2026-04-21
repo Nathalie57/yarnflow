@@ -16,18 +16,21 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useImagePreview } from '../hooks/useImagePreview'
 import { useWakeLock } from '../hooks/useWakeLock'
-import api from '../services/api'
+import { useMediaSession } from '../hooks/useMediaSession'
+import { useHints } from '../hooks/useHints'
+import api, { networkUtils } from '../services/api'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import ProxyViewer from '../components/ProxyViewer'
 import TagBadge from '../components/TagBadge'
 import TagInput from '../components/TagInput'
 import SatisfactionModal from '../components/SatisfactionModal'
+import UpgradePrompt from '../components/UpgradePrompt'
 
 const ProjectCounter = () => {
   const { projectId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, hasActiveSubscription } = useAuth()
   const {
     previewImage,
     isGeneratingPreview,
@@ -37,6 +40,8 @@ const ProjectCounter = () => {
     clearPreview
   } = useImagePreview()
   const { isSupported: isWakeLockSupported, isActive: isWakeLockActive, request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
+  const { triggerOnce } = useHints() // [AI:Claude] Hints contextuels
+
 
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -48,6 +53,10 @@ const ProjectCounter = () => {
   const [expandedSections, setExpandedSections] = useState(new Set()) // [AI:Claude] Sections dépliées
   const [sectionsCollapsed, setSectionsCollapsed] = useState(true) // [AI:Claude] Tout le bloc sections replié/déplié par défaut
   const [sectionsSortBy, setSectionsSortBy] = useState('created') // [AI:Claude] Tri des sections (v0.14.0 - défaut: ordre de création)
+  const [expandedNotesSection, setExpandedNotesSection] = useState(null) // [AI:Claude] Section avec notes dépliées
+  const [sectionNotesText, setSectionNotesText] = useState('') // [AI:Claude] Texte des notes en cours d'édition
+  const [isSavingSectionNotes, setIsSavingSectionNotes] = useState(false) // [AI:Claude] Sauvegarde en cours
+  const [openSectionMenu, setOpenSectionMenu] = useState(null) // [AI:Claude] Menu "..." ouvert pour quelle section
 
   // [AI:Claude] État du compteur
   const [currentRow, setCurrentRow] = useState(0)
@@ -56,6 +65,20 @@ const ProjectCounter = () => {
   const [counterIncrement, setCounterIncrement] = useState(1.0) // [AI:Claude] v0.16.2 - Incrément par défaut
   const [isEditingCounter, setIsEditingCounter] = useState(false) // [AI:Claude] v0.16.2 - Mode édition du compteur
   const [counterInputValue, setCounterInputValue] = useState('') // [AI:Claude] v0.16.2 - Valeur temporaire de l'input
+  const [isSavingRow, setIsSavingRow] = useState(false) // [AI:Claude] Anti double-clic sur compteur
+  const [isOnline, setIsOnline] = useState(networkUtils.isOnline()) // [AI:Claude] Détection hors-ligne
+  const [pendingSync, setPendingSync] = useState(false) // Actions en attente de sync
+  const pendingRowsRef = useRef([]) // Queue des rows à POSTer quand connexion revient
+
+  // [AI:Claude] Compteur secondaire (PLUS/PRO)
+  const [secondaryActive, setSecondaryActive] = useState(false)
+  const [secondaryCount, setSecondaryCount] = useState(0)
+  const [secondaryTarget, setSecondaryTarget] = useState(null)
+  const [secondaryLabel, setSecondaryLabel] = useState('')
+  const [isEditingSecondary, setIsEditingSecondary] = useState(false)
+  const [secondaryLabelInput, setSecondaryLabelInput] = useState('')
+  const [secondaryTargetInput, setSecondaryTargetInput] = useState('')
+  const [secondarySequence, setSecondarySequence] = useState(null) // [AI:Claude] v0.18.1 - Séquence structurée
 
   // [AI:Claude] Timer de session
   const [sessionId, setSessionId] = useState(null)
@@ -68,6 +91,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] FIX BUG x4: Ref pour éviter les multiples appels à endSession
   const isEndingSessionRef = useRef(false)
+  // [AI:Claude] Ref pour le timeout du compteur secondaire (évite les conflits sur spam)
 
   // [AI:Claude] Photos du projet
   const [projectPhotos, setProjectPhotos] = useState([])
@@ -105,6 +129,7 @@ const ProjectCounter = () => {
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
   const [modelGender, setModelGender] = useState('female') // [AI:Claude] Genre du modèle : male (homme), female (femme)
+  const [selectedSeason, setSelectedSeason] = useState(null) // [AI:Claude] v0.17.1 - Saison optionnelle
   const [enhancing, setEnhancing] = useState(false)
   const [credits, setCredits] = useState(null)
   const [hideAIWarning, setHideAIWarning] = useState(false) // [AI:Claude] Cacher l'avertissement IA si l'utilisateur a coché "Ne plus afficher"
@@ -121,6 +146,28 @@ const ProjectCounter = () => {
   const [showSatisfactionModal, setShowSatisfactionModal] = useState(false)
   const [generatedPhoto, setGeneratedPhoto] = useState(null)
 
+  // [AI:Claude] v0.17.0 - Célébration premier rang
+  const [showFirstProjectTip, setShowFirstProjectTip] = useState(false) // [AI:Claude] v0.17.1 - Tip premier projet
+
+  // Onboarding guidage visuel — affiché une seule fois par projet si rang = 0
+  const [showOnboarding, setShowOnboarding] = useState(false)
+
+  // Nudge sections — affiché après 5 rangs sans section, une fois par projet
+  const [showSectionsNudge, setShowSectionsNudge] = useState(false)
+
+  // Tip compteur secondaire — affiché une fois pour les PRO sans compteur actif
+  const [showSecondaryTip, setShowSecondaryTip] = useState(false)
+
+  // Deadline (objectif de date)
+  const [deadline, setDeadline] = useState(null) // 'YYYY-MM-DD'
+  const [showDeadlinePicker, setShowDeadlinePicker] = useState(false)
+
+  // Reminders de rang
+  const [reminders, setReminders] = useState([]) // [{id, row, message, done}]
+  const [activeReminder, setActiveReminder] = useState(null) // reminder déclenché
+  const [showReminderManager, setShowReminderManager] = useState(false)
+  const [reminderForm, setReminderForm] = useState({ row: '', message: '' })
+
   // [AI:Claude] Modal d'édition du projet
   const [showEditModal, setShowEditModal] = useState(false)
   const [editForm, setEditForm] = useState({
@@ -134,12 +181,13 @@ const ProjectCounter = () => {
   // [AI:Claude] Modal des détails techniques
   const [showTechnicalDetailsModal, setShowTechnicalDetailsModal] = useState(false)
   const [technicalForm, setTechnicalForm] = useState({
-    yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
+    yarn: [{ brand: '', name: '', url: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
     needles: [{ type: '', size: '', length: '' }],
     gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' },
     description: ''
   })
   const [savingTechnical, setSavingTechnical] = useState(false)
+  const [yarnSuggestions, setYarnSuggestions] = useState({ brands: [], names: [] })
 
   // [AI:Claude] Menu changement de catégorie
   const [showTechniqueMenu, setShowTechniqueMenu] = useState(false)
@@ -155,6 +203,9 @@ const ProjectCounter = () => {
   const [popularTags, setPopularTags] = useState([])
   const [canUseTags, setCanUseTags] = useState(false)
   const [showTagSection, setShowTagSection] = useState(false)
+
+  // Gate upgrade modal
+  const [upgradeFeature, setUpgradeFeature] = useState(null)
 
   // [AI:Claude] Notes du projet
   const [showNotes, setShowNotes] = useState(false)
@@ -173,7 +224,8 @@ const ProjectCounter = () => {
   const [sectionForm, setSectionForm] = useState({
     name: '',
     description: '',
-    total_rows: ''
+    total_rows: '',
+    notes: ''
   })
   // [AI:Claude] v0.16.2: Modale de confirmation pour attribuer les rangs existants
   const [showRowsConfirmModal, setShowRowsConfirmModal] = useState(false)
@@ -204,6 +256,45 @@ const ProjectCounter = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  // [AI:Claude] Détection connexion réseau + flush queue offline
+  useEffect(() => {
+    // Charger la queue offline depuis localStorage au montage
+    try {
+      const stored = localStorage.getItem(`yf_pending_rows_${projectId}`)
+      if (stored) {
+        const items = JSON.parse(stored)
+        if (items.length > 0) {
+          pendingRowsRef.current = items
+          setPendingSync(true)
+        }
+      }
+    } catch {}
+
+    const flushPendingRows = async () => {
+      if (pendingRowsRef.current.length === 0) return
+      try {
+        for (const row of pendingRowsRef.current) {
+          await api.post(`/projects/${projectId}/rows`, row)
+        }
+        pendingRowsRef.current = []
+        localStorage.removeItem(`yf_pending_rows_${projectId}`)
+        setPendingSync(false)
+      } catch {
+        // Toujours offline, on garde la queue
+      }
+    }
+
+    return networkUtils.onConnectionChange((online) => {
+      setIsOnline(online)
+      if (online) flushPendingRows()
+    })
+  }, [projectId])
+
+  // Mémoriser le dernier projet ouvert pour la reprise automatique
+  useEffect(() => {
+    if (projectId) localStorage.setItem('yf_last_project_id', projectId)
+  }, [projectId])
+
   // [AI:Claude] Charger le projet au montage
   useEffect(() => {
     const loadData = async () => {
@@ -211,7 +302,74 @@ const ProjectCounter = () => {
       fetchProjectPhotos()
       fetchCredits()
       // Passer le current_section_id du projet fraîchement chargé
-      fetchSections(projectData?.current_section_id)
+      const loadedSections = await fetchSections(projectData?.current_section_id)
+
+      // Restaurer le compteur secondaire depuis la section active
+      const activeSectionId = projectData?.current_section_id
+      if (activeSectionId && loadedSections?.length > 0) {
+        const activeSection = loadedSections.find(s => s.id === activeSectionId)
+        if (activeSection?.secondary_label) {
+          setSecondaryLabel(activeSection.secondary_label)
+          setSecondaryTarget(activeSection.secondary_target || null)
+          setSecondaryCount(activeSection.secondary_count || 0)
+          setSecondaryActive(true)
+          setSecondaryLabelInput(activeSection.secondary_label)
+          setSecondaryTargetInput(activeSection.secondary_target ? String(activeSection.secondary_target) : '')
+        }
+        // [AI:Claude] v0.18.1 - Restaurer la séquence structurée
+        if (activeSection?.secondary_sequence) {
+          const seq = typeof activeSection.secondary_sequence === 'string'
+            ? JSON.parse(activeSection.secondary_sequence)
+            : activeSection.secondary_sequence
+          setSecondarySequence(seq)
+        } else {
+          setSecondarySequence(null)
+        }
+
+        // Reminders de la section active
+        if (activeSection?.reminders) {
+          const rem = typeof activeSection.reminders === 'string'
+            ? JSON.parse(activeSection.reminders)
+            : activeSection.reminders
+          setReminders(Array.isArray(rem) ? rem : [])
+        } else {
+          setReminders([])
+        }
+      } else if (projectData?.reminders) {
+        // Reminders du projet (sans sections)
+        const rem = typeof projectData.reminders === 'string'
+          ? JSON.parse(projectData.reminders)
+          : projectData.reminders
+        setReminders(Array.isArray(rem) ? rem : [])
+      }
+
+      // Deadline
+      if (projectData?.deadline) setDeadline(projectData.deadline.substring(0, 10))
+
+      // [AI:Claude] v0.17.1 - Vérifier si c'est le premier projet (tip onboarding)
+      if (sessionStorage.getItem('showFirstProjectTip') === 'true') {
+        sessionStorage.removeItem('showFirstProjectTip')
+        setShowFirstProjectTip(true)
+      }
+
+      // Guidage visuel première visite — si rang = 0 et jamais vu
+      const onboardingKey = `yf_onboarded_${projectId}`
+      const alreadySeen = localStorage.getItem(onboardingKey)
+      const projectRow = projectData?.current_row ?? 0
+      if (!alreadySeen && Number(projectRow) === 0) {
+        setShowOnboarding(true)
+      }
+
+      // Nudge sections — si >= 5 rangs, aucune section, pas encore vu
+      const sectionsNudgeKey = `yf_sections_nudge_${projectId}`
+      if (!localStorage.getItem(sectionsNudgeKey) && Number(projectRow) >= 5 && (!loadedSections || loadedSections.length === 0)) {
+        setShowSectionsNudge(true)
+      }
+
+      // Tip compteur secondaire — une fois pour les PRO, si pas encore vu
+      if (hasActiveSubscription() && !localStorage.getItem('yf_secondary_tip_seen') && !activeSection?.secondary_label) {
+        setShowSecondaryTip(true)
+      }
 
       // [AI:Claude] Restaurer l'état du timer s'il était en pause
       const savedState = localStorage.getItem(`timerState_${projectId}`)
@@ -297,6 +455,31 @@ const ProjectCounter = () => {
   useEffect(() => {
     localStorage.setItem('sectionsSortBy', sectionsSortBy)
   }, [sectionsSortBy])
+
+  // Sync compteur secondaire vers la section courante - débounce 1.5s
+  // On sauvegarde dans project_sections (par section) pour sync multi-appareils.
+  // On ne poste PAS dans project_rows ici : ça écrasait section.current_row avec des valeurs
+  // stale (currentRow et currentSectionId n'étaient pas dans les deps). Les données secondaires
+  // sont déjà enregistrées dans project_rows lors de chaque incrément du compteur principal.
+  useEffect(() => {
+    if (!projectId || !currentSectionId) return
+    const timer = setTimeout(() => {
+      // [AI:Claude] v0.18.1 - Ne pas écraser les champs secondaires avec null quand le compteur
+      // est inactif : évite la race condition avec SaveSequenceToSectionModal (autre onglet/page)
+      if (secondaryActive) {
+        const debouncePayload = {
+          secondary_label: secondaryLabel || null,
+          secondary_target: secondaryTarget || null,
+          secondary_count: secondaryCount,
+        }
+        if (secondarySequence !== null) {
+          debouncePayload.secondary_sequence = JSON.stringify(secondarySequence)
+        }
+        api.put(`/projects/${projectId}/sections/${currentSectionId}`, debouncePayload).catch(() => {})
+      }
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [secondaryActive, secondaryLabel, secondaryTarget, secondaryCount, secondarySequence, projectId, currentSectionId])
 
   // [AI:Claude] Fermer les menus quand on clique en dehors
   useEffect(() => {
@@ -465,6 +648,16 @@ const ProjectCounter = () => {
       setCounterUnit(projectData.counter_unit || 'rows') // [AI:Claude] v0.16.2 - Charger unité compteur
       setCounterIncrement(parseFloat(projectData.counter_unit_increment) || 1.0) // [AI:Claude] v0.16.2 - Charger incrément
 
+      // [AI:Claude] Ouvrir l'onglet le plus pertinent au chargement
+      if (projectData.pattern_path || projectData.pattern_url || projectData.pattern_text) {
+        setActiveTab('patron')
+      } else if (projectData.photos_count > 0) {
+        setActiveTab('photos')
+      }
+
+      // Le compteur secondaire est maintenant géré par section (voir fetchSections / handleChangeSection)
+      // On ne restaure plus depuis le champ global du projet pour éviter les conflits inter-sections
+
       // [AI:Claude] Sélectionner la section en cours si elle existe
       if (projectData.current_section_id) {
         setCurrentSectionId(projectData.current_section_id)
@@ -484,7 +677,7 @@ const ProjectCounter = () => {
   // [AI:Claude] v0.15.0 - Gestion des tags
   const handleAddTag = async (tag) => {
     if (!canUseTags) {
-      showAlert('Tags réservés aux abonnés PLUS/PRO', 'Passez à PLUS ou PRO pour utiliser les tags', 'warning')
+      setUpgradeFeature('tags')
       return
     }
 
@@ -523,6 +716,7 @@ const ProjectCounter = () => {
       const response = await api.get(`/projects/${projectId}/sections`)
       const loadedSections = response.data.sections || []
       setSections(loadedSections)
+      if (loadedSections.length > 0) setSectionsCollapsed(false)
 
       // [AI:Claude] Vérifier si la section actuelle est toujours valide et non terminée
       let needsNewSection = false
@@ -543,7 +737,7 @@ const ProjectCounter = () => {
           const projectSection = loadedSections.find(s => s.id === targetSectionId)
           if (projectSection && !needsNewSection) {
             setCurrentSectionId(projectSection.id)
-            return
+            return loadedSections
           }
         }
 
@@ -554,7 +748,7 @@ const ProjectCounter = () => {
             const savedSection = loadedSections.find(s => s.id === parseInt(savedSectionId))
             if (savedSection && !savedSection.is_completed) {
               setCurrentSectionId(savedSection.id)
-              return
+              return loadedSections
             }
           }
         }
@@ -563,17 +757,24 @@ const ProjectCounter = () => {
         const firstIncomplete = loadedSections.find(s => !s.is_completed)
         if (firstIncomplete) {
           setCurrentSectionId(firstIncomplete.id)
-          return
+          return loadedSections
         }
 
         // Priorité 3 : Première section de la liste (si toutes sont terminées)
         setCurrentSectionId(loadedSections[0].id)
       }
+
+      return loadedSections
     } catch (err) {
       console.error('Erreur chargement sections:', err)
       // [AI:Claude] Pas d'erreur fatale si pas de sections
+      return []
     }
   }
+
+  // [AI:Claude] Plan payant actif (PLUS/PRO/Early Bird non expiré)
+  const isPaidPlan = hasActiveSubscription()
+
 
   const fetchProjectPhotos = async () => {
     try {
@@ -667,9 +868,10 @@ const ProjectCounter = () => {
       const yarn = details?.yarn || [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }]
       const normalizedYarn = yarn.map(y => ({
         ...y,
+        url: y.url || '',
         quantities: y.quantities.map(q => ({
           ...q,
-          unit: q.unit || 'pelotes' // Ajouter 'pelotes' par défaut si absent
+          unit: q.unit || 'pelotes'
         }))
       }))
 
@@ -682,12 +884,17 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur parsing technical_details:', err)
       setTechnicalForm({
-        yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
+        yarn: [{ brand: '', name: '', url: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
         needles: [{ type: '', size: '', length: '' }],
         gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' },
         description: project.description || ''
       })
     }
+    // Charger suggestions depuis localStorage
+    try {
+      const saved = JSON.parse(localStorage.getItem('yf_yarn_suggestions') || '{"brands":[],"names":[]}')
+      setYarnSuggestions(saved)
+    } catch {}
     setShowTechnicalDetailsModal(true)
   }
 
@@ -697,6 +904,17 @@ const ProjectCounter = () => {
     try {
       const technicalDetailsJson = JSON.stringify(technicalForm)
       await api.put(`/projects/${projectId}`, { technical_details: technicalDetailsJson })
+
+      // Mettre à jour les suggestions localStorage
+      try {
+        const existing = JSON.parse(localStorage.getItem('yf_yarn_suggestions') || '{"brands":[],"names":[]}')
+        const newBrands = technicalForm.yarn.map(y => y.brand).filter(Boolean)
+        const newNames = technicalForm.yarn.map(y => y.name).filter(Boolean)
+        const brands = [...new Set([...existing.brands, ...newBrands])].slice(0, 50)
+        const names = [...new Set([...existing.names, ...newNames])].slice(0, 50)
+        localStorage.setItem('yf_yarn_suggestions', JSON.stringify({ brands, names }))
+      } catch {}
+
       await fetchProject()
       setShowTechnicalDetailsModal(false)
       showAlert('Détails techniques mis à jour avec succès !', 'success')
@@ -767,7 +985,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Liste des types (identique à la création de projet)
   const getProjectTypes = () => {
-    return ['Vêtements', 'Accessoires', 'Maison/Déco', 'Jouets/Peluches', 'Vêtements bébé', 'Accessoires bébé']
+    return ['Vêtements', 'Accessoires', 'Jouets/Peluches', 'Vêtements bébé', 'Accessoires bébé', 'Vêtements enfant', 'Maison/Déco', 'Autre']
   }
 
   // [AI:Claude] Upload patron (PDF ou Image)
@@ -1018,6 +1236,8 @@ const ProjectCounter = () => {
     formData.append('photo', file)
     formData.append('project_id', projectId)
     formData.append('item_name', project.name)
+    if (project.type) formData.append('item_type', project.type)
+    if (project.technique) formData.append('technique', project.technique)
 
     try {
       await api.post('/photos/upload', formData, {
@@ -1025,8 +1245,15 @@ const ProjectCounter = () => {
       })
 
       await fetchProjectPhotos()
+      await fetchCredits()
       setShowPhotoUploadModal(false)
-      showAlert('Photo ajoutée avec succès !', 'success')
+      // Ouvrir directement la modale d'embellissement sur la photo qui vient d'être uploadée
+      const photosResponse = await api.get('/photos', { params: { project_id: projectId } })
+      const allPhotos = photosResponse.data.photos || []
+      const newPhoto = allPhotos.filter(p => !p.parent_photo_id).slice(-1)[0]
+      if (newPhoto) {
+        openEnhanceModal(newPhoto)
+      }
     } catch (err) {
       console.error('Erreur upload photo:', err)
       showAlert('Erreur lors de l\'ajout de la photo', 'error')
@@ -1069,7 +1296,7 @@ const ProjectCounter = () => {
 
     // [AI:Claude] Vérifier les crédits (1 photo = 1 crédit)
     if (!credits || credits.total_available < 1) {
-      showAlert(`Vous n'avez pas assez de crédits. Il vous faut 1 crédit.`, 'error')
+      setUpgradeFeature('photo_credits')
       return
     }
 
@@ -1083,7 +1310,8 @@ const ProjectCounter = () => {
       const response = await api.post(`/photos/${selectedPhoto.id}/enhance-multiple`, {
         contexts: [contextToUse],
         project_category: detectProjectCategory(project?.type || ''),
-        model_gender: modelGender // person (neutre), male (homme), female (femme)
+        model_gender: modelGender, // person (neutre), male (homme), female (femme)
+        season: selectedSeason // spring, summer, autumn, winter (optionnel)
       })
 
       // [AI:Claude] v0.15.0 - Récupérer la photo générée pour la modal de satisfaction
@@ -1151,6 +1379,7 @@ const ProjectCounter = () => {
   // [AI:Claude] Ouvrir modal d'embellissement avec sélection du premier style par défaut
   const openEnhanceModal = (photo) => {
     setSelectedPhoto(photo)
+    setSelectedSeason(null) // [AI:Claude] v0.17.1 - Réinitialiser la saison
     // clearPreview() // [AI:Claude] Désactivé car preview désactivée
     const category = detectProjectCategory(project?.type || '')
     const styles = getAvailableStyles(category)
@@ -1171,6 +1400,11 @@ const ProjectCounter = () => {
     if (lower === 'vêtements bébé' || lower === 'vetements bebe' || lower === 'baby_garment') {
       console.log('[ProjectCounter] Détecté comme baby_garment')
       return 'baby_garment'
+    }
+
+    if (lower === 'vêtements enfant' || lower === 'vetements enfant' || lower === 'child_garment') {
+      console.log('[ProjectCounter] Détecté comme child_garment')
+      return 'child_garment'
     }
 
     if (lower === 'accessoires bébé' || lower === 'accessoires bebe')
@@ -1198,95 +1432,119 @@ const ProjectCounter = () => {
     if (lower.match(/couverture|plaid|coussin|tapis|déco|nappe/))
       return 'home_decor'
 
-    console.log('[ProjectCounter] Aucune catégorie trouvée, retourne "other"')
-    return 'other'
+    console.log('[ProjectCounter] Aucune catégorie trouvée, retourne "accessory"')
+    return 'accessory' // Fallback vers accessoire (le plus générique)
   }
+
+  // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
+  const seasons = [
+    { key: 'spring', label: 'Printemps', icon: '🌸', desc: 'Fleurs, bourgeons, lumière douce' },
+    { key: 'summer', label: 'Été', icon: '☀️', desc: 'Lumière dorée, végétation luxuriante' },
+    { key: 'autumn', label: 'Automne', icon: '🍂', desc: 'Feuilles dorées, tons chauds' },
+    { key: 'winter', label: 'Hiver', icon: '❄️', desc: 'Neige, givre, ambiance cocooning' }
+  ]
+
+  // [AI:Claude] Thèmes qui supportent les saisons (extérieur, nature, lumière naturelle)
+  const seasonStyles = [
+    // Wearable - extérieur/nature
+    'wearable_c1', 'wearable_c3', 'wearable_c4', 'wearable_c6', 'wearable_c9',
+    // Accessory - extérieur/nature
+    'accessory_c2', 'accessory_c3', 'accessory_c6', 'accessory_c9',
+    // Home decor - ambiance saisonnière
+    'home_c4', 'home_c5', 'home_c6',
+    // Toy - extérieur/nature
+    'toy_c5', 'toy_c8',
+    // Baby garment - extérieur/nature
+    'baby_garment_c1', 'baby_garment_c4', 'baby_garment_c7', 'baby_garment_c9',
+    // Child garment - extérieur/nature/urbain
+    'child_garment_c1', 'child_garment_c6', 'child_garment_c9'
+  ]
 
   // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
   const stylesByCategory = {
     wearable: [
       // FREE (3)
-      { key: 'wearable_c1', label: 'Porté classique', icon: '👤', desc: 'Porté en portrait extérieur, lumière douce', tier: 'free' },
-      { key: 'flatlay_c1', label: 'Produit à plat', icon: '📸', desc: 'Posé à plat sur fond blanc studio', tier: 'free' },
-      { key: 'detail_c1', label: 'Détails texture', icon: '🔍', desc: 'Gros plan macro sur la texture et les points', tier: 'free' },
+      { key: 'wearable_c1', label: 'Porté, lumière naturelle', icon: '👤', desc: 'Portrait extérieur avec lumière douce', tier: 'free' },
+      { key: 'flatlay_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
+      { key: 'detail_c1', label: 'Gros plan sur les points', icon: '🔍', desc: 'Macro sur la texture et le détail du tricot', tier: 'free' },
       // PLUS (+3)
-      { key: 'wearable_c2', label: 'Porté studio', icon: '✨', desc: 'Porté en studio fond blanc neutre', tier: 'plus' },
-      { key: 'wearable_c3', label: 'Porté urbain', icon: '🌆', desc: 'Porté en ambiance urbaine lifestyle', tier: 'plus' },
-      { key: 'flatlay_c2', label: 'Flat lay lifestyle', icon: '🏡', desc: 'Posé à plat avec props décoratifs', tier: 'plus' },
+      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'pro' },
+      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'pro' },
+      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'pro' },
       // PRO (+3)
-      { key: 'wearable_c4', label: 'Bohème chic', icon: '🌼', desc: 'Porté ambiance vintage décor rétro', tier: 'pro' },
-      { key: 'wearable_c7', label: 'Haute couture', icon: '👗', desc: 'Porté studio fond texturé sombre', tier: 'pro' },
-      { key: 'wearable_c9', label: 'Urbain industriel', icon: '🏙️', desc: 'Porté ambiance industrielle', tier: 'pro' }
+      { key: 'wearable_c4', label: 'Porté, ambiance vintage', icon: '🌼', desc: 'Portrait dans un décor rétro chaleureux', tier: 'pro' },
+      { key: 'wearable_c7', label: 'Porté, éclairage dramatique', icon: '👗', desc: 'Portrait studio avec fond texturé sombre', tier: 'pro' },
+      { key: 'wearable_c9', label: 'Porté, décor industriel', icon: '🏙️', desc: 'Portrait en loft ou espace industriel', tier: 'pro' }
     ],
     accessory: [
       // FREE (3)
-      { key: 'accessory_c1', label: 'Studio fond blanc', icon: '📸', desc: 'Flat lay sur fond blanc pur, éclairage studio', tier: 'free' },
-      { key: 'accessory_c2', label: 'Porté naturel', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
-      { key: 'accessory_c3', label: 'Porté studio', icon: '👤', desc: 'Porté sur modèle avec fond neutre', tier: 'free' },
+      { key: 'accessory_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
+      { key: 'accessory_c2', label: 'Porté, lumière naturelle', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
+      { key: 'accessory_c3', label: 'Porté, fond neutre', icon: '👤', desc: 'Porté sur modèle avec fond sobre', tier: 'free' },
       // PLUS (+3)
-      { key: 'accessory_c4', label: 'Flat lay lifestyle', icon: '✨', desc: 'Posé à plat avec accessoires lifestyle', tier: 'plus' },
-      { key: 'accessory_c5', label: 'Porté urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'plus' },
-      { key: 'accessory_c6', label: 'Cosy intérieur', icon: '🏠', desc: 'Posé sur table avec textures douces', tier: 'plus' },
+      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'pro' },
+      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'pro' },
+      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'pro' },
       // PRO (+3)
-      { key: 'accessory_c7', label: 'Porté mode', icon: '💃', desc: 'Shooting mode professionnel avec mise en scène stylée', tier: 'pro' },
-      { key: 'accessory_c8', label: 'Luxe produit', icon: '💎', desc: 'Mise en scène luxe avec fond sombre élégant', tier: 'pro' },
-      { key: 'accessory_c9', label: 'Porté bohème', icon: '🌸', desc: 'Porté dans intérieur bohème avec plantes', tier: 'pro' }
+      { key: 'accessory_c7', label: 'Porté, style éditorial', icon: '💃', desc: 'Portrait avec mise en scène soignée', tier: 'pro' },
+      { key: 'accessory_c8', label: 'À plat, fond sombre élégant', icon: '💎', desc: 'Mise en scène sobre sur fond sombre', tier: 'pro' },
+      { key: 'accessory_c9', label: 'Porté, décor bohème', icon: '🌸', desc: 'Porté dans un intérieur bohème avec plantes', tier: 'pro' }
     ],
     home_decor: [
       // FREE (3)
-      { key: 'home_c1', label: 'Contemporain graphique', icon: '🏠', desc: 'Design moderne avec touches de couleur', tier: 'free' },
-      { key: 'home_c2', label: 'Rustique naturel', icon: '🌿', desc: 'Bois, plantes, lumière naturelle', tier: 'free' },
-      { key: 'home_c3', label: 'Scandinave', icon: '✨', desc: 'Décor épuré blanc/gris', tier: 'free' },
+      { key: 'home_c1', label: 'Intérieur moderne', icon: '🏠', desc: 'Décor contemporain avec touches de couleur', tier: 'free' },
+      { key: 'home_c2', label: 'Ambiance naturelle', icon: '🌿', desc: 'Bois, plantes et lumière naturelle', tier: 'free' },
+      { key: 'home_c3', label: 'Décor épuré', icon: '🪟', desc: 'Style scandinave, blanc et gris doux', tier: 'free' },
       // PLUS (+3)
-      { key: 'home_c4', label: 'Industriel', icon: '🏭', desc: 'Ambiance loft, métal, briques', tier: 'plus' },
-      { key: 'home_c5', label: 'Coloré vintage', icon: '🎨', desc: 'Couleurs chaudes, vintage', tier: 'plus' },
-      { key: 'home_c6', label: 'Bohème cozy', icon: '🛋️', desc: 'Ambiance chaleureuse, tissus doux', tier: 'plus' },
+      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'pro' },
+      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'pro' },
+      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'pro' },
       // PRO (+3)
-      { key: 'home_c7', label: 'Luxe contemporain', icon: '💎', desc: 'Décor moderne avec matériaux nobles', tier: 'pro' },
-      { key: 'home_c8', label: 'Minimaliste zen', icon: '🧘', desc: 'Ambiance zen, couleurs neutres', tier: 'pro' },
-      { key: 'home_c9', label: 'Atelier créatif', icon: '🎨', desc: 'Table d\'artiste avec fournitures créatives', tier: 'pro' }
+      { key: 'home_c7', label: 'Décor élégant', icon: '💎', desc: 'Intérieur contemporain avec matières nobles', tier: 'pro' },
+      { key: 'home_c8', label: 'Ambiance zen', icon: '🧘', desc: 'Décor minimaliste, couleurs neutres apaisantes', tier: 'pro' },
+      { key: 'home_c9', label: 'Table de créatrice', icon: '🎨', desc: 'Posé sur une table avec fils et fournitures', tier: 'pro' }
     ],
     toy: [
       // FREE (3)
-      { key: 'toy_c1', label: 'Classique doux', icon: '🧸', desc: 'Chambre enfantine avec lumière douce', tier: 'free' },
-      { key: 'toy_c2', label: 'Livre de contes', icon: '📖', desc: 'Décor de conte illustré, aquarelle pastel', tier: 'free' },
-      { key: 'toy_c3', label: 'Studio fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
+      { key: 'toy_c1', label: 'Chambre enfant, lumière douce', icon: '🧸', desc: 'Décor de chambre enfantine doux et lumineux', tier: 'free' },
+      { key: 'toy_c2', label: 'Ambiance conte illustré', icon: '📖', desc: 'Décor aquarelle pastel, ambiance féerique', tier: 'free' },
+      { key: 'toy_c3', label: 'À plat, fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
       // PLUS (+3)
-      { key: 'toy_c4', label: 'Vintage peluche', icon: '🧸', desc: 'Ambiance rétro, lumière tamisée', tier: 'plus' },
-      { key: 'toy_c5', label: 'Artisanat naturel', icon: '🌿', desc: 'Bois, tissus naturels', tier: 'plus' },
-      { key: 'toy_c6', label: 'Cartoon coloré', icon: '🎈', desc: 'Couleurs vives, style dessin animé', tier: 'plus' },
+      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'pro' },
+      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'pro' },
+      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'pro' },
       // PRO (+3)
-      { key: 'toy_c7', label: 'Boutique premium', icon: '🏪', desc: 'Boutique artisanale avec étagères et fond pastel', tier: 'pro' },
-      { key: 'toy_c8', label: 'Aventure jungle', icon: '🦁', desc: 'Jungle tropicale avec plantes exotiques', tier: 'pro' },
-      { key: 'toy_c9', label: 'Cirque vintage', icon: '🎪', desc: 'Chapiteau rétro avec rayures et paillettes', tier: 'pro' }
+      { key: 'toy_c7', label: 'Décor boutique artisanale', icon: '🏪', desc: 'Étagères et fond pastel, style créatrice', tier: 'pro' },
+      { key: 'toy_c8', label: 'Décor jungle tropicale', icon: '🦁', desc: 'Plantes exotiques, ambiance aventure', tier: 'pro' },
+      { key: 'toy_c9', label: 'Ambiance fête rétro', icon: '🎪', desc: 'Décor festif vintage coloré', tier: 'pro' }
     ],
     baby_garment: [
       // FREE (3)
-      { key: 'baby_garment_c1', label: 'Bébé sur lit 👶', icon: '🛏️', desc: 'Porté par bébé allongé sur lit pastel', tier: 'free' },
-      { key: 'baby_garment_c2', label: 'Studio pastel', icon: '✨', desc: 'À plat sur fond uni doux', tier: 'free' },
-      { key: 'baby_garment_c3', label: 'Nursery scandinave', icon: '🏠', desc: 'À plat sur table à langer en bois clair', tier: 'free' },
+      { key: 'baby_garment_c1', label: 'Porté par bébé, lit pastel', icon: '🛏️', desc: 'Bébé allongé sur lit aux tons doux', tier: 'free' },
+      { key: 'baby_garment_c2', label: 'À plat, fond doux', icon: '🌸', desc: 'Posé à plat sur fond uni pastel', tier: 'free' },
+      { key: 'baby_garment_c3', label: 'À plat, table à langer', icon: '🏠', desc: 'Sur table à langer en bois clair, style scandinave', tier: 'free' },
       // PLUS (+3)
-      { key: 'baby_garment_c4', label: 'Bébé lifestyle 👶', icon: '🧸', desc: 'Porté par bébé avec jouets bois', tier: 'plus' },
-      { key: 'baby_garment_c5', label: 'Flat lay naturel', icon: '🌿', desc: 'À plat avec accessoires lifestyle', tier: 'plus' },
-      { key: 'baby_garment_c6', label: 'Panier vintage', icon: '🧺', desc: 'À plat dans osier avec lin', tier: 'plus' },
+      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'pro' },
+      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'pro' },
+      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'pro' },
       // PRO (+3)
-      { key: 'baby_garment_c7', label: 'Dans bras parent 👶', icon: '💝', desc: 'Porté par bébé tenu par parent', tier: 'pro' },
-      { key: 'baby_garment_c8', label: 'Premium flat lay', icon: '💎', desc: 'À plat avec fleurs séchées', tier: 'pro' },
-      { key: 'baby_garment_c9', label: 'Tapis de jeu 👶', icon: '🌸', desc: 'Porté par bébé sur tapis moelleux', tier: 'pro' }
+      { key: 'baby_garment_c7', label: 'Porté dans les bras', icon: '💝', desc: 'Bébé tenu par un parent, ambiance tendre', tier: 'pro' },
+      { key: 'baby_garment_c8', label: 'À plat, fleurs séchées', icon: '💎', desc: 'Mise en scène élégante avec fleurs séchées', tier: 'pro' },
+      { key: 'baby_garment_c9', label: 'Porté par bébé, tapis moelleux', icon: '🌸', desc: 'Bébé sur tapis doux et coloré', tier: 'pro' }
     ],
-    other: [
+    child_garment: [
       // FREE (3)
-      { key: 'baby_c1', label: 'Lit bébé doux', icon: '🛏️', desc: 'Plié sur lit avec draps blancs et peluches', tier: 'free' },
-      { key: 'baby_c2', label: 'Fond pastel épuré', icon: '📸', desc: 'Flat lay sur fond pastel studio', tier: 'free' },
-      { key: 'baby_c3', label: 'Berceau cosy', icon: '👶', desc: 'Dans berceau avec jouets en bois', tier: 'free' },
+      { key: 'child_garment_c1', label: 'Porté, parc ou jardin', icon: '🌿', desc: 'Enfant dans un espace vert, lumière naturelle', tier: 'free' },
+      { key: 'child_garment_c2', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
+      { key: 'child_garment_c3', label: 'À plat, chambre enfant', icon: '🛏️', desc: 'Sur lit coloré avec peluches', tier: 'free' },
       // PLUS (+3)
-      { key: 'baby_c4', label: 'Flat lay naturel', icon: '🌿', desc: 'Avec jouets en bois et plantes', tier: 'plus' },
-      { key: 'baby_c5', label: 'Table à langer', icon: '🏠', desc: 'Style scandinave minimaliste', tier: 'plus' },
-      { key: 'baby_c6', label: 'Panier vintage', icon: '🧺', desc: 'Osier avec tissus lin naturel', tier: 'plus' },
+      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'pro' },
+      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'pro' },
+      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'pro' },
       // PRO (+3)
-      { key: 'baby_c7', label: 'Cadeau emballé', icon: '🎁', desc: 'Emballage élégant avec ruban et carte', tier: 'pro' },
-      { key: 'baby_c8', label: 'Lifestyle premium', icon: '✨', desc: 'Mise en scène raffinée avec accessoires', tier: 'pro' },
-      { key: 'baby_c9', label: 'Étagère nursery', icon: '📚', desc: 'Sur étagère murale blanche organisée', tier: 'pro' }
+      { key: 'child_garment_c7', label: 'Porté, éclairage studio', icon: '📸', desc: 'Portrait soigné avec éclairage studio créatif', tier: 'pro' },
+      { key: 'child_garment_c8', label: 'À plat, mise en scène soignée', icon: '💎', desc: 'Mise en scène boutique haut de gamme', tier: 'pro' },
+      { key: 'child_garment_c9', label: 'Porté, promenade en famille', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
     ]
   }
 
@@ -1314,25 +1572,14 @@ const ProjectCounter = () => {
     // Déterminer le tier en fonction du type d'abonnement
     let userTier = 'free'
 
-    // Plans PLUS
-    if (subscriptionType === 'plus' || subscriptionType === 'plus_annual') {
-      userTier = 'plus'
-    }
-    // Plans PRO (tous les variants)
-    else if (
-      subscriptionType === 'pro' ||
-      subscriptionType === 'pro_annual' ||
-      subscriptionType === 'early_bird' ||
-      subscriptionType.toLowerCase().includes('pro')
-    ) {
+    // Plans payants (PLUS legacy + PRO)
+    if (subscriptionType !== 'free') {
       userTier = 'pro'
     }
 
     // Filtrer selon le tier
     if (userTier === 'free') {
       return allStyles.filter(s => s.tier === 'free')
-    } else if (userTier === 'plus') {
-      return allStyles.filter(s => s.tier === 'free' || s.tier === 'plus')
     } else {
       return allStyles // PRO accède à tout
     }
@@ -1357,6 +1604,9 @@ const ProjectCounter = () => {
 
       // [AI:Claude] Activer le wake lock pour garder l'écran allumé
       await requestWakeLock()
+
+      // [AI:Claude] Hint contextuel expliquant le wake lock (1ère fois uniquement)
+      triggerOnce('timer_wake_lock')
     } catch (err) {
       console.error('Erreur démarrage session:', err)
       showAlert('Erreur lors du démarrage de la session', 'error')
@@ -1569,6 +1819,16 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Incrémenter le rang (sauvegarde directe sans modal)
   const handleIncrementRow = async () => {
+    // [AI:Claude] Anti double-clic
+    if (isSavingRow) return
+    setIsSavingRow(true)
+
+    // Masquer le guidage onboarding au premier rang
+    if (showOnboarding) {
+      setShowOnboarding(false)
+      localStorage.setItem(`yf_onboarded_${projectId}`, '1')
+    }
+
     // [AI:Claude] Vérifier si on a atteint le maximum
     let maxRows = null
     if (currentSectionId && sections.length > 0) {
@@ -1665,6 +1925,8 @@ const ProjectCounter = () => {
             current_row: oldRow
           }))
         }
+      } finally {
+        setIsSavingRow(false)
       }
       return
     }
@@ -1677,10 +1939,14 @@ const ProjectCounter = () => {
         stitch_count: null,
         duration: null,
         notes: null,
-        difficulty_rating: null
+        difficulty_rating: null,
+        secondary_count: secondaryActive ? secondaryCount : null,
+        secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
+        secondary_label: secondaryActive && secondaryLabel ? secondaryLabel : null,
       }
 
       await api.post(`/projects/${projectId}/rows`, rowData)
+
 
       // [AI:Claude] FIX v0.16.2: Mettre à jour sections/project AVANT setCurrentRow
       // pour éviter que le useEffect n'écrase avec l'ancienne valeur
@@ -1702,6 +1968,10 @@ const ProjectCounter = () => {
 
       // [AI:Claude] Mettre à jour currentRow APRÈS sections pour que useEffect lise la bonne valeur
       setCurrentRow(newRow)
+
+      // Vérifier si un reminder se déclenche à ce rang
+      const triggered = reminders.find(r => !r.done && r.row === newRow)
+      if (triggered) setActiveReminder(triggered)
 
       // [AI:Claude] Si on vient de terminer, marquer comme terminé automatiquement
       if (maxRows !== null && newRow === maxRows) {
@@ -1730,14 +2000,12 @@ const ProjectCounter = () => {
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
 
             if (allCompleted && sections.length > 0) {
-              // Afficher la modale de confirmation au lieu de terminer automatiquement
-              showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+              // Pas d'alert ici — la modale de complétion prend le relais
               await handleAllSectionsCompleted()
             } else {
               showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+              await fetchProject()
             }
-
-            await fetchProject()
           } catch (err) {
             console.error('Erreur marquage section terminée:', err)
             const numMax = Number(maxRows)
@@ -1767,34 +2035,75 @@ const ProjectCounter = () => {
           }
         }
       }
-    } catch (err) {
-      console.error('Erreur sauvegarde rang:', err)
-      console.error('Détails erreur:', err.response?.data)
-      const errorMsg = err.response?.data?.message || err.message || 'Erreur inconnue'
-      showAlert(`Erreur lors de la sauvegarde du rang: ${errorMsg}`, 'error')
-      // [AI:Claude] Rollback en cas d'erreur (compteur ET sections)
-      setCurrentRow(oldRow)
-      if (currentSectionId) {
-        setSections(prevSections =>
-          prevSections.map(s =>
-            s.id === currentSectionId
-              ? { ...s, current_row: oldRow }
-              : s
-          )
-        )
-      } else {
-        // [AI:Claude] FIX: Rollback du projet global si pas de sections
-        setProject(prevProject => ({
-          ...prevProject,
-          current_row: oldRow
-        }))
+
+      // [AI:Claude] v0.17.0 - Célébration du premier rang compté
+      // Vérifier le total projet (pas juste la section active) pour éviter les faux positifs
+      const totalProjectRows = sections.length > 0
+        ? sections.reduce((sum, s) => sum + (parseFloat(s.current_row) || 0), 0)
+        : parseFloat(oldRow) || 0
+      if (totalProjectRows === 0) {
+
+        // Tracker l'événement first_row_counted
+        try {
+          await api.post('/analytics/track-event', {
+            event_name: 'first_row_counted',
+            project_id: projectId,
+            counter_unit: counterUnit
+          })
+        } catch (err) {
+          console.error('Erreur tracking first_row_counted:', err)
+        }
+      } else if (totalProjectRows > 0) {
+        // Tracker project_worked_again à chaque incrémentation après le premier rang
+        try {
+          await api.post('/analytics/track-event', {
+            event_name: 'project_worked_again',
+            project_id: projectId,
+            current_row: newRow
+          })
+        } catch (err) {
+          console.error('Erreur tracking project_worked_again:', err)
+        }
       }
+    } catch (err) {
+      const isNetworkError = !err.response
+      if (isNetworkError) {
+        // Hors-ligne : garder le nouvel état, queuer pour sync ultérieure
+        pendingRowsRef.current.push(rowData)
+        try {
+          localStorage.setItem(`yf_pending_rows_${projectId}`, JSON.stringify(pendingRowsRef.current))
+        } catch {}
+        setPendingSync(true)
+      } else {
+        // Erreur serveur : rollback
+        console.error('Erreur sauvegarde rang:', err.response?.data)
+        const errorMsg = err.response?.data?.message || err.message || 'Erreur inconnue'
+        showAlert(`Erreur lors de la sauvegarde du rang: ${errorMsg}`, 'error')
+        setCurrentRow(oldRow)
+        if (currentSectionId) {
+          setSections(prevSections =>
+            prevSections.map(s =>
+              s.id === currentSectionId
+                ? { ...s, current_row: oldRow }
+                : s
+            )
+          )
+        } else {
+          setProject(prevProject => ({ ...prevProject, current_row: oldRow }))
+        }
+      }
+    } finally {
+      setIsSavingRow(false)
     }
   }
 
   // [AI:Claude] Décrémenter le rang (supprime le dernier rang au lieu de créer un nouveau)
   const handleDecrementRow = async () => {
+    // [AI:Claude] Anti double-clic
+    if (isSavingRow) return
+
     if (currentRow > 0) {
+      setIsSavingRow(true)
       // [AI:Claude] v0.16.2 - Calculer newRow selon l'unité
       const increment = parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0)
       const newRow = counterUnit === 'rows'
@@ -1874,31 +2183,71 @@ const ProjectCounter = () => {
           })
         }
       } catch (err) {
-        console.error('Erreur sauvegarde rang:', err)
-        showAlert('Erreur lors de la sauvegarde du rang', 'error')
-        // [AI:Claude] Rollback en cas d'erreur (compteur ET sections)
-        setCurrentRow(oldRow)
-        if (currentSectionId) {
-          setSections(prevSections =>
-            prevSections.map(s =>
-              s.id === currentSectionId
-                ? { ...s, current_row: oldRow }
-                : s
-            )
-          )
+        const isNetworkError = !err.response
+        if (isNetworkError) {
+          // Hors-ligne : garder l'état local, sera synchro à la reconnexion via le debounce PUT
+          setPendingSync(true)
         } else {
-          // [AI:Claude] FIX: Rollback du projet global si pas de sections
-          setProject(prevProject => ({
-            ...prevProject,
-            current_row: oldRow
-          }))
+          console.error('Erreur sauvegarde rang:', err)
+          showAlert('Erreur lors de la sauvegarde du rang', 'error')
+          setCurrentRow(oldRow)
+          if (currentSectionId) {
+            setSections(prevSections =>
+              prevSections.map(s =>
+                s.id === currentSectionId
+                  ? { ...s, current_row: oldRow }
+                  : s
+              )
+            )
+          } else {
+            setProject(prevProject => ({ ...prevProject, current_row: oldRow }))
+          }
         }
+      } finally {
+        setIsSavingRow(false)
       }
     }
   }
 
+  // Écran de verrouillage : affiche le rang courant et les contrôles +/- quand le timer tourne
+  useMediaSession({
+    isActive: isTimerRunning,
+    projectName: project?.name || 'YarnFlow',
+    sectionName: sections.find(s => s.id === currentSectionId)?.name || null,
+    currentRow,
+    targetRows: currentSectionId
+      ? sections.find(s => s.id === currentSectionId)?.total_rows || null
+      : project?.total_rows || null,
+    onIncrement: handleIncrementRow,
+    onDecrement: handleDecrementRow,
+  })
+
   // [AI:Claude] Changer la section en cours
   const handleChangeSection = async (sectionId) => {
+    // [AI:Claude] Fermer les notes et le menu quand on change de section
+    setExpandedNotesSection(null)
+    setSectionNotesText('')
+    setOpenSectionMenu(null)
+
+    // Sauvegarder immédiatement l'état du compteur secondaire sur la section qu'on quitte
+    // (la sync debounce ne serait pas encore passée)
+    if (currentSectionId) {
+      api.put(`/projects/${projectId}/sections/${currentSectionId}`, {
+        secondary_label: secondaryActive ? (secondaryLabel || null) : null,
+        secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
+        secondary_count: secondaryActive ? secondaryCount : 0
+      }).catch(() => {})
+    }
+
+    // Reset local du compteur secondaire
+    setSecondaryActive(false)
+    setSecondaryCount(0)
+    setSecondaryTarget(null)
+    setSecondaryLabel('')
+    setIsEditingSecondary(false)
+    setSecondaryLabelInput('')
+    setSecondaryTargetInput('')
+
     try {
       // [AI:Claude] FIX BUG x4: Vérifier si on est déjà en train de terminer une session
       const wasTimerRunning = isTimerRunning
@@ -1970,9 +2319,48 @@ const ProjectCounter = () => {
       // [AI:Claude] Sauvegarder la section active dans localStorage pour la retrouver au retour
       localStorage.setItem(`currentSection_${projectId}`, sectionId.toString())
 
-      // [AI:Claude] Rafraîchir les sections et le projet avec la nouvelle section
-      await fetchSections(sectionId)
+      // Rafraîchir les sections et le projet avec la nouvelle section
+      const loadedSections = await fetchSections(sectionId)
       await fetchProject()
+
+      // Restaurer le compteur secondaire depuis la section cible (données par section en DB)
+      // On écrase ce que fetchProject() a pu restaurer depuis le champ global du projet
+      const targetSection = loadedSections.find(s => s.id === sectionId)
+      if (targetSection?.secondary_label) {
+        setSecondaryLabel(targetSection.secondary_label)
+        setSecondaryTarget(targetSection.secondary_target || null)
+        setSecondaryCount(targetSection.secondary_count || 0)
+        setSecondaryActive(true)
+        setSecondaryLabelInput(targetSection.secondary_label)
+        setSecondaryTargetInput(targetSection.secondary_target ? String(targetSection.secondary_target) : '')
+      } else {
+        setSecondaryActive(false)
+        setSecondaryCount(0)
+        setSecondaryTarget(null)
+        setSecondaryLabel('')
+        setIsEditingSecondary(false)
+        setSecondaryLabelInput('')
+        setSecondaryTargetInput('')
+      }
+      // [AI:Claude] v0.18.1 - Restaurer la séquence structurée
+      if (targetSection?.secondary_sequence) {
+        const seq = typeof targetSection.secondary_sequence === 'string'
+          ? JSON.parse(targetSection.secondary_sequence)
+          : targetSection.secondary_sequence
+        setSecondarySequence(seq)
+      } else {
+        setSecondarySequence(null)
+      }
+      // Reminders de la section
+      if (targetSection?.reminders) {
+        const rem = typeof targetSection.reminders === 'string'
+          ? JSON.parse(targetSection.reminders)
+          : targetSection.reminders
+        setReminders(Array.isArray(rem) ? rem : [])
+      } else {
+        setReminders([])
+      }
+      setActiveReminder(null)
     } catch (err) {
       console.error('Erreur changement section:', err)
       showAlert('Erreur lors du changement de section', 'error')
@@ -2107,7 +2495,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Ouvrir modal d'ajout de section
   const openAddSectionModal = () => {
-    setSectionForm({ name: '', description: '', total_rows: '' })
+    setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
     setEditingSection(null)
     setShowAddSectionModal(true)
   }
@@ -2117,7 +2505,8 @@ const ProjectCounter = () => {
     setSectionForm({
       name: section.name,
       description: section.description || '',
-      total_rows: section.total_rows || ''
+      total_rows: section.total_rows || '',
+      notes: section.notes || ''
     })
     setEditingSection(section)
     setShowAddSectionModal(true)
@@ -2176,7 +2565,8 @@ const ProjectCounter = () => {
         name: sectionForm.name.trim(),
         description: sectionForm.description.trim() || null,
         total_rows: sectionForm.total_rows ? parseInt(sectionForm.total_rows) : null,
-        display_order: editingSection ? editingSection.display_order : sections.length
+        display_order: editingSection ? editingSection.display_order : sections.length,
+        notes: sectionForm.notes.trim() || null
       }
 
       // [AI:Claude] N'envoyer current_row QUE lors de la création, pas lors de la modification
@@ -2208,13 +2598,168 @@ const ProjectCounter = () => {
       }
 
       setShowAddSectionModal(false)
-      setSectionForm({ name: '', description: '', total_rows: '' })
+      setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
       setEditingSection(null)
     } catch (err) {
       console.error('Erreur sauvegarde section:', err)
       showAlert('Erreur lors de la sauvegarde de la section', 'error')
     } finally {
       setSavingSection(false)
+    }
+  }
+
+  // [AI:Claude] Toggle notes de section (dépliable)
+  const toggleSectionNotes = (section) => {
+    if (expandedNotesSection === section.id) {
+      // Fermer
+      setExpandedNotesSection(null)
+      setSectionNotesText('')
+    } else {
+      // Ouvrir
+      setExpandedNotesSection(section.id)
+      setSectionNotesText(section.notes || '')
+    }
+  }
+
+  // Calcul jours restants pour la deadline
+  const daysUntilDeadline = deadline ? Math.ceil((new Date(deadline) - new Date().setHours(0,0,0,0)) / (1000*60*60*24)) : null
+
+  const saveDeadline = (date) => {
+    setDeadline(date)
+    api.put(`/projects/${projectId}`, { deadline: date || null }).catch(() => {})
+  }
+
+  // Sauvegarder les reminders dans la section ou le projet
+  const saveReminders = (newReminders) => {
+    const payload = { reminders: JSON.stringify(newReminders) }
+    if (currentSectionId) {
+      api.put(`/projects/${projectId}/sections/${currentSectionId}`, payload).catch(() => {})
+    } else {
+      api.put(`/projects/${projectId}`, payload).catch(() => {})
+    }
+  }
+
+  const addReminder = () => {
+    const row = parseInt(reminderForm.row)
+    if (!row || row <= 0 || !reminderForm.message.trim()) return
+    const newReminder = { id: Date.now().toString(), row, message: reminderForm.message.trim(), done: false }
+    const newReminders = [...reminders, newReminder].sort((a, b) => a.row - b.row)
+    setReminders(newReminders)
+    saveReminders(newReminders)
+    setReminderForm({ row: '', message: '' })
+  }
+
+  const dismissReminder = (id) => {
+    const newReminders = reminders.map(r => r.id === id ? { ...r, done: true } : r)
+    setReminders(newReminders)
+    saveReminders(newReminders)
+    setActiveReminder(null)
+  }
+
+  const resetReminder = (id) => {
+    const newReminders = reminders.map(r => r.id === id ? { ...r, done: false } : r)
+    setReminders(newReminders)
+    saveReminders(newReminders)
+  }
+
+  const deleteReminder = (id) => {
+    const newReminders = reminders.filter(r => r.id !== id)
+    setReminders(newReminders)
+    saveReminders(newReminders)
+  }
+
+  // Sauvegarder l'état courant du compteur secondaire dans project_rows (avant reset)
+  const flushSecondaryToHistory = () => {
+    if (!secondaryActive || !secondaryLabel || secondaryCount === 0) return
+    api.post(`/projects/${projectId}/rows`, {
+      row_number: currentRow,
+      section_id: currentSectionId || null,
+      secondary_count: secondaryCount,
+      secondary_target: secondaryTarget,
+      secondary_label: secondaryLabel
+    }).catch(() => {})
+  }
+
+  // [AI:Claude] v0.18.1 - Incrémenter le compteur secondaire avec gestion de séquence
+  const handleSecondaryIncrement = () => {
+    if (!secondarySequence) {
+      // Comportement normal sans séquence
+      setSecondaryCount(prev => prev + 1)
+      return
+    }
+
+    const seq = secondarySequence
+    const step = seq.steps[seq.current_step]
+    if (!step) return
+
+    const newDone = seq.current_done + 1
+
+    if (newDone >= step.repeat) {
+      // Étape terminée, passer à la suivante
+      const nextStep = seq.current_step + 1
+      const newSeq = { ...seq, current_step: nextStep, current_done: 0 }
+      setSecondarySequence(newSeq)
+      setSecondaryCount(0)
+      if (nextStep < seq.steps.length) {
+        setSecondaryTarget(seq.steps[nextStep].target)
+      }
+      // La persistence est assurée par le useEffect debounce
+    } else {
+      const newSeq = { ...seq, current_done: newDone }
+      setSecondarySequence(newSeq)
+      setSecondaryCount(prev => prev + 1)
+    }
+  }
+
+  // [AI:Claude] v0.18.1 - Décrémenter le compteur secondaire avec gestion de séquence
+  const handleSecondaryDecrement = () => {
+    if (!secondarySequence) {
+      setSecondaryCount(prev => Math.max(0, prev - 1))
+      return
+    }
+
+    const seq = secondarySequence
+
+    if (seq.current_done > 0) {
+      // Reculer dans l'étape courante
+      const newSeq = { ...seq, current_done: seq.current_done - 1 }
+      setSecondarySequence(newSeq)
+      setSecondaryCount(prev => Math.max(0, prev - 1))
+    } else if (seq.current_step > 0) {
+      // Revenir à l'étape précédente, à sa dernière valeur
+      const prevStepIndex = seq.current_step - 1
+      const prevStep = seq.steps[prevStepIndex]
+      const newSeq = { ...seq, current_step: prevStepIndex, current_done: prevStep.repeat - 1 }
+      setSecondarySequence(newSeq)
+      setSecondaryTarget(prevStep.target)
+      setSecondaryCount(prevStep.repeat - 1)
+    }
+    // Déjà au début (étape 0, done 0) : rien à faire
+  }
+
+  // [AI:Claude] Sauvegarder les notes de section
+  const saveSectionNotes = async (sectionId) => {
+    setIsSavingSectionNotes(true)
+    try {
+      await api.put(`/projects/${projectId}/sections/${sectionId}`, {
+        notes: sectionNotesText
+      })
+
+      // Mettre à jour localement
+      setSections(prevSections =>
+        prevSections.map(s =>
+          s.id === sectionId
+            ? { ...s, notes: sectionNotesText }
+            : s
+        )
+      )
+
+      showAlert('Notes sauvegardées', 'success')
+    } catch (err) {
+      console.error('Erreur sauvegarde notes section:', err)
+      showAlert('Erreur lors de la sauvegarde des notes', 'error')
+    } finally {
+      setIsSavingSectionNotes(false)
     }
   }
 
@@ -2280,8 +2825,6 @@ const ProjectCounter = () => {
         const allSectionsCompleted = updatedSections.every(s => s.is_completed === 1)
 
         if (allSectionsCompleted && project.status !== 'completed') {
-          // Afficher la modale de confirmation au lieu de terminer automatiquement
-          showAlert(alertMessage, 'success')
           await handleAllSectionsCompleted()
           return
         }
@@ -2316,6 +2859,20 @@ const ProjectCounter = () => {
       await fetchProject()
       setShowProjectCompletionModal(false)
       showAlert('🎉 Projet marqué comme terminé !', 'success')
+    } catch (err) {
+      console.error('Erreur terminer projet:', err)
+      showAlert('Erreur lors de la finalisation du projet', 'error')
+    }
+  }
+
+  // Terminer le projet ET ouvrir l'upload photo (moment émotionnel)
+  const handleCompleteAndPhoto = async () => {
+    try {
+      await api.put(`/projects/${projectId}`, { status: 'completed' })
+      await fetchProject()
+      setShowProjectCompletionModal(false)
+      setActiveTab('photos')
+      setShowPhotoUploadModal(true)
     } catch (err) {
       console.error('Erreur terminer projet:', err)
       showAlert('Erreur lors de la finalisation du projet', 'error')
@@ -2373,6 +2930,10 @@ const ProjectCounter = () => {
   // [AI:Claude] Déplier/replier une section (accordéon - une seule ouverte à la fois)
   const toggleSectionExpanded = (sectionId, e) => {
     if (e) e.stopPropagation()
+    // Fermer les notes et le menu de toute section quand on change de section
+    setExpandedNotesSection(null)
+    setSectionNotesText('')
+    setOpenSectionMenu(null)
     setExpandedSections(prev => {
       const newSet = new Set()
       // Si la section était déjà ouverte, on la ferme (newSet reste vide)
@@ -2395,9 +2956,35 @@ const ProjectCounter = () => {
 
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p className="mt-4 text-gray-600">Chargement du projet...</p>
+      <div className="max-w-7xl mx-auto px-4 py-3 space-y-3">
+        {/* Skeleton header */}
+        <div className="space-y-2">
+          <div className="skeleton h-4 w-16 rounded" />
+          <div className="skeleton h-7 w-48 rounded-lg" />
+          <div className="flex gap-2">
+            <div className="skeleton h-5 w-20 rounded-full" />
+            <div className="skeleton h-5 w-16 rounded-full" />
+          </div>
+        </div>
+        {/* Skeleton barre progression */}
+        <div className="skeleton h-16 w-full rounded-xl" />
+        {/* Skeleton compteur */}
+        <div className="skeleton h-20 w-full rounded-xl" />
+        {/* Skeleton sections */}
+        <div className="skeleton h-12 w-full rounded-xl" />
+        {/* Skeleton tabs */}
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div className="flex border-b border-gray-100">
+            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="skeleton h-4 w-full rounded" />
+            <div className="skeleton h-4 w-3/4 rounded" />
+            <div className="skeleton h-32 w-full rounded-lg" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -2509,6 +3096,72 @@ const ProjectCounter = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-3">
+
+      {/* [AI:Claude] v0.17.1 - Tip premier projet */}
+      {showFirstProjectTip && (
+        <div className="mb-4 bg-primary-50 border border-primary-200 rounded-xl p-4 relative">
+          <button
+            onClick={() => setShowFirstProjectTip(false)}
+            className="absolute top-2 right-2 text-primary-400 hover:text-primary-600 text-xl leading-none"
+            aria-label="Fermer"
+          >
+            ×
+          </button>
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+            <div>
+              <p className="font-semibold text-primary-800 mb-1">Astuce</p>
+              <p className="text-primary-700 text-sm leading-relaxed">
+                YarnFlow est surtout utile quand vous êtes interrompue.
+                <br />
+                Laissez-le ouvert pendant que vous tricotez — même si vous faites des pauses.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Nudge sections */}
+      {showSectionsNudge && sections.length === 0 && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
+          <button
+            onClick={() => { setShowSectionsNudge(false); localStorage.setItem(`yf_sections_nudge_${projectId}`, '1') }}
+            className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
+            aria-label="Fermer"
+          >×</button>
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10" /></svg>
+            <div>
+              <p className="font-semibold text-amber-800 mb-1 text-sm">Votre projet a plusieurs parties ?</p>
+              <p className="text-amber-700 text-sm leading-relaxed">
+                Créez des <strong>sections</strong> pour suivre chaque partie séparément — dos, devant, manches…
+                Le compteur repart à zéro pour chaque section.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Indicateur hors-ligne / sync en attente */}
+      {(!isOnline || pendingSync) && (
+        <div className={`mb-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
+          !isOnline
+            ? 'bg-orange-50 text-orange-700 border border-orange-200'
+            : 'bg-blue-50 text-blue-700 border border-blue-200'
+        }`}>
+          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {!isOnline
+              ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M12 12h.01M3 3l18 18" />
+              : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            }
+          </svg>
+          {!isOnline
+            ? 'Hors ligne — vos rangs sont sauvegardés localement'
+            : 'Synchronisation en cours…'
+          }
+        </div>
+      )}
+
       {/* [AI:Claude] Header ultra-compact */}
       <div className="mb-3">
         <div>
@@ -2521,6 +3174,29 @@ const ProjectCounter = () => {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
+              {daysUntilDeadline !== null ? (
+                <button
+                  onClick={() => setShowDeadlinePicker(true)}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition ${
+                    daysUntilDeadline < 0 ? 'bg-red-100 text-red-700' :
+                    daysUntilDeadline <= 7 ? 'bg-orange-100 text-orange-700' :
+                    'bg-green-100 text-green-700'
+                  }`}
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  {daysUntilDeadline < 0 ? `${Math.abs(daysUntilDeadline)}j de retard` :
+                   daysUntilDeadline === 0 ? "Aujourd'hui !" :
+                   `${daysUntilDeadline}j restants`}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowDeadlinePicker(true)}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  Objectif de date
+                </button>
+              )}
               <div className="relative type-menu">
                 <button
                   onClick={() => setShowTypeMenu(!showTypeMenu)}
@@ -2581,35 +3257,40 @@ const ProjectCounter = () => {
                 )}
               </div>
 
-              {/* [AI:Claude] v0.16.2 - Switch toggle unité */}
-              <div className="flex items-center gap-2 ml-auto">
+              {/* [AI:Claude] Toggle unité — concerne tout le projet */}
+              <div className="flex-shrink-0">
                 <button
                   onClick={handleToggleUnit}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-300 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs font-medium transition-colors"
+                  title="Changer l'unité de comptage"
                 >
-                  <span className="text-xs text-gray-600">Unité :</span>
-                  <div className="flex items-center gap-1.5 font-medium text-xs">
-                    <span className={counterUnit === 'rows' ? 'text-primary-600' : 'text-gray-400'}>
-                      📏 Rangs
-                    </span>
-                    <div className="relative inline-flex items-center h-5 w-9 rounded-full transition-colors"
-                         style={{ backgroundColor: counterUnit === 'cm' ? '#8b5cf6' : '#d1d5db' }}>
-                      <span
-                        className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform"
-                        style={{ transform: counterUnit === 'cm' ? 'translateX(18px)' : 'translateX(2px)' }}
-                      />
-                    </div>
-                    <span className={counterUnit === 'cm' ? 'text-primary-600' : 'text-gray-400'}>
-                      📐 CM
-                    </span>
+                  <span className={counterUnit === 'rows' ? 'text-gray-900 font-semibold' : 'text-gray-400'}>Rangs</span>
+                  <div className="relative inline-flex items-center h-4 w-7 rounded-full transition-colors"
+                       style={{ backgroundColor: counterUnit === 'cm' ? '#557055' : '#9ca3af' }}>
+                    <span
+                      className="inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform"
+                      style={{ transform: counterUnit === 'cm' ? 'translateX(14px)' : 'translateX(2px)' }}
+                    />
                   </div>
+                  <span className={counterUnit === 'cm' ? 'text-gray-900 font-semibold' : 'text-gray-400'}>cm</span>
                 </button>
               </div>
+
             </div>
 
-            {/* Tags (v0.15.0) - Éditable */}
+            {/* Tags */}
             <div className="w-full mt-2">
-              {canUseTags ? (
+              {!canUseTags ? (
+                <button
+                  onClick={() => setUpgradeFeature('tags')}
+                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-primary-600 transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  Tags — PRO
+                </button>
+              ) : (
                 <>
                   {!showTagSection && localTags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 items-center">
@@ -2623,22 +3304,22 @@ const ProjectCounter = () => {
                         onClick={() => setShowTagSection(true)}
                         className="text-xs text-primary-600 hover:text-primary-700 font-medium ml-2"
                       >
-                        ✏️ Modifier
+                        Modifier
                       </button>
                     </div>
                   )}
                   {!showTagSection && localTags.length === 0 && (
                     <button
                       onClick={() => setShowTagSection(true)}
-                      className="text-xs text-gray-500 hover:text-primary-600 font-medium"
+                      className="text-xs text-gray-400 hover:text-primary-600 font-medium"
                     >
-                      🏷️ Ajouter des tags...
+                      + Ajouter des tags
                     </button>
                   )}
                   {showTagSection && (
                     <div className="bg-sage/5 rounded-lg p-3 border border-sage/20">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">🏷️ Tags du projet</span>
+                        <span className="text-sm font-medium text-gray-700">Tags du projet</span>
                         <button
                           onClick={() => setShowTagSection(false)}
                           className="text-xs text-gray-500 hover:text-gray-700"
@@ -2656,106 +3337,98 @@ const ProjectCounter = () => {
                     </div>
                   )}
                 </>
-              ) : (
-                localTags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {localTags.slice(0, 5).map((tag, idx) => (
-                      <TagBadge key={idx} tag={tag} className="text-xs" />
-                    ))}
-                    {localTags.length > 5 && (
-                      <span className="text-xs text-gray-500 px-2 py-1">+{localTags.length - 5}</span>
-                    )}
-                  </div>
-                )
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* [AI:Claude] Barre 1 : Progression globale du projet - STICKY */}
-      <div className="sticky top-0 z-40 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-300 p-4 mb-3 shadow-lg">
+      {/* [AI:Claude] Barre 1 : Progression globale du projet */}
+      <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 mb-3 shadow-sm">
         {/* Version Desktop */}
         <div className="hidden sm:flex items-center gap-4">
           <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-gray-700">Progression totale</span>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-gray-600">Progression totale</span>
               <span className="text-xs font-bold text-primary-700">{globalProgressPercentage || 0}%</span>
             </div>
-            <div className="w-full bg-white/50 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
               <div
-                className={`h-2 rounded-full transition-all ${
-                  project.status === 'completed' ? 'bg-green-600' : 'bg-primary-600'
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  project.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-primary-400 to-primary-600'
                 }`}
                 style={{ width: `${globalProgressPercentage || 0}%` }}
               ></div>
             </div>
           </div>
-          <div className="text-center flex-shrink-0">
-            <div className="text-lg font-bold text-primary-700">
+          <div className="text-center flex-shrink-0 border-l border-gray-100 pl-4">
+            <div className="text-sm font-semibold text-gray-800">
               {(() => {
                 const totalTime = project?.total_time || 0
                 const totalHours = Math.floor(totalTime / 3600)
                 const totalMins = Math.floor((totalTime % 3600) / 60)
-                const totalSecs = totalTime % 60
-                return `${totalHours}h ${totalMins}min ${totalSecs}s`
+                return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
               })()}
             </div>
-            <div className="text-[10px] text-gray-600">Temps total</div>
+            <div className="text-[10px] text-gray-400">Temps total</div>
           </div>
           <button
             onClick={handleToggleProjectComplete}
-            className={`px-4 py-2 rounded-lg font-medium text-sm transition whitespace-nowrap ${
+            className={`px-4 py-2 rounded-xl font-medium text-sm transition whitespace-nowrap ${
               project.status === 'completed'
                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
             title={project.status === 'completed' ? 'Réouvrir le projet' : 'Marquer le projet comme terminé'}
           >
-            {project.status === 'completed' ? '✅ Terminé' : '✓ Marquer terminé'}
+            {project.status === 'completed' ? (
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                Terminé
+              </span>
+            ) : 'Marquer terminé'}
           </button>
         </div>
 
         {/* Version Mobile - Design simplifié */}
         <div className="sm:hidden space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-gray-700">Progression</span>
+            <span className="font-medium text-gray-600">Progression</span>
             <span className="font-bold text-primary-700">{globalProgressPercentage || 0}%</span>
           </div>
-          <div className="w-full bg-white/50 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
             <div
-              className={`h-2 rounded-full transition-all ${
-                project.status === 'completed' ? 'bg-green-600' : 'bg-primary-600'
+              className={`h-2 rounded-full transition-all duration-500 ${
+                project.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-primary-400 to-primary-600'
               }`}
               style={{ width: `${globalProgressPercentage || 0}%` }}
             ></div>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <div className="text-xs text-gray-600">
-              ⏱️ {(() => {
+            <div className="text-xs text-gray-500">
+              {(() => {
                 const totalTime = project?.total_time || 0
                 const totalHours = Math.floor(totalTime / 3600)
                 const totalMins = Math.floor((totalTime % 3600) / 60)
-                const totalSecs = totalTime % 60
-                return `${totalHours}h ${totalMins}min ${totalSecs}s`
+                return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
               })()}
             </div>
             <button
               onClick={handleToggleProjectComplete}
-              className={`px-3 py-1.5 rounded-lg font-medium text-xs transition ${
+              className={`px-3 py-1.5 rounded-xl font-medium text-xs transition ${
                 project.status === 'completed'
                   ? 'bg-green-100 text-green-800'
-                  : 'bg-white text-gray-700 border border-gray-300'
+                  : 'bg-gray-100 text-gray-700'
               }`}
             >
-              {project.status === 'completed' ? '✅ Terminé' : '✓ Terminé'}
+              {project.status === 'completed' ? '✓ Terminé' : 'Marquer terminé'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY avec fond caramel doux */}
-      <div className="sticky top-20 z-40 bg-orange-100 bg-opacity-75 backdrop-blur-sm rounded-lg border-2 border-orange-300 p-3 mb-3 shadow-lg">
+      {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY */}
+      <div className="sticky top-[52px] z-40 bg-primary-200/70 backdrop-blur-sm rounded-xl border border-primary-200 p-3 mb-3 shadow-sm">
         {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
         <div className="space-y-2 sm:space-y-0">
           {/* Ligne 1 mobile: Section + Compteur | Desktop: cachée car tout sur une seule ligne */}
@@ -2763,13 +3436,22 @@ const ProjectCounter = () => {
             {/* Section active mobile */}
             <div className="text-left flex-shrink min-w-0">
               <div className="text-xs text-gray-500">Section active</div>
-              <div className="font-semibold text-gray-900 text-sm truncate">
+              <div className="font-semibold text-gray-900 text-sm truncate max-w-[140px]">
                 {currentSectionId ? (
                   sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
                 ) : (
                   'Projet global'
                 )}
               </div>
+              <button
+                onClick={() => setShowReminderManager(true)}
+                className={`mt-0.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+              >
+                <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                Rappels
+              </button>
             </div>
 
             {/* Compteur mobile */}
@@ -2777,11 +3459,15 @@ const ProjectCounter = () => {
               <button
                 onClick={handleDecrementRow}
                 disabled={currentRow === 0}
-                className="w-9 h-9 bg-red-100 text-red-600 rounded-full text-lg font-bold hover:bg-red-200 transition disabled:opacity-50"
+                className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
               >
                 −
               </button>
-              <div className="text-center min-w-[80px]">
+              <div
+                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-3 py-1 min-w-[90px] cursor-pointer"
+                onClick={handleCounterClick}
+                title="Cliquer pour modifier"
+              >
                 {isEditingCounter ? (
                   <input
                     type="number"
@@ -2792,29 +3478,33 @@ const ProjectCounter = () => {
                     onKeyDown={handleCounterInputKeyDown}
                     onBlur={handleCounterInputSubmit}
                     autoFocus
-                    className="text-3xl font-bold text-gray-900 w-full text-center border-2 border-primary-500 rounded px-1"
+                    className="text-3xl font-bold text-gray-900 w-full text-center outline-none tabular-nums"
                   />
                 ) : (
-                  <div
-                    onClick={handleCounterClick}
-                    className="text-3xl font-bold text-gray-900 cursor-pointer hover:bg-gray-100 rounded px-2 transition"
-                    title="Cliquer pour modifier"
-                  >
+                  <div className="text-3xl font-bold text-gray-900 tabular-nums leading-tight">
                     {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
                   </div>
                 )}
-                {progressData.total && (
-                  <div className="text-xs text-gray-600">
-                    / {counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}
+                <div className="text-[10px] text-gray-400 leading-none mt-0.5">
+                  {progressData.total
+                    ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
+                    : counterUnit === 'cm' ? 'cm' : 'rangs'}
+                </div>
+              </div>
+              <div className="relative">
+                <button
+                  onClick={handleIncrementRow}
+                  className={`w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none ${showOnboarding ? 'ring-4 ring-primary-400 ring-offset-2 animate-pulse' : ''}`}
+                >
+                  +
+                </button>
+                {showOnboarding && sections.length === 0 && (
+                  <div className="absolute right-14 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 w-44 shadow-lg pointer-events-none z-50">
+                    Appuyez ici à chaque rang terminé
+                    <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-gray-900" />
                   </div>
                 )}
               </div>
-              <button
-                onClick={handleIncrementRow}
-                className="w-9 h-9 bg-primary-600 text-white rounded-full text-xl font-bold hover:bg-primary-700 transition shadow-md"
-              >
-                +
-              </button>
             </div>
           </div>
 
@@ -2823,12 +3513,23 @@ const ProjectCounter = () => {
             {/* Section active - visible uniquement desktop */}
             <div className="hidden sm:block text-left flex-shrink-0">
               <div className="text-xs text-gray-500">Section active</div>
-              <div className="font-semibold text-gray-900 text-base">
-                {currentSectionId ? (
-                  sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
-                ) : (
-                  'Projet global'
-                )}
+              <div className="flex items-center gap-1.5">
+                <div className="font-semibold text-gray-900 text-base">
+                  {currentSectionId ? (
+                    sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
+                  ) : (
+                    'Projet global'
+                  )}
+                </div>
+                <button
+                  onClick={() => setShowReminderManager(true)}
+                  className={`flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                >
+                  <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  Rappels
+                </button>
               </div>
             </div>
 
@@ -2837,11 +3538,15 @@ const ProjectCounter = () => {
               <button
                 onClick={handleDecrementRow}
                 disabled={currentRow === 0}
-                className="w-9 h-9 bg-red-100 text-red-600 rounded-full text-lg font-bold hover:bg-red-200 transition disabled:opacity-50"
+                className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
               >
                 −
               </button>
-              <div className="text-center min-w-[80px]">
+              <div
+                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-1.5 min-w-[90px] cursor-pointer"
+                onClick={handleCounterClick}
+                title="Cliquer pour modifier"
+              >
                 {isEditingCounter ? (
                   <input
                     type="number"
@@ -2852,26 +3557,22 @@ const ProjectCounter = () => {
                     onKeyDown={handleCounterInputKeyDown}
                     onBlur={handleCounterInputSubmit}
                     autoFocus
-                    className="text-3xl font-bold text-gray-900 w-full text-center border-2 border-primary-500 rounded px-1"
+                    className="text-3xl font-bold text-gray-900 w-full text-center outline-none tabular-nums"
                   />
                 ) : (
-                  <div
-                    onClick={handleCounterClick}
-                    className="text-3xl font-bold text-gray-900 cursor-pointer hover:bg-gray-100 rounded px-2 transition"
-                    title="Cliquer pour modifier"
-                  >
+                  <div className="text-3xl font-bold text-gray-900 tabular-nums leading-tight">
                     {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
                   </div>
                 )}
-                {progressData.total && (
-                  <div className="text-xs text-gray-600">
-                    / {counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}
-                  </div>
-                )}
+                <div className="text-[10px] text-gray-400 leading-none mt-0.5">
+                  {progressData.total
+                    ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
+                    : counterUnit === 'cm' ? 'cm' : 'rangs'}
+                </div>
               </div>
               <button
                 onClick={handleIncrementRow}
-                className="w-10 h-10 bg-primary-600 text-white rounded-full text-2xl font-bold hover:bg-primary-700 transition shadow-md"
+                className="w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
               >
                 +
               </button>
@@ -2884,7 +3585,9 @@ const ProjectCounter = () => {
                 <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
                   Session
                   {isWakeLockActive && (
-                    <span className="text-green-600" title="Écran maintenu allumé">🔋</span>
+                    <svg className="w-3 h-3 text-green-600" title="Écran maintenu allumé" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm-1 13.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6L17 8.9l-6 6.1z"/>
+                    </svg>
                   )}
                 </div>
               </div>
@@ -2912,9 +3615,10 @@ const ProjectCounter = () => {
                   {!isTimerRunning ? (
                     <button
                       onClick={handleStartSession}
-                      className="px-2 sm:px-3 py-1.5 sm:py-2 bg-green-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-green-700 transition whitespace-nowrap"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap shadow-sm"
                     >
-                      ▶️ Démarrer
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      Démarrer
                     </button>
                   ) : (
                     <>
@@ -2922,53 +3626,253 @@ const ProjectCounter = () => {
                       {!isTimerPaused ? (
                         <button
                           onClick={handlePauseSession}
-                          className="px-2 sm:px-3 py-1.5 sm:py-2 bg-orange-500 text-white rounded text-xs sm:text-sm font-medium hover:bg-orange-600 transition whitespace-nowrap"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
                           title="Mettre en pause"
                         >
-                          ⏸️ Pause
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                          Pause
                         </button>
                       ) : (
                         <button
                           onClick={handleResumeSession}
-                          className="px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-blue-700 transition whitespace-nowrap"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
                           title="Reprendre"
                         >
-                          ▶️ Reprendre
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                          Reprendre
                         </button>
                       )}
 
                       {/* Bouton Arrêter */}
                       <button
                         onClick={handleEndSession}
-                        className="px-2 sm:px-3 py-1.5 sm:py-2 bg-red-600 text-white rounded text-xs sm:text-sm font-medium hover:bg-red-700 transition whitespace-nowrap"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs sm:text-sm font-semibold hover:bg-gray-50 transition whitespace-nowrap"
                         title="Terminer la session"
                       >
-                        ⏹️ Arrêter
+                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+                        Arrêter
                       </button>
                     </>
                   )}
                 </>
               )}
               {project.status === 'completed' && (
-                <div className="px-3 py-2 bg-green-100 text-green-700 rounded text-xs sm:text-sm font-medium">
-                  ✅ Terminé
+                <div className="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-xl text-xs sm:text-sm font-medium">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  Terminé
                 </div>
               )}
             </div>
           </div>
         </div>
+
+        {/* [AI:Claude] Compteur secondaire (PLUS/PRO) */}
+        {!isPaidPlan ? (
+          <div className="pt-2 border-t border-primary-300/50">
+            <button
+              onClick={() => setUpgradeFeature('secondary_counter')}
+              className="text-xs text-gray-400 flex items-center gap-1.5 hover:text-primary-600 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              Compteur secondaire — PRO
+            </button>
+          </div>
+        ) : !secondaryActive ? (
+          <div className="pt-2 border-t border-primary-300/50">
+            <div className="relative">
+              <button
+                onClick={() => { setSecondaryLabelInput(''); setSecondaryTargetInput(''); setSecondaryActive(true); setIsEditingSecondary(true); setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
+                className="text-xs text-primary-700 flex items-center gap-1 hover:text-primary-900 transition font-medium"
+              >
+                ＋ Ajouter un compteur secondaire
+              </button>
+              {showSecondaryTip && (
+                <div className="absolute left-0 top-7 z-20 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 w-56 shadow-lg">
+                  <button
+                    onClick={() => { setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
+                    className="absolute top-1.5 right-2 text-gray-400 hover:text-white leading-none"
+                  >×</button>
+                  <p className="font-semibold mb-1">Compteur secondaire</p>
+                  <p className="text-gray-300 leading-relaxed">Suivez vos augmentations, diminutions ou tout autre comptage en parallèle.</p>
+                  <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="pt-2 border-t border-primary-300/50">
+            {isEditingSecondary ? (
+              // Mode édition label + cible
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="text"
+                  value={secondaryLabelInput}
+                  onChange={e => setSecondaryLabelInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') { setSecondaryLabel(secondaryLabelInput); setSecondaryTarget(secondaryTargetInput ? Number(secondaryTargetInput) : null); setIsEditingSecondary(false) }
+                    if (e.key === 'Escape') setIsEditingSecondary(false)
+                  }}
+                  placeholder="ex: Dim."
+                  maxLength={20}
+                  autoFocus
+                  className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <input
+                  type="number"
+                  value={secondaryTargetInput}
+                  onChange={e => setSecondaryTargetInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') { setSecondaryLabel(secondaryLabelInput); setSecondaryTarget(secondaryTargetInput ? Number(secondaryTargetInput) : null); setIsEditingSecondary(false) }
+                    if (e.key === 'Escape') setIsEditingSecondary(false)
+                  }}
+                  placeholder="Objectif (opt.)"
+                  min="1"
+                  className="w-28 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+                <button
+                  onClick={() => {
+                    setSecondaryLabel(secondaryLabelInput)
+                    setSecondaryTarget(secondaryTargetInput ? Number(secondaryTargetInput) : null)
+                    setIsEditingSecondary(false)
+                  }}
+                  className="px-2 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 transition"
+                >
+                  OK
+                </button>
+                <button
+                  onClick={() => setIsEditingSecondary(false)}
+                  className="text-xs text-gray-400 hover:text-gray-600"
+                >
+                  Annuler
+                </button>
+              </div>
+            ) : (
+              // Compteur secondaire actif
+              <div className="space-y-2">
+                {/* Ligne 1 : label + actions */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    {secondaryLabel || 'Compteur'}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        setSecondaryLabelInput(secondaryLabel)
+                        setSecondaryTargetInput(secondaryTarget ? String(secondaryTarget) : '')
+                        setIsEditingSecondary(true)
+                      }}
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+                      title="Modifier"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                    </button>
+                    <button
+                      onClick={() => { flushSecondaryToHistory(); setSecondaryCount(0) }}
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-orange-500 hover:bg-orange-100 transition"
+                      title="Remettre à zéro"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    </button>
+                    <button
+                      onClick={() => { flushSecondaryToHistory(); setSecondaryActive(false); setSecondaryCount(0); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput(''); setSecondarySequence(null) }}
+                      className="w-6 h-6 flex items-center justify-center rounded-full text-red-400 hover:bg-red-100 transition"
+                      title="Supprimer le compteur"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ligne 2 : compteur */}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleSecondaryDecrement}
+                    className="w-8 h-8 bg-red-100 text-red-600 rounded-full text-base font-bold hover:bg-red-200 transition flex-shrink-0"
+                  >
+                    −
+                  </button>
+                  <div className="flex-1 text-center">
+                    <span className="font-bold text-xl text-gray-900">{secondaryCount}</span>
+                    {secondarySequence && secondarySequence.steps?.[secondarySequence.current_step] ? (
+                      <span className="text-gray-400 font-normal text-sm"> / {secondarySequence.steps[secondarySequence.current_step].repeat}</span>
+                    ) : secondaryTarget ? (
+                      <span className="text-gray-400 font-normal text-sm"> / {secondaryTarget}</span>
+                    ) : null}
+                  </div>
+                  <button
+                    onClick={handleSecondaryIncrement}
+                    disabled={secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence}
+                    className={`w-8 h-8 rounded-full text-base font-bold transition flex-shrink-0 ${
+                      secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence
+                        ? 'bg-green-500 text-white cursor-not-allowed'
+                        : 'bg-primary-600 text-white hover:bg-primary-700'
+                    }`}
+                  >
+                    {secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence ? '✓' : '+'}
+                  </button>
+                </div>
+
+                {/* Ligne 3 : infos séquence */}
+                {/* [AI:Claude] v0.18.1 - Affichage séquence structurée */}
+                {secondarySequence && secondarySequence.steps && secondarySequence.current_step < secondarySequence.steps.length && (
+                  <div className="pt-2 border-t border-primary-200/50 space-y-1.5">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>Étape {secondarySequence.current_step + 1}/{secondarySequence.steps.length} — tous les <strong className="text-gray-700">{secondarySequence.steps[secondarySequence.current_step]?.target}</strong> ({secondarySequence.steps[secondarySequence.current_step]?.repeat}×)</span>
+                    </div>
+                    {(() => {
+                      const totalReps = secondarySequence.steps.reduce((sum, s) => sum + s.repeat, 0)
+                      const doneBefore = secondarySequence.steps.slice(0, secondarySequence.current_step).reduce((sum, s) => sum + s.repeat, 0)
+                      const totalDone = doneBefore + secondarySequence.current_done
+                      const pct = totalReps > 0 ? Math.round((totalDone / totalReps) * 100) : 0
+                      return (
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div className="bg-primary-500 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+                {secondarySequence && secondarySequence.steps && secondarySequence.current_step >= secondarySequence.steps.length && (
+                  <div className="pt-2 border-t border-green-200">
+                    <p className="text-xs text-green-700 font-medium text-center">✓ Séquence terminée</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      <div className="flex flex-col gap-3">
+
+      {/* Guidage sections — première visite avec sections */}
+      {showOnboarding && sections.length > 0 && !currentSectionId && (
+        <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 flex items-start gap-3">
+          <div className="w-6 h-6 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
+          <div>
+            <p className="text-sm font-medium text-primary-900">Sur quelle partie travaillez-vous ?</p>
+            <p className="text-xs text-primary-700 mt-0.5">Sélectionnez une section ci-dessous, puis appuyez sur <strong>+</strong> à chaque rang terminé.</p>
+          </div>
+        </div>
+      )}
+
       {/* [AI:Claude] Tableau des sections */}
-      <div className="bg-white rounded-lg border border-gray-200 mb-3 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div
-          className="p-3 border-b border-gray-200 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
+          className="px-4 py-3 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
           onClick={() => setSectionsCollapsed(!sectionsCollapsed)}
         >
           <div className="flex items-center gap-2">
-            <span className="text-gray-500 text-lg">{sectionsCollapsed ? '▸' : '▾'}</span>
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform ${sectionsCollapsed ? '' : 'rotate-90'}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
             <h2 className="text-sm font-semibold text-gray-900">
-              🧩 Sections du projet {sections.length > 0 && `(${sections.length})`}
+              Sections {sections.length > 0 && <span className="text-gray-400 font-normal">({sections.length})</span>}
             </h2>
           </div>
           <button
@@ -2976,10 +3880,12 @@ const ProjectCounter = () => {
               e.stopPropagation()
               openAddSectionModal()
             }}
-            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg text-xs font-medium hover:bg-primary-700 transition flex items-center gap-1"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs font-semibold hover:bg-primary-700 transition"
           >
-            <span className="hidden sm:inline">➕ Ajouter une section</span>
-            <span className="sm:hidden">➕</span>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span className="hidden sm:inline">Ajouter une section</span>
           </button>
         </div>
 
@@ -2987,16 +3893,23 @@ const ProjectCounter = () => {
           <>
             {sections.length === 0 ? (
               <div className="p-8 text-center">
-                <div className="text-5xl mb-3">🧩</div>
-                <p className="text-gray-600 font-medium mb-2">Aucune section</p>
-                <p className="text-sm text-gray-500 mb-4">
-                  Les sections vous permettent de diviser votre projet en parties (face, dos, manches, etc.)
+                <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                  </svg>
+                </div>
+                <p className="text-gray-700 font-medium mb-1 text-sm">Aucune section</p>
+                <p className="text-xs text-gray-400 mb-4">
+                  Divisez votre projet en parties (face, dos, manches...)
                 </p>
                 <button
                   onClick={openAddSectionModal}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
                 >
-                  ➕ Créer ma première section
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Créer ma première section
                 </button>
               </div>
             ) : (
@@ -3029,7 +3942,7 @@ const ProjectCounter = () => {
                         to="/subscription"
                         className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                       >
-                        🔒 Plus de tris avec PLUS/PRO
+                        🔒 Plus de tris avec PRO
                       </Link>
                     )}
                   </div>
@@ -3108,10 +4021,44 @@ const ProjectCounter = () => {
                             )}
                           </div>
                         )}
+
+                        {/* Zone notes dépliable */}
+                        {expandedNotesSection === section.id && (
+                          <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg" onClick={(e) => e.stopPropagation()}>
+                            <textarea
+                              value={sectionNotesText}
+                              onChange={(e) => setSectionNotesText(e.target.value)}
+                              placeholder="Notes pour cette section..."
+                              className="w-full h-24 p-2 text-sm border border-gray-300 rounded resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                            />
+                            <div className="flex items-center justify-end mt-2">
+                              <button
+                                onClick={() => saveSectionNotes(section.id)}
+                                disabled={isSavingSectionNotes}
+                                className="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50 transition"
+                              >
+                                {isSavingSectionNotes ? '...' : 'Sauvegarder'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </td>
 
                       {/* Progression */}
                       <td className="px-4 py-3">
+                        {section.total_rows ? (
+                          <span className="text-xs text-gray-500 block mb-1">
+                            {counterUnit === 'cm'
+                              ? `${Number(section.current_row || 0).toFixed(1)} / ${Number(section.total_rows).toFixed(1)} cm`
+                              : `rang ${Math.floor(section.current_row || 0)} / ${Math.floor(section.total_rows)}`}
+                          </span>
+                        ) : section.current_row > 0 ? (
+                          <span className="text-xs text-gray-500 block mb-1">
+                            {counterUnit === 'cm'
+                              ? `${Number(section.current_row).toFixed(1)} cm`
+                              : `rang ${Math.floor(section.current_row)}`}
+                          </span>
+                        ) : null}
                         {sectionProgress !== null ? (
                           <div className="flex items-center gap-2">
                             <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden min-w-[60px]">
@@ -3125,7 +4072,10 @@ const ProjectCounter = () => {
                             <span className="text-xs font-medium text-gray-700 min-w-[35px]">
                               {sectionProgress}%
                             </span>
-                            <span className="text-xs text-gray-500 ml-2">⏱️ {section.time_formatted || '0h 0min 0s'}</span>
+                            <span className="text-xs text-gray-500 ml-2 flex items-center gap-1">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                              {section.time_formatted || '0h 0min 0s'}
+                            </span>
                           </div>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
@@ -3186,6 +4136,31 @@ const ProjectCounter = () => {
                           >
                             🗑️
                           </button>
+                          {/* Séparateur + Bouton Notes */}
+                          <div className="ml-3 pl-3 border-l border-gray-200">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (!isPaidPlan) { setUpgradeFeature('section_notes'); return }
+                                toggleSectionNotes(section)
+                              }}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition shadow-sm ${
+                                !isPaidPlan
+                                  ? 'bg-gray-100 text-gray-400 border border-gray-200 hover:bg-gray-200'
+                                  : expandedNotesSection === section.id
+                                    ? 'bg-primary-600 text-white shadow-primary-200'
+                                    : section.notes
+                                      ? 'bg-primary-600 text-white shadow-primary-200'
+                                      : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
+                              }`}
+                              title={!isPaidPlan ? 'Notes par section — PRO' : expandedNotesSection === section.id ? 'Fermer les notes' : section.notes ? 'Voir/modifier les notes' : 'Ajouter des notes'}
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="text-xs font-semibold">Notes</span>
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>
@@ -3240,16 +4215,48 @@ const ProjectCounter = () => {
                         }
                       }}
                     >
-                      <div className="flex items-center gap-2 flex-1">
-                        {isActive && !isCompleted && <span className="text-primary-600 font-bold text-xs">●</span>}
-                        {isActive && isCompleted && <span className="text-green-600 font-bold text-xs">●</span>}
-                        <h3 className={`text-sm font-semibold ${
-                          isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
-                        }`}>
-                          {section.name}
-                        </h3>
-                        {!isActive && isCompleted && <span className="text-green-600 text-xs">✓</span>}
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {isActive && !isCompleted && <span className="text-primary-600 font-bold text-xs flex-shrink-0">●</span>}
+                        {isActive && isCompleted && <span className="text-green-600 font-bold text-xs flex-shrink-0">●</span>}
+                        <div className="min-w-0">
+                          <h3 className={`text-sm font-semibold truncate ${
+                            isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
+                          }`}>
+                            {section.name}
+                            {!isActive && isCompleted && <span className="text-green-600 text-xs ml-1">✓</span>}
+                          </h3>
+                          {(section.total_rows || section.current_row > 0) && (
+                            <span className="text-xs text-gray-400">
+                              {section.total_rows
+                                ? counterUnit === 'cm'
+                                  ? `${Number(section.current_row || 0).toFixed(1)} / ${Number(section.total_rows).toFixed(1)} cm`
+                                  : `rang ${Math.floor(section.current_row || 0)} / ${Math.floor(section.total_rows)}`
+                                : counterUnit === 'cm'
+                                  ? `${Number(section.current_row).toFixed(1)} cm`
+                                  : `rang ${Math.floor(section.current_row)}`}
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      {/* Bouton notes dans le header - style bulle */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleSectionNotes(section)
+                        }}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-full transition shadow-sm ${
+                          expandedNotesSection === section.id
+                            ? 'bg-primary-600 text-white shadow-primary-200'
+                            : section.notes
+                              ? 'bg-primary-600 text-white shadow-primary-200'
+                              : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
+                        }`}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-xs font-semibold">Notes</span>
+                      </button>
                       <span className="text-gray-400 p-1">
                         {isExpanded ? '▾' : '▸'}
                       </span>
@@ -3332,25 +4339,79 @@ const ProjectCounter = () => {
                           >
                             {isCompleted ? '✅ Terminée' : '✓ Marquer terminée'}
                           </button>
+                          {/* Menu "..." pour modifier/supprimer */}
+                          <div className="relative">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOpenSectionMenu(openSectionMenu === section.id ? null : section.id)
+                              }}
+                              className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
+                            >
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                              </svg>
+                            </button>
+                            {/* Menu déroulant */}
+                            {openSectionMenu === section.id && (
+                              <>
+                                {/* Overlay pour fermer */}
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setOpenSectionMenu(null)
+                                  }}
+                                />
+                                {/* Menu */}
+                                <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setOpenSectionMenu(null)
+                                      openEditSectionModal(section)
+                                    }}
+                                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition"
+                                  >
+                                    <span>✏️</span>
+                                    <span>Modifier</span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setOpenSectionMenu(null)
+                                      handleDeleteSection(section)
+                                    }}
+                                    className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 border-t border-gray-100 transition"
+                                  >
+                                    <span>🗑️</span>
+                                    <span>Supprimer</span>
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                      </div>
+                    )}
+
+                    {/* Zone notes dépliable (mobile) - toujours accessible */}
+                    {expandedNotesSection === section.id && (
+                      <div className="mt-2 mx-4 mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <textarea
+                          value={sectionNotesText}
+                          onChange={(e) => setSectionNotesText(e.target.value)}
+                          placeholder="Notes pour cette section..."
+                          className="w-full h-28 p-2 text-sm border border-gray-300 rounded resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+                        />
+                        <div className="flex items-center justify-end mt-2">
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openEditSectionModal(section)
-                            }}
-                            className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
-                            title="Modifier"
+                            onClick={() => saveSectionNotes(section.id)}
+                            disabled={isSavingSectionNotes}
+                            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
                           >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteSection(section)
-                            }}
-                            className="p-2 bg-gray-100 text-red-600 rounded-lg hover:bg-red-50 transition"
-                            title="Supprimer"
-                          >
-                            🗑️
+                            {isSavingSectionNotes ? '...' : 'Sauvegarder'}
                           </button>
                         </div>
                       </div>
@@ -3366,49 +4427,47 @@ const ProjectCounter = () => {
       </div>
 
       {/* [AI:Claude] Tabs compacts */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {/* Tabs header */}
-        <div className="border-b border-gray-200">
+        <div className="border-b border-gray-100">
           <div className="flex">
             <button
               onClick={() => setActiveTab('patron')}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium transition ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition ${
                 activeTab === 'patron'
-                  ? 'bg-white text-primary-600 border-b-2 border-primary-600'
-                  : 'bg-gray-50 text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-primary-700 border-b-2 border-primary-600'
+                  : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              📄 Patron
+              Patron
               {(project.pattern_path || project.pattern_url) && (
-                <span className="ml-1 text-green-600 text-sm">✓</span>
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500 align-middle" />
               )}
             </button>
             <button
               onClick={() => setActiveTab('photos')}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium transition ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition ${
                 activeTab === 'photos'
-                  ? 'bg-white text-primary-600 border-b-2 border-primary-600'
-                  : 'bg-gray-50 text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-primary-700 border-b-2 border-primary-600'
+                  : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              📸 Photos
+              Photos
               {projectPhotos.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded-full text-xs">
-                  {projectPhotos.length}
-                </span>
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
             </button>
             <button
               onClick={() => setActiveTab('description')}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium transition ${
+              className={`flex-1 px-4 py-3 text-sm font-medium transition ${
                 activeTab === 'description'
-                  ? 'bg-white text-primary-600 border-b-2 border-primary-600'
-                  : 'bg-gray-50 text-gray-600 hover:text-gray-900'
+                  ? 'bg-white text-primary-700 border-b-2 border-primary-600'
+                  : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              🔧 Détails techniques
+              Détails
               {(project.technical_details || project.description) && (
-                <span className="ml-1 text-green-600 text-sm">✓</span>
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
             </button>
           </div>
@@ -3420,26 +4479,71 @@ const ProjectCounter = () => {
               {activeTab === 'photos' && (
                 <div>
                   {projectPhotos.length > 0 && (
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold text-gray-900">Galerie photos</h2>
-                      <button
-                        onClick={() => setShowPhotoUploadModal(true)}
-                        className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
-                      >
-                        ➕ Ajouter photo
-                      </button>
+                    <div className="mb-4">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-gray-900">Photos</h2>
+                        <button
+                          onClick={() => setShowPhotoUploadModal(true)}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Ajouter
+                        </button>
+                      </div>
                     </div>
                   )}
 
 {projectPhotos.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                <div className="text-6xl mb-4">📷</div>
-                <p className="text-gray-600 mb-4">Aucune photo pour ce projet</p>
+              <div className="rounded-xl border border-gray-100 bg-gradient-to-b from-primary-50/40 to-white p-6">
+                {/* Avant/Après visuel */}
+                <div className="flex items-center justify-center gap-3 mb-5">
+                  <div className="flex-1 max-w-[120px] rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                    <div className="bg-gray-100 h-20 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-center text-xs text-gray-400 py-1">Votre photo</p>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <svg className="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 max-w-[120px] rounded-lg overflow-hidden border-2 border-primary-300 shadow-sm">
+                    <div className="bg-gradient-to-br from-primary-100 to-primary-200 h-20 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="text-center text-xs text-primary-600 font-semibold py-1">Mise en valeur</p>
+                  </div>
+                </div>
+
+                <h3 className="text-center font-bold text-gray-900 mb-1 text-sm">
+                  Mettez votre ouvrage en valeur
+                </h3>
+                <p className="text-center text-xs text-gray-500 mb-4">
+                  Fond et éclairage retravaillés — votre création reste identique
+                </p>
+
+                {credits && credits.total_available > 0 && (
+                  <p className="text-center text-xs text-green-700 font-medium mb-3">
+                    {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}
+                  </p>
+                )}
+
                 <button
                   onClick={() => setShowPhotoUploadModal(true)}
-                  className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
                 >
-                  📸 Ajouter ma première photo
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Ajouter une photo
                 </button>
               </div>
             ) : (
@@ -3561,7 +4665,7 @@ const ProjectCounter = () => {
                                             </button>
 
                                             {/* Divider */}
-                                            <div className="border-t border-primary-200 my-1"></div>
+                                            <div className="border-t border-primary-300/50 my-1"></div>
 
                                             {/* Mobile : un seul bouton "Partager" */}
                                             {isMobile ? (
@@ -3721,7 +4825,7 @@ const ProjectCounter = () => {
                                             )}
 
                                             {/* Divider */}
-                                            <div className="border-t border-primary-200 my-1"></div>
+                                            <div className="border-t border-primary-300/50 my-1"></div>
 
                                             {/* Supprimer */}
                                             <button
@@ -3746,9 +4850,8 @@ const ProjectCounter = () => {
                           </div>
                         )}
 
-                        {/* [AI:Claude] Photo originale EN BAS - juste pour référence */}
-                        <div className="bg-gray-50 p-4 border-t-2 border-gray-200">
-                          {/* [AI:Claude] v0.14.0 - Gérer le cas où la photo originale est manquante */}
+                        {/* Photo originale - référence + CTA embellissement */}
+                        <div className={`p-4 ${photoVariations.length > 0 ? 'bg-gray-50 border-t-2 border-gray-200' : 'bg-white'}`}>
                           <div className="flex items-start gap-4">
                             <div className="relative flex-shrink-0 group">
                               <img
@@ -3765,9 +4868,11 @@ const ProjectCounter = () => {
                                   e.target.onclick = null
                                 }}
                               />
-                              <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-90 text-white text-xs px-2 py-1 rounded font-medium">
-                                📷 Originale
-                              </div>
+                              {photoVariations.length > 0 && (
+                                <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-90 text-white text-xs px-2 py-1 rounded font-medium">
+                                  Photo originale
+                                </div>
+                              )}
                               {/* Overlay "Voir en grand" au survol */}
                               <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                 <span className="text-white font-bold text-xs">
@@ -3834,12 +4939,34 @@ const ProjectCounter = () => {
                                 Ajoutée le {new Date(originalPhoto.created_at).toLocaleDateString('fr-FR')}
                               </p>
 
-                              <button
-                                onClick={() => openEnhanceModal(originalPhoto)}
-                                className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm shadow-md"
-                              >
-                                ✨ Générer plus de variations
-                              </button>
+                              {photoVariations.length === 0 ? (
+                                <div className="flex flex-col gap-1">
+                                  <button
+                                    onClick={() => openEnhanceModal(originalPhoto)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm shadow-sm"
+                                  >
+                                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    Mettre en valeur
+                                  </button>
+                                  {credits && credits.total_available > 0 && (
+                                    <span className="text-xs text-primary-600 font-medium">
+                                      {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => openEnhanceModal(originalPhoto)}
+                                  className="inline-flex items-center gap-2 px-4 py-2 border border-primary-300 text-primary-700 rounded-lg font-medium hover:bg-primary-50 transition text-sm"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                  </svg>
+                                  Nouvelle variation IA
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -3875,12 +5002,13 @@ const ProjectCounter = () => {
                         // Texte existant
                         <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">📝 Texte du patron</h3>
+                            <h3 className="text-lg font-semibold text-gray-900">Texte du patron</h3>
                             <button
                               onClick={handleOpenPatternTextModal}
-                              className="px-4 py-2 text-primary-600 border border-primary-600 rounded-lg font-medium hover:bg-primary-50 transition text-sm"
+                              className="px-4 py-2 text-primary-600 border border-primary-600 rounded-lg font-medium hover:bg-primary-50 transition text-sm flex items-center gap-1.5"
                             >
-                              ✏️ Modifier le texte
+                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              Modifier le texte
                             </button>
                           </div>
                           <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
@@ -3892,7 +5020,9 @@ const ProjectCounter = () => {
                       ) : proxyError ? (
                         // Pas de texte ET erreur proxy - proposer d'en ajouter
                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 text-center">
-                          <div className="text-4xl mb-3">📝</div>
+                          <div className="flex justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                          </div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">
                             Ajouter le texte du patron
                           </h3>
@@ -3903,7 +5033,7 @@ const ProjectCounter = () => {
                             onClick={handleOpenPatternTextModal}
                             className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
                           >
-                            📝 Ajouter le texte
+                            Ajouter le texte
                           </button>
                         </div>
                       ) : null}
@@ -3911,7 +5041,7 @@ const ProjectCounter = () => {
                   ) : project.pattern_text ? (
                     // Patron texte seul (sans URL ni fichier)
                     <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">📝 Patron</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Patron</h3>
                       <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
                         <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                           {project.pattern_text}
@@ -3922,11 +5052,12 @@ const ProjectCounter = () => {
                     // Image avec lightbox
                     <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
                       <img
-                        src={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}`}
+                        key={project.pattern_path}
+                        src={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`}
                         alt="Patron"
                         className="w-full h-auto cursor-zoom-in hover:opacity-95 transition"
                         onClick={() => setLightboxImage({
-                          src: `${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}`,
+                          src: `${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`,
                           alt: 'Patron'
                         })}
                       />
@@ -3936,9 +5067,10 @@ const ProjectCounter = () => {
                             src: `${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}`,
                             alt: 'Patron'
                           })}
-                          className="text-sm text-gray-600 hover:text-primary-600 transition font-medium"
+                          className="text-sm text-gray-600 hover:text-primary-600 transition font-medium flex items-center gap-1.5"
                         >
-                          🔍 Ouvrir en plein écran
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                          Ouvrir en plein écran
                         </button>
                       </div>
                     </div>
@@ -3946,7 +5078,8 @@ const ProjectCounter = () => {
                     // PDF avec viewer interactif
                     <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
                       <PDFViewer
-                        url={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}`}
+                        key={project.pattern_path}
+                        url={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`}
                         fileName={project.name ? `${project.name}-patron.pdf` : 'patron.pdf'}
                       />
                     </div>
@@ -3957,9 +5090,10 @@ const ProjectCounter = () => {
                 <div className="flex justify-center mt-4">
                   <button
                     onClick={() => setShowPatternEditChoiceModal(true)}
-                    className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
+                    className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
                   >
-                    ✏️ Modifier
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Modifier
                   </button>
                 </div>
               </div>
@@ -3974,7 +5108,9 @@ const ProjectCounter = () => {
                   className="w-full border-2 border-dashed border-primary-300 rounded-lg p-6 hover:border-primary-500 hover:bg-primary-50 transition"
                   disabled={uploadingPattern}
                 >
-                  <div className="text-4xl mb-2">📚</div>
+                  <div className="flex justify-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </div>
                   <p className="text-gray-700 font-medium mb-1">
                     Choisir depuis ma bibliothèque
                   </p>
@@ -3989,7 +5125,9 @@ const ProjectCounter = () => {
                   className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
                   disabled={uploadingPattern}
                 >
-                  <div className="text-4xl mb-2">📝</div>
+                  <div className="flex justify-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                  </div>
                   <p className="text-gray-700 font-medium mb-1">
                     Modifier le texte du patron
                   </p>
@@ -4001,7 +5139,9 @@ const ProjectCounter = () => {
                 {/* Option 3: Upload fichier */}
                 <label className="block cursor-pointer">
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition">
-                    <div className="text-4xl mb-2 text-center">📎</div>
+                    <div className="flex justify-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    </div>
                     <p className="text-gray-700 font-medium text-center mb-1">
                       Importer un nouveau fichier
                     </p>
@@ -4011,7 +5151,7 @@ const ProjectCounter = () => {
                   </div>
                   <input
                     type="file"
-                    accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
+                    accept="image/*,.pdf,application/pdf"
                     onChange={handlePatternUpload}
                     className="hidden"
                     disabled={uploadingPattern}
@@ -4024,7 +5164,9 @@ const ProjectCounter = () => {
                   className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
                   disabled={uploadingPattern}
                 >
-                  <div className="text-4xl mb-2">🔗</div>
+                  <div className="flex justify-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  </div>
                   <p className="text-gray-700 font-medium mb-1">
                     Lien vers une page web
                   </p>
@@ -4034,7 +5176,10 @@ const ProjectCounter = () => {
                 </button>
 
                 {uploadingPattern && (
-                  <p className="text-sm text-gray-500 text-center">📤 Envoi en cours...</p>
+                  <p className="text-sm text-gray-500 text-center flex items-center justify-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                    Envoi en cours...
+                  </p>
                 )}
               </div>
             )}
@@ -4065,9 +5210,10 @@ const ProjectCounter = () => {
                           <h2 className="text-lg font-semibold text-gray-900">Détails techniques</h2>
                           <button
                             onClick={openTechnicalDetailsModal}
-                            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
+                            className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
                           >
-                            ✏️ Modifier
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Modifier
                           </button>
                         </div>
 
@@ -4077,7 +5223,7 @@ const ProjectCounter = () => {
                           {technicalDetails.description && (
                             <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
                               <div className="flex gap-2">
-                                <span className="text-gray-400 text-sm">💬</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
                                 <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line flex-1">
                                   {technicalDetails.description}
                                 </p>
@@ -4092,7 +5238,7 @@ const ProjectCounter = () => {
                               {technicalDetails.yarn && technicalDetails.yarn.length > 0 && technicalDetails.yarn[0].brand && (
                                 <div className="bg-gradient-to-br from-primary-50 to-warm-100 rounded-lg p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-xl">🧶</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M2 9h20M2 15h20" opacity="0.4"/></svg>
                                     <span className="font-semibold text-primary-700 text-sm">
                                       {project.technique === 'tricot' ? 'Laine' : 'Fil'}
                                     </span>
@@ -4126,7 +5272,7 @@ const ProjectCounter = () => {
                               {technicalDetails.needles && technicalDetails.needles.length > 0 && (technicalDetails.needles[0].type || technicalDetails.needles[0].size) && (
                                 <div className="bg-gradient-to-br from-sage-50 to-sage-100 rounded-lg p-3 border-l-4 border-sage-400">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-xl">{project.technique === 'tricot' ? '🪡' : '🪝'}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-sage-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
                                     <span className="font-semibold text-sage-700 text-sm">
                                       {project.technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
                                     </span>
@@ -4157,7 +5303,7 @@ const ProjectCounter = () => {
                               {technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows) && (
                                 <div className="bg-gradient-to-br from-warm-50 to-warm-200 rounded-lg p-3 border-l-4 border-warm-400">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-xl">📏</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-warm-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="12"/><line x1="15" y1="10" x2="15" y2="14"/><line x1="19" y1="10" x2="19" y2="12"/></svg>
                                     <span className="font-semibold text-warm-700 text-sm">Échantillon</span>
                                   </div>
                                   <div className="bg-white/70 rounded px-3 py-2">
@@ -4185,13 +5331,16 @@ const ProjectCounter = () => {
                       </>
                     ) : (
                       <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                        <div className="text-6xl mb-4">🔧</div>
+                        <div className="flex justify-center mb-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                        </div>
                         <p className="text-gray-600 mb-4">Aucun détail technique pour ce projet</p>
                         <button
                           onClick={openTechnicalDetailsModal}
-                          className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                          className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition flex items-center gap-2 mx-auto"
                         >
-                          ➕ Ajouter les détails techniques
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                          Ajouter les détails techniques
                         </button>
                       </div>
                     )}
@@ -4200,6 +5349,7 @@ const ProjectCounter = () => {
               })()}
             </div>
           </div>
+      </div>{/* fin flex-col-reverse sections/tabs */}
 
       {/* [AI:Claude] Modal d'ajout d'URL de patron */}
       {/* [AI:Claude] Modal sélection patron depuis bibliothèque */}
@@ -4376,91 +5526,68 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal de choix de modification du patron */}
       {showPatternEditChoiceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">
-              ✏️ Modifier le patron
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Choisissez comment vous souhaitez modifier votre patron
-            </p>
+          <div className="bg-white rounded-xl max-w-2xl w-full p-6">
+            <h2 className="text-lg font-bold mb-1 text-gray-900">Modifier le patron</h2>
+            <p className="text-sm text-gray-500 mb-5">Choisissez comment vous souhaitez modifier votre patron</p>
 
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               {/* Option 1: Bibliothèque */}
               <button
-                onClick={() => {
-                  setShowPatternEditChoiceModal(false)
-                  setShowPatternLibraryModal(true)
-                  fetchLibraryPatterns()
-                }}
-                className="w-full border-2 border-dashed border-primary-300 rounded-lg p-6 hover:border-primary-500 hover:bg-primary-50 transition"
+                onClick={() => { setShowPatternEditChoiceModal(false); setShowPatternLibraryModal(true); fetchLibraryPatterns() }}
+                className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                 disabled={uploadingPattern}
               >
-                <div className="text-4xl mb-2">📚</div>
-                <p className="text-gray-700 font-medium mb-1">
-                  Choisir depuis ma bibliothèque
-                </p>
-                <p className="text-xs text-gray-500">
-                  Utilisez un patron déjà sauvegardé
-                </p>
-              </button>
-
-              {/* Option 2: Créer un patron texte */}
-              <button
-                onClick={() => {
-                  setShowPatternEditChoiceModal(false)
-                  handleOpenPatternTextModal()
-                }}
-                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
-                disabled={uploadingPattern}
-              >
-                <div className="text-4xl mb-2">📝</div>
-                <p className="text-gray-700 font-medium mb-1">
-                  Modifier le texte du patron
-                </p>
-                <p className="text-xs text-gray-500">
-                  Coller ou saisir le texte du patron
-                </p>
-              </button>
-
-              {/* Option 3: Upload fichier */}
-              <label className="block cursor-pointer">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition">
-                  <div className="text-4xl mb-2 text-center">📎</div>
-                  <p className="text-gray-700 font-medium text-center mb-1">
-                    Importer un nouveau fichier
-                  </p>
-                  <p className="text-xs text-gray-500 text-center">
-                    PDF, JPG, PNG, WEBP
-                  </p>
+                <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-primary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                 </div>
-                <input
-                  type="file"
-                  accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={(e) => {
-                    setShowPatternEditChoiceModal(false)
-                    handlePatternUpload(e)
-                  }}
-                  className="hidden"
-                  disabled={uploadingPattern}
-                />
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">Choisir depuis ma bibliothèque</p>
+                  <p className="text-xs text-gray-500">Utilisez un patron déjà sauvegardé</p>
+                </div>
+              </button>
+
+              {/* Option 2: Texte */}
+              <button
+                onClick={() => { setShowPatternEditChoiceModal(false); handleOpenPatternTextModal() }}
+                className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
+                disabled={uploadingPattern}
+              >
+                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">Modifier le texte du patron</p>
+                  <p className="text-xs text-gray-500">Coller ou saisir le texte du patron</p>
+                </div>
+              </button>
+
+              {/* Option 3: Fichier */}
+              <label className="block cursor-pointer">
+                <div className="flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">Importer un fichier</p>
+                    <p className="text-xs text-gray-500">PDF, JPG, PNG, WEBP</p>
+                  </div>
+                </div>
+                <input type="file" accept="image/*,.pdf,application/pdf" onChange={(e) => { setShowPatternEditChoiceModal(false); handlePatternUpload(e) }} className="hidden" disabled={uploadingPattern} />
               </label>
 
               {/* Option 4: URL */}
               <button
-                onClick={() => {
-                  setShowPatternEditChoiceModal(false)
-                  setShowPatternUrlModal(true)
-                }}
-                className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
+                onClick={() => { setShowPatternEditChoiceModal(false); setShowPatternUrlModal(true) }}
+                className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                 disabled={uploadingPattern}
               >
-                <div className="text-4xl mb-2">🔗</div>
-                <p className="text-gray-700 font-medium mb-1">
-                  Lien vers une page web
-                </p>
-                <p className="text-xs text-gray-500">
-                  YouTube, Pinterest, blog...
-                </p>
+                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">Lien vers une page web</p>
+                  <p className="text-xs text-gray-500">YouTube, Pinterest, blog...</p>
+                </div>
               </button>
             </div>
 
@@ -4481,13 +5608,12 @@ const ProjectCounter = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 flex-shrink-0">
-              <h2 className="text-2xl font-bold">
-                📝 {project.pattern_text ? 'Modifier le patron texte' : 'Créer un patron texte'}
+              <h2 className="text-lg font-bold text-gray-900">
+                {project.pattern_text ? 'Modifier le patron texte' : 'Créer un patron texte'}
               </h2>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-                <p className="text-sm text-blue-800">
-                  💡 <strong>Astuce :</strong> Vous pouvez copier-coller le texte de votre patron ici
-                </p>
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3 mt-3">
+                <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <p className="text-sm text-blue-800"><strong>Astuce :</strong> Vous pouvez copier-coller le texte de votre patron ici</p>
               </div>
             </div>
 
@@ -4536,65 +5662,44 @@ Rang 3 : *1ms, aug* x6 (18)
       {/* [AI:Claude] Modal d'upload de photo */}
       {showPhotoUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">
-              📸 Ajouter une photo
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Sélectionnez une photo de votre projet
-            </p>
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h2 className="text-lg font-bold mb-1 text-gray-900">Ajouter une photo</h2>
+            <p className="text-sm text-gray-500 mb-5">Sélectionnez une photo de votre projet</p>
 
             {/* Inputs cachés */}
-            <input
-              ref={(el) => (window.cameraInputCounter = el)}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handlePhotoUpload}
-              className="hidden"
-              disabled={uploadingPhoto}
-            />
-            <input
-              ref={(el) => (window.galleryInputCounter = el)}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              className="hidden"
-              disabled={uploadingPhoto}
-            />
+            <input ref={(el) => (window.cameraInputCounter = el)} type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
+            <input ref={(el) => (window.galleryInputCounter = el)} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
 
-            {/* Boutons visibles */}
-            <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mb-3`}>
+            <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-1'} gap-3 mb-4`}>
               {isMobile && (
                 <button
                   type="button"
                   onClick={() => window.cameraInputCounter?.click()}
                   disabled={uploadingPhoto}
-                  className="flex flex-col items-center justify-center gap-2 p-6 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex flex-col items-center justify-center gap-3 p-6 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  <span className="text-4xl">📷</span>
-                  <span className="font-medium">Prendre une photo</span>
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <span className="font-semibold text-sm">Prendre une photo</span>
                 </button>
               )}
               <button
                 type="button"
                 onClick={() => window.galleryInputCounter?.click()}
                 disabled={uploadingPhoto}
-                className="flex flex-col items-center justify-center gap-2 p-6 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex flex-col items-center justify-center gap-3 p-6 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition disabled:opacity-50"
               >
-                <span className="text-4xl">🖼️</span>
-                <span className="font-medium">Choisir une photo</span>
+                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <span className="font-semibold text-sm">Choisir depuis la galerie</span>
               </button>
             </div>
 
-            <p className="text-xs text-gray-500 text-center">
-              JPG, PNG, WEBP
-            </p>
+            <p className="text-xs text-gray-400 text-center mb-4">JPG, PNG, WEBP</p>
 
             {uploadingPhoto && (
-              <p className="text-sm text-gray-500 text-center mt-4">
-                📤 Upload en cours...
-              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
+                <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                Upload en cours...
+              </div>
             )}
 
             <div className="mt-4">
@@ -4616,56 +5721,46 @@ Rang 3 : *1ms, aug* x6 (18)
           <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-2xl font-bold text-gray-900">✨ Générer une photo IA</h2>
+                <h2 className="text-lg font-bold text-gray-900">Embellir ma photo</h2>
                 <button
                   type="button"
                   onClick={() => setShowStyleExamplesModal(true)}
-                  className="bg-primary-600 text-white text-sm px-3 py-1.5 rounded-lg font-semibold shadow-lg hover:bg-primary-700 transition flex items-center gap-1"
+                  className="flex items-center gap-1.5 bg-primary-600 text-white text-sm px-3 py-1.5 rounded-xl font-semibold hover:bg-primary-700 transition"
                 >
-                  <span>🎨</span>
-                  <span>Exemples de styles</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  Exemples
                 </button>
               </div>
             </div>
 
             <form onSubmit={handleEnhancePhoto} className="flex-1 overflow-y-auto p-6 flex flex-col">
-              {/* Avertissement important */}
+              {/* Message rassurant */}
               {!hideAIWarning && (
-                <div className="mb-4 bg-orange-50 border-l-4 border-orange-400 rounded-r-lg p-4">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl flex-shrink-0">⚠️</span>
-                    <div className="text-sm w-full">
-                      <h4 className="font-bold text-orange-900 mb-2">Ce qui va être préservé et ce qui va changer :</h4>
-                      <div className="space-y-1.5 text-orange-800">
-                        <p className="flex items-start gap-2">
-                          <span className="text-green-600 font-bold flex-shrink-0">✓</span>
-                          <span><strong>Préservé :</strong> Les couleurs, motifs et texture de votre ouvrage restent identiques</span>
-                        </p>
-                        <p className="flex items-start gap-2">
-                          <span className="text-orange-600 font-bold flex-shrink-0">↻</span>
-                          <span><strong>Modifié :</strong> Le fond, l'éclairage et la position sont adaptés au style choisi</span>
-                        </p>
-                        <p className="flex items-start gap-2">
-                          <span className="text-blue-600 font-bold flex-shrink-0">✂</span>
-                          <span><strong>Retiré :</strong> Les mains, éléments de fond indésirables sont supprimés</span>
-                        </p>
-                      </div>
-                      <p className="mt-2.5 text-xs text-orange-700 font-medium">
-                        💡 Conseil : Consultez les exemples de styles pour visualiser le résultat attendu
-                      </p>
-                      {/* Checkbox "Ne plus afficher" */}
-                      <div className="mt-3 pt-3 border-t border-orange-200">
-                        <label className="flex items-center gap-2 cursor-pointer text-xs text-orange-800 hover:text-orange-900">
-                          <input
-                            type="checkbox"
-                            checked={hideAIWarning}
-                            onChange={handleHideAIWarning}
-                            className="rounded border-orange-300 text-primary-600 focus:ring-primary-500"
-                          />
-                          <span className="font-medium">J'ai compris, ne plus afficher cet avertissement</span>
-                        </label>
-                      </div>
-                    </div>
+                <div className="mb-4 bg-primary-50 border border-primary-100 rounded-xl p-4">
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p className="flex items-center gap-2.5">
+                      <svg className="w-4 h-4 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      Votre ouvrage reste intact — couleurs, matière et points sont préservés
+                    </p>
+                    <p className="flex items-center gap-2.5">
+                      <svg className="w-4 h-4 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      Seuls le fond et l'éclairage changent pour valoriser votre création
+                    </p>
+                    <p className="flex items-center gap-2.5">
+                      <svg className="w-4 h-4 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      La photo originale est toujours conservée
+                    </p>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-primary-200">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-500 hover:text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={hideAIWarning}
+                        onChange={handleHideAIWarning}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      Ne plus afficher ce message
+                    </label>
                   </div>
                 </div>
               )}
@@ -4685,11 +5780,16 @@ Rang 3 : *1ms, aug* x6 (18)
 
               {/* Choix du style */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Choisissez un style :
-                </label>
+                <div className="flex items-baseline justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Choisissez un style :
+                  </label>
+                  <span className="text-xs text-primary-600 font-medium">
+                    Sélectionné selon votre projet
+                  </span>
+                </div>
                 <div className="space-y-2">
-                  {getAvailableStyles(detectProjectCategory(project?.type || '')).map(style => (
+                  {getAvailableStyles(detectProjectCategory(project?.type || '')).map((style, styleIdx) => (
                     <div key={style.key}>
                       <label
                         className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
@@ -4706,12 +5806,11 @@ Rang 3 : *1ms, aug* x6 (18)
                           onChange={() => setSelectedContext(style)}
                           className="text-primary-600 focus:ring-primary-500"
                         />
-                        <span className="text-2xl">{style.icon}</span>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-gray-900">{style.label}</p>
-                            {style.tier === 'plus' && (
-                              <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">PLUS</span>
+                            {styleIdx === 0 && (
+                              <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-semibold">Recommandé</span>
                             )}
                             {style.tier === 'pro' && (
                               <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
@@ -4721,10 +5820,12 @@ Rang 3 : *1ms, aug* x6 (18)
                         </div>
                       </label>
 
-                      {/* Sélecteur de genre intégré pour styles "Porté" */}
-                      {selectedContext?.key === style.key && style.label && style.label.includes('Porté') && (
-                        <div className="mt-2 ml-11 p-3 bg-blue-50 border-2 border-blue-300 rounded-lg">
-                          <p className="text-xs font-semibold text-gray-700 mb-2">👤 Genre du modèle :</p>
+                      {/* Sélecteur de genre intégré pour styles "Porté" ou enfant porté */}
+                      {selectedContext?.key === style.key && style.label && (style.label.includes('Porté') || style.key.startsWith('child_garment_c') && ['child_garment_c1', 'child_garment_c4', 'child_garment_c6', 'child_garment_c7', 'child_garment_c9'].includes(style.key)) && (
+                        <div className="mt-2 ml-11 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">
+                            {style.key.startsWith('child_garment_') ? 'Genre de l\'enfant :' : 'Genre du modèle :'}
+                          </p>
                           <div className="grid grid-cols-2 gap-2">
                             <label
                               className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
@@ -4741,8 +5842,7 @@ Rang 3 : *1ms, aug* x6 (18)
                                 onChange={(e) => setModelGender(e.target.value)}
                                 className="sr-only"
                               />
-                              <span className="text-2xl">👨</span>
-                              <span className="text-xs font-semibold text-gray-900">Homme</span>
+                              <span className="text-xs font-semibold text-gray-900">{style.key.startsWith('child_garment_') ? 'Garçon' : 'Homme'}</span>
                             </label>
                             <label
                               className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
@@ -4759,8 +5859,7 @@ Rang 3 : *1ms, aug* x6 (18)
                                 onChange={(e) => setModelGender(e.target.value)}
                                 className="sr-only"
                               />
-                              <span className="text-2xl">👩</span>
-                              <span className="text-xs font-semibold text-gray-900">Femme</span>
+                              <span className="text-xs font-semibold text-gray-900">{style.key.startsWith('child_garment_') ? 'Fille' : 'Femme'}</span>
                             </label>
                           </div>
                         </div>
@@ -4771,28 +5870,62 @@ Rang 3 : *1ms, aug* x6 (18)
 
                 {/* Message upgrade pour FREE */}
                 {user?.subscription_type === 'free' && (
-                  <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-primary-50 border border-purple-200 rounded-lg">
+                  <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
                     <p className="text-sm text-gray-700">
-                      🎨 <span className="font-semibold">6 styles supplémentaires</span> avec PLUS et <span className="font-semibold">9 styles premium</span> avec PRO !
+                      <span className="font-semibold">9 styles supplémentaires</span> disponibles avec PRO !
                       <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Découvrir les plans
-                      </a>
-                    </p>
-                  </div>
-                )}
-
-                {/* Message upgrade pour PLUS */}
-                {(user?.subscription_type === 'plus' || user?.subscription_type === 'plus_annual') && (
-                  <div className="mt-3 p-3 bg-gradient-to-r from-primary-50 to-sage-50 border border-primary-200 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      ✨ <span className="font-semibold">3 styles premium supplémentaires</span> disponibles avec PRO (Instagram, Catalogues, Saisonnier) !
-                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Passer à PRO
+                        Découvrir le plan PRO
                       </a>
                     </p>
                   </div>
                 )}
               </div>
+
+              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel, uniquement pour thèmes extérieur/nature) */}
+              {selectedContext && seasonStyles.includes(selectedContext.key) && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Ambiance saisonnière <span className="text-gray-400 font-normal">(optionnel)</span> :
+                </label>
+                <div className="grid grid-cols-5 gap-2">
+                  {/* Option "Aucune" */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSeason(null)}
+                    className={`flex flex-col items-center gap-1 p-2 border-2 rounded-lg transition ${
+                      selectedSeason === null
+                        ? 'border-primary-600 bg-primary-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    <span className="text-xs font-medium text-gray-700">Aucune</span>
+                  </button>
+
+                  {/* Options de saisons */}
+                  {seasons.map(season => (
+                    <button
+                      key={season.key}
+                      type="button"
+                      onClick={() => setSelectedSeason(season.key)}
+                      className={`flex flex-col items-center gap-1 p-2 border-2 rounded-lg transition ${
+                        selectedSeason === season.key
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      title={season.desc}
+                    >
+                      <span className="text-xs font-medium text-gray-700">{season.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {selectedSeason && (
+                  <p className="text-xs text-primary-600 mt-2">
+                    {seasons.find(s => s.key === selectedSeason)?.desc}
+                  </p>
+                )}
+              </div>
+              )}
 
               {/* Aperçu gratuit - DÉSACTIVÉ pour économiser les coûts API */}
               {/*
@@ -4845,7 +5978,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                     <div>
-                      <h4 className="font-semibold text-primary-900">🎨 Génération HD en cours...</h4>
+                      <h4 className="font-semibold text-primary-900">Génération HD en cours...</h4>
                       <p className="text-sm text-gray-600">Cela peut prendre quelques secondes</p>
                     </div>
                   </div>
@@ -4888,20 +6021,30 @@ Rang 3 : *1ms, aug* x6 (18)
                   Annuler
                 </button>
 
-                <button
-                  type="submit"
-                  disabled={enhancing || !credits || credits.total_available < 1}
-                  className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                >
-                  {enhancing ? '✨ Génération...' : '✨ Générer en HD (1 crédit)'}
-                </button>
+                {credits && credits.total_available < 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setUpgradeFeature('photo_credits')}
+                    className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition shadow-md"
+                  >
+                    Plus de crédits — PRO
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    disabled={enhancing || !credits}
+                    className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  >
+                    {enhancing ? 'Génération...' : 'Générer en HD (1 crédit)'}
+                  </button>
+                )}
               </div>
 
               {/* Message d'information */}
-              <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
-                <p className="text-xs text-gray-700 text-center leading-relaxed">
-                  <span className="font-bold text-blue-700">💬 Votre avis compte</span> :
-                  Après génération, vous pourrez noter le résultat et nous aider à améliorer le service.
+              <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-xs text-gray-600 text-center leading-relaxed">
+                  <span className="font-semibold text-gray-700">Votre avis compte</span> :
+                  après génération, vous pourrez noter le résultat et nous aider à améliorer le service.
                 </p>
               </div>
 
@@ -4947,8 +6090,8 @@ Rang 3 : *1ms, aug* x6 (18)
       {showStyleExamplesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] shadow-xl flex flex-col">
-            <div className="bg-gradient-to-r from-primary-600 to-sage-600 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-lg">
-              <h2 className="text-2xl font-bold">🎨 Exemples de styles IA</h2>
+            <div className="bg-primary-700 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
+              <h2 className="text-lg font-bold">Exemples de styles IA</h2>
               <button
                 onClick={() => setShowStyleExamplesModal(false)}
                 className="text-white hover:bg-white/20 rounded-full p-2 transition"
@@ -4977,7 +6120,7 @@ Rang 3 : *1ms, aug* x6 (18)
 
               {/* Résultats des 9 styles */}
               <div className="mb-4">
-                <h3 className="text-lg font-bold text-gray-900 text-center">✨ Résultats par style</h3>
+                <h3 className="text-lg font-bold text-gray-900 text-center">Résultats par style</h3>
                 <p className="text-sm text-gray-600 text-center mt-1">Les 9 styles disponibles appliqués à la même photo</p>
               </div>
 
@@ -4997,11 +6140,6 @@ Rang 3 : *1ms, aug* x6 (18)
                           e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EExemple à venir%3C/text%3E%3C/svg%3E'
                         }}
                       />
-                      {style.tier === 'plus' && (
-                        <span className="absolute top-2 right-2 px-2 py-1 bg-purple-600 text-white text-xs font-bold rounded-full shadow">
-                          PLUS
-                        </span>
-                      )}
                       {style.tier === 'pro' && (
                         <span className="absolute top-2 right-2 px-2 py-1 bg-primary-600 text-white text-xs font-bold rounded-full shadow">
                           PRO
@@ -5017,7 +6155,6 @@ Rang 3 : *1ms, aug* x6 (18)
                     {/* Nom et description du style */}
                     <div className="p-3 bg-white">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xl">{style.icon}</span>
                         <h3 className="font-bold text-gray-900">{style.label}</h3>
                       </div>
                       <p className="text-xs text-gray-600">{style.desc}</p>
@@ -5043,9 +6180,7 @@ Rang 3 : *1ms, aug* x6 (18)
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">
-              ✏️ Modifier le projet
-            </h3>
+            <h3 className="text-lg font-bold mb-4 text-gray-900">Modifier le projet</h3>
 
             {/* Description */}
             <div className="mb-4">
@@ -5065,7 +6200,7 @@ Rang 3 : *1ms, aug* x6 (18)
             {/* Catégorie */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                📁 Catégorie <span className="text-red-600">*</span>
+                Catégorie <span className="text-red-600">*</span>
               </label>
               <select
                 value={editForm.type}
@@ -5074,19 +6209,21 @@ Rang 3 : *1ms, aug* x6 (18)
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">-- Sélectionner une catégorie --</option>
-                <option value="Vêtements">🧥 Vêtements</option>
-                <option value="Accessoires">👜 Accessoires</option>
-                <option value="Maison/Déco">🏠 Maison/Déco</option>
-                <option value="Jouets/Peluches">🧸 Jouets/Peluches</option>
-                <option value="Vêtements bébé">👶 Vêtements bébé</option>
-                <option value="Accessoires bébé">🍼 Accessoires bébé</option>
+                <option value="Vêtements">Vêtements</option>
+                <option value="Accessoires">Accessoires</option>
+                <option value="Jouets/Peluches">Jouets/Peluches</option>
+                <option value="Vêtements bébé">Vêtements bébé</option>
+                <option value="Accessoires bébé">Accessoires bébé</option>
+                <option value="Vêtements enfant">Vêtements enfant</option>
+                <option value="Maison/Déco">Maison/Déco</option>
+                <option value="Autre">Autre</option>
               </select>
             </div>
 
             {/* Taille du crochet */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                🪝 Taille du crochet
+                Taille du crochet
               </label>
               <input
                 type="text"
@@ -5100,7 +6237,7 @@ Rang 3 : *1ms, aug* x6 (18)
             {/* Marque de fil */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                🧶 Marque de fil
+                Marque de fil
               </label>
               <input
                 type="text"
@@ -5137,9 +6274,7 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 border-b border-gray-200 bg-white flex-shrink-0">
-              <h3 className="text-2xl font-bold text-gray-900">
-                🔧 Détails techniques
-              </h3>
+              <h3 className="text-lg font-bold text-gray-900">Détails techniques</h3>
               <p className="text-sm text-gray-600 mt-1">
                 Ajoutez les informations sur la laine, les aiguilles/crochets et l'échantillon
               </p>
@@ -5149,7 +6284,7 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* Description générale */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  📝 Description / Notes
+                  Description / Notes
                 </label>
                 <textarea
                   value={technicalForm.description}
@@ -5164,8 +6299,8 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* LAINE / YARN */}
               <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-warm-100 rounded-lg border border-primary-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    🧶 {project.technique === 'tricot' ? 'Laine' : 'Fil'}
+                  <h4 className="text-base font-semibold text-gray-900">
+                    {project.technique === 'tricot' ? 'Laine' : 'Fil'}
                   </h4>
                   <button
                     type="button"
@@ -5197,12 +6332,19 @@ Rang 3 : *1ms, aug* x6 (18)
                         </button>
                       )}
                     </div>
+                    <datalist id={`yarn-brands-${yIdx}`}>
+                      {yarnSuggestions.brands.map(b => <option key={b} value={b} />)}
+                    </datalist>
+                    <datalist id={`yarn-names-${yIdx}`}>
+                      {yarnSuggestions.names.map(n => <option key={n} value={n} />)}
+                    </datalist>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                       <div>
                         <label className="block text-xs text-gray-600 mb-1">Marque</label>
                         <input
                           type="text"
                           value={y.brand}
+                          list={`yarn-brands-${yIdx}`}
                           onChange={(e) => {
                             const newYarn = [...technicalForm.yarn]
                             newYarn[yIdx].brand = e.target.value
@@ -5217,6 +6359,7 @@ Rang 3 : *1ms, aug* x6 (18)
                         <input
                           type="text"
                           value={y.name}
+                          list={`yarn-names-${yIdx}`}
                           onChange={(e) => {
                             const newYarn = [...technicalForm.yarn]
                             newYarn[yIdx].name = e.target.value
@@ -5225,6 +6368,28 @@ Rang 3 : *1ms, aug* x6 (18)
                           className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                           placeholder="Ex: Garnstudio (groupe A)"
                         />
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-xs text-gray-600 mb-1">Lien produit</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="url"
+                          value={y.url || ''}
+                          onChange={(e) => {
+                            const newYarn = [...technicalForm.yarn]
+                            newYarn[yIdx].url = e.target.value
+                            setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                          }}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                          placeholder="https://www.drops-design.com/..."
+                        />
+                        {y.url && (
+                          <a href={y.url} target="_blank" rel="noopener noreferrer"
+                            className="flex-shrink-0 text-primary-600 hover:text-primary-700 text-xs underline">
+                            Voir
+                          </a>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -5320,10 +6485,10 @@ Rang 3 : *1ms, aug* x6 (18)
                                   newYarn[yIdx].quantities = newYarn[yIdx].quantities.filter((_, i) => i !== qIdx)
                                   setTechnicalForm({ ...technicalForm, yarn: newYarn })
                                 }}
-                                className="text-red-500 hover:text-red-700 text-sm px-2 py-1.5"
+                                className="text-red-500 hover:text-red-700 px-2 py-1.5"
                                 title="Supprimer ce coloris"
                               >
-                                ✕
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                               </button>
                             )}
                           </div>
@@ -5338,7 +6503,7 @@ Rang 3 : *1ms, aug* x6 (18)
               <div className="mb-6 p-4 bg-sage-50 rounded-lg border border-sage-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    {project.technique === 'tricot' ? '🪡 Aiguilles' : '🪝 Crochets'}
+                    {project.technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
                   </h4>
                   <button
                     type="button"
@@ -5365,9 +6530,10 @@ Rang 3 : *1ms, aug* x6 (18)
                               ...technicalForm,
                               needles: technicalForm.needles.filter((_, i) => i !== nIdx)
                             })}
-                            className="text-red-600 hover:text-red-700 text-sm"
+                            className="text-red-500 hover:text-red-700 text-sm flex items-center gap-1"
                           >
-                            ✕ Supprimer
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            Supprimer
                           </button>
                         )}
                       </div>
@@ -5427,7 +6593,7 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* ÉCHANTILLON / GAUGE */}
               <div className="mb-6 p-4 bg-warm-50 rounded-lg border border-warm-200">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  📏 Échantillon
+                  Échantillon
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                   <div>
@@ -5501,7 +6667,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   disabled={savingTechnical}
                   className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingTechnical ? 'Enregistrement...' : '💾 Enregistrer'}
+                  {savingTechnical ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </div>
             </div>
@@ -5511,11 +6677,11 @@ Rang 3 : *1ms, aug* x6 (18)
 
       {/* [AI:Claude] Modal des notes du projet */}
       {showNotes && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] px-4 pt-4 pb-20">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">
-                📝 Notes du projet
+              <h2 className="text-lg font-bold text-gray-900">
+                Notes du projet
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {project.name}
@@ -5531,7 +6697,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={12}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                   placeholder="Ajoutez vos notes personnelles sur ce projet :&#10;&#10;• Modifications apportées au patron&#10;• Difficultés rencontrées&#10;• Astuces et conseils&#10;• Idées pour la suite&#10;• Points d'attention..."
                   autoFocus
                 />
@@ -5553,9 +6719,9 @@ Rang 3 : *1ms, aug* x6 (18)
                 <button
                   onClick={handleSaveNotes}
                   disabled={savingNotes}
-                  className="px-6 py-2 bg-yellow-600 text-white rounded-lg font-bold hover:bg-yellow-700 transition disabled:opacity-50"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingNotes ? 'Sauvegarde...' : '💾 Sauvegarder'}
+                  {savingNotes ? 'Sauvegarde...' : 'Sauvegarder'}
                 </button>
               </div>
             </div>
@@ -5621,37 +6787,71 @@ Rang 3 : *1ms, aug* x6 (18)
       {/* [AI:Claude] Modal de fin de projet - toutes sections terminées */}
       {showProjectCompletionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
-            <h3 className="text-2xl font-bold mb-4 text-gray-900 text-center">
-              🎉 Toutes les sections sont terminées !
-            </h3>
-            <p className="text-gray-700 mb-6 text-center">
-              Félicitations ! Vous avez terminé toutes les sections de votre projet.
-              <br />
-              Que souhaitez-vous faire ?
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-primary-100 flex items-center justify-center">
+                <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">
+                Toutes les sections sont terminées !
+              </h3>
+              <p className="text-gray-500 text-sm mt-1">
+                Félicitations pour votre {project?.name || 'projet'} !
+              </p>
+            </div>
+
+            {/* CTA photo — mis en avant */}
+            {credits && credits.total_available > 0 ? (
+              <button
+                onClick={handleCompleteAndPhoto}
+                className="w-full mb-3 px-5 py-4 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition flex items-center justify-center gap-3"
+              >
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>
+                  Mettre mon ouvrage en valeur
+                  <span className="block text-xs font-normal text-primary-200">{credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} photo disponible{credits.total_available > 1 ? 's' : ''}</span>
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={handleCompleteAndPhoto}
+                className="w-full mb-3 px-5 py-4 bg-primary-50 border-2 border-primary-300 text-primary-700 rounded-xl font-bold hover:bg-primary-100 transition flex items-center justify-center gap-3"
+              >
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Ajouter une photo
+              </button>
+            )}
+
+            <div className="flex flex-col gap-2">
               <button
                 onClick={() => {
                   setShowProjectCompletionModal(false)
                   setShowAddSectionModal(true)
-                  setSectionForm({ name: '', description: '', total_rows: '' })
+                  setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
                   setEditingSection(null)
                 }}
-                className="flex-1 px-6 py-4 border-2 border-primary-600 text-primary-600 rounded-lg font-bold hover:bg-primary-50 transition text-center"
+                className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
               >
-                ➕ Ajouter une section
+                Ajouter une section
               </button>
               <button
                 onClick={handleCompleteProject}
-                className="flex-1 px-6 py-4 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition text-center"
+                className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
               >
-                ✅ Terminer le projet
+                Terminer sans ajouter de photo
               </button>
             </div>
             <button
               onClick={() => setShowProjectCompletionModal(false)}
-              className="w-full mt-3 px-4 py-2 text-gray-500 hover:text-gray-700 transition text-sm"
+              className="w-full mt-2 px-4 py-2 text-gray-400 hover:text-gray-600 transition text-xs"
             >
               Annuler (rester en cours)
             </button>
@@ -5664,7 +6864,7 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-2xl font-bold mb-4">
-              {editingSection ? '✏️ Modifier la section' : '➕ Ajouter une section'}
+              {editingSection ? 'Modifier la section' : 'Ajouter une section'}
             </h2>
 
             <form onSubmit={handleSaveSection}>
@@ -5699,7 +6899,7 @@ Rang 3 : *1ms, aug* x6 (18)
               </div>
 
               {/* Nombre de rangs */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nombre total de rangs (optionnel)
                 </label>
@@ -5713,13 +6913,27 @@ Rang 3 : *1ms, aug* x6 (18)
                 />
               </div>
 
+              {/* Notes */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Notes (optionnel)
+                </label>
+                <textarea
+                  value={sectionForm.notes}
+                  onChange={(e) => setSectionForm({ ...sectionForm, notes: e.target.value })}
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  placeholder="Instructions particulières, rappels, modifications..."
+                />
+              </div>
+
               {/* Boutons */}
               <div className="flex space-x-3">
                 <button
                   type="button"
                   onClick={() => {
                     setShowAddSectionModal(false)
-                    setSectionForm({ name: '', description: '', total_rows: '' })
+                    setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
                     setEditingSection(null)
                   }}
                   disabled={savingSection}
@@ -5861,7 +7075,8 @@ Rang 3 : *1ms, aug* x6 (18)
         />
       )}
 
-      {/* [AI:Claude] Bouton flottant pour les notes - toujours accessible */}
+      {/* [AI:Claude] Bouton flottant pour les notes - masqué quand popup ouverte */}
+      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !showAlertModal && !showConfirmModal && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && (
       <button
         onClick={handleOpenNotes}
         className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-2xl px-4 py-3 flex items-center gap-3"
@@ -5891,6 +7106,7 @@ Rang 3 : *1ms, aug* x6 (18)
           </svg>
         </span>
       </button>
+      )}
 
       {/* [AI:Claude] v0.15.0 - Modal de satisfaction post-génération */}
       <SatisfactionModal
@@ -6023,6 +7239,155 @@ Rang 3 : *1ms, aug* x6 (18)
         </div>
       )}
 
+      <UpgradePrompt
+        isOpen={!!upgradeFeature}
+        onClose={() => setUpgradeFeature(null)}
+        feature={upgradeFeature || 'tags'}
+      />
+
+      {/* Modale reminder déclenché */}
+      {activeReminder && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center space-y-4">
+            <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
+              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Rappel — rang {activeReminder.row}</p>
+              <p className="text-lg font-bold text-gray-900">{activeReminder.message}</p>
+            </div>
+            <button
+              onClick={() => dismissReminder(activeReminder.id)}
+              className="w-full py-3 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition"
+            >
+              Compris !
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Deadline picker */}
+      {showDeadlinePicker && (
+        <DeadlinePickerModal
+          currentDeadline={deadline}
+          onSave={(date) => { saveDeadline(date); setShowDeadlinePicker(false) }}
+          onClose={() => setShowDeadlinePicker(false)}
+        />
+      )}
+
+      {/* Gestionnaire de reminders */}
+      {showReminderManager && (
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Rappels de rang</h2>
+              <button onClick={() => setShowReminderManager(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+            </div>
+
+            {/* Formulaire ajout */}
+            <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Nouveau rappel</p>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={reminderForm.row}
+                  onChange={e => setReminderForm(f => ({ ...f, row: e.target.value }))}
+                  placeholder="Rang"
+                  className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <input
+                  type="text"
+                  value={reminderForm.message}
+                  onChange={e => setReminderForm(f => ({ ...f, message: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && addReminder()}
+                  placeholder="Ex : Commencer les diminutions"
+                  className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <button
+                onClick={addReminder}
+                disabled={!reminderForm.row || !reminderForm.message.trim()}
+                className="w-full py-1.5 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
+              >
+                Ajouter
+              </button>
+            </div>
+
+            {/* Liste des reminders */}
+            {reminders.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-2">Aucun rappel pour le moment.</p>
+            ) : (
+              <div className="space-y-2">
+                {reminders.map(r => (
+                  <div key={r.id} className={`flex items-start gap-3 p-3 rounded-xl border ${r.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-200'}`}>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 mt-0.5 ${r.done ? 'bg-gray-200 text-gray-500' : 'bg-amber-100 text-amber-700'}`}>
+                      {r.row}
+                    </span>
+                    <p className={`flex-1 text-sm ${r.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{r.message}</p>
+                    <div className="flex gap-1">
+                      {r.done && (
+                        <button onClick={() => resetReminder(r.id)} className="text-gray-400 hover:text-primary-600 transition" title="Réactiver">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        </button>
+                      )}
+                      <button onClick={() => deleteReminder(r.id)} className="text-gray-400 hover:text-red-500 transition" title="Supprimer">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
+  const [draft, setDraft] = useState(currentDeadline || '')
+  const today = new Date().toISOString().substring(0, 10)
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 mb-16 sm:mb-0">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">Objectif de date</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+        </div>
+        <p className="text-sm text-gray-500">Fixe une date cible pour terminer ce projet. Tu verras le compte à rebours sur le compteur.</p>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Date cible</label>
+          <input
+            type="date"
+            value={draft}
+            min={today}
+            onChange={e => setDraft(e.target.value)}
+            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+        <div className="flex gap-2">
+          {currentDeadline && (
+            <button
+              onClick={() => onSave(null)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+            >
+              Supprimer
+            </button>
+          )}
+          <button
+            onClick={() => { if (draft) onSave(draft) }}
+            disabled={!draft}
+            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -38,9 +38,13 @@ class AIPhotoService
         'wearable_c3' => 'porté par une personne dans une ambiance urbaine lifestyle avec rue calme et lumière naturelle',
         // VÊTEMENTS À PLAT - PLUS
         'flatlay_c2' => 'posé à plat avec accessoires lifestyle et props décoratifs sur surface naturelle texturée',
-        // VÊTEMENTS PORTÉS - PRO
+        // VÊTEMENTS PORTÉS - PLUS
         'wearable_c4' => 'porté par une personne dans une ambiance vintage avec décor rétro et tons chauds',
+        'wearable_c5' => 'porté par une personne en studio avec éclairage chaud et fond épuré, ambiance sportswear élégant',
+        'wearable_c6' => 'porté par une personne dans un portrait en pleine nature avec arbres, végétation et lumière naturelle filtrée',
+        // VÊTEMENTS PORTÉS - PRO
         'wearable_c7' => 'porté par une personne en studio avec fond texturé sombre et éclairage dramatique sophistiqué',
+        'wearable_c8' => 'porté par une personne dans une ambiance rétro années 70 avec décor vintage, tons orangés et éclairage chaleureux',
         'wearable_c9' => 'porté par une personne dans une ambiance industrielle urbaine avec architecture moderne',
 
         // ACCESSOIRES - FREE
@@ -79,7 +83,7 @@ class AIPhotoService
         'toy_c6' => 'dans un décor cartoon coloré avec fond uni vif et éléments graphiques ludiques style dessin animé',
         // JOUETS/PELUCHES - PRO
         'toy_c7' => 'dans une boutique de jouets artisanaux premium avec étagères en bois clair, fond pastel élégant et éclairage doux professionnel',
-        'toy_c8' => 'dans un décor d\'aventure jungle tropicale avec plantes exotiques, accessoires d\'exploration et lumière naturelle dorée',
+        'toy_c8' => 'dans un décor d\'aventure jungle tropicale avec plantes exotiques et accessoires d\'exploration',
         'toy_c9' => 'dans une ambiance cirque vintage avec rayures rouge et blanc, paillettes dorées, projecteurs et décor de chapiteau rétro festif',
 
         // ACCESSOIRES BÉBÉ - FREE
@@ -106,7 +110,20 @@ class AIPhotoService
         // VÊTEMENTS BÉBÉ - PRO
         'baby_garment_c7' => 'porté par un bébé (vrai bébé humain) dans les bras d\'un parent (mains adultes visibles tenant délicatement le bébé), photo lifestyle douce et émouvante avec lumière naturelle',
         'baby_garment_c8' => 'posé à plat en mise en scène lifestyle premium avec accessoires naissance haut de gamme, fleurs séchées délicates et éclairage professionnel doux',
-        'baby_garment_c9' => 'porté par un bébé (vrai bébé humain) confortablement installé sur un tapis de jeu moelleux dans une nursery bohème chic avec plantes vertes, coussins doux et lumière naturelle chaleureuse'
+        'baby_garment_c9' => 'porté par un bébé (vrai bébé humain) confortablement installé sur un tapis de jeu moelleux dans une nursery bohème chic avec plantes vertes, coussins doux et lumière naturelle chaleureuse',
+
+        // VÊTEMENTS ENFANT - FREE (v0.17.1)
+        'child_garment_c1' => 'porté par un enfant (vrai enfant humain de 3-8 ans) dans un parc ou jardin, pose joyeuse naturelle avec lumière douce',
+        'child_garment_c2' => 'posé à plat sur fond blanc studio avec éclairage uniforme professionnel et ombres douces, présentation produit épurée',
+        'child_garment_c3' => 'posé à plat sur un lit d\'enfant coloré avec coussins, peluches et couvertures douces en arrière-plan, ambiance chambre enfant joyeuse',
+        // VÊTEMENTS ENFANT - PLUS
+        'child_garment_c4' => 'porté par un enfant (vrai enfant humain de 3-8 ans) en train de jouer avec des jouets en bois naturel, ambiance lifestyle chaleureuse avec lumière naturelle',
+        'child_garment_c5' => 'en flat lay coloré avec accessoires enfant (crayons de couleur, petits jouets, livres illustrés) sur surface bois naturel clair',
+        'child_garment_c6' => 'porté par un enfant (vrai enfant humain de 3-8 ans) dans un décor urbain (rue piétonne, trottoir, place de ville), style street photo avec arrière-plan ville flou',
+        // VÊTEMENTS ENFANT - PRO
+        'child_garment_c7' => 'porté par un enfant (vrai enfant humain de 3-8 ans) dans un shooting mode professionnel avec pose naturelle et dynamique, éclairage studio créatif et fond neutre élégant',
+        'child_garment_c8' => 'posé à plat en mise en scène boutique haut de gamme avec accessoires raffinés, surface texturée noble et éclairage professionnel sophistiqué',
+        'child_garment_c9' => 'porté par un enfant (vrai enfant humain de 3-8 ans) tenant la main d\'un parent adulte pendant une promenade, les deux personnes visibles en entier ou en partie haute du corps, ambiance familiale complice et chaleureuse avec lumière naturelle douce'
     ];
 
 
@@ -155,8 +172,9 @@ class AIPhotoService
             } else {
                 $itemName = $options['item_name'] ?? '';
                 $modelGender = $options['model_gender'] ?? 'person'; // person, male, female
-                $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender);
-                error_log("[GEMINI] Using GENERATION prompt (from original) - Model gender: $modelGender");
+                $season = $options['season'] ?? null; // spring, summer, autumn, winter
+                $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender, $season);
+                error_log("[GEMINI] Using GENERATION prompt (from original) - Model gender: $modelGender" . ($season ? " - Season: $season" : ""));
             }
 
             // [AI:Claude] Mode simulation (pour tester sans API)
@@ -213,6 +231,30 @@ class AIPhotoService
     }
 
     /**
+     * [AI:Claude] Descriptions saisonnières pour enrichir les prompts
+     * Utilisées pour ajouter une ambiance saisonnière aux photos
+     */
+    private const SEASONS = [
+        'spring' => '. SAISON OBLIGATOIRE: Le décor DOIT être PRINTANIER avec fleurs fraîches en floraison, bourgeons sur les arbres, herbe verte tendre, lumière douce et claire, tons pastel',
+        'summer' => '. SAISON OBLIGATOIRE: Le décor DOIT être ESTIVAL avec végétation luxuriante et verte, ciel bleu lumineux, lumière chaude et dorée, tons chauds et ensoleillés',
+        'autumn' => '. SAISON OBLIGATOIRE: Le décor DOIT être AUTOMNAL avec feuilles mortes dorées/orangées au sol et sur les arbres, lumière chaude et douce, tons chauds (orange, marron, bordeaux)',
+        'winter' => '. SAISON OBLIGATOIRE: Le décor DOIT être HIVERNAL avec neige au sol, arbres dénudés ou enneigés, givre visible, lumière froide et douce, tons blancs et bleutés'
+    ];
+
+    /**
+     * [AI:Claude] Catégories où les saisons sont pertinentes
+     */
+    private const SEASON_CATEGORIES = [
+        'wearable',       // Vêtements portés en extérieur
+        'accessory',      // Bonnets/écharpes en hiver, chapeaux en été
+        'home',           // Décoration de saison
+        'toy',            // Décor extérieur peut varier
+        'baby_garment',   // Vêtements bébé
+        'baby',           // Accessoires bébé
+        'child_garment'   // Vêtements enfant
+    ];
+
+    /**
      * [AI:Claude] Construire le prompt de génération - Format SIMPLE qui fonctionne
      * Basé sur le prompt testé avec succès par l'utilisatrice sur Gemini
      *
@@ -220,12 +262,32 @@ class AIPhotoService
      * @param string $context Contexte visuel (studio_white, product_white, etc.)
      * @param string $itemName Nom de l'article (optionnel)
      * @param string $modelGender Genre du modèle : 'person' (neutre), 'male' (homme), 'female' (femme)
+     * @param string|null $season Saison optionnelle : 'spring', 'summer', 'autumn', 'winter'
      * @return string Prompt optimisé
      */
-    private function buildPrompt(string $type, string $context, string $itemName = '', string $modelGender = 'person'): string
+    private function buildPrompt(string $type, string $context, string $itemName = '', string $modelGender = 'person', ?string $season = null): string
     {
         // [AI:Claude] Récupérer la description du contexte
-        $contextDescription = self::CONTEXTS[$context] ?? self::CONTEXTS['lifestyle'];
+        $contextDescription = self::CONTEXTS[$context] ?? 'dans un contexte lifestyle naturel avec lumière douce';
+
+        // [AI:Claude] Ajouter l'ambiance saisonnière si applicable
+        $seasonDescription = '';
+        if ($season && isset(self::SEASONS[$season])) {
+            // Vérifier si la catégorie supporte les saisons
+            // Pour child_garment_c6 → child_garment, pour wearable_c1 → wearable
+            $parts = explode('_', $context);
+            $lastPart = end($parts);
+            // Si le dernier élément commence par 'c' suivi d'un chiffre (c1, c2...), c'est un suffixe de style
+            if (preg_match('/^c\d+$/', $lastPart)) {
+                array_pop($parts);
+            }
+            $contextCategory = implode('_', $parts);
+
+            if (in_array($contextCategory, self::SEASON_CATEGORIES)) {
+                $seasonDescription = self::SEASONS[$season];
+                error_log("[PROMPT] Saison ajoutée: {$season} pour catégorie {$contextCategory}");
+            }
+        }
 
         // [AI:Claude] Déterminer le texte pour le modèle selon le genre choisi
         $modelText = match($modelGender) {
@@ -243,8 +305,41 @@ class AIPhotoService
         ];
 
         if (in_array($context, $babyGarmentWornContexts)) {
-            error_log("[PROMPT] Vêtement bébé '{$itemName}' - PORTÉ PAR BÉBÉ");
-            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. Le vêtement doit être porté par un VRAI BÉBÉ HUMAIN (pas une poupée, pas un mannequin). ÉTAPES CRITIQUES : 1) Garde le vêtement fait main porté par le bébé. 2) RETIRE tous les éléments parasites : objets indésirables, fond original moche. 3) Place le bébé portant le vêtement dans le nouveau contexte avec une pose naturelle, confortable et sécurisante pour un bébé. RÈGLE ABSOLUE sur les détails visuels du vêtement porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la position du bébé dans l'espace pour créer une belle composition naturelle et douce, mais tu NE PEUX PAS changer l'apparence visuelle du vêtement lui-même (couleurs, motifs, texture). Le vêtement porté doit être bien mis en valeur dans une scène réaliste et attendrissante.";
+            error_log("[PROMPT] Vêtement bébé '{$itemName}' - PORTÉ PAR BÉBÉ" . ($season ? " - Saison: {$season}" : ""));
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. Le vêtement doit être porté par un VRAI BÉBÉ HUMAIN (pas une poupée, pas un mannequin). ÉTAPES CRITIQUES : 1) Garde le vêtement fait main porté par le bébé. 2) RETIRE tous les éléments parasites : objets indésirables, fond original moche. 3) Place le bébé portant le vêtement dans le nouveau contexte avec une pose naturelle, confortable et sécurisante pour un bébé. RÈGLE ABSOLUE sur les détails visuels du vêtement porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la position du bébé dans l'espace pour créer une belle composition naturelle et douce, mais tu NE PEUX PAS changer l'apparence visuelle du vêtement lui-même (couleurs, motifs, texture). Le vêtement porté doit être bien mis en valeur dans une scène réaliste et attendrissante.";
+        }
+
+        // [AI:Claude] v0.17.1 - Contextes de vêtements enfant PORTÉS
+        $childGarmentWornContexts = [
+            'child_garment_c1', // Enfant parc/jardin
+            'child_garment_c4', // Enfant jouant
+            'child_garment_c6', // Enfant urbain/street
+            'child_garment_c7', // Mode enfant
+            'child_garment_c9'  // Promenade famille
+        ];
+
+        if (in_array($context, $childGarmentWornContexts)) {
+            // [AI:Claude] Déterminer le genre de l'enfant
+            $childText = match($modelGender) {
+                'male' => 'un petit garçon (vrai enfant humain masculin)',
+                'female' => 'une petite fille (vrai enfant humain féminin)',
+                default => 'un enfant (vrai enfant humain)'
+            };
+            $childAge = 'âgé de 3 à 8 ans environ';
+
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. Le vêtement doit être porté par {$childText} {$childAge} (pas une poupée, pas un mannequin). ÉTAPES CRITIQUES : 1) Garde le vêtement fait main porté par l'enfant. 2) RETIRE tous les éléments parasites : objets indésirables, fond original moche. 3) Place l'enfant portant le vêtement dans le nouveau contexte avec une pose naturelle, joyeuse et adaptée à son âge (debout, jouant, courant...). RÈGLE ABSOLUE sur les détails visuels du vêtement porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la position de l'enfant dans l'espace pour créer une belle composition naturelle et dynamique, mais tu NE PEUX PAS changer l'apparence visuelle du vêtement lui-même (couleurs, motifs, texture). Le vêtement porté doit être bien mis en valeur dans une scène réaliste et joyeuse.";
+        }
+
+        // [AI:Claude] v0.17.1 - Contextes de vêtements enfant À PLAT
+        $childGarmentFlatContexts = [
+            'child_garment_c2', // Studio blanc
+            'child_garment_c3', // Chambre enfant
+            'child_garment_c5', // Flat lay coloré
+            'child_garment_c8'  // Premium boutique
+        ];
+
+        if (in_array($context, $childGarmentFlatContexts)) {
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement le vêtement enfant visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place le vêtement enfant isolé complètement à plat sur la surface horizontale dans le nouveau contexte, comme s'il était naturellement posé par gravité, JAMAIS debout ou en position verticale. RÈGLE ABSOLUE sur les détails visuels : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels de l'ouvrage. Tu PEUX changer l'angle de vue (vue du dessus, légèrement de côté, etc.) et la position sur la surface pour que ce soit naturel et bien composé, mais le vêtement doit toujours rester à plat horizontalement. Tu NE PEUX PAS changer l'apparence visuelle (couleurs, motifs, texture). Le vêtement enfant doit être seul et bien mis en scène.";
         }
 
         // [AI:Claude] v0.14.0 - Prompt ULTRA STRICT spécifique pour photos portées (adultes)
@@ -255,7 +350,10 @@ class AIPhotoService
             'wearable_c2',
             'wearable_c3',
             'wearable_c4',
+            'wearable_c5',
+            'wearable_c6',
             'wearable_c7',
+            'wearable_c8',
             'wearable_c9',
             // Accessoires portés
             'accessory_c2',
@@ -267,7 +365,8 @@ class AIPhotoService
 
         if ($isWornContext) {
             // Pour photos portées : préciser le genre du modèle si demandé
-            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. L'article doit être porté par {$modelText}, PAS un mannequin de vitrine en plastique. ÉTAPES CRITIQUES : 1) Garde l'ouvrage fait main porté par le modèle. 2) RETIRE tous les éléments parasites : mains qui tiennent artificiellement l'ouvrage (sauf si elles font naturellement partie de la pose), objets indésirables, fond original moche. 3) Place le modèle portant l'ouvrage dans le nouveau contexte avec une pose naturelle et appropriée. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la pose du modèle, la position dans l'espace pour créer une belle composition naturelle, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage lui-même (couleurs, motifs, texture). L'ouvrage porté doit être bien mis en valeur dans une scène réaliste.";
+            error_log("[PROMPT] Contexte porté" . ($season ? " - Saison: {$season}" : ""));
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. L'article doit être porté par {$modelText}, PAS un mannequin de vitrine en plastique. ÉTAPES CRITIQUES : 1) Garde l'ouvrage fait main porté par le modèle. 2) RETIRE tous les éléments parasites : mains qui tiennent artificiellement l'ouvrage (sauf si elles font naturellement partie de la pose), objets indésirables, fond original moche. 3) Place le modèle portant l'ouvrage dans le nouveau contexte avec une pose naturelle et appropriée. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la pose du modèle, la position dans l'espace pour créer une belle composition naturelle, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage lui-même (couleurs, motifs, texture). L'ouvrage porté doit être bien mis en valeur dans une scène réaliste.";
         }
 
         // [AI:Claude] v0.14.0 - Prompt spécifique pour accessoires bébé et vêtements bébé À PLAT
@@ -276,12 +375,15 @@ class AIPhotoService
 
         if ($isBabyContext || $isBabyGarmentFlatContext) {
             $itemType = $isBabyGarmentFlatContext ? 'vêtement bébé' : 'accessoire bébé';
-            error_log("[PROMPT] {$itemType} '{$itemName}' - Utilisation du prompt FLAT LAY strict");
-            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement le {$itemType} visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place le {$itemType} isolé complètement à plat sur la surface horizontale dans le nouveau contexte, comme s'il était naturellement posé par gravité, JAMAIS debout ou en position verticale. RÈGLE ABSOLUE sur les détails visuels : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels de l'ouvrage. Tu PEUX changer l'angle de vue (vue du dessus, légèrement de côté, etc.) et la position sur la surface pour que ce soit naturel et bien composé, mais le {$itemType} doit toujours rester à plat horizontalement. Tu NE PEUX PAS changer l'apparence visuelle (couleurs, motifs, texture). Le {$itemType} doit être seul et bien mis en scène.";
+            error_log("[PROMPT] {$itemType} '{$itemName}' - Utilisation du prompt FLAT LAY strict" . ($season ? " - Saison: {$season}" : ""));
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement le {$itemType} visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place le {$itemType} isolé complètement à plat sur la surface horizontale dans le nouveau contexte, comme s'il était naturellement posé par gravité, JAMAIS debout ou en position verticale. RÈGLE ABSOLUE sur les détails visuels : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels de l'ouvrage. Tu PEUX changer l'angle de vue (vue du dessus, légèrement de côté, etc.) et la position sur la surface pour que ce soit naturel et bien composé, mais le {$itemType} doit toujours rester à plat horizontalement. Tu NE PEUX PAS changer l'apparence visuelle (couleurs, motifs, texture). Le {$itemType} doit être seul et bien mis en scène.";
         }
 
         // [AI:Claude] Prompt standard pour autres contextes (produit seul)
-        return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement l'ouvrage fait main visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place l'ouvrage isolé dans le nouveau contexte avec une position, un angle et une pose NATURELS et APPROPRIÉS pour le contexte demandé. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF, la FORME et tous les détails visuels. Tu PEUX changer la position, l'angle de vue, l'orientation pour que ce soit naturel dans le nouveau contexte, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage (couleurs, motifs, texture). L'ouvrage doit être seul et bien mis en scène.";
+        if ($season) {
+            error_log("[PROMPT] Contexte standard - Saison: {$season}");
+        }
+        return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. ÉTAPES CRITIQUES : 1) ISOLE uniquement l'ouvrage fait main visible sur l'image originale. 2) RETIRE complètement tous les autres éléments : mains, bras, personnes, fond original, objets indésirables. 3) Place l'ouvrage isolé dans le nouveau contexte avec une position, un angle et une pose NATURELS et APPROPRIÉS pour le contexte demandé. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF, la FORME et tous les détails visuels. Tu PEUX changer la position, l'angle de vue, l'orientation pour que ce soit naturel dans le nouveau contexte, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage (couleurs, motifs, texture). L'ouvrage doit être seul et bien mis en scène.";
     }
 
     /**
@@ -595,8 +697,9 @@ class AIPhotoService
             $context = $options['context'] ?? 'lifestyle';
             $itemName = $options['item_name'] ?? '';
             $modelGender = $options['model_gender'] ?? 'person'; // person, male, female
+            $season = $options['season'] ?? null; // spring, summer, autumn, winter
 
-            $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender);
+            $prompt = $this->buildPrompt($projectType, $context, $itemName, $modelGender, $season);
 
             // [AI:Claude] Mode simulation (pour tester sans API)
             if ($this->simulationMode) {
@@ -758,5 +861,50 @@ class AIPhotoService
     public static function getAvailableContexts(): array
     {
         return array_keys(self::CONTEXTS);
+    }
+
+    /**
+     * [AI:Claude] Obtenir les saisons disponibles pour le frontend
+     *
+     * @return array Liste des saisons avec leurs descriptions
+     */
+    public static function getAvailableSeasons(): array
+    {
+        return [
+            'spring' => [
+                'key' => 'spring',
+                'label' => 'Printemps',
+                'icon' => '🌸',
+                'description' => 'Fleurs, bourgeons, lumière douce'
+            ],
+            'summer' => [
+                'key' => 'summer',
+                'label' => 'Été',
+                'icon' => '☀️',
+                'description' => 'Lumière dorée, végétation luxuriante'
+            ],
+            'autumn' => [
+                'key' => 'autumn',
+                'label' => 'Automne',
+                'icon' => '🍂',
+                'description' => 'Feuilles dorées, tons chauds'
+            ],
+            'winter' => [
+                'key' => 'winter',
+                'label' => 'Hiver',
+                'icon' => '❄️',
+                'description' => 'Neige, givre, ambiance cocooning'
+            ]
+        ];
+    }
+
+    /**
+     * [AI:Claude] Obtenir les catégories qui supportent les saisons
+     *
+     * @return array Liste des catégories
+     */
+    public static function getSeasonCategories(): array
+    {
+        return self::SEASON_CATEGORIES;
     }
 }

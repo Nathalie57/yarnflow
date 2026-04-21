@@ -11,7 +11,9 @@
     "validate:env": "node validate-env.js",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "pwa:validate": "node validate-pwa.cjs"
+    "pwa:validate": "node validate-pwa.cjs",
+    "store:init": "echo 'Run: npx @bubblewrap/cli init --manifest=https://yarnflow.fr/manifest.json'",
+    "store:build": "echo 'Run: npx @bubblewrap/cli build'"
   },
   "dependencies": {
     "axios": "^1.13.2",

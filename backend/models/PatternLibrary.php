@@ -332,6 +332,19 @@ class PatternLibrary
     }
 
     /**
+     * Récupérer les projets liés à un patron pour un utilisateur donné
+     */
+    public function getLinkedProjects(int $patternId, int $userId): array
+    {
+        $query = "SELECT id, name, status FROM projects
+                  WHERE pattern_library_id = :pattern_id AND user_id = :user_id
+                  ORDER BY updated_at DESC";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':pattern_id' => $patternId, ':user_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * [AI:Claude] Échapper les caractères wildcards LIKE pour éviter les recherches non intentionnelles
      *
      * @param string $value Valeur à échapper

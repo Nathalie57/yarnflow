@@ -226,8 +226,10 @@ class Project extends BaseModel
             'counter_unit', 'counter_unit_increment', // [AI:Claude] v0.16.2 - Support unité compteur (rangs/cm)
             'yarn_brand', 'yarn_color', 'yarn_weight', 'hook_size', 'yarn_used_grams',
             'notes', 'pattern_notes', 'is_public', 'is_favorite', 'completed_at',
-            'pattern_path', 'pattern_url', 'pattern_text', // [AI:Claude] v0.13.0 - Support texte patron
-            'technical_details' // [AI:Claude] v0.13.0 - Détails techniques structurés (laine, aiguilles, échantillon)
+            'pattern_path', 'pattern_url', 'pattern_text', 'pattern_library_id', // [AI:Claude] v0.13.0 - Support texte patron
+            'technical_details', // [AI:Claude] v0.13.0 - Détails techniques structurés (laine, aiguilles, échantillon)
+            'secondary_label', 'secondary_target', 'secondary_count', // [AI:Claude] Sync compteur secondaire multi-appareils
+            'reminders', 'deadline' // Rappels de rang + objectif de date
         ];
 
         $fields = [];
@@ -320,9 +322,11 @@ class Project extends BaseModel
     public function addRow(int $projectId, array $rowData): int|false
     {
         $query = "INSERT INTO project_rows
-                  (project_id, section_id, row_num, stitch_count, stitch_type, duration, notes, difficulty_rating, photo, completed_at)
+                  (project_id, section_id, row_num, stitch_count, stitch_type, duration, notes, difficulty_rating, photo, completed_at,
+                   secondary_count, secondary_target, secondary_label)
                   VALUES
-                  (:project_id, :section_id, :row_num, :stitch_count, :stitch_type, :duration, :notes, :difficulty_rating, :photo, :completed_at)
+                  (:project_id, :section_id, :row_num, :stitch_count, :stitch_type, :duration, :notes, :difficulty_rating, :photo, :completed_at,
+                   :secondary_count, :secondary_target, :secondary_label)
                   ON DUPLICATE KEY UPDATE
                   section_id = VALUES(section_id),
                   stitch_count = VALUES(stitch_count),
@@ -331,7 +335,10 @@ class Project extends BaseModel
                   notes = VALUES(notes),
                   difficulty_rating = VALUES(difficulty_rating),
                   photo = VALUES(photo),
-                  completed_at = VALUES(completed_at)";
+                  completed_at = VALUES(completed_at),
+                  secondary_count = VALUES(secondary_count),
+                  secondary_target = VALUES(secondary_target),
+                  secondary_label = VALUES(secondary_label)";
 
         $stmt = $this->db->prepare($query);
 
@@ -345,7 +352,10 @@ class Project extends BaseModel
             ':notes' => $rowData['notes'] ?? null,
             ':difficulty_rating' => $rowData['difficulty_rating'] ?? null,
             ':photo' => $rowData['photo'] ?? null,
-            ':completed_at' => $rowData['completed_at'] ?? date('Y-m-d H:i:s')
+            ':completed_at' => $rowData['completed_at'] ?? date('Y-m-d H:i:s'),
+            ':secondary_count' => $rowData['secondary_count'] ?? null,
+            ':secondary_target' => $rowData['secondary_target'] ?? null,
+            ':secondary_label' => $rowData['secondary_label'] ?? null,
         ];
 
         if (!$stmt->execute($params))
@@ -586,19 +596,21 @@ class Project extends BaseModel
             $dateCondition = "AND p.started_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)";
 
         // [AI:Claude] Requête pour calculer les stats de base
+        // total_rows via project_rows pour compter tous les rangs historiques (sections incluses)
         $query = "SELECT
                     COUNT(*) as total_projects,
                     SUM(CASE WHEN p.status = 'completed' THEN 1 ELSE 0 END) as completed_projects,
                     SUM(CASE WHEN p.status = 'in_progress' THEN 1 ELSE 0 END) as active_projects,
                     SUM(p.total_time) as total_crochet_time,
                     SUM(p.total_stitches) as total_stitches,
-                    SUM(p.current_row) as total_rows
+                    (SELECT COUNT(*) FROM project_rows pr WHERE pr.project_id IN (SELECT id FROM {$this->table} WHERE user_id = :user_id_rows)) as total_rows
                   FROM {$this->table} p
                   WHERE p.user_id = :user_id
                   $dateCondition";
 
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':user_id_rows', $userId, \PDO::PARAM_INT);
         $stmt->execute();
 
         $stats = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -640,6 +652,42 @@ class Project extends BaseModel
         $avgSessionTime = $sessionStats['avg_session_duration']
             ? round($sessionStats['avg_session_duration'] / 60)
             : 0;
+
+        // Meilleure heure de la journée (heure avec le plus de rangs/h en moyenne)
+        $bestHourQuery = "SELECT HOUR(ps.started_at) as hour,
+                                 AVG(ps.rows_completed / NULLIF(ps.duration / 3600, 0)) as avg_speed
+                          FROM project_sessions ps
+                          JOIN {$this->table} p ON ps.project_id = p.id
+                          WHERE p.user_id = :user_id
+                          AND ps.ended_at IS NOT NULL
+                          AND ps.duration > 0
+                          AND ps.rows_completed > 0
+                          $dateCondition
+                          GROUP BY HOUR(ps.started_at)
+                          ORDER BY avg_speed DESC
+                          LIMIT 1";
+
+        $stmt = $this->db->prepare($bestHourQuery);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $bestHourResult = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $bestHour = $bestHourResult ? (int)$bestHourResult['hour'] : null;
+
+        // Progression par jour (rangs/cm complétés par jour sur les 30 derniers jours)
+        $progressionQuery = "SELECT DATE(ps.started_at) as day,
+                                    SUM(ps.rows_completed) as `rows`
+                             FROM project_sessions ps
+                             JOIN {$this->table} p ON ps.project_id = p.id
+                             WHERE p.user_id = :user_id
+                             AND ps.ended_at IS NOT NULL
+                             AND ps.started_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                             GROUP BY DATE(ps.started_at)
+                             ORDER BY day ASC";
+
+        $stmt = $this->db->prepare($progressionQuery);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $progressionData = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         // [AI:Claude] Calcul du streak (jours consécutifs de travail)
         // Récupérer tous les jours distincts où l'utilisateur a travaillé
@@ -713,6 +761,18 @@ class Project extends BaseModel
             $longestStreak = max($longestStreak, $tempStreak);
         }
 
+        // [AI:Claude] v0.17.0 - Vérifier si l'utilisateur a au moins un projet avec current_row > 0
+        $hasStartedQuery = "SELECT COUNT(*) > 0 as has_started_rows
+                            FROM {$this->table}
+                            WHERE user_id = :user_id
+                            AND current_row > 0";
+
+        $stmt = $this->db->prepare($hasStartedQuery);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $hasStartedResult = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $hasStartedRows = (bool)($hasStartedResult['has_started_rows'] ?? false);
+
         return [
             'total_projects' => $totalProjects,
             'completed_projects' => $completedProjects,
@@ -727,7 +787,10 @@ class Project extends BaseModel
             'average_session_time' => $avgSessionTime,
             'current_streak' => $currentStreak,
             'longest_streak' => $longestStreak,
-            'period' => $period
+            'best_hour' => $bestHour,
+            'progression' => $progressionData,
+            'period' => $period,
+            'has_started_rows' => $hasStartedRows // [AI:Claude] v0.17.0 - Onboarding premier rang
         ];
     }
 
@@ -821,9 +884,9 @@ class Project extends BaseModel
     public function createSection(int $projectId, array $sectionData): int|false
     {
         $query = "INSERT INTO project_sections
-                  (project_id, name, description, display_order, total_rows, current_row)
+                  (project_id, name, description, notes, display_order, total_rows, current_row)
                   VALUES
-                  (:project_id, :name, :description, :display_order, :total_rows, :current_row)";
+                  (:project_id, :name, :description, :notes, :display_order, :total_rows, :current_row)";
 
         $stmt = $this->db->prepare($query);
 
@@ -831,6 +894,7 @@ class Project extends BaseModel
             ':project_id' => $projectId,
             ':name' => $sectionData['name'],
             ':description' => $sectionData['description'] ?? null,
+            ':notes' => $sectionData['notes'] ?? null,
             ':display_order' => $sectionData['display_order'] ?? 0,
             ':total_rows' => $sectionData['total_rows'] ?? null,
             ':current_row' => $sectionData['current_row'] ?? 0  // [AI:Claude] v0.16.2: Support initial row count
@@ -919,7 +983,9 @@ class Project extends BaseModel
      */
     public function updateSection(int $sectionId, array $data): bool
     {
-        $allowedFields = ['name', 'description', 'display_order', 'total_rows', 'current_row', 'counter_unit', 'is_completed'];
+        $allowedFields = ['name', 'description', 'notes', 'display_order', 'total_rows', 'current_row', 'counter_unit', 'is_completed',
+                          'secondary_label', 'secondary_target', 'secondary_count', 'secondary_sequence',
+                          'reminders']; // Rappels de rang
 
         $fields = [];
         $params = [':id' => $sectionId];

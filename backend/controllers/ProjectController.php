@@ -230,15 +230,29 @@ class ProjectController
             error_log("[PROJECT CREATE] Can create: ".($this->canCreateProject($user, $activeProjectCount) ? 'YES' : 'NO'));
 
             if (!$this->canCreateProject($user, $activeProjectCount)) {
-                $maxProjects = match($user['subscription_type']) {
+                // [AI:Claude] Déterminer le vrai type d'abonnement (en tenant compte de l'expiration)
+                $effectiveSubscription = $user['subscription_type'] ?? 'free';
+                if ($effectiveSubscription !== 'free' && isset($user['subscription_expires_at']) && $user['subscription_expires_at'] !== null) {
+                    if (strtotime($user['subscription_expires_at']) <= time()) {
+                        $effectiveSubscription = 'free'; // Abonnement expiré
+                    }
+                }
+
+                $maxProjects = match($effectiveSubscription) {
                     'free' => 3,
                     'plus', 'plus_annual' => 7,
                     default => 999
                 };
-                $upgradeMessage = $user['subscription_type'] === 'free'
+
+                $subscriptionLabel = $effectiveSubscription;
+                if ($effectiveSubscription === 'free' && $user['subscription_type'] !== 'free') {
+                    $subscriptionLabel = 'free (abonnement ' . $user['subscription_type'] . ' expiré)';
+                }
+
+                $upgradeMessage = $effectiveSubscription === 'free'
                     ? 'Passez à PLUS (2.99€/mois, 7 projets) ou PRO (4.99€/mois, illimité)'
                     : 'Passez à PRO (4.99€/mois) pour des projets illimités';
-                throw new \Exception("Quota de projets actifs atteint. Vous avez $activeProjectCount projet(s) actif(s), maximum autorisé: $maxProjects (abonnement: {$user['subscription_type']}). Terminez un projet ou $upgradeMessage.");
+                throw new \Exception("Quota de projets actifs atteint. Vous avez $activeProjectCount projet(s) actif(s), maximum autorisé: $maxProjects (abonnement: {$subscriptionLabel}). Terminez un projet ou $upgradeMessage.");
             }
 
             // [AI:Claude] Préparation des données
@@ -483,14 +497,17 @@ class ProjectController
 
             $rowData = [
                 'row_number' => (int)$data['row_number'],
-                'section_id' => $data['section_id'] ?? null, // [AI:Claude] Support des sections
+                'section_id' => $data['section_id'] ?? null,
                 'stitch_count' => $data['stitch_count'] ?? null,
                 'stitch_type' => $data['stitch_type'] ?? null,
                 'duration' => $data['duration'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'difficulty_rating' => $data['difficulty_rating'] ?? null,
                 'photo' => $data['photo'] ?? null,
-                'completed_at' => $data['completed_at'] ?? date('Y-m-d H:i:s')
+                'completed_at' => $data['completed_at'] ?? date('Y-m-d H:i:s'),
+                'secondary_count' => isset($data['secondary_count']) ? (int)$data['secondary_count'] : null,
+                'secondary_target' => isset($data['secondary_target']) ? (int)$data['secondary_target'] : null,
+                'secondary_label' => isset($data['secondary_label']) ? trim($data['secondary_label']) : null,
             ];
 
             $rowId = $this->projectModel->addRow($id, $rowData);
@@ -1332,22 +1349,22 @@ class ProjectController
 
             // [AI:Claude] Mettre à jour le projet avec le patron
             if ($pattern['source_type'] === 'file') {
-                // Lier le fichier
                 $success = $this->projectModel->updateProject($id, [
+                    'pattern_library_id' => $patternLibraryId,
                     'pattern_path' => $pattern['file_path'],
                     'pattern_url' => null,
                     'pattern_text' => null
                 ]);
             } elseif ($pattern['source_type'] === 'text') {
-                // Lier le texte
                 $success = $this->projectModel->updateProject($id, [
+                    'pattern_library_id' => $patternLibraryId,
                     'pattern_text' => $pattern['pattern_text'],
                     'pattern_path' => null,
                     'pattern_url' => null
                 ]);
             } else {
-                // Lier l'URL
                 $success = $this->projectModel->updateProject($id, [
+                    'pattern_library_id' => $patternLibraryId,
                     'pattern_url' => $pattern['url'],
                     'pattern_path' => null,
                     'pattern_text' => null
@@ -1414,6 +1431,7 @@ class ProjectController
             $sectionData = [
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
+                'notes' => $data['notes'] ?? null,
                 'display_order' => $data['display_order'] ?? 0,
                 'total_rows' => $data['total_rows'] ?? null,
                 'current_row' => $data['current_row'] ?? 0  // [AI:Claude] v0.16.2: Support affectation rangs

@@ -26,18 +26,18 @@ class CreditManager
      * Aligné sur CLAUDE.md
      */
     private const MONTHLY_QUOTAS = [
-        'free' => 5,          // FREE : 5 crédits/mois
-        'plus' => 15,         // PLUS 2.99€/mois : 15 crédits/mois
-        'plus_annual' => 15,  // PLUS ANNUAL 29.99€/an : 15 crédits/mois
-        'pro' => 30,          // PRO 4.99€/mois : 30 crédits/mois
-        'pro_annual' => 30,   // PRO ANNUAL 49.99€/an : 30 crédits/mois
-        'early_bird' => 30,   // EARLY BIRD 2.99€/mois : 30 crédits/mois (waitlist uniquement)
-        // Legacy support (deprecated - tous migrés vers 'pro')
-        'standard' => 30,
-        'premium' => 30,
-        'monthly' => 30,
-        'yearly' => 30,
-        'starter' => 30
+        'free'         => 2,   // FREE : 2 crédits/mois
+        'pro'          => 20,  // PRO 3.99€/mois : 20 crédits/mois
+        'pro_annual'   => 20,  // PRO ANNUAL 39.99€/an : 20 crédits/mois
+        'plus'         => 20,  // legacy PLUS → traité comme PRO
+        'plus_annual'  => 20,
+        'early_bird'   => 20,
+        // Legacy support
+        'standard' => 20,
+        'premium'  => 20,
+        'monthly'  => 20,
+        'yearly'   => 20,
+        'starter'  => 20,
     ];
 
     /**
@@ -243,7 +243,7 @@ class CreditManager
                   (user_id, monthly_credits, last_reset_at)
                   VALUES (:user_id, :monthly_credits, NOW())
                   ON DUPLICATE KEY UPDATE
-                  monthly_credits = :monthly_credits";
+                  monthly_credits = VALUES(monthly_credits)";
 
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);

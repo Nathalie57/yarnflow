@@ -10,13 +10,14 @@ export function useImagePreview() {
   const [previewError, setPreviewError] = useState(null)
   const [previewContext, setPreviewContext] = useState(null) // Context utilisé pour la preview
 
-  const generatePreview = async (photoId, context) => {
+  const generatePreview = async (photoId, context, season = null) => {
     setIsGeneratingPreview(true)
     setPreviewError(null)
 
     try {
       const response = await api.post(`/photos/${photoId}/preview`, {
-        context: context
+        context: context,
+        season: season // [AI:Claude] Saison optionnelle (spring, summer, autumn, winter)
       })
 
       if (response.data.success) {

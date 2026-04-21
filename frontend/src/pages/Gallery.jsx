@@ -14,29 +14,25 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useImagePreview } from '../hooks/useImagePreview'
 import api from '../services/api'
 
 const Gallery = () => {
   const { user } = useAuth()
-  const {
-    previewImage,
-    isGeneratingPreview,
-    previewError,
-    previewContext,
-    generatePreview,
-    clearPreview
-  } = useImagePreview()
   const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [credits, setCredits] = useState(null)
 
+  // [AI:Claude] Projets de l'utilisateur (pour lier une photo à un projet)
+  const [projects, setProjects] = useState([])
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+
   // [AI:Claude] Détecter si on est sur mobile
   const [isMobile, setIsMobile] = useState(false)
 
-  // [AI:Claude] Recherche
+  // [AI:Claude] Recherche et filtres
   const [searchQuery, setSearchQuery] = useState('')
+  const [styleFilter, setStyleFilter] = useState(null)
 
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [showEnhanceModal, setShowEnhanceModal] = useState(false)
@@ -54,13 +50,14 @@ const Gallery = () => {
     photo: null,
     item_name: '',
     item_type: '',
-    technique: '',
-    description: ''
+    technique: ''
   })
   const [uploading, setUploading] = useState(false)
 
   // [AI:Claude] Embellissement IA - v0.12.1 SIMPLIFIÉ (1 photo, preset auto)
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
+  const [selectedSeason, setSelectedSeason] = useState(null) // [AI:Claude] Saison optionnelle (spring, summer, autumn, winter)
+  const [modelGender, setModelGender] = useState('female') // [AI:Claude] Genre du modèle (male, female)
   const [enhancing, setEnhancing] = useState(false)
 
   // [AI:Claude] Détecter mobile au montage
@@ -74,10 +71,11 @@ const Gallery = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // [AI:Claude] Charger les photos et crédits au montage
+  // [AI:Claude] Charger les photos, crédits et projets au montage
   useEffect(() => {
     fetchPhotos()
     fetchCredits()
+    fetchProjects()
   }, [])
 
   // [AI:Claude] Fermer le menu si clic à l'extérieur
@@ -141,18 +139,44 @@ const Gallery = () => {
     }
   }
 
-  // [AI:Claude] Filtrer les photos par recherche
+  // [AI:Claude] Charger les projets de l'utilisateur
+  const fetchProjects = async () => {
+    try {
+      const response = await api.get('/projects')
+      setProjects(response.data.projects || [])
+    } catch (err) {
+      console.error('Erreur chargement projets:', err)
+      setProjects([])
+    }
+  }
+
+  const CATEGORY_LABELS = {
+    wearable:      { label: 'Vêtements'   },
+    baby_garment:  { label: 'Bébé'        },
+    child_garment: { label: 'Enfant'      },
+    toy:           { label: 'Amigurumis'  },
+    home_decor:    { label: 'Déco'        },
+    accessory:     { label: 'Accessoires' },
+  }
+
+  // [AI:Claude] Catégories présentes dans la galerie (pour les pills de filtre)
+  const getAvailableCategoryFilters = () => {
+    const cats = [...new Set(photos.map(p => detectProjectCategory(p.item_type || '')).filter(Boolean))]
+    return cats.filter(c => CATEGORY_LABELS[c])
+  }
+
+  // [AI:Claude] Filtrer les photos par recherche et catégorie
   const getFilteredPhotos = () => {
     return photos.filter(photo => {
+      if (styleFilter && detectProjectCategory(photo.item_type || '') !== styleFilter) return false
+
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         const matchName = photo.item_name?.toLowerCase().includes(query)
         const matchType = photo.item_type?.toLowerCase().includes(query)
-        const matchStyle = photo.ai_style?.toLowerCase().includes(query)
-        const matchDescription = photo.description?.toLowerCase().includes(query)
         const matchTechnique = photo.technique?.toLowerCase().includes(query)
 
-        if (!matchName && !matchType && !matchStyle && !matchDescription && !matchTechnique)
+        if (!matchName && !matchType && !matchTechnique)
           return false
       }
       return true
@@ -167,10 +191,19 @@ const Gallery = () => {
     try {
       const formData = new FormData()
       formData.append('photo', uploadData.photo)
-      formData.append('item_name', uploadData.item_name)
-      formData.append('item_type', uploadData.item_type)
-      formData.append('technique', uploadData.technique)
-      formData.append('description', uploadData.description || '')
+
+      // [AI:Claude] Si projet sélectionné, utiliser ses infos, sinon les champs du formulaire
+      if (selectedProjectId) {
+        const selectedProject = projects.find(p => String(p.id) === String(selectedProjectId))
+        formData.append('item_name', selectedProject?.name || '')
+        formData.append('item_type', selectedProject?.type || '')
+        formData.append('technique', selectedProject?.technique || '')
+        formData.append('project_id', selectedProjectId)
+      } else {
+        formData.append('item_name', uploadData.item_name)
+        formData.append('item_type', uploadData.item_type)
+        formData.append('technique', uploadData.technique)
+      }
 
       const response = await api.post('/photos/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -183,12 +216,15 @@ const Gallery = () => {
         photo: null,
         item_name: '',
         item_type: '',
-        technique: '',
-        description: ''
+        technique: ''
       })
+      setSelectedProjectId('')
       setShowUploadModal(false)
 
       console.log('Photo uploadée avec succès:', newPhoto)
+
+      // [AI:Claude] Enchaîner directement vers l'embellissement IA
+      openEnhanceModal(newPhoto)
     } catch (err) {
       console.error('Erreur upload:', err)
       alert(err.response?.data?.error || 'Erreur lors de l\'upload')
@@ -197,18 +233,7 @@ const Gallery = () => {
     }
   }
 
-  // [AI:Claude] Générer une preview gratuite
-  const handleGeneratePreview = async () => {
-    if (!selectedPhoto || !selectedContext) return
-
-    const result = await generatePreview(selectedPhoto.id, selectedContext.key)
-
-    if (!result.success) {
-      alert(result.error || 'Erreur lors de la génération de la preview')
-    }
-  }
-
-  // [AI:Claude] Embellir avec IA - v0.12.1 SIMPLIFIÉ
+  // [AI:Claude] Embellir avec IA
   const handleEnhance = async (e) => {
     e.preventDefault()
 
@@ -223,20 +248,18 @@ const Gallery = () => {
     setEnhancing(true)
 
     try {
-      // [AI:Claude] Utiliser le context de la preview si disponible, sinon le context sélectionné
-      const contextToUse = previewContext || selectedContext.key
-
-      // [AI:Claude] Appel API pour génération HD avec le même context que la preview
+      // [AI:Claude] Appel API pour génération IA
       const response = await api.post(`/photos/${selectedPhoto.id}/enhance-multiple`, {
-        contexts: [contextToUse],
-        project_category: detectProjectCategory(selectedPhoto.item_type || '')
+        contexts: [selectedContext.key],
+        project_category: detectProjectCategory(selectedPhoto.item_type || ''),
+        season: selectedSeason, // Saison optionnelle
+        model_gender: modelGender // Genre du modèle (male, female)
       })
 
       await fetchPhotos()
       await fetchCredits()
       setShowEnhanceModal(false)
       setSelectedPhoto(null)
-      clearPreview()
 
       alert(`✨ Photo générée avec succès !`)
     } catch (err) {
@@ -264,7 +287,7 @@ const Gallery = () => {
   // [AI:Claude] Ouvrir modal d'embellissement avec sélection du premier style par défaut
   const openEnhanceModal = (photo) => {
     setSelectedPhoto(photo)
-    clearPreview() // [AI:Claude] Réinitialiser la preview
+    setSelectedSeason(null) // [AI:Claude] Réinitialiser la saison
     const category = detectProjectCategory(photo.item_type || '')
     const styles = getAvailableStyles(category)
     setSelectedContext(styles[0]) // Premier style par défaut
@@ -284,6 +307,9 @@ const Gallery = () => {
 
     if (lower === 'vêtements bébé' || lower === 'vetements bebe' || lower === 'baby_garment')
       return 'baby_garment'
+
+    if (lower === 'vêtements enfant' || lower === 'vetements enfant' || lower === 'child_garment')
+      return 'child_garment'
 
     if (lower === 'accessoires bébé' || lower === 'accessoires bebe')
       return 'wearable'
@@ -316,94 +342,100 @@ const Gallery = () => {
     if (lower.match(/couverture|plaid|coussin|tapis|déco|nappe/))
       return 'home_decor'
 
-    return 'other'
+    return null // Type inconnu ou vide : pas de catégorie
   }
+
+  // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
+  const seasons = [
+    { key: 'spring', label: 'Printemps', icon: '🌸', desc: 'Fleurs, bourgeons, lumière douce' },
+    { key: 'summer', label: 'Été', icon: '☀️', desc: 'Lumière dorée, végétation luxuriante' },
+    { key: 'autumn', label: 'Automne', icon: '🍂', desc: 'Feuilles dorées, tons chauds' },
+    { key: 'winter', label: 'Hiver', icon: '❄️', desc: 'Neige, givre, ambiance cocooning' }
+  ]
+
+  // [AI:Claude] Thèmes qui supportent les saisons (extérieur, nature, lumière naturelle)
+  const seasonStyles = [
+    // Wearable - extérieur/nature
+    'wearable_c1', 'wearable_c3', 'wearable_c4', 'wearable_c6', 'wearable_c9',
+    // Accessory - extérieur/nature
+    'accessory_c2', 'accessory_c3', 'accessory_c6', 'accessory_c9',
+    // Home decor - ambiance saisonnière
+    'home_c4', 'home_c5', 'home_c6',
+    // Toy - extérieur/nature
+    'toy_c5', 'toy_c8',
+    // Baby garment - extérieur/nature
+    'baby_garment_c1', 'baby_garment_c4', 'baby_garment_c7', 'baby_garment_c9',
+    // Child garment - extérieur/nature/urbain
+    'child_garment_c1', 'child_garment_c6', 'child_garment_c9'
+  ]
 
   // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
   const stylesByCategory = {
     wearable: [
-      // FREE (3)
-      { key: 'wearable_c1', label: 'Classique épuré', icon: '👤', desc: 'Portrait extérieur lumière douce', tier: 'free' },
-      { key: 'wearable_c2', label: 'Casual moderne', icon: '✨', desc: 'Studio fond blanc neutre', tier: 'free' },
-      { key: 'wearable_c3', label: 'Vintage sobre', icon: '🌆', desc: 'Ambiance urbaine lifestyle, rue calme', tier: 'free' },
-      // PLUS (+3)
-      { key: 'wearable_c4', label: 'Bohème chic', icon: '🌼', desc: 'Ambiance vintage avec décor rétro', tier: 'plus' },
-      { key: 'wearable_c5', label: 'Sportif élégant', icon: '💡', desc: 'Studio lumière chaude', tier: 'plus' },
-      { key: 'wearable_c6', label: 'Minimaliste graphique', icon: '🌿', desc: 'Portrait en nature, lumière dorée', tier: 'plus' },
-      // PRO (+3)
-      { key: 'wearable_c7', label: 'Haute couture sophistiquée', icon: '👗', desc: 'Studio fond texturé sombre', tier: 'pro' },
-      { key: 'wearable_c8', label: 'Rétro années 70', icon: '✨', desc: 'Ambiance soirée/décontractée', tier: 'pro' },
-      { key: 'wearable_c9', label: 'Urbain streetwear', icon: '🏙️', desc: 'Ambiance industrielle', tier: 'pro' }
+      { key: 'wearable_c1', label: 'Porté, lumière naturelle', icon: '👤', desc: 'Portrait extérieur avec lumière douce', tier: 'free' },
+      { key: 'flatlay_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
+      { key: 'detail_c1', label: 'Gros plan sur les points', icon: '🔍', desc: 'Macro sur la texture et le détail du tricot', tier: 'free' },
+      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'pro' },
+      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'pro' },
+      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'pro' },
+      { key: 'wearable_c4', label: 'Porté, ambiance vintage', icon: '🌼', desc: 'Portrait dans un décor rétro chaleureux', tier: 'pro' },
+      { key: 'wearable_c7', label: 'Porté, éclairage dramatique', icon: '👗', desc: 'Portrait studio avec fond texturé sombre', tier: 'pro' },
+      { key: 'wearable_c9', label: 'Porté, décor industriel', icon: '🏙️', desc: 'Portrait en loft ou espace industriel', tier: 'pro' }
     ],
     accessory: [
-      // FREE (3)
-      { key: 'accessory_c1', label: 'Classique minimaliste', icon: '📸', desc: 'Gros plan en studio', tier: 'free' },
-      { key: 'accessory_c2', label: 'Vintage délicat', icon: '🏠', desc: 'Mise en scène cosy sur table', tier: 'free' },
-      { key: 'accessory_c3', label: 'Moderne brillant', icon: '✨', desc: 'Ambiance luxe, fond sombre, lumière tamisée', tier: 'free' },
-      // PLUS (+3)
-      { key: 'accessory_c4', label: 'Bohème naturel', icon: '🌿', desc: 'Style bohème intérieur, lumière naturelle', tier: 'plus' },
-      { key: 'accessory_c5', label: 'Coloré graphique', icon: '🎨', desc: 'Studio avec lumière colorée', tier: 'plus' },
-      { key: 'accessory_c6', label: 'Chic urbain', icon: '🏙️', desc: 'Mise en scène urbaine dynamique', tier: 'plus' },
-      // PRO (+3)
-      { key: 'accessory_c7', label: 'Glamour soirée', icon: '💎', desc: 'Studio luxe avec accessoires complémentaires', tier: 'pro' },
-      { key: 'accessory_c8', label: 'Artistique abstrait', icon: '🎭', desc: 'Ambiance artistique, couleurs saturées', tier: 'pro' },
-      { key: 'accessory_c9', label: 'Vintage baroque', icon: '👑', desc: 'Décor baroque riche en détails', tier: 'pro' }
+      { key: 'accessory_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
+      { key: 'accessory_c2', label: 'Porté, lumière naturelle', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
+      { key: 'accessory_c3', label: 'Porté, fond neutre', icon: '👤', desc: 'Porté sur modèle avec fond sobre', tier: 'free' },
+      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'pro' },
+      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'pro' },
+      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'pro' },
+      { key: 'accessory_c7', label: 'Porté, style éditorial', icon: '💃', desc: 'Portrait avec mise en scène soignée', tier: 'pro' },
+      { key: 'accessory_c8', label: 'À plat, fond sombre élégant', icon: '💎', desc: 'Mise en scène sobre sur fond sombre', tier: 'pro' },
+      { key: 'accessory_c9', label: 'Porté, décor bohème', icon: '🌸', desc: 'Porté dans un intérieur bohème avec plantes', tier: 'pro' }
     ],
     home_decor: [
-      // FREE (3)
-      { key: 'home_c1', label: 'Moderne épuré', icon: '🏠', desc: 'Intérieur lumineux et minimaliste', tier: 'free' },
-      { key: 'home_c2', label: 'Rustique naturel', icon: '🌿', desc: 'Bois, plantes, lumière naturelle', tier: 'free' },
-      { key: 'home_c3', label: 'Scandinave', icon: '✨', desc: 'Décor épuré blanc/gris', tier: 'free' },
-      // PLUS (+3)
-      { key: 'home_c4', label: 'Industriel', icon: '🏭', desc: 'Ambiance loft, métal, briques', tier: 'plus' },
-      { key: 'home_c5', label: 'Coloré vintage', icon: '🎨', desc: 'Couleurs chaudes, vintage', tier: 'plus' },
-      { key: 'home_c6', label: 'Bohème cozy', icon: '🛋️', desc: 'Ambiance chaleureuse, tissus doux', tier: 'plus' },
-      // PRO (+3)
-      { key: 'home_c7', label: 'Luxe contemporain', icon: '💎', desc: 'Décor moderne avec matériaux nobles', tier: 'pro' },
-      { key: 'home_c8', label: 'Minimaliste zen', icon: '🧘', desc: 'Ambiance zen, couleurs neutres', tier: 'pro' },
-      { key: 'home_c9', label: 'Éclectique artistique', icon: '🎭', desc: 'Mélange de styles, pièces uniques', tier: 'pro' }
+      { key: 'home_c1', label: 'Intérieur moderne', icon: '🏠', desc: 'Décor contemporain avec touches de couleur', tier: 'free' },
+      { key: 'home_c2', label: 'Ambiance naturelle', icon: '🌿', desc: 'Bois, plantes et lumière naturelle', tier: 'free' },
+      { key: 'home_c3', label: 'Décor épuré', icon: '🪟', desc: 'Style scandinave, blanc et gris doux', tier: 'free' },
+      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'pro' },
+      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'pro' },
+      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'pro' },
+      { key: 'home_c7', label: 'Décor élégant', icon: '💎', desc: 'Intérieur contemporain avec matières nobles', tier: 'pro' },
+      { key: 'home_c8', label: 'Ambiance zen', icon: '🧘', desc: 'Décor minimaliste, couleurs neutres apaisantes', tier: 'pro' },
+      { key: 'home_c9', label: 'Table de créatrice', icon: '🎨', desc: 'Posé sur une table avec fils et fournitures', tier: 'pro' }
     ],
     toy: [
-      // FREE (3)
-      { key: 'toy_c1', label: 'Classique doux', icon: '🧸', desc: 'Chambre enfantine avec lumière douce', tier: 'free' },
-      { key: 'toy_c2', label: 'Contes de fées', icon: '✨', desc: 'Décor fantaisie, couleurs pastel', tier: 'free' },
-      { key: 'toy_c3', label: 'Moderne ludique', icon: '🎨', desc: 'Fond blanc studio uniforme', tier: 'free' },
-      // PLUS (+3)
-      { key: 'toy_c4', label: 'Vintage peluche', icon: '🧸', desc: 'Ambiance rétro, lumière tamisée', tier: 'plus' },
-      { key: 'toy_c5', label: 'Artisanat naturel', icon: '🌿', desc: 'Bois, tissus naturels', tier: 'plus' },
-      { key: 'toy_c6', label: 'Cartoon coloré', icon: '🎈', desc: 'Couleurs vives, style dessin animé', tier: 'plus' },
-      // PRO (+3)
-      { key: 'toy_c7', label: 'Luxe pour enfant', icon: '👑', desc: 'Studio avec décor chic', tier: 'pro' },
-      { key: 'toy_c8', label: 'Fantaisie magique', icon: '✨', desc: 'Ambiance féérique, lumières tamisées', tier: 'pro' },
-      { key: 'toy_c9', label: 'Personnalisé unique', icon: '🎭', desc: 'Mise en scène personnalisée', tier: 'pro' }
+      { key: 'toy_c1', label: 'Chambre enfant, lumière douce', icon: '🧸', desc: 'Décor de chambre enfantine doux et lumineux', tier: 'free' },
+      { key: 'toy_c2', label: 'Ambiance conte illustré', icon: '📖', desc: 'Décor aquarelle pastel, ambiance féerique', tier: 'free' },
+      { key: 'toy_c3', label: 'À plat, fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
+      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'pro' },
+      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'pro' },
+      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'pro' },
+      { key: 'toy_c7', label: 'Décor boutique artisanale', icon: '🏪', desc: 'Étagères et fond pastel, style créatrice', tier: 'pro' },
+      { key: 'toy_c8', label: 'Décor jungle tropicale', icon: '🦁', desc: 'Plantes exotiques, ambiance aventure', tier: 'pro' },
+      { key: 'toy_c9', label: 'Ambiance fête rétro', icon: '🎪', desc: 'Décor festif vintage coloré', tier: 'pro' }
     ],
     baby_garment: [
-      // FREE (3)
-      { key: 'baby_garment_c1', label: 'Bébé sur lit 👶', icon: '🛏️', desc: 'Porté par bébé allongé sur lit pastel', tier: 'free' },
-      { key: 'baby_garment_c2', label: 'Studio pastel', icon: '✨', desc: 'À plat sur fond uni doux', tier: 'free' },
-      { key: 'baby_garment_c3', label: 'Nursery scandinave', icon: '🏠', desc: 'À plat sur table à langer en bois clair', tier: 'free' },
-      // PLUS (+3)
-      { key: 'baby_garment_c4', label: 'Bébé lifestyle 👶', icon: '🧸', desc: 'Porté par bébé avec jouets bois', tier: 'plus' },
-      { key: 'baby_garment_c5', label: 'Flat lay naturel', icon: '🌿', desc: 'À plat avec accessoires lifestyle', tier: 'plus' },
-      { key: 'baby_garment_c6', label: 'Panier vintage', icon: '🧺', desc: 'À plat dans osier avec lin', tier: 'plus' },
-      // PRO (+3)
-      { key: 'baby_garment_c7', label: 'Dans bras parent 👶', icon: '💝', desc: 'Porté par bébé tenu par parent', tier: 'pro' },
-      { key: 'baby_garment_c8', label: 'Premium flat lay', icon: '💎', desc: 'À plat avec fleurs séchées', tier: 'pro' },
-      { key: 'baby_garment_c9', label: 'Tapis de jeu 👶', icon: '🌸', desc: 'Porté par bébé sur tapis moelleux', tier: 'pro' }
+      { key: 'baby_garment_c1', label: 'Porté par bébé, lit pastel', icon: '🛏️', desc: 'Bébé allongé sur lit aux tons doux', tier: 'free' },
+      { key: 'baby_garment_c2', label: 'À plat, fond doux', icon: '🌸', desc: 'Posé à plat sur fond uni pastel', tier: 'free' },
+      { key: 'baby_garment_c3', label: 'À plat, table à langer', icon: '🏠', desc: 'Sur table à langer en bois clair, style scandinave', tier: 'free' },
+      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'pro' },
+      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'pro' },
+      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'pro' },
+      { key: 'baby_garment_c7', label: 'Porté dans les bras', icon: '💝', desc: 'Bébé tenu par un parent, ambiance tendre', tier: 'pro' },
+      { key: 'baby_garment_c8', label: 'À plat, fleurs séchées', icon: '💎', desc: 'Mise en scène élégante avec fleurs séchées', tier: 'pro' },
+      { key: 'baby_garment_c9', label: 'Porté par bébé, tapis moelleux', icon: '🌸', desc: 'Bébé sur tapis doux et coloré', tier: 'pro' }
     ],
-    other: [
-      // FREE (3)
-      { key: 'baby_c1', label: 'Doux naturel', icon: '👶', desc: 'Studio lumière douce et pastel', tier: 'free' },
-      { key: 'baby_c2', label: 'Bio organique', icon: '🌿', desc: 'Décor naturel, plantes', tier: 'free' },
-      { key: 'baby_c3', label: 'Classique enfantin', icon: '✨', desc: 'Ambiance joyeuse et lumineuse', tier: 'free' },
-      // PLUS (+3)
-      { key: 'baby_c4', label: 'Moderne épuré', icon: '🏠', desc: 'Style minimaliste blanc', tier: 'plus' },
-      { key: 'baby_c5', label: 'Coloré gai', icon: '🎨', desc: 'Couleurs vives, ambiance joyeuse', tier: 'plus' },
-      { key: 'baby_c6', label: 'Vintage doux', icon: '🧸', desc: 'Décor rétro, lumière chaude', tier: 'plus' },
-      // PRO (+3)
-      { key: 'baby_c7', label: 'Luxe contemporain', icon: '💎', desc: 'Studio avec accessoires premium', tier: 'pro' },
-      { key: 'baby_c8', label: 'Ambiance conte de fées', icon: '✨', desc: 'Décor féérique doux', tier: 'pro' },
-      { key: 'baby_c9', label: 'Personnalisé moderne', icon: '🎭', desc: 'Mise en scène personnalisée', tier: 'pro' }
+    child_garment: [
+      { key: 'child_garment_c1', label: 'Porté, parc ou jardin', icon: '🌿', desc: 'Enfant dans un espace vert, lumière naturelle', tier: 'free' },
+      { key: 'child_garment_c2', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
+      { key: 'child_garment_c3', label: 'À plat, chambre enfant', icon: '🛏️', desc: 'Sur lit coloré avec peluches', tier: 'free' },
+      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'pro' },
+      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'pro' },
+      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'pro' },
+      { key: 'child_garment_c7', label: 'Porté, éclairage studio', icon: '📸', desc: 'Portrait soigné avec éclairage studio créatif', tier: 'pro' },
+      { key: 'child_garment_c8', label: 'À plat, mise en scène soignée', icon: '💎', desc: 'Mise en scène boutique haut de gamme', tier: 'pro' },
+      { key: 'child_garment_c9', label: 'Porté, promenade en famille', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
     ]
   }
 
@@ -415,30 +447,18 @@ const Gallery = () => {
     // Déterminer le tier en fonction du type d'abonnement
     let userTier = 'free'
 
-    // Plans PLUS
-    if (subscriptionType === 'plus' || subscriptionType === 'plus_annual') {
-      userTier = 'plus'
-    }
-    // Plans PRO (tous les variants)
-    else if (
-      subscriptionType === 'pro' ||
-      subscriptionType === 'pro_annual' ||
-      subscriptionType === 'early_bird' ||
-      subscriptionType.toLowerCase().includes('pro')
-    ) {
+    // Plans payants (PLUS legacy + PRO)
+    if (subscriptionType !== 'free') {
       userTier = 'pro'
     }
 
     // Filtrer selon le tier
     if (userTier === 'free') {
       return allStyles.filter(s => s.tier === 'free')
-    } else if (userTier === 'plus') {
-      return allStyles.filter(s => s.tier === 'free' || s.tier === 'plus')
     } else {
       return allStyles // PRO accède à tout
     }
   }
-
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -446,7 +466,7 @@ const Gallery = () => {
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">📸 Ma Galerie</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Ma galerie</h1>
             <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
               Toutes mes créations en photo
             </p>
@@ -460,15 +480,23 @@ const Gallery = () => {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <span className="text-2xl">✨</span>
+                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
                 <div>
-                  <h3 className="font-bold text-lg text-gray-900">Crédits Photos IA</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-gray-900">Crédits photos</h3>
+                    <span className="text-xs text-gray-500 font-normal">1 crédit = 1 photo embellie</span>
+                  </div>
                   <p className="text-sm text-gray-600">
                     {(() => {
                       const subType = user?.subscription_type;
-                      if (!subType || subType === 'free') return 'Plan FREE : 5 photos/mois';
-                      if (subType === 'plus' || subType === 'plus_annual') return 'Plan PLUS : 15 photos/mois';
-                      return 'Plan PRO : 30 photos/mois';
+                      if (!subType || subType === 'free') return 'Plan FREE : 2 crédits/mois';
+                      if (subType === 'plus' || subType === 'plus_annual') return 'Plan PRO : 20 crédits/mois';
+                      return 'Plan PRO : 20 crédits/mois';
                     })()}
                   </p>
                 </div>
@@ -488,7 +516,10 @@ const Gallery = () => {
               {credits.total_available === 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
                   <p className="text-sm text-amber-800 font-medium">
-                    ⚠️ Vous n'avez plus de crédits
+                    Plus de crédits ce mois-ci
+                  </p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Rechargement le 1er du mois
                   </p>
                 </div>
               )}
@@ -496,23 +527,33 @@ const Gallery = () => {
               {(!user?.subscription_type || user?.subscription_type === 'free') ? (
                 <Link
                   to="/subscription"
-                  className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition shadow-md hover:shadow-lg"
+                  className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition"
                 >
-                  🚀 Passer à PLUS ou PRO
+                  Passer à PRO — 20 crédits/mois
                 </Link>
               ) : (
-                <button
-                  disabled
-                  className="inline-flex items-center justify-center px-6 py-3 bg-gray-100 text-gray-400 font-medium rounded-lg cursor-not-allowed"
-                  title="Recharge automatique chaque mois à votre date d'abonnement"
-                >
-                  ✅ Abonnement {user?.subscription_type?.includes('plus') ? 'PLUS' : 'PRO'} actif
-                </button>
+                <div className="text-sm text-gray-500 text-center">
+                  Rechargement le 1er du mois
+                </div>
               )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Bouton CTA pour générer une photo IA */}
+      <div className="mb-6 flex justify-center">
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="inline-flex items-center gap-3 px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg rounded-xl shadow-sm hover:shadow-md transition"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>Embellir une photo</span>
+        </button>
+      </div>
 
       {/* Loading */}
       {loading && (
@@ -529,9 +570,9 @@ const Gallery = () => {
         </div>
       )}
 
-      {/* Barre de recherche */}
+      {/* Barre de recherche + filtres style */}
       {!loading && !error && photos.length > 0 && (
-        <div className="mb-6">
+        <div className="mb-6 space-y-3">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -557,6 +598,38 @@ const Gallery = () => {
               </button>
             )}
           </div>
+
+          {/* Pills filtre par catégorie */}
+          {getAvailableCategoryFilters().length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setStyleFilter(null)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                  styleFilter === null
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                Tous
+              </button>
+              {getAvailableCategoryFilters().map(cat => {
+                const meta = CATEGORY_LABELS[cat]
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setStyleFilter(styleFilter === cat ? null : cat)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                      styleFilter === cat
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {meta.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -564,35 +637,47 @@ const Gallery = () => {
       {!loading && !error && (
         <>
           {photos.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <div className="text-6xl mb-4">✨</div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Aucune photo IA générée
+            <div className="text-center py-16 bg-white rounded-xl border border-gray-200 px-6">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary-50 flex items-center justify-center">
+                <svg className="w-7 h-7 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Votre galerie est vide
               </h3>
-              <p className="text-gray-600 mb-6">
-                Allez dans vos projets pour générer vos premières photos professionnelles avec l'IA
+              <p className="text-gray-500 text-sm mb-2">
+                Ajoutez une photo dans un projet, choisissez un rendu,<br />et retrouvez le résultat ici.
+              </p>
+              <p className="text-gray-400 text-xs mb-6">
+                Votre ouvrage reste identique — seuls le fond et l'éclairage changent.
               </p>
               <Link
                 to="/my-projects"
-                className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
               >
-                📂 Voir mes projets
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                Aller dans mes projets
               </Link>
             </div>
           ) : getFilteredPhotos().length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <div className="text-4xl mb-4">🔍</div>
+              <div className="flex justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 Aucun résultat
               </h3>
               <p className="text-gray-600 mb-4">
-                Aucune photo ne correspond à votre recherche "{searchQuery}"
+                Aucune photo ne correspond à vos filtres actifs
               </p>
               <button
-                onClick={() => setSearchQuery('')}
+                onClick={() => { setSearchQuery(''); setStyleFilter(null) }}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
               >
-                Effacer la recherche
+                Effacer les filtres
               </button>
             </div>
           ) : (
@@ -692,7 +777,7 @@ const Gallery = () => {
                                 }}
                                 className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
                               >
-                                <span className="text-lg">📸</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                                 <span>Définir comme couverture</span>
                               </button>
                             )}
@@ -883,9 +968,9 @@ const Gallery = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <h2 className="text-2xl font-bold text-gray-900">📷 Uploader une photo</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Ajouter une photo</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Ajoutez une photo de votre ouvrage à embellir avec l'IA
+                Prenez ou choisissez une photo de votre ouvrage
               </p>
             </div>
 
@@ -900,7 +985,7 @@ const Gallery = () => {
                 <input
                   ref={(el) => (window.cameraInputGallery = el)}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/*"
                   capture="environment"
                   onChange={(e) => setUploadData({ ...uploadData, photo: e.target.files[0] })}
                   className="hidden"
@@ -908,7 +993,7 @@ const Gallery = () => {
                 <input
                   ref={(el) => (window.galleryInputGallery = el)}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp"
+                  accept="image/*"
                   onChange={(e) => setUploadData({ ...uploadData, photo: e.target.files[0] })}
                   className="hidden"
                 />
@@ -921,7 +1006,10 @@ const Gallery = () => {
                       onClick={() => window.cameraInputGallery?.click()}
                       className="flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
                     >
-                      <span className="text-xl">📷</span>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
                       <span className="font-medium">Prendre une photo</span>
                     </button>
                   )}
@@ -930,7 +1018,7 @@ const Gallery = () => {
                     onClick={() => window.galleryInputGallery?.click()}
                     className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
                   >
-                    <span className="text-xl">🖼️</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     <span className="font-medium">Choisir une photo</span>
                   </button>
                 </div>
@@ -946,99 +1034,137 @@ const Gallery = () => {
                 </p>
               </div>
 
-              {/* Nom de l'ouvrage */}
+              {/* Projet (optionnel) - PLACÉ EN PREMIER */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom de l'ouvrage <span className="text-red-600">*</span>
+                  Lier à un projet <span className="text-gray-400">(optionnel)</span>
                 </label>
-                <input
-                  type="text"
-                  value={uploadData.item_name}
-                  onChange={(e) => setUploadData({ ...uploadData, item_name: e.target.value })}
-                  required
+                <select
+                  value={selectedProjectId}
+                  onChange={(e) => setSelectedProjectId(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Ex: Mon bonnet rouge"
-                />
+                >
+                  <option value="">Aucun projet - saisir les infos manuellement</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name} {project.type ? `(${project.type})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {selectedProjectId
+                    ? '✓ Les infos du projet seront utilisées automatiquement'
+                    : 'Sélectionnez un projet ou remplissez les champs ci-dessous'
+                  }
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                {/* Type d'ouvrage */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type d'ouvrage <span className="text-red-600">*</span>
-                  </label>
-                  <select
-                    value={uploadData.item_type}
-                    onChange={(e) => setUploadData({ ...uploadData, item_type: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="">-- Sélectionner --</option>
-                    <optgroup label="🧢 Vêtements">
-                      <option value="bonnet">Bonnet</option>
-                      <option value="écharpe">Écharpe</option>
-                      <option value="pull">Pull</option>
-                      <option value="chaussettes">Chaussettes</option>
-                      <option value="snood">Snood</option>
-                    </optgroup>
-                    <optgroup label="👶 Vêtements bébé">
-                      <option value="body bébé">Body bébé</option>
-                      <option value="barboteuse">Barboteuse</option>
-                      <option value="gilet bébé">Gilet bébé</option>
-                      <option value="chaussons bébé">Chaussons bébé</option>
-                      <option value="bonnet bébé">Bonnet bébé</option>
-                      <option value="couverture bébé">Couverture bébé</option>
-                    </optgroup>
-                    <optgroup label="🧸 Amigurumis">
-                      <option value="amigurumi">Amigurumi</option>
-                      <option value="peluche">Peluche</option>
-                      <option value="doudou">Doudou</option>
-                    </optgroup>
-                    <optgroup label="👜 Accessoires">
-                      <option value="sac">Sac</option>
-                      <option value="pochette">Pochette</option>
-                      <option value="trousse">Trousse</option>
-                    </optgroup>
-                    <optgroup label="🏠 Déco maison">
-                      <option value="couverture">Couverture</option>
-                      <option value="plaid">Plaid</option>
-                      <option value="coussin">Coussin</option>
-                    </optgroup>
-                    <option value="autre">Autre</option>
-                  </select>
-                </div>
+              {/* Affichage du projet sélectionné */}
+              {selectedProjectId && (() => {
+                const selectedProject = projects.find(p => String(p.id) === String(selectedProjectId))
+                return selectedProject ? (
+                  <div className="mb-4 p-4 bg-primary-50 rounded-lg border border-primary-200">
+                    <div className="flex items-center gap-3">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-primary-600">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 3c0 0-3 4-3 9s3 9 3 9"/>
+                        <path d="M3 12h18"/>
+                      </svg>
+                      <div>
+                        <p className="font-semibold text-primary-900">{selectedProject.name}</p>
+                        <p className="text-sm text-primary-700">
+                          {selectedProject.type && <span className="mr-2">{selectedProject.type}</span>}
+                          {selectedProject.technique && <span>• {selectedProject.technique === 'tricot' ? 'Tricot' : 'Crochet'}</span>}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null
+              })()}
 
-                {/* Technique */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Technique
-                  </label>
-                  <select
-                    value={uploadData.technique}
-                    onChange={(e) => setUploadData({ ...uploadData, technique: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="">-- Sélectionner --</option>
-                    <option value="crochet">🪡 Crochet</option>
-                    <option value="tricot">🧶 Tricot</option>
-                    <option value="autre">Autre</option>
-                  </select>
-                </div>
-              </div>
+              {/* Champs manuels - uniquement si pas de projet sélectionné */}
+              {!selectedProjectId && (
+                <>
+                  {/* Nom de l'ouvrage */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nom de l'ouvrage <span className="text-red-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={uploadData.item_name}
+                      onChange={(e) => setUploadData({ ...uploadData, item_name: e.target.value })}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="Ex: Mon bonnet rouge"
+                    />
+                  </div>
 
-              {/* Description */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={uploadData.description}
-                  onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
-                  rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Ex: Bonnet slouchy en laine mérinos, fait main"
-                />
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {/* Type d'ouvrage */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Type d'ouvrage <span className="text-red-600">*</span>
+                      </label>
+                      <select
+                        value={uploadData.item_type}
+                        onChange={(e) => setUploadData({ ...uploadData, item_type: e.target.value })}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="">-- Sélectionner --</option>
+                        <optgroup label="Vêtements">
+                          <option value="bonnet">Bonnet</option>
+                          <option value="écharpe">Écharpe</option>
+                          <option value="pull">Pull</option>
+                          <option value="chaussettes">Chaussettes</option>
+                          <option value="snood">Snood</option>
+                        </optgroup>
+                        <optgroup label="Vêtements bébé">
+                          <option value="body bébé">Body bébé</option>
+                          <option value="barboteuse">Barboteuse</option>
+                          <option value="gilet bébé">Gilet bébé</option>
+                          <option value="chaussons bébé">Chaussons bébé</option>
+                          <option value="bonnet bébé">Bonnet bébé</option>
+                          <option value="couverture bébé">Couverture bébé</option>
+                        </optgroup>
+                        <optgroup label="Amigurumis">
+                          <option value="amigurumi">Amigurumi</option>
+                          <option value="peluche">Peluche</option>
+                          <option value="doudou">Doudou</option>
+                        </optgroup>
+                        <optgroup label="Accessoires">
+                          <option value="sac">Sac</option>
+                          <option value="pochette">Pochette</option>
+                          <option value="trousse">Trousse</option>
+                        </optgroup>
+                        <optgroup label="Déco maison">
+                          <option value="couverture">Couverture</option>
+                          <option value="plaid">Plaid</option>
+                          <option value="coussin">Coussin</option>
+                        </optgroup>
+                      </select>
+                    </div>
+
+                    {/* Technique */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Technique
+                      </label>
+                      <select
+                        value={uploadData.technique}
+                        onChange={(e) => setUploadData({ ...uploadData, technique: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="">-- Sélectionner --</option>
+                        <option value="crochet">Crochet</option>
+                        <option value="tricot">Tricot</option>
+                        <option value="autre">Autre</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Boutons */}
               <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
@@ -1051,10 +1177,14 @@ const Gallery = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={uploading}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-primary-300"
+                  disabled={
+                    uploading ||
+                    !uploadData.photo ||
+                    (!selectedProjectId && (!uploadData.item_name || !uploadData.item_type))
+                  }
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
-                  {uploading ? 'Upload...' : '📤 Uploader'}
+                  {uploading ? 'Chargement...' : 'Embellir avec l\'IA'}
                 </button>
               </div>
             </form>
@@ -1067,28 +1197,21 @@ const Gallery = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
           <div className="bg-white rounded-lg max-w-lg w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg">
-              <h2 className="text-2xl font-bold text-gray-900">✨ Générer une photo IA</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Embellir ma photo</h2>
               <p className="text-sm text-gray-600 mt-1">
                 {selectedPhoto.item_name}
               </p>
             </div>
 
             <form onSubmit={handleEnhance} className="p-6">
-              {/* Photo actuelle (remplacée par preview pendant génération HD) */}
-              <div className={`mb-6 rounded-lg border-2 p-4 relative ${enhancing && previewImage ? 'bg-green-50 border-green-400' : 'bg-gray-100 border-gray-200'}`}>
-                {enhancing && previewImage && (
-                  <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    Upscaling en cours...
-                  </div>
-                )}
+              {/* Photo originale */}
+              <div className="mb-6 rounded-lg border-2 p-4 bg-gray-100 border-gray-200">
                 <img
-                  src={(enhancing && previewImage) ? previewImage : `${import.meta.env.VITE_BACKEND_URL}${selectedPhoto.original_path}`}
+                  src={`${import.meta.env.VITE_BACKEND_URL}${selectedPhoto.original_path}`}
                   alt={selectedPhoto.item_name}
                   className="max-h-48 w-auto object-contain rounded-lg mx-auto"
                   onError={(e) => {
-                    if (!(enhancing && previewImage)) {
-                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
-                    }
+                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
                   }}
                 />
               </div>
@@ -1116,13 +1239,9 @@ const Gallery = () => {
                         onChange={() => setSelectedContext(style)}
                         className="text-primary-600 focus:ring-primary-500"
                       />
-                      <span className="text-2xl">{style.icon}</span>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="font-medium text-gray-900">{style.label}</p>
-                          {style.tier === 'plus' && (
-                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">PLUS</span>
-                          )}
                           {style.tier === 'pro' && (
                             <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
                           )}
@@ -1133,58 +1252,81 @@ const Gallery = () => {
                   ))}
                 </div>
 
-                {/* Message upgrade pour FREE */}
-                {user?.subscription_type === 'free' && (
-                  <div className="mt-3 p-3 bg-gradient-to-r from-purple-50 to-primary-50 border border-purple-200 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      🎨 <span className="font-semibold">6 styles supplémentaires</span> avec PLUS et <span className="font-semibold">9 styles premium</span> avec PRO !
-                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Découvrir les plans
-                      </a>
+                {/* Sélecteur de genre pour styles portés (adultes et enfants) */}
+                {selectedContext && (selectedContext.label?.includes('Porté') || ['child_garment_c1', 'child_garment_c4', 'child_garment_c6', 'child_garment_c7', 'child_garment_c9'].includes(selectedContext.key)) && (
+                  <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm font-semibold text-gray-700 mb-2">
+                      {selectedContext.key?.startsWith('child_garment_') ? 'Genre de l\'enfant :' : 'Genre du modèle :'}
                     </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'male' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
+                        <input type="radio" name="modelGender" value="male" checked={modelGender === 'male'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
+                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Garçon' : 'Homme'}</span>
+                      </label>
+                      <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'female' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
+                        <input type="radio" name="modelGender" value="female" checked={modelGender === 'female'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
+                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Fille' : 'Femme'}</span>
+                      </label>
+                    </div>
                   </div>
                 )}
 
-                {/* Message upgrade pour PLUS */}
-                {(user?.subscription_type === 'plus' || user?.subscription_type === 'plus_annual') && (
-                  <div className="mt-3 p-3 bg-gradient-to-r from-primary-50 to-sage-50 border border-primary-200 rounded-lg">
+                {/* Message upgrade pour FREE */}
+                {user?.subscription_type === 'free' && (
+                  <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
                     <p className="text-sm text-gray-700">
-                      ✨ <span className="font-semibold">3 styles premium supplémentaires</span> disponibles avec PRO (Instagram, Catalogues, Saisonnier) !
+                      <span className="font-semibold">9 styles supplémentaires</span> disponibles avec PRO !
                       <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Passer à PRO
+                        Découvrir le plan PRO
                       </a>
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Zone de preview */}
-              {previewImage && !enhancing && (
+              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel, uniquement pour thèmes extérieur/nature) */}
+              {selectedContext && seasonStyles.includes(selectedContext.key) && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                    ✨ Aperçu (preview gratuite)
-                  </h3>
-                  <div className="relative">
-                    <img
-                      src={previewImage}
-                      alt="Preview IA"
-                      className="w-full h-auto rounded-lg border-2 border-primary-300"
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                    <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">
-                      0 crédit
-                    </div>
-                  </div>
-                  <p className="text-xs text-green-700 mt-2 font-medium">
-                    ✓ L'image HD sera générée à partir de cette preview en haute résolution
-                  </p>
-                </div>
-              )}
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Ambiance saisonnière <span className="text-gray-400 font-normal">(optionnel)</span> :
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {/* Option "Aucune" */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSeason(null)}
+                      className={`flex flex-col items-center gap-1 p-3 border-2 rounded-lg transition ${
+                        selectedSeason === null
+                          ? 'border-primary-600 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                      <span className="text-xs font-medium text-gray-700">Aucune</span>
+                    </button>
 
-              {/* Erreur preview */}
-              {previewError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-800">{previewError}</p>
+                    {/* Options de saisons */}
+                    {seasons.map(season => (
+                      <button
+                        key={season.key}
+                        type="button"
+                        onClick={() => setSelectedSeason(season.key)}
+                        className={`flex flex-col items-center gap-1 p-3 border-2 rounded-lg transition ${
+                          selectedSeason === season.key
+                            ? 'border-primary-600 bg-primary-50'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        title={season.desc}
+                      >
+                        <span className="text-xs font-medium text-gray-700">{season.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {selectedSeason && (
+                    <p className="text-xs text-primary-600 mt-2">
+                      {seasons.find(s => s.key === selectedSeason)?.desc}
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1194,20 +1336,20 @@ const Gallery = () => {
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                     <div>
-                      <h4 className="font-semibold text-primary-900">🎨 Génération HD en cours...</h4>
+                      <h4 className="font-semibold text-primary-900">Génération en cours...</h4>
                       <p className="text-sm text-gray-600">Cela peut prendre quelques secondes</p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Résumé des crédits - uniquement si preview existe */}
-              {!enhancing && previewImage && credits && (
+              {/* Résumé des crédits */}
+              {!enhancing && credits && (
                 <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        💎 Génération HD = 1 crédit
+                        Génération = 1 crédit
                       </p>
                       <p className="text-xs text-gray-600 mt-1">
                         Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
@@ -1223,66 +1365,24 @@ const Gallery = () => {
 
               {/* Boutons */}
               <div className="flex items-center gap-3">
-                {!previewImage ? (
-                  // Bouton Preview gratuite
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowEnhanceModal(false)
-                        setSelectedPhoto(null)
-                        clearPreview()
-                      }}
-                      disabled={isGeneratingPreview}
-                      className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleGeneratePreview}
-                      disabled={!selectedContext || isGeneratingPreview}
-                      className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isGeneratingPreview ? (
-                        <>🔄 Génération preview...</>
-                      ) : (
-                        <>✨ Aperçu gratuit (0 crédit)</>
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  // Après preview : boutons Nouvelle preview + HD
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowEnhanceModal(false)
-                        setSelectedPhoto(null)
-                        clearPreview()
-                      }}
-                      disabled={enhancing}
-                      className="px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleGeneratePreview}
-                      disabled={enhancing || isGeneratingPreview}
-                      className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
-                    >
-                      {isGeneratingPreview ? '🔄 Génération...' : '🔄 Nouvelle preview'}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={enhancing || !credits || credits.total_available < 1}
-                      className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                    >
-                      {enhancing ? '⏳ Génération HD...' : '🎨 Générer en HD (1 crédit)'}
-                    </button>
-                  </>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEnhanceModal(false)
+                    setSelectedPhoto(null)
+                  }}
+                  disabled={enhancing}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={enhancing || !selectedContext || !credits || credits.total_available < 1}
+                  className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                >
+                  {enhancing ? 'Génération...' : 'Générer (1 crédit)'}
+                </button>
               </div>
             </form>
           </div>
@@ -1339,7 +1439,7 @@ const Gallery = () => {
               </p>
               <div className="bg-gradient-to-br from-primary-50 to-warm-50 border-2 border-primary-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700 font-medium">
-                  💡 <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
+                  <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
                 </p>
               </div>
             </div>

@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { AuthProvider } from './contexts/AuthContext'
+import { HintsProvider } from './contexts/HintsContext'
 import PrivateRoute from './components/PrivateRoute'
 import Layout from './components/Layout'
 import PWAPrompt from './components/PWAPrompt'
+import ContextualHint from './components/ContextualHint'
 import CookieConsent from 'react-cookie-consent'
 
 // Pages
@@ -14,10 +16,6 @@ import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import OAuthCallback from './pages/OAuthCallback'
-import Dashboard from './pages/Dashboard'
-import Generator from './pages/Generator'
-import MyPatterns from './pages/MyPatterns'
-import PatternDetail from './pages/PatternDetail'
 import Subscription from './pages/Subscription'
 import Profile from './pages/Profile'
 import MyProjects from './pages/MyProjects'
@@ -25,6 +23,7 @@ import ProjectCounter from './pages/ProjectCounter'
 import SmartProjectCreator from './pages/SmartProjectCreator'
 import Stats from './pages/Stats'
 import Gallery from './pages/Gallery'
+import Tools from './pages/Tools'
 import PatternLibrary from './pages/PatternLibrary'
 import PatternLibraryDetail from './pages/PatternLibraryDetail'
 import PaymentSuccess from './pages/PaymentSuccess'
@@ -71,6 +70,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <HintsProvider>
         <AnalyticsTracker />
         <Routes>
           {/* Routes publiques */}
@@ -96,13 +96,8 @@ function App() {
 
           {/* Routes protégées */}
           <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
-            {/* [AI:Claude] Redirection dashboard vers my-projects (nouveau tableau de bord unifié) */}
             <Route path="/dashboard" element={<Navigate to="/my-projects" replace />} />
             <Route path="/projects" element={<Navigate to="/my-projects" replace />} />
-
-            <Route path="/generator" element={<Generator />} />
-            <Route path="/my-patterns" element={<MyPatterns />} />
-            <Route path="/patterns/:id" element={<PatternDetail />} />
             <Route path="/subscription" element={<Subscription />} />
             <Route path="/profile" element={<Profile />} />
 
@@ -112,6 +107,7 @@ function App() {
             <Route path="/projects/:projectId/counter" element={<ProjectCounter />} />
             <Route path="/smart-project-creator" element={<SmartProjectCreator />} />
             <Route path="/stats" element={<Stats />} />
+            <Route path="/tools" element={<Tools />} />
 
             {/* Routes galerie photos IA (v0.10.0) */}
             <Route path="/gallery" element={<Gallery />} />
@@ -130,6 +126,7 @@ function App() {
           </Route>
         </Routes>
         <PWAPrompt />
+        <ContextualHint />
 
         {/* [AI:Claude] Bannière informative (mode cookieless = pas besoin de consentement) */}
         <CookieConsent
@@ -161,6 +158,7 @@ function App() {
             </p>
           </div>
         </CookieConsent>
+        </HintsProvider>
       </AuthProvider>
     </BrowserRouter>
   )

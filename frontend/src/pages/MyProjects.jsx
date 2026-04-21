@@ -14,17 +14,29 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import ProjectFilters from '../components/ProjectFilters'
-import TagInput from '../components/TagInput'
+import InfoBubble from '../components/InfoBubble'
 import TagBadge from '../components/TagBadge'
 import UpgradePrompt from '../components/UpgradePrompt'
+import CreateProjectWizard from '../components/CreateProjectWizard'
 
 const MyProjects = () => {
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
+
+  // Reprise automatique du dernier projet — une seule fois par session
+  useEffect(() => {
+    const alreadyResumed = sessionStorage.getItem('yf_resumed')
+    const lastProjectId = localStorage.getItem('yf_last_project_id')
+    if (!alreadyResumed && lastProjectId) {
+      sessionStorage.setItem('yf_resumed', '1')
+      navigate(`/projects/${lastProjectId}`, { replace: true })
+    }
+  }, [])
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
@@ -40,24 +52,9 @@ const MyProjects = () => {
   const [loadingStats, setLoadingStats] = useState(true)
   const [credits, setCredits] = useState(null)
 
-  // [AI:Claude] Formulaire de création de projet
-  const [formData, setFormData] = useState({
-    name: '',
-    technique: 'crochet', // crochet ou tricot
-    type: '',
-    description: '',
-    counter_unit: 'rows' // [AI:Claude] v0.16.2 - Unité de comptage (rows/cm)
-  })
+  // [AI:Claude] Création de projet via wizard
   const [creating, setCreating] = useState(false)
   const [creatingStep, setCreatingStep] = useState('') // [AI:Claude] Étape en cours
-
-  // [AI:Claude] Détails techniques du projet
-  const [technicalForm, setTechnicalForm] = useState({
-    yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
-    needles: [{ type: '', size: '', length: '' }],
-    gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
-  })
-  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false)
 
   // [AI:Claude] Import de patron
   const [patternFile, setPatternFile] = useState(null)
@@ -76,10 +73,6 @@ const MyProjects = () => {
   const [showPatternTextModal, setShowPatternTextModal] = useState(false)
   const [patternSearchQuery, setPatternSearchQuery] = useState('') // Pour recherche Google/Ravelry
 
-  // [AI:Claude] Sections/parties du projet (face, dos, manches, etc.)
-  const [sections, setSections] = useState([])
-  const [showSections, setShowSections] = useState(false)
-
   // [AI:Claude] Modal système pour remplacer alert/confirm
   const [showAlertModal, setShowAlertModal] = useState(false)
   const [alertData, setAlertData] = useState({ title: '', message: '', type: 'info' })
@@ -93,11 +86,9 @@ const MyProjects = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   // [AI:Claude] Tags et filtres (v0.15.0)
-  const [projectTags, setProjectTags] = useState([]) // Tags du projet en cours de création
   const [availableTags, setAvailableTags] = useState([]) // Tous les tags de l'utilisateur
   const [popularTags, setPopularTags] = useState([]) // Suggestions de tags
-  const [canUseTags, setCanUseTags] = useState(false)
-  const [isFavorite, setIsFavorite] = useState(false)
+  const canUseTags = !!(user?.subscription_type && user.subscription_type !== 'free')
   const [filters, setFilters] = useState({
     status: null,
     favorite: null,
@@ -105,6 +96,42 @@ const MyProjects = () => {
     sort: 'updated_desc'
   })
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+
+  // [AI:Claude] Restaurer le brouillon de création si la page a été rechargée (tab mobile)
+  useEffect(() => {
+    try {
+      const wizardDraft = sessionStorage.getItem('yf_wizard')
+      const patternDraft = sessionStorage.getItem('yf_wizard_pattern')
+      if (wizardDraft || patternDraft) {
+        setShowCreateModal(true)
+        if (patternDraft) {
+          const d = JSON.parse(patternDraft)
+          if (d.patternUrl) setPatternUrl(d.patternUrl)
+          if (d.patternText) setPatternText(d.patternText)
+          if (d.patternType && ['url', 'text'].includes(d.patternType)) setPatternType(d.patternType)
+        }
+      }
+    } catch {}
+  }, [])
+
+  // [AI:Claude] Sauvegarder l'état patron dans sessionStorage tant que le wizard est ouvert
+  useEffect(() => {
+    if (!showCreateModal) return
+    try {
+      sessionStorage.setItem('yf_wizard_pattern', JSON.stringify({ patternUrl, patternText, patternType }))
+    } catch {}
+  }, [showCreateModal, patternUrl, patternText, patternType])
+
+  // [AI:Claude] Bouton retour Android : fermer le modal au lieu de quitter l'app
+  useEffect(() => {
+    if (showCreateModal) {
+      window.history.pushState({ modal: 'createProject' }, '')
+      const handlePopState = () => handleCancelModal()
+      window.addEventListener('popstate', handlePopState)
+      return () => window.removeEventListener('popstate', handlePopState)
+    }
+  }, [showCreateModal])
 
   // [AI:Claude] Détecter mobile au montage
   useEffect(() => {
@@ -143,9 +170,8 @@ const MyProjects = () => {
     fetchCredits()
   }, [])
 
-  // [AI:Claude] Charger les tags populaires et permissions (v0.15.0)
+  // [AI:Claude] Charger les tags populaires (v0.15.0)
   useEffect(() => {
-    checkUserPermissions()
     fetchPopularTags()
   }, [user])
 
@@ -209,43 +235,10 @@ const MyProjects = () => {
     }
   }
 
-  // [AI:Claude] Vérifier les permissions utilisateur (v0.15.0)
-  const checkUserPermissions = () => {
-    if (user) {
-      // Les plans PLUS, PRO et Early Bird ont accès aux tags
-      const tier = user.subscription_type || 'free'
-      const hasTags = ['plus', 'plus_annual', 'pro', 'pro_annual', 'early_bird'].includes(tier)
-      setCanUseTags(hasTags)
-    }
-  }
-
-  // [AI:Claude] Normaliser le plan utilisateur pour les composants (free, plus, pro)
   const getUserPlan = () => {
     if (!user) return 'free'
     const tier = user.subscription_type || 'free'
-
-    if (tier.startsWith('plus') || tier === 'plus_annual') return 'plus'
-    if (tier.startsWith('pro') || tier === 'pro_annual') return 'pro'
-    if (tier === 'early_bird') return 'pro' // Early Bird = fonctionnalités PRO
-
-    return 'free'
-  }
-
-  // [AI:Claude] Ajouter un tag au projet en création (v0.15.0)
-  const handleAddTag = (tag) => {
-    if (!canUseTags) {
-      setShowUpgradePrompt(true)
-      return
-    }
-
-    if (!projectTags.includes(tag)) {
-      setProjectTags([...projectTags, tag])
-    }
-  }
-
-  // [AI:Claude] Supprimer un tag du projet en création (v0.15.0)
-  const handleRemoveTag = (tag) => {
-    setProjectTags(projectTags.filter(t => t !== tag))
+    return tier === 'free' ? 'free' : 'pro'
   }
 
   // [AI:Claude] Sauvegarder les tags après création de projet (v0.15.0)
@@ -400,12 +393,12 @@ const MyProjects = () => {
     }
   }
 
-  // [AI:Claude] Créer un nouveau projet avec patron optionnel
-  const handleCreateProject = async (e) => {
-    e.preventDefault()
+  // [AI:Claude] Créer un nouveau projet via le wizard
+  const handleCreateProject = async (wizardData) => {
     setCreating(true)
     setCreatingStep('Création du projet...')
 
+    const { formData, sections, technicalForm, isFavorite, projectTags } = wizardData
     let currentStep = ''
     let newProject = null
 
@@ -419,8 +412,8 @@ const MyProjects = () => {
         type: formData.type || null,
         description: formData.description || null,
         status: 'in_progress',
-        counter_unit: formData.counter_unit || 'rows', // [AI:Claude] v0.16.2 - Unité de comptage
-        counter_unit_increment: formData.counter_unit === 'cm' ? 0.5 : 1.0 // [AI:Claude] v0.16.2 - Incrément selon l'unité
+        counter_unit: formData.counter_unit || 'rows',
+        counter_unit_increment: formData.counter_unit === 'cm' ? 0.5 : 1.0
       }
 
       // [AI:Claude] Ajouter les détails techniques si des données ont été saisies
@@ -435,6 +428,18 @@ const MyProjects = () => {
       const response = await api.post('/projects', projectData)
       newProject = response.data.project
 
+      // [AI:Claude] Tracker l'événement project_created
+      try {
+        await api.post('/analytics/track-event', {
+          event_name: 'project_created',
+          project_id: newProject.id,
+          technique: newProject.technique,
+          counter_unit: newProject.counter_unit
+        })
+      } catch (err) {
+        console.error('Erreur tracking project_created:', err)
+      }
+
       // [AI:Claude] ÉTAPE 2 : Créer les sections si définies
       if (sections.length > 0) {
         currentStep = 'création des sections'
@@ -445,7 +450,8 @@ const MyProjects = () => {
             name: sections[i].name,
             description: sections[i].description || null,
             total_rows: sections[i].total_rows || null,
-            display_order: i
+            display_order: i,
+            notes: sections[i].notes || null
           })
         }
       }
@@ -485,14 +491,14 @@ const MyProjects = () => {
         })
       }
 
-      // [AI:Claude] ÉTAPE 4 : Sauvegarder les tags (v0.15.0)
+      // [AI:Claude] ÉTAPE 4 : Sauvegarder les tags
       if (projectTags.length > 0) {
         currentStep = 'sauvegarde des tags'
         setCreatingStep('Ajout des tags...')
         await saveProjectTags(newProject.id, projectTags)
       }
 
-      // [AI:Claude] ÉTAPE 5 : Marquer comme favori (v0.15.0)
+      // [AI:Claude] ÉTAPE 5 : Marquer comme favori
       if (isFavorite) {
         currentStep = 'marquage favori'
         setCreatingStep('Marquage comme favori...')
@@ -502,40 +508,23 @@ const MyProjects = () => {
       // [AI:Claude] Ajouter à la liste
       setProjects([newProject, ...projects])
 
-      // [AI:Claude] Reset et fermer
-      setFormData({
-        name: '',
-        technique: 'crochet',
-        type: '',
-        description: '',
-        counter_unit: 'rows' // [AI:Claude] v0.16.2 - Reset unité de comptage
-      })
-      setTechnicalForm({
-        yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
-        needles: [{ type: '', size: '', length: '' }],
-        gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
-      })
-      setShowTechnicalDetails(false)
+      // [AI:Claude] Reset patron state et fermer
       setPatternFile(null)
       setPatternText('')
       setPatternUrl('')
       setPatternType('')
       setSelectedLibraryPattern(null)
       setPatternSearchQuery('')
-      setSections([])
-      setShowSections(false)
-      setProjectTags([])
-      setIsFavorite(false)
       setShowCreateModal(false)
+      try { sessionStorage.removeItem('yf_wizard_pattern') } catch {}
 
-      // [AI:Claude] Rediriger vers le compteur
-      showConfirm(
-        '🎉 Projet créé !',
-        'Votre projet a été créé avec succès. Voulez-vous ouvrir le compteur maintenant ?',
-        () => {
-          window.location.href = `/projects/${newProject.id}/counter`
-        }
-      )
+      // [AI:Claude] Si c'est le premier projet, stocker un flag pour afficher le tip
+      if (projects.length === 0) {
+        sessionStorage.setItem('showFirstProjectTip', 'true')
+      }
+
+      // [AI:Claude] Redirection automatique vers le projet pour onboarding "premier rang"
+      window.location.href = `/projects/${newProject.id}`
     } catch (err) {
       // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
       let errorMessage = ''
@@ -582,16 +571,23 @@ const MyProjects = () => {
     )
   }
 
-  // [AI:Claude] Quota utilisateur (v0.14.0 - FREE/PLUS/PRO)
+  // [AI:Claude] Quota utilisateur (v0.14.0 - FREE/PLUS/PRO) + v0.17.1 vérification expiration
   const getProjectQuota = () => {
-    if (!user) return { current: 0, max: 3, total: 0 }
+    if (!user) return { current: 0, max: 3, total: 0, expired: false, effectiveType: 'free' }
 
-    const max = user.subscription_type === 'free' ? 3
-      : (user.subscription_type === 'plus' || user.subscription_type === 'plus_annual') ? 7
-      : user.subscription_type === 'pro' ? 999
-      : user.subscription_type === 'pro_annual' ? 999
-      : user.subscription_type === 'early_bird' ? 999
-      : 999
+    // [AI:Claude] Vérifier si l'abonnement est expiré
+    let effectiveType = user.subscription_type || 'free'
+    let isExpired = false
+
+    if (effectiveType !== 'free' && user.subscription_expires_at) {
+      const expiresAt = new Date(user.subscription_expires_at)
+      if (expiresAt <= new Date()) {
+        isExpired = true
+        effectiveType = 'free' // Traiter comme free si expiré
+      }
+    }
+
+    const max = effectiveType === 'free' ? 3 : 999
 
     // [AI:Claude] Compter uniquement les projets ACTIFS (non terminés)
     const activeProjectsCount = projects.filter(p => p.status !== 'completed').length
@@ -599,39 +595,28 @@ const MyProjects = () => {
     return {
       current: activeProjectsCount,
       max,
-      total: projects.length
+      total: projects.length,
+      expired: isExpired,
+      effectiveType,
+      originalType: user.subscription_type
     }
   }
 
   const quota = getProjectQuota()
   const canCreateProject = quota.current < quota.max
 
-  // [AI:Claude] Fonction pour reset le formulaire de création
+  // [AI:Claude] Fonction pour reset le formulaire de création (wizard)
   const handleCancelModal = () => {
-    setFormData({
-      name: '',
-      technique: 'crochet',
-      type: '',
-      description: '',
-      counter_unit: 'rows' // [AI:Claude] v0.16.2 - Reset unité de comptage
-    })
-    setTechnicalForm({
-      yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
-      needles: [{ type: '', size: '', length: '' }],
-      gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' }
-    })
-    setShowTechnicalDetails(false)
     setPatternFile(null)
     setPatternUrl('')
     setPatternText('')
     setPatternType('')
     setSelectedLibraryPattern(null)
     setPatternSearchQuery('')
-    setSections([])
-    setShowSections(false)
     setShowCreateModal(false)
     setShowPatternUrlModal(false)
     setShowPatternTextModal(false)
+    try { sessionStorage.removeItem('yf_wizard_pattern') } catch {}
   }
 
   // [AI:Claude] Filtrer les projets par recherche
@@ -654,6 +639,10 @@ const MyProjects = () => {
 
   const filteredProjects = getFilteredProjects()
 
+  // [AI:Claude] v0.17.0 - Vérifier si l'utilisateur a au moins un projet avec current_row > 0
+  // Pour débloquer les filtres/organisation avancée
+  const hasStartedAtLeastOneProject = projects.some(p => (p.current_row || 0) > 0)
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Header - Responsive mobile */}
@@ -663,92 +652,86 @@ const MyProjects = () => {
           <>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">🧶 Mes Projets</h1>
-                <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
-                  Tous vos projets tricot & crochet avec photos et suivi de progression
-                </p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes projets</h1>
               </div>
 
               {canCreateProject ? (
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowCreateModal(true)}
-                    className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800"
+                    className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm"
                   >
-                    ➕ Nouveau Projet
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Nouveau projet
                   </button>
                   <Link
                     to="/smart-project-creator"
-                    className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition touch-manipulation bg-gradient-to-r from-purple-600 to-primary-600 text-white hover:from-purple-700 hover:to-primary-700 active:from-purple-800 active:to-primary-800 flex items-center gap-2"
+                    className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-gradient-to-r from-purple-600 to-primary-600 text-white hover:from-purple-700 hover:to-primary-700 active:from-purple-800 active:to-primary-800 shadow-sm"
                   >
                     ✨ Création Intelligente
                   </Link>
                 </div>
               ) : (
-                <Link
-                  to="/subscription"
-                  className="px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-bold transition touch-manipulation bg-gradient-to-r from-primary-600 to-primary-700 text-white hover:from-primary-700 hover:to-primary-800 active:from-primary-800 active:to-primary-900 text-center flex items-center gap-2 justify-center focus:outline-none focus:ring-4 focus:ring-primary-300"
-                >
-                  <span>✨ Débloquer plus de projets</span>
-                </Link>
+                <div className="flex flex-col items-end gap-2">
+                  <button
+                    disabled
+                    className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm bg-gray-100 text-gray-400 cursor-not-allowed"
+                    title={`Quota atteint : ${quota.current}/${quota.max} projets actifs`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Nouveau projet
+                  </button>
+                  <div className="text-right">
+                    <p className="text-xs text-red-600 font-medium">
+                      {quota.expired
+                        ? `⚠️ Abonnement ${quota.originalType} expiré`
+                        : `Quota atteint (${quota.current}/${quota.max})`
+                      }
+                    </p>
+                    <Link
+                      to="/subscription"
+                      className="text-xs text-primary-600 hover:text-primary-700 font-semibold underline"
+                    >
+                      {quota.expired ? 'Renouveler mon abonnement →' : 'Passer au niveau supérieur →'}
+                    </Link>
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Stats inline compacte */}
+            {/* Stats inline */}
             {!loadingStats && dashboardStats && (
-              <div className="mt-6 bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
-                  {/* Projets */}
-                  <div className="flex items-center gap-3 flex-1">
-                    <span className="text-3xl">📋</span>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-primary-600">
-                          {quota.max === 999 ? quota.total : quota.current}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          / {quota.max === 999 ? '∞' : quota.max} projet{quota.max > 1 ? 's' : ''} {quota.max < 999 ? 'actifs' : ''}
-                        </span>
-                      </div>
-                      {quota.max < 999 && quota.total > 0 && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {quota.total} projet{quota.total > 1 ? 's' : ''} au total
-                        </p>
-                      )}
-                    </div>
-                  </div>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
+                {/* Projets */}
+                {quota.max === 999 ? (
+                  <span>{quota.total} projet{quota.total !== 1 ? 's' : ''}</span>
+                ) : (() => {
+                  const isAtLimit = quota.current >= quota.max
+                  const isNearLimit = quota.current >= quota.max - 1
+                  return (
+                    <button
+                      onClick={() => setShowUpgradePrompt(true)}
+                      className={`hover:underline ${isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-gray-500'}`}
+                    >
+                      {quota.current}/{quota.max} projets
+                      {isAtLimit && ' — limite atteinte'}
+                    </button>
+                  )
+                })()}
 
-                  {/* Séparateur vertical */}
-                  <div className="hidden sm:block w-px h-12 bg-gray-200"></div>
+                <span className="text-gray-300">·</span>
 
-                  {/* Photos IA */}
-                  <div className="flex items-center gap-3 flex-1">
-                    <span className="text-3xl">📸</span>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2 mb-1">
-                        <span className="text-2xl font-bold text-primary-600">{credits?.total_available || 0}</span>
-                        <span className="text-sm text-gray-500">crédit{(credits?.total_available || 0) > 1 ? 's' : ''} photo{(credits?.total_available || 0) > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-xs text-gray-500">
-                          {credits?.monthly_credits || 0} mensuels + {credits?.purchased_credits || 0} achetés
-                          {' • '}
-                          <Link to="/gallery" className="underline font-medium text-primary-600 hover:text-primary-700">
-                            Galerie
-                          </Link>
-                        </p>
-                        <Link
-                          to="/subscription#credits"
-                          className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-xs font-bold rounded-lg hover:from-primary-700 hover:to-primary-800 transition focus:outline-none focus:ring-2 focus:ring-primary-300"
-                          title="Acheter des crédits"
-                        >
-                          <span>+</span>
-                          <span className="hidden sm:inline">Acheter</span>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Crédits photos */}
+                <span>
+                  {credits?.total_available || 0} crédit{(credits?.total_available || 0) !== 1 ? 's' : ''} photo
+                </span>
+                <Link to="/subscription#credits" className="text-primary-600 hover:underline text-xs">
+                  + Acheter
+                </Link>
               </div>
             )}
           </>
@@ -769,7 +752,7 @@ const MyProjects = () => {
               placeholder="Rechercher un projet par nom, type..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 pl-11 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+              className="w-full px-4 py-2.5 pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition bg-white text-sm"
             />
             <svg
               className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -793,11 +776,27 @@ const MyProjects = () => {
         </div>
       )}
 
-      {/* Loading */}
-      {loading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          <p className="mt-4 text-gray-600">Chargement de vos projets...</p>
+      {/* Skeleton loader */}
+      {loading && !hasLoadedOnce && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+              <div className="h-48 skeleton" />
+              <div className="p-4 space-y-3">
+                <div className="h-5 skeleton rounded-lg w-3/4" />
+                <div className="flex gap-2">
+                  <div className="h-5 skeleton rounded-full w-20" />
+                  <div className="h-5 skeleton rounded-full w-16" />
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="h-12 skeleton rounded-xl" />
+                  <div className="h-12 skeleton rounded-xl" />
+                </div>
+                <div className="h-1.5 skeleton rounded-full" />
+                <div className="h-10 skeleton rounded-xl" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -808,27 +807,40 @@ const MyProjects = () => {
         </div>
       )}
 
-      {/* Filtres (v0.15.0) - Affichés uniquement si des projets existent */}
+      {/* Filtres - Affichés si des projets existent */}
       {hasLoadedOnce && !error && projects.length > 0 && (
         <div className="mb-6">
-          <ProjectFilters
-            onFilterChange={setFilters}
-            availableTags={availableTags}
-            canUseTags={canUseTags}
-            onUpgradeClick={() => setShowUpgradePrompt(true)}
-            userPlan={getUserPlan()}
-          />
+          <button
+            onClick={() => setFiltersOpen(o => !o)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors mb-2"
+          >
+            <svg className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+            Filtrer et trier
+            {(filters.status || filters.favorite !== null || filters.tags.length > 0) && (
+              <span className="ml-1 w-2 h-2 rounded-full bg-primary-500 inline-block" />
+            )}
+          </button>
+
+          {filtersOpen && (
+            <div className="animate-fade-in-up">
+              <ProjectFilters
+                onFilterChange={setFilters}
+                availableTags={availableTags}
+                canUseTags={canUseTags}
+                onUpgradeClick={() => setShowUpgradePrompt(true)}
+                userPlan={getUserPlan()}
+              />
+            </div>
+          )}
         </div>
       )}
 
       {/* Indicateur de chargement pendant filtrage */}
       {loading && hasLoadedOnce && (
-        <div className="flex items-center justify-center py-4 text-primary-600">
-          <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span className="text-sm font-medium">Filtrage en cours...</span>
+        <div className="flex items-center justify-center py-3">
+          <div className="w-5 h-5 rounded-full border-2 border-primary-200 border-t-primary-600 animate-spin" />
         </div>
       )}
 
@@ -836,129 +848,73 @@ const MyProjects = () => {
       {!loading && !error && (
         <>
           {projects.length === 0 ? (
-            <div className="max-w-2xl mx-auto text-center py-16 px-6 bg-gradient-to-br from-warm-50 to-white rounded-2xl border-2 border-primary-200 shadow-sm">
-              <div className="text-7xl mb-6">🧶</div>
+            <div className="max-w-xl mx-auto py-12 px-6">
 
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                Commençons votre premier projet !
-              </h2>
+              {/* Question directe */}
+              <div className="text-center mb-8">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+                  Vous avez un projet en cours ?
+                </h2>
+                <p className="text-gray-600 text-base leading-relaxed">
+                  Notez votre rang actuel en 5 secondes.<br />
+                  La prochaine fois que vous reprenez, vous savez exactement où vous en êtes.
+                </p>
+              </div>
 
-              <p className="text-gray-700 text-lg leading-relaxed mb-8 max-w-xl mx-auto">
-                <strong>Un projet = un ouvrage</strong> (pull, amigurumi, couverture...).
-                <br className="hidden sm:block" />
-                YarnFlow compte vos rangs, suit votre progression, et vous aide à reprendre sans jamais vous perdre.
-              </p>
-
+              {/* CTA principal */}
               {canCreateProject && (
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="px-8 py-4 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300 shadow-lg hover:shadow-xl text-lg mb-6"
-                >
-                  ➕ Créer mon premier projet
-                </button>
+                <div className="text-center mb-10">
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="px-8 py-4 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition-colors shadow-sm hover:shadow-md text-base"
+                  >
+                    Oui — ajouter mon projet maintenant
+                  </button>
+                </div>
               )}
 
-              {/* Section "Comment ça marche" - Déplié par défaut */}
-              <details open className="bg-white rounded-xl p-6 text-left max-w-md mx-auto border border-primary-100 shadow-sm mb-4">
-                <summary className="font-semibold text-primary-700 cursor-pointer hover:text-primary-800 transition list-none flex items-center justify-between">
-                  <span>Comment ça marche ?</span>
-                  <span className="text-xl">🤔</span>
-                </summary>
-                <ol className="mt-4 space-y-3 text-gray-700 text-sm">
-                  <li className="flex items-start">
-                    <span className="text-primary-600 font-bold mr-3 text-base">1️⃣</span>
-                    <span>Créez un projet pour votre ouvrage</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-primary-600 font-bold mr-3 text-base">2️⃣</span>
-                    <span>Ajoutez une ou plusieurs sections (rangs ou centimètres)</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-primary-600 font-bold mr-3 text-base">3️⃣</span>
-                    <span>Utilisez le compteur pendant que vous tricotez ou crochetez</span>
-                  </li>
-                </ol>
-              </details>
+              {/* Ce que ça fait concrètement */}
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
+                <div className="flex items-start gap-4 p-4">
+                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Vous êtes interrompue — aucun stress</p>
+                    <p className="text-gray-500 text-sm mt-0.5">Un clic pour mémoriser votre rang. Vous retrouvez exactement là où vous étiez.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-4">
+                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Plusieurs projets en parallèle</p>
+                    <p className="text-gray-500 text-sm mt-0.5">Tricot du soir, cadeau en cours, projet urgent — chacun a son compteur.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-4">
+                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Votre patron toujours avec vous</p>
+                    <p className="text-gray-500 text-sm mt-0.5">Attachez votre PDF ou notez le lien — plus besoin de chercher sur quel onglet il était.</p>
+                  </div>
+                </div>
+              </div>
 
-              {/* Exemple de projet */}
-              <p className="text-sm text-gray-500">
-                💡 Besoin d'un exemple ?
-                <button
-                  onClick={() => {
-                    showAlert(
-                      "Exemple concret : Pull en cours",
-                      <div className="text-left space-y-4">
-                        {/* Étape 1 : Création */}
-                        <div className="bg-primary-50 rounded-lg p-4 border-l-4 border-primary-600">
-                          <p className="font-bold text-primary-900 mb-2">📝 Vous créez un projet</p>
-                          <div className="bg-white rounded p-3 text-sm">
-                            <p className="font-semibold text-gray-900">Nom : Pull rayé automne</p>
-                            <p className="text-gray-600 text-xs mt-1">Technique : Tricot • Type : Pull</p>
-                          </div>
-                        </div>
-
-                        {/* Étape 2 : Ajout sections */}
-                        <div className="bg-sage-50 rounded-lg p-4 border-l-4 border-sage-600">
-                          <p className="font-bold text-sage-900 mb-2">➕ Vous ajoutez des sections</p>
-                          <p className="text-xs text-gray-600 mb-3 italic">
-                            Une section = une partie de votre ouvrage
-                          </p>
-                          <div className="space-y-2 text-sm">
-                            <div className="bg-white rounded p-3">
-                              <p className="font-semibold text-gray-700">Section : Dos</p>
-                              <p className="text-gray-600 text-xs">120 rangs à faire</p>
-                            </div>
-                            <div className="bg-white rounded p-3">
-                              <p className="font-semibold text-gray-700">Section : Devant</p>
-                              <p className="text-gray-600 text-xs">120 rangs à faire</p>
-                            </div>
-                            <div className="bg-white rounded p-3">
-                              <p className="font-semibold text-gray-700">Section : Manches (×2)</p>
-                              <p className="text-gray-600 text-xs">80 rangs chacune</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Étape 3 : Utilisation compteur */}
-                        <div className="bg-warm-50 rounded-lg p-4 border-l-4 border-warm-600">
-                          <p className="font-bold text-warm-900 mb-2">🧶 Vous tricotez avec le compteur</p>
-                          <div className="bg-white rounded-lg p-4 border-2 border-dashed border-gray-300">
-                            <div className="text-center mb-3">
-                              <p className="text-xs text-gray-500 font-semibold">Section : Dos</p>
-                              <p className="text-4xl font-bold text-primary-600 my-2">47</p>
-                              <p className="text-xs text-gray-500">sur 120 rangs</p>
-                              <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                                <div className="bg-primary-600 h-2 rounded-full" style={{width: '39%'}}></div>
-                              </div>
-                            </div>
-                            <div className="flex gap-2 justify-center mt-4">
-                              <div className="bg-gray-300 rounded-lg px-6 py-2 text-2xl font-bold text-gray-500">−</div>
-                              <div className="bg-primary-600 rounded-lg px-6 py-2 text-2xl font-bold text-white">+</div>
-                            </div>
-                            <p className="text-xs text-gray-500 text-center mt-3 italic">
-                              À chaque rang terminé, vous tapez sur +
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Avantages */}
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="font-semibold text-gray-900 mb-2 text-sm">✨ Ce que YarnFlow fait pour vous :</p>
-                          <ul className="text-xs text-gray-600 space-y-1.5">
-                            <li>• Calcule votre vitesse automatiquement (rangs/heure)</li>
-                            <li>• Garde l'écran allumé pendant que vous tricotez</li>
-                            <li>• Suit la progression de chaque section séparément</li>
-                            <li>• Vous permet d'ajouter des notes et photos</li>
-                          </ul>
-                        </div>
-                      </div>,
-                      'info'
-                    )
-                  }}
-                  className="text-primary-600 hover:text-primary-700 font-medium underline ml-1 transition"
-                >
-                  Voir un exemple concret
-                </button>
+              <p className="text-center text-xs text-gray-400 mt-6">
+                Besoin d'organiser vos patrons sans créer de projet ?{' '}
+                <Link to="/pattern-library" className="text-primary-600 hover:text-primary-700 underline">
+                  Bibliothèque de patrons
+                </Link>
               </p>
             </div>
           ) : filteredProjects.length === 0 ? (
@@ -989,13 +945,14 @@ const MyProjects = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProjects.map(project => (
+              {filteredProjects.map((project, index) => (
                 <div
                   key={project.id}
-                  className="bg-white rounded-lg border-2 border-gray-200 hover:shadow-lg transition overflow-hidden"
+                  className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden animate-fade-in-up"
+                  style={{ animationDelay: `${index * 55}ms` }}
                 >
-                  {/* Photo principale */}
-                  {project.main_photo ? (
+                  {/* Photo — uniquement si elle existe */}
+                  {project.main_photo && (
                     <div className="h-48 bg-gray-200 relative group">
                       <img
                         src={`${import.meta.env.VITE_BACKEND_URL}${project.main_photo}`}
@@ -1004,23 +961,17 @@ const MyProjects = () => {
                       />
                       <button
                         onClick={() => openPhotoUploadModal(project)}
-                        className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
+                        className="absolute inset-0 bg-black/0 group-hover:bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
                       >
-                        <span className="px-4 py-2 bg-white text-gray-800 rounded-lg font-medium">
-                          📷 Changer la photo
+                        <span className="flex items-center gap-2 px-4 py-2 bg-white/90 text-gray-800 rounded-xl text-sm font-medium">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                          </svg>
+                          Changer la photo
                         </span>
                       </button>
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => openPhotoUploadModal(project)}
-                      className="w-full h-48 bg-gradient-to-br from-primary-100 to-primary-200 hover:from-primary-200 hover:to-primary-300 transition-all flex flex-col items-center justify-center gap-3"
-                    >
-                      <span className="text-5xl">{project.technique === 'tricot' ? '🧶' : '🪡'}</span>
-                      <span className="px-4 py-2 bg-white text-primary-700 rounded-lg font-medium shadow-md hover:shadow-lg transition">
-                        📷 Ajouter une photo
-                      </span>
-                    </button>
                   )}
 
                   {/* Contenu */}
@@ -1030,32 +981,49 @@ const MyProjects = () => {
                         {project.name}
                       </h3>
 
-                      <button
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Bouton ajouter photo — discret, visible seulement sans photo */}
+                        {!project.main_photo && (
+                          <button
+                            onClick={() => openPhotoUploadModal(project)}
+                            className="p-1.5 text-gray-300 hover:text-gray-500 transition-colors rounded-lg hover:bg-gray-50"
+                            title="Ajouter une photo"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                            </svg>
+                          </button>
+                        )}
+                        <button
                         onClick={() => handleToggleFavorite(project.id, project.is_favorite)}
-                        className="text-2xl transition hover:scale-110"
+                        className="transition-transform hover:scale-110 active:scale-95"
+                        title={project.is_favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
                       >
-                        {project.is_favorite ? '⭐' : '☆'}
+                        {project.is_favorite ? (
+                          <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-gray-300 hover:text-amber-300" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                          </svg>
+                        )}
                       </button>
+                      </div>{/* fin flex boutons droite */}
                     </div>
 
-                    {/* Statut + Type + Technique */}
-                    <div className="flex items-center flex-wrap gap-2 mb-3">
+                    {/* Statut + Technique */}
+                    <div className="flex items-center flex-wrap gap-1.5 mb-3">
                       {getStatusBadge(project.status)}
+                      <span className="px-2 py-0.5 bg-primary-50 text-primary-600 rounded-full text-xs font-medium">
+                        {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
+                      </span>
                       {project.type && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold">
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
                           {project.type}
                         </span>
                       )}
-                      <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold">
-                        {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                        project.counter_unit === 'cm'
-                          ? 'bg-purple-50 text-purple-700'
-                          : 'bg-blue-50 text-blue-700'
-                      }`}>
-                        {project.counter_unit === 'cm' ? '📐 CM' : '📏 Rangs'}
-                      </span>
                     </div>
 
                     {/* Tags (v0.15.0) */}
@@ -1072,97 +1040,50 @@ const MyProjects = () => {
                       </div>
                     )}
 
-                    {/* Description */}
-                    {project.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {project.description}
-                      </p>
-                    )}
-
-                    {/* Stats */}
-                    {project.status === 'completed' ? (
-                      // Projet terminé : afficher seulement le temps
-                      <div className="mb-4 text-sm">
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <p className="text-gray-600">Temps total</p>
-                          <p className="font-bold text-gray-900">
-                            {project.time_formatted || '0h 0min'}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      // Projet en cours : afficher rang/section + temps
-                      <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          {/* Afficher section si présente, sinon rang global */}
-                          {project.sections_count > 0 && project.current_section_name ? (
+                    {/* Stats inline */}
+                    <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
+                      {project.status === 'completed' ? (
+                        <span>{project.time_formatted || '0h 0min'}</span>
+                      ) : (
+                        <>
+                          <span>
+                            {project.sections_count > 0 && project.current_section_name
+                              ? project.current_section_name
+                              : project.counter_unit === 'cm'
+                                ? `${Number(project.current_row || 0).toFixed(1)} cm`
+                                : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
+                            }
+                          </span>
+                          {project.time_formatted && project.time_formatted !== '0h 0min' && (
                             <>
-                              <p className="text-gray-600">Section en cours</p>
-                              <p className="font-bold text-gray-900 text-xs">
-                                {project.current_section_name}
-                              </p>
-                              <p className="text-gray-700 text-xs mt-0.5">
-                                {project.counter_unit === 'cm'
-                                  ? Number(project.current_section_row || 0).toFixed(1)
-                                  : Math.floor(Number(project.current_section_row || 0))
-                                }
-                                {project.current_section_total_rows ? (
-                                  project.counter_unit === 'cm'
-                                    ? ` / ${Number(project.current_section_total_rows).toFixed(1)}`
-                                    : ` / ${Math.floor(Number(project.current_section_total_rows))}`
-                                ) : ''}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <p className="text-gray-600">
-                                {project.counter_unit === 'cm' ? '📐 Progression (cm)' : '📏 Rang actuel'}
-                              </p>
-                              <p className="font-bold text-gray-900">
-                                {project.counter_unit === 'cm'
-                                  ? Number(project.current_row || 0).toFixed(1)
-                                  : Math.floor(Number(project.current_row || 0))
-                                }
-                                {/* Afficher total si défini (NULL si projet avec sections incomplètes) */}
-                                {project.total_rows ? (
-                                  project.counter_unit === 'cm'
-                                    ? ` / ${Number(project.total_rows).toFixed(1)}`
-                                    : ` / ${Math.floor(Number(project.total_rows))}`
-                                ) : ''}
-                              </p>
+                              <span className="text-gray-200">·</span>
+                              <span>{project.time_formatted}</span>
                             </>
                           )}
-                        </div>
-
-                        <div className="bg-gray-50 rounded-lg p-2">
-                          <p className="text-gray-600">Temps</p>
-                          <p className="font-bold text-gray-900">
-                            {project.time_formatted || '0h 0min'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
+                        </>
+                      )}
+                    </div>
 
                     {/* Barre de progression ou nombre de rangs */}
                     {(project.status === 'completed' || project.completion_percentage !== null) ? (
                       // Projet avec pourcentage calculable : afficher barre de progression
                       <div className="mb-4">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-600">Progression</span>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-gray-400">Progression</span>
                           {project.status === 'completed' ? (
-                            <span className="text-xs font-bold text-green-600">
-                              100%
-                            </span>
+                            <span className="text-xs font-semibold text-green-600">100%</span>
                           ) : (
-                            <span className="text-xs font-bold text-primary-600">
+                            <span className="text-xs font-semibold text-primary-600">
                               {project.completion_percentage}%
                             </span>
                           )}
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                           <div
-                            className={`h-2 rounded-full transition-all ${
-                              project.status === 'completed' ? 'bg-green-600' : 'bg-primary-600'
+                            className={`h-2 rounded-full transition-all duration-500 ${
+                              project.status === 'completed'
+                                ? 'bg-gradient-to-r from-green-400 to-emerald-500'
+                                : 'bg-gradient-to-r from-primary-400 to-primary-600'
                             }`}
                             style={{
                               width: project.status === 'completed'
@@ -1213,17 +1134,19 @@ const MyProjects = () => {
                     <div className="flex items-center gap-2">
                       <Link
                         to={`/projects/${project.id}`}
-                        className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-2 focus:ring-primary-300"
+                        className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-center font-semibold text-sm hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-300"
                       >
-                        📖 Voir le projet
+                        Ouvrir
                       </Link>
 
                       <button
                         onClick={() => handleDeleteProject(project.id)}
-                        className="px-3 py-2 border-2 border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition focus:outline-none focus:ring-2 focus:ring-red-300"
+                        className="px-3 py-2.5 border border-gray-200 text-gray-400 rounded-xl hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"
                         title="Supprimer"
                       >
-                        🗑️
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -1234,788 +1157,30 @@ const MyProjects = () => {
         </>
       )}
 
-      {/* Modal de création de projet */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-content-mobile">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
-              <h2 className="text-2xl font-bold text-gray-900">🧶 Nouveau projet</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Créez un projet pour suivre vos rangs et votre progression
-              </p>
-            </div>
-
-            <form onSubmit={handleCreateProject} className="p-6">
-              {/* Nom du projet (obligatoire) */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom du projet <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Ex: Bonnet slouchy rouge"
-                />
-              </div>
-
-              {/* Technique (Tricot ou Crochet) - [AI:Claude] YarnFlow v0.9.0 */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Technique <span className="text-red-600">*</span>
-                </label>
-                <select
-                  value={formData.technique}
-                  onChange={(e) => setFormData({ ...formData, technique: e.target.value })}
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                >
-                  <option value="crochet">🪡 Crochet</option>
-                  <option value="tricot">🧶 Tricot</option>
-                </select>
-              </div>
-
-              {/* [AI:Claude] v0.16.2 - Unité de comptage */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Unité de comptage
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="counter_unit"
-                      value="rows"
-                      checked={formData.counter_unit === 'rows'}
-                      onChange={(e) => setFormData({ ...formData, counter_unit: e.target.value })}
-                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-700">📏 Rangs (entiers)</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="counter_unit"
-                      value="cm"
-                      checked={formData.counter_unit === 'cm'}
-                      onChange={(e) => setFormData({ ...formData, counter_unit: e.target.value })}
-                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-700">📐 Centimètres (0.5)</span>
-                  </label>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Choisissez comment vous voulez compter votre progression
-                </p>
-              </div>
-
-              {/* Catégorie de projet */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Catégorie de projet <span className="text-red-600">*</span>
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  required
-                >
-                  <option value="">-- Sélectionner une catégorie --</option>
-                  <option value="Vêtements">🧥 Vêtements</option>
-                  <option value="Accessoires">👜 Accessoires</option>
-                  <option value="Maison/Déco">🏠 Maison/Déco</option>
-                  <option value="Jouets/Peluches">🧸 Jouets/Peluches</option>
-                  <option value="Vêtements bébé">👶 Vêtements bébé</option>
-                  <option value="Accessoires bébé">🍼 Accessoires bébé</option>
-                </select>
-              </div>
-
-              {/* Description */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Ex: Bonnet décontracté pour l'hiver"
-                />
-              </div>
-
-              {/* Détails techniques (optionnel) */}
-              <div className="mb-6 border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      🔧 Détails techniques (optionnel)
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Laine, aiguilles/crochets, échantillon
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
-                    className="px-3 py-1.5 text-sm border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition"
-                  >
-                    {showTechnicalDetails ? '✕ Masquer' : '➕ Ajouter détails'}
-                  </button>
-                </div>
-
-                {showTechnicalDetails && (
-                  <div className="space-y-4">
-                    {/* LAINE / YARN */}
-                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-gray-900">
-                          🧶 {formData.technique === 'tricot' ? 'Laine' : 'Fil'}
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => setTechnicalForm({
-                            ...technicalForm,
-                            yarn: [...technicalForm.yarn, { brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }]
-                          })}
-                          className="px-2 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
-                        >
-                          + Ajouter
-                        </button>
-                      </div>
-                      {technicalForm.yarn.map((y, yIdx) => (
-                        <div key={yIdx} className="mb-3 p-3 bg-white rounded-lg shadow-sm">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-medium text-gray-700">
-                              {formData.technique === 'tricot' ? 'Laine' : 'Fil'} #{yIdx + 1}
-                            </span>
-                            {technicalForm.yarn.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => setTechnicalForm({
-                                  ...technicalForm,
-                                  yarn: technicalForm.yarn.filter((_, i) => i !== yIdx)
-                                })}
-                                className="text-red-600 hover:text-red-700 text-xs"
-                              >
-                                ✕ Supprimer
-                              </button>
-                            )}
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 mb-2">
-                            <input
-                              type="text"
-                              value={y.brand}
-                              onChange={(e) => {
-                                const newYarn = [...technicalForm.yarn]
-                                newYarn[yIdx].brand = e.target.value
-                                setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                              }}
-                              className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                              placeholder="Marque (ex: DROPS)"
-                            />
-                            <input
-                              type="text"
-                              value={y.name}
-                              onChange={(e) => {
-                                const newYarn = [...technicalForm.yarn]
-                                newYarn[yIdx].name = e.target.value
-                                setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                              }}
-                              className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                              placeholder="Nom (ex: ALPACA)"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            {y.quantities.map((q, qIdx) => (
-                              <div key={qIdx} className="p-2 bg-gray-50 rounded border border-gray-200">
-                                {/* Ligne 1: Quantité + Unité */}
-                                <div className="grid grid-cols-[1fr,auto] gap-2 mb-2">
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Quantité</label>
-                                    <input
-                                      type="text"
-                                      value={q.amount}
-                                      onChange={(e) => {
-                                        const newYarn = [...technicalForm.yarn]
-                                        newYarn[yIdx].quantities[qIdx].amount = e.target.value
-                                        setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                      }}
-                                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                      placeholder="Ex: 3, 150-200"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Unité</label>
-                                    <div className="flex border border-gray-300 rounded overflow-hidden">
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newYarn = [...technicalForm.yarn]
-                                          newYarn[yIdx].quantities[qIdx].unit = 'pelotes'
-                                          setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                        }}
-                                        className={`px-2 py-1.5 text-[10px] font-medium transition ${
-                                          (q.unit || 'pelotes') === 'pelotes'
-                                            ? 'bg-primary-600 text-white'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50'
-                                        }`}
-                                      >
-                                        Pelotes
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const newYarn = [...technicalForm.yarn]
-                                          newYarn[yIdx].quantities[qIdx].unit = 'grammes'
-                                          setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                        }}
-                                        className={`px-2 py-1.5 text-[10px] font-medium transition border-l border-gray-300 ${
-                                          (q.unit || 'pelotes') === 'grammes'
-                                            ? 'bg-primary-600 text-white'
-                                            : 'bg-white text-gray-700 hover:bg-gray-50'
-                                        }`}
-                                      >
-                                        Grammes
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                                {/* Ligne 2: Coloris + Supprimer */}
-                                <div className="flex gap-1 items-end">
-                                  <div className="flex-1">
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">Coloris</label>
-                                    <input
-                                      type="text"
-                                      value={q.color}
-                                      onChange={(e) => {
-                                        const newYarn = [...technicalForm.yarn]
-                                        newYarn[yIdx].quantities[qIdx].color = e.target.value
-                                        setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                      }}
-                                      className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                      placeholder="Ex: Rouge, Bleu"
-                                    />
-                                  </div>
-                                  {y.quantities.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        const newYarn = [...technicalForm.yarn]
-                                        newYarn[yIdx].quantities = newYarn[yIdx].quantities.filter((_, i) => i !== qIdx)
-                                        setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                                      }}
-                                      className="text-red-500 hover:text-red-700 text-xs px-1 py-1.5"
-                                      title="Supprimer ce coloris"
-                                    >
-                                      ✕
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newYarn = [...technicalForm.yarn]
-                                newYarn[yIdx].quantities.push({ amount: '', unit: 'pelotes', color: '' })
-                                setTechnicalForm({ ...technicalForm, yarn: newYarn })
-                              }}
-                              className="text-purple-600 hover:text-purple-700 text-xs"
-                            >
-                              + Ajouter coloris
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* AIGUILLES / CROCHETS */}
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-gray-900">
-                          {formData.technique === 'tricot' ? '🪡 Aiguilles' : '🪝 Crochets'}
-                        </h4>
-                        <button
-                          type="button"
-                          onClick={() => setTechnicalForm({
-                            ...technicalForm,
-                            needles: [...technicalForm.needles, { type: '', size: '', length: '' }]
-                          })}
-                          className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                        >
-                          + Ajouter
-                        </button>
-                      </div>
-                      {technicalForm.needles.map((n, nIdx) => (
-                        <div key={nIdx} className="mb-2 p-3 bg-white rounded-lg shadow-sm">
-                          {(technicalForm.needles.length > 1 || formData.technique === 'tricot') && (
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-xs font-medium text-gray-700">
-                                {formData.technique === 'tricot' ? `Aiguille #${nIdx + 1}` : `Crochet #${nIdx + 1}`}
-                              </span>
-                              {technicalForm.needles.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setTechnicalForm({
-                                    ...technicalForm,
-                                    needles: technicalForm.needles.filter((_, i) => i !== nIdx)
-                                  })}
-                                  className="text-red-600 hover:text-red-700 text-xs"
-                                >
-                                  ✕ Supprimer
-                                </button>
-                              )}
-                            </div>
-                          )}
-                          <div className={`grid gap-2 ${formData.technique === 'tricot' ? 'grid-cols-3' : 'grid-cols-1'}`}>
-                            {formData.technique === 'tricot' && (
-                              <input
-                                type="text"
-                                value={n.type}
-                                onChange={(e) => {
-                                  const newNeedles = [...technicalForm.needles]
-                                  newNeedles[nIdx].type = e.target.value
-                                  setTechnicalForm({ ...technicalForm, needles: newNeedles })
-                                }}
-                                className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="Type (Circulaires)"
-                              />
-                            )}
-                            <input
-                              type="text"
-                              value={n.size}
-                              onChange={(e) => {
-                                const newNeedles = [...technicalForm.needles]
-                                newNeedles[nIdx].size = e.target.value
-                                setTechnicalForm({ ...technicalForm, needles: newNeedles })
-                              }}
-                              className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                              placeholder="Taille mm (ex: 4, 5)"
-                            />
-                            {formData.technique === 'tricot' && (
-                              <input
-                                type="text"
-                                value={n.length}
-                                onChange={(e) => {
-                                  const newNeedles = [...technicalForm.needles]
-                                  newNeedles[nIdx].length = e.target.value
-                                  setTechnicalForm({ ...technicalForm, needles: newNeedles })
-                                }}
-                                className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="Longueur (40cm)"
-                              />
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* ÉCHANTILLON */}
-                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                      <h4 className="text-sm font-semibold text-gray-900 mb-3">📏 Échantillon</h4>
-                      <div className="grid grid-cols-3 gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={technicalForm.gauge.stitches}
-                          onChange={(e) => setTechnicalForm({
-                            ...technicalForm,
-                            gauge: { ...technicalForm.gauge, stitches: e.target.value }
-                          })}
-                          className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                          placeholder="Largeur (17 mailles)"
-                        />
-                        <input
-                          type="text"
-                          value={technicalForm.gauge.rows}
-                          onChange={(e) => setTechnicalForm({
-                            ...technicalForm,
-                            gauge: { ...technicalForm.gauge, rows: e.target.value }
-                          })}
-                          className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                          placeholder="Hauteur (22 rangs)"
-                        />
-                        <input
-                          type="text"
-                          value={technicalForm.gauge.dimensions}
-                          onChange={(e) => setTechnicalForm({
-                            ...technicalForm,
-                            gauge: { ...technicalForm.gauge, dimensions: e.target.value }
-                          })}
-                          className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                          placeholder="10 x 10 cm"
-                        />
-                      </div>
-                      <textarea
-                        value={technicalForm.gauge.notes}
-                        onChange={(e) => setTechnicalForm({
-                          ...technicalForm,
-                          gauge: { ...technicalForm.gauge, notes: e.target.value }
-                        })}
-                        rows={2}
-                        className="w-full px-2 py-1.5 border border-gray-300 rounded text-xs"
-                        placeholder="Notes sur l'échantillon..."
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Tags et Favoris (v0.15.0) */}
-              <div className="mb-6 border-t pt-4 space-y-4">
-                {/* Favori (tous plans) */}
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={isFavorite}
-                    onChange={(e) => setIsFavorite(e.target.checked)}
-                    className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary focus:ring-2"
-                  />
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-primary transition">
-                    ⭐ Marquer comme favori
-                  </span>
-                </label>
-
-                {/* Tags (PLUS/PRO uniquement) */}
-                {canUseTags ? (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      🏷️ Tags
-                    </label>
-                    <TagInput
-                      tags={projectTags}
-                      onAddTag={handleAddTag}
-                      onRemoveTag={handleRemoveTag}
-                      suggestions={popularTags.map(t => t.tag_name)}
-                      placeholder="Ex: cadeau, bébé, urgent..."
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-sage/10 rounded-lg p-4 border border-sage/30">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">🏷️</span>
-                      <span className="font-medium text-gray-800">Tags - Disponible en PLUS</span>
-                      <span className="ml-auto text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-                        Premium
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Organisez vos projets avec des étiquettes personnalisées pour les retrouver facilement
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowUpgradePrompt(true)}
-                      className="text-sm text-primary hover:underline font-medium"
-                    >
-                      En savoir plus →
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Sections/Parties du projet (optionnel) */}
-              <div className="mb-6 border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Sections du projet (optionnel)
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Pour les projets complexes : face, dos, manches, etc.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowSections(!showSections)}
-                    className="px-3 py-1.5 text-sm border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition"
-                  >
-                    {showSections ? '✕ Masquer' : '➕ Ajouter sections'}
-                  </button>
-                </div>
-
-                {showSections && (
-                  <div className="space-y-3">
-                    {/* Boutons exemples rapides */}
-                    {sections.length === 0 && (
-                      <div className="bg-primary-50 border-2 border-primary-200 rounded-lg p-3 mb-3">
-                        <p className="text-xs text-primary-800 font-bold mb-2">Exemples rapides :</p>
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setSections([
-                              { name: 'Face', description: '', total_rows: null },
-                              { name: 'Dos', description: '', total_rows: null },
-                              { name: 'Manche gauche', description: '', total_rows: null },
-                              { name: 'Manche droite', description: '', total_rows: null }
-                            ])}
-                            className="px-3 py-1 text-xs bg-white border-2 border-primary-300 text-primary-700 rounded-lg hover:bg-primary-50 transition focus:outline-none focus:ring-2 focus:ring-primary-300 font-bold"
-                          >
-                            🧥 Pull/Gilet
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setSections([
-                              { name: 'Corps', description: '', total_rows: null },
-                              { name: 'Tête', description: '', total_rows: null },
-                              { name: 'Bras (x2)', description: '', total_rows: null },
-                              { name: 'Jambes (x2)', description: '', total_rows: null }
-                            ])}
-                            className="px-3 py-1 text-xs bg-white border-2 border-primary-300 text-primary-700 rounded-lg hover:bg-primary-50 transition focus:outline-none focus:ring-2 focus:ring-primary-300 font-bold"
-                          >
-                            🧸 Amigurumi
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Liste des sections */}
-                    {sections.map((section, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
-                            <input
-                              type="text"
-                              placeholder="Nom (ex: Face)"
-                              value={section.name}
-                              onChange={(e) => {
-                                const newSections = [...sections]
-                                newSections[index].name = e.target.value
-                                setSections(newSections)
-                              }}
-                              className="px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Description (optionnel)"
-                              value={section.description}
-                              onChange={(e) => {
-                                const newSections = [...sections]
-                                newSections[index].description = e.target.value
-                                setSections(newSections)
-                              }}
-                              className="px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500"
-                            />
-                            <input
-                              type="number"
-                              placeholder="Nb rangs (optionnel)"
-                              value={section.total_rows || ''}
-                              onChange={(e) => {
-                                const newSections = [...sections]
-                                newSections[index].total_rows = e.target.value ? parseInt(e.target.value) : null
-                                setSections(newSections)
-                              }}
-                              className="px-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500"
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newSections = sections.filter((_, i) => i !== index)
-                              setSections(newSections)
-                            }}
-                            className="px-2 py-1.5 text-red-600 hover:bg-red-50 rounded transition"
-                            title="Supprimer"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Bouton ajouter section */}
-                    <button
-                      type="button"
-                      onClick={() => setSections([...sections, { name: '', description: '', total_rows: null }])}
-                      className="w-full px-4 py-2 border-2 border-dashed border-gray-300 text-gray-600 rounded-lg hover:border-primary-400 hover:text-primary-600 hover:bg-primary-50 transition text-sm"
-                    >
-                      ➕ Ajouter une section
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Import de patron (optionnel) */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Patron (optionnel)
-                </label>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Option 1: Bibliothèque */}
-                  <div className="relative h-full">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setShowPatternLibraryModal(true)
-                        fetchLibraryPatterns()
-                      }}
-                      className={`w-full h-full min-h-[140px] border-2 border-dashed border-primary-300 rounded-lg p-4 hover:border-primary-500 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'library' ? 'ring-2 ring-primary-600 bg-primary-50' : 'border-gray-300'}`}
-                    >
-                      <div className="text-3xl mb-2 text-center">📚</div>
-                      <p className="text-sm font-medium text-center mb-1">
-                        Depuis ma bibliothèque
-                      </p>
-                      <p className="text-xs text-gray-500 text-center">
-                        {selectedLibraryPattern ? `✓ ${selectedLibraryPattern.name}` : 'Patrons sauvegardés'}
-                      </p>
-                    </button>
-                    {selectedLibraryPattern && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedLibraryPattern(null)
-                          setPatternType('')
-                        }}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
-                        title="Annuler la sélection"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Option 2: Upload fichier */}
-                  <div className={`relative h-full ${patternType === 'file' ? 'ring-2 ring-primary-600 rounded-lg' : ''}`}>
-                    <label className="cursor-pointer block h-full">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition h-full min-h-[140px] flex flex-col justify-center">
-                        <div className="text-3xl mb-2 text-center">📎</div>
-                        <p className="text-sm font-medium text-center mb-1">
-                          Importer un fichier
-                        </p>
-                        <p className="text-xs text-gray-500 text-center">
-                          {patternFile ? `✓ ${patternFile.name}` : 'PDF, JPG, PNG, WEBP'}
-                        </p>
-                      </div>
-                      <input
-                        type="file"
-                        accept="application/pdf,image/jpeg,image/jpg,image/png,image/webp"
-                        onChange={(e) => {
-                          const file = e.target.files[0]
-                          if (file) {
-                            setPatternFile(file)
-                            setPatternType('file')
-                            setPatternUrl('')
-                            setPatternText('')
-                            setSelectedLibraryPattern(null)
-                          }
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-                    {patternFile && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPatternFile(null)
-                          setPatternType('')
-                        }}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
-                        title="Supprimer le fichier"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Option 3: URL */}
-                  <div className="relative h-full">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setShowPatternUrlModal(true)
-                      }}
-                      className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'url' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
-                    >
-                      <div className="text-3xl mb-2 text-center">🔗</div>
-                      <p className="text-sm font-medium text-center mb-1">
-                        Lien web
-                      </p>
-                      <p className="text-xs text-gray-500 text-center">
-                        {patternUrl ? `✓ ${patternUrl.substring(0, 30)}...` : 'YouTube, Pinterest, blog...'}
-                      </p>
-                    </button>
-                    {patternUrl && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPatternUrl('')
-                          setPatternType('')
-                        }}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
-                        title="Effacer l'URL"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Option 4: Texte */}
-                  <div className="relative h-full">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setShowPatternTextModal(true)
-                      }}
-                      className={`w-full h-full min-h-[140px] border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition flex flex-col justify-center ${patternType === 'text' ? 'ring-2 ring-primary-600 bg-primary-50' : ''}`}
-                    >
-                      <div className="text-3xl mb-2 text-center">📝</div>
-                      <p className="text-sm font-medium text-center mb-1">
-                        Texte
-                      </p>
-                      <p className="text-xs text-gray-500 text-center">
-                        {patternText ? `✓ ${patternText.substring(0, 30)}...` : 'Copier-coller le patron'}
-                      </p>
-                    </button>
-                    {patternText && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setPatternText('')
-                          setPatternType('')
-                        }}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center text-sm font-bold"
-                        title="Effacer le texte"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Boutons */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 modal-actions-mobile">
-                <button
-                  type="button"
-                  onClick={handleCancelModal}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-primary-300"
-                >
-                  {creating ? (creatingStep || 'Création...') : '✨ Créer le projet'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Wizard de création de projet */}
+      <CreateProjectWizard
+        isOpen={showCreateModal}
+        onClose={handleCancelModal}
+        onSubmit={handleCreateProject}
+        isSubmitting={creating}
+        submitLabel={creatingStep || 'Création...'}
+        canUseTags={canUseTags}
+        popularTags={popularTags}
+        onShowUpgradePrompt={() => setShowUpgradePrompt(true)}
+        onOpenLibraryModal={() => {
+          setShowPatternLibraryModal(true)
+          fetchLibraryPatterns()
+        }}
+        onOpenUrlModal={() => setShowPatternUrlModal(true)}
+        onOpenTextModal={() => setShowPatternTextModal(true)}
+        patternType={patternType}
+        setPatternType={setPatternType}
+        patternFile={patternFile}
+        setPatternFile={setPatternFile}
+        patternUrl={patternUrl}
+        patternText={patternText}
+        selectedLibraryPattern={selectedLibraryPattern}
+      />
 
       {/* Modal d'alerte personnalisée */}
       {showAlertModal && (
@@ -2161,13 +1326,18 @@ const MyProjects = () => {
             {/* Workflow rapide */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
               <p className="text-sm text-blue-800">
-                💡 <strong>Workflow rapide :</strong>
+                💡 <strong>Pour un patron en ligne (page web gratuite) :</strong>
               </p>
               <ol className="text-xs text-blue-700 mt-2 ml-4 list-decimal space-y-1">
-                <li>Cherchez votre patron avec les boutons Google ou Ravelry ci-dessous</li>
-                <li>Copiez l'URL du patron trouvé</li>
-                <li>Revenez ici et collez dans le champ (appui long ou Ctrl+V)</li>
+                <li>Trouvez la page du patron (ex : site Drops, blog...)</li>
+                <li>Copiez l'adresse depuis la barre de votre navigateur</li>
+                <li>Collez-la dans le champ ci-dessus</li>
               </ol>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-amber-800">
+                📎 <strong>Patron PDF (Ravelry, téléchargement...) ?</strong> Utilisez plutôt le bouton <strong>Fichier</strong> pour l'importer directement.
+              </p>
             </div>
 
             {/* Champ URL */}
@@ -2357,7 +1527,7 @@ Rang 4 : *2ms, aug* x6 (24)
                 <input
                   ref={(el) => (window.cameraInputProjects = el)}
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  accept="image/*"
                   capture="environment"
                   onChange={(e) => setPhotoFile(e.target.files[0])}
                   className="hidden"
@@ -2365,7 +1535,7 @@ Rang 4 : *2ms, aug* x6 (24)
                 <input
                   ref={(el) => (window.galleryInputProjects = el)}
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  accept="image/*"
                   onChange={(e) => setPhotoFile(e.target.files[0])}
                   className="hidden"
                 />

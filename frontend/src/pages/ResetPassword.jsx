@@ -8,6 +8,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../services/api'
+import PasswordInput from '../components/PasswordInput'
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams()
@@ -217,9 +218,8 @@ const ResetPassword = () => {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
               Nouveau mot de passe
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -237,9 +237,8 @@ const ResetPassword = () => {
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
               Confirmer le mot de passe
             </label>
-            <input
+            <PasswordInput
               id="confirmPassword"
-              type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required

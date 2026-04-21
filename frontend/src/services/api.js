@@ -1,5 +1,49 @@
 import axios from 'axios'
 
+// [AI:Claude] Configuration retry pour erreurs réseau
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  retryDelay: 1000, // 1 seconde initial
+  retryableStatuses: [408, 429, 500, 502, 503, 504], // Timeout, Too Many Requests, Server errors
+}
+
+// [AI:Claude] Fonction de délai avec backoff exponentiel
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
+// [AI:Claude] Vérifier si une erreur est retryable (réseau ou serveur temporaire)
+const isRetryableError = (error) => {
+  // Erreur réseau (pas de réponse du serveur)
+  if (!error.response) {
+    return true
+  }
+  // Erreurs serveur temporaires
+  return RETRY_CONFIG.retryableStatuses.includes(error.response.status)
+}
+
+// [AI:Claude] Helper de stockage robuste (localStorage avec fallback sessionStorage)
+const storage = {
+  getItem: (key) => {
+    try {
+      return localStorage.getItem(key) || sessionStorage.getItem(key)
+    } catch (e) {
+      return null
+    }
+  },
+  setItem: (key, value) => {
+    try {
+      localStorage.setItem(key, value)
+    } catch (e) {
+      try { sessionStorage.setItem(key, value) } catch (e2) { /* ignore */ }
+    }
+  },
+  removeItem: (key) => {
+    try {
+      localStorage.removeItem(key)
+      sessionStorage.removeItem(key)
+    } catch (e) { /* ignore */ }
+  }
+}
+
 // Détection automatique de l'environnement via variables d'environnement
 const getAPIUrl = () => {
   // Utilise VITE_API_URL défini dans .env.development, .env.staging ou .env.production
@@ -17,7 +61,7 @@ const api = axios.create({
 // Intercepteur pour ajouter le token JWT
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
+    const token = storage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -47,8 +91,26 @@ const processQueue = (error, token = null) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log('[API Interceptor] Erreur détectée:', error.response?.status)
     const originalRequest = error.config
+
+    // [AI:Claude] Retry automatique pour erreurs réseau/serveur temporaires
+    if (isRetryableError(error) && originalRequest) {
+      const retryCount = originalRequest._retryCount || 0
+
+      if (retryCount < RETRY_CONFIG.maxRetries) {
+        originalRequest._retryCount = retryCount + 1
+        const retryDelay = RETRY_CONFIG.retryDelay * Math.pow(2, retryCount) // Backoff exponentiel
+
+        console.log(`[API Retry] Tentative ${retryCount + 1}/${RETRY_CONFIG.maxRetries} dans ${retryDelay}ms...`)
+
+        await delay(retryDelay)
+        return api(originalRequest)
+      } else {
+        console.log('[API Retry] Échec après', RETRY_CONFIG.maxRetries, 'tentatives')
+      }
+    }
+
+    console.log('[API Interceptor] Erreur détectée:', error.response?.status || 'Network Error')
 
     // Si erreur 401 et qu'on n'a pas déjà essayé de rafraîchir
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -68,12 +130,12 @@ api.interceptors.response.use(
       originalRequest._retry = true
       isRefreshing = true
 
-      const token = localStorage.getItem('token')
+      const token = storage.getItem('token')
 
       if (!token) {
         // Pas de token, déconnecter directement
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
+        storage.removeItem('token')
+        storage.removeItem('user')
         window.location.href = '/login'
         return Promise.reject(error)
       }
@@ -99,7 +161,7 @@ api.interceptors.response.use(
 
         if (response.data?.data?.token) {
           const newToken = response.data.data.token
-          localStorage.setItem('token', newToken)
+          storage.setItem('token', newToken)
           console.log('[API Interceptor] ✅ Nouveau token sauvegardé')
 
           // Mettre à jour le header de la requête originale
@@ -121,8 +183,8 @@ api.interceptors.response.use(
         processQueue(refreshError, null)
         isRefreshing = false
 
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
+        storage.removeItem('token')
+        storage.removeItem('user')
         console.log('[API Interceptor] Redirection vers /login')
         window.location.href = '/login'
 
@@ -213,6 +275,26 @@ export const patternOptionsAPI = {
   getRequired: (categoryKey) => api.get(`/pattern-options/required/${categoryKey}`),
   getByKey: (optionKey) => api.get(`/pattern-options/key/${optionKey}`),
   getByGroup: (group) => api.get(`/pattern-options/group/${group}`)
+}
+
+// [AI:Claude] Utilitaires de connexion réseau
+export const networkUtils = {
+  isOnline: () => navigator.onLine,
+
+  // Listener pour changements de connexion
+  onConnectionChange: (callback) => {
+    const handleOnline = () => callback(true)
+    const handleOffline = () => callback(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    // Retourner fonction de cleanup
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }
 }
 
 export default api
