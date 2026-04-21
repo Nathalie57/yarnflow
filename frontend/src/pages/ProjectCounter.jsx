@@ -181,12 +181,13 @@ const ProjectCounter = () => {
   // [AI:Claude] Modal des détails techniques
   const [showTechnicalDetailsModal, setShowTechnicalDetailsModal] = useState(false)
   const [technicalForm, setTechnicalForm] = useState({
-    yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
+    yarn: [{ brand: '', name: '', url: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
     needles: [{ type: '', size: '', length: '' }],
     gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' },
     description: ''
   })
   const [savingTechnical, setSavingTechnical] = useState(false)
+  const [yarnSuggestions, setYarnSuggestions] = useState({ brands: [], names: [] })
 
   // [AI:Claude] Menu changement de catégorie
   const [showTechniqueMenu, setShowTechniqueMenu] = useState(false)
@@ -862,9 +863,10 @@ const ProjectCounter = () => {
       const yarn = details?.yarn || [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }]
       const normalizedYarn = yarn.map(y => ({
         ...y,
+        url: y.url || '',
         quantities: y.quantities.map(q => ({
           ...q,
-          unit: q.unit || 'pelotes' // Ajouter 'pelotes' par défaut si absent
+          unit: q.unit || 'pelotes'
         }))
       }))
 
@@ -877,12 +879,17 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur parsing technical_details:', err)
       setTechnicalForm({
-        yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
+        yarn: [{ brand: '', name: '', url: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
         needles: [{ type: '', size: '', length: '' }],
         gauge: { stitches: '', rows: '', dimensions: '10 x 10 cm', notes: '' },
         description: project.description || ''
       })
     }
+    // Charger suggestions depuis localStorage
+    try {
+      const saved = JSON.parse(localStorage.getItem('yf_yarn_suggestions') || '{"brands":[],"names":[]}')
+      setYarnSuggestions(saved)
+    } catch {}
     setShowTechnicalDetailsModal(true)
   }
 
@@ -892,6 +899,17 @@ const ProjectCounter = () => {
     try {
       const technicalDetailsJson = JSON.stringify(technicalForm)
       await api.put(`/projects/${projectId}`, { technical_details: technicalDetailsJson })
+
+      // Mettre à jour les suggestions localStorage
+      try {
+        const existing = JSON.parse(localStorage.getItem('yf_yarn_suggestions') || '{"brands":[],"names":[]}')
+        const newBrands = technicalForm.yarn.map(y => y.brand).filter(Boolean)
+        const newNames = technicalForm.yarn.map(y => y.name).filter(Boolean)
+        const brands = [...new Set([...existing.brands, ...newBrands])].slice(0, 50)
+        const names = [...new Set([...existing.names, ...newNames])].slice(0, 50)
+        localStorage.setItem('yf_yarn_suggestions', JSON.stringify({ brands, names }))
+      } catch {}
+
       await fetchProject()
       setShowTechnicalDetailsModal(false)
       showAlert('Détails techniques mis à jour avec succès !', 'success')
@@ -6309,12 +6327,19 @@ Rang 3 : *1ms, aug* x6 (18)
                         </button>
                       )}
                     </div>
+                    <datalist id={`yarn-brands-${yIdx}`}>
+                      {yarnSuggestions.brands.map(b => <option key={b} value={b} />)}
+                    </datalist>
+                    <datalist id={`yarn-names-${yIdx}`}>
+                      {yarnSuggestions.names.map(n => <option key={n} value={n} />)}
+                    </datalist>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                       <div>
                         <label className="block text-xs text-gray-600 mb-1">Marque</label>
                         <input
                           type="text"
                           value={y.brand}
+                          list={`yarn-brands-${yIdx}`}
                           onChange={(e) => {
                             const newYarn = [...technicalForm.yarn]
                             newYarn[yIdx].brand = e.target.value
@@ -6329,6 +6354,7 @@ Rang 3 : *1ms, aug* x6 (18)
                         <input
                           type="text"
                           value={y.name}
+                          list={`yarn-names-${yIdx}`}
                           onChange={(e) => {
                             const newYarn = [...technicalForm.yarn]
                             newYarn[yIdx].name = e.target.value
@@ -6337,6 +6363,28 @@ Rang 3 : *1ms, aug* x6 (18)
                           className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                           placeholder="Ex: Garnstudio (groupe A)"
                         />
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-xs text-gray-600 mb-1">Lien produit</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="url"
+                          value={y.url || ''}
+                          onChange={(e) => {
+                            const newYarn = [...technicalForm.yarn]
+                            newYarn[yIdx].url = e.target.value
+                            setTechnicalForm({ ...technicalForm, yarn: newYarn })
+                          }}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+                          placeholder="https://www.drops-design.com/..."
+                        />
+                        {y.url && (
+                          <a href={y.url} target="_blank" rel="noopener noreferrer"
+                            className="flex-shrink-0 text-primary-600 hover:text-primary-700 text-xs underline">
+                            Voir
+                          </a>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
