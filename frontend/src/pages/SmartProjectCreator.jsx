@@ -23,11 +23,11 @@ export default function SmartProjectCreator() {
   )
 
   // État du workflow
-  const [step, setStep] = useState(1) // 1: choix, 2: analyse, 3: validation, 4: succès
-  const [mode, setMode] = useState(null) // 'pdf' ou 'url'
+  const [step, setStep] = useState(1)
+  const [mode, setMode] = useState(null)
 
   // Données
-  const [quota, setQuota] = useState(null)
+  const [quota, setQuota] = useState(null) // { is_pro, free_trial_used, total_used }
   const [file, setFile] = useState(null)
   const [url, setUrl] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
@@ -148,7 +148,11 @@ export default function SmartProjectCreator() {
     } catch (err) {
       console.error('Erreur analyze:', err)
       if (err.response?.status === 403) {
-        setError('La création intelligente est réservée aux abonnés PRO.')
+        fetchQuota() // recharge pour afficher l'écran d'upgrade
+        setError(err.response.data?.free_trial_used
+          ? 'Essai gratuit déjà utilisé — passez à PRO pour continuer.'
+          : 'La création intelligente est réservée aux abonnés PRO.'
+        )
       } else {
         setError(err.response?.data?.error || 'Erreur lors de l\'analyse du patron')
       }
@@ -208,7 +212,8 @@ export default function SmartProjectCreator() {
     setSections(sections.filter((_, i) => i !== index))
   }
 
-  if (!isPro) {
+  // FREE avec essai déjà utilisé → écran d'upgrade
+  if (!isPro && quota?.free_trial_used) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-sage-50 to-warm-50 py-8">
         <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">
@@ -218,8 +223,13 @@ export default function SmartProjectCreator() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Création Intelligente</h1>
-          <p className="text-gray-500">Importez un patron PDF ou une URL — l'IA crée automatiquement toutes les sections et remplit les détails techniques.</p>
-          <p className="text-sm font-medium text-primary-600">Fonctionnalité réservée aux abonnés PRO</p>
+          <p className="text-gray-500">Vous avez utilisé votre essai gratuit. Passez à PRO pour importer autant de patrons que vous voulez.</p>
+          <div className="bg-primary-50 rounded-xl p-4 text-left space-y-2">
+            <p className="text-sm font-semibold text-primary-900">Avec PRO :</p>
+            <p className="text-sm text-primary-700">Imports illimités — PDF, URL, Ravelry</p>
+            <p className="text-sm text-primary-700">Sections et détails techniques créés automatiquement</p>
+            <p className="text-sm text-primary-700">Assistant IA, photos pro, stats complètes</p>
+          </div>
           <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
             Passer à PRO — 3,99€/mois
           </Link>
@@ -251,12 +261,18 @@ export default function SmartProjectCreator() {
             Importez un patron PDF ou URL et laissez l'IA créer votre projet automatiquement
           </p>
 
-          {/* Quota Badge */}
+          {/* Badge quota */}
           {quota && (
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-200">
-              <span className="text-sm text-gray-600">Imports IA ce mois:</span>
-              <span className={`text-sm font-bold ${quota.remaining > 0 ? 'text-primary-600' : 'text-red-600'}`}>
-                {quota.used}/{quota.total} {quota.unlimited && '(illimité)'}
+            <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border ${
+              quota.is_pro
+                ? 'bg-primary-50 border-primary-200'
+                : 'bg-amber-50 border-amber-200'
+            }`}>
+              <span className={`text-sm font-medium ${quota.is_pro ? 'text-primary-700' : 'text-amber-700'}`}>
+                {quota.is_pro
+                  ? `${quota.remaining} import${quota.remaining !== 1 ? 's' : ''} restant${quota.remaining !== 1 ? 's' : ''} ce mois`
+                  : 'Essai gratuit — 1 import offert'
+                }
               </span>
             </div>
           )}

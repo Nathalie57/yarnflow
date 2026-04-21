@@ -206,7 +206,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">2e compteur par projet</span></li>
             <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">Notes par section</span></li>
             <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">Tags et organisation</span></li>
-            <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">Création intelligente de projet (IA)</span></li>
+            <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">Création intelligente de projet (1 essai gratuit)</span></li>
             <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">Stats complètes + graphiques</span></li>
           </ul>
 
@@ -246,7 +246,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">2 compteurs par projet</span></li>
             <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Notes par section</span></li>
             <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Tags et organisation</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Création intelligente de projet (IA)</span></li>
+            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Création intelligente de projet (15 imports / mois)</span></li>
             <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Stats complètes + graphiques + badges</span></li>
             <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Timer avec historique</span></li>
             <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">30 questions assistant IA / mois</span></li>
