@@ -215,7 +215,7 @@ export default function SmartProjectCreator() {
   // FREE avec essai déjà utilisé → écran d'upgrade
   if (!isPro && quota?.free_trial_used) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-sage-50 to-warm-50 py-8">
+      <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">
           <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto">
             <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -242,7 +242,7 @@ export default function SmartProjectCreator() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-sage-50 to-warm-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
 
         {/* Header */}
@@ -263,7 +263,7 @@ export default function SmartProjectCreator() {
 
           {/* Badge quota */}
           {quota && (
-            <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-lg border ${
+            <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${
               quota.is_pro
                 ? 'bg-primary-50 border-primary-200'
                 : 'bg-amber-50 border-amber-200'
@@ -302,14 +302,14 @@ export default function SmartProjectCreator() {
 
         {/* Erreur globale */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
             {error}
           </div>
         )}
 
         {/* ÉTAPE 1 : Choix du mode */}
         {step === 1 && (
-          <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
               Comment souhaitez-vous importer votre patron ?
             </h2>
@@ -318,7 +318,7 @@ export default function SmartProjectCreator() {
               {/* Mode PDF */}
               <button
                 onClick={() => handleModeSelect('pdf')}
-                className="p-8 border-2 border-gray-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition group"
+                className="p-8 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group"
               >
                 <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
                   <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
@@ -335,7 +335,7 @@ export default function SmartProjectCreator() {
               {/* Mode URL */}
               <button
                 onClick={() => handleModeSelect('url')}
-                className="p-8 border-2 border-gray-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition group"
+                className="p-8 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group"
               >
                 <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
                   <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
@@ -354,7 +354,7 @@ export default function SmartProjectCreator() {
 
         {/* ÉTAPE 2 : Upload/URL + Analyse */}
         {step === 2 && (
-          <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
               {mode === 'pdf' ? 'Importer un PDF' : 'Importer depuis une URL'}
             </h2>
@@ -393,7 +393,7 @@ export default function SmartProjectCreator() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://exemple.com/mon-patron"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
             )}
@@ -401,7 +401,7 @@ export default function SmartProjectCreator() {
             <div className="flex gap-4">
               <button
                 onClick={() => setStep(1)}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
               >
                 ← Retour
               </button>
@@ -409,7 +409,7 @@ export default function SmartProjectCreator() {
               <button
                 onClick={handleAnalyze}
                 disabled={analyzing || (mode === 'pdf' && !file) || (mode === 'url' && !url)}
-                className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {analyzing ? (
                   <>
@@ -429,13 +429,13 @@ export default function SmartProjectCreator() {
 
         {/* ÉTAPE 3 : Validation/Édition */}
         {step === 3 && (
-          <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              📝 Vérifiez et modifiez les informations
+              Vérifiez et modifiez les informations
             </h2>
 
             {aiStatus === 'partial' && (
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 text-sm">
                 Certaines informations n'ont pas pu être détectées automatiquement. Complétez les champs manquants.
               </div>
             )}
@@ -448,7 +448,7 @@ export default function SmartProjectCreator() {
                   type="text"
                   value={project.title}
                   onChange={(e) => setProject({...project, title: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
@@ -458,7 +458,7 @@ export default function SmartProjectCreator() {
                   <select
                     value={project.craft_type}
                     onChange={(e) => setProject({...project, craft_type: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="crochet">Crochet</option>
                     <option value="tricot">Tricot</option>
@@ -471,7 +471,7 @@ export default function SmartProjectCreator() {
                   <select
                     value={project.category || ''}
                     onChange={(e) => setProject({...project, category: e.target.value || null})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">-- Sélectionner --</option>
                     <option value="bonnet">Bonnet</option>
@@ -496,13 +496,13 @@ export default function SmartProjectCreator() {
                   value={project.description}
                   onChange={(e) => setProject({...project, description: e.target.value})}
                   rows="2"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
 
             {/* Détails techniques */}
-            <details className="mb-6 border border-gray-200 rounded-lg p-4" open>
+            <details className="mb-6 border border-gray-200 rounded-2xl p-4" open>
               <summary className="font-medium text-gray-900 cursor-pointer">Détails techniques</summary>
 
               <div className="mt-4 space-y-4">
@@ -513,7 +513,7 @@ export default function SmartProjectCreator() {
                       type="text"
                       value={project.yarn.brand}
                       onChange={(e) => setProject({...project, yarn: {...project.yarn, brand: e.target.value}})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                   </div>
                   <div>
@@ -522,7 +522,7 @@ export default function SmartProjectCreator() {
                       type="text"
                       value={project.yarn.color}
                       onChange={(e) => setProject({...project, yarn: {...project.yarn, color: e.target.value}})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                   </div>
                 </div>
@@ -535,7 +535,7 @@ export default function SmartProjectCreator() {
                       value={project.yarn.weight}
                       onChange={(e) => setProject({...project, yarn: {...project.yarn, weight: e.target.value}})}
                       placeholder="DK, Worsted, Fingering..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                   </div>
                   <div>
@@ -545,7 +545,7 @@ export default function SmartProjectCreator() {
                       value={project.hook_or_needles.size}
                       onChange={(e) => setProject({...project, hook_or_needles: {...project.hook_or_needles, size: e.target.value}})}
                       placeholder="4.5"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                   </div>
                 </div>
@@ -558,14 +558,14 @@ export default function SmartProjectCreator() {
                       value={project.gauge.stitches || ''}
                       onChange={(e) => setProject({...project, gauge: {...project.gauge, stitches: e.target.value ? parseInt(e.target.value) : null}})}
                       placeholder="Mailles"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                     <input
                       type="number"
                       value={project.gauge.rows || ''}
                       onChange={(e) => setProject({...project, gauge: {...project.gauge, rows: e.target.value ? parseInt(e.target.value) : null}})}
                       placeholder="Rangs"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                   </div>
                 </div>
@@ -575,10 +575,10 @@ export default function SmartProjectCreator() {
             {/* Sections */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-gray-900">📋 Sections du projet</h3>
+                <h3 className="font-medium text-gray-900">Sections du projet</h3>
                 <button
                   onClick={addSection}
-                  className="px-3 py-1 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                  className="px-3 py-1 text-sm bg-primary-600 text-white rounded-xl hover:bg-primary-700"
                 >
                   + Ajouter
                 </button>
@@ -586,7 +586,7 @@ export default function SmartProjectCreator() {
 
               <div className="space-y-3">
                 {sections.map((section, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-3">
+                  <div key={index} className="border border-gray-200 rounded-2xl p-3">
                     <div className="flex gap-2 items-start mb-2">
                       <div className="flex-1 grid grid-cols-3 gap-2">
                         <input
@@ -638,7 +638,7 @@ export default function SmartProjectCreator() {
                 value={project.pattern_notes}
                 onChange={(e) => setProject({...project, pattern_notes: e.target.value})}
                 rows="3"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm"
                 placeholder="Notes importantes, conseils, modifications..."
               />
             </div>
@@ -647,7 +647,7 @@ export default function SmartProjectCreator() {
             <div className="flex gap-4">
               <button
                 onClick={() => setStep(2)}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
               >
                 ← Retour
               </button>
@@ -655,7 +655,7 @@ export default function SmartProjectCreator() {
               <button
                 onClick={handleConfirm}
                 disabled={creating || !project.title}
-                className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {creating ? 'Création...' : '✓ Créer le projet'}
               </button>
@@ -665,7 +665,7 @@ export default function SmartProjectCreator() {
 
         {/* ÉTAPE 4 : Succès */}
         {step === 4 && createdProject && (
-          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
             <div className="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
               <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
             </div>
@@ -679,14 +679,14 @@ export default function SmartProjectCreator() {
             <div className="flex gap-4 justify-center">
               <button
                 onClick={() => navigate(`/project-counter/${createdProject.id}`)}
-                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                className="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700"
               >
                 Ouvrir le projet →
               </button>
 
               <button
                 onClick={() => navigate('/my-projects')}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
               >
                 Voir tous mes projets
               </button>
