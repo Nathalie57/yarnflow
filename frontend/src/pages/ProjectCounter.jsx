@@ -290,6 +290,11 @@ const ProjectCounter = () => {
     })
   }, [projectId])
 
+  // Mémoriser le dernier projet ouvert pour la reprise automatique
+  useEffect(() => {
+    if (projectId) localStorage.setItem('yf_last_project_id', projectId)
+  }, [projectId])
+
   // [AI:Claude] Charger le projet au montage
   useEffect(() => {
     const loadData = async () => {

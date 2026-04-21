@@ -14,7 +14,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import ProjectFilters from '../components/ProjectFilters'
@@ -26,6 +26,17 @@ import CreateProjectWizard from '../components/CreateProjectWizard'
 const MyProjects = () => {
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
+
+  // Reprise automatique du dernier projet — une seule fois par session
+  useEffect(() => {
+    const alreadyResumed = sessionStorage.getItem('yf_resumed')
+    const lastProjectId = localStorage.getItem('yf_last_project_id')
+    if (!alreadyResumed && lastProjectId) {
+      sessionStorage.setItem('yf_resumed', '1')
+      navigate(`/projects/${lastProjectId}`, { replace: true })
+    }
+  }, [])
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
