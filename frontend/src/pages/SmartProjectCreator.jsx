@@ -279,7 +279,22 @@ export default function SmartProjectCreator() {
         </div>
 
         {/* Étapes */}
-        <div className="mb-8 flex items-center justify-center gap-4">
+        {/* Mobile : étape X / 4 + barre de progression */}
+        <div className="mb-8 sm:hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-primary-600">
+              Étape {step} / 4 — {[, 'Mode', 'Analyse', 'Validation', 'Création'][step]}
+            </span>
+          </div>
+          <div className="w-full h-1.5 bg-gray-200 rounded-full">
+            <div
+              className="h-1.5 bg-primary-600 rounded-full transition-all"
+              style={{ width: `${(step / 4) * 100}%` }}
+            />
+          </div>
+        </div>
+        {/* Desktop : stepper complet */}
+        <div className="mb-8 hidden sm:flex items-center justify-center gap-4">
           {[
             { num: 1, label: 'Mode' },
             { num: 2, label: 'Analyse' },

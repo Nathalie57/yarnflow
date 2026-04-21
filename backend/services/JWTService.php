@@ -43,7 +43,7 @@ class JWTService
         }
 
         $this->secret = $secret;
-        $this->expiration = (int)($_ENV['JWT_EXPIRATION'] ?? 604800);
+        $this->expiration = (int)($_ENV['JWT_EXPIRATION'] ?? 2592000); // 30 jours par défaut
     }
 
     /**

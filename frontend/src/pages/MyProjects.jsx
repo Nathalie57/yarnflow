@@ -633,10 +633,10 @@ const MyProjects = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes projets</h1>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex flex-col items-end gap-1.5">
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm"
+                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm w-full sm:w-auto justify-center"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -645,9 +645,9 @@ const MyProjects = () => {
                 </button>
                 <Link
                   to="/smart-project-creator"
-                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-white border border-primary-300 text-primary-700 hover:bg-primary-50 active:bg-primary-100 shadow-sm"
+                  className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-700 transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                   </svg>
                   Création Intelligente
@@ -700,8 +700,11 @@ const MyProjects = () => {
         )}
       </div>
 
-      {/* Bannière Création Intelligente — FREE avec essai dispo uniquement */}
-      {smartQuota && !smartQuota.is_pro && !smartQuota.free_trial_used && (
+      {/* Bannière Création Intelligente — FREE essai dispo OU PRO jamais utilisé ce mois */}
+      {smartQuota && (
+        (!smartQuota.is_pro && !smartQuota.free_trial_used) ||
+        (smartQuota.is_pro && smartQuota.used_this_month === 0)
+      ) && (
         <Link
           to="/smart-project-creator"
           className="block mb-6 p-4 bg-primary-50 border border-primary-200 rounded-2xl hover:bg-primary-100 transition group"
@@ -714,7 +717,12 @@ const MyProjects = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-primary-900">Essayez la Création Intelligente</p>
-              <p className="text-xs text-primary-600 mt-0.5">Importez un patron PDF — l'IA crée votre projet automatiquement. <span className="font-semibold">1 essai gratuit offert.</span></p>
+              <p className="text-xs text-primary-600 mt-0.5">
+                {smartQuota.is_pro
+                  ? <>Importez un patron PDF — l'IA crée votre projet automatiquement. <span className="font-semibold">15 imports disponibles ce mois.</span></>
+                  : <>Importez un patron PDF — l'IA crée votre projet automatiquement. <span className="font-semibold">1 essai gratuit offert.</span></>
+                }
+              </p>
             </div>
             <svg className="w-4 h-4 text-primary-400 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
