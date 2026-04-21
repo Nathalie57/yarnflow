@@ -700,6 +700,29 @@ const MyProjects = () => {
         )}
       </div>
 
+      {/* Bannière Création Intelligente — FREE avec essai dispo uniquement */}
+      {smartQuota && !smartQuota.is_pro && !smartQuota.free_trial_used && (
+        <Link
+          to="/smart-project-creator"
+          className="block mb-6 p-4 bg-primary-50 border border-primary-200 rounded-2xl hover:bg-primary-100 transition group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-white rounded-xl border border-primary-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+              <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-primary-900">Essayez la Création Intelligente</p>
+              <p className="text-xs text-primary-600 mt-0.5">Importez un patron PDF — l'IA crée votre projet automatiquement. <span className="font-semibold">1 essai gratuit offert.</span></p>
+            </div>
+            <svg className="w-4 h-4 text-primary-400 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </div>
+        </Link>
+      )}
+
       {/* Barre de recherche */}
       {!loading && projects.length > 0 && (
         <div className="mb-6">
