@@ -149,6 +149,8 @@ class AuthController
                 }
             }
 
+            $this->userModel->updateLastLogin($userId);
+
             $user = $this->userModel->findById($userId);
             $token = $this->jwtService->generateToken($user);
 
