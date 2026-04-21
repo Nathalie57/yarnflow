@@ -110,14 +110,14 @@ const Landing = () => {
             </div>
 
             <div className="flex flex-col items-center gap-3 p-4">
-              <div className="w-12 h-12 bg-white rounded-2xl border border-primary-200 flex items-center justify-center shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="w-12 h-12 bg-white rounded-2xl border border-purple-200 flex items-center justify-center shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-gray-900 mb-1">Écran allumé, rang retenu</p>
-                <p className="text-sm text-gray-600">Wake lock automatique et timer intégré — l'app travaille pendant que vous tricotez</p>
+                <p className="font-bold text-gray-900 mb-1">Un patron PDF → un projet prêt</p>
+                <p className="text-sm text-gray-600">L'IA lit votre patron, crée les sections et remplit les détails — en quelques secondes</p>
               </div>
             </div>
 
@@ -346,6 +346,36 @@ const Landing = () => {
             </div>
 
           </div>
+        </div>
+      </section>
+
+      {/* Assistant IA */}
+      <section className="py-14 bg-white">
+        <div className="max-w-3xl mx-auto px-4 text-center">
+          <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Assistant IA</span>
+          <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">Une experte tricot disponible à tout moment</h2>
+          <p className="text-gray-600 leading-relaxed mb-8 max-w-xl mx-auto">
+            Comment calculer les diminutions pour ma taille ? Quel point pour remplacer celui du patron ? L'assistant connaît votre projet et répond en contexte — pas des réponses génériques.
+          </p>
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 text-left max-w-lg mx-auto space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">M</div>
+              <div className="bg-white rounded-xl rounded-tl-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
+                J'ai raté 3 rangs sur mon dos, comment je rattrape sans détricoter tout ?
+              </div>
+            </div>
+            <div className="flex items-start gap-3 flex-row-reverse">
+              <div className="w-7 h-7 bg-primary-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                </svg>
+              </div>
+              <div className="bg-primary-50 rounded-xl rounded-tr-none border border-primary-100 px-4 py-2.5 text-sm text-gray-700">
+                Pour rattraper 3 rangs sans détricoter, vous pouvez utiliser une aiguille auxiliaire…
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-4">3 questions / mois en FREE · 30 questions / mois en PRO</p>
         </div>
       </section>
 
