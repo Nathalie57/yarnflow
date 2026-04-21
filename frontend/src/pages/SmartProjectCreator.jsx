@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
 
 /**
@@ -15,6 +16,11 @@ import axios from 'axios'
 
 export default function SmartProjectCreator() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+
+  const isPro = user && user.subscription_type && user.subscription_type !== 'free' && (
+    !user.subscription_expires_at || new Date(user.subscription_expires_at) > new Date()
+  )
 
   // État du workflow
   const [step, setStep] = useState(1) // 1: choix, 2: analyse, 3: validation, 4: succès
@@ -142,7 +148,7 @@ export default function SmartProjectCreator() {
     } catch (err) {
       console.error('Erreur analyze:', err)
       if (err.response?.status === 403) {
-        setError('Quota d\'imports IA atteint pour ce mois. Passez au plan PLUS ou PRO pour continuer.')
+        setError('La création intelligente est réservée aux abonnés PRO.')
       } else {
         setError(err.response?.data?.error || 'Erreur lors de l\'analyse du patron')
       }
@@ -200,6 +206,29 @@ export default function SmartProjectCreator() {
 
   const removeSection = (index) => {
     setSections(sections.filter((_, i) => i !== index))
+  }
+
+  if (!isPro) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-sage-50 to-warm-50 py-8">
+        <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">
+          <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto">
+            <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Création Intelligente</h1>
+          <p className="text-gray-500">Importez un patron PDF ou une URL — l'IA crée automatiquement toutes les sections et remplit les détails techniques.</p>
+          <p className="text-sm font-medium text-primary-600">Fonctionnalité réservée aux abonnés PRO</p>
+          <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
+            Passer à PRO — 3,99€/mois
+          </Link>
+          <button onClick={() => navigate(-1)} className="block w-full text-sm text-gray-400 hover:text-gray-600">
+            Retour
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

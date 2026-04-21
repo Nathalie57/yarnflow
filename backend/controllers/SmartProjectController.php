@@ -112,10 +112,10 @@ class SmartProjectController
                 return;
             }
 
-            // Vérifier le quota
-            if (!$this->hasRemainingQuota($userId, $user['subscription_type'])) {
+            // Création intelligente réservée aux abonnés PRO
+            if (!$this->userModel->hasActiveSubscription($userId)) {
                 $this->jsonResponse([
-                    'error' => 'Quota d\'imports IA atteint pour ce mois',
+                    'error' => 'La création intelligente est réservée aux abonnés PRO',
                     'upgrade_required' => true
                 ], 403);
                 return;

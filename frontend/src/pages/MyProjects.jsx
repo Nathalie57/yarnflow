@@ -572,38 +572,7 @@ const MyProjects = () => {
   }
 
   // [AI:Claude] Quota utilisateur (v0.14.0 - FREE/PLUS/PRO) + v0.17.1 vérification expiration
-  const getProjectQuota = () => {
-    if (!user) return { current: 0, max: 3, total: 0, expired: false, effectiveType: 'free' }
-
-    // [AI:Claude] Vérifier si l'abonnement est expiré
-    let effectiveType = user.subscription_type || 'free'
-    let isExpired = false
-
-    if (effectiveType !== 'free' && user.subscription_expires_at) {
-      const expiresAt = new Date(user.subscription_expires_at)
-      if (expiresAt <= new Date()) {
-        isExpired = true
-        effectiveType = 'free' // Traiter comme free si expiré
-      }
-    }
-
-    const max = effectiveType === 'free' ? 3 : 999
-
-    // [AI:Claude] Compter uniquement les projets ACTIFS (non terminés)
-    const activeProjectsCount = projects.filter(p => p.status !== 'completed').length
-
-    return {
-      current: activeProjectsCount,
-      max,
-      total: projects.length,
-      expired: isExpired,
-      effectiveType,
-      originalType: user.subscription_type
-    }
-  }
-
-  const quota = getProjectQuota()
-  const canCreateProject = quota.current < quota.max
+  const canCreateProject = true
 
   // [AI:Claude] Fonction pour reset le formulaire de création (wizard)
   const handleCancelModal = () => {
@@ -655,73 +624,30 @@ const MyProjects = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes projets</h1>
               </div>
 
-              {canCreateProject ? (
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Nouveau projet
-                  </button>
-                  <Link
-                    to="/smart-project-creator"
-                    className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-gradient-to-r from-purple-600 to-primary-600 text-white hover:from-purple-700 hover:to-primary-700 active:from-purple-800 active:to-primary-800 shadow-sm"
-                  >
-                    ✨ Création Intelligente
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex flex-col items-end gap-2">
-                  <button
-                    disabled
-                    className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm bg-gray-100 text-gray-400 cursor-not-allowed"
-                    title={`Quota atteint : ${quota.current}/${quota.max} projets actifs`}
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Nouveau projet
-                  </button>
-                  <div className="text-right">
-                    <p className="text-xs text-red-600 font-medium">
-                      {quota.expired
-                        ? `⚠️ Abonnement ${quota.originalType} expiré`
-                        : `Quota atteint (${quota.current}/${quota.max})`
-                      }
-                    </p>
-                    <Link
-                      to="/subscription"
-                      className="text-xs text-primary-600 hover:text-primary-700 font-semibold underline"
-                    >
-                      {quota.expired ? 'Renouveler mon abonnement →' : 'Passer au niveau supérieur →'}
-                    </Link>
-                  </div>
-                </div>
-              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                  </svg>
+                  Nouveau projet
+                </button>
+                <Link
+                  to="/smart-project-creator"
+                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-gradient-to-r from-purple-600 to-primary-600 text-white hover:from-purple-700 hover:to-primary-700 active:from-purple-800 active:to-primary-800 shadow-sm"
+                >
+                  ✨ Création Intelligente
+                </Link>
+              </div>
             </div>
 
             {/* Stats inline */}
             {!loadingStats && dashboardStats && (
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                 {/* Projets */}
-                {quota.max === 999 ? (
-                  <span>{quota.total} projet{quota.total !== 1 ? 's' : ''}</span>
-                ) : (() => {
-                  const isAtLimit = quota.current >= quota.max
-                  const isNearLimit = quota.current >= quota.max - 1
-                  return (
-                    <button
-                      onClick={() => setShowUpgradePrompt(true)}
-                      className={`hover:underline ${isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-gray-500'}`}
-                    >
-                      {quota.current}/{quota.max} projets
-                      {isAtLimit && ' — limite atteinte'}
-                    </button>
-                  )
-                })()}
+                <span>{projects.length} projet{projects.length !== 1 ? 's' : ''}</span>
 
                 <span className="text-gray-300">·</span>
 
