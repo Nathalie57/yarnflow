@@ -24,6 +24,7 @@ Vérifier que chaque variable est correctement remplie :
 - [ ] `FRONTEND_URL` = URL du frontend prod (ex: `https://yarnflow.fr`) — critique pour les redirections Stripe
 - [ ] `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` = base prod
 - [ ] `JWT_SECRET` = secret long et aléatoire (pas le placeholder)
+- [ ] `JWT_EXPIRATION=2592000` (30 jours — sinon reconnexion quotidienne)
 - [ ] `STRIPE_SECRET_KEY` = clé **live** `sk_live_...` (pas `sk_test_`)
 - [ ] `STRIPE_WEBHOOK_SECRET` = secret webhook **live** `whsec_...`
 - [ ] `STRIPE_PRICE_ID_PLUS_MONTHLY` = ID du vrai produit Stripe
