@@ -27,9 +27,6 @@ const Landing = () => {
       <header className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-            </svg>
             <span className="font-bold text-lg md:text-xl text-gray-900">YarnFlow</span>
           </div>
 
@@ -40,14 +37,15 @@ const Landing = () => {
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
-            <Link to="/login" className="text-gray-700 hover:text-primary-600 font-medium transition text-sm">
+            <Link to="/login" className="hidden sm:block text-gray-700 hover:text-primary-600 font-medium transition text-sm">
               Connexion
             </Link>
             <Link
               to="/register"
-              className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl font-medium transition text-sm shadow-sm whitespace-nowrap"
+              className="bg-primary-600 hover:bg-primary-700 text-white px-3 sm:px-4 py-2 rounded-xl font-medium transition text-xs sm:text-sm shadow-sm whitespace-nowrap"
             >
-              Commencer — c'est gratuit
+              <span className="hidden sm:inline">Commencer — c'est gratuit</span>
+              <span className="sm:hidden">C'est gratuit</span>
             </Link>
           </div>
         </div>
@@ -64,7 +62,7 @@ const Landing = () => {
         </div>
 
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-          Le carnet de tricot<br className="hidden md:block" /> que vous méritez vraiment
+          Le carnet de tricot & crochet<br className="hidden md:block" /> que vous méritez vraiment
         </h1>
 
         <p className="text-xl text-gray-600 mb-10 leading-relaxed max-w-2xl mx-auto">
@@ -116,7 +114,7 @@ const Landing = () => {
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-gray-900 mb-1">Un patron PDF → un projet prêt</p>
+                <p className="font-bold text-gray-900 mb-1">Un patron PDF ou URL → un projet prêt</p>
                 <p className="text-sm text-gray-600">L'IA lit votre patron, crée les sections et remplit les détails — en quelques secondes</p>
               </div>
             </div>
@@ -167,7 +165,7 @@ const Landing = () => {
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
-                  'Timer automatique dès le premier rang',
+                  'Timer intégré pour mesurer votre temps de travail',
                   "Wake lock : l'écran reste allumé pendant que vous tricotez",
                   'Sections indépendantes par partie de projet',
                   '2 compteurs simultanés pour les projets complexes (PRO)',
@@ -191,7 +189,7 @@ const Landing = () => {
                 Vos créations méritent<br />de belles photos
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                Une photo prise à la va-vite sur le canapé ? L'IA la transforme en image professionnelle en quelques secondes. Parfait pour Etsy, Instagram, ou simplement pour archiver vos projets avec soin.
+                Une photo prise à la va-vite sur le canapé ? L'IA sublime l'éclairage, adoucit le fond et met votre ouvrage en valeur — sans le dénaturer. Parfait pour partager sur Instagram, vendre sur Etsy, ou simplement garder un beau souvenir de vos créations.
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
@@ -211,20 +209,37 @@ const Landing = () => {
 
             {/* Mockup avant/après */}
             <div className="order-1 md:order-2 grid grid-cols-2 gap-3">
-              <div className="relative rounded-xl bg-gray-100 border border-gray-200 aspect-square flex flex-col items-center justify-center shadow-sm overflow-hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="text-xs text-gray-400">Photo brute</span>
-                <div className="absolute top-2 left-2 bg-gray-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AVANT</div>
+              {/* AVANT */}
+              <div className="relative rounded-xl border border-gray-200 aspect-square shadow-sm overflow-hidden bg-gray-100 flex flex-col">
+                {/* Simulation photo canapé */}
+                <div className="flex-1 flex items-center justify-center relative">
+                  <div className="w-20 h-20 rounded-full bg-amber-200 opacity-60 absolute top-4 left-4" />
+                  <div className="w-16 h-16 rounded-full bg-amber-300 opacity-40 absolute bottom-6 right-3" />
+                  <div className="relative z-10 w-14 h-14 bg-amber-100 rounded-lg border-2 border-amber-200 flex items-center justify-center">
+                    <div className="grid grid-cols-3 gap-0.5">
+                      {[...Array(9)].map((_, i) => <div key={i} className="w-2 h-2 rounded-sm bg-amber-400 opacity-70" />)}
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-200 px-3 py-1.5 text-[10px] text-gray-500 text-center">Photo prise à la va-vite</div>
+                <div className="absolute top-2 left-2 bg-gray-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AVANT</div>
               </div>
-              <div className="relative rounded-xl bg-primary-50 border border-primary-200 aspect-square flex flex-col items-center justify-center shadow-sm overflow-hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="text-xs text-primary-600 font-medium">Rendu pro</span>
+              {/* APRÈS */}
+              <div className="relative rounded-xl border border-primary-200 aspect-square shadow-sm overflow-hidden bg-primary-50 flex flex-col">
+                <div className="flex-1 flex items-center justify-center relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-white" />
+                  <div className="relative z-10 w-16 h-16 bg-white rounded-xl border border-primary-100 shadow-md flex items-center justify-center">
+                    <div className="grid grid-cols-3 gap-0.5">
+                      {[...Array(9)].map((_, i) => <div key={i} className="w-2 h-2 rounded-sm bg-primary-300" />)}
+                    </div>
+                  </div>
+                  <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1">
+                    {['Lifestyle', 'Studio', 'Scandi'].map(s => (
+                      <span key={s} className="text-[9px] bg-white border border-primary-100 text-primary-600 px-1.5 py-0.5 rounded-full font-medium shadow-sm">{s}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-primary-100 px-3 py-1.5 text-[10px] text-primary-700 font-medium text-center">Rendu professionnel IA</div>
                 <div className="absolute top-2 left-2 bg-primary-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">APRÈS</div>
               </div>
             </div>
@@ -254,14 +269,14 @@ const Landing = () => {
                 Tous vos patrons,<br />tous vos projets — au même endroit
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                PDF Ravelry, liens Etsy, notes personnelles — tout dans une bibliothèque propre. Avec PRO, taguez, filtrez, retrouvez en un clin d'œil.
+                PDF Ravelry, liens Etsy, notes personnelles — tout dans une bibliothèque propre. Filtrez par catégorie, technique ou favoris et retrouvez n'importe quel patron en deux secondes.
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
                   'Patrons en PDF, URL ou texte libre',
                   'Détails techniques : laine, aiguilles, échantillon, dimensions',
                   'Notes globales par projet',
-                  'Tags personnalisés et filtres (PRO)',
+                  'Filtres par catégorie, technique et favoris',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -317,14 +332,14 @@ const Landing = () => {
             <div>
               <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Création Intelligente — PRO</span>
               <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
-                Importez un patron PDF.<br />Le projet se crée tout seul.
+                Importez un patron PDF ou une URL.<br />Le projet se crée tout seul.
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
                 Téléchargez votre patron en PDF ou collez une URL — l'IA lit le document, crée les sections, remplit les détails techniques et structure votre projet en quelques secondes. Personne d'autre ne fait ça.
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600 mb-6">
                 {[
-                  "PDF, URL ou lien Ravelry — n'importe quel format",
+                  "PDF ou URL — Ravelry, Etsy, blog, peu importe la source",
                   'Sections créées automatiquement (dos, devant, manches…)',
                   'Laine, aiguilles, tension extraits du patron',
                   '1 essai gratuit · 15 imports/mois en PRO',
@@ -338,7 +353,7 @@ const Landing = () => {
                 ))}
               </ul>
               <span className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-200">
-                Exclusif YarnFlow — aucune autre app ne propose ça
+                Unique sur le marché du tricot &amp; crochet
               </span>
             </div>
 
@@ -350,7 +365,7 @@ const Landing = () => {
       <section className="py-14 bg-white">
         <div className="max-w-3xl mx-auto px-4 text-center">
           <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Assistant IA</span>
-          <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">Une experte tricot disponible à tout moment</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">Un expert tricot & crochet disponible à tout moment</h2>
           <p className="text-gray-600 leading-relaxed mb-8 max-w-xl mx-auto">
             Comment calculer les diminutions pour ma taille ? Quel point pour remplacer celui du patron ? L'assistant connaît votre projet et répond en contexte — pas des réponses génériques.
           </p>
@@ -423,7 +438,7 @@ const Landing = () => {
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">Simple et transparent</h2>
           <p className="text-center text-gray-600 mb-10 text-lg">
-            Commencez gratuitement. Passez à PRO quand vos projets le méritent.
+            FREE pour toujours. PRO quand vos projets le méritent.
           </p>
 
           <div className="flex justify-center mb-10">
@@ -457,9 +472,10 @@ const Landing = () => {
                   '1 compteur par projet',
                   'Détails techniques (laine, aiguilles...)',
                   'Notes globales',
-                  '5 patrons en bibliothèque',
+                  'Bibliothèque de patrons illimitée',
                   '3 questions assistant IA / mois',
                   '2 crédits photo / mois',
+                  'Création intelligente (1 essai gratuit)',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -478,7 +494,7 @@ const Landing = () => {
                 ))}
               </ul>
               <Link to="/register" className="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition text-sm">
-                Commencer gratuitement
+                Créer mon compte gratuit
               </Link>
             </div>
 
@@ -507,6 +523,7 @@ const Landing = () => {
                   ['Timer avec historique', true],
                   ['30 questions assistant IA / mois', true],
                   ['20 crédits photo + tous les styles', true],
+                  ['Création intelligente — 15 imports / mois', true],
                 ].map(([item, highlight], i) => (
                   <li key={i} className={`flex items-start gap-2.5 text-sm ${highlight ? 'text-gray-800 font-medium' : 'text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -537,15 +554,19 @@ const Landing = () => {
             {[
               {
                 q: "C'est vraiment gratuit pour toujours ?",
-                a: "Oui. Le plan FREE n'a pas de limite de temps. Projets illimités, compteur de rangs, détails techniques, 5 patrons — sans jamais payer. Le PRO se justifie quand vos projets deviennent complexes."
+                a: "Oui, sans limite de temps. Projets illimités, compteur de rangs, bibliothèque de patrons, détails techniques — sans jamais payer. Le PRO se justifie quand vos projets deviennent complexes."
               },
               {
                 q: "Quelle est la différence entre FREE et PRO concrètement ?",
-                a: "FREE couvre le cas d'usage basique : compter ses rangs et noter ses infos. PRO couvre les projets sérieux : 2 compteurs par projet, notes par section, bibliothèque illimitée, tags, stats complètes et assistant IA sans limite."
+                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 1 essai création intelligente. PRO débloque les features avancées : 2 compteurs simultanés, notes par section, stats complètes, assistant IA 30 questions/mois, 20 crédits photo et création intelligente 15 imports/mois."
+              },
+              {
+                q: "La création intelligente, c'est quoi exactement ?",
+                a: "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 1 essai gratuit offert, puis 15 imports/mois en PRO."
               },
               {
                 q: "Ça marche sur quels appareils ?",
-                a: "YarnFlow est une PWA — accessible sur tous les navigateurs (mobile, tablette, ordinateur). Vous pouvez l'installer sur votre téléphone comme une vraie app, avec l'icône sur l'écran d'accueil."
+                a: "YarnFlow est une PWA — accessible sur tous les navigateurs (mobile, tablette, ordinateur). Vous pouvez l'installer sur votre téléphone comme une vraie app, avec l'icône sur l'écran d'accueil. Aucun téléchargement sur l'App Store requis."
               },
               {
                 q: "Puis-je annuler à tout moment ?",
@@ -553,7 +574,7 @@ const Landing = () => {
               },
               {
                 q: "Mes patrons et projets sont-ils en sécurité ?",
-                a: "Vos données sont stockées en sécurité sur nos serveurs, ne sont jamais partagées ou vendues, et vous pouvez les exporter ou supprimer à tout moment."
+                a: "Vos données sont stockées en sécurité sur nos serveurs, ne sont jamais partagées ou vendues, et vous pouvez les supprimer à tout moment."
               },
             ].map((item, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
