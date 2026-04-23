@@ -70,9 +70,9 @@ export default function PaymentSuccess() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto mb-4"></div>
           <p className="text-gray-600 text-lg">Vérification du paiement...</p>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function PaymentSuccess() {
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -94,7 +94,7 @@ export default function PaymentSuccess() {
           </p>
           <button
             onClick={() => navigate('/subscription')}
-            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+            className="bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors"
           >
             Retour à l'abonnement
           </button>
@@ -105,11 +105,10 @@ export default function PaymentSuccess() {
 
   // Status = success
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-        {/* Icône de succès */}
-        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
-          <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-10 h-10 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
@@ -134,21 +133,19 @@ export default function PaymentSuccess() {
           </p>
         )}
 
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-purple-800">
+        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6">
+          <p className="text-sm text-primary-800">
             Un email de confirmation vous a été envoyé.
           </p>
         </div>
 
-        {/* Compte à rebours */}
         <p className="text-gray-500 text-sm mb-4">
           Redirection automatique dans {countdown} seconde{countdown > 1 ? 's' : ''}...
         </p>
 
-        {/* Bouton de navigation */}
         <button
           onClick={() => navigate('/my-projects')}
-          className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+          className="w-full bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors"
         >
           Aller à mes projets
         </button>
