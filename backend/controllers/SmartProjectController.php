@@ -147,13 +147,42 @@ class SmartProjectController
                 }
             }
 
-            // Déterminer le type d'import (PDF ou URL)
+            // Déterminer le type d'import (PDF, URL ou bibliothèque)
             $sourceType = null;
             $sourceName = null;
             $filePath = null;
             $fileSize = null;
+            $isLibraryFile = false;
 
-            if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+            if (isset($_POST['library_pattern_id']) && !empty($_POST['library_pattern_id'])) {
+                // Import depuis la bibliothèque
+                $libraryPatternId = (int)$_POST['library_pattern_id'];
+                $patternLibraryModel = new \App\Models\PatternLibrary();
+                $libraryPattern = $patternLibraryModel->getPatternById($libraryPatternId);
+
+                if (!$libraryPattern || $libraryPattern['user_id'] !== $userId) {
+                    $this->jsonResponse(['error' => 'Patron introuvable dans votre bibliothèque'], 404);
+                    return;
+                }
+
+                if (empty($libraryPattern['file_path'])) {
+                    $this->jsonResponse(['error' => 'Ce patron n\'a pas de fichier PDF associé'], 400);
+                    return;
+                }
+
+                $absolutePath = __DIR__ . '/../../public' . $libraryPattern['file_path'];
+                if (!file_exists($absolutePath)) {
+                    $this->jsonResponse(['error' => 'Fichier PDF introuvable sur le serveur'], 404);
+                    return;
+                }
+
+                $sourceType = 'library';
+                $sourceName = $libraryPattern['name'];
+                $filePath = $absolutePath;
+                $fileSize = filesize($absolutePath);
+                $isLibraryFile = true;
+
+            } elseif (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
                 // Upload PDF
                 $sourceType = 'pdf';
                 $filePath = $_FILES['file']['tmp_name'];
@@ -183,14 +212,14 @@ class SmartProjectController
                 $sourceName = $_POST['url'];
 
             } else {
-                $this->jsonResponse(['error' => 'Fichier PDF ou URL requis'], 400);
+                $this->jsonResponse(['error' => 'Fichier PDF, URL ou patron de bibliothèque requis'], 400);
                 return;
             }
 
             // Extraire avec IA
             $extractionStart = microtime(true);
 
-            if ($sourceType === 'pdf') {
+            if ($sourceType === 'pdf' || $sourceType === 'library') {
                 $result = $this->extractorService->extractFromPDF($filePath);
             } else {
                 $result = $this->extractorService->extractFromURL($sourceName);
@@ -198,8 +227,8 @@ class SmartProjectController
 
             $processingTime = isset($result['processing_time_ms']) ? (int)$result['processing_time_ms'] : (int)round((microtime(true) - $extractionStart) * 1000);
 
-            // Nettoyer le fichier temp
-            if ($sourceType === 'pdf' && file_exists($filePath)) {
+            // Nettoyer le fichier temp (jamais pour les fichiers de la bibliothèque)
+            if ($sourceType === 'pdf' && !$isLibraryFile && file_exists($filePath)) {
                 unlink($filePath);
             }
 

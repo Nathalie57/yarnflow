@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import axios from 'axios'
+import api from '../services/api'
 
 /**
  * SmartProjectCreator - Création intelligente de projets via IA
@@ -30,6 +31,10 @@ export default function SmartProjectCreator() {
   const [quota, setQuota] = useState(null) // { is_pro, free_trial_used, total_used }
   const [file, setFile] = useState(null)
   const [url, setUrl] = useState('')
+  const [libraryPatterns, setLibraryPatterns] = useState([])
+  const [librarySearch, setLibrarySearch] = useState('')
+  const [selectedLibraryPattern, setSelectedLibraryPattern] = useState(null)
+  const [loadingLibrary, setLoadingLibrary] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzingStep, setAnalyzingStep] = useState(0)
   const [extractedData, setExtractedData] = useState(null)
@@ -69,10 +74,23 @@ export default function SmartProjectCreator() {
     }
   }
 
-  const handleModeSelect = (selectedMode) => {
+  const handleModeSelect = async (selectedMode) => {
     setMode(selectedMode)
     setStep(2)
     setError(null)
+
+    if (selectedMode === 'library') {
+      setLoadingLibrary(true)
+      try {
+        const response = await api.get('/pattern-library', { params: { limit: 100 } })
+        const patterns = (response.data.patterns || []).filter(p => p.file_path)
+        setLibraryPatterns(patterns)
+      } catch (err) {
+        setError('Impossible de charger la bibliothèque')
+      } finally {
+        setLoadingLibrary(false)
+      }
+    }
   }
 
   const handleFileChange = (e) => {
@@ -100,6 +118,10 @@ export default function SmartProjectCreator() {
       setError('Veuillez saisir une URL')
       return
     }
+    if (mode === 'library' && !selectedLibraryPattern) {
+      setError('Veuillez sélectionner un patron dans votre bibliothèque')
+      return
+    }
 
     setAnalyzing(true)
     setAnalyzingStep(0)
@@ -118,8 +140,10 @@ export default function SmartProjectCreator() {
 
       if (mode === 'pdf') {
         formData.append('file', file)
-      } else {
+      } else if (mode === 'url') {
         formData.append('url', url)
+      } else if (mode === 'library') {
+        formData.append('library_pattern_id', selectedLibraryPattern.id)
       }
 
       const response = await axios.post('/api/projects/smart-create/analyze', formData, {
@@ -187,7 +211,7 @@ export default function SmartProjectCreator() {
         project,
         sections,
         source_type: mode,
-        source_url: mode === 'pdf' ? file.name : url
+        source_url: mode === 'pdf' ? file?.name : mode === 'library' ? selectedLibraryPattern?.name : url
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -340,20 +364,18 @@ export default function SmartProjectCreator() {
               Comment souhaitez-vous importer votre patron ?
             </h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Mode PDF */}
               <button
                 onClick={() => handleModeSelect('pdf')}
-                className="p-8 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group"
+                className="p-6 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group text-left"
               >
-                <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+                <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Fichier PDF</h3>
-                <p className="text-sm text-gray-600">
-                  Uploadez un patron au format PDF (max 10 MB)
-                </p>
-                <div className="mt-4 text-primary-600 group-hover:text-primary-700 font-medium">
+                <p className="text-sm text-gray-600">Uploadez un patron au format PDF (max 10 MB)</p>
+                <div className="mt-4 text-primary-600 group-hover:text-primary-700 font-medium text-sm">
                   Choisir →
                 </div>
               </button>
@@ -361,16 +383,29 @@ export default function SmartProjectCreator() {
               {/* Mode URL */}
               <button
                 onClick={() => handleModeSelect('url')}
-                className="p-8 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group"
+                className="p-6 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group text-left"
               >
-                <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center mb-4 mx-auto">
+                <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Lien Web</h3>
-                <p className="text-sm text-gray-600">
-                  Importez depuis une URL (blog, site web)
-                </p>
-                <div className="mt-4 text-primary-600 group-hover:text-primary-700 font-medium">
+                <p className="text-sm text-gray-600">Importez depuis une URL (blog, site web)</p>
+                <div className="mt-4 text-primary-600 group-hover:text-primary-700 font-medium text-sm">
+                  Choisir →
+                </div>
+              </button>
+
+              {/* Mode Bibliothèque */}
+              <button
+                onClick={() => handleModeSelect('library')}
+                className="p-6 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group text-left"
+              >
+                <div className="w-12 h-12 bg-primary-50 rounded-2xl flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">Ma bibliothèque</h3>
+                <p className="text-sm text-gray-600">Choisissez un patron déjà dans votre bibliothèque</p>
+                <div className="mt-4 text-primary-600 group-hover:text-primary-700 font-medium text-sm">
                   Choisir →
                 </div>
               </button>
@@ -378,12 +413,63 @@ export default function SmartProjectCreator() {
           </div>
         )}
 
-        {/* ÉTAPE 2 : Upload/URL + Analyse */}
+        {/* ÉTAPE 2 : Upload/URL/Bibliothèque + Analyse */}
         {step === 2 && !analyzing && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              {mode === 'pdf' ? 'Importer un PDF' : 'Importer depuis une URL'}
+              {mode === 'pdf' ? 'Importer un PDF' : mode === 'library' ? 'Choisir dans ma bibliothèque' : 'Importer depuis une URL'}
             </h2>
+
+            {mode === 'library' && (
+              <div className="mb-6">
+                {loadingLibrary ? (
+                  <div className="text-center py-8 text-gray-500">Chargement de la bibliothèque…</div>
+                ) : libraryPatterns.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">Aucun patron avec PDF dans votre bibliothèque.</p>
+                    <Link to="/pattern-library" className="text-primary-600 hover:text-primary-700 font-medium">
+                      Aller à la bibliothèque →
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      value={librarySearch}
+                      onChange={(e) => setLibrarySearch(e.target.value)}
+                      placeholder="Rechercher un patron…"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 mb-4"
+                    />
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      {libraryPatterns
+                        .filter(p => p.name.toLowerCase().includes(librarySearch.toLowerCase()))
+                        .map(p => (
+                          <button
+                            key={p.id}
+                            onClick={() => setSelectedLibraryPattern(p)}
+                            className={`w-full text-left px-4 py-3 rounded-xl border transition flex items-center justify-between gap-3 ${
+                              selectedLibraryPattern?.id === p.id
+                                ? 'border-primary-500 bg-primary-50'
+                                : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-900 truncate">{p.name}</p>
+                              {p.category && <p className="text-xs text-gray-500">{p.category}</p>}
+                            </div>
+                            {selectedLibraryPattern?.id === p.id && (
+                              <svg className="w-5 h-5 text-primary-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
+                              </svg>
+                            )}
+                          </button>
+                        ))
+                      }
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             {mode === 'pdf' && (
               <div className="mb-6">
@@ -434,7 +520,7 @@ export default function SmartProjectCreator() {
 
               <button
                 onClick={handleAnalyze}
-                disabled={analyzing || (mode === 'pdf' && !file) || (mode === 'url' && !url)}
+                disabled={analyzing || (mode === 'pdf' && !file) || (mode === 'url' && !url) || (mode === 'library' && !selectedLibraryPattern)}
                 className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {analyzing ? (
