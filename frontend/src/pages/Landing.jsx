@@ -325,23 +325,20 @@ const Landing = () => {
       {/* Témoignages */}
       <section className="bg-warm-50 border-y border-warm-100 py-14">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-10">Ce qu'en disent nos premières utilisateurs</h2>
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-10">Ce qu'en disent nos premières utilisatrices</h2>
           <div className="grid md:grid-cols-3 gap-5">
             {[
               {
                 quote: "J'avais essayé d'autres apps, mais c'est la première fois que je peux vraiment gérer mon pull avec les deux manches en même temps. Les sections changent tout.",
                 name: "Marie-Claire",
-                detail: "Tricoteuse depuis 8 ans"
               },
               {
                 quote: "Les photos IA sont bluffantes. Je poste maintenant mes créations sur Instagram sans complexe — et les gens me demandent toujours quel photographe j'ai utilisé.",
-                name: "Thomas",
-                detail: "Crocheteur & créateur Etsy"
+                name: "Louisa",
               },
               {
                 quote: "Je cherchais un carnet numérique sérieux depuis des années. YarnFlow c'est exactement ça — simple pour commencer, puissant quand on en a besoin.",
                 name: "Sophie",
-                detail: "Passionnée de tricot complexe"
               },
             ].map((t, i) => (
               <div key={i} className="bg-white rounded-2xl border border-warm-200 p-6 shadow-sm">
@@ -353,14 +350,10 @@ const Landing = () => {
                   ))}
                 </div>
                 <p className="text-gray-700 text-sm leading-relaxed mb-4 italic">"{t.quote}"</p>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">{t.name}</p>
-                  <p className="text-xs text-gray-400">{t.detail}</p>
-                </div>
+                <p className="font-semibold text-gray-900 text-sm">{t.name}</p>
               </div>
             ))}
           </div>
-          <p className="text-center text-xs text-gray-400 mt-6">Témoignages de nos bêta-testeuses — à remplacer par vos vrais avis</p>
         </div>
       </section>
 
