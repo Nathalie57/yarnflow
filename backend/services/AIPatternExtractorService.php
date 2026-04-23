@@ -4,10 +4,11 @@
  * @brief Service d'extraction intelligente de patrons via Gemini AI
  * @author Nathalie + AI Assistants
  * @created 2026-01-07
- * @modified 2026-01-07 by [AI:Claude] - Création Smart Project
+ * @modified 2026-04-22 by [AI:Claude] - Files API pour PDF (compatible prod)
  *
  * @history
  *   2026-01-07 [AI:Claude] Création service extraction patrons PDF/URL avec Gemini
+ *   2026-04-22 [AI:Claude] Remplacement base64 inline par Gemini Files API
  */
 
 declare(strict_types=1);
@@ -23,7 +24,7 @@ class AIPatternExtractorService
     private string $geminiModel;
     private Client $httpClient;
     private const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
-    private const TIMEOUT_SECONDS = 30;
+    private const TIMEOUT_SECONDS = 180;
 
     /**
      * Prompt système pour l'extraction de patrons
@@ -87,7 +88,7 @@ PROMPT;
     public function __construct()
     {
         $this->geminiApiKey = $_ENV['GEMINI_API_KEY'] ?? '';
-        $this->geminiModel = 'gemini-2.0-flash-exp'; // Modèle supportant PDF natif
+        $this->geminiModel = 'gemini-2.5-flash';
 
         if (empty($this->geminiApiKey)) {
             throw new \RuntimeException('GEMINI_API_KEY non configurée');
@@ -101,15 +102,12 @@ PROMPT;
 
     /**
      * Extrait les informations d'un patron depuis un fichier PDF
-     *
-     * @param string $filePath Chemin absolu vers le PDF uploadé
-     * @return array {success: bool, data: array|null, error: string|null}
+     * Utilise la Gemini Files API : upload séparé → analyse → suppression
      */
     public function extractFromPDF(string $filePath): array
     {
         $startTime = microtime(true);
 
-        // Vérifications
         if (!file_exists($filePath)) {
             return $this->errorResponse('Fichier PDF introuvable', 0);
         }
@@ -119,14 +117,24 @@ PROMPT;
             return $this->errorResponse('Fichier trop volumineux (max 10 MB)', 0);
         }
 
-        // Encoder le PDF en base64 pour Gemini
-        $pdfContent = file_get_contents($filePath);
-        $base64Pdf = base64_encode($pdfContent);
+        $fileUri = null;
+        try {
+            error_log("[AIPatternExtractor] Upload PDF vers Gemini Files API ({$fileSize} bytes)...");
+            $fileUri = $this->uploadFileToGemini($filePath);
+            error_log("[AIPatternExtractor] Upload OK: {$fileUri}");
 
-        // Appeler Gemini avec le PDF
-        $result = $this->callGeminiWithFile($base64Pdf, 'application/pdf');
+            $result = $this->callGeminiWithFileUri($fileUri);
 
-        $processingTime = round((microtime(true) - $startTime) * 1000); // ms
+        } catch (GuzzleException $e) {
+            error_log('[AIPatternExtractor] Erreur upload/analyse: ' . $e->getMessage());
+            return $this->errorResponse('Erreur lors de l\'analyse: ' . $e->getMessage(), 0);
+        } finally {
+            if ($fileUri) {
+                $this->deleteGeminiFile($fileUri);
+            }
+        }
+
+        $processingTime = round((microtime(true) - $startTime) * 1000);
         $result['processing_time_ms'] = $processingTime;
         $result['file_size_bytes'] = $fileSize;
 
@@ -135,20 +143,15 @@ PROMPT;
 
     /**
      * Extrait les informations d'un patron depuis une URL
-     *
-     * @param string $url URL du patron (blog, site web)
-     * @return array {success: bool, data: array|null, error: string|null}
      */
     public function extractFromURL(string $url): array
     {
         $startTime = microtime(true);
 
-        // Valider l'URL
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
             return $this->errorResponse('URL invalide', 0);
         }
 
-        // Scraper le contenu de la page
         try {
             $response = $this->httpClient->get($url, [
                 'headers' => [
@@ -157,15 +160,12 @@ PROMPT;
             ]);
 
             $html = (string) $response->getBody();
-
-            // Extraire le texte principal (simple, sans lib externe)
             $text = $this->extractTextFromHTML($html);
 
             if (empty($text) || strlen($text) < 100) {
                 return $this->errorResponse('Impossible d\'extraire le contenu de cette page', 0);
             }
 
-            // Appeler Gemini avec le texte
             $result = $this->callGeminiWithText($text);
 
             $processingTime = round((microtime(true) - $startTime) * 1000);
@@ -179,9 +179,66 @@ PROMPT;
     }
 
     /**
-     * Appelle Gemini avec un fichier PDF encodé en base64
+     * Upload un PDF vers Gemini Files API
+     * Retourne l'URI du fichier uploadé (ex: "https://generativelanguage.googleapis.com/v1beta/files/abc123")
      */
-    private function callGeminiWithFile(string $base64Content, string $mimeType): array
+    private function uploadFileToGemini(string $filePath): string
+    {
+        $boundary = 'gem_upload_' . uniqid();
+        $fileContent = file_get_contents($filePath);
+        $metadata = json_encode(['file' => ['display_name' => basename($filePath)]]);
+
+        $body = "--{$boundary}\r\n"
+            . "Content-Type: application/json\r\n\r\n"
+            . $metadata . "\r\n"
+            . "--{$boundary}\r\n"
+            . "Content-Type: application/pdf\r\n\r\n"
+            . $fileContent . "\r\n"
+            . "--{$boundary}--";
+
+        $uploadEndpoint = "https://generativelanguage.googleapis.com/upload/v1beta/files?uploadType=multipart&key={$this->geminiApiKey}";
+
+        $response = $this->httpClient->post($uploadEndpoint, [
+            'body' => $body,
+            'headers' => [
+                'Content-Type' => "multipart/related; boundary={$boundary}",
+                'Content-Length' => strlen($body)
+            ]
+        ]);
+
+        $result = json_decode((string) $response->getBody(), true);
+
+        if (!isset($result['file']['uri'])) {
+            throw new \RuntimeException('Upload Gemini échoué: ' . json_encode($result));
+        }
+
+        return $result['file']['uri'];
+    }
+
+    /**
+     * Supprime un fichier uploadé sur Gemini Files API
+     */
+    private function deleteGeminiFile(string $fileUri): void
+    {
+        // fileUri = "https://generativelanguage.googleapis.com/v1beta/files/abc123"
+        // On extrait "files/abc123" pour construire l'endpoint DELETE
+        if (!preg_match('/v1beta\/(files\/[^?#]+)/', $fileUri, $matches)) {
+            return;
+        }
+
+        $deleteEndpoint = "https://generativelanguage.googleapis.com/v1beta/{$matches[1]}?key={$this->geminiApiKey}";
+        try {
+            $this->httpClient->delete($deleteEndpoint);
+            error_log("[AIPatternExtractor] Fichier Gemini supprimé: {$matches[1]}");
+        } catch (\Exception $e) {
+            error_log('[AIPatternExtractor] Impossible de supprimer le fichier Gemini: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Appelle Gemini avec un fichier uploadé via Files API
+     */
+    private function callGeminiWithFileUri(string $fileUri): array
     {
         $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$this->geminiModel}:generateContent?key={$this->geminiApiKey}";
 
@@ -191,19 +248,19 @@ PROMPT;
                     'parts' => [
                         ['text' => self::EXTRACTION_PROMPT],
                         [
-                            'inline_data' => [
-                                'mime_type' => $mimeType,
-                                'data' => $base64Content
+                            'file_data' => [
+                                'mime_type' => 'application/pdf',
+                                'file_uri' => $fileUri
                             ]
                         ]
                     ]
                 ]
             ],
             'generationConfig' => [
-                'temperature' => 0.1, // Faible pour extraction factuelle
+                'temperature' => 0.1,
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 8192 // Augmenté pour inclure toutes les instructions
+                'maxOutputTokens' => 8192
             ]
         ];
 
@@ -217,13 +274,13 @@ PROMPT;
             return $this->parseGeminiResponse($body);
 
         } catch (GuzzleException $e) {
-            error_log('[AIPatternExtractor] Erreur Gemini API: ' . $e->getMessage());
+            error_log('[AIPatternExtractor] Erreur Gemini generateContent: ' . $e->getMessage());
             return $this->errorResponse('Erreur API Gemini: ' . $e->getMessage(), 0);
         }
     }
 
     /**
-     * Appelle Gemini avec du texte simple
+     * Appelle Gemini avec du texte simple (pour URL)
      */
     private function callGeminiWithText(string $text): array
     {
@@ -241,7 +298,7 @@ PROMPT;
                 'temperature' => 0.1,
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 8192 // Augmenté pour inclure toutes les instructions
+                'maxOutputTokens' => 8192
             ]
         ];
 
@@ -272,12 +329,10 @@ PROMPT;
 
         $rawText = $response['candidates'][0]['content']['parts'][0]['text'];
 
-        // Nettoyer le texte (retirer markdown, etc.)
         $jsonText = trim($rawText);
         $jsonText = preg_replace('/^```json\s*/i', '', $jsonText);
         $jsonText = preg_replace('/\s*```$/', '', $jsonText);
 
-        // Parser le JSON
         $data = json_decode($jsonText, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -285,7 +340,6 @@ PROMPT;
             return $this->errorResponse('Impossible de parser la réponse IA (JSON invalide)', 0);
         }
 
-        // Valider la structure minimale
         if (!isset($data['title']) && !isset($data['sections'])) {
             return $this->errorResponse('Aucune information exploitable détectée dans le patron', 0, 'partial');
         }
@@ -295,33 +349,20 @@ PROMPT;
             'data' => $data,
             'error' => null,
             'ai_status' => $this->determineStatus($data),
-            'raw_response' => $response // Pour debug
+            'raw_response' => $response
         ];
     }
 
-    /**
-     * Extrait le texte d'un HTML (simple, sans lib)
-     */
     private function extractTextFromHTML(string $html): string
     {
-        // Retirer scripts et styles
         $html = preg_replace('/<script\b[^>]*>(.*?)<\/script>/is', '', $html);
         $html = preg_replace('/<style\b[^>]*>(.*?)<\/style>/is', '', $html);
-
-        // Convertir HTML en texte
         $text = strip_tags($html);
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-        // Nettoyer les espaces
         $text = preg_replace('/\s+/', ' ', $text);
-        $text = trim($text);
-
-        return $text;
+        return trim($text);
     }
 
-    /**
-     * Détermine le statut de l'extraction (success/partial/failed)
-     */
     private function determineStatus(array $data): string
     {
         $requiredFields = ['title', 'craft_type', 'sections'];
@@ -339,20 +380,15 @@ PROMPT;
             return 'partial';
         }
 
-        $hasOptional = false;
         foreach ($optionalFields as $field) {
             if (!empty($data[$field])) {
-                $hasOptional = true;
-                break;
+                return 'success';
             }
         }
 
-        return $hasOptional ? 'success' : 'partial';
+        return 'partial';
     }
 
-    /**
-     * Retourne une réponse d'erreur standardisée
-     */
     private function errorResponse(string $message, int $processingTime, string $status = 'failed'): array
     {
         return [

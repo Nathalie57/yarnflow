@@ -198,9 +198,6 @@ class SmartProjectController
 
             $processingTime = isset($result['processing_time_ms']) ? (int)$result['processing_time_ms'] : (int)round((microtime(true) - $extractionStart) * 1000);
 
-            // Logger l'import (même si échec partiel)
-            $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'] ?? 'failed', $result['raw_response'] ?? null, $processingTime, $result['error'] ?? null);
-
             // Nettoyer le fichier temp
             if ($sourceType === 'pdf' && file_exists($filePath)) {
                 unlink($filePath);
@@ -215,6 +212,9 @@ class SmartProjectController
                 ], $result['ai_status'] === 'failed' ? 422 : 200);
                 return;
             }
+
+            // Logger uniquement les imports réussis (ne pas consommer le quota sur erreur)
+            $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'] ?? 'success', $result['raw_response'] ?? null, $processingTime, null);
 
             $this->jsonResponse([
                 'success' => true,
@@ -307,16 +307,17 @@ class SmartProjectController
                 if (!empty($sectionsData)) {
                     $stmt = $db->prepare("
                         INSERT INTO project_sections
-                        (project_id, name, unit, target_value, description, display_order)
-                        VALUES (:project_id, :name, :unit, :target_value, :description, :display_order)
+                        (project_id, name, counter_unit, total_rows, description, display_order)
+                        VALUES (:project_id, :name, :counter_unit, :total_rows, :description, :display_order)
                     ");
 
                     foreach ($sectionsData as $index => $section) {
+                        $unit = $section['unit'] ?? 'rangs';
                         $stmt->execute([
                             'project_id' => $projectId,
                             'name' => $section['name'],
-                            'unit' => $section['unit'] ?? 'rangs',
-                            'target_value' => $section['target'] ?? null,
+                            'counter_unit' => $unit === 'cm' ? 'cm' : 'rows',
+                            'total_rows' => $section['target'] ?? null,
                             'description' => $section['description'] ?? null,
                             'display_order' => $index + 1
                         ]);

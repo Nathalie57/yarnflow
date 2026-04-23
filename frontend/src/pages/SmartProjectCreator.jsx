@@ -693,7 +693,7 @@ export default function SmartProjectCreator() {
 
             <div className="flex gap-4 justify-center">
               <button
-                onClick={() => navigate(`/project-counter/${createdProject.id}`)}
+                onClick={() => navigate(`/projects/${createdProject.id}`)}
                 className="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700"
               >
                 Ouvrir le projet →

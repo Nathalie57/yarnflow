@@ -94,6 +94,7 @@ define('SUBSCRIPTION_FEATURES', [
         'ai_questions_per_month' => 3,
         'max_library_patterns' => -1,      // Illimité
         'can_use_tags' => false,
+        'tag_suggestions' => false,
         'can_mark_favorite' => true,
         'second_counter' => false,
         'section_notes' => false,
@@ -111,6 +112,7 @@ define('SUBSCRIPTION_FEATURES', [
         'ai_questions_per_month' => 30,
         'max_library_patterns' => -1,      // Illimité
         'can_use_tags' => true,
+        'tag_suggestions' => true,
         'can_mark_favorite' => true,
         'second_counter' => true,
         'section_notes' => true,
@@ -128,6 +130,7 @@ define('SUBSCRIPTION_FEATURES', [
         'ai_questions_per_month' => 30,
         'max_library_patterns' => -1,
         'can_use_tags' => true,
+        'tag_suggestions' => true,
         'can_mark_favorite' => true,
         'second_counter' => true,
         'section_notes' => true,
@@ -144,6 +147,7 @@ define('SUBSCRIPTION_FEATURES', [
         'ai_questions_per_month' => 30,
         'max_library_patterns' => -1,
         'can_use_tags' => true,
+        'tag_suggestions' => true,
         'can_mark_favorite' => true,
         'second_counter' => true,
         'section_notes' => true,

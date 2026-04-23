@@ -37,7 +37,7 @@ const Landing = () => {
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
-            <Link to="/login" className="hidden sm:block text-gray-700 hover:text-primary-600 font-medium transition text-sm">
+            <Link to="/login" className="text-gray-700 hover:text-primary-600 font-medium transition text-sm">
               Connexion
             </Link>
             <Link
@@ -141,18 +141,9 @@ const Landing = () => {
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
 
-            {/* Mockup compteur */}
-            <div className="rounded-2xl bg-primary-50 border border-primary-100 p-6 shadow-sm aspect-[4/3] flex flex-col items-center justify-center gap-4">
-              <div className="text-xs font-bold text-primary-600 uppercase tracking-widest">Pull — Dos</div>
-              <div className="text-7xl font-bold text-gray-900 tabular-nums">42</div>
-              <div className="text-sm text-gray-500">/ 80 rangs</div>
-              <div className="w-48 bg-white rounded-full h-2 border border-primary-100">
-                <div className="bg-primary-500 h-2 rounded-full" style={{ width: '52%' }} />
-              </div>
-              <div className="flex gap-4 mt-2">
-                <div className="w-14 h-14 bg-white rounded-2xl border-2 border-gray-200 flex items-center justify-center text-2xl font-bold text-gray-400 shadow-sm">−</div>
-                <div className="w-14 h-14 bg-primary-600 rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-md">+</div>
-              </div>
+            {/* Screenshot compteur */}
+            <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+              <img src="/compteur.jpg" alt="Compteur de rangs YarnFlow" className="w-full object-cover" />
             </div>
 
             <div>
@@ -248,18 +239,10 @@ const Landing = () => {
           {/* Feature detail — Bibliothèque */}
           <div className="grid md:grid-cols-2 gap-12 items-center">
 
-            {/* Mockup bibliothèque */}
-            <div className="rounded-2xl bg-gray-50 border border-gray-200 p-5 shadow-sm aspect-[4/3] flex flex-col justify-center gap-3">
-              {[
-                { title: 'Pull irlandais', tag: 'En cours', color: 'bg-warm-100 text-warm-700' },
-                { title: 'Châle Shetland', tag: 'Terminé', color: 'bg-green-100 text-green-700' },
-                { title: 'Chaussettes contrastes', tag: 'En pause', color: 'bg-gray-100 text-gray-500' },
-              ].map((p, i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-                  <span className="text-sm font-medium text-gray-800">{p.title}</span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.color}`}>{p.tag}</span>
-                </div>
-              ))}
+            {/* Screenshot projets */}
+            <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
+              <img src="/projets.jpg" alt="Mes projets YarnFlow" className="w-full object-cover object-top max-h-[480px]" />
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
 
 
