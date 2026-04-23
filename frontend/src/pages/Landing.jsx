@@ -198,40 +198,15 @@ const Landing = () => {
               </ul>
             </div>
 
-            {/* Mockup avant/après */}
+            {/* Avant/après réels */}
             <div className="order-1 md:order-2 grid grid-cols-2 gap-3">
-              {/* AVANT */}
-              <div className="relative rounded-xl border border-gray-200 aspect-square shadow-sm overflow-hidden bg-gray-100 flex flex-col">
-                {/* Simulation photo canapé */}
-                <div className="flex-1 flex items-center justify-center relative">
-                  <div className="w-20 h-20 rounded-full bg-amber-200 opacity-60 absolute top-4 left-4" />
-                  <div className="w-16 h-16 rounded-full bg-amber-300 opacity-40 absolute bottom-6 right-3" />
-                  <div className="relative z-10 w-14 h-14 bg-amber-100 rounded-lg border-2 border-amber-200 flex items-center justify-center">
-                    <div className="grid grid-cols-3 gap-0.5">
-                      {[...Array(9)].map((_, i) => <div key={i} className="w-2 h-2 rounded-sm bg-amber-400 opacity-70" />)}
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-200 px-3 py-1.5 text-[10px] text-gray-500 text-center">Photo prise à la va-vite</div>
-                <div className="absolute top-2 left-2 bg-gray-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AVANT</div>
+              <div className="relative rounded-xl overflow-hidden shadow-sm border border-gray-200 aspect-square">
+                <img src="/photo-avant.jpg" alt="Avant — photo brute" className="w-full h-full object-cover" />
+                <div className="absolute top-2 left-2 bg-gray-700/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AVANT</div>
               </div>
-              {/* APRÈS */}
-              <div className="relative rounded-xl border border-primary-200 aspect-square shadow-sm overflow-hidden bg-primary-50 flex flex-col">
-                <div className="flex-1 flex items-center justify-center relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-white" />
-                  <div className="relative z-10 w-16 h-16 bg-white rounded-xl border border-primary-100 shadow-md flex items-center justify-center">
-                    <div className="grid grid-cols-3 gap-0.5">
-                      {[...Array(9)].map((_, i) => <div key={i} className="w-2 h-2 rounded-sm bg-primary-300" />)}
-                    </div>
-                  </div>
-                  <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1">
-                    {['Lifestyle', 'Studio', 'Scandi'].map(s => (
-                      <span key={s} className="text-[9px] bg-white border border-primary-100 text-primary-600 px-1.5 py-0.5 rounded-full font-medium shadow-sm">{s}</span>
-                    ))}
-                  </div>
-                </div>
-                <div className="bg-primary-100 px-3 py-1.5 text-[10px] text-primary-700 font-medium text-center">Rendu professionnel IA</div>
-                <div className="absolute top-2 left-2 bg-primary-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">APRÈS</div>
+              <div className="relative rounded-xl overflow-hidden shadow-sm border border-primary-200 aspect-square">
+                <img src="/photo-apres.jpg" alt="Après — rendu IA Lifestyle" className="w-full h-full object-cover" />
+                <div className="absolute top-2 left-2 bg-primary-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">APRÈS</div>
               </div>
             </div>
           </div>
@@ -279,37 +254,10 @@ const Landing = () => {
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
 
-            {/* Mockup import PDF */}
-            <div className="rounded-2xl bg-primary-50 border border-primary-100 p-6 shadow-sm aspect-[4/3] flex flex-col justify-center gap-3">
-              <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-primary-100 shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-primary-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">pull-raglan-femme.pdf</p>
-                  <p className="text-xs text-primary-600">Analyse en cours…</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-gray-400 px-1">
-                <div className="flex-1 h-px bg-primary-200" />
-                <span>Projet créé automatiquement</span>
-                <div className="flex-1 h-px bg-primary-200" />
-              </div>
-              {[
-                { label: 'Pull Raglan Femme', sub: '4 sections détectées' },
-                { label: 'Drops Alaska 200g · Aiguilles 4.5mm', sub: 'Détails techniques extraits' },
-                { label: 'Dos · Devant · Manche G · Manche D', sub: 'Compteurs prêts' },
-              ].map((row, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-primary-100">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{row.label}</p>
-                    <p className="text-xs text-gray-400">{row.sub}</p>
-                  </div>
-                </div>
-              ))}
+            {/* Screenshot étape validation */}
+            <div className="rounded-2xl overflow-hidden shadow-md border border-gray-200 relative">
+              <img src="/patron.jpg" alt="Création intelligente YarnFlow — validation du patron extrait" className="w-full object-cover object-top max-h-[480px]" />
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
 
             <div>
