@@ -31,6 +31,7 @@ export default function SmartProjectCreator() {
   const [file, setFile] = useState(null)
   const [url, setUrl] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
+  const [analyzingStep, setAnalyzingStep] = useState(0)
   const [extractedData, setExtractedData] = useState(null)
   const [aiStatus, setAiStatus] = useState(null)
   const [error, setError] = useState(null)
@@ -101,7 +102,15 @@ export default function SmartProjectCreator() {
     }
 
     setAnalyzing(true)
+    setAnalyzingStep(0)
     setError(null)
+
+    // Progression simulée des étapes pendant l'attente
+    const stepTimers = [
+      setTimeout(() => setAnalyzingStep(1), 3000),
+      setTimeout(() => setAnalyzingStep(2), 12000),
+      setTimeout(() => setAnalyzingStep(3), 35000),
+    ]
 
     try {
       const token = localStorage.getItem('token')
@@ -157,7 +166,9 @@ export default function SmartProjectCreator() {
         setError(err.response?.data?.error || 'Erreur lors de l\'analyse du patron')
       }
     } finally {
+      stepTimers.forEach(clearTimeout)
       setAnalyzing(false)
+      setAnalyzingStep(0)
     }
   }
 
@@ -368,7 +379,7 @@ export default function SmartProjectCreator() {
         )}
 
         {/* ÉTAPE 2 : Upload/URL + Analyse */}
-        {step === 2 && (
+        {step === 2 && !analyzing && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
               {mode === 'pdf' ? 'Importer un PDF' : 'Importer depuis une URL'}
@@ -438,6 +449,48 @@ export default function SmartProjectCreator() {
                   'Analyser avec l\'IA'
                 )}
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* LOADING : Analyse en cours */}
+        {analyzing && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 relative">
+              <svg className="animate-spin w-16 h-16 text-primary-200" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+              </svg>
+              <svg className="animate-spin w-16 h-16 text-primary-600 absolute inset-0" style={{ animationDuration: '1s' }} viewBox="0 0 24 24" fill="none">
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Analyse en cours…</h2>
+            <p className="text-gray-500 text-sm mb-8">L'IA lit votre patron et en extrait toutes les informations. Cela peut prendre une minute.</p>
+            <div className="max-w-xs mx-auto space-y-3 text-left">
+              {[
+                { label: 'Envoi du patron', delay: 0 },
+                { label: 'Lecture du contenu', delay: 1 },
+                { label: 'Extraction des informations', delay: 2 },
+                { label: 'Mise en forme du résultat', delay: 3 },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  {analyzingStep > i ? (
+                    <svg className="w-5 h-5 text-primary-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
+                    </svg>
+                  ) : analyzingStep === i ? (
+                    <svg className="animate-spin w-5 h-5 text-primary-500 shrink-0" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" className="opacity-25"/>
+                      <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border-2 border-gray-200 shrink-0"/>
+                  )}
+                  <span className={`text-sm ${analyzingStep >= i ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
+                    {s.label}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}
