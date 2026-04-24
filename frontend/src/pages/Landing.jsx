@@ -27,9 +27,6 @@ const Landing = () => {
       <header className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-            </svg>
             <span className="font-bold text-lg md:text-xl text-gray-900">YarnFlow</span>
           </div>
 
@@ -45,9 +42,10 @@ const Landing = () => {
             </Link>
             <Link
               to="/register"
-              className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-xl font-medium transition text-sm shadow-sm whitespace-nowrap"
+              className="bg-primary-600 hover:bg-primary-700 text-white px-3 sm:px-4 py-2 rounded-xl font-medium transition text-xs sm:text-sm shadow-sm whitespace-nowrap"
             >
-              Commencer — c'est gratuit
+              <span className="hidden sm:inline">Commencer — c'est gratuit</span>
+              <span className="sm:hidden">C'est gratuit</span>
             </Link>
           </div>
         </div>
@@ -64,11 +62,11 @@ const Landing = () => {
         </div>
 
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-          Le carnet de tricot<br className="hidden md:block" /> que vous méritez vraiment
+          Le carnet de tricot & crochet<br className="hidden md:block" /> que vous méritez vraiment
         </h1>
 
         <p className="text-xl text-gray-600 mb-10 leading-relaxed max-w-2xl mx-auto">
-          Fini les bouts de papier, les rangs perdus et les photos floues. YarnFlow gère vos projets du premier rang jusqu'à la photo finale — même les plus complexes.
+          Fini de jongler entre trois apps différentes et vos notes papier. YarnFlow gère vos projets du premier rang jusqu'à la photo finale — dans une seule app.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
@@ -112,12 +110,12 @@ const Landing = () => {
             <div className="flex flex-col items-center gap-3 p-4">
               <div className="w-12 h-12 bg-white rounded-2xl border border-primary-200 flex items-center justify-center shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-gray-900 mb-1">Écran allumé, rang retenu</p>
-                <p className="text-sm text-gray-600">Wake lock automatique et timer intégré — l'app travaille pendant que vous tricotez</p>
+                <p className="font-bold text-gray-900 mb-1">Un patron PDF ou URL → un projet prêt</p>
+                <p className="text-sm text-gray-600">L'IA lit votre patron, crée les sections et remplit les détails — en quelques secondes</p>
               </div>
             </div>
 
@@ -143,18 +141,9 @@ const Landing = () => {
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
 
-            {/* Mockup compteur */}
-            <div className="rounded-2xl bg-primary-50 border border-primary-100 p-6 shadow-sm aspect-[4/3] flex flex-col items-center justify-center gap-4">
-              <div className="text-xs font-bold text-primary-600 uppercase tracking-widest">Pull — Dos</div>
-              <div className="text-7xl font-bold text-gray-900 tabular-nums">42</div>
-              <div className="text-sm text-gray-500">/ 80 rangs</div>
-              <div className="w-48 bg-white rounded-full h-2 border border-primary-100">
-                <div className="bg-primary-500 h-2 rounded-full" style={{ width: '52%' }} />
-              </div>
-              <div className="flex gap-4 mt-2">
-                <div className="w-14 h-14 bg-white rounded-2xl border-2 border-gray-200 flex items-center justify-center text-2xl font-bold text-gray-400 shadow-sm">−</div>
-                <div className="w-14 h-14 bg-primary-600 rounded-2xl flex items-center justify-center text-2xl font-bold text-white shadow-md">+</div>
-              </div>
+            {/* Screenshot compteur */}
+            <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+              <img src="/compteur.jpg" alt="Compteur de rangs YarnFlow" className="w-full object-cover" />
             </div>
 
             <div>
@@ -167,7 +156,7 @@ const Landing = () => {
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
-                  'Timer automatique dès le premier rang',
+                  'Timer intégré pour mesurer votre temps de travail',
                   "Wake lock : l'écran reste allumé pendant que vous tricotez",
                   'Sections indépendantes par partie de projet',
                   '2 compteurs simultanés pour les projets complexes (PRO)',
@@ -191,7 +180,7 @@ const Landing = () => {
                 Vos créations méritent<br />de belles photos
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                Une photo prise à la va-vite sur le canapé ? L'IA la transforme en image professionnelle en quelques secondes. Parfait pour Etsy, Instagram, ou simplement pour archiver vos projets avec soin.
+                Une photo prise à la va-vite sur le canapé ? L'IA sublime l'éclairage, adoucit le fond et met votre ouvrage en valeur — sans le dénaturer. Parfait pour partager sur Instagram, vendre sur Etsy, ou simplement garder un beau souvenir de vos créations.
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
@@ -209,23 +198,15 @@ const Landing = () => {
               </ul>
             </div>
 
-            {/* Mockup avant/après */}
+            {/* Avant/après réels */}
             <div className="order-1 md:order-2 grid grid-cols-2 gap-3">
-              <div className="relative rounded-xl bg-gray-100 border border-gray-200 aspect-square flex flex-col items-center justify-center shadow-sm overflow-hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="text-xs text-gray-400">Photo brute</span>
-                <div className="absolute top-2 left-2 bg-gray-700 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AVANT</div>
+              <div className="relative rounded-xl overflow-hidden shadow-sm border border-gray-200 aspect-square">
+                <img src="/photo-avant.jpg" alt="Avant — photo brute" className="w-full h-full object-cover" />
+                <div className="absolute top-2 left-2 bg-gray-700/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AVANT</div>
               </div>
-              <div className="relative rounded-xl bg-primary-50 border border-primary-200 aspect-square flex flex-col items-center justify-center shadow-sm overflow-hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="text-xs text-primary-600 font-medium">Rendu pro</span>
-                <div className="absolute top-2 left-2 bg-primary-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">APRÈS</div>
+              <div className="relative rounded-xl overflow-hidden shadow-sm border border-primary-200 aspect-square">
+                <img src="/photo-apres.jpg" alt="Après — rendu IA Lifestyle" className="w-full h-full object-cover" />
+                <div className="absolute top-2 left-2 bg-primary-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">APRÈS</div>
               </div>
             </div>
           </div>
@@ -233,18 +214,10 @@ const Landing = () => {
           {/* Feature detail — Bibliothèque */}
           <div className="grid md:grid-cols-2 gap-12 items-center">
 
-            {/* Mockup bibliothèque */}
-            <div className="rounded-2xl bg-gray-50 border border-gray-200 p-5 shadow-sm aspect-[4/3] flex flex-col justify-center gap-3">
-              {[
-                { title: 'Pull irlandais', tag: 'En cours', color: 'bg-warm-100 text-warm-700' },
-                { title: 'Châle Shetland', tag: 'Terminé', color: 'bg-green-100 text-green-700' },
-                { title: 'Chaussettes contrastes', tag: 'En pause', color: 'bg-gray-100 text-gray-500' },
-              ].map((p, i) => (
-                <div key={i} className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-                  <span className="text-sm font-medium text-gray-800">{p.title}</span>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${p.color}`}>{p.tag}</span>
-                </div>
-              ))}
+            {/* Screenshot projets */}
+            <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
+              <img src="/projets.jpg" alt="Mes projets YarnFlow" className="w-full object-cover object-top max-h-[480px]" />
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
 
 
@@ -254,14 +227,14 @@ const Landing = () => {
                 Tous vos patrons,<br />tous vos projets — au même endroit
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                PDF Ravelry, liens Etsy, notes personnelles — tout dans une bibliothèque propre. Avec PRO, taguez, filtrez, retrouvez en un clin d'œil.
+                PDF Ravelry, liens Etsy, notes personnelles — tout dans une bibliothèque propre. Filtrez par catégorie, technique ou favoris et retrouvez n'importe quel patron en deux secondes.
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
                   'Patrons en PDF, URL ou texte libre',
                   'Détails techniques : laine, aiguilles, échantillon, dimensions',
                   'Notes globales par projet',
-                  'Tags personnalisés et filtres (PRO)',
+                  'Filtres par catégorie, technique et favoris',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -276,26 +249,96 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Feature detail — Création intelligente */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+
+            {/* Screenshot étape validation */}
+            <div className="rounded-2xl overflow-hidden shadow-md border border-gray-200 relative">
+              <img src="/patron.jpg" alt="Création intelligente YarnFlow — validation du patron extrait" className="w-full object-cover object-top max-h-[480px]" />
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
+            </div>
+
+            <div>
+              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Création Intelligente — PRO</span>
+              <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
+                Importez un patron PDF ou une URL.<br />Le projet se crée tout seul.
+              </h2>
+              <p className="text-gray-600 leading-relaxed mb-5">
+                Téléchargez votre patron en PDF ou collez une URL — l'IA lit le document, crée les sections, remplit les détails techniques et structure votre projet en quelques secondes. Personne d'autre ne fait ça.
+              </p>
+              <ul className="space-y-2.5 text-sm text-gray-600 mb-6">
+                {[
+                  "PDF ou URL — Ravelry, Etsy, blog, peu importe la source",
+                  'Sections créées automatiquement (dos, devant, manches…)',
+                  'Laine, aiguilles, tension extraits du patron',
+                  '1 essai gratuit · 15 imports/mois en PRO',
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <span className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-200">
+                Unique sur le marché du tricot &amp; crochet
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Assistant IA */}
+      <section className="py-14 bg-white">
+        <div className="max-w-3xl mx-auto px-4 text-center">
+          <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Assistant IA</span>
+          <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">Un expert tricot & crochet disponible à tout moment</h2>
+          <p className="text-gray-600 leading-relaxed mb-8 max-w-xl mx-auto">
+            Comment calculer les diminutions pour ma taille ? Quel point pour remplacer celui du patron ? L'assistant connaît votre projet et répond en contexte — pas des réponses génériques.
+          </p>
+          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 text-left max-w-lg mx-auto space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="w-7 h-7 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">M</div>
+              <div className="bg-white rounded-xl rounded-tl-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
+                J'ai raté 3 rangs sur mon dos, comment je rattrape sans détricoter tout ?
+              </div>
+            </div>
+            <div className="flex items-start gap-3 flex-row-reverse">
+              <div className="w-7 h-7 bg-primary-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                </svg>
+              </div>
+              <div className="bg-primary-50 rounded-xl rounded-tr-none border border-primary-100 px-4 py-2.5 text-sm text-gray-700">
+                Pour rattraper 3 rangs sans détricoter, vous pouvez utiliser une aiguille auxiliaire…
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-4">3 questions / mois en FREE · 30 questions / mois en PRO</p>
+        </div>
+      </section>
+
       {/* Témoignages */}
       <section className="bg-warm-50 border-y border-warm-100 py-14">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-10">Ce qu'en disent nos premières utilisateurs</h2>
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-10">Ce qu'en disent nos premières utilisatrices</h2>
           <div className="grid md:grid-cols-3 gap-5">
             {[
               {
                 quote: "J'avais essayé d'autres apps, mais c'est la première fois que je peux vraiment gérer mon pull avec les deux manches en même temps. Les sections changent tout.",
                 name: "Marie-Claire",
-                detail: "Tricoteuse depuis 8 ans"
               },
               {
                 quote: "Les photos IA sont bluffantes. Je poste maintenant mes créations sur Instagram sans complexe — et les gens me demandent toujours quel photographe j'ai utilisé.",
-                name: "Thomas",
-                detail: "Crocheteur & créateur Etsy"
+                name: "Louisa",
               },
               {
                 quote: "Je cherchais un carnet numérique sérieux depuis des années. YarnFlow c'est exactement ça — simple pour commencer, puissant quand on en a besoin.",
                 name: "Sophie",
-                detail: "Passionnée de tricot complexe"
               },
             ].map((t, i) => (
               <div key={i} className="bg-white rounded-2xl border border-warm-200 p-6 shadow-sm">
@@ -307,14 +350,10 @@ const Landing = () => {
                   ))}
                 </div>
                 <p className="text-gray-700 text-sm leading-relaxed mb-4 italic">"{t.quote}"</p>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">{t.name}</p>
-                  <p className="text-xs text-gray-400">{t.detail}</p>
-                </div>
+                <p className="font-semibold text-gray-900 text-sm">{t.name}</p>
               </div>
             ))}
           </div>
-          <p className="text-center text-xs text-gray-400 mt-6">Témoignages de nos bêta-testeuses — à remplacer par vos vrais avis</p>
         </div>
       </section>
 
@@ -323,7 +362,7 @@ const Landing = () => {
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">Simple et transparent</h2>
           <p className="text-center text-gray-600 mb-10 text-lg">
-            Commencez gratuitement. Passez à PRO quand vos projets le méritent.
+            FREE pour toujours. PRO quand vos projets le méritent.
           </p>
 
           <div className="flex justify-center mb-10">
@@ -357,9 +396,10 @@ const Landing = () => {
                   '1 compteur par projet',
                   'Détails techniques (laine, aiguilles...)',
                   'Notes globales',
-                  '5 patrons en bibliothèque',
+                  'Bibliothèque de patrons illimitée',
                   '3 questions assistant IA / mois',
                   '2 crédits photo / mois',
+                  'Création intelligente (1 essai gratuit)',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -378,7 +418,7 @@ const Landing = () => {
                 ))}
               </ul>
               <Link to="/register" className="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition text-sm">
-                Commencer gratuitement
+                Créer mon compte gratuit
               </Link>
             </div>
 
@@ -407,6 +447,7 @@ const Landing = () => {
                   ['Timer avec historique', true],
                   ['30 questions assistant IA / mois', true],
                   ['20 crédits photo + tous les styles', true],
+                  ['Création intelligente — 15 imports / mois', true],
                 ].map(([item, highlight], i) => (
                   <li key={i} className={`flex items-start gap-2.5 text-sm ${highlight ? 'text-gray-800 font-medium' : 'text-gray-700'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -437,15 +478,19 @@ const Landing = () => {
             {[
               {
                 q: "C'est vraiment gratuit pour toujours ?",
-                a: "Oui. Le plan FREE n'a pas de limite de temps. Projets illimités, compteur de rangs, détails techniques, 5 patrons — sans jamais payer. Le PRO se justifie quand vos projets deviennent complexes."
+                a: "Oui, sans limite de temps. Projets illimités, compteur de rangs, bibliothèque de patrons, détails techniques — sans jamais payer. Le PRO se justifie quand vos projets deviennent complexes."
               },
               {
                 q: "Quelle est la différence entre FREE et PRO concrètement ?",
-                a: "FREE couvre le cas d'usage basique : compter ses rangs et noter ses infos. PRO couvre les projets sérieux : 2 compteurs par projet, notes par section, bibliothèque illimitée, tags, stats complètes et assistant IA sans limite."
+                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 1 essai création intelligente. PRO débloque les features avancées : 2 compteurs simultanés, notes par section, stats complètes, assistant IA 30 questions/mois, 20 crédits photo et création intelligente 15 imports/mois."
+              },
+              {
+                q: "La création intelligente, c'est quoi exactement ?",
+                a: "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 1 essai gratuit offert, puis 15 imports/mois en PRO."
               },
               {
                 q: "Ça marche sur quels appareils ?",
-                a: "YarnFlow est une PWA — accessible sur tous les navigateurs (mobile, tablette, ordinateur). Vous pouvez l'installer sur votre téléphone comme une vraie app, avec l'icône sur l'écran d'accueil."
+                a: "YarnFlow est une PWA — accessible sur tous les navigateurs (mobile, tablette, ordinateur). Vous pouvez l'installer sur votre téléphone comme une vraie app, avec l'icône sur l'écran d'accueil. Aucun téléchargement sur l'App Store requis."
               },
               {
                 q: "Puis-je annuler à tout moment ?",
@@ -453,7 +498,7 @@ const Landing = () => {
               },
               {
                 q: "Mes patrons et projets sont-ils en sécurité ?",
-                a: "Vos données sont stockées en sécurité sur nos serveurs, ne sont jamais partagées ou vendues, et vous pouvez les exporter ou supprimer à tout moment."
+                a: "Vos données sont stockées en sécurité sur nos serveurs, ne sont jamais partagées ou vendues, et vous pouvez les supprimer à tout moment."
               },
             ].map((item, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">

@@ -37,7 +37,9 @@ class CorsMiddleware
                 'http://127.0.0.1:3000',
                 'http://127.0.0.1:5173',
                 'http://127.0.0.1:8080',
-                $_ENV['FRONTEND_URL'] ?? ''
+                'http://patron-maker.local',
+                $_ENV['FRONTEND_URL'] ?? '',
+                $_ENV['APP_URL'] ?? ''
             ];
         } else {
             // Mode production : restreindre aux domaines autorisés

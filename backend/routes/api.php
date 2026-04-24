@@ -17,6 +17,7 @@ use App\Controllers\AdminController;
 use App\Controllers\CategoryController;
 use App\Controllers\PatternOptionController;
 use App\Controllers\ProjectController;
+use App\Controllers\SmartProjectController;
 use App\Controllers\PhotoController;
 use App\Controllers\PatternLibraryController;
 use App\Controllers\WaitlistController;
@@ -192,6 +193,11 @@ function route(string $method, string $uri): void
         $method === 'DELETE' && preg_match('/^projects\/(\d+)\/tags\/([^\/]+)$/', $uri, $matches) => (new ProjectController())->deleteTag((int)$matches[1], $matches[2]),
         $method === 'GET' && $uri === 'user/tags/popular' => (new ProjectController())->getPopularTags(),
         $method === 'PUT' && preg_match('/^projects\/(\d+)\/favorite$/', $uri, $matches) => (new ProjectController())->toggleFavorite((int)$matches[1]),
+
+        // [AI:Claude] Routes Smart Project Creation (v0.17.0)
+        $method === 'GET' && $uri === 'projects/smart-create/quota' => (new SmartProjectController())->getQuota(),
+        $method === 'POST' && $uri === 'projects/smart-create/analyze' => (new SmartProjectController())->analyze(),
+        $method === 'POST' && $uri === 'projects/smart-create/confirm' => (new SmartProjectController())->confirm(),
 
         // [AI:Claude] Routes de gestion des photos IA (AI Photo Studio v0.10.0)
         $method === 'GET' && $uri === 'photos' => (new PhotoController())->index($_GET),

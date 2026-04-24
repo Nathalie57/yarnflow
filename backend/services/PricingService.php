@@ -276,6 +276,75 @@ class PricingService
     }
 
     /**
+     * [AI:Claude] v0.17.0 - Limites par plan (projets actifs, crédits photos, imports IA, etc.)
+     */
+    private array $planLimits = [
+        'free' => [
+            'active_projects_max' => 3,
+            'photo_credits_monthly' => 5,
+            'ai_pattern_imports_monthly' => 1, // [AI:Claude] v0.17.0 - Smart Project Creation
+            'can_use_tags' => false
+        ],
+        'plus' => [
+            'active_projects_max' => 7,
+            'photo_credits_monthly' => 15,
+            'ai_pattern_imports_monthly' => 5, // [AI:Claude] v0.17.0 - Smart Project Creation
+            'can_use_tags' => true
+        ],
+        'plus_annual' => [
+            'active_projects_max' => 7,
+            'photo_credits_monthly' => 15,
+            'ai_pattern_imports_monthly' => 5, // [AI:Claude] v0.17.0 - Smart Project Creation
+            'can_use_tags' => true
+        ],
+        'pro' => [
+            'active_projects_max' => 999999, // Illimité
+            'photo_credits_monthly' => 30,
+            'ai_pattern_imports_monthly' => 20, // [AI:Claude] v0.17.0 - Limite raisonnable
+            'can_use_tags' => true
+        ],
+        'pro_annual' => [
+            'active_projects_max' => 999999,
+            'photo_credits_monthly' => 30,
+            'ai_pattern_imports_monthly' => 20, // [AI:Claude] v0.17.0 - Limite raisonnable
+            'can_use_tags' => true
+        ],
+        'early_bird' => [
+            'active_projects_max' => 999999,
+            'photo_credits_monthly' => 30,
+            'ai_pattern_imports_monthly' => 20, // [AI:Claude] v0.17.0 - Limite raisonnable
+            'can_use_tags' => true
+        ]
+    ];
+
+    /**
+     * [AI:Claude] v0.17.0 - Obtenir une limite spécifique pour un plan
+     *
+     * @param string $plan Type de plan (free, plus, pro, etc.)
+     * @param string $feature Nom de la feature (active_projects_max, photo_credits_monthly, ai_pattern_imports_monthly, etc.)
+     * @return int|bool Limite ou false si non trouvée
+     */
+    public function getLimit(string $plan, string $feature): int|bool
+    {
+        if (!isset($this->planLimits[$plan])) {
+            return $this->planLimits['free'][$feature] ?? 0;
+        }
+
+        return $this->planLimits[$plan][$feature] ?? 0;
+    }
+
+    /**
+     * [AI:Claude] Obtenir toutes les limites d'un plan
+     *
+     * @param string $plan Type de plan
+     * @return array Toutes les limites du plan
+     */
+    public function getAllLimits(string $plan): array
+    {
+        return $this->planLimits[$plan] ?? $this->planLimits['free'];
+    }
+
+    /**
      * [AI:Claude] Obtenir tous les multiplicateurs de prix
      *
      * @return array Liste des multiplicateurs par type et niveau

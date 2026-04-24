@@ -256,31 +256,8 @@ class User extends BaseModel
         if ($user === null)
             return 0;
 
-        $subscriptionType = $user['subscription_type'] ?? SUBSCRIPTION_FREE;
-
-        // [AI:Claude] Quotas projets v0.14.0 - FREE 3 projets, PLUS 7 projets, PRO illimité
-        $unlimitedPlans = [SUBSCRIPTION_PRO, SUBSCRIPTION_PRO_ANNUAL, SUBSCRIPTION_EARLY_BIRD, SUBSCRIPTION_PREMIUM];
-        if (in_array($subscriptionType, $unlimitedPlans))
-            return null; // Illimité
-
-        $quotas = [
-            SUBSCRIPTION_FREE => (int)($_ENV['MAX_PROJECTS_FREE'] ?? 3),
-            SUBSCRIPTION_PLUS => (int)($_ENV['MAX_PROJECTS_PLUS'] ?? 7),
-            SUBSCRIPTION_PLUS_ANNUAL => (int)($_ENV['MAX_PROJECTS_PLUS'] ?? 7),
-            // Legacy support
-            SUBSCRIPTION_STARTER => (int)($_ENV['MAX_PROJECTS_PLUS'] ?? 7)
-        ];
-
-        $maxProjects = $quotas[$subscriptionType] ?? $quotas[SUBSCRIPTION_FREE];
-
-        // [AI:Claude] Compter les projets existants de l'utilisateur
-        $sql = "SELECT COUNT(*) as count FROM projects WHERE user_id = :user_id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute(['user_id' => $userId]);
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
-        $currentCount = (int)($result['count'] ?? 0);
-
-        return max(0, $maxProjects - $currentCount);
+        // Projets illimités pour tous les plans (FREE et PRO)
+        return null;
     }
 
     /**
@@ -404,20 +381,19 @@ class User extends BaseModel
      */
     private function normalizeSubscriptionType(string $subscriptionType): string
     {
-        // [AI:Claude] Mapping des types legacy vers les nouveaux types
         $mapping = [
             'free' => 'free',
-            'plus' => 'plus',
-            'plus_annual' => 'plus_annual',
             'pro' => 'pro',
             'pro_annual' => 'pro_annual',
             'early_bird' => 'early_bird',
-            // Legacy
-            'starter' => 'plus',
+            // Legacy → PRO
+            'plus' => 'pro',
+            'plus_annual' => 'pro_annual',
+            'starter' => 'pro',
             'premium' => 'pro',
             'standard' => 'pro',
             'monthly' => 'pro',
-            'yearly' => 'pro_annual'
+            'yearly' => 'pro_annual',
         ];
 
         return $mapping[$subscriptionType] ?? 'free';
