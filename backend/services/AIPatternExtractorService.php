@@ -61,7 +61,7 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
     {
       "name": "nom de la section (ex: Corps, Manches, Assemblage)",
       "unit": "rangs" | "cm",
-      "target": nombre total de rangs ou cm pour cette section (int ou null),
+      "target": nombre total de rangs/tours pour cette section — COMPTER les rangs dans les instructions si non explicitement indiqué (ex: si la section va jusqu'à Rnd 39 ou Rang 39, target=39). null uniquement si vraiment impossible à déterminer,
       "description": "TOUTES les instructions complètes de cette section, rang par rang ou étape par étape (string)"
     }
   ],
