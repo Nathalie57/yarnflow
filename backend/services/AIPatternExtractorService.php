@@ -61,7 +61,7 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
     {
       "name": "nom de la section (ex: Corps, Manches, Assemblage)",
       "unit": "rangs" | "cm",
-      "target": nombre total de rangs/tours pour cette section — COMPTER les rangs dans les instructions si non explicitement indiqué (ex: si la section va jusqu'à Rnd 39 ou Rang 39, target=39). null uniquement si vraiment impossible à déterminer,
+      "target": nombre total de rangs/tours/cm pour cette section — COMPTER les rangs dans les instructions si non explicitement indiqué (ex: si la section va jusqu'à Rnd 39, target=39). IMPORTANT: si le patron est multi-tailles avec des valeurs différentes par taille (format "19-20-21-23 cm" ou "XS-S-M-L"), mettre null car on ne connaît pas la taille choisie,
       "description": "TOUTES les instructions complètes de cette section, rang par rang ou étape par étape (string)"
     }
   ],
@@ -73,7 +73,7 @@ RÈGLES STRICTES :
 - Si une information est absente/incertaine → null
 - craft_type : détecter selon vocabulaire (ms/ml/mc/bride = crochet, m/end/env/jersey = tricot)
 - category : utiliser les catégories YarnFlow existantes uniquement
-- sections : découper logiquement (Corps, Manches, Col, Assemblage, Finitions...)
+- sections : découper logiquement (Corps, Manches, Col, Assemblage, Finitions...) — chaque partie du vêtement/ouvrage doit être une section distincte : "Dos" et "Devant" = 2 sections séparées, "Bras gauche" et "Bras droit" = 2 sections séparées, "Manche gauche" et "Manche droite" = 2 sections séparées. Ne jamais regrouper des parties distinctes dans une même section.
 - sections.description : INCLURE TOUTES LES INSTRUCTIONS détaillées de cette section (tous les rangs, toutes les étapes)
 - Conserver les abréviations du patron (ms, ml, mc, m, end, env, etc.)
 - Numéroter les rangs/tours si présents (ex: "Rang 1: ..., Rang 2: ..., etc.")
@@ -104,7 +104,7 @@ PROMPT;
      * Extrait les informations d'un patron depuis un fichier PDF
      * Utilise la Gemini Files API : upload séparé → analyse → suppression
      */
-    public function extractFromPDF(string $filePath): array
+    public function extractFromPDF(string $filePath, ?string $size = null): array
     {
         $startTime = microtime(true);
 
@@ -123,7 +123,7 @@ PROMPT;
             $fileUri = $this->uploadFileToGemini($filePath);
             error_log("[AIPatternExtractor] Upload OK: {$fileUri}");
 
-            $result = $this->callGeminiWithFileUri($fileUri);
+            $result = $this->callGeminiWithFileUri($fileUri, $size);
 
         } catch (GuzzleException $e) {
             error_log('[AIPatternExtractor] Erreur upload/analyse: ' . $e->getMessage());
@@ -144,7 +144,7 @@ PROMPT;
     /**
      * Extrait les informations d'un patron depuis une URL
      */
-    public function extractFromURL(string $url): array
+    public function extractFromURL(string $url, ?string $size = null): array
     {
         $startTime = microtime(true);
 
@@ -166,7 +166,7 @@ PROMPT;
                 return $this->errorResponse('Impossible d\'extraire le contenu de cette page', 0);
             }
 
-            $result = $this->callGeminiWithText($text);
+            $result = $this->callGeminiWithText($text, $size);
 
             $processingTime = round((microtime(true) - $startTime) * 1000);
             $result['processing_time_ms'] = $processingTime;
@@ -235,10 +235,19 @@ PROMPT;
         }
     }
 
+    private function buildPrompt(?string $size): string
+    {
+        $prompt = self::EXTRACTION_PROMPT;
+        if ($size) {
+            $prompt .= "\n\nTAILLE CHOISIE PAR L'UTILISATRICE : {$size}\nPour les patrons multi-tailles, utiliser UNIQUEMENT les valeurs correspondant à cette taille pour les champs target, description et toutes les mesures.";
+        }
+        return $prompt;
+    }
+
     /**
      * Appelle Gemini avec un fichier uploadé via Files API
      */
-    private function callGeminiWithFileUri(string $fileUri): array
+    private function callGeminiWithFileUri(string $fileUri, ?string $size = null): array
     {
         $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$this->geminiModel}:generateContent?key={$this->geminiApiKey}";
 
@@ -246,7 +255,7 @@ PROMPT;
             'contents' => [
                 [
                     'parts' => [
-                        ['text' => self::EXTRACTION_PROMPT],
+                        ['text' => $this->buildPrompt($size)],
                         [
                             'file_data' => [
                                 'mime_type' => 'application/pdf',
@@ -260,7 +269,7 @@ PROMPT;
                 'temperature' => 0.1,
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 8192
+                'maxOutputTokens' => 32768
             ]
         ];
 
@@ -282,7 +291,7 @@ PROMPT;
     /**
      * Appelle Gemini avec du texte simple (pour URL)
      */
-    private function callGeminiWithText(string $text): array
+    private function callGeminiWithText(string $text, ?string $size = null): array
     {
         $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$this->geminiModel}:generateContent?key={$this->geminiApiKey}";
 
@@ -290,7 +299,7 @@ PROMPT;
             'contents' => [
                 [
                     'parts' => [
-                        ['text' => self::EXTRACTION_PROMPT . "\n\nCONTENU DU PATRON:\n\n" . $text]
+                        ['text' => $this->buildPrompt($size) . "\n\nCONTENU DU PATRON:\n\n" . $text]
                     ]
                 ]
             ],
@@ -298,7 +307,7 @@ PROMPT;
                 'temperature' => 0.1,
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 8192
+                'maxOutputTokens' => 32768
             ]
         ];
 

@@ -216,13 +216,16 @@ class SmartProjectController
                 return;
             }
 
+            // Taille choisie (optionnel, pour patrons multi-tailles)
+            $patternSize = !empty($_POST['pattern_size']) ? trim($_POST['pattern_size']) : null;
+
             // Extraire avec IA
             $extractionStart = microtime(true);
 
             if ($sourceType === 'pdf' || $sourceType === 'library') {
-                $result = $this->extractorService->extractFromPDF($filePath);
+                $result = $this->extractorService->extractFromPDF($filePath, $patternSize);
             } else {
-                $result = $this->extractorService->extractFromURL($sourceName);
+                $result = $this->extractorService->extractFromURL($sourceName, $patternSize);
             }
 
             $processingTime = isset($result['processing_time_ms']) ? (int)$result['processing_time_ms'] : (int)round((microtime(true) - $extractionStart) * 1000);

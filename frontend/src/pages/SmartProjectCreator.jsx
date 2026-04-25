@@ -35,6 +35,7 @@ export default function SmartProjectCreator() {
   const [librarySearch, setLibrarySearch] = useState('')
   const [selectedLibraryPattern, setSelectedLibraryPattern] = useState(null)
   const [loadingLibrary, setLoadingLibrary] = useState(false)
+  const [patternSize, setPatternSize] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzingStep, setAnalyzingStep] = useState(0)
   const [extractedData, setExtractedData] = useState(null)
@@ -144,6 +145,9 @@ export default function SmartProjectCreator() {
         formData.append('url', url)
       } else if (mode === 'library') {
         formData.append('library_pattern_id', selectedLibraryPattern.id)
+      }
+      if (patternSize.trim()) {
+        formData.append('pattern_size', patternSize.trim())
       }
 
       const response = await axios.post('/api/projects/smart-create/analyze', formData, {
@@ -506,6 +510,36 @@ export default function SmartProjectCreator() {
               </div>
             )}
 
+            {/* Taille (optionnel, pour patrons multi-tailles) */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Ma taille <span className="text-gray-400 font-normal">(optionnel — pour les patrons multi-tailles)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setPatternSize(patternSize === s ? '' : s)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                      patternSize === s
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'border-gray-200 text-gray-600 hover:border-primary-400'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+                <input
+                  type="text"
+                  value={['XS','S','M','L','XL','XXL','XXXL'].includes(patternSize) ? '' : patternSize}
+                  onChange={e => setPatternSize(e.target.value)}
+                  placeholder="Autre (ex: 38, 6 ans…)"
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 w-36"
+                />
+              </div>
+            </div>
+
             <div className="flex gap-4">
               <button
                 onClick={() => setStep(1)}
@@ -796,7 +830,12 @@ export default function SmartProjectCreator() {
             {/* Actions */}
             <div className="flex gap-4">
               <button
-                onClick={() => setStep(2)}
+                onClick={() => {
+                  if (confirm('Si vous revenez en arrière, l\'analyse IA sera perdue et vous devrez relancer une nouvelle analyse (cela consommera un import). Continuer ?')) {
+                    setStep(2)
+                    setExtractedData(null)
+                  }
+                }}
                 className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
               >
                 ← Retour
