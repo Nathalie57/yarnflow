@@ -7361,8 +7361,8 @@ function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
   const [draft, setDraft] = useState(currentDeadline || '')
   const today = new Date().toISOString().substring(0, 10)
   return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4 bg-black/40">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 mb-16 sm:mb-0">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-900">Objectif de date</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
