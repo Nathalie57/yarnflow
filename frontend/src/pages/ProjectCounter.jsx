@@ -371,28 +371,29 @@ const ProjectCounter = () => {
         setShowSecondaryTip(true)
       }
 
-      // [AI:Claude] Restaurer l'état du timer s'il était en pause
+      // [AI:Claude] Restaurer l'état du timer (en pause ou en cours au moment du refresh/fermeture)
       const savedState = localStorage.getItem(`timerState_${projectId}`)
       if (savedState) {
         try {
           const state = JSON.parse(savedState)
 
-          // Vérifier que la session est récente (moins de 24h)
           const hoursSinceSave = (Date.now() - state.timestamp) / (1000 * 60 * 60)
-          if (hoursSinceSave < 24 && state.isPaused && state.sessionId) {
-            console.log('[TIMER] Restauration état sauvegardé:', state.pausedTime, 's')
+          if (hoursSinceSave < 24 && state.sessionId) {
+            // Si le timer tournait, ajouter le temps écoulé depuis la sauvegarde
+            const restoredTime = state.isPaused
+              ? state.pausedTime
+              : state.pausedTime + Math.floor((Date.now() - state.timestamp) / 1000)
+
+            console.log('[TIMER] Restauration:', restoredTime, 's (était', state.isPaused ? 'en pause' : 'en cours', ')')
 
             setSessionId(state.sessionId)
             setSessionStartRow(state.sessionStartRow)
-            setPausedTime(state.pausedTime)
-            setElapsedTime(state.pausedTime)
+            setPausedTime(restoredTime)
+            setElapsedTime(restoredTime)
             setIsTimerRunning(true)
-            setIsTimerPaused(true)
+            setIsTimerPaused(true) // Toujours restaurer en pause, l'utilisateur relance explicitement
             setCurrentRow(state.currentRow)
-
-            // Restauration silencieuse - pas besoin d'alerte
           } else if (hoursSinceSave >= 24) {
-            // Session trop ancienne, la supprimer
             localStorage.removeItem(`timerState_${projectId}`)
             console.log('[TIMER] Session sauvegardée trop ancienne, supprimée')
           }
@@ -608,11 +609,10 @@ const ProjectCounter = () => {
     }
   }, [sessionId, isTimerRunning, currentRow, sessionStartRow, projectId, pausedTime, sessionStartTime, isTimerPaused])
 
-  // [AI:Claude] Sauvegarder le timer quand l'app passe en arrière-plan (PWA)
+  // [AI:Claude] Sauvegarder le timer quand l'app passe en arrière-plan ou se ferme/refresh
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && sessionId && isTimerRunning) {
-        // L'app passe en arrière-plan, sauvegarder l'état
+    const saveTimerState = () => {
+      if (sessionId && isTimerRunning) {
         const exactDuration = isTimerPaused
           ? pausedTime
           : pausedTime + Math.floor((Date.now() - sessionStartTime) / 1000)
@@ -626,12 +626,20 @@ const ProjectCounter = () => {
           isPaused: isTimerPaused,
           timestamp: Date.now()
         }))
-        console.log('[TIMER] Sauvegarde automatique (visibilitychange):', exactDuration, 's')
+        console.log('[TIMER] Sauvegarde automatique:', exactDuration, 's')
       }
     }
 
+    const handleVisibilityChange = () => {
+      if (document.hidden) saveTimerState()
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', saveTimerState)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', saveTimerState)
+    }
   }, [sessionId, isTimerRunning, isTimerPaused, pausedTime, sessionStartTime, currentRow, sessionStartRow, projectId, currentSectionId])
 
   const fetchProject = async () => {
