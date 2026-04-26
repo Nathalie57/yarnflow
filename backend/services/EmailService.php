@@ -662,9 +662,6 @@ HTML;
 </body>
 </html>
 HTML;
-</body>
-</html>
-HTML;
     }
 
     /**
