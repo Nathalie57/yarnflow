@@ -318,7 +318,10 @@ class AuthController
                 return;
             }
 
-            $payload = json_decode(base64_decode($parts[1]), true);
+            // Base64URL → Base64 standard avant décodage
+            $b64 = str_replace(['-', '_'], ['+', '/'], $parts[1]);
+            $b64 .= str_repeat('=', (4 - strlen($b64) % 4) % 4);
+            $payload = json_decode(base64_decode($b64), true);
 
             // Vérifier grace period
             $expirationTime = $payload['exp'] ?? 0;
