@@ -52,48 +52,64 @@ class UserController
         if ($userData === null)
             return;
 
-        $user = $this->userModel->findById($userData['user_id']);
+        try {
+            $user = $this->userModel->findById($userData['user_id']);
 
-        if ($user === null)
-            Response::notFound('Utilisateur introuvable');
+            if ($user === null)
+                Response::notFound('Utilisateur introuvable');
 
-        unset($user['password']);
+            unset($user['password']);
 
-        // [AI:Claude] Statistiques projets tracker (calculées en temps réel)
-        $projectStats = $this->projectModel->getUserStatsByPeriod($userData['user_id'], 'all');
+            // [AI:Claude] Statistiques projets tracker (calculées en temps réel)
+            $projectStats = $this->projectModel->getUserStatsByPeriod($userData['user_id'], 'all');
 
-        // [AI:Claude] Compter les photos générées par l'IA
-        $db = \App\Config\Database::getInstance()->getConnection();
-        $stmt = $db->prepare('SELECT COUNT(*) as ai_photos_count FROM user_photos WHERE user_id = ? AND enhanced_path IS NOT NULL');
-        $stmt->execute([$userData['user_id']]);
-        $aiPhotosCount = $stmt->fetch(\PDO::FETCH_ASSOC)['ai_photos_count'] ?? 0;
+            $db = \App\Config\Database::getInstance()->getConnection();
 
-        // [AI:Claude] Crédits photos restants
-        $stmt = $db->prepare('SELECT monthly_credits, purchased_credits, credits_used_this_month FROM user_photo_credits WHERE user_id = ?');
-        $stmt->execute([$userData['user_id']]);
-        $credits = $stmt->fetch(\PDO::FETCH_ASSOC);
-        $creditsRemaining = ($credits['monthly_credits'] ?? 0) + ($credits['purchased_credits'] ?? 0) - ($credits['credits_used_this_month'] ?? 0);
+            // [AI:Claude] Compter les photos générées par l'IA (table optionnelle)
+            $aiPhotosCount = 0;
+            try {
+                $stmt = $db->prepare('SELECT COUNT(*) as ai_photos_count FROM user_photos WHERE user_id = ? AND enhanced_path IS NOT NULL');
+                $stmt->execute([$userData['user_id']]);
+                $aiPhotosCount = $stmt->fetch(\PDO::FETCH_ASSOC)['ai_photos_count'] ?? 0;
+            } catch (\Exception $e) {
+                error_log('[UserController::getProfile] user_photos query failed: ' . $e->getMessage());
+            }
 
-        $hasActiveSubscription = $this->userModel->hasActiveSubscription($user['id']);
-        $totalSpent = $this->paymentModel->getTotalPaidByUser($user['id']);
+            // [AI:Claude] Crédits photos restants (table optionnelle)
+            $creditsRemaining = 0;
+            try {
+                $stmt = $db->prepare('SELECT monthly_credits, purchased_credits, credits_used_this_month FROM user_photo_credits WHERE user_id = ?');
+                $stmt->execute([$userData['user_id']]);
+                $credits = $stmt->fetch(\PDO::FETCH_ASSOC);
+                $creditsRemaining = ($credits['monthly_credits'] ?? 0) + ($credits['purchased_credits'] ?? 0) - ($credits['credits_used_this_month'] ?? 0);
+            } catch (\Exception $e) {
+                error_log('[UserController::getProfile] user_photo_credits query failed: ' . $e->getMessage());
+            }
 
-        Response::success([
-            'user' => $user,
-            'stats' => [
-                // [AI:Claude] Stats projets YarnFlow
-                'total_projects' => $projectStats['total_projects'] ?? 0,
-                'active_projects' => $projectStats['active_projects'] ?? 0,
-                'completed_projects' => $projectStats['completed_projects'] ?? 0,
-                'total_rows' => $projectStats['total_rows'] ?? 0,
-                'total_time' => $projectStats['total_crochet_time'] ?? 0,
-                // [AI:Claude] Stats photos IA
-                'ai_photos_generated' => $aiPhotosCount,
-                'photo_credits_remaining' => max(0, $creditsRemaining),
-                // [AI:Claude] Stats abonnement
-                'has_active_subscription' => $hasActiveSubscription,
-                'total_spent' => $totalSpent
-            ]
-        ]);
+            $hasActiveSubscription = $this->userModel->hasActiveSubscription($user['id']);
+            $totalSpent = $this->paymentModel->getTotalPaidByUser($user['id']);
+
+            Response::success([
+                'user' => $user,
+                'stats' => [
+                    // [AI:Claude] Stats projets YarnFlow
+                    'total_projects' => $projectStats['total_projects'] ?? 0,
+                    'active_projects' => $projectStats['active_projects'] ?? 0,
+                    'completed_projects' => $projectStats['completed_projects'] ?? 0,
+                    'total_rows' => $projectStats['total_rows'] ?? 0,
+                    'total_time' => $projectStats['total_crochet_time'] ?? 0,
+                    // [AI:Claude] Stats photos IA
+                    'ai_photos_generated' => $aiPhotosCount,
+                    'photo_credits_remaining' => max(0, $creditsRemaining),
+                    // [AI:Claude] Stats abonnement
+                    'has_active_subscription' => $hasActiveSubscription,
+                    'total_spent' => $totalSpent
+                ]
+            ]);
+        } catch (\Exception $e) {
+            error_log('[UserController::getProfile] Error: ' . $e->getMessage());
+            Response::serverError('Erreur profil: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -376,10 +392,14 @@ class UserController
         // [AI:Claude] Compter les photos générées par l'IA (celles qui ont coûté des crédits)
         $db = \App\Config\Database::getInstance()->getConnection();
 
-        // [AI:Claude] Photos générées par IA = celles avec enhanced_path (ont utilisé des crédits)
-        $stmt = $db->prepare('SELECT COUNT(*) as ai_photos_count FROM user_photos WHERE user_id = ? AND enhanced_path IS NOT NULL');
-        $stmt->execute([$userData['user_id']]);
-        $aiPhotosCount = $stmt->fetch(\PDO::FETCH_ASSOC)['ai_photos_count'] ?? 0;
+        $aiPhotosCount = 0;
+        try {
+            $stmt = $db->prepare('SELECT COUNT(*) as ai_photos_count FROM user_photos WHERE user_id = ? AND enhanced_path IS NOT NULL');
+            $stmt->execute([$userData['user_id']]);
+            $aiPhotosCount = $stmt->fetch(\PDO::FETCH_ASSOC)['ai_photos_count'] ?? 0;
+        } catch (\Exception $e) {
+            error_log('[UserController::getDashboard] user_photos query failed: ' . $e->getMessage());
+        }
 
         // [AI:Claude] Statistiques
         $stats = [

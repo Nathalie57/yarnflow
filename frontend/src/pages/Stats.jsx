@@ -142,7 +142,7 @@ const Stats = () => {
   const badgeColorClasses = {
     primary: 'bg-primary-50 text-primary-800 border-primary-200',
     green:   'bg-green-50 text-green-800 border-green-200',
-    warm:    'bg-warm-50 text-warm-800 border-warm-200',
+    warm:    'bg-primary-50 text-primary-800 border-primary-200',
     orange:  'bg-orange-50 text-orange-800 border-orange-200',
   }
 
@@ -158,7 +158,7 @@ const Stats = () => {
           return (
             <div key={i} className="flex flex-col items-center gap-1">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                isActive ? 'bg-warm-500 text-white shadow-sm' : 'bg-gray-100 text-gray-400'
+                isActive ? 'bg-primary-500 text-white shadow-sm' : 'bg-gray-100 text-gray-400'
               }`}>
                 {dayName[0].toUpperCase()}
               </div>
@@ -332,8 +332,8 @@ const Stats = () => {
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-warm-100 rounded-lg flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-warm-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />
                   </svg>
@@ -341,7 +341,7 @@ const Stats = () => {
                 <span className="font-semibold text-gray-900">Série en cours</span>
               </div>
               <div className="text-right">
-                <span className="text-2xl font-bold text-warm-600 tabular-nums">{stats.current_streak || 0}</span>
+                <span className="text-2xl font-bold text-primary-600 tabular-nums">{stats.current_streak || 0}</span>
                 <span className="text-sm text-gray-500 ml-1">jour{stats.current_streak > 1 ? 's' : ''}</span>
               </div>
             </div>
@@ -378,7 +378,7 @@ const Stats = () => {
                   <ResponsiveContainer width="100%" height={180}>
                     <AreaChart data={
                       stats.progression && stats.progression.length > 0
-                        ? stats.progression.map(d => ({ day: d.day.slice(5), rangs: parseInt(d.rows) || 0 }))
+                        ? stats.progression.map(d => ({ day: d.day.slice(5), rangs: parseInt(d.row_count) || 0 }))
                         : [3,7,5,12,8,15,10,18,14,20,16,22,17,25,19,14,21,18,24,16,22,19,27,21,18,25,20,28,23,26].map((v, i) => ({ day: `J${i + 1}`, rangs: v }))
                     }>
                       <defs>
@@ -434,7 +434,7 @@ const Stats = () => {
                       <span className="text-gray-600">Terminés ({stats.completed_projects || 0})</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full bg-warm-500" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
                       <span className="text-gray-600">En cours ({stats.active_projects || 0})</span>
                     </div>
                   </div>

@@ -675,7 +675,7 @@ class Project extends BaseModel
 
         // Progression par jour (rangs/cm complétés par jour sur les 30 derniers jours)
         $progressionQuery = "SELECT DATE(ps.started_at) as day,
-                                    SUM(ps.rows_completed) as `rows`
+                                    SUM(ps.rows_completed) as row_count
                              FROM project_sessions ps
                              JOIN {$this->table} p ON ps.project_id = p.id
                              WHERE p.user_id = :user_id
