@@ -666,7 +666,7 @@ const PatternLibrary = () => {
               </div>
             ) : (
               /* Empty state sans filtres - Accueil bibliothèque */
-              <div className="max-w-2xl mx-auto text-center py-16 px-6 bg-gradient-to-br from-warm-50 to-white rounded-2xl border-2 border-primary-200 shadow-sm">
+              <div className="max-w-2xl mx-auto text-center py-16 px-6 bg-gradient-to-br from-primary-50 to-white rounded-2xl border-2 border-primary-200 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-16 h-16 text-primary-300 mx-auto mb-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
                 </svg>
@@ -762,7 +762,7 @@ const PatternLibrary = () => {
                           onError={(e) => {
                             e.target.style.display = 'none'
                             e.target.parentElement.innerHTML = `
-                              <div class="w-full h-full bg-gradient-to-br from-warm-100 to-primary-100 flex items-center justify-center">
+                              <div class="w-full h-full bg-gradient-to-br from-primary-100 to-primary-100 flex items-center justify-center">
                                 <div class="text-center">
                                   <p class="text-xs text-primary-700 font-medium mt-2">Lien web</p>
                                 </div>
@@ -771,7 +771,7 @@ const PatternLibrary = () => {
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-warm-100 to-primary-100 flex items-center justify-center">
+                        <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-100 flex items-center justify-center">
                           <div className="text-center">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-14 h-14 text-primary-400 mx-auto mb-2">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
@@ -824,7 +824,7 @@ const PatternLibrary = () => {
                         </span>
                       )}
                       {pattern.difficulty && (
-                        <span className="px-2 py-1 bg-warm-100 text-primary-700 rounded text-xs">
+                        <span className="px-2 py-1 bg-primary-100 text-primary-700 rounded text-xs">
                           {pattern.difficulty}
                         </span>
                       )}

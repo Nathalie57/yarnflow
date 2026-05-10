@@ -3436,9 +3436,9 @@ const ProjectCounter = () => {
       </div>
 
       {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY */}
-      <div className="sticky top-[52px] z-40 bg-primary-200/70 backdrop-blur-sm rounded-xl border border-primary-200 p-3 mb-3 shadow-sm">
+      <div className="sticky top-[64px] z-40 bg-primary-200 rounded-xl border border-primary-200 p-4 mb-3 shadow-sm">
         {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
-        <div className="space-y-2 sm:space-y-0">
+        <div className="space-y-3 sm:space-y-0">
           {/* Ligne 1 mobile: Section + Compteur | Desktop: cachée car tout sur une seule ligne */}
           <div className="flex sm:hidden items-center justify-between gap-2">
             {/* Section active mobile */}
@@ -3472,7 +3472,7 @@ const ProjectCounter = () => {
                 −
               </button>
               <div
-                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-3 py-1 min-w-[90px] cursor-pointer"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
                 onClick={handleCounterClick}
                 title="Cliquer pour modifier"
               >
@@ -3486,10 +3486,10 @@ const ProjectCounter = () => {
                     onKeyDown={handleCounterInputKeyDown}
                     onBlur={handleCounterInputSubmit}
                     autoFocus
-                    className="text-3xl font-bold text-gray-900 w-full text-center outline-none tabular-nums"
+                    className="text-5xl font-bold text-primary-600 w-full text-center outline-none tabular-nums"
                   />
                 ) : (
-                  <div className="text-3xl font-bold text-gray-900 tabular-nums leading-tight">
+                  <div className="text-5xl font-bold text-primary-600 tabular-nums leading-tight">
                     {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
                   </div>
                 )}
@@ -3551,7 +3551,7 @@ const ProjectCounter = () => {
                 −
               </button>
               <div
-                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-1.5 min-w-[90px] cursor-pointer"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
                 onClick={handleCounterClick}
                 title="Cliquer pour modifier"
               >
@@ -3565,10 +3565,10 @@ const ProjectCounter = () => {
                     onKeyDown={handleCounterInputKeyDown}
                     onBlur={handleCounterInputSubmit}
                     autoFocus
-                    className="text-3xl font-bold text-gray-900 w-full text-center outline-none tabular-nums"
+                    className="text-5xl font-bold text-primary-600 w-full text-center outline-none tabular-nums"
                   />
                 ) : (
-                  <div className="text-3xl font-bold text-gray-900 tabular-nums leading-tight">
+                  <div className="text-5xl font-bold text-primary-600 tabular-nums leading-tight">
                     {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
                   </div>
                 )}
@@ -4651,7 +4651,7 @@ const ProjectCounter = () => {
 
                                         {/* Dropdown menu */}
                                         {openMenuId === variation.id && (
-                                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-warm-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
+                                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-primary-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
                                             {/* Photo de couverture */}
                                             <button
                                               onClick={async (e) => {
@@ -4701,7 +4701,7 @@ const ProjectCounter = () => {
                                                     }
                                                   }
                                                 }}
-                                                className="w-full px-4 py-2.5 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors font-medium"
+                                                className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
                                               >
                                                 <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -4738,7 +4738,7 @@ const ProjectCounter = () => {
                                                     }
                                                     setOpenMenuId(null)
                                                   }}
-                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                  className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                                                 >
                                                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                                     <defs>
@@ -4765,7 +4765,7 @@ const ProjectCounter = () => {
                                                     window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(url)}&description=${encodeURIComponent(description)}`, '_blank')
                                                     setOpenMenuId(null)
                                                   }}
-                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                  className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                                                 >
                                                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                                     <circle cx="12" cy="12" r="12" fill="#E60023"/>
@@ -4781,7 +4781,7 @@ const ProjectCounter = () => {
                                                     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')
                                                     setOpenMenuId(null)
                                                   }}
-                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                  className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                                                 >
                                                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                                     <circle cx="12" cy="12" r="12" fill="#1877F2"/>
@@ -4798,7 +4798,7 @@ const ProjectCounter = () => {
                                                     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank')
                                                     setOpenMenuId(null)
                                                   }}
-                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                  className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                                                 >
                                                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                                     <circle cx="12" cy="12" r="12" fill="#000000"/>
@@ -4821,7 +4821,7 @@ const ProjectCounter = () => {
                                                       alert('❌ Impossible de copier le lien')
                                                     }
                                                   }}
-                                                  className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                                                  className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                                                 >
                                                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                                     <circle cx="12" cy="12" r="12" fill="#6B7280"/>
@@ -5244,7 +5244,7 @@ const ProjectCounter = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               {/* LAINE / YARN */}
                               {technicalDetails.yarn && technicalDetails.yarn.length > 0 && technicalDetails.yarn[0].brand && (
-                                <div className="bg-gradient-to-br from-primary-50 to-warm-100 rounded-lg p-3 border-l-4 border-primary-400">
+                                <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M2 9h20M2 15h20" opacity="0.4"/></svg>
                                     <span className="font-semibold text-primary-700 text-sm">
@@ -5309,10 +5309,10 @@ const ProjectCounter = () => {
 
                               {/* ÉCHANTILLON / GAUGE */}
                               {technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows) && (
-                                <div className="bg-gradient-to-br from-warm-50 to-warm-200 rounded-lg p-3 border-l-4 border-warm-400">
+                                <div className="bg-gradient-to-br from-primary-50 to-primary-200 rounded-lg p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-warm-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="12"/><line x1="15" y1="10" x2="15" y2="14"/><line x1="19" y1="10" x2="19" y2="12"/></svg>
-                                    <span className="font-semibold text-warm-700 text-sm">Échantillon</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="12"/><line x1="15" y1="10" x2="15" y2="14"/><line x1="19" y1="10" x2="19" y2="12"/></svg>
+                                    <span className="font-semibold text-primary-700 text-sm">Échantillon</span>
                                   </div>
                                   <div className="bg-white/70 rounded px-3 py-2">
                                     <div className="text-sm text-gray-900 font-medium">
@@ -6305,7 +6305,7 @@ Rang 3 : *1ms, aug* x6 (18)
               </div>
 
               {/* LAINE / YARN */}
-              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-warm-100 rounded-lg border border-primary-200">
+              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
                     {project.technique === 'tricot' ? 'Laine' : 'Fil'}
@@ -6599,7 +6599,7 @@ Rang 3 : *1ms, aug* x6 (18)
               </div>
 
               {/* ÉCHANTILLON / GAUGE */}
-              <div className="mb-6 p-4 bg-warm-50 rounded-lg border border-warm-200">
+              <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   Échantillon
                 </h4>
@@ -7226,7 +7226,7 @@ Rang 3 : *1ms, aug* x6 (18)
               <p className="text-gray-600 leading-relaxed">
                 Votre image est prête à être partagée !
               </p>
-              <div className="bg-gradient-to-br from-primary-50 to-warm-50 border-2 border-primary-200 rounded-lg p-4">
+              <div className="bg-gradient-to-br from-primary-50 to-primary-50 border-2 border-primary-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700 font-medium">
                   💡 <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
                 </p>
@@ -7239,7 +7239,7 @@ Rang 3 : *1ms, aug* x6 (18)
                 window.open('https://www.instagram.com/', '_blank')
                 setShowInstagramModal(false)
               }}
-              className="w-full py-4 bg-gradient-to-r from-primary-600 to-warm-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-warm-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-primary-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
             >
               Ouvrir Instagram
             </button>

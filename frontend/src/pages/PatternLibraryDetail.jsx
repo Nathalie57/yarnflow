@@ -487,7 +487,7 @@ const PatternLibraryDetail = () => {
                 </span>
               )}
               {pattern.difficulty && (
-                <span className="px-3 py-1 bg-warm-100 text-primary-700 rounded-full text-sm">
+                <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm">
                   {pattern.difficulty}
                 </span>
               )}

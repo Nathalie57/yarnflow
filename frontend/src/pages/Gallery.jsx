@@ -758,7 +758,7 @@ const Gallery = () => {
 
                         {/* Dropdown menu */}
                         {openMenuId === photo.id && (
-                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-warm-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
+                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-primary-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
                             {/* Photo de couverture */}
                             {photo.project_id && (
                               <button
@@ -844,7 +844,7 @@ const Gallery = () => {
                                   setOpenMenuId(null)
                                 }
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                              className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                             >
                               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                 <defs>
@@ -871,7 +871,7 @@ const Gallery = () => {
                                 window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(url)}&description=${encodeURIComponent(description)}`, '_blank')
                                 setOpenMenuId(null)
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                              className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                             >
                               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                 <circle cx="12" cy="12" r="12" fill="#E60023"/>
@@ -887,7 +887,7 @@ const Gallery = () => {
                                 window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')
                                 setOpenMenuId(null)
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                              className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                             >
                               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                 <circle cx="12" cy="12" r="12" fill="#1877F2"/>
@@ -904,7 +904,7 @@ const Gallery = () => {
                                 window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank')
                                 setOpenMenuId(null)
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                              className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                             >
                               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                 <circle cx="12" cy="12" r="12" fill="#000000"/>
@@ -927,7 +927,7 @@ const Gallery = () => {
                                   alert('❌ Impossible de copier le lien')
                                 }
                               }}
-                              className="w-full px-4 py-2 text-left text-sm text-warm-900 hover:bg-warm-100 flex items-center gap-3 transition-colors group"
+                              className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
                             >
                               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                 <circle cx="12" cy="12" r="12" fill="#6B7280"/>
@@ -1437,7 +1437,7 @@ const Gallery = () => {
               <p className="text-gray-600 leading-relaxed">
                 Votre image est prête à être partagée !
               </p>
-              <div className="bg-gradient-to-br from-primary-50 to-warm-50 border-2 border-primary-200 rounded-lg p-4">
+              <div className="bg-gradient-to-br from-primary-50 to-primary-50 border-2 border-primary-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700 font-medium">
                   <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
                 </p>
@@ -1450,7 +1450,7 @@ const Gallery = () => {
                 window.open('https://www.instagram.com/', '_blank')
                 setShowInstagramModal(false)
               }}
-              className="w-full py-4 bg-gradient-to-r from-primary-600 to-warm-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-warm-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-primary-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
             >
               Ouvrir Instagram
             </button>

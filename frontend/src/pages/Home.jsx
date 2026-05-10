@@ -7,7 +7,7 @@ export default function Home() {
   const [demoCounter, setDemoCounter] = useState(42)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-primary-50 to-warm-100">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-primary-50 to-primary-100">
       {/* Navigation */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -245,7 +245,7 @@ export default function Home() {
             </div>
 
             {/* Feature 3 - STATS */}
-            <div className="bg-warm-100 rounded-xl p-8 border-2 border-primary-200">
+            <div className="bg-primary-100 rounded-xl p-8 border-2 border-primary-200">
               <div className="text-5xl mb-4">📈</div>
               <h3 className="text-2xl font-bold mb-4">Statistiques</h3>
               <p className="text-gray-700 mb-4">
@@ -321,7 +321,7 @@ export default function Home() {
             </div>
 
             {/* 2. Statistiques motivantes */}
-            <div className="bg-warm-100 rounded-xl p-8 border-2 border-primary-200">
+            <div className="bg-primary-100 rounded-xl p-8 border-2 border-primary-200">
               <div className="text-5xl mb-4">📈</div>
               <h3 className="text-xl font-bold mb-3">Stats Strava-style</h3>
               <ul className="space-y-2 text-gray-700">

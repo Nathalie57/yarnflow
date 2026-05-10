@@ -56,7 +56,7 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <div className="card border-2 border-primary-200 bg-warm-100">
+        <div className="card border-2 border-primary-200 bg-primary-100">
           <h3 className="text-primary-700 mb-2 font-semibold">📸 Images IA</h3>
           <p className="text-3xl font-bold text-primary-600">
             {dashboard?.stats?.ai_photos_generated || 0}
@@ -125,7 +125,7 @@ const Dashboard = () => {
       </div>
 
       {/* Message de bienvenue */}
-      <div className="card bg-gradient-to-r from-primary-50 to-warm-100 border-2 border-primary-200 mb-8">
+      <div className="card bg-gradient-to-r from-primary-50 to-primary-100 border-2 border-primary-200 mb-8">
         <div className="flex items-start gap-4">
           <div className="text-4xl">✨</div>
           <div className="flex-1">
