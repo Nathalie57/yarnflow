@@ -178,15 +178,20 @@ api.interceptors.response.use(
           throw new Error('Pas de token dans la réponse')
         }
       } catch (refreshError) {
-        // Le refresh a échoué, déconnecter l'utilisateur
-        console.log('[API Interceptor] ❌ Refresh échoué:', refreshError.message)
+        console.log('[API Interceptor] ❌ Refresh échoué:', refreshError.response?.status, refreshError.message)
         processQueue(refreshError, null)
         isRefreshing = false
 
-        storage.removeItem('token')
-        storage.removeItem('user')
-        console.log('[API Interceptor] Redirection vers /login')
-        window.location.href = '/login'
+        // Déconnecter uniquement si le serveur rejette explicitement le token (401)
+        // Pas pour les erreurs réseau ou serveur temporaires (pas de réponse, 500, etc.)
+        if (refreshError.response?.status === 401) {
+          storage.removeItem('token')
+          storage.removeItem('user')
+          console.log('[API Interceptor] Token rejeté par le serveur, redirection /login')
+          window.location.href = '/login'
+        } else {
+          console.log('[API Interceptor] Erreur temporaire, on garde la session')
+        }
 
         return Promise.reject(refreshError)
       }

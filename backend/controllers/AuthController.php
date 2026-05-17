@@ -286,7 +286,7 @@ class AuthController
 
             // [AI:Claude] Vérifier que le token n'est pas trop vieux (max 7 jours après expiration)
             $expirationTime = $decoded->exp;
-            $gracePeriod = 7 * 24 * 60 * 60; // 7 jours en secondes
+            $gracePeriod = 30 * 24 * 60 * 60; // 30 jours en secondes
             $maxRefreshTime = $expirationTime + $gracePeriod;
 
             if (time() > $maxRefreshTime) {
