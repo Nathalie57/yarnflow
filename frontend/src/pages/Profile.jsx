@@ -36,7 +36,7 @@ const Profile = () => {
         last_name: data.user.last_name || '',
         email: data.user.email || ''
       })
-      setInactivityReminder(data.user.inactivity_reminder_enabled !== 0)
+      setInactivityReminder(Number(data.user.inactivity_reminder_enabled) !== 0)
     } catch (error) {
       console.error('Erreur chargement profil:', error)
       setErrorMessage('Erreur lors du chargement du profil')

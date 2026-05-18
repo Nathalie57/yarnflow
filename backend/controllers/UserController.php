@@ -158,7 +158,7 @@ class UserController
         if (isset($data['email']))
             $updateData['email'] = $data['email'];
 
-        if (isset($data['inactivity_reminder_enabled']))
+        if (array_key_exists('inactivity_reminder_enabled', $data))
             $updateData['inactivity_reminder_enabled'] = $data['inactivity_reminder_enabled'] ? 1 : 0;
 
         if (empty($updateData))
