@@ -2,6 +2,6 @@
 deployment:
   tasks:
     # Déployer UNIQUEMENT le backend (exclure vendor/ et uploads/)
-    - /bin/bash -c "rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow-staging/backend/ /home/najo1022/staging.yarnflow.fr/api/"
+    - /bin/bash -c "rsync -av --delete --exclude='vendor/' --exclude='uploads/' --exclude='.env' /home/najo1022/repositories/yarnflow/backend/ /home/najo1022/public_html/api/"
 
     # Frontend : déployé manuellement via FTP (npm run build + upload dist/)
