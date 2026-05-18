@@ -113,6 +113,7 @@ function route(string $method, string $uri): void
 
         // [AI:Claude] Routes utilisateur
         $method === 'GET' && $uri === 'user/profile' => (new UserController())->getProfile(),
+        $method === 'POST' && $uri === 'user/profile' => (new UserController())->updateProfile(), // POST pour compatibilité prod (php://input vide sur PUT)
         $method === 'PUT' && $uri === 'user/profile' => (new UserController())->updateProfile(),
         $method === 'PUT' && $uri === 'user/password' => (new UserController())->changePassword(),
         $method === 'DELETE' && $uri === 'user/account' => (new UserController())->deleteAccount(),

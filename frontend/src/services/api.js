@@ -232,7 +232,7 @@ export const paymentsAPI = {
 // User
 export const userAPI = {
   getProfile: () => api.get('/user/profile'),
-  updateProfile: (data) => api.put('/user/profile', data),
+  updateProfile: (data) => api.post('/user/profile', data),
   changePassword: (data) => api.put('/user/password', data),
   deleteAccount: (data) => api.delete('/user/account', { data }),
   getDashboard: () => api.get('/user/dashboard'),
