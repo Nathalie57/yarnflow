@@ -3002,12 +3002,20 @@ const ProjectCounter = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-800 mb-4">{error || 'Projet introuvable'}</p>
-          <Link
-            to="/my-projects"
-            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-          >
-            Retour aux projets
-          </Link>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => { setError(null); setLoading(true); fetchProject().then(pd => pd && fetchSections(pd.current_section_id)) }}
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+            >
+              Réessayer
+            </button>
+            <Link
+              to="/my-projects"
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              Retour aux projets
+            </Link>
+          </div>
         </div>
       </div>
     )

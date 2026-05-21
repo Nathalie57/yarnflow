@@ -124,9 +124,7 @@ class UserController
         if ($userData === null)
             return;
 
-        $rawInput = file_get_contents('php://input');
-        error_log('[UserController::updateProfile] Method: ' . $_SERVER['REQUEST_METHOD'] . ' | Raw input length: ' . strlen($rawInput ?? '') . ' | Raw: ' . substr($rawInput ?? '', 0, 200));
-        $data = json_decode($rawInput, true) ?? [];
+        $data = json_decode(file_get_contents('php://input'), true) ?? [];
 
         $validator = new Validator();
 
