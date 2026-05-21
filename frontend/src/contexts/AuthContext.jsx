@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { authAPI } from '../services/api'
 
 const AuthContext = createContext(null)
@@ -48,6 +48,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const lastVisibilityCheck = useRef(0)
+
   // Charger l'utilisateur depuis localStorage au démarrage
   useEffect(() => {
     const loadUser = async () => {
@@ -76,6 +78,31 @@ export const AuthProvider = ({ children }) => {
     }
 
     loadUser()
+  }, [])
+
+  // Refresh proactif quand l'app repasse au premier plan (fix déconnexion Android)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.hidden) return
+      const token = storage.getItem('token')
+      if (!token) return
+
+      // Throttle : max une vérification toutes les 60 secondes
+      const now = Date.now()
+      if (now - lastVisibilityCheck.current < 60000) return
+      lastVisibilityCheck.current = now
+
+      try {
+        const response = await authAPI.me()
+        setUser(response.data.data.user)
+      } catch {
+        // L'intercepteur gère le refresh automatique si 401
+        // Si le refresh échoue aussi, l'intercepteur redirige vers /login
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [])
 
   const login = async (email, password) => {

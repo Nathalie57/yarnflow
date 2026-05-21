@@ -325,7 +325,7 @@ class AuthController
 
             // Vérifier grace period
             $expirationTime = $payload['exp'] ?? 0;
-            $gracePeriod = 7 * 24 * 60 * 60;
+            $gracePeriod = 30 * 24 * 60 * 60; // 30 jours comme le chemin normal
             $maxRefreshTime = $expirationTime + $gracePeriod;
 
             if (time() > $maxRefreshTime) {
