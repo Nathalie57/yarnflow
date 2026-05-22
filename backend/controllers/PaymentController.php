@@ -287,14 +287,14 @@ class PaymentController
         $creditsAmount = null;
         $plan = null;
 
-        if (str_contains($paymentType, 'credits_pack')) {
+        if ($paymentType !== null && str_contains($paymentType, 'credits_pack')) {
             $type = 'credits';
             $creditsAmount = match($paymentType) {
                 'credits_pack_50' => 50,
                 'credits_pack_150' => 150,
                 default => null
             };
-        } elseif (str_contains($paymentType, 'subscription')) {
+        } elseif ($paymentType !== null && str_contains($paymentType, 'subscription')) {
             $type = 'subscription';
             $plan = match($paymentType) {
                 'subscription_plus' => 'PLUS Mensuel',
@@ -519,10 +519,10 @@ class PaymentController
     private function getExpectedAmount(string $paymentType): ?float
     {
         return match($paymentType) {
-            'subscription_plus' => 2.99,
-            'subscription_plus_annual' => 29.99,
-            'subscription_pro' => 4.99,
-            'subscription_pro_annual' => 49.99,
+            'subscription_plus' => 3.99,
+            'subscription_plus_annual' => 39.99,
+            'subscription_pro' => 3.99,
+            'subscription_pro_annual' => 39.99,
             'subscription_early_bird' => 2.99,
             PAYMENT_CREDITS_PACK_50 => 4.99,
             PAYMENT_CREDITS_PACK_150 => 9.99,

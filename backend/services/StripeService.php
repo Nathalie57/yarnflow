@@ -519,6 +519,7 @@ class StripeService
         return [
             'success' => true,
             'event' => 'checkout_completed',
+            'session_id' => $session->id,
             'user_id' => $metadata->user_id ?? null,
             'pattern_id' => $metadata->pattern_id ?? null,
             'payment_type' => $metadata->payment_type ?? null,

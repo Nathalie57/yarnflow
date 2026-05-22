@@ -6,6 +6,7 @@ import PrivateRoute from './components/PrivateRoute'
 import Layout from './components/Layout'
 import PWAPrompt from './components/PWAPrompt'
 import ContextualHint from './components/ContextualHint'
+import ErrorBoundary from './components/ErrorBoundary'
 import CookieConsent from 'react-cookie-consent'
 
 // Pages
@@ -72,6 +73,7 @@ function App() {
       <AuthProvider>
         <HintsProvider>
         <AnalyticsTracker />
+        <ErrorBoundary>
         <Routes>
           {/* Routes publiques */}
           <Route path="/" element={<Landing />} />
@@ -125,6 +127,7 @@ function App() {
             <Route path="/admin/options" element={<AdminOptions />} />
           </Route>
         </Routes>
+        </ErrorBoundary>
         <PWAPrompt />
         <ContextualHint />
 
