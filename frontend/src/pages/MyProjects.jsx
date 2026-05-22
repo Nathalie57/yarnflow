@@ -941,11 +941,11 @@ const MyProjects = () => {
                 >
                   {/* Photo — uniquement si elle existe */}
                   {project.main_photo && (
-                    <div className="h-48 bg-gray-200 relative group">
+                    <div className="aspect-square bg-gray-200 relative group overflow-hidden">
                       <img
                         src={`${import.meta.env.VITE_BACKEND_URL}${project.main_photo}`}
                         alt={`Photo du projet ${project.name}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-top"
                       />
                       <button
                         onClick={() => openPhotoUploadModal(project)}
