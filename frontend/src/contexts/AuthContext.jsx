@@ -64,7 +64,8 @@ export const AuthProvider = ({ children }) => {
           // Vérifier si le token est toujours valide
           try {
             const response = await authAPI.me()
-            setUser(response.data.data.user)
+            const freshUser = response?.data?.data?.user
+            if (freshUser) setUser(freshUser)
           } catch (err) {
             console.error('Erreur validation token:', err)
             // On garde l'utilisateur du localStorage même si la validation échoue
@@ -94,7 +95,8 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const response = await authAPI.me()
-        setUser(response.data.data.user)
+        const freshUser = response?.data?.data?.user
+        if (freshUser) setUser(freshUser)
       } catch {
         // L'intercepteur gère le refresh automatique si 401
         // Si le refresh échoue aussi, l'intercepteur redirige vers /login
