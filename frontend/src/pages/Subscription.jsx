@@ -39,7 +39,7 @@ const Subscription = () => {
   const loadSubscription = async () => {
     try {
       const response = await userAPI.getSubscription()
-      setSubscription(response.data.data)
+      setSubscription(response.data.data.subscription)
     } catch (error) {
       console.error('Erreur chargement abonnement:', error)
     } finally {

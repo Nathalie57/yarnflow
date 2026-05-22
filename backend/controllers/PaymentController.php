@@ -269,12 +269,7 @@ class PaymentController
      */
     public function checkStatus(string $sessionId): void
     {
-        $authMiddleware = new \App\Middleware\AuthMiddleware();
-        $userData = $authMiddleware->authenticate();
-
-        if ($userData === null)
-            return;
-
+        // Pas d'auth requise : le session_id Stripe est suffisant (non-devinable)
         $result = $this->stripeService->getSessionStatus($sessionId);
 
         if (!$result['success'])

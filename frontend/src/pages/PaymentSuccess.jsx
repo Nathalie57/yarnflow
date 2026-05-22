@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { paymentsAPI } from '../services/api'
+import { paymentsAPI, authAPI } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { updateUser } = useAuth()
   const { trackPurchase } = useAnalytics()
   const [status, setStatus] = useState('loading') // loading, success, error
   const [paymentInfo, setPaymentInfo] = useState(null)
@@ -35,6 +37,15 @@ export default function PaymentSuccess() {
           const amount = data.amount || 0
 
           trackPurchase(type, plan, amount, sessionId)
+
+          // Rafraîchir le contexte auth pour refléter le nouveau statut d'abonnement
+          try {
+            const meResponse = await authAPI.me()
+            const freshUser = meResponse?.data?.data?.user
+            if (freshUser) updateUser(freshUser)
+          } catch {
+            // Non bloquant — l'abonnement est actif en base même si le refresh échoue
+          }
         } else {
           setStatus('error')
         }
