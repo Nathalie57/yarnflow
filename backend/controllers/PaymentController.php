@@ -336,14 +336,22 @@ class PaymentController
         }
 
         // [AI:Claude] Traiter l'événement selon son type
-        if ($result['event'] === 'checkout_completed') {
-            $this->processCheckoutCompleted($result);
-        } elseif ($result['event'] === 'payment_succeeded') {
-            $this->processPaymentSucceeded($result);
-        } elseif ($result['event'] === 'subscription_created') {
-            $this->processSubscriptionCreated($result);
-        } elseif ($result['event'] === 'subscription_deleted') {
-            $this->processSubscriptionDeleted($result);
+        try {
+            if ($result['event'] === 'checkout_completed') {
+                $this->processCheckoutCompleted($result);
+            } elseif ($result['event'] === 'payment_succeeded') {
+                $this->processPaymentSucceeded($result);
+            } elseif ($result['event'] === 'subscription_created') {
+                $this->processSubscriptionCreated($result);
+            } elseif ($result['event'] === 'subscription_deleted') {
+                $this->processSubscriptionDeleted($result);
+            }
+        } catch (\Throwable $e) {
+            error_log('[Webhook ERROR] ' . get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            error_log('[Webhook Stack] ' . $e->getTraceAsString());
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            exit;
         }
 
         http_response_code(200);
