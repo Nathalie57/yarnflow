@@ -386,10 +386,7 @@ class PaymentController
         $payment = $this->paymentModel->findOne(['stripe_session_id' => $data['session_id'] ?? '']);
 
         if ($payment) {
-            $this->paymentModel->update($payment['id'], [
-                'status' => PAYMENT_COMPLETED,
-                'completed_at' => date('Y-m-d H:i:s')
-            ]);
+            $this->paymentModel->updateStatus($payment['id'], PAYMENT_COMPLETED);
         }
 
         // [AI:Claude] Si c'est un abonnement, mettre à jour l'utilisateur
