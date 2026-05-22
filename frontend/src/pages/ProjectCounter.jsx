@@ -299,6 +299,10 @@ const ProjectCounter = () => {
   useEffect(() => {
     const loadData = async () => {
       const projectData = await fetchProject()
+      if (!projectData) {
+        navigate('/my-projects')
+        return
+      }
       fetchProjectPhotos()
       fetchCredits()
       // Passer le current_section_id du projet fraîchement chargé
