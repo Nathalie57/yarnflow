@@ -36,6 +36,19 @@ const Subscription = () => {
     }
   }, [])
 
+  const handleManageSubscription = async () => {
+    setProcessing(true)
+    try {
+      const response = await paymentsAPI.createPortal()
+      const { portal_url } = response.data.data
+      window.location.href = portal_url
+    } catch (error) {
+      console.error('Erreur portail:', error)
+      alert('Impossible d\'ouvrir le portail de gestion. Réessayez.')
+      setProcessing(false)
+    }
+  }
+
   const loadSubscription = async () => {
     try {
       const response = await userAPI.getSubscription()
@@ -151,7 +164,13 @@ const Subscription = () => {
               )}
             </div>
           </div>
-          <span className="text-sm font-bold text-primary-700">3,99€/mois</span>
+          <button
+            onClick={handleManageSubscription}
+            disabled={processing}
+            className="text-xs font-semibold text-primary-700 border border-primary-300 bg-white hover:bg-primary-50 rounded-lg px-3 py-1.5 transition disabled:opacity-60"
+          >
+            {processing ? 'Chargement…' : 'Gérer'}
+          </button>
         </div>
       )}
 

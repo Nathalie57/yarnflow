@@ -317,6 +317,46 @@ class PaymentController
      * [AI:Claude] Webhook Stripe pour traiter les événements
      * POST /api/payments/webhook
      */
+
+    /**
+     * [AI:Claude] Créer une session Customer Portal Stripe pour gérer l'abonnement
+     * POST /api/payments/portal
+     */
+    public function createPortal(): void
+    {
+        $authMiddleware = new \App\Middleware\AuthMiddleware();
+        $userData = $authMiddleware->authenticate();
+
+        if ($userData === null)
+            return;
+
+        $user = $this->userModel->findById($userData['user_id']);
+
+        $customerId = $user['stripe_customer_id'] ?? null;
+
+        // [AI:Claude] Si pas de customer_id en base, le chercher/créer via l'email
+        if (!$customerId) {
+            $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+            $customerId = $this->stripeService->createOrGetCustomer($user['email'], $name ?: $user['email']);
+            if ($customerId) {
+                $this->userModel->update($userData['user_id'], ['stripe_customer_id' => $customerId]);
+            }
+        }
+
+        if (!$customerId) {
+            Response::serverError('Impossible d\'accéder au portail : aucun compte Stripe trouvé');
+            return;
+        }
+
+        $returnUrl = 'https://yarnflow.fr/subscription';
+        $result = $this->stripeService->createPortalSession($customerId, $returnUrl);
+
+        if (!$result['success'])
+            Response::serverError('Erreur lors de la création du portail client');
+
+        Response::success(['portal_url' => $result['url']]);
+    }
+
     public function handleWebhook(): void
     {
         $payload = file_get_contents('php://input');
@@ -382,6 +422,14 @@ class PaymentController
 
         if ($payment) {
             $this->paymentModel->updateStatus($payment['id'], PAYMENT_COMPLETED);
+        }
+
+        // [AI:Claude] Sauvegarder le stripe_customer_id pour le Customer Portal
+        if (!empty($data['customer_id'])) {
+            $existingUser = $this->userModel->findById($userId);
+            if (empty($existingUser['stripe_customer_id'])) {
+                $this->userModel->update($userId, ['stripe_customer_id' => $data['customer_id']]);
+            }
         }
 
         // [AI:Claude] Si c'est un abonnement, mettre à jour l'utilisateur

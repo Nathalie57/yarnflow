@@ -107,6 +107,7 @@ function route(string $method, string $uri): void
         $method === 'POST' && $uri === 'payments/checkout/subscription' => (new PaymentController())->createSubscriptionCheckout(),
         $method === 'POST' && $uri === 'payments/checkout/credits' => (new PaymentController())->createCreditsCheckout(),
         $method === 'GET' && preg_match('/^payments\/status\/(.+)$/', $uri, $matches) => (new PaymentController())->checkStatus($matches[1]),
+        $method === 'POST' && $uri === 'payments/portal' => (new PaymentController())->createPortal(),
         $method === 'POST' && $uri === 'payments/webhook' => (new PaymentController())->handleWebhook(),
         $method === 'GET' && $uri === 'payments/history' => (new PaymentController())->getHistory(),
         $method === 'POST' && preg_match('/^payments\/(\d+)\/refund$/', $uri, $matches) => (new PaymentController())->createRefund((int)$matches[1]),

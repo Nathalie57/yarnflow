@@ -226,6 +226,7 @@ export const paymentsAPI = {
   checkoutSubscription: (data) => api.post('/payments/checkout/subscription', data),
   checkoutCredits: (data) => api.post('/payments/checkout/credits', data),
   checkStatus: (sessionId) => api.get(`/payments/status/${sessionId}`),
+  createPortal: () => api.post('/payments/portal'),
   getHistory: (params) => api.get('/payments/history', { params })
 }
 

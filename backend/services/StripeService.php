@@ -520,6 +520,7 @@ class StripeService
             'success' => true,
             'event' => 'checkout_completed',
             'session_id' => $session->id,
+            'customer_id' => $session->customer ?? null,
             'user_id' => $metadata->user_id ?? null,
             'pattern_id' => $metadata->pattern_id ?? null,
             'payment_type' => $metadata->payment_type ?? null,
@@ -578,6 +579,35 @@ class StripeService
             'subscription_id' => $subscription->id,
             'customer_id' => $subscription->customer
         ];
+    }
+
+    /**
+     * [AI:Claude] Créer une session Customer Portal Stripe
+     *
+     * @param string $customerId ID du customer Stripe
+     * @param string $returnUrl URL de retour après le portail
+     * @return array Session portail créée
+     */
+    public function createPortalSession(string $customerId, string $returnUrl): array
+    {
+        try {
+            $session = \Stripe\BillingPortal\Session::create([
+                'customer' => $customerId,
+                'return_url' => $returnUrl,
+            ]);
+
+            return [
+                'success' => true,
+                'url' => $session->url
+            ];
+
+        } catch (ApiErrorException $e) {
+            error_log('[Stripe] Erreur création portail : '.$e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
     }
 
     /**
