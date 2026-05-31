@@ -40,6 +40,9 @@ const MyProjects = () => {
         const freshUser = response?.data?.data?.user
         if (freshUser) updateUser(freshUser)
       }).catch(() => {})
+      // Fermer l'onglet Stripe (Chrome Custom Tab ouvert par window.open) après 3s
+      // Si ça marche → l'utilisateur revient dans le PWA. Sinon → il reste sur cette page (OK).
+      setTimeout(() => { try { window.close() } catch {} }, 3000)
     }
   }, [])
 

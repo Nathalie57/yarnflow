@@ -38,11 +38,15 @@ const Subscription = () => {
 
   const handleManageSubscription = async () => {
     setProcessing(true)
+    const win = window.open('', '_blank')
     try {
       const response = await paymentsAPI.createPortal()
       const { portal_url } = response.data.data
-      window.location.href = portal_url
+      if (win) win.location.href = portal_url
+      else window.location.href = portal_url
+      setProcessing(false)
     } catch (error) {
+      if (win) win.close()
       console.error('Erreur portail:', error)
       alert('Impossible d\'ouvrir le portail de gestion. Réessayez.')
       setProcessing(false)
@@ -63,15 +67,18 @@ const Subscription = () => {
   const handleSubscribe = async () => {
     setProcessing(true)
     trackSubscriptionClick('pro', billingPeriod, 'subscription')
+    // Ouvrir un onglet vide AVANT l'await (dans le contexte du clic) pour contourner le popup blocker mobile
+    const win = window.open('', '_blank')
     try {
       const subscriptionType = billingPeriod === 'annual' ? 'pro_annual' : 'pro'
       const amount = billingPeriod === 'monthly' ? 3.99 : 39.99
-
       const response = await paymentsAPI.checkoutSubscription({ type: subscriptionType })
       const { checkout_url } = response.data.data
       trackBeginCheckout('subscription', subscriptionType, amount)
-      window.location.href = checkout_url
+      if (win) win.location.href = checkout_url
+      else window.location.href = checkout_url
     } catch (error) {
+      if (win) win.close()
       console.error('Erreur checkout:', error)
       alert(error.response?.data?.message || 'Erreur lors de la création du paiement')
       setProcessing(false)
@@ -81,13 +88,16 @@ const Subscription = () => {
   const handleBuyCredits = async (amount) => {
     setProcessing(true)
     trackCreditsClick(amount, 'subscription')
+    const win = window.open('', '_blank')
     try {
       const response = await paymentsAPI.checkoutCredits({ pack: String(amount) })
       const { checkout_url } = response.data.data
       const price = amount === 50 ? 4.99 : 9.99
       trackBeginCheckout('credits', String(amount), price)
-      window.location.href = checkout_url
+      if (win) win.location.href = checkout_url
+      else window.location.href = checkout_url
     } catch (error) {
+      if (win) win.close()
       console.error('Erreur checkout crédits:', error)
       alert(error.response?.data?.message || 'Erreur lors de la création du paiement')
       setProcessing(false)
