@@ -54,8 +54,8 @@ class StripeService
             throw new \RuntimeException('STRIPE_WEBHOOK_SECRET must be configured for webhook security');
         }
 
-        $this->successUrl = $_ENV['FRONTEND_URL'].'/payment/success?session_id={CHECKOUT_SESSION_ID}';
-        $this->cancelUrl = $_ENV['FRONTEND_URL'].'/payment/cancel';
+        $this->successUrl = $_ENV['FRONTEND_URL'].'/my-projects?payment=success';
+        $this->cancelUrl = $_ENV['FRONTEND_URL'].'/subscription';
 
         // Charger les Price IDs depuis .env
         $this->plusMonthlyPriceId = $_ENV['STRIPE_PRICE_ID_PLUS_MONTHLY'] ?? '';

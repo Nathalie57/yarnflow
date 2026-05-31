@@ -79,6 +79,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff,woff2}'],
         globIgnores: ['**/style-examples/**'], // Exclure les images d'exemples trop volumineuses
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB max (au lieu de 2MB)
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//],
         // [AI:Claude] Force la mise à jour immédiate du SW après déploiement
         skipWaiting: true,

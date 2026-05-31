@@ -16,7 +16,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import api from '../services/api'
+import api, { authAPI } from '../services/api'
 import ProjectFilters from '../components/ProjectFilters'
 import InfoBubble from '../components/InfoBubble'
 import TagBadge from '../components/TagBadge'
@@ -24,9 +24,24 @@ import UpgradePrompt from '../components/UpgradePrompt'
 import CreateProjectWizard from '../components/CreateProjectWizard'
 
 const MyProjects = () => {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+
+  const [paymentSuccess, setPaymentSuccess] = useState(false)
+
+  // Détection retour Stripe : ?payment=success dans l'URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (params.get('payment') === 'success') {
+      setPaymentSuccess(true)
+      navigate('/my-projects', { replace: true })
+      authAPI.me().then(response => {
+        const freshUser = response?.data?.data?.user
+        if (freshUser) updateUser(freshUser)
+      }).catch(() => {})
+    }
+  }, [])
 
   // Reprise automatique du dernier projet — une seule fois par session
   useEffect(() => {
@@ -623,6 +638,26 @@ const MyProjects = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      {/* Toast succès paiement Stripe */}
+      {paymentSuccess && (
+        <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-green-800">Paiement réussi !</p>
+            <p className="text-sm text-green-700 mt-0.5">Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités PRO.</p>
+          </div>
+          <button onClick={() => setPaymentSuccess(false)} className="flex-shrink-0 text-green-500 hover:text-green-700">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Header - Responsive mobile */}
       <div className="mb-6 sm:mb-8">
         {/* Afficher header complet uniquement si des projets existent */}
