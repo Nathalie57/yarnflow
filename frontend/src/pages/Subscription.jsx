@@ -77,6 +77,7 @@ const Subscription = () => {
       trackBeginCheckout('subscription', subscriptionType, amount)
       if (win) win.location.href = checkout_url
       else window.location.href = checkout_url
+      setProcessing(false)
     } catch (error) {
       if (win) win.close()
       console.error('Erreur checkout:', error)
@@ -96,6 +97,7 @@ const Subscription = () => {
       trackBeginCheckout('credits', String(amount), price)
       if (win) win.location.href = checkout_url
       else window.location.href = checkout_url
+      setProcessing(false)
     } catch (error) {
       if (win) win.close()
       console.error('Erreur checkout crédits:', error)
