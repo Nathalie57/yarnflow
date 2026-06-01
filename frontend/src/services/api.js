@@ -185,6 +185,11 @@ api.interceptors.response.use(
         // Déconnecter uniquement si le serveur rejette explicitement le token (401)
         // Pas pour les erreurs réseau ou serveur temporaires (pas de réponse, 500, etc.)
         if (refreshError.response?.status === 401) {
+          // Si l'appelant a demandé _noAutoLogout, on lui laisse gérer (ex: loadUser au démarrage)
+          if (originalRequest._noAutoLogout) {
+            refreshError._refreshFailed = true
+            return Promise.reject(refreshError)
+          }
           storage.removeItem('token')
           storage.removeItem('user')
           console.log('[API Interceptor] Token rejeté par le serveur, redirection /login')
@@ -205,7 +210,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
-  me: () => api.get('/auth/me'),
+  me: (config) => api.get('/auth/me', config),
   refresh: () => api.post('/auth/refresh')
 }
 

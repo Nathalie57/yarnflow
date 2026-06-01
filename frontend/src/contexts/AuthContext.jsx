@@ -54,27 +54,36 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const loadUser = async () => {
       const token = storage.getItem('token')
+      if (!token) { setLoading(false); return }
+
+      // Afficher le user stocké immédiatement pour éviter le flash de chargement
       const storedUser = storage.getItem('user')
-
-      if (token && storedUser) {
+      if (storedUser) {
         try {
-          const parsedUser = JSON.parse(storedUser)
-          setUser(parsedUser)
-
-          // Vérifier si le token est toujours valide
-          try {
-            const response = await authAPI.me()
-            const freshUser = response?.data?.data?.user
-            if (freshUser) setUser(freshUser)
-          } catch (err) {
-            console.error('Erreur validation token:', err)
-            // On garde l'utilisateur du localStorage même si la validation échoue
-          }
-        } catch (err) {
-          console.error('Erreur chargement utilisateur:', err)
-          logout()
+          setUser(JSON.parse(storedUser))
+        } catch {
+          // JSON corrompu — on continue quand même avec le token
         }
       }
+
+      // Valider le token côté serveur sans risquer de déconnecter en cas d'erreur réseau
+      try {
+        const response = await authAPI.me({ _noAutoLogout: true })
+        const freshUser = response?.data?.data?.user
+        if (freshUser) {
+          setUser(freshUser)
+          storage.setItem('user', JSON.stringify(freshUser))
+        }
+      } catch (err) {
+        // Erreur réseau ou serveur temporaire → on garde la session locale
+        // Seul un 401 confirmé (token révoqué) doit déconnecter
+        if (err.response?.status === 401 && err._refreshFailed) {
+          storage.removeItem('token')
+          storage.removeItem('user')
+          setUser(null)
+        }
+      }
+
       setLoading(false)
     }
 
