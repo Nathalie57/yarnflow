@@ -247,7 +247,7 @@ const Subscription = () => {
         {/* PRO */}
         <div className="bg-white rounded-2xl border-2 border-primary-500 p-6 shadow-lg flex flex-col relative">
           <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-            <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm">
+            <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">
               Pour les projets sérieux
             </span>
           </div>
