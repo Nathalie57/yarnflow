@@ -87,36 +87,10 @@
     </script>
   </head>
   <body>
-    <div id="root">
-      <!-- Visible si React ne monte pas — disparaît automatiquement quand React prend le contrôle -->
-      <div id="yf-debug" style="position:fixed;top:0;left:0;right:0;padding:16px;background:#fff;font-family:sans-serif;font-size:13px;z-index:99999;border-bottom:2px solid #e5e7eb">
-        <p style="margin:0;color:#374151;font-weight:600">⏳ Chargement YarnFlow...</p>
-        <p style="margin:4px 0 0;color:#6b7280;font-size:11px" id="yf-debug-url"></p>
-        <p style="margin:4px 0 0;color:#6b7280;font-size:11px" id="yf-debug-sw"></p>
-        <p style="margin:4px 0 0;color:#dc2626;font-size:11px" id="yf-debug-err"></p>
-      </div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 
     <script>
-      // Debug : URL courante et état SW
-      var dbgUrl = document.getElementById('yf-debug-url');
-      var dbgSw  = document.getElementById('yf-debug-sw');
-      var dbgErr = document.getElementById('yf-debug-err');
-      if (dbgUrl) dbgUrl.textContent = 'URL: ' + window.location.href;
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration().then(function(reg) {
-          if (dbgSw) dbgSw.textContent = 'SW: ' + (reg ? (reg.active ? 'actif ✓' : 'installation...') : 'aucun');
-        });
-      } else {
-        if (dbgSw) dbgSw.textContent = 'SW: non supporté';
-      }
-      window.onerror = function(msg, src, line) {
-        if (dbgErr) dbgErr.textContent = '❌ JS: ' + msg + ' — ' + (src||'').split('/').pop() + ':' + line;
-      };
-      window.addEventListener('unhandledrejection', function(e) {
-        if (dbgErr) dbgErr.textContent = '❌ Promise: ' + (e.reason && e.reason.message ? e.reason.message : e.reason);
-      });
 
       // Force mise à jour SW — version incrémentée pour nettoyer les caches périmés
       var SW_VERSION = '2026060101';
