@@ -222,23 +222,16 @@ const Subscription = () => {
           <div className="mb-5">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Free</p>
             <div className="text-4xl font-bold text-gray-900 mb-1">0€</div>
-            <p className="text-sm text-gray-500">Pour découvrir YarnFlow</p>
+            <p className="text-sm text-gray-500">L'essentiel pour suivre vos encours et découvrir la puissance de l'IA.</p>
           </div>
 
           <ul className="space-y-2.5 mb-6 flex-1">
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">Projets illimités avec sections</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">1 compteur par projet</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">Détails techniques complets</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">Notes globales</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">Bibliothèque de patrons illimitée</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">Stats résumées</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">3 questions assistant IA / mois</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">2 crédits photo IA / mois</span></li>
-            <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">2e compteur par projet</span></li>
-            <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">Notes par section</span></li>
-            <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">Tags et organisation</span></li>
-            <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">Création intelligente de projet (1 essai gratuit)</span></li>
-            <li className="flex items-start gap-2.5"><Dash /><span className="text-sm text-gray-400">Stats complètes + graphiques</span></li>
+            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">Projets &amp; patrons illimités avec sections</span></li>
+            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">1 compteur de rangs actif par projet</span></li>
+            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">Timer intégré &amp; statistiques de progression</span></li>
+            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700"><span className="font-medium">1 Création Intelligente IA offerte</span> — l'IA configure votre premier projet à partir d'un PDF ou d'une photo</span></li>
+            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">3 questions / mois à l'assistant IA tricot</span></li>
+            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">2 crédits / mois au Studio Photo IA</span></li>
           </ul>
 
           <button disabled className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed">
@@ -269,19 +262,16 @@ const Subscription = () => {
             {billingPeriod === 'annual' && (
               <p className="text-xs text-green-600 font-medium mb-1">Facturé 39,99€/an — économisez 7,89€</p>
             )}
-            <p className="text-sm text-gray-500">Pour les projets qui méritent mieux qu'un bout de papier</p>
+            <p className="text-sm text-gray-500">Pour les projets qui méritent mieux qu'un bout de papier.</p>
           </div>
 
-          <ul className="space-y-2.5 mb-6 flex-1">
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700">Tout ce qu'inclut FREE</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">2 compteurs par projet</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Notes par section</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Tags et organisation</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Création intelligente de projet (15 imports / mois)</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Stats complètes + graphiques + badges</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">Timer avec historique</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">30 questions assistant IA / mois</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm font-medium text-gray-800">20 crédits photo IA + tous les styles</span></li>
+          <ul className="space-y-3 mb-6 flex-1">
+            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700">Tout ce qu'inclut le plan FREE</span></li>
+            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Confort de gestion</span><span className="block text-gray-500 text-xs mt-0.5">2 compteurs simultanés, notes privées par section et tags pour trier vos ouvrages</span></span></li>
+            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Création Intelligente IA — 15 imports / mois</span><span className="block text-gray-500 text-xs mt-0.5">Déposez un PDF ou une photo de patron, l'IA pré-remplit tout instantanément</span></span></li>
+            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Assistant IA tricot — 30 questions / mois</span><span className="block text-gray-500 text-xs mt-0.5">Vos doutes expliqués en un clin d'œil, même en pleine nuit</span></span></li>
+            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Studio Photo IA — 20 crédits / mois</span><span className="block text-gray-500 text-xs mt-0.5">Sublimez vos tricots dans des décors pros, prêts à partager</span></span></li>
+            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Statistiques avancées</span><span className="block text-gray-500 text-xs mt-0.5">Graphiques visuels, badges de progression et temps moyen par session</span></span></li>
           </ul>
 
           <button

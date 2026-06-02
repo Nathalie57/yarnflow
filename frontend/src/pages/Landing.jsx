@@ -389,33 +389,32 @@ const Landing = () => {
             <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Free</p>
               <div className="text-4xl font-bold text-gray-900 mb-1">0€</div>
-              <p className="text-sm text-gray-500 mb-6">Gratuit pour toujours</p>
+              <p className="text-sm text-gray-500 mb-6">L'essentiel pour suivre vos encours et découvrir la puissance de l'IA.</p>
               <ul className="space-y-3 mb-8">
-                {[
-                  'Projets illimités avec sections',
-                  '1 compteur par projet',
-                  'Détails techniques (laine, aiguilles...)',
-                  'Notes globales',
-                  'Bibliothèque de patrons illimitée',
-                  '3 questions assistant IA / mois',
-                  '2 crédits photo / mois',
-                  'Création intelligente (1 essai gratuit)',
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    {item}
-                  </li>
-                ))}
-                {['2e compteur par projet', 'Notes par section', 'Tags et organisation'].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-300 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M18 12H6" />
-                    </svg>
-                    {item}
-                  </li>
-                ))}
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  Projets &amp; patrons illimités avec sections
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  1 compteur de rangs actif par projet
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  Timer intégré &amp; statistiques de progression
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span><span className="font-medium">1 Création Intelligente IA offerte</span> — l'IA configure votre premier projet à partir d'un PDF ou d'une photo</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  3 questions / mois à l'assistant IA tricot
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  2 crédits / mois au Studio Photo IA
+                </li>
               </ul>
               <Link to="/register" className="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition text-sm">
                 Créer mon compte gratuit
@@ -435,27 +434,32 @@ const Landing = () => {
               {billingPeriod === 'annual' && (
                 <p className="text-xs text-green-600 font-medium mb-1">Facturé 39,99€/an — économisez 7,89€</p>
               )}
-              <p className="text-sm text-gray-500 mb-6">Pour les projets qui méritent mieux qu'un bout de papier</p>
+              <p className="text-sm text-gray-500 mb-6">Pour les projets qui méritent mieux qu'un bout de papier.</p>
               <ul className="space-y-3 mb-8">
-                {[
-                  ['Tout ce qu\'inclut FREE', false],
-                  ['2 compteurs par projet', true],
-                  ['Notes par section', true],
-                  ['Tags et organisation', true],
-                  ['Bibliothèque illimitée', true],
-                  ['Stats complètes + graphiques + badges', true],
-                  ['Timer avec historique', true],
-                  ['30 questions assistant IA / mois', true],
-                  ['20 crédits photo + tous les styles', true],
-                  ['Création intelligente — 15 imports / mois', true],
-                ].map(([item, highlight], i) => (
-                  <li key={i} className={`flex items-start gap-2.5 text-sm ${highlight ? 'text-gray-800 font-medium' : 'text-gray-700'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    {item}
-                  </li>
-                ))}
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  Tout ce qu'inclut le plan FREE
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span><span className="font-medium text-gray-800">Confort de gestion</span><span className="block text-gray-500 text-xs mt-0.5">2 compteurs simultanés, notes privées par section et tags pour trier vos ouvrages</span></span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span><span className="font-medium text-gray-800">Création Intelligente IA — 15 imports / mois</span><span className="block text-gray-500 text-xs mt-0.5">Déposez un PDF ou une photo de patron, l'IA pré-remplit tout instantanément</span></span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span><span className="font-medium text-gray-800">Assistant IA tricot — 30 questions / mois</span><span className="block text-gray-500 text-xs mt-0.5">Vos doutes expliqués en un clin d'œil, même en pleine nuit</span></span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span><span className="font-medium text-gray-800">Studio Photo IA — 20 crédits / mois</span><span className="block text-gray-500 text-xs mt-0.5">Sublimez vos tricots dans des décors pros, prêts à partager</span></span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span><span className="font-medium text-gray-800">Statistiques avancées</span><span className="block text-gray-500 text-xs mt-0.5">Graphiques visuels, badges de progression et temps moyen par session</span></span>
+                </li>
               </ul>
               <Link
                 to="/register"
