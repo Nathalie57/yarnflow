@@ -36,12 +36,24 @@ const MyProjects = () => {
     if (params.get('payment') === 'success') {
       setPaymentSuccess(true)
       navigate('/my-projects', { replace: true })
-      authAPI.me().then(response => {
-        const freshUser = response?.data?.data?.user
-        if (freshUser) updateUser(freshUser)
-      }).catch(() => {})
-      // Fermer l'onglet Stripe (Chrome Custom Tab ouvert par window.open) après 3s
-      // Si ça marche → l'utilisateur revient dans le PWA. Sinon → il reste sur cette page (OK).
+
+      // Polling jusqu'à ce que le webhook ait mis à jour l'abonnement (race condition)
+      const MAX_RETRIES = 6
+      const RETRY_DELAY = 2000
+      const pollSubscription = async (attempt = 0) => {
+        try {
+          const response = await authAPI.me()
+          const freshUser = response?.data?.data?.user
+          if (freshUser) {
+            updateUser(freshUser)
+            if (freshUser.subscription_type === 'free' && attempt < MAX_RETRIES) {
+              setTimeout(() => pollSubscription(attempt + 1), RETRY_DELAY)
+            }
+          }
+        } catch {}
+      }
+      pollSubscription()
+
       setTimeout(() => { try { window.close() } catch {} }, 3000)
     }
   }, [])
