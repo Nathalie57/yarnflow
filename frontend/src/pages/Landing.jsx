@@ -378,7 +378,7 @@ const Landing = () => {
                 className={`px-6 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${billingPeriod === 'annual' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Annuel
-                <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">−17%</span>
+                <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">−40%</span>
               </button>
             </div>
           </div>
@@ -428,11 +428,11 @@ const Landing = () => {
               </div>
               <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3 mt-2">Pro</p>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-bold text-gray-900">{billingPeriod === 'monthly' ? '3,99€' : '3,33€'}</span>
+                <span className="text-4xl font-bold text-gray-900">{billingPeriod === 'monthly' ? '6,99€' : '4,16€'}</span>
                 <span className="text-sm text-gray-500">/mois</span>
               </div>
               {billingPeriod === 'annual' && (
-                <p className="text-xs text-green-600 font-medium mb-1">Facturé 39,99€/an — économisez 7,89€</p>
+                <p className="text-xs text-green-600 font-medium mb-1">Facturé 49,99€/an — économisez 33,89€</p>
               )}
               <p className="text-sm text-gray-500 mb-6">Pour les projets qui méritent mieux qu'un bout de papier.</p>
               <ul className="space-y-3 mb-8">
