@@ -29,6 +29,7 @@ class StripeService
     private string $secretKey;
     private string $webhookSecret;
     private string $successUrl;
+    private string $creditsSuccessUrl;
     private string $cancelUrl;
 
     // Price IDs Stripe (créés dans le Dashboard)
@@ -56,6 +57,7 @@ class StripeService
 
         $frontendUrl = rtrim($_ENV['FRONTEND_URL'], '/');
         $this->successUrl = $frontendUrl.'/my-projects?payment=success';
+        $this->creditsSuccessUrl = $frontendUrl.'/gallery?credits=purchased';
         $this->cancelUrl = $frontendUrl.'/subscription';
 
         // Charger les Price IDs depuis .env
@@ -354,7 +356,7 @@ class StripeService
                     'quantity' => 1
                 ]],
                 'mode' => 'payment',
-                'success_url' => $this->successUrl,
+                'success_url' => $this->creditsSuccessUrl,
                 'cancel_url' => $this->cancelUrl,
                 'metadata' => [
                     'user_id' => $userId,
@@ -395,7 +397,7 @@ class StripeService
                     'quantity' => 1
                 ]],
                 'mode' => 'payment',
-                'success_url' => $this->successUrl,
+                'success_url' => $this->creditsSuccessUrl,
                 'cancel_url' => $this->cancelUrl,
                 'metadata' => [
                     'user_id' => $userId,
