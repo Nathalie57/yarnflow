@@ -492,11 +492,13 @@ class StripeService
 
             // [AI:Claude] Traiter selon le type d'événement
             return match($event->type) {
-                'checkout.session.completed' => $this->handleCheckoutCompleted($event->data->object),
-                'payment_intent.succeeded' => $this->handlePaymentSucceeded($event->data->object),
-                'payment_intent.payment_failed' => $this->handlePaymentFailed($event->data->object),
-                'customer.subscription.created' => $this->handleSubscriptionCreated($event->data->object),
-                'customer.subscription.deleted' => $this->handleSubscriptionDeleted($event->data->object),
+                'checkout.session.completed'     => $this->handleCheckoutCompleted($event->data->object),
+                'invoice.paid'                   => $this->handleInvoicePaid($event->data->object),
+                'customer.subscription.updated'  => $this->handleSubscriptionUpdated($event->data->object),
+                'customer.subscription.deleted'  => $this->handleSubscriptionDeleted($event->data->object),
+                'payment_intent.succeeded'        => $this->handlePaymentSucceeded($event->data->object),
+                'payment_intent.payment_failed'   => $this->handlePaymentFailed($event->data->object),
+                'customer.subscription.created'  => $this->handleSubscriptionCreated($event->data->object),
                 default => [
                     'success' => true,
                     'message' => 'Événement non géré : '.$event->type
@@ -565,6 +567,42 @@ class StripeService
         return [
             'success' => true,
             'event' => 'subscription_created',
+            'subscription_id' => $subscription->id,
+            'customer_id' => $subscription->customer,
+            'status' => $subscription->status
+        ];
+    }
+
+    /**
+     * Gérer le renouvellement d'abonnement (invoice.paid)
+     * Déclenché à chaque renouvellement mensuel/annuel Stripe
+     */
+    private function handleInvoicePaid(object $invoice): array
+    {
+        // Ignorer les invoices hors abonnement (one-time payments)
+        if (empty($invoice->subscription)) {
+            return ['success' => true, 'event' => 'invoice_paid_ignored'];
+        }
+
+        return [
+            'success' => true,
+            'event' => 'invoice_paid',
+            'customer_id' => $invoice->customer,
+            'subscription_id' => $invoice->subscription,
+            'amount' => $invoice->amount_paid / 100,
+            'billing_reason' => $invoice->billing_reason ?? 'subscription_cycle'
+        ];
+    }
+
+    /**
+     * Gérer le changement de statut d'abonnement (customer.subscription.updated)
+     * Déclenché quand l'abonnement passe en past_due, unpaid, active, etc.
+     */
+    private function handleSubscriptionUpdated(object $subscription): array
+    {
+        return [
+            'success' => true,
+            'event' => 'subscription_updated',
             'subscription_id' => $subscription->id,
             'customer_id' => $subscription->customer,
             'status' => $subscription->status

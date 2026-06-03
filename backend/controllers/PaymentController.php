@@ -374,12 +374,16 @@ class PaymentController
         try {
             if ($result['event'] === 'checkout_completed') {
                 $this->processCheckoutCompleted($result);
+            } elseif ($result['event'] === 'invoice_paid') {
+                $this->processInvoicePaid($result);
+            } elseif ($result['event'] === 'subscription_updated') {
+                $this->processSubscriptionUpdated($result);
+            } elseif ($result['event'] === 'subscription_deleted') {
+                $this->processSubscriptionDeleted($result);
             } elseif ($result['event'] === 'payment_succeeded') {
                 $this->processPaymentSucceeded($result);
             } elseif ($result['event'] === 'subscription_created') {
                 $this->processSubscriptionCreated($result);
-            } elseif ($result['event'] === 'subscription_deleted') {
-                $this->processSubscriptionDeleted($result);
             }
         } catch (\Throwable $e) {
             error_log('[Webhook ERROR] ' . get_class($e) . ': ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
@@ -392,6 +396,63 @@ class PaymentController
         http_response_code(200);
         echo json_encode(['success' => true]);
         exit;
+    }
+
+    /**
+     * Traiter le renouvellement d'abonnement (invoice.paid)
+     * Étend subscription_expires_at et remet les crédits mensuels à jour
+     */
+    private function processInvoicePaid(array $data): void
+    {
+        // Ignorer les invoices qui ne sont pas des renouvellements
+        if (($data['billing_reason'] ?? '') === 'subscription_create') {
+            return; // Déjà traité par checkout.session.completed
+        }
+
+        $customerId = $data['customer_id'] ?? null;
+        if (!$customerId) return;
+
+        $user = $this->userModel->findOne(['stripe_customer_id' => $customerId]);
+        if (!$user) {
+            error_log("[invoice.paid] Utilisateur introuvable pour customer {$customerId}");
+            return;
+        }
+
+        $userId = (int)$user['id'];
+        $subscriptionType = $user['subscription_type'];
+
+        // Ne prolonger que les abonnements actifs (pas FREE)
+        if ($subscriptionType === SUBSCRIPTION_FREE) return;
+
+        // Prolonger d'un mois ou d'un an selon le plan
+        $isAnnual = in_array($subscriptionType, [SUBSCRIPTION_PRO_ANNUAL, SUBSCRIPTION_PLUS_ANNUAL]);
+        $newExpiry = date('Y-m-d H:i:s', strtotime($isAnnual ? '+1 year' : '+1 month'));
+
+        $this->userModel->updateSubscription($userId, $subscriptionType, $newExpiry);
+        $this->creditManager->initializeUserCredits($userId, $subscriptionType);
+
+        error_log("[invoice.paid] User {$userId} → plan {$subscriptionType} prolongé jusqu'au {$newExpiry}, crédits réinitialisés");
+    }
+
+    /**
+     * Traiter le changement de statut d'abonnement (customer.subscription.updated)
+     * Dégrade en FREE si past_due ou unpaid
+     */
+    private function processSubscriptionUpdated(array $data): void
+    {
+        $status = $data['status'] ?? '';
+        if (!in_array($status, ['past_due', 'unpaid'])) return;
+
+        $customerId = $data['customer_id'] ?? null;
+        if (!$customerId) return;
+
+        $user = $this->userModel->findOne(['stripe_customer_id' => $customerId]);
+        if (!$user) return;
+
+        $this->userModel->updateSubscription((int)$user['id'], SUBSCRIPTION_FREE, null);
+        $this->creditManager->initializeUserCredits((int)$user['id'], 'free');
+
+        error_log("[subscription.updated] User {$user['id']} rétrogradé FREE — statut Stripe: {$status}");
     }
 
     /**
@@ -417,8 +478,12 @@ class PaymentController
             }
         }
 
-        // [AI:Claude] Mettre à jour le paiement en base
+        // Idempotence : ne pas traiter deux fois la même session
         $payment = $this->paymentModel->findOne(['stripe_session_id' => $data['session_id'] ?? '']);
+        if ($payment && $payment['status'] === PAYMENT_COMPLETED) {
+            error_log("[checkout.completed] Session {$data['session_id']} déjà traitée — ignorée");
+            return;
+        }
 
         if ($payment) {
             $this->paymentModel->updateStatus($payment['id'], PAYMENT_COMPLETED);
