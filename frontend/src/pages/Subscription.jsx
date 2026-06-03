@@ -27,6 +27,15 @@ const Subscription = () => {
     loadSubscription()
   }, [])
 
+  // Recharger l'abonnement quand la page revient au premier plan (retour du CCT Stripe)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) loadSubscription()
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
+
   useEffect(() => {
     if (window.location.hash === '#credits') {
       setTimeout(() => {
