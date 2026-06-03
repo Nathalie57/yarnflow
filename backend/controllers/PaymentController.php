@@ -441,18 +441,24 @@ class PaymentController
     private function processSubscriptionUpdated(array $data): void
     {
         $status = $data['status'] ?? '';
-        if (!in_array($status, ['past_due', 'unpaid'])) return;
-
         $customerId = $data['customer_id'] ?? null;
         if (!$customerId) return;
 
         $user = $this->userModel->findOne(['stripe_customer_id' => $customerId]);
         if (!$user) return;
 
-        $this->userModel->updateSubscription((int)$user['id'], SUBSCRIPTION_FREE, null);
-        $this->creditManager->initializeUserCredits((int)$user['id'], 'free');
+        if (in_array($status, ['past_due', 'unpaid'])) {
+            // Paiement échoué → rétrograder en FREE immédiatement
+            $this->userModel->updateSubscription((int)$user['id'], SUBSCRIPTION_FREE, null);
+            $this->creditManager->initializeUserCredits((int)$user['id'], 'free');
+            error_log("[subscription.updated] User {$user['id']} rétrogradé FREE — statut: {$status}");
 
-        error_log("[subscription.updated] User {$user['id']} rétrogradé FREE — statut Stripe: {$status}");
+        } elseif ($status === 'active' && $user['subscription_type'] === SUBSCRIPTION_FREE) {
+            // Paiement récupéré après past_due → réactiver le plan PRO via invoice.paid
+            // (invoice.paid se déclenche simultanément et gère la prolongation)
+            // On logue juste pour traçabilité
+            error_log("[subscription.updated] User {$user['id']} repassé active — invoice.paid gérera la réactivation");
+        }
     }
 
     /**
