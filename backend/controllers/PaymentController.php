@@ -454,6 +454,10 @@ class PaymentController
 
             $this->userModel->updateSubscription($userId, $subscriptionType, $expiresAt);
 
+            // Allouer les crédits mensuels correspondant au nouveau plan
+            $this->creditManager->initializeUserCredits($userId, $subscriptionType);
+            error_log("[SUBSCRIPTION] Crédits initialisés pour user {$userId} → plan {$subscriptionType}");
+
             // [AI:Claude] Si PRO Annuel, ajouter 50 crédits bonus (one-time)
             if ($paymentType === 'subscription_pro_annual') {
                 $this->creditManager->addPurchasedCredits($userId, 50);
