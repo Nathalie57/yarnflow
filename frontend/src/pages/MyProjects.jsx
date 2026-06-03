@@ -53,8 +53,6 @@ const MyProjects = () => {
         } catch {}
       }
       pollSubscription()
-
-      setTimeout(() => { try { window.close() } catch {} }, 3000)
     }
   }, [])
 
