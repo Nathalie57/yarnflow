@@ -71,7 +71,7 @@ const Subscription = () => {
     const win = window.open('', '_blank')
     try {
       const subscriptionType = billingPeriod === 'annual' ? 'pro_annual' : 'pro'
-      const amount = billingPeriod === 'monthly' ? 6.99 : 49.99
+      const amount = billingPeriod === 'monthly' ? 6.99 : 59.99
       const response = await paymentsAPI.checkoutSubscription({ type: subscriptionType })
       const { checkout_url } = response.data.data
       trackBeginCheckout('subscription', subscriptionType, amount)
@@ -117,7 +117,7 @@ const Subscription = () => {
     subscription?.type === 'annual'
   )
 
-  const proPrice = billingPeriod === 'monthly' ? '6,99€' : '4,16€'
+  const proPrice = billingPeriod === 'monthly' ? '6,99€' : '5,00€'
 
   if (loading) {
     return (
@@ -204,7 +204,7 @@ const Subscription = () => {
             }`}
           >
             Annuel
-            <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">−40%</span>
+            <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">−28%</span>
           </button>
         </div>
       </div>
@@ -260,7 +260,7 @@ const Subscription = () => {
               <span className="text-sm text-gray-500">/mois</span>
             </div>
             {billingPeriod === 'annual' && (
-              <p className="text-xs text-green-600 font-medium mb-1">Facturé 49,99€/an — économisez 33,89€</p>
+              <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
             )}
             <p className="text-sm text-gray-500">Pour les projets qui méritent mieux qu'un bout de papier.</p>
           </div>
