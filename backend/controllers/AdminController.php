@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Models\Pattern;
 use App\Models\Payment;
 use App\Models\PatternTemplate;
+use App\Services\CreditManager;
 use App\Utils\Response;
 use App\Utils\Validator;
 
@@ -30,6 +31,7 @@ class AdminController
     private Pattern $patternModel;
     private Payment $paymentModel;
     private PatternTemplate $templateModel;
+    private CreditManager $creditManager;
 
     public function __construct()
     {
@@ -37,6 +39,7 @@ class AdminController
         $this->patternModel = new Pattern();
         $this->paymentModel = new Payment();
         $this->templateModel = new PatternTemplate();
+        $this->creditManager = new CreditManager();
     }
 
     /**
@@ -359,6 +362,7 @@ class AdminController
 
         try {
             $this->userModel->updateSubscription($userId, $subscriptionType, $expiresAt);
+            $this->creditManager->initializeUserCredits($userId, $subscriptionType);
 
             // [AI:Claude] Logger l'action admin
             error_log("[ADMIN] {$userData['email']} a changé l'abonnement de user {$userId} en {$subscriptionType}");

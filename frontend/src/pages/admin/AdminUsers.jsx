@@ -16,7 +16,7 @@ const AdminUsers = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await adminAPI.getUsers({ search, filter })
+      const response = await adminAPI.getUsers({ search, filter, limit: 1000 })
       // L'API retourne { users: [...], pagination: {...} }
       setUsers(response.data.data.users || [])
     } catch (error) {
