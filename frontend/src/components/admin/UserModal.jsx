@@ -245,7 +245,14 @@ const UserModal = ({ user, onClose, onUpdate }) => {
           {activeTab === 'subscription' && (
             <div className="space-y-3">
               <h3 className="text-lg font-bold mb-4">Changer l'abonnement</h3>
-              {['free', 'plus', 'plus_annual', 'pro', 'pro_annual', 'early_bird'].map((type) => (
+              {[
+                { type: 'free',        label: 'FREE',          desc: '3 projets, 2 crédits photo/mois, 3 questions IA/mois' },
+                { type: 'pro',         label: 'PRO Mensuel',   desc: '6,99€/mois — 15 imports IA, 30 questions IA, 20 crédits photo/mois' },
+                { type: 'pro_annual',  label: 'PRO Annuel',    desc: '59,99€/an (5,00€/mois) — mêmes avantages PRO' },
+                { type: 'early_bird',  label: 'Early Bird',    desc: '2,99€/mois × 12 — accès PRO complet, tarif bloqué' },
+                { type: 'plus',        label: 'PLUS (legacy)', desc: 'Ancien plan — ne plus attribuer', legacy: true },
+                { type: 'plus_annual', label: 'PLUS Annuel (legacy)', desc: 'Ancien plan — ne plus attribuer', legacy: true },
+              ].map(({ type, label, desc, legacy }) => (
                 <button
                   key={type}
                   onClick={() => handleUpdateSubscription(type)}
@@ -253,20 +260,15 @@ const UserModal = ({ user, onClose, onUpdate }) => {
                   className={`w-full p-4 text-left border-2 rounded-lg transition-all ${
                     user.subscription_type === type
                       ? 'border-primary-600 bg-primary-50'
+                      : legacy
+                      ? 'border-gray-100 bg-gray-50 opacity-50 hover:opacity-70'
                       : 'border-gray-200 hover:border-primary-400 hover:bg-gray-50'
                   } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="font-bold text-gray-900">{getSubscriptionLabel(type)}</div>
-                      <div className="text-sm text-gray-600">
-                        {type === 'free' && '3 projets actifs, 5 crédits/mois'}
-                        {type === 'plus' && '2.99€/mois - 7 projets, 15 crédits/mois'}
-                        {type === 'plus_annual' && '29.99€/an - 7 projets, 15 crédits/mois'}
-                        {type === 'pro' && '4.99€/mois - Projets illimités, 30 crédits/mois'}
-                        {type === 'pro_annual' && '49.99€/an - Projets illimités, 30 crédits/mois'}
-                        {type === 'early_bird' && '2.99€/mois x12 - Accès PRO complet'}
-                      </div>
+                      <div className={`font-bold ${legacy ? 'text-gray-400' : 'text-gray-900'}`}>{label}</div>
+                      <div className={`text-sm ${legacy ? 'text-gray-400' : 'text-gray-600'}`}>{desc}</div>
                     </div>
                     {user.subscription_type === type && (
                       <span className="text-primary-600 font-bold">✓ Actuel</span>
