@@ -125,7 +125,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             <p className="text-xs text-gray-500 mt-0.5">Pour les projets sérieux</p>
           </div>
           <div className="text-right">
-            <span className="text-2xl font-bold text-primary-600">3,99€</span>
+            <span className="text-2xl font-bold text-primary-600">6,99€</span>
             <span className="text-xs text-gray-500">/mois</span>
           </div>
         </div>

@@ -93,7 +93,7 @@ export default function AiAssistant() {
           to="/subscription"
           className="inline-block bg-primary-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
         >
-          Passer à PRO — 3,99€/mois
+          Passer à PRO — 6,99€/mois
         </Link>
         <p className="text-xs text-gray-400">Quota réinitialisé le 1er du mois prochain</p>
       </div>

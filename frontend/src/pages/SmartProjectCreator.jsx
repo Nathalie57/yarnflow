@@ -270,7 +270,7 @@ export default function SmartProjectCreator() {
             <p className="text-sm text-primary-700">Assistant IA, photos pro, stats complètes</p>
           </div>
           <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
-            Passer à PRO — 3,99€/mois
+            Passer à PRO — 6,99€/mois
           </Link>
           <button onClick={() => navigate(-1)} className="block w-full text-sm text-gray-400 hover:text-gray-600">
             Retour

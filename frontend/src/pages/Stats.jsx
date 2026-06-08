@@ -498,7 +498,7 @@ const Stats = () => {
                     to="/subscription"
                     className="inline-block w-full px-5 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition shadow-sm"
                   >
-                    Débloquer avec PRO — 3,99€/mois
+                    Débloquer avec PRO — 6,99€/mois
                   </Link>
                   <p className="text-xs text-gray-400 mt-2">Résiliable à tout moment</p>
                 </div>
@@ -602,7 +602,7 @@ const Stats = () => {
                     to="/subscription"
                     className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition shadow-sm"
                   >
-                    Débloquer tous les badges PRO — 3,99€/mois
+                    Débloquer tous les badges PRO — 6,99€/mois
                   </Link>
                 </>
               )}

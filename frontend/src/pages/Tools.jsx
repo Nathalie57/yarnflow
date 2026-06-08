@@ -155,7 +155,6 @@ const TOOLS = [
     title: 'Assistant IA',
     description: 'Posez toutes vos questions sur les techniques, patrons et points. 3/mois en FREE, 30/mois en PRO.',
     component: AiAssistant,
-    badge: 'PRO',
   },
 ]
 

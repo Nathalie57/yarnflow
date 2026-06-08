@@ -745,7 +745,7 @@ const PatternLibraryDetail = () => {
                   Notez vos adaptations pour chaque utilisation — aiguilles, modifications du patron, fil substitué…
                 </p>
                 <Link to="/subscription" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
-                  Passer à PRO — 3,99€/mois
+                  Passer à PRO — 6,99€/mois
                 </Link>
               </div>
             ) : (
