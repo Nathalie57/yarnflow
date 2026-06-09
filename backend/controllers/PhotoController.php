@@ -212,8 +212,12 @@ class PhotoController
             // [AI:Claude] Mettre à jour la photo en base
             $this->updatePhotoWithEnhanced($photoId, $enhancedPath, $style, $purpose, $result['prompt_used']);
 
-            // [AI:Claude] Logger la génération
-            $this->logPhotoGeneration($userId, $photoId, $creditResult['credit_type'], $result);
+            // [AI:Claude] Logger la génération (non bloquant)
+            try {
+                $this->logPhotoGeneration($userId, $photoId, $creditResult['credit_type'], $result);
+            } catch (\Exception $logEx) {
+                error_log('[PhotoController] logPhotoGeneration failed: ' . $logEx->getMessage());
+            }
 
             // [AI:Claude] Récupérer la photo mise à jour
             $updatedPhoto = $this->getPhotoById($photoId);

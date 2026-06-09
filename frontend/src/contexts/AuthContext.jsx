@@ -1,7 +1,19 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { authAPI } from '../services/api'
+import { authAPI, refreshTokenSilently } from '../services/api'
 
 const AuthContext = createContext(null)
+
+// Décode le payload JWT côté client (sans vérification de signature) pour lire l'exp
+const getTokenExpiry = (token) => {
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    return payload?.exp ?? null
+  } catch {
+    return null
+  }
+}
 
 // [AI:Claude] Helper de stockage robuste (localStorage avec fallback sessionStorage)
 const storage = {
@@ -49,12 +61,14 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null)
 
   const lastVisibilityCheck = useRef(0)
+  const isLoadingUser = useRef(false)
 
   // Charger l'utilisateur depuis localStorage au démarrage
   useEffect(() => {
     const loadUser = async () => {
+      isLoadingUser.current = true
       const token = storage.getItem('token')
-      if (!token) { setLoading(false); return }
+      if (!token) { setLoading(false); isLoadingUser.current = false; return }
 
       // Afficher le user stocké immédiatement pour éviter le flash de chargement
       const storedUser = storage.getItem('user')
@@ -63,6 +77,23 @@ export const AuthProvider = ({ children }) => {
           setUser(JSON.parse(storedUser))
         } catch {
           // JSON corrompu — on continue quand même avec le token
+        }
+      }
+
+      // Refresh proactif : si le token expire dans moins de 7 jours, on rafraîchit avant même
+      // d'appeler /auth/me pour éviter le cycle 401 → refresh → retry au réveil.
+      // On utilise une instance axios sans intercepteurs pour éviter toute boucle.
+      const exp = getTokenExpiry(token)
+      if (exp !== null) {
+        const sevenDays = 7 * 24 * 60 * 60
+        const secondsLeft = exp - Math.floor(Date.now() / 1000)
+        if (secondsLeft < sevenDays) {
+          try {
+            const newToken = await refreshTokenSilently(token)
+            if (newToken) storage.setItem('token', newToken)
+          } catch {
+            // Refresh proactif échoué (serveur down, token trop vieux) — on continue
+          }
         }
       }
 
@@ -85,15 +116,18 @@ export const AuthProvider = ({ children }) => {
       }
 
       setLoading(false)
+      isLoadingUser.current = false
     }
 
     loadUser()
   }, [])
 
-  // Refresh proactif quand l'app repasse au premier plan (fix déconnexion Android)
+  // Refresh des données user quand l'app repasse au premier plan (fix déconnexion Android)
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (document.hidden) return
+      if (isLoadingUser.current) return  // loadUser() tourne encore au cold start, on attend
+
       const token = storage.getItem('token')
       if (!token) return
 
@@ -103,12 +137,18 @@ export const AuthProvider = ({ children }) => {
       lastVisibilityCheck.current = now
 
       try {
-        const response = await authAPI.me()
+        // _noAutoLogout : la validation au démarrage (loadUser) est déjà le gardien de session.
+        // Le handler de visibilité sert à rafraîchir les données user, pas à valider l'auth.
+        // On ne déconnecte pas depuis ici pour éviter les faux positifs (réseau lent au réveil).
+        const response = await authAPI.me({ _noAutoLogout: true })
         const freshUser = response?.data?.data?.user
-        if (freshUser) setUser(freshUser)
+        if (freshUser) {
+          setUser(freshUser)
+          storage.setItem('user', JSON.stringify(freshUser))
+        }
       } catch {
-        // L'intercepteur gère le refresh automatique si 401
-        // Si le refresh échoue aussi, l'intercepteur redirige vers /login
+        // Silencieux — erreur réseau, serveur temporaire, etc.
+        // Si le token est vraiment révoqué, le prochain loadUser() au redémarrage le détectera.
       }
     }
 

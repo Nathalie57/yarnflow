@@ -214,6 +214,18 @@ export const authAPI = {
   refresh: () => api.post('/auth/refresh')
 }
 
+// Refresh silencieux sans intercepteurs — utilisé pour le refresh proactif au démarrage.
+// Évite la boucle intercepteur→refresh→intercepteur si le serveur rejette le token.
+export const refreshTokenSilently = async (token) => {
+  const silentApi = axios.create({ baseURL: getAPIUrl() })
+  const response = await silentApi.post(
+    '/auth/refresh',
+    {},
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+  return response.data?.data?.token ?? null
+}
+
 // Patterns
 export const patternsAPI = {
   calculatePrice: (data) => api.post('/patterns/calculate-price', data),
