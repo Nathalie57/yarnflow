@@ -10,6 +10,10 @@
     # Serve .well-known/ files directly (Digital Asset Links for TWA)
     RewriteRule ^\.well-known/ - [L]
 
+    # Serve manifest and service worker directly (PWA)
+    RewriteRule ^manifest\.(json|webmanifest)$ - [L]
+    RewriteRule ^sw\.js$ - [L]
+
     # Don't rewrite files or directories that exist
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
@@ -23,8 +27,9 @@
 
 # Serve assetlinks.json with correct Content-Type (TWA / Digital Asset Links)
 <IfModule mod_headers.c>
-    <FilesMatch "assetlinks\.json$">
+    <FilesMatch "\.(json|webmanifest)$">
         Header set Content-Type "application/json"
+        Header set Access-Control-Allow-Origin "*"
     </FilesMatch>
 </IfModule>
 

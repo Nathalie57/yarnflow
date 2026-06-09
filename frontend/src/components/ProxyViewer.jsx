@@ -7,10 +7,25 @@
 
 import { useState } from 'react'
 
+const getYouTubeEmbedUrl = (url) => {
+  try {
+    const u = new URL(url)
+    let videoId = null
+    if (u.hostname === 'youtu.be') {
+      videoId = u.pathname.slice(1)
+    } else if (u.hostname.includes('youtube.com')) {
+      videoId = u.searchParams.get('v')
+    }
+    if (videoId) return `https://www.youtube.com/embed/${videoId}?rel=0`
+  } catch {}
+  return null
+}
+
 const ProxyViewer = ({ url, onError, onLoad }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(url)
   const proxyUrl = `${import.meta.env.VITE_API_URL}/web-fetch/proxy?url=${encodeURIComponent(url)}`
 
   const handleLoad = () => {
@@ -71,21 +86,22 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
         </div>
       )}
 
-      {/* Iframe avec le contenu proxyfié */}
+      {/* Iframe YouTube embed ou proxy */}
       {!error && (
         <iframe
-          src={proxyUrl}
+          src={youtubeEmbedUrl || proxyUrl}
           className="w-full border-0"
           style={{
-            height: '80vh',
-            minHeight: '500px',
-            maxHeight: '1200px',
+            height: youtubeEmbedUrl ? '56vw' : '80vh',
+            minHeight: '300px',
+            maxHeight: youtubeEmbedUrl ? '500px' : '1200px',
             display: loading ? 'none' : 'block'
           }}
-          title="Patron"
+          title={youtubeEmbedUrl ? 'Vidéo YouTube' : 'Patron'}
           onLoad={handleLoad}
           onError={handleError}
-          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+          allow={youtubeEmbedUrl ? 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' : undefined}
+          sandbox={youtubeEmbedUrl ? 'allow-same-origin allow-scripts allow-popups' : 'allow-same-origin allow-scripts allow-popups allow-forms'}
         />
       )}
     </div>

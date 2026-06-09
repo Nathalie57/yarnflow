@@ -886,6 +886,13 @@ const MyProjects = () => {
           {projects.length === 0 ? (
             <div className="max-w-xl mx-auto py-12 px-6">
 
+              {/* Accueil personnalisé */}
+              {user?.first_name && (
+                <p className="text-center text-gray-500 text-sm mb-6">
+                  Bonjour <span className="font-semibold text-gray-700">{user.first_name}</span> 👋 — bienvenue sur YarnFlow !
+                </p>
+              )}
+
               {/* Question directe */}
               <div className="text-center mb-8">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
@@ -897,15 +904,21 @@ const MyProjects = () => {
                 </p>
               </div>
 
-              {/* CTA principal */}
+              {/* CTAs */}
               {canCreateProject && (
-                <div className="text-center mb-10">
+                <div className="text-center mb-10 flex flex-col items-center gap-3">
                   <button
                     onClick={() => setShowCreateModal(true)}
-                    className="px-8 py-4 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition-colors shadow-sm hover:shadow-md text-base"
+                    className="w-full max-w-xs px-8 py-4 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition-colors shadow-sm hover:shadow-md text-base"
                   >
-                    Oui — ajouter mon projet maintenant
+                    Oui — ajouter mon projet
                   </button>
+                  <Link
+                    to="/tools"
+                    className="text-sm text-gray-400 hover:text-primary-600 transition-colors underline underline-offset-2"
+                  >
+                    Pas encore — je veux d'abord explorer l'app
+                  </Link>
                 </div>
               )}
 
