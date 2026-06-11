@@ -597,15 +597,20 @@ class StripeService
     /**
      * Gérer le changement de statut d'abonnement (customer.subscription.updated)
      * Déclenché quand l'abonnement passe en past_due, unpaid, active, etc.
+     * Ou quand l'utilisateur change de plan via le Customer Portal.
      */
     private function handleSubscriptionUpdated(object $subscription): array
     {
+        // Extraire le price ID actif pour détecter les changements de plan via portail
+        $priceId = $subscription->items->data[0]->price->id ?? null;
+
         return [
             'success' => true,
             'event' => 'subscription_updated',
             'subscription_id' => $subscription->id,
             'customer_id' => $subscription->customer,
-            'status' => $subscription->status
+            'status' => $subscription->status,
+            'price_id' => $priceId,
         ];
     }
 

@@ -367,13 +367,23 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>Statistiques avancées</span></li>
           </ul>
 
-          <button
-            onClick={handleSubscribe}
-            disabled={processing || isPro}
-            className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {processing ? 'Chargement…' : isPro ? 'Plan actuel' : `Passer à PRO — ${proPrice}/mois`}
-          </button>
+          {isPlus ? (
+            <button
+              onClick={handleManageSubscription}
+              disabled={processing}
+              className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {processing ? 'Chargement…' : 'Passer à PRO via mon espace'}
+            </button>
+          ) : (
+            <button
+              onClick={handleSubscribe}
+              disabled={processing || isPro}
+              className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {processing ? 'Chargement…' : isPro ? 'Plan actuel' : `Passer à PRO — ${proPrice}/mois`}
+            </button>
+          )}
         </div>
       </div>
 
