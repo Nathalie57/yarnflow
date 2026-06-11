@@ -319,6 +319,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tags de tri</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">1 Création IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>5 crédits Studio Photo / mois</span></li>
           </ul>
 
           <button

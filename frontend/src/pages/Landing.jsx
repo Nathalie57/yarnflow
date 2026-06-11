@@ -457,6 +457,10 @@ const Landing = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <span>10 questions / mois à l'assistant IA</span>
                 </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span>5 crédits / mois au Studio Photo IA</span>
+                </li>
               </ul>
               <Link
                 to="/register"
@@ -533,7 +537,7 @@ const Landing = () => {
               },
               {
                 q: "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente, 3 questions IA/mois. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes par section, tags, 50 pelotes en stock, 1 import IA/mois, 10 questions IA/mois. PRO (6,99€/mois) débloque tout : stock illimité, 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo, stats avancées."
+                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente, 3 questions IA/mois, 2 crédits photo. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes par section, tags, 50 pelotes en stock, 1 import IA/mois, 10 questions IA/mois, 5 crédits photo. PRO (6,99€/mois) débloque tout : stock illimité, 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo, stats avancées."
               },
               {
                 q: "La création intelligente, c'est quoi exactement ?",

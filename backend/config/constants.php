@@ -110,7 +110,7 @@ define('SUBSCRIPTION_FEATURES', [
         'price' => 3.99,
         'max_active_projects' => -1,
         'max_stash_entries' => 50,
-        'photo_credits_per_month' => 2,    // Identique FREE (marge préservée)
+        'photo_credits_per_month' => 5,
         'ai_questions_per_month' => 10,
         'max_library_patterns' => -1,
         'can_use_tags' => true,
@@ -129,7 +129,7 @@ define('SUBSCRIPTION_FEATURES', [
         'price' => 35.88,                  // 2.99€/mois × 12
         'max_active_projects' => -1,
         'max_stash_entries' => 50,
-        'photo_credits_per_month' => 2,
+        'photo_credits_per_month' => 5,
         'ai_questions_per_month' => 10,
         'max_library_patterns' => -1,
         'can_use_tags' => true,
