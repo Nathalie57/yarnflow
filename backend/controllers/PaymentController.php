@@ -642,8 +642,8 @@ class PaymentController
     private function getExpectedAmount(string $paymentType): ?float
     {
         return match($paymentType) {
-            'subscription_plus' => 6.99,
-            'subscription_plus_annual' => 59.99,
+            'subscription_plus' => 3.99,
+            'subscription_plus_annual' => 35.88,
             'subscription_pro' => 6.99,
             'subscription_pro_annual' => 59.99,
             'subscription_early_bird' => 2.99,

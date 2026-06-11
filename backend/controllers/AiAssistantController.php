@@ -36,11 +36,12 @@ class AiAssistantController
 
     private const LIMITS = [
         'free'         => 3,
+        'plus'         => 3,
+        'plus_annual'  => 3,
         'pro'          => 30,
         'pro_annual'   => 30,
-        'plus'         => 30,  // legacy → traité comme PRO
-        'plus_annual'  => 30,
         'early_bird'   => 30,
+        // Legacy
         'monthly'      => 30,
         'annual'       => 30,
     ];
