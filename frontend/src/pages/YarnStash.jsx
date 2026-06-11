@@ -13,12 +13,13 @@ import YarnStashStats from '../components/stash/YarnStashStats'
 import YarnStashCard from '../components/stash/YarnStashCard'
 import YarnStashForm from '../components/stash/YarnStashForm'
 
-const FREE_LIMIT = 10
-
 const YarnStash = () => {
-  const { hasActiveSubscription } = useAuth()
+  const { getSubscriptionPlan } = useAuth()
   const navigate = useNavigate()
-  const isPro = hasActiveSubscription()
+  const plan = getSubscriptionPlan()
+  const isPro = plan === 'pro'
+  const isPlus = plan === 'plus'
+  const stashLimit = isPro ? null : isPlus ? 50 : 10
 
   // Data
   const [entries, setEntries] = useState([])
@@ -116,7 +117,7 @@ const YarnStash = () => {
   // Limite FREE
   // -----------------------------------------------------------------------
 
-  const atLimit = !isPro && (stats?.total_references ?? 0) >= FREE_LIMIT
+  const atLimit = !isPro && stashLimit !== null && (stats?.total_references ?? 0) >= stashLimit
 
   const handleAddClick = () => {
     if (atLimit) {
@@ -160,20 +161,20 @@ const YarnStash = () => {
         </div>
 
         {/* ---- Bandeau upgrade FREE ---- */}
-        {!isPro && stats && (
+        {!isPro && stashLimit !== null && stats && (
           <div className="mb-4 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
             <span className="text-sm text-amber-800">
-              <span className="font-semibold">{stats.total_references}/{FREE_LIMIT}</span> références utilisées
+              <span className="font-semibold">{stats.total_references}/{stashLimit}</span> références utilisées
             </span>
             {atLimit ? (
               <Link
                 to="/subscription"
                 className="text-xs font-semibold text-primary-600 hover:text-primary-700"
               >
-                Passer à Pro →
+                {isPlus ? 'Passer à Pro →' : 'Passer à Plus ou Pro →'}
               </Link>
             ) : (
-              <span className="text-xs text-amber-600">Plan Free</span>
+              <span className="text-xs text-amber-600">{isPlus ? 'Plan Plus' : 'Plan Free'}</span>
             )}
           </div>
         )}

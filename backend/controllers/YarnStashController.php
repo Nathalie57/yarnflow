@@ -158,18 +158,23 @@ class YarnStashController
                 return;
             }
 
-            $plan  = $user['subscription_type'] ?? 'free';
-            $isPro = $plan !== 'free';
+            $plan   = $user['subscription_type'] ?? 'free';
+            $isPro  = in_array($plan, ['pro', 'pro_annual', 'early_bird']);
+            $isPlus = in_array($plan, ['plus', 'plus_annual']);
 
             if (!$isPro) {
                 $count = $this->getStashCount($userId);
-                if ($count >= 10) {
+                $limit = $isPlus ? 50 : 10;
+                if ($count >= $limit) {
+                    $error = $isPlus
+                        ? 'Limite de 50 références atteinte. Passez à Pro pour un stock illimité.'
+                        : 'Limite de 10 références atteinte. Passez à Plus ou Pro pour plus de stock.';
                     $this->sendResponse(403, [
                         'success'          => false,
-                        'error'            => 'Limite de 10 références atteinte. Passez à Pro pour un stock illimité.',
+                        'error'            => $error,
                         'upgrade_required' => true,
                         'current_count'    => $count,
-                        'max_count'        => 10,
+                        'max_count'        => $limit,
                     ]);
                     return;
                 }
