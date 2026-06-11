@@ -300,6 +300,15 @@ export const patternOptionsAPI = {
   getByGroup: (group) => api.get(`/pattern-options/group/${group}`)
 }
 
+// Yarn Stash (Le Stash — stock de laine)
+export const yarnStashAPI = {
+  getAll: (params) => api.get('/stash', { params }),
+  create: (data) => api.post('/stash', data),
+  getById: (id) => api.get(`/stash/${id}`),
+  update: (id, data) => api.put(`/stash/${id}`, data),
+  delete: (id) => api.delete(`/stash/${id}`)
+}
+
 // [AI:Claude] Utilitaires de connexion réseau
 export const networkUtils = {
   isOnline: () => navigator.onLine,

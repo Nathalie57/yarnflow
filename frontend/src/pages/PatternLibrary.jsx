@@ -477,76 +477,80 @@ const PatternLibrary = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      {/* Retour */}
+      <Link to="/bibliotheque" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-4 transition-colors">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+        Ressources
+      </Link>
+
       {/* Header */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes patrons</h1>
+      </div>
+
+      {/* Barre d'action */}
+      <div className="flex items-center justify-between mb-6">
+        {/* Indicateur de limite FREE */}
+        {!isPro && stats !== null && (
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bibliothèque de patrons</h1>
-            <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
-              Centralisez tous vos patrons et liez-les à vos projets
-            </p>
-          </div>
-
-          {/* Indicateur de limite FREE */}
-          {!isPro && stats !== null && (
-            <div className="sm:text-right">
-              {(() => {
-                const count = stats.total_patterns || 0
-                const max = 5
-                const pct = Math.min((count / max) * 100, 100)
-                const remaining = max - count
-                const isNearLimit = count >= 3
-                const isAtLimit = count >= max
-                return (
-                  <div className={`inline-flex flex-col items-end gap-1 px-4 py-2.5 rounded-xl border ${
-                    isAtLimit ? 'bg-red-50 border-red-200' :
-                    isNearLimit ? 'bg-amber-50 border-amber-200' :
-                    'bg-gray-50 border-gray-200'
-                  }`}>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-semibold ${
-                        isAtLimit ? 'text-red-700' : isNearLimit ? 'text-amber-700' : 'text-gray-700'
-                      }`}>
-                        {count}/{max} patrons
-                      </span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                        isAtLimit ? 'bg-red-100 text-red-700' : isNearLimit ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'
-                      }`}>FREE</span>
-                    </div>
-                    <div className="w-32 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-amber-500' : 'bg-primary-500'
-                        }`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <button
-                      onClick={() => setShowUpgradeLibrary(true)}
-                      className={`text-xs font-medium hover:underline ${
-                        isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-primary-600'
-                      }`}
-                    >
-                      {isAtLimit ? 'Limite atteinte — Passer à PRO' :
-                       isNearLimit ? `Plus que ${remaining} — Passer à PRO` :
-                       'Passer à PRO pour plus'}
-                    </button>
+            {(() => {
+              const count = stats.total_patterns || 0
+              const max = 5
+              const pct = Math.min((count / max) * 100, 100)
+              const remaining = max - count
+              const isNearLimit = count >= 3
+              const isAtLimit = count >= max
+              return (
+                <div className={`inline-flex flex-col gap-1 px-3 py-2 rounded-xl border ${
+                  isAtLimit ? 'bg-red-50 border-red-200' :
+                  isNearLimit ? 'bg-amber-50 border-amber-200' :
+                  'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-semibold ${
+                      isAtLimit ? 'text-red-700' : isNearLimit ? 'text-amber-700' : 'text-gray-700'
+                    }`}>
+                      {count}/{max} patrons
+                    </span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                      isAtLimit ? 'bg-red-100 text-red-700' : isNearLimit ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'
+                    }`}>FREE</span>
                   </div>
-                )
-              })()}
-            </div>
-          )}
+                  <div className="w-32 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-amber-500' : 'bg-primary-500'
+                      }`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => setShowUpgradeLibrary(true)}
+                    className={`text-xs font-medium hover:underline text-left ${
+                      isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-primary-600'
+                    }`}
+                  >
+                    {isAtLimit ? 'Limite atteinte — Passer à PRO' :
+                     isNearLimit ? `Plus que ${remaining} — Passer à PRO` :
+                     'Passer à PRO pour plus'}
+                  </button>
+                </div>
+              )
+            })()}
+          </div>
+        )}
 
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition bg-primary-600 text-white hover:bg-primary-700"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Ajouter un patron
-          </button>
-        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition bg-primary-600 text-white hover:bg-primary-700"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Ajouter un patron
+        </button>
       </div>
 
       {/* Filtres et recherche */}

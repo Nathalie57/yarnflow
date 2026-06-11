@@ -25,8 +25,10 @@ import SmartProjectCreator from './pages/SmartProjectCreator'
 import Stats from './pages/Stats'
 import Gallery from './pages/Gallery'
 import Tools from './pages/Tools'
+import Bibliotheque from './pages/Bibliotheque'
 import PatternLibrary from './pages/PatternLibrary'
 import PatternLibraryDetail from './pages/PatternLibraryDetail'
+import YarnStash from './pages/YarnStash'
 import PaymentSuccess from './pages/PaymentSuccess'
 
 // Pages légales
@@ -114,9 +116,11 @@ function App() {
             {/* Routes galerie photos IA (v0.10.0) */}
             <Route path="/gallery" element={<Gallery />} />
 
-            {/* Routes bibliothèque de patrons */}
+            {/* Hub bibliothèque */}
+            <Route path="/bibliotheque" element={<Bibliotheque />} />
             <Route path="/pattern-library" element={<PatternLibrary />} />
             <Route path="/pattern-library/:id" element={<PatternLibraryDetail />} />
+            <Route path="/stash" element={<YarnStash />} />
 
             {/* Routes admin */}
             <Route path="/admin" element={<AdminDashboard />} />

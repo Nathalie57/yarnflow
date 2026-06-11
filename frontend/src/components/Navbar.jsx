@@ -211,16 +211,16 @@ const Navbar = () => {
               Projets
             </Link>
 
-            {/* BIBLIOTHÈQUE DE PATRONS */}
+            {/* RESSOURCES */}
             <Link
-              to="/pattern-library"
+              to="/bibliotheque"
               className={`text-sm transition-colors ${
-                location.pathname === '/pattern-library'
+                ['/bibliotheque', '/pattern-library', '/stash'].some(p => location.pathname === p) || location.pathname.startsWith('/pattern-library/')
                   ? 'text-primary-600 font-semibold'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Bibliothèque
+              Ressources
             </Link>
 
             {/* GALERIE PHOTOS IA */}
@@ -364,15 +364,15 @@ const Navbar = () => {
             </Link>
 
             <Link
-              to="/pattern-library"
+              to="/bibliotheque"
               onClick={closeMobileMenu}
               className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
-                location.pathname === '/pattern-library'
+                ['/bibliotheque', '/pattern-library', '/stash'].some(p => location.pathname === p) || location.pathname.startsWith('/pattern-library/')
                   ? 'bg-primary-50 text-primary-700 font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Bibliothèque Patrons
+              Ressources
             </Link>
 
             <Link

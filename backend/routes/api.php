@@ -25,6 +25,7 @@ use App\Controllers\PasswordResetController;
 use App\Controllers\WebFetchController;
 use App\Controllers\AiAssistantController;
 use App\Controllers\ContactController;
+use App\Controllers\YarnStashController;
 use App\Middleware\RateLimitMiddleware;
 
 /**
@@ -244,6 +245,13 @@ function route(string $method, string $uri): void
         $method === 'POST' && $uri === 'web-fetch' => (new WebFetchController())->fetch(),
         $method === 'POST' && $uri === 'web-fetch/metadata' => (new WebFetchController())->fetchMetadata(),
         $method === 'GET' && $uri === 'web-fetch/proxy' => (new WebFetchController())->proxy(),
+
+        // Routes stock de laine (Le Stash)
+        $method === 'GET' && $uri === 'stash' => (new YarnStashController())->index($_GET),
+        $method === 'POST' && $uri === 'stash' => (new YarnStashController())->create(),
+        $method === 'GET' && preg_match('/^stash\/(\d+)$/', $uri, $matches) => (new YarnStashController())->show((int)$matches[1]),
+        $method === 'PUT' && preg_match('/^stash\/(\d+)$/', $uri, $matches) => (new YarnStashController())->update((int)$matches[1]),
+        $method === 'DELETE' && preg_match('/^stash\/(\d+)$/', $uri, $matches) => (new YarnStashController())->delete((int)$matches[1]),
 
         // [AI:Claude] Routes de contact (v0.15.0)
         $method === 'POST' && $uri === 'contact' => (new ContactController())->sendMessage(),
