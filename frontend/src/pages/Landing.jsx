@@ -159,7 +159,7 @@ const Landing = () => {
                   'Timer intégré pour mesurer votre temps de travail',
                   "Wake lock : l'écran reste allumé pendant que vous tricotez",
                   'Sections indépendantes par partie de projet',
-                  '2 compteurs simultanés pour les projets complexes (PRO)',
+                  '2 compteurs simultanés pour les projets complexes (PLUS & PRO)',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -261,7 +261,7 @@ const Landing = () => {
             </div>
 
             <div>
-              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Création Intelligente — PRO</span>
+              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Création Intelligente</span>
               <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
                 Importez un patron PDF ou une URL.<br />Le projet se crée tout seul.
               </h2>
@@ -273,7 +273,7 @@ const Landing = () => {
                   "PDF ou URL — Ravelry, Etsy, blog, peu importe la source",
                   'Sections créées automatiquement (dos, devant, manches…)',
                   'Laine, aiguilles, tension extraits du patron',
-                  '1 essai gratuit · 15 imports/mois en PRO',
+                  '1 essai gratuit · 1 import/mois en PLUS · 15 imports/mois en PRO',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -318,7 +318,7 @@ const Landing = () => {
               </div>
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-4">3 questions / mois en FREE · 30 questions / mois en PRO</p>
+          <p className="text-xs text-gray-400 mt-4">3 questions / mois en FREE · 3 questions / mois en PLUS · 30 questions / mois en PRO</p>
         </div>
       </section>
 
@@ -362,7 +362,7 @@ const Landing = () => {
         <div className="max-w-4xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">Simple et transparent</h2>
           <p className="text-center text-gray-600 mb-10 text-lg">
-            FREE pour toujours. PRO quand vos projets le méritent.
+            FREE pour toujours. PLUS quand vos projets grandissent. PRO quand ils méritent tout.
           </p>
 
           <div className="flex justify-center mb-10">
@@ -383,10 +383,10 @@ const Landing = () => {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
 
             {/* FREE */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Free</p>
               <div className="text-4xl font-bold text-gray-900 mb-1">0€</div>
               <p className="text-sm text-gray-500 mb-6">L'essentiel pour suivre vos encours et découvrir la puissance de l'IA.</p>
@@ -405,11 +405,15 @@ const Landing = () => {
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium">1 Création Intelligente IA offerte</span> — l'IA configure votre premier projet à partir d'un PDF ou d'une photo</span>
+                  10 pelotes en stock
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  3 questions / mois à l'assistant IA tricot
+                  <span><span className="font-medium">1 Création Intelligente IA offerte</span></span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  3 questions / mois à l'assistant IA
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -421,10 +425,49 @@ const Landing = () => {
               </Link>
             </div>
 
-            {/* PRO */}
-            <div className="bg-white border-2 border-primary-500 rounded-2xl p-8 shadow-lg relative">
+            {/* PLUS */}
+            <div className="bg-white border-2 border-primary-400 rounded-2xl p-7 shadow-md relative">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">Pour les projets sérieux</span>
+                <span className="bg-primary-400 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">Nouveau</span>
+              </div>
+              <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-3 mt-2">Plus</p>
+              <div className="flex items-baseline gap-1 mb-1">
+                <span className="text-4xl font-bold text-gray-900">3,99€</span>
+                <span className="text-sm text-gray-500">/mois</span>
+              </div>
+              <p className="text-sm text-gray-500 mb-6">Pour les tricoteuses organisées qui veulent plus de confort.</p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  Tout ce qu'inclut le plan FREE
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span><span className="font-medium text-gray-800">2 compteurs simultanés</span><span className="block text-gray-500 text-xs mt-0.5">Notes par section, tags pour organiser vos ouvrages</span></span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span><span className="font-medium text-gray-800">50 pelotes en stock</span></span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span><span className="font-medium text-gray-800">Création Intelligente — 1 import / mois</span></span>
+                </li>
+              </ul>
+              <Link
+                to="/register"
+                onClick={() => trackSubscriptionClick('plus', billingPeriod, 'landing')}
+                className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
+              >
+                Passer à PLUS
+              </Link>
+              <p className="text-xs text-gray-400 text-center mt-2">Sans engagement · Résiliable à tout moment</p>
+            </div>
+
+            {/* PRO */}
+            <div className="bg-white border-2 border-primary-600 rounded-2xl p-7 shadow-lg relative">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">Pour les passionnées</span>
               </div>
               <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3 mt-2">Pro</p>
               <div className="flex items-baseline gap-1 mb-1">
@@ -434,27 +477,27 @@ const Landing = () => {
               {billingPeriod === 'annual' && (
                 <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
               )}
-              <p className="text-sm text-gray-500 mb-6">Pour les projets qui méritent mieux qu'un bout de papier.</p>
+              <p className="text-sm text-gray-500 mb-6">Pour les projets qui méritent tout.</p>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Tout ce qu'inclut le plan FREE
+                  Tout ce qu'inclut le plan PLUS
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Confort de gestion</span><span className="block text-gray-500 text-xs mt-0.5">2 compteurs simultanés, notes privées par section et tags pour trier vos ouvrages</span></span>
+                  <span><span className="font-medium text-gray-800">Stock illimité</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Création Intelligente IA — 15 imports / mois</span><span className="block text-gray-500 text-xs mt-0.5">Déposez un PDF ou une photo de patron, l'IA pré-remplit tout instantanément</span></span>
+                  <span><span className="font-medium text-gray-800">Création Intelligente — 15 imports / mois</span><span className="block text-gray-500 text-xs mt-0.5">Déposez un PDF ou une photo, l'IA pré-remplit tout instantanément</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Assistant IA tricot — 30 questions / mois</span><span className="block text-gray-500 text-xs mt-0.5">Vos doutes expliqués en un clin d'œil, même en pleine nuit</span></span>
+                  <span><span className="font-medium text-gray-800">Assistant IA tricot — 30 questions / mois</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Studio Photo IA — 20 crédits / mois</span><span className="block text-gray-500 text-xs mt-0.5">Sublimez vos tricots dans des décors pros, prêts à partager</span></span>
+                  <span><span className="font-medium text-gray-800">Studio Photo IA — 20 crédits / mois</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -482,15 +525,15 @@ const Landing = () => {
             {[
               {
                 q: "C'est vraiment gratuit pour toujours ?",
-                a: "Oui, sans limite de temps. Projets illimités, compteur de rangs, bibliothèque de patrons, détails techniques — sans jamais payer. Le PRO se justifie quand vos projets deviennent complexes."
+                a: "Oui, sans limite de temps. Projets illimités, compteur de rangs, bibliothèque de patrons, détails techniques — sans jamais payer. PLUS et PRO se justifient quand vos projets deviennent plus complexes."
               },
               {
-                q: "Quelle est la différence entre FREE et PRO concrètement ?",
-                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 1 essai création intelligente. PRO débloque les features avancées : 2 compteurs simultanés, notes par section, stats complètes, assistant IA 30 questions/mois, 20 crédits photo et création intelligente 15 imports/mois."
+                q: "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
+                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes par section, tags, 50 pelotes en stock, 1 import création intelligente/mois. PRO (6,99€/mois) débloque tout sans limites : stock illimité, 15 imports IA/mois, assistant IA 30 questions/mois et 20 crédits photo."
               },
               {
                 q: "La création intelligente, c'est quoi exactement ?",
-                a: "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 1 essai gratuit offert, puis 15 imports/mois en PRO."
+                a: "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 1 essai gratuit offert pour tous, puis 1 import/mois en PLUS ou 15 imports/mois en PRO."
               },
               {
                 q: "Ça marche sur quels appareils ?",
