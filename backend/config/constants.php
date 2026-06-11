@@ -111,7 +111,7 @@ define('SUBSCRIPTION_FEATURES', [
         'max_active_projects' => -1,
         'max_stash_entries' => 50,
         'photo_credits_per_month' => 2,    // Identique FREE (marge préservée)
-        'ai_questions_per_month' => 3,     // Identique FREE (marge préservée)
+        'ai_questions_per_month' => 10,
         'max_library_patterns' => -1,
         'can_use_tags' => true,
         'tag_suggestions' => false,
@@ -130,7 +130,7 @@ define('SUBSCRIPTION_FEATURES', [
         'max_active_projects' => -1,
         'max_stash_entries' => 50,
         'photo_credits_per_month' => 2,
-        'ai_questions_per_month' => 3,
+        'ai_questions_per_month' => 10,
         'max_library_patterns' => -1,
         'can_use_tags' => true,
         'tag_suggestions' => false,

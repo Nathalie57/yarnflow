@@ -318,7 +318,7 @@ const Landing = () => {
               </div>
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-4">3 questions / mois en FREE · 3 questions / mois en PLUS · 30 questions / mois en PRO</p>
+          <p className="text-xs text-gray-400 mt-4">3 questions / mois en FREE · 10 questions / mois en PLUS · 30 questions / mois en PRO</p>
         </div>
       </section>
 
@@ -453,6 +453,10 @@ const Landing = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <span><span className="font-medium text-gray-800">Création Intelligente — 1 import / mois</span></span>
                 </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  <span>10 questions / mois à l'assistant IA</span>
+                </li>
               </ul>
               <Link
                 to="/register"
@@ -529,7 +533,7 @@ const Landing = () => {
               },
               {
                 q: "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes par section, tags, 50 pelotes en stock, 1 import création intelligente/mois. PRO (6,99€/mois) débloque tout sans limites : stock illimité, 15 imports IA/mois, assistant IA 30 questions/mois et 20 crédits photo."
+                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente, 3 questions IA/mois. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes par section, tags, 50 pelotes en stock, 1 import IA/mois, 10 questions IA/mois. PRO (6,99€/mois) débloque tout : stock illimité, 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo, stats avancées."
               },
               {
                 q: "La création intelligente, c'est quoi exactement ?",

@@ -36,8 +36,8 @@ class AiAssistantController
 
     private const LIMITS = [
         'free'         => 3,
-        'plus'         => 3,
-        'plus_annual'  => 3,
+        'plus'         => 10,
+        'plus_annual'  => 10,
         'pro'          => 30,
         'pro_annual'   => 30,
         'early_bird'   => 30,
