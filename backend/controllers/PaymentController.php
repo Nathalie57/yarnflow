@@ -425,7 +425,7 @@ class PaymentController
         if ($subscriptionType === SUBSCRIPTION_FREE) return;
 
         // Prolonger d'un mois ou d'un an selon le plan
-        $isAnnual = in_array($subscriptionType, [SUBSCRIPTION_PRO_ANNUAL, SUBSCRIPTION_PLUS_ANNUAL]);
+        $isAnnual = in_array($subscriptionType, [SUBSCRIPTION_PLUS_ANNUAL, SUBSCRIPTION_PRO_ANNUAL]);
         $newExpiry = date('Y-m-d H:i:s', strtotime($isAnnual ? '+1 year' : '+1 month'));
 
         $this->userModel->updateSubscription($userId, $subscriptionType, $newExpiry);

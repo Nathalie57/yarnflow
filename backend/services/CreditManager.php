@@ -27,10 +27,10 @@ class CreditManager
      */
     private const MONTHLY_QUOTAS = [
         'free'         => 2,   // FREE : 2 crédits/mois
-        'pro'          => 20,  // PRO 3.99€/mois : 20 crédits/mois
-        'pro_annual'   => 20,  // PRO ANNUAL 39.99€/an : 20 crédits/mois
-        'plus'         => 20,  // legacy PLUS → traité comme PRO
-        'plus_annual'  => 20,
+        'plus'         => 2,   // PLUS 3.99€/mois : identique FREE (marge préservée)
+        'plus_annual'  => 2,
+        'pro'          => 20,  // PRO 6.99€/mois : 20 crédits/mois
+        'pro_annual'   => 20,  // PRO ANNUAL 59.99€/an : 20 crédits/mois
         'early_bird'   => 20,
         // Legacy support
         'standard' => 20,
