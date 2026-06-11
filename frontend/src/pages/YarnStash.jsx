@@ -16,9 +16,9 @@ import YarnStashForm from '../components/stash/YarnStashForm'
 const FREE_LIMIT = 10
 
 const YarnStash = () => {
-  const { user } = useAuth()
+  const { hasActiveSubscription } = useAuth()
   const navigate = useNavigate()
-  const isPro = user?.subscription_type && user.subscription_type !== 'free'
+  const isPro = hasActiveSubscription()
 
   // Data
   const [entries, setEntries] = useState([])
@@ -239,6 +239,21 @@ const YarnStash = () => {
             )}
             <select
               className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 text-gray-600"
+              value={filterWeight}
+              onChange={(e) => setFilterWeight(e.target.value)}
+            >
+              <option value="">Toutes les épaisseurs</option>
+              <option value="lace">Lace</option>
+              <option value="fingering">Fingering</option>
+              <option value="sport">Sport</option>
+              <option value="dk">DK</option>
+              <option value="worsted">Worsted</option>
+              <option value="aran">Aran</option>
+              <option value="bulky">Bulky</option>
+              <option value="super_bulky">Super Bulky</option>
+            </select>
+            <select
+              className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 text-gray-600"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
@@ -331,7 +346,7 @@ const YarnStash = () => {
           Confirmation suppression
       ==================================================================== */}
       {deletingEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 text-center">
             <h2 className="font-semibold text-gray-900 mb-1">Supprimer cette entrée ?</h2>
             <p className="text-sm text-gray-500 mb-5">
