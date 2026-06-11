@@ -135,7 +135,7 @@ class EmailService
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
             color: #374151;
-            background-color: #fef8f4;
+            background-color: #f6f8f6;
             margin: 0;
             padding: 0;
         }
@@ -150,7 +150,7 @@ class EmailService
         .header {
             text-align: center;
             padding: 40px 20px;
-            background: linear-gradient(135deg, #dd7a4a 0%, #c86438 100%);
+            background: linear-gradient(135deg, #6d8a6d 0%, #557055 100%);
         }
         .header h1 {
             color: white;
@@ -167,7 +167,7 @@ class EmailService
             padding: 40px 30px;
         }
         .content h2 {
-            color: #884024;
+            color: #445944;
             font-size: 24px;
             margin-top: 0;
         }
@@ -179,12 +179,12 @@ class EmailService
         .footer {
             text-align: center;
             padding: 30px 20px;
-            background: #fef8f4;
+            background: #f6f8f6;
             color: #6b7280;
             font-size: 14px;
         }
         .footer a {
-            color: #dd7a4a;
+            color: #6d8a6d;
             text-decoration: none;
         }
         .signature {
@@ -194,7 +194,7 @@ class EmailService
     </style>
 </head>
 <body>
-    <div style="background-color: #fef8f4; padding: 20px 0;">
+    <div style="background-color: #f6f8f6; padding: 20px 0;">
         <div class="container">
             <div class="header">
                 <div class="emoji">🧶</div>
@@ -378,10 +378,10 @@ HTML;
      */
     private function getEmailHeader(string $subtitle = ''): string
     {
-        $sub = $subtitle ? "<p style=\"color:#fde8d8;font-size:14px;margin:8px 0 0;\">{$subtitle}</p>" : '';
+        $sub = $subtitle ? "<p style=\"color:#e8ede8;font-size:14px;margin:8px 0 0;\">{$subtitle}</p>" : '';
         return <<<HTML
 <tr>
-    <td style="background:#c86438;padding:32px 40px;text-align:center;border-radius:12px 12px 0 0;">
+    <td style="background:#557055;padding:32px 40px;text-align:center;border-radius:12px 12px 0 0;">
         <h1 style="color:#ffffff;margin:0;font-size:26px;font-weight:700;letter-spacing:-0.5px;">YarnFlow</h1>
         {$sub}
     </td>
@@ -393,11 +393,11 @@ HTML;
     {
         return <<<HTML
 <tr>
-    <td style="background-color:#fef8f4;padding:24px 40px;border-radius:0 0 12px 12px;border-top:1px solid #f3e8dd;text-align:center;">
+    <td style="background-color:#f6f8f6;padding:24px 40px;border-radius:0 0 12px 12px;border-top:1px solid #e8ede8;text-align:center;">
         <p style="color:#9ca3af;font-size:12px;margin:0;">
-            <a href="https://yarnflow.fr" style="color:#c86438;text-decoration:none;">yarnflow.fr</a> &nbsp;·&nbsp;
-            <a href="https://yarnflow.fr/contact" style="color:#c86438;text-decoration:none;">Contact</a> &nbsp;·&nbsp;
-            <a href="https://yarnflow.fr/cgu" style="color:#c86438;text-decoration:none;">CGU</a>
+            <a href="https://yarnflow.fr" style="color:#557055;text-decoration:none;">yarnflow.fr</a> &nbsp;·&nbsp;
+            <a href="https://yarnflow.fr/contact" style="color:#557055;text-decoration:none;">Contact</a> &nbsp;·&nbsp;
+            <a href="https://yarnflow.fr/cgu" style="color:#557055;text-decoration:none;">CGU</a>
         </p>
     </td>
 </tr>
@@ -412,8 +412,8 @@ HTML;
 <!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#fef8f4;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef8f4;padding:40px 20px;">
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
 {$header}
@@ -428,20 +428,20 @@ HTML;
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr><td align="center">
-            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#c86438;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
                 Ajouter mon projet en cours
             </a>
         </td></tr>
     </table>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3e8dd;border-radius:8px;margin:0 0 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
-            <td style="padding:16px 20px;border-bottom:1px solid #f3e8dd;">
+            <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
                 <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Interrompue à mi-rang</strong> — Un clic pour sauvegarder. Vous retrouvez exactement là où vous étiez.</p>
             </td>
         </tr>
         <tr>
-            <td style="padding:16px 20px;border-bottom:1px solid #f3e8dd;">
+            <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
                 <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Plusieurs projets en parallèle</strong> — Chacun a son compteur, ses notes, son patron.</p>
             </td>
         </tr>
@@ -514,8 +514,8 @@ HTML;
 <!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#fef8f4;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef8f4;padding:40px 20px;">
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
 {$header}
@@ -528,13 +528,13 @@ HTML;
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr><td align="center">
-            <a href="{$resetLinkEscaped}" style="display:inline-block;background:#c86438;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+            <a href="{$resetLinkEscaped}" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
                 Réinitialiser mon mot de passe
             </a>
         </td></tr>
     </table>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3e8dd;border-radius:8px;margin:0 0 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
             <td style="padding:16px 20px;">
                 <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
@@ -607,8 +607,8 @@ HTML;
 <!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#fef8f4;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef8f4;padding:40px 20px;">
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
 {$header}
@@ -628,20 +628,20 @@ HTML;
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr><td align="center">
-            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#c86438;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
                 Ajouter mon projet en cours
             </a>
         </td></tr>
     </table>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3e8dd;border-radius:8px;margin:0 0 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
-            <td style="padding:16px 20px;border-bottom:1px solid #f3e8dd;">
+            <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
                 <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Vous notez votre rang</strong> — YarnFlow retient votre place. Même si vous êtes interrompue.</p>
             </td>
         </tr>
         <tr>
-            <td style="padding:16px 20px;border-bottom:1px solid #f3e8dd;">
+            <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
                 <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Vous avez plusieurs projets</strong> — Chacun a son compteur, ses notes, son patron.</p>
             </td>
         </tr>
@@ -718,13 +718,13 @@ HTML;
             $projectName = htmlspecialchars($projectData['name']);
             $progress = (int)($projectData['progress'] ?? 0);
             $projectBlock = <<<HTML
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3e8dd;border-radius:8px;margin:0 0 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
             <td style="padding:20px 24px;">
                 <p style="margin:0 0 8px;font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">Votre projet en cours</p>
                 <p style="margin:0 0 12px;font-size:17px;font-weight:600;color:#111827;">{$projectName}</p>
-                <div style="background-color:#f3e8dd;border-radius:999px;height:6px;overflow:hidden;">
-                    <div style="background:#c86438;height:100%;width:{$progress}%;"></div>
+                <div style="background-color:#e8ede8;border-radius:999px;height:6px;overflow:hidden;">
+                    <div style="background:#557055;height:100%;width:{$progress}%;"></div>
                 </div>
                 <p style="margin:6px 0 0;font-size:13px;color:#9ca3af;">{$progress}% complété</p>
             </td>
@@ -737,8 +737,8 @@ HTML;
 <!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#fef8f4;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef8f4;padding:40px 20px;">
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
 {$header}
@@ -756,7 +756,7 @@ HTML;
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr><td align="center">
-            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#c86438;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
                 Reprendre mon projet
             </a>
         </td></tr>
@@ -868,8 +868,8 @@ HTML;
 <!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#fef8f4;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef8f4;padding:40px 20px;">
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
 {$header}
@@ -883,7 +883,7 @@ HTML;
         La prochaine fois que vous tricotez, ouvrez YarnFlow avant de commencer. Quand vous serez interrompue, votre rang sera déjà noté. Vous reprenez exactement là où vous étiez.
     </p>
 
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f3e8dd;border-radius:8px;margin:0 0 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
             <td style="padding:20px 24px;">
                 <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">Projet créé</p>
@@ -894,7 +894,7 @@ HTML;
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr><td align="center">
-            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#c86438;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
                 Ouvrir mon projet
             </a>
         </td></tr>
@@ -951,8 +951,8 @@ HTML;
 <!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#fef8f4;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef8f4;padding:40px 20px;">
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
 {$header}
@@ -973,7 +973,7 @@ HTML;
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr><td align="center">
-            <a href="{$projectUrlEscaped}" style="display:inline-block;background:#c86438;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+            <a href="{$projectUrlEscaped}" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
                 Ouvrir le compteur
             </a>
         </td></tr>
@@ -1005,8 +1005,8 @@ HTML;
 <!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#fef8f4;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#fef8f4;padding:40px 20px;">
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
 {$header}
@@ -1022,7 +1022,7 @@ HTML;
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr><td align="center">
-            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#c86438;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
                 Voir mes projets
             </a>
         </td></tr>
