@@ -17,7 +17,6 @@ namespace App\Controllers;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\AIPatternExtractorService;
-use App\Services\PricingService;
 use App\Middleware\AuthMiddleware;
 
 class SmartProjectController
@@ -25,7 +24,6 @@ class SmartProjectController
     private Project $projectModel;
     private User $userModel;
     private AIPatternExtractorService $extractorService;
-    private PricingService $pricingService;
     private AuthMiddleware $authMiddleware;
 
     private const UPLOAD_DIR = __DIR__ . '/../../uploads/patterns/';
@@ -36,7 +34,6 @@ class SmartProjectController
         $this->projectModel = new Project();
         $this->userModel = new User();
         $this->extractorService = new AIPatternExtractorService();
-        $this->pricingService = new PricingService();
         $this->authMiddleware = new AuthMiddleware();
 
         // Créer le dossier uploads si nécessaire
