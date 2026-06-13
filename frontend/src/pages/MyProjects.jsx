@@ -889,7 +889,7 @@ const MyProjects = () => {
               {/* Accueil personnalisé */}
               {user?.first_name && (
                 <p className="text-center text-gray-500 text-sm mb-6">
-                  Bonjour <span className="font-semibold text-gray-700">{user.first_name}</span> 👋 — bienvenue sur YarnFlow !
+                  Bonjour <span className="font-semibold text-gray-700">{user.first_name}</span> — bienvenue sur YarnFlow !
                 </p>
               )}
 
