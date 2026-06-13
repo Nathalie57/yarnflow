@@ -460,15 +460,20 @@ class PaymentController
         if ($status !== 'active') return;
 
         // Détecter un changement de plan via le Customer Portal (le price_id a changé)
+        // Ne traiter que si l'user a DÉJÀ un abonnement payant — l'activation initiale
+        // est gérée exclusivement par checkout.session.completed.
+        $currentPlan = $user['subscription_type'] ?? SUBSCRIPTION_FREE;
+        if ($currentPlan === SUBSCRIPTION_FREE) return;
+
         $priceId = $data['price_id'] ?? null;
         if ($priceId) {
             $newPlan = $this->resolvePlanFromPriceId($priceId);
-            if ($newPlan && $newPlan !== $user['subscription_type']) {
+            if ($newPlan && $newPlan !== $currentPlan) {
                 $isAnnual = in_array($newPlan, [SUBSCRIPTION_PLUS_ANNUAL, SUBSCRIPTION_PRO_ANNUAL]);
                 $newExpiry = date('Y-m-d H:i:s', strtotime($isAnnual ? '+1 year' : '+1 month'));
                 $this->userModel->updateSubscription($userId, $newPlan, $newExpiry);
                 $this->creditManager->initializeUserCredits($userId, $newPlan);
-                error_log("[subscription.updated] User {$userId} changement de plan : {$user['subscription_type']} → {$newPlan}");
+                error_log("[subscription.updated] User {$userId} changement de plan : {$currentPlan} → {$newPlan}");
             }
         }
     }
