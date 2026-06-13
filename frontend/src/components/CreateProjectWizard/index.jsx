@@ -132,11 +132,7 @@ const CreateProjectWizard = ({
   if (mode === null) {
     const isPaidWithImports = smartQuota && (smartQuota.is_pro || smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual') && smartQuota.remaining > 0
     const isFreeTrialAvailable = smartQuota && smartQuota.plan === 'free' && !smartQuota.free_trial_used
-    const smartSub = isPaidWithImports
-      ? `${smartQuota.remaining} création${smartQuota.remaining !== 1 ? 's' : ''} disponible${smartQuota.remaining !== 1 ? 's' : ''} ce mois`
-      : isFreeTrialAvailable
-      ? '1 essai gratuit — importez un PDF ou une URL'
-      : 'À partir de 3,99€/mois'
+    const isTrialUsed = smartQuota && smartQuota.plan === 'free' && smartQuota.free_trial_used
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
@@ -178,7 +174,25 @@ const CreateProjectWizard = ({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-primary-900 text-sm">Création Intelligente</p>
-                <p className="text-xs text-primary-600 mt-0.5">{smartSub}</p>
+                {isPaidWithImports && (
+                  <p className="text-xs text-primary-600 mt-0.5">
+                    <span className="font-semibold">{smartQuota.remaining} création{smartQuota.remaining !== 1 ? 's' : ''}</span> disponible{smartQuota.remaining !== 1 ? 's' : ''} ce mois
+                  </p>
+                )}
+                {isFreeTrialAvailable && (
+                  <p className="text-xs text-primary-600 mt-0.5">
+                    <span className="font-semibold">1 essai gratuit</span> disponible
+                  </p>
+                )}
+                {isTrialUsed && (
+                  <p className="text-xs mt-0.5 flex items-center gap-1.5">
+                    <span className="text-gray-400">Essai utilisé</span>
+                    <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Débloquer</span>
+                  </p>
+                )}
+                {!smartQuota && (
+                  <p className="text-xs text-primary-600 mt-0.5">Importez un PDF ou une URL</p>
+                )}
               </div>
             </button>
           </div>
