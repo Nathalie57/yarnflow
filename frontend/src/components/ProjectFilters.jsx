@@ -181,8 +181,8 @@ const ProjectFilters = ({
           }`}
         >
           <span>🏷️</span>
-          <span className="text-xs md:text-sm">{canUseTags ? 'Filtrer par tags' : 'Tags (PRO)'}</span>
-          {!canUseTags && <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full">PRO</span>}
+          <span className="text-xs md:text-sm">{canUseTags ? 'Filtrer par tags' : 'Tags (PLUS)'}</span>
+          {!canUseTags && <span className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full">PLUS</span>}
           {canUseTags && availableTags.length > 0 && (
             <svg
               className={`w-4 h-4 ml-auto transition-transform ${showTagFilter ? 'rotate-180' : ''}`}
