@@ -27,6 +27,7 @@ const CreateProjectWizard = ({
   submitLabel,
   canUseTags,
   popularTags,
+  smartQuota,
   onShowUpgradePrompt,
   onOpenLibraryModal,
   onOpenUrlModal,
@@ -40,6 +41,7 @@ const CreateProjectWizard = ({
   selectedLibraryPattern
 }) => {
   const navigate = useNavigate()
+  const [mode, setMode] = useState(null) // null = choix, 'manual' = formulaire
 
   const [draft] = useState(() => {
     try {
@@ -73,6 +75,7 @@ const CreateProjectWizard = ({
   // Reset complet à la fermeture
   useEffect(() => {
     if (!isOpen) {
+      setMode(null)
       setName('')
       setTechnique('crochet')
       setSelectedCategory(null)
@@ -124,6 +127,65 @@ const CreateProjectWizard = ({
   }
 
   if (!isOpen) return null
+
+  // Écran de choix — manuel vs Création Intelligente
+  if (mode === null) {
+    const isPaidWithImports = smartQuota && (smartQuota.is_pro || smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual') && smartQuota.remaining > 0
+    const isFreeTrialAvailable = smartQuota && smartQuota.plan === 'free' && !smartQuota.free_trial_used
+    const smartSub = isPaidWithImports
+      ? `${smartQuota.remaining} création${smartQuota.remaining !== 1 ? 's' : ''} disponible${smartQuota.remaining !== 1 ? 's' : ''} ce mois`
+      : isFreeTrialAvailable
+      ? '1 essai gratuit — importez un PDF ou une URL'
+      : 'À partir de 3,99€/mois'
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+        <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h2 className="text-lg font-bold text-gray-900">Nouveau projet</h2>
+            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="p-4 space-y-3">
+            {/* Manuel */}
+            <button
+              onClick={() => setMode('manual')}
+              className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition text-left group"
+            >
+              <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
+                <svg className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Créer manuellement</p>
+                <p className="text-xs text-gray-500 mt-0.5">Remplissez les informations vous-même</p>
+              </div>
+            </button>
+
+            {/* Création Intelligente */}
+            <button
+              onClick={() => { onClose(); navigate('/smart-project-creator') }}
+              className="w-full flex items-center gap-4 p-4 border border-primary-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 bg-primary-50/50 transition text-left group"
+            >
+              <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-primary-900 text-sm">Création Intelligente</p>
+                <p className="text-xs text-primary-600 mt-0.5">{smartSub}</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
