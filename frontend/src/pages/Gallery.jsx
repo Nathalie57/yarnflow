@@ -1323,7 +1323,7 @@ const Gallery = () => {
                   return (
                     <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
                       <p className="text-sm text-gray-700">
-                        <span className="font-semibold">6 styles supplémentaires</span> dès PLUS, <span className="font-semibold">9</span> avec PRO.
+                        <span className="font-semibold">6 styles supplémentaires</span> disponibles avec PLUS ou PRO.
                         <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
                           Découvrir les plans
                         </a>
