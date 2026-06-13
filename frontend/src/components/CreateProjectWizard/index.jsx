@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import TagInput from '../TagInput'
 import { PROJECT_CATEGORIES } from '../../data/projectTemplates'
 
@@ -38,6 +39,8 @@ const CreateProjectWizard = ({
   patternText,
   selectedLibraryPattern
 }) => {
+  const navigate = useNavigate()
+
   const [draft] = useState(() => {
     try {
       const s = sessionStorage.getItem(DRAFT_KEY)
@@ -377,7 +380,7 @@ const CreateProjectWizard = ({
                     <span className="text-sm text-gray-600">Tags</span>
                     <div className="flex items-center gap-2">
                       <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
-                      <button type="button" onClick={onShowUpgradePrompt} className="text-xs text-primary-600 hover:underline font-medium">
+                      <button type="button" onClick={() => { onClose(); navigate('/subscription') }} className="text-xs text-primary-600 hover:underline font-medium">
                         Voir les plans
                       </button>
                     </div>
