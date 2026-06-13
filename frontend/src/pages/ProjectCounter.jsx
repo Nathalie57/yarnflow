@@ -3958,25 +3958,11 @@ const ProjectCounter = () => {
                       >
                         <option value="created">Ordre de création</option>
                         <option value="name-az">Nom (A-Z)</option>
-                        {(user?.subscription_type === 'plus' || user?.subscription_type === 'plus_annual' ||
-                          user?.subscription_type === 'pro' || user?.subscription_type === 'pro_annual' ||
-                          user?.subscription_type === 'early_bird') && (
-                          <>
-                            <option value="progress">Progression croissante</option>
-                            <option value="progress-desc">Progression décroissante</option>
-                            <option value="status">Statut (en cours d'abord)</option>
-                          </>
-                        )}
+                        <option value="progress">Progression croissante</option>
+                        <option value="progress-desc">Progression décroissante</option>
+                        <option value="status">Statut (en cours d'abord)</option>
                       </select>
                     </div>
-                    {user?.subscription_type === 'free' && (
-                      <Link
-                        to="/subscription"
-                        className="text-xs text-primary-600 hover:text-primary-700 font-medium"
-                      >
-                        🔒 Plus de tris avec PRO
-                      </Link>
-                    )}
                   </div>
                 </div>
                 {/* Version Desktop : Tableau */}
