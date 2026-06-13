@@ -291,7 +291,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 50 références</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Notes privées par section</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tags pour organiser vos ouvrages</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">1 Création IA / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 Créations IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>5 crédits Studio Photo / mois</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Statistiques avancées</span></li>

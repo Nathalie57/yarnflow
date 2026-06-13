@@ -272,7 +272,7 @@ const Landing = () => {
                   "PDF ou URL — Ravelry, Etsy, blog, peu importe la source",
                   'Sections créées automatiquement (dos, devant, manches…)',
                   'Laine, aiguilles, tension extraits du patron',
-                  '1 essai gratuit · 1 import/mois en PLUS · 15 imports/mois en PRO',
+                  '1 essai gratuit · 3 imports/mois en PLUS · 15 imports/mois en PRO',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -440,7 +440,7 @@ const Landing = () => {
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Création Intelligente — 1 import / mois</span></span>
+                  <span><span className="font-medium text-gray-800">Création Intelligente — 3 imports / mois</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -537,11 +537,11 @@ const Landing = () => {
               },
               {
                 q: "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente, 3 questions IA/mois, 2 crédits photo. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes privées par section, tags, 50 pelotes en stock, 1 import IA/mois, 10 questions IA/mois, 5 crédits photo, statistiques avancées. PRO (6,99€/mois) débloque tout : stock illimité, 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo."
+                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente, 3 questions IA/mois, 2 crédits photo. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes privées par section, tags, 50 pelotes en stock, 3 imports IA/mois, 10 questions IA/mois, 5 crédits photo, statistiques avancées. PRO (6,99€/mois) débloque tout : stock illimité, 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo."
               },
               {
                 q: "La création intelligente, c'est quoi exactement ?",
-                a: "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 1 essai gratuit offert pour tous, puis 1 import/mois en PLUS ou 15 imports/mois en PRO."
+                a: "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 1 essai gratuit offert pour tous, puis 3 imports/mois en PLUS ou 15 imports/mois en PRO."
               },
               {
                 q: "Ça marche sur quels appareils ?",

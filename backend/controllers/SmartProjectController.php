@@ -394,7 +394,7 @@ class SmartProjectController
     /**
      * Retourne le plan d'import IA effectif pour l'utilisateur.
      * - PRO / pro_annual / early_bird : 15 imports/mois
-     * - PLUS / plus_annual : 1 import/mois
+     * - PLUS / plus_annual : 3 imports/mois
      * - FREE ou abonnement expiré : 0 (1 essai à vie géré séparément)
      */
     private function getSmartImportPlan(string $subscriptionType, int $userId): array
@@ -411,7 +411,7 @@ class SmartProjectController
 
         if (in_array($subscriptionType, $plusTypes)) {
             if ($this->userModel->hasActiveSubscription($userId)) {
-                return ['tier' => 'plus', 'monthly_limit' => 1];
+                return ['tier' => 'plus', 'monthly_limit' => 3];
             }
         }
 
