@@ -681,26 +681,15 @@ const MyProjects = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes projets</h1>
               </div>
 
-              <div className="flex flex-col items-end gap-1.5">
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm w-full sm:w-auto justify-center"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  Nouveau projet
-                </button>
-                <Link
-                  to="/smart-project-creator"
-                  className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-700 transition-colors"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-                  </svg>
-                  Création Intelligente
-                </Link>
-              </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm w-full sm:w-auto justify-center"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Nouveau projet
+              </button>
             </div>
 
             {/* Stats inline */}
@@ -719,28 +708,6 @@ const MyProjects = () => {
                   + Acheter
                 </Link>
 
-                {smartQuota && (
-                  <>
-                    <span className="text-gray-300">·</span>
-                    {(smartQuota.is_pro || smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual') ? (
-                      <Link to="/smart-project-creator" className="hover:underline">
-                        {smartQuota.remaining} import{smartQuota.remaining !== 1 ? 's' : ''} IA
-                      </Link>
-                    ) : smartQuota.free_trial_used ? (
-                      <>
-                        <span className="text-gray-400 text-xs">Essai IA utilisé</span>
-                        <span className="text-gray-300">·</span>
-                        <Link to="/subscription" className="text-primary-600 hover:underline text-xs font-medium">
-                          Débloquer
-                        </Link>
-                      </>
-                    ) : (
-                      <Link to="/smart-project-creator" className="text-primary-600 hover:underline text-xs">
-                        1 essai IA gratuit
-                      </Link>
-                    )}
-                  </>
-                )}
               </div>
             )}
           </>
@@ -752,36 +719,48 @@ const MyProjects = () => {
         )}
       </div>
 
-      {/* Bannière Création Intelligente — FREE essai dispo OU PRO jamais utilisé ce mois */}
-      {smartQuota && (
-        (!smartQuota.is_pro && !smartQuota.free_trial_used) ||
-        (smartQuota.is_pro && smartQuota.used_this_month === 0)
-      ) && (
-        <Link
-          to="/smart-project-creator"
-          className="block mb-6 p-4 bg-primary-50 border border-primary-200 rounded-2xl hover:bg-primary-100 transition group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-white rounded-xl border border-primary-200 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+      {/* Bannière Création Intelligente */}
+      {smartQuota && (() => {
+        const isPaidWithImports = (smartQuota.is_pro || smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual') && smartQuota.remaining > 0
+        const isFreeTrialAvailable = !smartQuota.is_pro && !smartQuota.free_trial_used && smartQuota.plan === 'free'
+        const isTrialUsed = smartQuota.plan === 'free' && smartQuota.free_trial_used
+
+        if (!isPaidWithImports && !isFreeTrialAvailable && !isTrialUsed) return null
+
+        const to = isTrialUsed ? '/subscription' : '/smart-project-creator'
+        const label = isTrialUsed
+          ? 'Vous avez adoré ? Continuez avec PLUS ou PRO'
+          : isFreeTrialAvailable
+          ? 'Essayez la Création Intelligente'
+          : 'Créer un projet automatiquement'
+        const sub = isTrialUsed
+          ? 'Plus de créations automatiques à partir de 3,99€/mois'
+          : isFreeTrialAvailable
+          ? 'Importez un patron PDF — l\'IA crée votre projet. 1 essai gratuit offert.'
+          : `${smartQuota.remaining} création${smartQuota.remaining !== 1 ? 's' : ''} disponible${smartQuota.remaining !== 1 ? 's' : ''} ce mois`
+
+        return (
+          <Link
+            to={to}
+            className="block mb-6 p-4 bg-primary-50 border border-primary-200 rounded-2xl hover:bg-primary-100 transition group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-white rounded-xl border border-primary-200 flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-primary-900">{label}</p>
+                <p className="text-xs text-primary-600 mt-0.5">{sub}</p>
+              </div>
+              <svg className="w-4 h-4 text-primary-400 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-primary-900">Essayez la Création Intelligente</p>
-              <p className="text-xs text-primary-600 mt-0.5">
-                {smartQuota.is_pro
-                  ? <>Importez un patron PDF — l'IA crée votre projet automatiquement. <span className="font-semibold">15 imports disponibles ce mois.</span></>
-                  : <>Importez un patron PDF — l'IA crée votre projet automatiquement. <span className="font-semibold">1 essai gratuit offert.</span></>
-                }
-              </p>
-            </div>
-            <svg className="w-4 h-4 text-primary-400 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </div>
-        </Link>
-      )}
+          </Link>
+        )
+      })()}
 
       {/* Barre de recherche */}
       {!loading && projects.length > 0 && (
