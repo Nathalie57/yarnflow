@@ -122,16 +122,37 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
         </ul>
 
         {/* Prix */}
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <p className="font-bold text-gray-900 text-sm">Plan {content.plan === 'plus' ? 'PLUS' : 'PRO'}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{content.plan === 'plus' ? 'Idéal pour les tricoteuses actives' : 'Pour les projets sérieux'}</p>
+        {content.plan === 'plus' ? (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-primary-50 border border-primary-200 rounded-xl p-3 flex flex-col">
+              <p className="font-bold text-gray-900 text-sm">PLUS</p>
+              <p className="text-xs text-gray-500 mt-0.5">Pour les actives</p>
+              <div className="mt-2">
+                <span className="text-xl font-bold text-primary-600">3,99€</span>
+                <span className="text-xs text-gray-500">/mois</span>
+              </div>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex flex-col">
+              <p className="font-bold text-gray-900 text-sm">PRO</p>
+              <p className="text-xs text-gray-500 mt-0.5">Toutes les fonctions</p>
+              <div className="mt-2">
+                <span className="text-xl font-bold text-gray-700">6,99€</span>
+                <span className="text-xs text-gray-500">/mois</span>
+              </div>
+            </div>
           </div>
-          <div className="text-right">
-            <span className="text-2xl font-bold text-primary-600">{content.plan === 'plus' ? '3,99€' : '6,99€'}</span>
-            <span className="text-xs text-gray-500">/mois</span>
+        ) : (
+          <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="font-bold text-gray-900 text-sm">Plan PRO</p>
+              <p className="text-xs text-gray-500 mt-0.5">Pour les projets sérieux</p>
+            </div>
+            <div className="text-right">
+              <span className="text-2xl font-bold text-primary-600">6,99€</span>
+              <span className="text-xs text-gray-500">/mois</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3">
@@ -145,7 +166,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             onClick={handleUpgrade}
             className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition text-sm font-semibold shadow-sm"
           >
-            Passer à {content.plan === 'plus' ? 'PLUS' : 'PRO'}
+            {content.plan === 'plus' ? 'Voir les plans' : 'Passer à PRO'}
           </button>
         </div>
         <p className="text-xs text-gray-400 text-center -mt-2">Sans engagement · Résiliable à tout moment</p>
