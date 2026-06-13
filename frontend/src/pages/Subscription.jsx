@@ -15,8 +15,25 @@ const Dash = () => (
   </svg>
 )
 
+const TWAMessage = () => (
+  <div className="max-w-md mx-auto px-6 py-16 text-center space-y-6">
+    <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto">
+      <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    </div>
+    <h1 className="text-2xl font-bold text-gray-900">Débloquer YarnFlow</h1>
+    <p className="text-gray-600 leading-relaxed">
+      Pour vous offrir YarnFlow au prix le plus juste sans intermédiaire, la gestion des abonnements se fait exclusivement sur notre site internet. Pour débloquer vos fonctionnalités, connectez-vous simplement à votre compte sur <span className="font-semibold text-primary-700">yarnflow.fr</span> depuis le navigateur de votre téléphone ou de votre ordinateur. Votre application se mettra à jour instantanément !
+    </p>
+    <button onClick={() => window.history.back()} className="text-sm text-gray-400 hover:text-gray-600 transition">
+      Retour
+    </button>
+  </div>
+)
+
 const Subscription = () => {
-  const { user } = useAuth()
+  const { user, isTWA } = useAuth()
   const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick } = useAnalytics()
   const [subscription, setSubscription] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -156,6 +173,8 @@ const Subscription = () => {
       </div>
     )
   }
+
+  if (isTWA) return <TWAMessage />
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-8">

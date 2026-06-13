@@ -55,10 +55,24 @@ export const useAuth = () => {
   return context
 }
 
+// Détecte si l'app tourne dans une TWA Play Store (android-app://)
+// Stocké en localStorage pour persister après la première page
+const detectTWA = () => {
+  try {
+    if (localStorage.getItem('yf_twa') === '1') return true
+    if (document.referrer.startsWith('android-app://')) {
+      localStorage.setItem('yf_twa', '1')
+      return true
+    }
+  } catch {}
+  return false
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const isTWA = detectTWA()
 
   const lastVisibilityCheck = useRef(0)
   const isLoadingUser = useRef(false)
@@ -245,6 +259,7 @@ export const AuthProvider = ({ children }) => {
     isAdmin,
     hasActiveSubscription,
     getSubscriptionPlan,
+    isTWA,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -5,6 +5,7 @@
 
 import { useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
+import { useAuth } from '../contexts/AuthContext'
 
 const FEATURES = {
   tags: {
@@ -64,8 +65,28 @@ const FEATURES = {
 
 const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
   const navigate = useNavigate()
+  const { isTWA } = useAuth()
 
   if (!isOpen) return null
+
+  if (isTWA) return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 relative" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <h3 className="text-lg font-bold text-gray-900 pr-6">Débloquer cette fonctionnalité</h3>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          Pour vous offrir YarnFlow au prix le plus juste sans intermédiaire, la gestion des abonnements se fait exclusivement sur notre site internet. Pour débloquer vos fonctionnalités, connectez-vous simplement à votre compte sur <span className="font-semibold text-primary-700">yarnflow.fr</span> depuis le navigateur de votre téléphone ou de votre ordinateur. Votre application se mettra à jour instantanément !
+        </p>
+        <button onClick={onClose} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700">
+          Fermer
+        </button>
+      </div>
+    </div>
+  )
 
   const content = FEATURES[feature] || FEATURES.tags
 
