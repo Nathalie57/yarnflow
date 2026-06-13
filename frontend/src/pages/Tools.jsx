@@ -153,7 +153,7 @@ const TOOLS = [
     id: 'ai',
     Icon: IconMessage,
     title: 'Assistant IA',
-    description: 'Posez toutes vos questions sur les techniques, patrons et points. 3/mois en FREE, 30/mois en PRO.',
+    description: 'Posez toutes vos questions sur les techniques, patrons et points. 3/mois en FREE, 10/mois en PLUS, 30/mois en PRO.',
     component: AiAssistant,
   },
 ]
