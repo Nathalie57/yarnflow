@@ -8,6 +8,7 @@ import PropTypes from 'prop-types'
 
 const FEATURES = {
   tags: {
+    plan: 'plus',
     svg: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
@@ -99,7 +100,9 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             {content.svg}
           </div>
           <div>
-            <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-0.5">Fonctionnalité PRO</p>
+            <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-0.5">
+              Fonctionnalité {content.plan === 'plus' ? 'PLUS' : 'PRO'}
+            </p>
             <h3 className="text-lg font-bold text-gray-900">{content.title}</h3>
           </div>
         </div>
@@ -121,11 +124,11 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
         {/* Prix */}
         <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between">
           <div>
-            <p className="font-bold text-gray-900 text-sm">Plan PRO</p>
-            <p className="text-xs text-gray-500 mt-0.5">Pour les projets sérieux</p>
+            <p className="font-bold text-gray-900 text-sm">Plan {content.plan === 'plus' ? 'PLUS' : 'PRO'}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{content.plan === 'plus' ? 'Idéal pour les tricoteuses actives' : 'Pour les projets sérieux'}</p>
           </div>
           <div className="text-right">
-            <span className="text-2xl font-bold text-primary-600">6,99€</span>
+            <span className="text-2xl font-bold text-primary-600">{content.plan === 'plus' ? '3,99€' : '6,99€'}</span>
             <span className="text-xs text-gray-500">/mois</span>
           </div>
         </div>
@@ -142,7 +145,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             onClick={handleUpgrade}
             className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition text-sm font-semibold shadow-sm"
           >
-            Passer à PRO
+            Passer à {content.plan === 'plus' ? 'PLUS' : 'PRO'}
           </button>
         </div>
         <p className="text-xs text-gray-400 text-center -mt-2">Sans engagement · Résiliable à tout moment</p>
