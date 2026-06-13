@@ -302,12 +302,8 @@ export default function SmartProjectCreator() {
 
           {/* Badge quota */}
           {quota && (
-            <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${
-              quota.is_pro
-                ? 'bg-primary-50 border-primary-200'
-                : 'bg-amber-50 border-amber-200'
-            }`}>
-              <span className={`text-sm font-medium ${quota.is_pro ? 'text-primary-700' : 'text-amber-700'}`}>
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-primary-50 border-primary-200">
+              <span className="text-sm font-medium text-primary-700">
                 {quota.is_pro
                   ? `${quota.remaining} import${quota.remaining !== 1 ? 's' : ''} restant${quota.remaining !== 1 ? 's' : ''} ce mois`
                   : 'Essai gratuit — 1 import offert'
@@ -628,7 +624,7 @@ export default function SmartProjectCreator() {
             </h2>
 
             {aiStatus === 'partial' && (
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 text-sm">
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 text-sm">
                 Certaines informations n'ont pas pu être détectées automatiquement. Complétez les champs manquants.
               </div>
             )}
