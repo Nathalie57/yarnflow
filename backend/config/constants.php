@@ -122,7 +122,7 @@ define('SUBSCRIPTION_FEATURES', [
         'timer_history' => false,
         'all_photo_styles' => false,
         'smart_project_creation' => true,
-        'smart_project_imports_monthly' => 1,
+        'smart_project_imports_monthly' => 3,
     ],
     'plus_annual' => [
         'name' => 'YarnFlow Plus (Annuel)',
@@ -141,7 +141,7 @@ define('SUBSCRIPTION_FEATURES', [
         'timer_history' => false,
         'all_photo_styles' => false,
         'smart_project_creation' => true,
-        'smart_project_imports_monthly' => 1,
+        'smart_project_imports_monthly' => 3,
     ],
     'pro' => [
         'name' => 'YarnFlow Pro',
