@@ -722,14 +722,18 @@ const MyProjects = () => {
                 {smartQuota && (
                   <>
                     <span className="text-gray-300">·</span>
-                    {smartQuota.is_pro ? (
+                    {(smartQuota.is_pro || smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual') ? (
                       <Link to="/smart-project-creator" className="hover:underline">
                         {smartQuota.remaining} import{smartQuota.remaining !== 1 ? 's' : ''} IA
                       </Link>
                     ) : smartQuota.free_trial_used ? (
-                      <Link to="/subscription" className="text-primary-600 hover:underline text-xs">
-                        Essai IA utilisé — PRO
-                      </Link>
+                      <>
+                        <span className="text-gray-400 text-xs">Essai IA utilisé</span>
+                        <span className="text-gray-300">·</span>
+                        <Link to="/subscription" className="text-primary-600 hover:underline text-xs font-medium">
+                          Débloquer
+                        </Link>
+                      </>
                     ) : (
                       <Link to="/smart-project-creator" className="text-primary-600 hover:underline text-xs">
                         1 essai IA gratuit
