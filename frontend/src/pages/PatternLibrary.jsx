@@ -487,56 +487,6 @@ const PatternLibrary = () => {
             </p>
           </div>
 
-          {/* Indicateur de limite FREE */}
-          {!isPro && stats !== null && (
-            <div className="sm:text-right">
-              {(() => {
-                const count = stats.total_patterns || 0
-                const max = 5
-                const pct = Math.min((count / max) * 100, 100)
-                const remaining = max - count
-                const isNearLimit = count >= 3
-                const isAtLimit = count >= max
-                return (
-                  <div className={`inline-flex flex-col items-end gap-1 px-4 py-2.5 rounded-xl border ${
-                    isAtLimit ? 'bg-red-50 border-red-200' :
-                    isNearLimit ? 'bg-amber-50 border-amber-200' :
-                    'bg-gray-50 border-gray-200'
-                  }`}>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-sm font-semibold ${
-                        isAtLimit ? 'text-red-700' : isNearLimit ? 'text-amber-700' : 'text-gray-700'
-                      }`}>
-                        {count}/{max} patrons
-                      </span>
-                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                        isAtLimit ? 'bg-red-100 text-red-700' : isNearLimit ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'
-                      }`}>FREE</span>
-                    </div>
-                    <div className="w-32 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-amber-500' : 'bg-primary-500'
-                        }`}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <button
-                      onClick={() => setShowUpgradeLibrary(true)}
-                      className={`text-xs font-medium hover:underline ${
-                        isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-primary-600'
-                      }`}
-                    >
-                      {isAtLimit ? 'Limite atteinte — Passer à PRO' :
-                       isNearLimit ? `Plus que ${remaining} — Passer à PRO` :
-                       'Passer à PRO pour plus'}
-                    </button>
-                  </div>
-                )
-              })()}
-            </div>
-          )}
-
           <button
             onClick={() => setShowAddModal(true)}
             className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium transition bg-primary-600 text-white hover:bg-primary-700"
