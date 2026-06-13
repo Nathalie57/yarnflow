@@ -167,7 +167,7 @@ const CreateProjectWizard = ({
 
             {/* Création Intelligente */}
             <button
-              onClick={() => { onClose(); navigate('/smart-project-creator') }}
+              onClick={() => { onClose(); navigate(isTrialUsed || isPlusExhausted ? '/subscription' : '/smart-project-creator') }}
               className="w-full flex items-center gap-4 p-4 border border-primary-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 bg-primary-50/50 transition text-left group"
             >
               <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
