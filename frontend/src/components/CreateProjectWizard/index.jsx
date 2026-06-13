@@ -378,7 +378,7 @@ const CreateProjectWizard = ({
                     <div className="flex items-center gap-2">
                       <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
                       <button type="button" onClick={onShowUpgradePrompt} className="text-xs text-primary-600 hover:underline font-medium">
-                        Passer à PLUS
+                        Voir les plans
                       </button>
                     </div>
                   </div>

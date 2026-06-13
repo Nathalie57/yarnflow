@@ -110,7 +110,7 @@ const Step4Optional = ({
             className="flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700 transition"
           >
             <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
-            Passer à PLUS
+            Voir les plans
           </button>
         </div>
       )}
