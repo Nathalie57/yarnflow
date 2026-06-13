@@ -17,11 +17,10 @@ const Dash = () => (
 
 const Subscription = () => {
   const { user } = useAuth()
-  const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick, trackBillingPeriodChange } = useAnalytics()
+  const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick } = useAnalytics()
   const [subscription, setSubscription] = useState(null)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
-  const [billingPeriod, setBillingPeriod] = useState('monthly')
 
   useEffect(() => {
     loadSubscription()
@@ -92,17 +91,16 @@ const Subscription = () => {
     }
   }
 
-  const handleSubscribe = async () => {
+  const handleSubscribe = async (type = 'pro_annual') => {
     setProcessing(true)
-    trackSubscriptionClick('pro', billingPeriod, 'subscription')
-    // Ouvrir un onglet vide AVANT l'await (dans le contexte du clic) pour contourner le popup blocker mobile
+    const isAnnual = type === 'pro_annual'
+    trackSubscriptionClick('pro', isAnnual ? 'annual' : 'monthly', 'subscription')
     const win = window.open('', '_blank')
     try {
-      const subscriptionType = billingPeriod === 'annual' ? 'pro_annual' : 'pro'
-      const amount = billingPeriod === 'monthly' ? 6.99 : 59.99
-      const response = await paymentsAPI.checkoutSubscription({ type: subscriptionType })
+      const amount = isAnnual ? 59.99 : 6.99
+      const response = await paymentsAPI.checkoutSubscription({ type })
       const { checkout_url } = response.data.data
-      trackBeginCheckout('subscription', subscriptionType, amount)
+      trackBeginCheckout('subscription', type, amount)
       if (win) win.location.href = checkout_url
       else window.location.href = checkout_url
       setProcessing(false)
@@ -147,7 +145,6 @@ const Subscription = () => {
   )
 
   const plusPrice = '3,99€'
-  const proPrice = billingPeriod === 'monthly' ? '6,99€' : '5,00€'
 
   if (loading) {
     return (
@@ -242,29 +239,6 @@ const Subscription = () => {
         </div>
       )}
 
-      {/* Toggle mensuel / annuel */}
-      <div className="flex justify-center">
-        <div className="bg-gray-100 rounded-xl p-1 flex gap-1">
-          <button
-            onClick={() => { setBillingPeriod('monthly'); trackBillingPeriodChange('monthly') }}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
-              billingPeriod === 'monthly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Mensuel
-          </button>
-          <button
-            onClick={() => { setBillingPeriod('annual'); trackBillingPeriodChange('annual') }}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
-              billingPeriod === 'annual' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Annuel
-            <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">−28%</span>
-          </button>
-        </div>
-      </div>
-
       {/* Plans */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto w-full">
 
@@ -316,7 +290,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">2 compteurs simultanés</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 50 références</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Notes privées par section</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tags de tri</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tags pour organiser vos ouvrages</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">1 Création IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>5 crédits Studio Photo / mois</span></li>
@@ -349,12 +323,10 @@ const Subscription = () => {
           <div className="mb-4 mt-2">
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">Pro</p>
             <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-bold text-gray-900">{proPrice}</span>
+              <span className="text-3xl font-bold text-gray-900">4,99€</span>
               <span className="text-sm text-gray-500">/mois</span>
             </div>
-            {billingPeriod === 'annual' && (
-              <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
-            )}
+            <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
             <p className="text-sm text-gray-500">L'expérience ultime, sans limites.</p>
           </div>
 
@@ -367,22 +339,27 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>Statistiques avancées</span></li>
           </ul>
 
-          {isPlus ? (
-            <button
-              onClick={handleManageSubscription}
-              disabled={processing}
-              className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {processing ? 'Chargement…' : 'Passer à PRO via mon espace'}
+          {isPro ? (
+            <button disabled className="w-full py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold opacity-60 cursor-not-allowed">
+              Plan actuel
             </button>
           ) : (
-            <button
-              onClick={handleSubscribe}
-              disabled={processing || isPro}
-              className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {processing ? 'Chargement…' : isPro ? 'Plan actuel' : `Passer à PRO — ${proPrice}/mois`}
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro_annual')}
+                disabled={processing}
+                className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {processing ? 'Chargement…' : 'Passer à PRO (Annuel)'}
+              </button>
+              <button
+                onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro')}
+                disabled={processing}
+                className="w-full py-2.5 border-2 border-primary-600 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {processing ? 'Chargement…' : 'Choisir le Mensuel (6,99€/mois)'}
+              </button>
+            </div>
           )}
         </div>
       </div>

@@ -8,10 +8,9 @@ import { Link } from 'react-router-dom'
 import { useAnalytics, useScrollTracking } from '../hooks/useAnalytics'
 
 const Landing = () => {
-  const [billingPeriod, setBillingPeriod] = useState('monthly')
   const [openFAQ, setOpenFAQ] = useState(null)
 
-  const { trackPageView, trackSubscriptionClick, trackBillingPeriodChange } = useAnalytics()
+  const { trackPageView, trackSubscriptionClick } = useAnalytics()
   useScrollTracking()
 
   useEffect(() => {
@@ -365,24 +364,6 @@ const Landing = () => {
             FREE pour toujours. PLUS quand vos projets grandissent. PRO quand ils méritent tout.
           </p>
 
-          <div className="flex justify-center mb-10">
-            <div className="bg-gray-100 rounded-xl p-1 flex gap-1">
-              <button
-                onClick={() => { setBillingPeriod('monthly'); trackBillingPeriodChange('monthly') }}
-                className={`px-6 py-2 rounded-lg text-sm font-medium transition ${billingPeriod === 'monthly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                Mensuel
-              </button>
-              <button
-                onClick={() => { setBillingPeriod('annual'); trackBillingPeriodChange('annual') }}
-                className={`px-6 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${billingPeriod === 'annual' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                Annuel
-                <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">−28%</span>
-              </button>
-            </div>
-          </div>
-
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
 
             {/* FREE */}
@@ -401,7 +382,7 @@ const Landing = () => {
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Timer intégré &amp; statistiques de progression
+                  Timer intégré &amp; suivi du temps
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -443,7 +424,15 @@ const Landing = () => {
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">2 compteurs simultanés</span><span className="block text-gray-500 text-xs mt-0.5">Notes par section, tags pour organiser vos ouvrages</span></span>
+                  <span className="font-medium text-gray-800">2 compteurs simultanés</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  Notes privées par section
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  Tags pour organiser vos ouvrages
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -483,12 +472,10 @@ const Landing = () => {
               </div>
               <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3 mt-2">Pro</p>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-bold text-gray-900">{billingPeriod === 'monthly' ? '6,99€' : '5,00€'}</span>
+                <span className="text-4xl font-bold text-gray-900">4,99€</span>
                 <span className="text-sm text-gray-500">/mois</span>
               </div>
-              {billingPeriod === 'annual' && (
-                <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
-              )}
+              <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
               <p className="text-sm text-gray-500 mb-6">Pour les projets qui méritent tout.</p>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
@@ -516,13 +503,22 @@ const Landing = () => {
                   <span><span className="font-medium text-gray-800">Statistiques avancées</span><span className="block text-gray-500 text-xs mt-0.5">Graphiques visuels, badges de progression et temps moyen par session</span></span>
                 </li>
               </ul>
-              <Link
-                to="/register"
-                onClick={() => trackSubscriptionClick('pro', billingPeriod, 'landing')}
-                className="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
-              >
-                Passer à PRO
-              </Link>
+              <div className="space-y-2">
+                <Link
+                  to="/register"
+                  onClick={() => trackSubscriptionClick('pro', 'annual', 'landing')}
+                  className="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
+                >
+                  Passer à PRO (Annuel)
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => trackSubscriptionClick('pro', 'monthly', 'landing')}
+                  className="block w-full text-center border-2 border-primary-600 text-primary-700 hover:bg-primary-50 font-semibold py-2.5 rounded-xl transition text-sm"
+                >
+                  Choisir le Mensuel (6,99€/mois)
+                </Link>
+              </div>
               <p className="text-xs text-gray-400 text-center mt-2">Sans engagement · Résiliable à tout moment</p>
             </div>
           </div>
@@ -541,7 +537,7 @@ const Landing = () => {
               },
               {
                 q: "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente, 3 questions IA/mois, 2 crédits photo. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes par section, tags, 50 pelotes en stock, 1 import IA/mois, 10 questions IA/mois, 5 crédits photo. PRO (6,99€/mois) débloque tout : stock illimité, 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo, stats avancées."
+                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente, 3 questions IA/mois, 2 crédits photo. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes privées par section, tags, 50 pelotes en stock, 1 import IA/mois, 10 questions IA/mois, 5 crédits photo, statistiques avancées. PRO (6,99€/mois) débloque tout : stock illimité, 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo."
               },
               {
                 q: "La création intelligente, c'est quoi exactement ?",
