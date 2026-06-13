@@ -130,7 +130,10 @@ const CreateProjectWizard = ({
 
   // Écran de choix — manuel vs Création Intelligente
   if (mode === null) {
-    const isPaidWithImports = smartQuota && (smartQuota.is_pro || smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual') && smartQuota.remaining > 0
+    const isPlusOrPro = smartQuota && (smartQuota.is_pro || smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual')
+    const isPaidWithImports = isPlusOrPro && smartQuota.remaining > 0
+    const isPlusExhausted = smartQuota && (smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual') && smartQuota.remaining === 0
+    const isProExhausted = smartQuota && smartQuota.is_pro && smartQuota.remaining === 0
     const isFreeTrialAvailable = smartQuota && smartQuota.plan === 'free' && !smartQuota.free_trial_used
     const isTrialUsed = smartQuota && smartQuota.plan === 'free' && smartQuota.free_trial_used
 
@@ -189,6 +192,15 @@ const CreateProjectWizard = ({
                     <span className="text-gray-400">Essai utilisé</span>
                     <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Débloquer</span>
                   </p>
+                )}
+                {isPlusExhausted && (
+                  <p className="text-xs mt-0.5 flex items-center gap-1.5">
+                    <span className="text-gray-400">3/3 utilisées ce mois</span>
+                    <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Passer à PRO</span>
+                  </p>
+                )}
+                {isProExhausted && (
+                  <p className="text-xs text-gray-400 mt-0.5">15/15 utilisées — renouvellement le 1er du mois</p>
                 )}
                 {!smartQuota && (
                   <p className="text-xs text-primary-600 mt-0.5">Importez un PDF ou une URL</p>
