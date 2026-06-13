@@ -262,9 +262,9 @@ const CreateProjectWizard = ({
                     <button
                       type="button"
                       onClick={onOpenLibraryModal}
-                      className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'library' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'library' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 mb-1 ${patternType === 'library' ? 'text-primary-600' : 'text-gray-400'}`}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                       </svg>
                       <span className="text-xs font-medium text-gray-700">Bibliothèque</span>
@@ -277,9 +277,9 @@ const CreateProjectWizard = ({
                       onDragOver={(e) => { e.preventDefault(); setFileDragOver(true) }}
                       onDragLeave={() => setFileDragOver(false)}
                       onDrop={handleFileDrop}
-                      className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${
+                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${
                         fileDragOver ? 'border-primary-400 bg-primary-50' :
-                        patternType === 'file' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'
+                        patternType === 'file' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'
                       }`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
@@ -304,7 +304,7 @@ const CreateProjectWizard = ({
                     <button
                       type="button"
                       onClick={onOpenUrlModal}
-                      className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'url' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'url' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
@@ -316,7 +316,7 @@ const CreateProjectWizard = ({
                     <button
                       type="button"
                       onClick={onOpenTextModal}
-                      className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'text' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'text' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -376,9 +376,9 @@ const CreateProjectWizard = ({
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">Tags</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">PRO</span>
+                      <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
                       <button type="button" onClick={onShowUpgradePrompt} className="text-xs text-primary-600 hover:underline font-medium">
-                        Passer à PRO
+                        Passer à PLUS
                       </button>
                     </div>
                   </div>
