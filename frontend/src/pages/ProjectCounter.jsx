@@ -5841,9 +5841,7 @@ Rang 3 : *1ms, aug* x6 (18)
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-medium text-gray-900">{style.label}</p>
-                            {styleIdx === 0 && (
-                              <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded font-semibold">Recommandé</span>
-                            )}
+
                             {style.tier === 'pro' && (
                               <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
                             )}
