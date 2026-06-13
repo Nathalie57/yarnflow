@@ -516,7 +516,7 @@ const Gallery = () => {
                     {(() => {
                       const subType = user?.subscription_type;
                       if (!subType || subType === 'free') return 'Plan FREE : 2 crédits/mois';
-                      if (subType === 'plus' || subType === 'plus_annual') return 'Plan PRO : 20 crédits/mois';
+                      if (subType === 'plus' || subType === 'plus_annual') return 'Plan PLUS : 5 crédits/mois';
                       return 'Plan PRO : 20 crédits/mois';
                     })()}
                   </p>
@@ -550,7 +550,7 @@ const Gallery = () => {
                   to="/subscription"
                   className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition"
                 >
-                  Passer à PRO — 20 crédits/mois
+                  Passer à PLUS ou PRO — plus de crédits
                 </Link>
               ) : (
                 <div className="flex flex-col gap-2 items-center sm:items-end">
