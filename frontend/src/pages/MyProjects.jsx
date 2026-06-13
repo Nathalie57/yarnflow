@@ -1367,27 +1367,9 @@ const MyProjects = () => {
       {/* Modal ajout URL patron */}
       {showPatternUrlModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">
-              🔗 Lien vers le patron
-            </h2>
-
-            {/* Workflow rapide */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-blue-800">
-                💡 <strong>Pour un patron en ligne (page web gratuite) :</strong>
-              </p>
-              <ol className="text-xs text-blue-700 mt-2 ml-4 list-decimal space-y-1">
-                <li>Trouvez la page du patron (ex : site Drops, blog...)</li>
-                <li>Copiez l'adresse depuis la barre de votre navigateur</li>
-                <li>Collez-la dans le champ ci-dessus</li>
-              </ol>
-            </div>
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-              <p className="text-xs text-amber-800">
-                📎 <strong>Patron PDF (Ravelry, téléchargement...) ?</strong> Utilisez plutôt le bouton <strong>Fichier</strong> pour l'importer directement.
-              </p>
-            </div>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Lien vers le patron</h2>
+            <p className="text-sm text-gray-500 mb-5">Collez l'adresse d'une page web (Drops, blog, Ravelry...)</p>
 
             {/* Champ URL */}
             <input
@@ -1395,28 +1377,29 @@ const MyProjects = () => {
               value={patternUrl}
               onChange={(e) => setPatternUrl(e.target.value)}
               placeholder="https://example.com/mon-patron"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 mb-6"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mb-2"
               autoFocus
             />
+            <p className="text-xs text-gray-400 mb-5">Pour un PDF, utilisez plutôt le bouton Fichier.</p>
 
             {/* Séparateur */}
-            <div className="relative mb-6">
+            <div className="relative mb-5">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-100"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Ou chercher un patron</span>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-white text-gray-400">Ou chercher un patron</span>
               </div>
             </div>
 
             {/* Recherche rapide */}
-            <div className="mb-6">
+            <div className="mb-5">
               <input
                 type="text"
                 value={patternSearchQuery}
                 onChange={(e) => setPatternSearchQuery(e.target.value)}
-                placeholder="Ex: pull irlandais, bonnet simple..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="pull irlandais, bonnet simple..."
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl mb-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
               />
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -1427,9 +1410,10 @@ const MyProjects = () => {
                       : encodeURIComponent('tricot crochet patron')
                     window.open(`https://www.google.com/search?q=${query}`, '_blank')
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
                 >
-                  🌐 Google
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+                  Google
                 </button>
                 <button
                   type="button"
@@ -1439,15 +1423,16 @@ const MyProjects = () => {
                       : 'https://www.ravelry.com/patterns/search'
                     window.open(url, '_blank')
                   }}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
                 >
-                  🧶 Ravelry
+                  <svg className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm-1 5v2H9v2h2v6h2v-6h2V9h-2V7h-2z"/></svg>
+                  Ravelry
                 </button>
               </div>
             </div>
 
             {/* Boutons de validation */}
-            <div className="flex space-x-3">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -1455,7 +1440,7 @@ const MyProjects = () => {
                   setPatternUrl('')
                   setPatternSearchQuery('')
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition font-medium"
               >
                 Annuler
               </button>
@@ -1472,7 +1457,7 @@ const MyProjects = () => {
                   }
                 }}
                 disabled={!patternUrl.trim()}
-                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Enregistrer
               </button>
