@@ -269,15 +269,9 @@ export default function SmartProjectCreator() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Création Intelligente</h1>
-          <p className="text-gray-500">Vous avez utilisé votre essai gratuit. Abonnez-vous pour continuer à importer des patrons automatiquement.</p>
-          <div className="bg-primary-50 rounded-xl p-4 text-left space-y-2">
-            <p className="text-sm font-semibold text-primary-900">Avec PLUS ou PRO :</p>
-            <p className="text-sm text-primary-700">Imports mensuels — PDF, URL, Ravelry</p>
-            <p className="text-sm text-primary-700">Sections et détails techniques créés automatiquement</p>
-            <p className="text-sm text-primary-700">Assistant IA, photos, stats complètes</p>
-          </div>
+          <p className="text-gray-500">Vous avez utilisé votre essai gratuit.</p>
           <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
-            Débloquer
+            Plus de créations automatiques
           </Link>
           <button onClick={() => navigate(-1)} className="block w-full text-sm text-gray-400 hover:text-gray-600">
             Retour
