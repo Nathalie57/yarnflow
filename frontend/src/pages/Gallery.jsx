@@ -400,9 +400,9 @@ const Gallery = () => {
       { key: 'wearable_c1', label: 'Porté, lumière naturelle', icon: '👤', desc: 'Portrait extérieur avec lumière douce', tier: 'free' },
       { key: 'flatlay_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
       { key: 'detail_c1', label: 'Gros plan sur les points', icon: '🔍', desc: 'Macro sur la texture et le détail du tricot', tier: 'free' },
-      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'pro' },
-      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'pro' },
-      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'pro' },
+      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'plus' },
+      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'plus' },
+      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'plus' },
       { key: 'wearable_c4', label: 'Porté, ambiance vintage', icon: '🌼', desc: 'Portrait dans un décor rétro chaleureux', tier: 'pro' },
       { key: 'wearable_c7', label: 'Porté, éclairage dramatique', icon: '👗', desc: 'Portrait studio avec fond texturé sombre', tier: 'pro' },
       { key: 'wearable_c9', label: 'Porté, décor industriel', icon: '🏙️', desc: 'Portrait en loft ou espace industriel', tier: 'pro' }
@@ -411,9 +411,9 @@ const Gallery = () => {
       { key: 'accessory_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
       { key: 'accessory_c2', label: 'Porté, lumière naturelle', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
       { key: 'accessory_c3', label: 'Porté, fond neutre', icon: '👤', desc: 'Porté sur modèle avec fond sobre', tier: 'free' },
-      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'pro' },
-      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'pro' },
-      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'pro' },
+      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'plus' },
+      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'plus' },
+      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'plus' },
       { key: 'accessory_c7', label: 'Porté, style éditorial', icon: '💃', desc: 'Portrait avec mise en scène soignée', tier: 'pro' },
       { key: 'accessory_c8', label: 'À plat, fond sombre élégant', icon: '💎', desc: 'Mise en scène sobre sur fond sombre', tier: 'pro' },
       { key: 'accessory_c9', label: 'Porté, décor bohème', icon: '🌸', desc: 'Porté dans un intérieur bohème avec plantes', tier: 'pro' }
@@ -422,9 +422,9 @@ const Gallery = () => {
       { key: 'home_c1', label: 'Intérieur moderne', icon: '🏠', desc: 'Décor contemporain avec touches de couleur', tier: 'free' },
       { key: 'home_c2', label: 'Ambiance naturelle', icon: '🌿', desc: 'Bois, plantes et lumière naturelle', tier: 'free' },
       { key: 'home_c3', label: 'Décor épuré', icon: '🪟', desc: 'Style scandinave, blanc et gris doux', tier: 'free' },
-      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'pro' },
-      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'pro' },
-      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'pro' },
+      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'plus' },
+      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'plus' },
+      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'plus' },
       { key: 'home_c7', label: 'Décor élégant', icon: '💎', desc: 'Intérieur contemporain avec matières nobles', tier: 'pro' },
       { key: 'home_c8', label: 'Ambiance zen', icon: '🧘', desc: 'Décor minimaliste, couleurs neutres apaisantes', tier: 'pro' },
       { key: 'home_c9', label: 'Table de créatrice', icon: '🎨', desc: 'Posé sur une table avec fils et fournitures', tier: 'pro' }
@@ -433,9 +433,9 @@ const Gallery = () => {
       { key: 'toy_c1', label: 'Chambre enfant, lumière douce', icon: '🧸', desc: 'Décor de chambre enfantine doux et lumineux', tier: 'free' },
       { key: 'toy_c2', label: 'Ambiance conte illustré', icon: '📖', desc: 'Décor aquarelle pastel, ambiance féerique', tier: 'free' },
       { key: 'toy_c3', label: 'À plat, fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
-      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'pro' },
-      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'pro' },
-      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'pro' },
+      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'plus' },
+      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'plus' },
+      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'plus' },
       { key: 'toy_c7', label: 'Décor boutique artisanale', icon: '🏪', desc: 'Étagères et fond pastel, style créatrice', tier: 'pro' },
       { key: 'toy_c8', label: 'Décor jungle tropicale', icon: '🦁', desc: 'Plantes exotiques, ambiance aventure', tier: 'pro' },
       { key: 'toy_c9', label: 'Ambiance fête rétro', icon: '🎪', desc: 'Décor festif vintage coloré', tier: 'pro' }
@@ -444,9 +444,9 @@ const Gallery = () => {
       { key: 'baby_garment_c1', label: 'Porté par bébé, lit pastel', icon: '🛏️', desc: 'Bébé allongé sur lit aux tons doux', tier: 'free' },
       { key: 'baby_garment_c2', label: 'À plat, fond doux', icon: '🌸', desc: 'Posé à plat sur fond uni pastel', tier: 'free' },
       { key: 'baby_garment_c3', label: 'À plat, table à langer', icon: '🏠', desc: 'Sur table à langer en bois clair, style scandinave', tier: 'free' },
-      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'pro' },
-      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'pro' },
-      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'pro' },
+      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'plus' },
+      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'plus' },
+      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'plus' },
       { key: 'baby_garment_c7', label: 'Porté dans les bras', icon: '💝', desc: 'Bébé tenu par un parent, ambiance tendre', tier: 'pro' },
       { key: 'baby_garment_c8', label: 'À plat, fleurs séchées', icon: '💎', desc: 'Mise en scène élégante avec fleurs séchées', tier: 'pro' },
       { key: 'baby_garment_c9', label: 'Porté par bébé, tapis moelleux', icon: '🌸', desc: 'Bébé sur tapis doux et coloré', tier: 'pro' }
@@ -455,34 +455,26 @@ const Gallery = () => {
       { key: 'child_garment_c1', label: 'Porté, parc ou jardin', icon: '🌿', desc: 'Enfant dans un espace vert, lumière naturelle', tier: 'free' },
       { key: 'child_garment_c2', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
       { key: 'child_garment_c3', label: 'À plat, chambre enfant', icon: '🛏️', desc: 'Sur lit coloré avec peluches', tier: 'free' },
-      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'pro' },
-      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'pro' },
-      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'pro' },
+      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'plus' },
+      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'plus' },
+      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'plus' },
       { key: 'child_garment_c7', label: 'Porté, éclairage studio', icon: '📸', desc: 'Portrait soigné avec éclairage studio créatif', tier: 'pro' },
       { key: 'child_garment_c8', label: 'À plat, mise en scène soignée', icon: '💎', desc: 'Mise en scène boutique haut de gamme', tier: 'pro' },
       { key: 'child_garment_c9', label: 'Porté, promenade en famille', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
     ]
   }
 
-  // [AI:Claude] Filtrer les styles selon le plan de l'utilisateur
+  // Retourne tous les styles avec un flag `locked` selon le plan
   const getAvailableStyles = (category) => {
     const allStyles = stylesByCategory[category] || []
-    const subscriptionType = user?.subscription_type || 'free'
+    const sub = user?.subscription_type || 'free'
+    const isPro = ['subscription_pro', 'subscription_pro_annual'].includes(sub)
+    const isPlus = ['subscription_plus', 'subscription_plus_annual'].includes(sub)
 
-    // Déterminer le tier en fonction du type d'abonnement
-    let userTier = 'free'
-
-    // Plans payants (PLUS legacy + PRO)
-    if (subscriptionType !== 'free') {
-      userTier = 'pro'
-    }
-
-    // Filtrer selon le tier
-    if (userTier === 'free') {
-      return allStyles.filter(s => s.tier === 'free')
-    } else {
-      return allStyles // PRO accède à tout
-    }
+    return allStyles.map(s => ({
+      ...s,
+      locked: isPro ? false : isPlus ? s.tier === 'pro' : s.tier !== 'free'
+    }))
   }
 
   return (
@@ -1280,10 +1272,12 @@ const Gallery = () => {
                   {getAvailableStyles(detectProjectCategory(selectedPhoto.item_type || '')).map(style => (
                     <label
                       key={style.key}
-                      className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
-                        selectedContext?.key === style.key
-                          ? 'border-primary-600 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300'
+                      className={`flex items-center gap-3 p-3 border-2 rounded-lg transition ${
+                        style.locked
+                          ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
+                          : selectedContext?.key === style.key
+                            ? 'border-primary-600 bg-primary-50 cursor-pointer'
+                            : 'border-gray-200 hover:border-gray-300 cursor-pointer'
                       }`}
                     >
                       <input
@@ -1291,17 +1285,21 @@ const Gallery = () => {
                         name="style"
                         value={style.key}
                         checked={selectedContext?.key === style.key}
-                        onChange={() => setSelectedContext(style)}
-                        className="text-primary-600 focus:ring-primary-500"
+                        onChange={() => !style.locked && setSelectedContext(style)}
+                        disabled={style.locked}
+                        className="text-primary-600 focus:ring-primary-500 disabled:opacity-40"
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-gray-900">{style.label}</p>
-                          {style.tier === 'pro' && (
-                            <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
+                          <p className={`font-medium ${style.locked ? 'text-gray-400' : 'text-gray-900'}`}>{style.label}</p>
+                          {style.locked && style.tier === 'pro' && (
+                            <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-600 rounded font-semibold">PRO</span>
+                          )}
+                          {style.locked && style.tier === 'plus' && (
+                            <span className="text-xs px-2 py-0.5 bg-violet-100 text-violet-600 rounded font-semibold">PLUS</span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600">{style.desc}</p>
+                        <p className="text-sm text-gray-400">{style.desc}</p>
                       </div>
                     </label>
                   ))}
@@ -1326,17 +1324,33 @@ const Gallery = () => {
                   </div>
                 )}
 
-                {/* Message upgrade pour FREE */}
-                {user?.subscription_type === 'free' && (
-                  <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">9 styles supplémentaires</span> disponibles avec PRO !
-                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Découvrir le plan PRO
-                      </a>
-                    </p>
-                  </div>
-                )}
+                {/* Message upgrade */}
+                {(() => {
+                  const sub = user?.subscription_type || 'free'
+                  const isPro = ['subscription_pro', 'subscription_pro_annual'].includes(sub)
+                  const isPlus = ['subscription_plus', 'subscription_plus_annual'].includes(sub)
+                  if (isPro) return null
+                  if (isPlus) return (
+                    <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-semibold">3 styles supplémentaires</span> disponibles avec PRO.
+                        <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
+                          Passer à PRO
+                        </a>
+                      </p>
+                    </div>
+                  )
+                  return (
+                    <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-semibold">6 styles supplémentaires</span> dès PLUS, <span className="font-semibold">9</span> avec PRO.
+                        <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
+                          Découvrir les plans
+                        </a>
+                      </p>
+                    </div>
+                  )
+                })()}
               </div>
 
               {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel, uniquement pour thèmes extérieur/nature) */}
