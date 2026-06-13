@@ -244,9 +244,6 @@ class SmartProjectController
                 return;
             }
 
-            // Logger uniquement les imports réussis (ne pas consommer le quota sur erreur)
-            $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'] ?? 'success', $result['raw_response'] ?? null, $processingTime, null);
-
             $this->jsonResponse([
                 'success' => true,
                 'data' => $result['data'],
@@ -289,6 +286,7 @@ class SmartProjectController
             $sectionsData = $data['sections'];
             $sourceType = $data['source_type'] ?? 'manual';
             $sourceUrl = $data['source_url'] ?? null;
+            $analyzeMetadata = $data['analyze_metadata'] ?? null;
 
             // Créer le projet
             $db = \App\Config\Database::getInstance()->getConnection();
@@ -355,19 +353,11 @@ class SmartProjectController
                     }
                 }
 
-                // Mettre à jour le log d'import avec le project_id
-                $stmt = $db->prepare("
-                    UPDATE ai_pattern_imports
-                    SET project_id = :project_id
-                    WHERE user_id = :user_id
-                      AND project_id IS NULL
-                    ORDER BY created_at DESC
-                    LIMIT 1
-                ");
-                $stmt->execute([
-                    'project_id' => $projectId,
-                    'user_id' => $userId
-                ]);
+                // Logger l'import au moment de la création du projet (dans la transaction)
+                $sourceName = $analyzeMetadata['source_name'] ?? ($sourceUrl ?? 'unknown');
+                $processingTime = (int)($analyzeMetadata['processing_time_ms'] ?? 0);
+                $aiStatusLog = $analyzeMetadata['ai_status'] ?? 'success';
+                $this->logImport($userId, $projectId, $sourceType, $sourceName, null, $aiStatusLog, null, $processingTime, null);
 
                 $db->commit();
 

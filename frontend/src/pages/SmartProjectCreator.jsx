@@ -40,6 +40,7 @@ export default function SmartProjectCreator() {
   const [analyzingStep, setAnalyzingStep] = useState(0)
   const [extractedData, setExtractedData] = useState(null)
   const [aiStatus, setAiStatus] = useState(null)
+  const [analyzeMetadata, setAnalyzeMetadata] = useState(null)
   const [error, setError] = useState(null)
 
   // Projet éditable
@@ -160,6 +161,11 @@ export default function SmartProjectCreator() {
       if (response.data.success) {
         setExtractedData(response.data.data)
         setAiStatus(response.data.ai_status)
+        setAnalyzeMetadata({
+          source_name: response.data.source_name,
+          processing_time_ms: response.data.processing_time_ms,
+          ai_status: response.data.ai_status
+        })
 
         // Pré-remplir les champs
         setProject({
@@ -215,7 +221,8 @@ export default function SmartProjectCreator() {
         project,
         sections,
         source_type: mode,
-        source_url: mode === 'pdf' ? file?.name : mode === 'library' ? selectedLibraryPattern?.name : url
+        source_url: mode === 'pdf' ? file?.name : mode === 'library' ? selectedLibraryPattern?.name : url,
+        analyze_metadata: analyzeMetadata
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -251,8 +258,8 @@ export default function SmartProjectCreator() {
     setSections(sections.filter((_, i) => i !== index))
   }
 
-  // FREE avec essai déjà utilisé → écran d'upgrade
-  if (!isPro && quota?.free_trial_used) {
+  // FREE avec essai déjà utilisé → écran d'upgrade (seulement à l'étape 1, pas pendant/après le process)
+  if (!isPro && quota?.free_trial_used && step <= 1) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">
