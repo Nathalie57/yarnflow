@@ -97,6 +97,7 @@ const Subscription = () => {
       const response = await paymentsAPI.checkoutSubscription({ type: 'plus' })
       const { checkout_url } = response.data.data
       trackBeginCheckout('subscription', 'plus', 3.99)
+      localStorage.setItem('yf_pending_plan', 'plus')
       if (win) win.location.href = checkout_url
       else window.location.href = checkout_url
       setProcessing(false)
@@ -118,6 +119,7 @@ const Subscription = () => {
       const response = await paymentsAPI.checkoutSubscription({ type })
       const { checkout_url } = response.data.data
       trackBeginCheckout('subscription', type, amount)
+      localStorage.setItem('yf_pending_plan', ['plus', 'plus_annual'].includes(type) ? 'plus' : 'pro')
       if (win) win.location.href = checkout_url
       else window.location.href = checkout_url
       setProcessing(false)

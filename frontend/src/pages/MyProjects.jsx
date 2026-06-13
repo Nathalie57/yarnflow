@@ -29,11 +29,17 @@ const MyProjects = () => {
   const navigate = useNavigate()
 
   const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [pendingPlan, setPendingPlan] = useState(null)
 
   // Détection retour Stripe : ?payment=success dans l'URL
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     if (params.get('payment') === 'success') {
+      const storedPlan = localStorage.getItem('yf_pending_plan')
+      if (storedPlan) {
+        setPendingPlan(storedPlan)
+        localStorage.removeItem('yf_pending_plan')
+      }
       setPaymentSuccess(true)
       navigate('/my-projects', { replace: true })
 
@@ -48,6 +54,10 @@ const MyProjects = () => {
             updateUser(freshUser)
             if (freshUser.subscription_type === 'free' && attempt < MAX_RETRIES) {
               setTimeout(() => pollSubscription(attempt + 1), RETRY_DELAY)
+            } else {
+              // Webhook traité — rafraîchir crédits et quota
+              fetchCredits()
+              fetchSmartQuota()
             }
           }
         } catch {}
@@ -661,7 +671,7 @@ const MyProjects = () => {
           </div>
           <div className="flex-1">
             <p className="font-semibold text-green-800">Paiement réussi !</p>
-            <p className="text-sm text-green-700 mt-0.5">Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités {['plus', 'plus_annual'].includes(user?.subscription_type) ? 'PLUS' : 'PRO'}.</p>
+            <p className="text-sm text-green-700 mt-0.5">Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités {pendingPlan === 'plus' ? 'PLUS' : 'PRO'}.</p>
           </div>
           <button onClick={() => setPaymentSuccess(false)} className="flex-shrink-0 text-green-500 hover:text-green-700">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
