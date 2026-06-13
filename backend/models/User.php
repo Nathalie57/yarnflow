@@ -382,18 +382,18 @@ class User extends BaseModel
     private function normalizeSubscriptionType(string $subscriptionType): string
     {
         $mapping = [
-            'free' => 'free',
-            'pro' => 'pro',
-            'pro_annual' => 'pro_annual',
-            'early_bird' => 'early_bird',
+            'free'        => 'free',
+            'plus'        => 'plus',
+            'plus_annual' => 'plus_annual',
+            'pro'         => 'pro',
+            'pro_annual'  => 'pro_annual',
+            'early_bird'  => 'early_bird',
             // Legacy → PRO
-            'plus' => 'pro',
-            'plus_annual' => 'pro_annual',
-            'starter' => 'pro',
-            'premium' => 'pro',
+            'starter'  => 'pro',
+            'premium'  => 'pro',
             'standard' => 'pro',
-            'monthly' => 'pro',
-            'yearly' => 'pro_annual',
+            'monthly'  => 'pro',
+            'yearly'   => 'pro_annual',
         ];
 
         return $mapping[$subscriptionType] ?? 'free';

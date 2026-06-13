@@ -425,7 +425,7 @@ class PaymentController
         if ($subscriptionType === SUBSCRIPTION_FREE) return;
 
         // Prolonger d'un mois ou d'un an selon le plan
-        $isAnnual = in_array($subscriptionType, [SUBSCRIPTION_PRO_ANNUAL, SUBSCRIPTION_PLUS_ANNUAL]);
+        $isAnnual = in_array($subscriptionType, [SUBSCRIPTION_PLUS_ANNUAL, SUBSCRIPTION_PRO_ANNUAL]);
         $newExpiry = date('Y-m-d H:i:s', strtotime($isAnnual ? '+1 year' : '+1 month'));
 
         $this->userModel->updateSubscription($userId, $subscriptionType, $newExpiry);
@@ -436,7 +436,8 @@ class PaymentController
 
     /**
      * Traiter le changement de statut d'abonnement (customer.subscription.updated)
-     * Dégrade en FREE si past_due ou unpaid
+     * Dégrade en FREE si past_due ou unpaid.
+     * Met à jour le plan si changement via le Customer Portal Stripe.
      */
     private function processSubscriptionUpdated(array $data): void
     {
@@ -447,18 +448,46 @@ class PaymentController
         $user = $this->userModel->findOne(['stripe_customer_id' => $customerId]);
         if (!$user) return;
 
-        if (in_array($status, ['past_due', 'unpaid'])) {
-            // Paiement échoué → rétrograder en FREE immédiatement
-            $this->userModel->updateSubscription((int)$user['id'], SUBSCRIPTION_FREE, null);
-            $this->creditManager->initializeUserCredits((int)$user['id'], 'free');
-            error_log("[subscription.updated] User {$user['id']} rétrogradé FREE — statut: {$status}");
+        $userId = (int)$user['id'];
 
-        } elseif ($status === 'active' && $user['subscription_type'] === SUBSCRIPTION_FREE) {
-            // Paiement récupéré après past_due → réactiver le plan PRO via invoice.paid
-            // (invoice.paid se déclenche simultanément et gère la prolongation)
-            // On logue juste pour traçabilité
-            error_log("[subscription.updated] User {$user['id']} repassé active — invoice.paid gérera la réactivation");
+        if (in_array($status, ['past_due', 'unpaid'])) {
+            $this->userModel->updateSubscription($userId, SUBSCRIPTION_FREE, null);
+            $this->creditManager->initializeUserCredits($userId, 'free');
+            error_log("[subscription.updated] User {$userId} rétrogradé FREE — statut: {$status}");
+            return;
         }
+
+        if ($status !== 'active') return;
+
+        // Détecter un changement de plan via le Customer Portal (le price_id a changé)
+        $priceId = $data['price_id'] ?? null;
+        if ($priceId) {
+            $newPlan = $this->resolvePlanFromPriceId($priceId);
+            if ($newPlan && $newPlan !== $user['subscription_type']) {
+                $isAnnual = in_array($newPlan, [SUBSCRIPTION_PLUS_ANNUAL, SUBSCRIPTION_PRO_ANNUAL]);
+                $newExpiry = date('Y-m-d H:i:s', strtotime($isAnnual ? '+1 year' : '+1 month'));
+                $this->userModel->updateSubscription($userId, $newPlan, $newExpiry);
+                $this->creditManager->initializeUserCredits($userId, $newPlan);
+                error_log("[subscription.updated] User {$userId} changement de plan : {$user['subscription_type']} → {$newPlan}");
+            }
+        }
+    }
+
+    /**
+     * Résoudre le type d'abonnement à partir d'un Stripe price ID.
+     */
+    private function resolvePlanFromPriceId(string $priceId): ?string
+    {
+        $map = [
+            $_ENV['STRIPE_PRICE_ID_PLUS_MONTHLY']  ?? '' => SUBSCRIPTION_PLUS,
+            $_ENV['STRIPE_PRICE_ID_PLUS_ANNUAL']   ?? '' => SUBSCRIPTION_PLUS_ANNUAL,
+            $_ENV['STRIPE_PRICE_ID_PRO_MONTHLY']   ?? '' => SUBSCRIPTION_PRO,
+            $_ENV['STRIPE_PRICE_ID_PRO_ANNUAL']    ?? '' => SUBSCRIPTION_PRO_ANNUAL,
+            $_ENV['STRIPE_PRICE_ID_EARLY_BIRD']    ?? '' => SUBSCRIPTION_EARLY_BIRD,
+        ];
+        // Ignorer les entrées avec clé vide (env non configuré)
+        unset($map['']);
+        return $map[$priceId] ?? null;
     }
 
     /**
@@ -642,8 +671,8 @@ class PaymentController
     private function getExpectedAmount(string $paymentType): ?float
     {
         return match($paymentType) {
-            'subscription_plus' => 6.99,
-            'subscription_plus_annual' => 59.99,
+            'subscription_plus' => 3.99,
+            'subscription_plus_annual' => 35.88,
             'subscription_pro' => 6.99,
             'subscription_pro_annual' => 59.99,
             'subscription_early_bird' => 2.99,

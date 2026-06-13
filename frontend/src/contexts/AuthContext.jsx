@@ -225,6 +225,15 @@ export const AuthProvider = ({ children }) => {
     return expiresAt > new Date()
   }
 
+  // Retourne le tier exact : 'free' | 'plus' | 'pro'
+  const getSubscriptionPlan = () => {
+    if (!user) return 'free'
+    const type = user.subscription_type
+    if (type === 'plus' || type === 'plus_annual') return 'plus'
+    if (type === 'free' || !hasActiveSubscription()) return 'free'
+    return 'pro' // pro, pro_annual, early_bird
+  }
+
   const value = {
     user,
     loading,
@@ -234,7 +243,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     isAdmin,
-    hasActiveSubscription
+    hasActiveSubscription,
+    getSubscriptionPlan,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -21,14 +21,14 @@ define('TYPE_AMIGURUMI', 'amigurumi'); // Amigurumi (peluches)
 define('TYPE_BAG', 'bag');           // Sac
 define('TYPE_GARMENT', 'garment');   // Vêtement
 
-// Types d'abonnement — FREE (0€) et PRO (3.99€/mois ou 39.99€/an)
+// Types d'abonnement — FREE (0€), PLUS (3.99€/mois), PRO (6.99€/mois ou 59.99€/an)
 define('SUBSCRIPTION_FREE', 'free');
+define('SUBSCRIPTION_PLUS', 'plus');
+define('SUBSCRIPTION_PLUS_ANNUAL', 'plus_annual');
 define('SUBSCRIPTION_PRO', 'pro');
 define('SUBSCRIPTION_PRO_ANNUAL', 'pro_annual');
 define('SUBSCRIPTION_EARLY_BIRD', 'early_bird');       // Early Bird = PRO au tarif réduit
 // Aliases legacy (utilisateurs existants en base avec anciens types)
-define('SUBSCRIPTION_PLUS', 'pro');
-define('SUBSCRIPTION_PLUS_ANNUAL', 'pro');
 define('SUBSCRIPTION_STANDARD', 'pro');
 define('SUBSCRIPTION_PREMIUM', 'pro');
 define('SUBSCRIPTION_STARTER', 'pro');
@@ -43,6 +43,8 @@ define('PAYMENT_REFUNDED', 'refunded');
 
 // Types de paiement
 define('PAYMENT_PATTERN', 'pattern');
+define('PAYMENT_SUBSCRIPTION_PLUS', 'subscription_plus');
+define('PAYMENT_SUBSCRIPTION_PLUS_ANNUAL', 'subscription_plus_annual');
 define('PAYMENT_SUBSCRIPTION_PRO', 'subscription_pro');
 define('PAYMENT_SUBSCRIPTION_PRO_ANNUAL', 'subscription_pro_annual');
 define('PAYMENT_SUBSCRIPTION_EARLY_BIRD', 'subscription_early_bird');
@@ -50,8 +52,6 @@ define('PAYMENT_PHOTO_CREDITS', 'photo_credits');
 define('PAYMENT_CREDITS_PACK_50', 'credits_pack_50');
 define('PAYMENT_CREDITS_PACK_150', 'credits_pack_150');
 // Aliases legacy
-define('PAYMENT_SUBSCRIPTION_PLUS', 'subscription_pro');
-define('PAYMENT_SUBSCRIPTION_PLUS_ANNUAL', 'subscription_pro_annual');
 define('PAYMENT_SUBSCRIPTION_MONTHLY', 'subscription_pro');
 define('PAYMENT_SUBSCRIPTION_ANNUAL', 'subscription_pro_annual');
 
@@ -89,10 +89,11 @@ define('SUBSCRIPTION_FEATURES', [
     'free' => [
         'name' => 'YarnFlow Free',
         'price' => 0,
-        'max_active_projects' => -1,       // Illimité
+        'max_active_projects' => -1,
+        'max_stash_entries' => 10,
         'photo_credits_per_month' => 2,
         'ai_questions_per_month' => 3,
-        'max_library_patterns' => -1,      // Illimité
+        'max_library_patterns' => -1,
         'can_use_tags' => false,
         'tag_suggestions' => false,
         'can_mark_favorite' => true,
@@ -104,13 +105,52 @@ define('SUBSCRIPTION_FEATURES', [
         'smart_project_creation' => false,
         'smart_project_imports_monthly' => 0,
     ],
+    'plus' => [
+        'name' => 'YarnFlow Plus',
+        'price' => 3.99,
+        'max_active_projects' => -1,
+        'max_stash_entries' => 50,
+        'photo_credits_per_month' => 5,
+        'ai_questions_per_month' => 10,
+        'max_library_patterns' => -1,
+        'can_use_tags' => true,
+        'tag_suggestions' => false,
+        'can_mark_favorite' => true,
+        'second_counter' => true,
+        'section_notes' => true,
+        'advanced_stats' => true,
+        'timer_history' => false,
+        'all_photo_styles' => false,
+        'smart_project_creation' => true,
+        'smart_project_imports_monthly' => 1,
+    ],
+    'plus_annual' => [
+        'name' => 'YarnFlow Plus (Annuel)',
+        'price' => 35.88,                  // 2.99€/mois × 12
+        'max_active_projects' => -1,
+        'max_stash_entries' => 50,
+        'photo_credits_per_month' => 5,
+        'ai_questions_per_month' => 10,
+        'max_library_patterns' => -1,
+        'can_use_tags' => true,
+        'tag_suggestions' => false,
+        'can_mark_favorite' => true,
+        'second_counter' => true,
+        'section_notes' => true,
+        'advanced_stats' => true,
+        'timer_history' => false,
+        'all_photo_styles' => false,
+        'smart_project_creation' => true,
+        'smart_project_imports_monthly' => 1,
+    ],
     'pro' => [
         'name' => 'YarnFlow Pro',
-        'price' => 3.99,
-        'max_active_projects' => -1,       // Illimité
+        'price' => 6.99,
+        'max_active_projects' => -1,
+        'max_stash_entries' => -1,         // Illimité
         'photo_credits_per_month' => 20,
         'ai_questions_per_month' => 30,
-        'max_library_patterns' => -1,      // Illimité
+        'max_library_patterns' => -1,
         'can_use_tags' => true,
         'tag_suggestions' => true,
         'can_mark_favorite' => true,
@@ -124,8 +164,9 @@ define('SUBSCRIPTION_FEATURES', [
     ],
     'pro_annual' => [
         'name' => 'YarnFlow Pro (Annuel)',
-        'price' => 39.99,
+        'price' => 59.99,
         'max_active_projects' => -1,
+        'max_stash_entries' => -1,
         'photo_credits_per_month' => 20,
         'ai_questions_per_month' => 30,
         'max_library_patterns' => -1,
@@ -138,11 +179,13 @@ define('SUBSCRIPTION_FEATURES', [
         'timer_history' => true,
         'all_photo_styles' => true,
         'smart_project_creation' => true,
+        'smart_project_imports_monthly' => 15,
     ],
     'early_bird' => [
         'name' => 'YarnFlow Early Bird',
         'price' => 2.99,
         'max_active_projects' => -1,
+        'max_stash_entries' => -1,
         'photo_credits_per_month' => 20,
         'ai_questions_per_month' => 30,
         'max_library_patterns' => -1,
@@ -155,5 +198,6 @@ define('SUBSCRIPTION_FEATURES', [
         'timer_history' => true,
         'all_photo_styles' => true,
         'smart_project_creation' => true,
+        'smart_project_imports_monthly' => 15,
     ],
 ]);
