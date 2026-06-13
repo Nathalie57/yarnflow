@@ -661,7 +661,7 @@ const MyProjects = () => {
           </div>
           <div className="flex-1">
             <p className="font-semibold text-green-800">Paiement réussi !</p>
-            <p className="text-sm text-green-700 mt-0.5">Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités PRO.</p>
+            <p className="text-sm text-green-700 mt-0.5">Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités {['plus', 'plus_annual'].includes(user?.subscription_type) ? 'PLUS' : 'PRO'}.</p>
           </div>
           <button onClick={() => setPaymentSuccess(false)} className="flex-shrink-0 text-green-500 hover:text-green-700">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
