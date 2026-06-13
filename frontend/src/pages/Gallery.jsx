@@ -473,7 +473,7 @@ const Gallery = () => {
 
     return allStyles.map(s => ({
       ...s,
-      locked: isPro ? false : isPlus ? s.tier === 'pro' : s.tier !== 'free'
+      locked: (isPro || isPlus) ? false : s.tier !== 'free'
     }))
   }
 
@@ -1329,17 +1329,7 @@ const Gallery = () => {
                   const sub = user?.subscription_type || 'free'
                   const isPro = ['subscription_pro', 'subscription_pro_annual'].includes(sub)
                   const isPlus = ['subscription_plus', 'subscription_plus_annual'].includes(sub)
-                  if (isPro) return null
-                  if (isPlus) return (
-                    <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-semibold">3 styles supplémentaires</span> disponibles avec PRO.
-                        <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                          Passer à PRO
-                        </a>
-                      </p>
-                    </div>
-                  )
+                  if (isPro || isPlus) return null
                   return (
                     <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
                       <p className="text-sm text-gray-700">
