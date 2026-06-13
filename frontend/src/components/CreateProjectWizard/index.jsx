@@ -156,7 +156,7 @@ const CreateProjectWizard = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && canSubmit) handleSubmit() }}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition text-base"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition text-base"
               placeholder="Ex: Pull blanc pour maman"
               autoFocus
             />
@@ -166,24 +166,34 @@ const CreateProjectWizard = ({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Technique</label>
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: 'crochet', label: 'Crochet', icon: '🪡' },
-                { value: 'tricot', label: 'Tricot', icon: '🧶' }
-              ].map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTechnique(opt.value)}
-                  className={`px-4 py-3 rounded-lg border-2 font-medium transition flex items-center justify-center gap-2 ${
-                    technique === opt.value
-                      ? 'border-primary-600 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                  }`}
-                >
-                  <span className="text-xl">{opt.icon}</span>
-                  <span>{opt.label}</span>
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={() => setTechnique('crochet')}
+                className={`px-4 py-3 rounded-xl border font-medium transition flex items-center justify-center gap-2 ${
+                  technique === 'crochet'
+                    ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
+                    : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
+                </svg>
+                Crochet
+              </button>
+              <button
+                type="button"
+                onClick={() => setTechnique('tricot')}
+                className={`px-4 py-3 rounded-xl border font-medium transition flex items-center justify-center gap-2 ${
+                  technique === 'tricot'
+                    ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
+                    : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5 3 12m0 0 3.75 4.5M3 12h18" />
+                </svg>
+                Tricot
+              </button>
             </div>
           </div>
 
@@ -198,14 +208,13 @@ const CreateProjectWizard = ({
                   key={cat.id}
                   type="button"
                   onClick={() => setSelectedCategory(cat)}
-                  className={`p-3 rounded-lg border-2 flex flex-col items-center gap-1 transition ${
+                  className={`py-2.5 px-2 rounded-xl border text-xs font-medium text-center leading-tight transition ${
                     selectedCategory?.id === cat.id
-                      ? 'border-primary-600 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <span className="text-xs font-medium text-gray-700 text-center leading-tight">{cat.value}</span>
+                  {cat.value}
                 </button>
               ))}
             </div>
