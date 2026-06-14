@@ -24,7 +24,7 @@ const TWAMessage = () => (
     </div>
     <h1 className="text-2xl font-bold text-gray-900">Débloquer YarnFlow</h1>
     <p className="text-gray-600 leading-relaxed">
-      Pour vous offrir YarnFlow au prix le plus juste sans intermédiaire, la gestion des abonnements se fait exclusivement sur notre site internet. Pour débloquer vos fonctionnalités, connectez-vous simplement à votre compte sur <span className="font-semibold text-primary-700">yarnflow.fr</span> depuis le navigateur de votre téléphone ou de votre ordinateur. Votre application se mettra à jour instantanément !
+      Les abonnements se gèrent sur <span className="font-semibold text-primary-700">yarnflow.fr</span>. Connectez-vous depuis votre navigateur pour débloquer vos fonctionnalités — l'app se met à jour instantanément.
     </p>
     <button onClick={() => window.history.back()} className="text-sm text-gray-400 hover:text-gray-600 transition">
       Retour
