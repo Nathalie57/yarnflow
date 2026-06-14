@@ -145,6 +145,7 @@ class StripeService
                     'quantity' => 1
                 ]],
                 'mode' => 'subscription',
+                'allow_promotion_codes' => true,
                 'success_url' => $this->successUrl,
                 'cancel_url' => $this->cancelUrl,
                 'metadata' => [
@@ -186,6 +187,7 @@ class StripeService
                     'quantity' => 1
                 ]],
                 'mode' => 'subscription',
+                'allow_promotion_codes' => true,
                 'success_url' => $this->successUrl,
                 'cancel_url' => $this->cancelUrl,
                 'metadata' => [
@@ -227,6 +229,7 @@ class StripeService
                     'quantity' => 1
                 ]],
                 'mode' => 'subscription',
+                'allow_promotion_codes' => true,
                 'success_url' => $this->successUrl,
                 'cancel_url' => $this->cancelUrl,
                 'metadata' => [
@@ -268,6 +271,7 @@ class StripeService
                     'quantity' => 1
                 ]],
                 'mode' => 'subscription',
+                'allow_promotion_codes' => true,
                 'success_url' => $this->successUrl,
                 'cancel_url' => $this->cancelUrl,
                 'metadata' => [
