@@ -8,6 +8,7 @@
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import TagInput from '../TagInput'
 import { PROJECT_CATEGORIES } from '../../data/projectTemplates'
 
@@ -41,6 +42,7 @@ const CreateProjectWizard = ({
   selectedLibraryPattern
 }) => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [mode, setMode] = useState(null) // null = choix, 'manual' = formulaire
 
   const [draft] = useState(() => {
@@ -180,6 +182,9 @@ const CreateProjectWizard = ({
                 {isPaidWithImports && (
                   <p className="text-xs text-primary-600 mt-0.5">
                     <span className="font-semibold">{smartQuota.remaining} création{smartQuota.remaining !== 1 ? 's' : ''}</span> disponible{smartQuota.remaining !== 1 ? 's' : ''} ce mois
+                    {user?.subscription_expires_at && (
+                      <span className="text-gray-400"> — recharge le {new Date(user.subscription_expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</span>
+                    )}
                   </p>
                 )}
                 {isFreeTrialAvailable && (

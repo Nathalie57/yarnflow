@@ -544,7 +544,7 @@ const Gallery = () => {
                     Plus de crédits ce mois-ci
                   </p>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    Rechargement le 1er du mois
+                    Rechargement le {user?.subscription_expires_at ? `le ${new Date(user.subscription_expires_at).getDate()} de chaque mois` : 'le prochain renouvellement'}
                   </p>
                 </div>
               )}
@@ -564,7 +564,7 @@ const Gallery = () => {
                   >
                     Acheter des crédits
                   </Link>
-                  <span className="text-xs text-gray-400">Rechargement le 1er du mois</span>
+                  <span className="text-xs text-gray-400">Rechargement le {user?.subscription_expires_at ? `le ${new Date(user.subscription_expires_at).getDate()} de chaque mois` : 'le prochain renouvellement'}</span>
                 </div>
               )}
             </div>

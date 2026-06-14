@@ -222,6 +222,7 @@ const Subscription = () => {
               {subscription?.expires_at && (
                 <p className="text-xs text-primary-600">Renouvellement le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}</p>
               )}
+              <p className="text-xs text-gray-400 mt-0.5">Pour passer au PRO, cliquez sur Gérer — les jours restants PLUS seront déduits automatiquement.</p>
             </div>
           </div>
           <button
