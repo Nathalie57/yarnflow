@@ -280,7 +280,7 @@ const Subscription = () => {
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
             <li className="flex items-start gap-2"><Check /><span>Projets &amp; patrons illimités</span></li>
             <li className="flex items-start gap-2"><Check /><span>1 compteur par projet</span></li>
-            <li className="flex items-start gap-2"><Check /><span>Stock — 10 références</span></li>
+            {/* <li className="flex items-start gap-2"><Check /><span>Stock — 10 références</span></li> */}
             <li className="flex items-start gap-2"><Check /><span>1 Création IA offerte</span></li>
             <li className="flex items-start gap-2"><Check /><span>3 questions IA / mois</span></li>
             <li className="flex items-start gap-2"><Check /><span>2 crédits Studio Photo / mois</span></li>
@@ -310,7 +310,7 @@ const Subscription = () => {
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tout le plan FREE</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">2 compteurs simultanés</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 50 références</span></span></li>
+            {/* <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 50 références</span></span></li> */}
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Notes privées par section</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tags pour organiser vos ouvrages</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 Créations IA / mois</span></span></li>
@@ -354,7 +354,7 @@ const Subscription = () => {
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>Tout le plan PLUS</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">Stock illimité</span></span></li>
+            {/* <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">Stock illimité</span></span></li> */}
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">15 Créations IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">30 questions IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">20 crédits Studio Photo / mois</span></span></li>

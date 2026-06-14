@@ -384,10 +384,10 @@ const Landing = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   Timer intégré &amp; suivi du temps
                 </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                {/* <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   10 pelotes en stock
-                </li>
+                </li> */}
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <span><span className="font-medium">1 Création Intelligente IA offerte</span></span>
@@ -434,10 +434,10 @@ const Landing = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   Tags pour organiser vos ouvrages
                 </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                {/* <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <span><span className="font-medium text-gray-800">50 pelotes en stock</span></span>
-                </li>
+                </li> */}
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <span><span className="font-medium text-gray-800">Création Intelligente — 3 imports / mois</span></span>
@@ -482,10 +482,10 @@ const Landing = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   Tout ce qu'inclut le plan PLUS
                 </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                {/* <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <span><span className="font-medium text-gray-800">Stock illimité</span></span>
-                </li>
+                </li> */}
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <span><span className="font-medium text-gray-800">Création Intelligente — 15 imports / mois</span><span className="block text-gray-500 text-xs mt-0.5">Déposez un PDF ou une photo, l'IA pré-remplit tout instantanément</span></span>
