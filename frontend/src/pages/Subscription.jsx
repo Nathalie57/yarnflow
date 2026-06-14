@@ -362,8 +362,12 @@ const Subscription = () => {
           </ul>
 
           {isPro ? (
-            <button disabled className="w-full py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold opacity-60 cursor-not-allowed">
-              Plan actuel
+            <button
+              onClick={handleManageSubscription}
+              disabled={processing}
+              className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition disabled:opacity-60"
+            >
+              {processing ? 'Chargement…' : 'Changer de formule (mensuel / annuel)'}
             </button>
           ) : (
             <div className="space-y-2">
