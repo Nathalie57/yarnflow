@@ -526,6 +526,7 @@ class StripeService
             'event' => 'checkout_completed',
             'session_id' => $session->id,
             'customer_id' => $session->customer ?? null,
+            'subscription_id' => $session->subscription ?? null,
             'user_id' => $metadata->user_id ?? null,
             'pattern_id' => $metadata->pattern_id ?? null,
             'payment_type' => $metadata->payment_type ?? null,

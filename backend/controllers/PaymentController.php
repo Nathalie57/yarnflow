@@ -460,11 +460,17 @@ class PaymentController
         if ($status !== 'active') return;
 
         // Détecter un changement de plan via le Customer Portal (le price_id a changé)
-        // Ne traiter que si l'user a DÉJÀ un abonnement payant — l'activation initiale
-        // est gérée exclusivement par checkout.session.completed.
-        $currentPlan = $user['subscription_type'] ?? SUBSCRIPTION_FREE;
-        if ($currentPlan === SUBSCRIPTION_FREE) return;
+        // Valider que l'événement concerne l'abonnement Stripe actif de l'utilisateur.
+        // Sinon des événements rejoués d'anciens abonnements peuvent override le bon plan.
+        $subscriptionId = $data['subscription_id'] ?? null;
+        $storedSubscriptionId = $user['stripe_subscription_id'] ?? null;
 
+        if ($subscriptionId && $storedSubscriptionId && $subscriptionId !== $storedSubscriptionId) {
+            error_log("[subscription.updated] Ignoré — subscription_id {$subscriptionId} != abonnement actif {$storedSubscriptionId} pour user {$userId}");
+            return;
+        }
+
+        $currentPlan = $user['subscription_type'] ?? SUBSCRIPTION_FREE;
         $priceId = $data['price_id'] ?? null;
         if ($priceId) {
             $newPlan = $this->resolvePlanFromPriceId($priceId);
@@ -529,12 +535,19 @@ class PaymentController
             $this->paymentModel->updateStatus($payment['id'], PAYMENT_COMPLETED);
         }
 
-        // [AI:Claude] Sauvegarder le stripe_customer_id pour le Customer Portal
+        // Sauvegarder stripe_customer_id et stripe_subscription_id
+        $updateFields = [];
         if (!empty($data['customer_id'])) {
             $existingUser = $this->userModel->findById($userId);
             if (empty($existingUser['stripe_customer_id'])) {
-                $this->userModel->update($userId, ['stripe_customer_id' => $data['customer_id']]);
+                $updateFields['stripe_customer_id'] = $data['customer_id'];
             }
+        }
+        if (!empty($data['subscription_id'])) {
+            $updateFields['stripe_subscription_id'] = $data['subscription_id'];
+        }
+        if (!empty($updateFields)) {
+            $this->userModel->update($userId, $updateFields);
         }
 
         // [AI:Claude] Si c'est un abonnement, mettre à jour l'utilisateur
