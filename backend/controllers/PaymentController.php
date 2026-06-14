@@ -460,17 +460,24 @@ class PaymentController
         if ($status !== 'active') return;
 
         // Détecter un changement de plan via le Customer Portal (le price_id a changé)
-        // Valider que l'événement concerne l'abonnement Stripe actif de l'utilisateur.
-        // Sinon des événements rejoués d'anciens abonnements peuvent override le bon plan.
-        $subscriptionId = $data['subscription_id'] ?? null;
-        $storedSubscriptionId = $user['stripe_subscription_id'] ?? null;
+        $subscriptionId    = $data['subscription_id'] ?? null;
+        $storedSubId       = $user['stripe_subscription_id'] ?? null;
+        $currentPlan       = $user['subscription_type'] ?? SUBSCRIPTION_FREE;
 
-        if ($subscriptionId && $storedSubscriptionId && $subscriptionId !== $storedSubscriptionId) {
-            error_log("[subscription.updated] Ignoré — subscription_id {$subscriptionId} != abonnement actif {$storedSubscriptionId} pour user {$userId}");
+        // Guard 1 : l'activation initiale FREE → paid appartient à checkout.session.completed.
+        // subscription.updated ne gère que les changements de plan sur un abonnement déjà actif.
+        if ($currentPlan === SUBSCRIPTION_FREE) {
+            error_log("[subscription.updated] Ignoré — user {$userId} est FREE, checkout.session.completed gère l'activation");
             return;
         }
 
-        $currentPlan = $user['subscription_type'] ?? SUBSCRIPTION_FREE;
+        // Guard 2 : si le subscription_id est connu, ignorer tout event d'un autre abonnement
+        // (events rejoués d'anciens tests, abonnements annulés, etc.)
+        if ($subscriptionId && $storedSubId && $subscriptionId !== $storedSubId) {
+            error_log("[subscription.updated] Ignoré — subscription_id {$subscriptionId} != abonnement actif {$storedSubId} pour user {$userId}");
+            return;
+        }
+
         $priceId = $data['price_id'] ?? null;
         if ($priceId) {
             $newPlan = $this->resolvePlanFromPriceId($priceId);
