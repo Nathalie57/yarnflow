@@ -320,11 +320,11 @@ const Subscription = () => {
           </ul>
 
           <button
-            onClick={handleSubscribePlus}
-            disabled={processing || isPlus || isPro}
+            onClick={isPro ? handleManageSubscription : handleSubscribePlus}
+            disabled={processing || isPlus}
             className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {processing ? 'Chargement…' : isPlus ? 'Plan actuel' : isPro ? 'Inclus dans PRO' : `Passer à PLUS — ${plusPrice}/mois`}
+            {processing ? 'Chargement…' : isPlus ? 'Plan actuel' : isPro ? 'Rétrograder vers PLUS' : `Passer à PLUS — ${plusPrice}/mois`}
           </button>
         </div>
 
