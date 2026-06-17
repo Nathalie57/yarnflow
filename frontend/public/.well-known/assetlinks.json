@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "fr.yarnflow.app",
+      "sha256_cert_fingerprints": [
+        "97:61:B0:BA:B5:5B:F9:1C:09:54:08:F6:24:E5:45:B0:68:4B:28:2C:8B:0A:C9:97:80:A9:E3:60:B3:13:CF:B7"
+      ]
+    }
+  }
+]

@@ -17,7 +17,6 @@ namespace App\Controllers;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\AIPatternExtractorService;
-use App\Services\PricingService;
 use App\Middleware\AuthMiddleware;
 
 class SmartProjectController
@@ -25,7 +24,6 @@ class SmartProjectController
     private Project $projectModel;
     private User $userModel;
     private AIPatternExtractorService $extractorService;
-    private PricingService $pricingService;
     private AuthMiddleware $authMiddleware;
 
     private const UPLOAD_DIR = __DIR__ . '/../../uploads/patterns/';
@@ -36,7 +34,6 @@ class SmartProjectController
         $this->projectModel = new Project();
         $this->userModel = new User();
         $this->extractorService = new AIPatternExtractorService();
-        $this->pricingService = new PricingService();
         $this->authMiddleware = new AuthMiddleware();
 
         // Créer le dossier uploads si nécessaire
@@ -60,36 +57,38 @@ class SmartProjectController
                 return;
             }
 
-            $isPro = $this->userModel->hasActiveSubscription($userId);
             $db = \App\Config\Database::getInstance()->getConnection();
+            $plan = $this->getSmartImportPlan($user['subscription_type'], $userId);
 
-            if ($isPro) {
-                // PRO : 15 imports/mois
+            if ($plan['monthly_limit'] > 0) {
+                // PLUS (3/mois) ou PRO (15/mois) : quota mensuel
                 $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
                 $stmt->execute(['user_id' => $userId]);
                 $usedThisMonth = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 $this->jsonResponse([
                     'success' => true,
                     'quota' => [
-                        'is_pro' => true,
+                        'plan' => $plan['tier'],
+                        'is_pro' => $plan['tier'] === 'pro',
                         'free_trial_used' => false,
                         'used_this_month' => $usedThisMonth,
-                        'limit_monthly' => 15,
-                        'remaining' => max(0, 15 - $usedThisMonth),
+                        'limit_monthly' => $plan['monthly_limit'],
+                        'remaining' => max(0, $plan['monthly_limit'] - $usedThisMonth),
                     ]
                 ]);
             } else {
-                // FREE : 1 essai à vie
+                // FREE : 2 essais à vie
                 $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id");
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 $this->jsonResponse([
                     'success' => true,
                     'quota' => [
+                        'plan' => 'free',
                         'is_pro' => false,
-                        'free_trial_used' => $totalUsed > 0,
+                        'free_trial_used' => $totalUsed >= 2,
                         'total_used' => $totalUsed,
-                        'remaining' => $totalUsed > 0 ? 0 : 1,
+                        'remaining' => max(0, 2 - $totalUsed),
                     ]
                 ]);
             }
@@ -118,28 +117,28 @@ class SmartProjectController
             }
 
             $db = \App\Config\Database::getInstance()->getConnection();
-            $isPro = $this->userModel->hasActiveSubscription($userId);
+            $plan = $this->getSmartImportPlan($user['subscription_type'], $userId);
 
-            if ($isPro) {
-                // PRO : 15 imports/mois
+            if ($plan['monthly_limit'] > 0) {
+                // PLUS (3/mois) ou PRO (15/mois) : quota mensuel
                 $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
                 $stmt->execute(['user_id' => $userId]);
                 $usedThisMonth = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
-                if ($usedThisMonth >= 15) {
+                if ($usedThisMonth >= $plan['monthly_limit']) {
                     $this->jsonResponse([
-                        'error' => 'Limite mensuelle atteinte (15 imports/mois). Renouvellement le 1er du mois.',
+                        'error' => "Limite mensuelle atteinte ({$plan['monthly_limit']} imports/mois). Renouvellement le 1er du mois.",
                         'quota_exceeded' => true
                     ], 403);
                     return;
                 }
             } else {
-                // FREE : 1 essai à vie
+                // FREE : 2 essais à vie
                 $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id");
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
-                if ($totalUsed >= 1) {
+                if ($totalUsed >= 2) {
                     $this->jsonResponse([
-                        'error' => 'Essai gratuit déjà utilisé — passez à PRO pour continuer',
+                        'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour continuer',
                         'upgrade_required' => true,
                         'free_trial_used' => true
                     ], 403);
@@ -245,9 +244,6 @@ class SmartProjectController
                 return;
             }
 
-            // Logger uniquement les imports réussis (ne pas consommer le quota sur erreur)
-            $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'] ?? 'success', $result['raw_response'] ?? null, $processingTime, null);
-
             $this->jsonResponse([
                 'success' => true,
                 'data' => $result['data'],
@@ -290,6 +286,7 @@ class SmartProjectController
             $sectionsData = $data['sections'];
             $sourceType = $data['source_type'] ?? 'manual';
             $sourceUrl = $data['source_url'] ?? null;
+            $analyzeMetadata = $data['analyze_metadata'] ?? null;
 
             // Créer le projet
             $db = \App\Config\Database::getInstance()->getConnection();
@@ -356,19 +353,11 @@ class SmartProjectController
                     }
                 }
 
-                // Mettre à jour le log d'import avec le project_id
-                $stmt = $db->prepare("
-                    UPDATE ai_pattern_imports
-                    SET project_id = :project_id
-                    WHERE user_id = :user_id
-                      AND project_id IS NULL
-                    ORDER BY created_at DESC
-                    LIMIT 1
-                ");
-                $stmt->execute([
-                    'project_id' => $projectId,
-                    'user_id' => $userId
-                ]);
+                // Logger l'import au moment de la création du projet (dans la transaction)
+                $sourceName = $analyzeMetadata['source_name'] ?? ($sourceUrl ?? 'unknown');
+                $processingTime = (int)($analyzeMetadata['processing_time_ms'] ?? 0);
+                $aiStatusLog = $analyzeMetadata['ai_status'] ?? 'success';
+                $this->logImport($userId, $projectId, $sourceType, $sourceName, null, $aiStatusLog, null, $processingTime, null);
 
                 $db->commit();
 
@@ -393,28 +382,30 @@ class SmartProjectController
     }
 
     /**
-     * Vérifie si l'utilisateur a du quota restant
+     * Retourne le plan d'import IA effectif pour l'utilisateur.
+     * - PRO / pro_annual / early_bird : 15 imports/mois
+     * - PLUS / plus_annual : 3 imports/mois
+     * - FREE ou abonnement expiré : 0 (1 essai à vie géré séparément)
      */
-    private function hasRemainingQuota(int $userId, string $subscriptionType): bool
+    private function getSmartImportPlan(string $subscriptionType, int $userId): array
     {
-        $maxQuota = $this->pricingService->getLimit($subscriptionType, 'ai_pattern_imports_monthly');
+        $proTypes  = ['pro', 'pro_annual', 'early_bird', 'monthly', 'yearly', 'standard', 'premium', 'starter'];
+        $plusTypes = ['plus', 'plus_annual'];
 
-        if ($maxQuota >= 999999) {
-            return true; // Illimité
+        if (in_array($subscriptionType, $proTypes)) {
+            // Vérifier expiration
+            if ($this->userModel->hasActiveSubscription($userId)) {
+                return ['tier' => 'pro', 'monthly_limit' => 15];
+            }
         }
 
-        $db = \App\Config\Database::getInstance()->getConnection();
-        $stmt = $db->prepare("
-            SELECT COUNT(*) as count
-            FROM ai_pattern_imports
-            WHERE user_id = :user_id
-              AND MONTH(created_at) = MONTH(NOW())
-              AND YEAR(created_at) = YEAR(NOW())
-        ");
-        $stmt->execute(['user_id' => $userId]);
-        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+        if (in_array($subscriptionType, $plusTypes)) {
+            if ($this->userModel->hasActiveSubscription($userId)) {
+                return ['tier' => 'plus', 'monthly_limit' => 3];
+            }
+        }
 
-        return (int)$result['count'] < $maxQuota;
+        return ['tier' => 'free', 'monthly_limit' => 0];
     }
 
     /**

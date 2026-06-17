@@ -82,16 +82,14 @@ const Step4Optional = ({
           className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary focus:ring-2"
         />
         <span className="text-sm font-medium text-gray-700 group-hover:text-primary transition">
-          ⭐ Marquer comme favori
+          Marquer comme favori
         </span>
       </label>
 
       {/* Tags */}
       {canUseTags ? (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            🏷️ Tags
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
           <TagInput
             tags={projectTags}
             onAddTag={onAddTag}
@@ -101,23 +99,18 @@ const Step4Optional = ({
           />
         </div>
       ) : (
-        <div className="bg-sage/10 rounded-lg p-4 border border-sage/30">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg">🏷️</span>
-            <span className="font-medium text-gray-800">Tags - Disponible en PRO</span>
-            <span className="ml-auto text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
-              Premium
-            </span>
+        <div className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
+          <div>
+            <span className="text-sm font-medium text-gray-700">Tags</span>
+            <p className="text-xs text-gray-400 mt-0.5">Organisez vos projets avec des étiquettes</p>
           </div>
-          <p className="text-sm text-gray-600 mb-3">
-            Organisez vos projets avec des étiquettes personnalisées
-          </p>
           <button
             type="button"
             onClick={onShowUpgradePrompt}
-            className="text-sm text-primary hover:underline font-medium"
+            className="flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700 transition"
           >
-            En savoir plus →
+            <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
+            Voir les plans
           </button>
         </div>
       )}
@@ -127,21 +120,19 @@ const Step4Optional = ({
         <label className="block text-sm font-medium text-gray-700 mb-3">
           Patron (optionnel)
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2">
           {/* Option 1: Bibliothèque */}
           <button
             type="button"
             onClick={onOpenLibraryModal}
-            className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'library' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}
+            className={`p-3 border rounded-xl hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center gap-1 ${patternType === 'library' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200 bg-white'}`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1 text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${patternType === 'library' ? 'text-primary-600' : 'text-gray-400'}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
             </svg>
-            <span className="text-xs font-medium">Bibliothèque</span>
+            <span className="text-xs font-medium text-gray-700">Bibliothèque</span>
             {selectedLibraryPattern && (
-              <span className="text-xs text-primary-600 mt-1 truncate max-w-full">
-                ✓ {selectedLibraryPattern.name}
-              </span>
+              <span className="text-xs text-primary-600 truncate max-w-full">{selectedLibraryPattern.name}</span>
             )}
           </button>
 
@@ -150,19 +141,18 @@ const Step4Optional = ({
             onDragOver={(e) => { e.preventDefault(); setFileDragOver(true) }}
             onDragLeave={() => setFileDragOver(false)}
             onDrop={handleFileDrop}
-            className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${
-              fileDragOver ? 'border-primary-400 bg-primary-50' :
-              patternType === 'file' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'
+            className={`p-3 border rounded-xl hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center gap-1 cursor-pointer ${
+              fileDragOver || patternType === 'file' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200 bg-white'
             }`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1 text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${patternType === 'file' ? 'text-primary-600' : 'text-gray-400'}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
             </svg>
-            <span className="text-xs font-medium">Fichier</span>
-            <span className="text-xs text-gray-400 mt-0.5">PDF ou image</span>
+            <span className="text-xs font-medium text-gray-700">Fichier</span>
+            <span className="text-xs text-gray-400">PDF ou image</span>
             {patternFile && (
-              <span className="text-xs text-primary-600 mt-1 truncate max-w-full">
-                ✓ {patternFile.name.length > 15 ? patternFile.name.substring(0, 15) + '…' : patternFile.name}
+              <span className="text-xs text-primary-600 truncate max-w-full">
+                {patternFile.name.length > 15 ? patternFile.name.substring(0, 15) + '…' : patternFile.name}
               </span>
             )}
             <input
@@ -181,30 +171,26 @@ const Step4Optional = ({
           <button
             type="button"
             onClick={onOpenUrlModal}
-            className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'url' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}
+            className={`p-3 border rounded-xl hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center gap-1 ${patternType === 'url' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200 bg-white'}`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1 text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${patternType === 'url' ? 'text-primary-600' : 'text-gray-400'}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
             </svg>
-            <span className="text-xs font-medium">Lien web</span>
-            {patternUrl && (
-              <span className="text-xs text-primary-600 mt-1">✓ Lien ajouté</span>
-            )}
+            <span className="text-xs font-medium text-gray-700">Lien web</span>
+            {patternUrl && <span className="text-xs text-primary-600">Lien ajouté</span>}
           </button>
 
           {/* Option 4: Texte */}
           <button
             type="button"
             onClick={onOpenTextModal}
-            className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'text' ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}
+            className={`p-3 border rounded-xl hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center gap-1 ${patternType === 'text' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200 bg-white'}`}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 mb-1 text-gray-500">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${patternType === 'text' ? 'text-primary-600' : 'text-gray-400'}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
             </svg>
-            <span className="text-xs font-medium">Texte</span>
-            {patternText && (
-              <span className="text-xs text-primary-600 mt-1">✓ Texte ajouté</span>
-            )}
+            <span className="text-xs font-medium text-gray-700">Texte</span>
+            {patternText && <span className="text-xs text-primary-600">Texte ajouté</span>}
           </button>
         </div>
 
@@ -231,7 +217,7 @@ const Step4Optional = ({
           className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition flex items-center justify-between"
         >
           <span className="text-sm font-medium text-gray-700">
-            🔧 Détails techniques (laine, aiguilles, échantillon)
+            Détails techniques — laine, aiguilles, échantillon
           </span>
           <svg
             className={`w-5 h-5 text-gray-500 transition-transform ${showTechnicalDetails ? 'rotate-180' : ''}`}
@@ -248,7 +234,7 @@ const Step4Optional = ({
             {/* Laine */}
             <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                🧶 {technique === 'tricot' ? 'Laine' : 'Fil'}
+                {technique === 'tricot' ? 'Laine' : 'Fil'}
               </h4>
               {technicalForm.yarn.map((y, yIdx) => (
                 <div key={yIdx} className="mb-2 p-2 bg-white rounded border border-purple-100">
@@ -305,7 +291,7 @@ const Step4Optional = ({
             {/* Aiguilles/Crochets */}
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                {technique === 'tricot' ? '🪡 Aiguilles' : '🪝 Crochets'}
+                {technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
               </h4>
               {technicalForm.needles.map((n, nIdx) => (
                 <div key={nIdx} className="mb-2 p-2 bg-white rounded border border-blue-100">
@@ -364,7 +350,7 @@ const Step4Optional = ({
 
             {/* Échantillon */}
             <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">📏 Échantillon</h4>
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Échantillon</h4>
               <div className="grid grid-cols-3 gap-2">
                 <input
                   type="text"

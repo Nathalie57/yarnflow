@@ -35,12 +35,13 @@ class AiAssistantController
     }
 
     private const LIMITS = [
-        'free'         => 3,
+        'free'         => 5,
+        'plus'         => 10,
+        'plus_annual'  => 10,
         'pro'          => 30,
         'pro_annual'   => 30,
-        'plus'         => 30,  // legacy → traité comme PRO
-        'plus_annual'  => 30,
         'early_bird'   => 30,
+        // Legacy
         'monthly'      => 30,
         'annual'       => 30,
     ];
@@ -96,10 +97,10 @@ class AiAssistantController
                 return;
             }
 
-            // Vérifier quota mensuel (FREE = 3/mois, PRO = 30/mois)
+            // Vérifier quota mensuel (FREE = 5/mois, PRO = 30/mois)
             $plan = $user['subscription_type'] ?? 'free';
             if (!$this->hasActiveSubscription($user)) $plan = 'free';
-            $limit = self::LIMITS[$plan] ?? 3;
+            $limit = self::LIMITS[$plan] ?? 5;
             $month = date('Y-m');
             $used = $this->getMonthlyUsage($userId, $month);
 

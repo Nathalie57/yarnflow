@@ -7,6 +7,8 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import TagInput from '../TagInput'
 import { PROJECT_CATEGORIES } from '../../data/projectTemplates'
 
@@ -26,6 +28,7 @@ const CreateProjectWizard = ({
   submitLabel,
   canUseTags,
   popularTags,
+  smartQuota,
   onShowUpgradePrompt,
   onOpenLibraryModal,
   onOpenUrlModal,
@@ -38,6 +41,10 @@ const CreateProjectWizard = ({
   patternText,
   selectedLibraryPattern
 }) => {
+  const navigate = useNavigate()
+  const { user } = useAuth()
+  const [mode, setMode] = useState(null) // null = choix, 'manual' = formulaire
+
   const [draft] = useState(() => {
     try {
       const s = sessionStorage.getItem(DRAFT_KEY)
@@ -70,6 +77,7 @@ const CreateProjectWizard = ({
   // Reset complet à la fermeture
   useEffect(() => {
     if (!isOpen) {
+      setMode(null)
       setName('')
       setTechnique('crochet')
       setSelectedCategory(null)
@@ -122,6 +130,94 @@ const CreateProjectWizard = ({
 
   if (!isOpen) return null
 
+  // Écran de choix — manuel vs Création Intelligente
+  if (mode === null) {
+    const isPlusOrPro = smartQuota && (smartQuota.is_pro || smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual')
+    const isPaidWithImports = isPlusOrPro && smartQuota.remaining > 0
+    const isPlusExhausted = smartQuota && (smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual') && smartQuota.remaining === 0
+    const isProExhausted = smartQuota && smartQuota.is_pro && smartQuota.remaining === 0
+    const isFreeTrialAvailable = smartQuota && smartQuota.plan === 'free' && !smartQuota.free_trial_used
+    const isTrialUsed = smartQuota && smartQuota.plan === 'free' && smartQuota.free_trial_used
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+        <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <h2 className="text-lg font-bold text-gray-900">Nouveau projet</h2>
+            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="p-4 space-y-3">
+            {/* Manuel */}
+            <button
+              onClick={() => setMode('manual')}
+              className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition text-left group"
+            >
+              <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
+                <svg className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Créer manuellement</p>
+                <p className="text-xs text-gray-500 mt-0.5">Remplissez les informations vous-même</p>
+              </div>
+            </button>
+
+            {/* Création Intelligente */}
+            <button
+              onClick={() => { onClose(); navigate(isTrialUsed || isPlusExhausted ? '/subscription' : '/smart-project-creator') }}
+              className="w-full flex items-center gap-4 p-4 border border-primary-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 bg-primary-50/50 transition text-left group"
+            >
+              <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-primary-900 text-sm">Création Intelligente</p>
+                {isPaidWithImports && (
+                  <p className="text-xs text-primary-600 mt-0.5">
+                    <span className="font-semibold">{smartQuota.remaining} création{smartQuota.remaining !== 1 ? 's' : ''}</span> disponible{smartQuota.remaining !== 1 ? 's' : ''} ce mois
+                    {user?.subscription_expires_at && (
+                      <span className="text-gray-400"> — recharge le {new Date(user.subscription_expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</span>
+                    )}
+                  </p>
+                )}
+                {isFreeTrialAvailable && (
+                  <p className="text-xs text-primary-600 mt-0.5">
+                    <span className="font-semibold">{smartQuota?.remaining ?? 2} essai{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''} gratuit{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''}</span> disponible{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''}
+                  </p>
+                )}
+                {isTrialUsed && (
+                  <p className="text-xs mt-0.5 flex items-center gap-1.5">
+                    <span className="text-gray-400">Essai utilisé</span>
+                    <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Débloquer</span>
+                  </p>
+                )}
+                {isPlusExhausted && (
+                  <p className="text-xs mt-0.5 flex items-center gap-1.5">
+                    <span className="text-gray-400">3/3 utilisées ce mois</span>
+                    <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Passer à PRO</span>
+                  </p>
+                )}
+                {isProExhausted && (
+                  <p className="text-xs text-gray-400 mt-0.5">15/15 utilisées — renouvellement le 1er du mois</p>
+                )}
+                {!smartQuota && (
+                  <p className="text-xs text-primary-600 mt-0.5">Importez un PDF ou une URL</p>
+                )}
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
@@ -153,7 +249,7 @@ const CreateProjectWizard = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && canSubmit) handleSubmit() }}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition text-base"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition text-base"
               placeholder="Ex: Pull blanc pour maman"
               autoFocus
             />
@@ -163,24 +259,34 @@ const CreateProjectWizard = ({
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Technique</label>
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: 'crochet', label: 'Crochet', icon: '🪡' },
-                { value: 'tricot', label: 'Tricot', icon: '🧶' }
-              ].map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTechnique(opt.value)}
-                  className={`px-4 py-3 rounded-lg border-2 font-medium transition flex items-center justify-center gap-2 ${
-                    technique === opt.value
-                      ? 'border-primary-600 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                  }`}
-                >
-                  <span className="text-xl">{opt.icon}</span>
-                  <span>{opt.label}</span>
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={() => setTechnique('crochet')}
+                className={`px-4 py-3 rounded-xl border font-medium transition flex items-center justify-center gap-2 ${
+                  technique === 'crochet'
+                    ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
+                    : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
+                </svg>
+                Crochet
+              </button>
+              <button
+                type="button"
+                onClick={() => setTechnique('tricot')}
+                className={`px-4 py-3 rounded-xl border font-medium transition flex items-center justify-center gap-2 ${
+                  technique === 'tricot'
+                    ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
+                    : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5 3 12m0 0 3.75 4.5M3 12h18" />
+                </svg>
+                Tricot
+              </button>
             </div>
           </div>
 
@@ -195,14 +301,13 @@ const CreateProjectWizard = ({
                   key={cat.id}
                   type="button"
                   onClick={() => setSelectedCategory(cat)}
-                  className={`p-3 rounded-lg border-2 flex flex-col items-center gap-1 transition ${
+                  className={`py-2.5 px-2 rounded-xl border text-xs font-medium text-center leading-tight transition ${
                     selectedCategory?.id === cat.id
-                      ? 'border-primary-600 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <span className="text-xs font-medium text-gray-700 text-center leading-tight">{cat.value}</span>
+                  {cat.value}
                 </button>
               ))}
             </div>
@@ -262,9 +367,9 @@ const CreateProjectWizard = ({
                     <button
                       type="button"
                       onClick={onOpenLibraryModal}
-                      className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'library' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'library' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 mb-1 ${patternType === 'library' ? 'text-primary-600' : 'text-gray-400'}`}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                       </svg>
                       <span className="text-xs font-medium text-gray-700">Bibliothèque</span>
@@ -277,9 +382,9 @@ const CreateProjectWizard = ({
                       onDragOver={(e) => { e.preventDefault(); setFileDragOver(true) }}
                       onDragLeave={() => setFileDragOver(false)}
                       onDrop={handleFileDrop}
-                      className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${
+                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${
                         fileDragOver ? 'border-primary-400 bg-primary-50' :
-                        patternType === 'file' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'
+                        patternType === 'file' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'
                       }`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
@@ -304,7 +409,7 @@ const CreateProjectWizard = ({
                     <button
                       type="button"
                       onClick={onOpenUrlModal}
-                      className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'url' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'url' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
@@ -316,7 +421,7 @@ const CreateProjectWizard = ({
                     <button
                       type="button"
                       onClick={onOpenTextModal}
-                      className={`p-3 border-2 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'text' ? 'border-primary-600 bg-primary-50' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'text' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -376,9 +481,9 @@ const CreateProjectWizard = ({
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <span className="text-sm text-gray-600">Tags</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">PRO</span>
-                      <button type="button" onClick={onShowUpgradePrompt} className="text-xs text-primary-600 hover:underline font-medium">
-                        Passer à PRO
+                      <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
+                      <button type="button" onClick={() => { onClose(); navigate('/subscription') }} className="text-xs text-primary-600 hover:underline font-medium">
+                        Voir les plans
                       </button>
                     </div>
                   </div>

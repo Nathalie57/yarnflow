@@ -29,11 +29,17 @@ const MyProjects = () => {
   const navigate = useNavigate()
 
   const [paymentSuccess, setPaymentSuccess] = useState(false)
+  const [pendingPlan, setPendingPlan] = useState(null)
 
   // Détection retour Stripe : ?payment=success dans l'URL
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     if (params.get('payment') === 'success') {
+      const storedPlan = localStorage.getItem('yf_pending_plan')
+      if (storedPlan) {
+        setPendingPlan(storedPlan)
+        localStorage.removeItem('yf_pending_plan')
+      }
       setPaymentSuccess(true)
       navigate('/my-projects', { replace: true })
 
@@ -48,6 +54,10 @@ const MyProjects = () => {
             updateUser(freshUser)
             if (freshUser.subscription_type === 'free' && attempt < MAX_RETRIES) {
               setTimeout(() => pollSubscription(attempt + 1), RETRY_DELAY)
+            } else {
+              // Webhook traité — rafraîchir crédits et quota
+              fetchCredits()
+              fetchSmartQuota()
             }
           }
         } catch {}
@@ -661,7 +671,7 @@ const MyProjects = () => {
           </div>
           <div className="flex-1">
             <p className="font-semibold text-green-800">Paiement réussi !</p>
-            <p className="text-sm text-green-700 mt-0.5">Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités PRO.</p>
+            <p className="text-sm text-green-700 mt-0.5">Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités {pendingPlan === 'plus' ? 'PLUS' : 'PRO'}.</p>
           </div>
           <button onClick={() => setPaymentSuccess(false)} className="flex-shrink-0 text-green-500 hover:text-green-700">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -681,26 +691,15 @@ const MyProjects = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes projets</h1>
               </div>
 
-              <div className="flex flex-col items-end gap-1.5">
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm w-full sm:w-auto justify-center"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                  </svg>
-                  Nouveau projet
-                </button>
-                <Link
-                  to="/smart-project-creator"
-                  className="flex items-center gap-1.5 text-xs text-primary-600 hover:text-primary-700 transition-colors"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-                  </svg>
-                  Création Intelligente
-                </Link>
-              </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm w-full sm:w-auto justify-center"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Nouveau projet
+              </button>
             </div>
 
             {/* Stats inline */}
@@ -719,24 +718,6 @@ const MyProjects = () => {
                   + Acheter
                 </Link>
 
-                {smartQuota && (
-                  <>
-                    <span className="text-gray-300">·</span>
-                    {smartQuota.is_pro ? (
-                      <Link to="/smart-project-creator" className="hover:underline">
-                        {smartQuota.remaining} import{smartQuota.remaining !== 1 ? 's' : ''} IA
-                      </Link>
-                    ) : smartQuota.free_trial_used ? (
-                      <Link to="/subscription" className="text-primary-600 hover:underline text-xs">
-                        Essai IA utilisé — PRO
-                      </Link>
-                    ) : (
-                      <Link to="/smart-project-creator" className="text-primary-600 hover:underline text-xs">
-                        1 essai IA gratuit
-                      </Link>
-                    )}
-                  </>
-                )}
               </div>
             )}
           </>
@@ -748,36 +729,6 @@ const MyProjects = () => {
         )}
       </div>
 
-      {/* Bannière Création Intelligente — FREE essai dispo OU PRO jamais utilisé ce mois */}
-      {smartQuota && (
-        (!smartQuota.is_pro && !smartQuota.free_trial_used) ||
-        (smartQuota.is_pro && smartQuota.used_this_month === 0)
-      ) && (
-        <Link
-          to="/smart-project-creator"
-          className="block mb-6 p-4 bg-primary-50 border border-primary-200 rounded-2xl hover:bg-primary-100 transition group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-white rounded-xl border border-primary-200 flex items-center justify-center flex-shrink-0 shadow-sm">
-              <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-primary-900">Essayez la Création Intelligente</p>
-              <p className="text-xs text-primary-600 mt-0.5">
-                {smartQuota.is_pro
-                  ? <>Importez un patron PDF — l'IA crée votre projet automatiquement. <span className="font-semibold">15 imports disponibles ce mois.</span></>
-                  : <>Importez un patron PDF — l'IA crée votre projet automatiquement. <span className="font-semibold">1 essai gratuit offert.</span></>
-                }
-              </p>
-            </div>
-            <svg className="w-4 h-4 text-primary-400 flex-shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </div>
-        </Link>
-      )}
 
       {/* Barre de recherche */}
       {!loading && projects.length > 0 && (
@@ -889,7 +840,7 @@ const MyProjects = () => {
               {/* Accueil personnalisé */}
               {user?.first_name && (
                 <p className="text-center text-gray-500 text-sm mb-6">
-                  Bonjour <span className="font-semibold text-gray-700">{user.first_name}</span> 👋 — bienvenue sur YarnFlow !
+                  Bonjour <span className="font-semibold text-gray-700">{user.first_name}</span> — bienvenue sur YarnFlow !
                 </p>
               )}
 
@@ -1212,9 +1163,10 @@ const MyProjects = () => {
         onClose={handleCancelModal}
         onSubmit={handleCreateProject}
         isSubmitting={creating}
-        submitLabel={creatingStep || 'Création...'}
+        submitLabel={creatingStep || 'Créer le projet'}
         canUseTags={canUseTags}
         popularTags={popularTags}
+        smartQuota={smartQuota}
         onShowUpgradePrompt={() => setShowUpgradePrompt(true)}
         onOpenLibraryModal={() => {
           setShowPatternLibraryModal(true)
@@ -1289,31 +1241,32 @@ const MyProjects = () => {
       {/* Modal sélection patron depuis bibliothèque */}
       {showPatternLibraryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold">
-                📚 Choisir un patron depuis ma bibliothèque
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Sélectionnez un patron que vous avez déjà sauvegardé
-              </p>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-xl">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Bibliothèque de patrons</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Sélectionnez un patron que vous avez déjà sauvegardé</p>
+              </div>
+              <button onClick={() => setShowPatternLibraryModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
 
             <div className="p-6 overflow-y-auto flex-1">
               {loadingLibraryPatterns ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                 </div>
               ) : libraryPatterns.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-4">📚</div>
-                  <p className="text-gray-600 mb-4">Votre bibliothèque est vide</p>
-                  <p className="text-sm text-gray-500">
-                    Ajoutez des patrons à votre bibliothèque depuis vos projets
-                  </p>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-12 h-12 text-gray-300 mx-auto mb-3">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                  </svg>
+                  <p className="text-gray-600 mb-1 font-medium">Bibliothèque vide</p>
+                  <p className="text-sm text-gray-400">Ajoutez des patrons à votre bibliothèque depuis vos projets</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {libraryPatterns.map((pattern) => (
                     <button
                       key={pattern.id}
@@ -1325,23 +1278,29 @@ const MyProjects = () => {
                         setPatternText('')
                         setShowPatternLibraryModal(false)
                       }}
-                      className="border-2 border-gray-200 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
+                      className="border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                          {pattern.file_type === 'pdf' ? '📄' : pattern.file_type === 'image' ? '🖼️' : '🔗'}
+                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                          {pattern.file_type === 'pdf' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
+                          ) : pattern.file_type === 'image' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500"><path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate">{pattern.name}</h3>
+                          <h3 className="font-medium text-gray-900 truncate text-sm">{pattern.name}</h3>
                           {pattern.description && (
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{pattern.description}</p>
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{pattern.description}</p>
                           )}
-                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                             {pattern.category && (
-                              <span className="px-2 py-0.5 bg-gray-100 rounded">{pattern.category}</span>
+                              <span className="px-1.5 py-0.5 bg-gray-100 rounded text-xs text-gray-500">{pattern.category}</span>
                             )}
                             {pattern.difficulty && (
-                              <span className="px-2 py-0.5 bg-gray-100 rounded">{pattern.difficulty}</span>
+                              <span className="px-1.5 py-0.5 bg-gray-100 rounded text-xs text-gray-500">{pattern.difficulty}</span>
                             )}
                           </div>
                         </div>
@@ -1352,10 +1311,10 @@ const MyProjects = () => {
               )}
             </div>
 
-            <div className="p-6 border-t border-gray-200">
+            <div className="px-6 py-4 border-t border-gray-100">
               <button
                 onClick={() => setShowPatternLibraryModal(false)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition text-sm font-medium"
               >
                 Annuler
               </button>
@@ -1367,27 +1326,9 @@ const MyProjects = () => {
       {/* Modal ajout URL patron */}
       {showPatternUrlModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">
-              🔗 Lien vers le patron
-            </h2>
-
-            {/* Workflow rapide */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-blue-800">
-                💡 <strong>Pour un patron en ligne (page web gratuite) :</strong>
-              </p>
-              <ol className="text-xs text-blue-700 mt-2 ml-4 list-decimal space-y-1">
-                <li>Trouvez la page du patron (ex : site Drops, blog...)</li>
-                <li>Copiez l'adresse depuis la barre de votre navigateur</li>
-                <li>Collez-la dans le champ ci-dessus</li>
-              </ol>
-            </div>
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-              <p className="text-xs text-amber-800">
-                📎 <strong>Patron PDF (Ravelry, téléchargement...) ?</strong> Utilisez plutôt le bouton <strong>Fichier</strong> pour l'importer directement.
-              </p>
-            </div>
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Lien vers le patron</h2>
+            <p className="text-sm text-gray-500 mb-5">Collez l'adresse d'une page web (Drops, blog, Ravelry...)</p>
 
             {/* Champ URL */}
             <input
@@ -1395,28 +1336,29 @@ const MyProjects = () => {
               value={patternUrl}
               onChange={(e) => setPatternUrl(e.target.value)}
               placeholder="https://example.com/mon-patron"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 mb-6"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mb-2"
               autoFocus
             />
+            <p className="text-xs text-gray-400 mb-5">Pour un PDF, utilisez plutôt le bouton Fichier.</p>
 
             {/* Séparateur */}
-            <div className="relative mb-6">
+            <div className="relative mb-5">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-gray-100"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Ou chercher un patron</span>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-white text-gray-400">Ou chercher un patron</span>
               </div>
             </div>
 
             {/* Recherche rapide */}
-            <div className="mb-6">
+            <div className="mb-5">
               <input
                 type="text"
                 value={patternSearchQuery}
                 onChange={(e) => setPatternSearchQuery(e.target.value)}
-                placeholder="Ex: pull irlandais, bonnet simple..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="pull irlandais, bonnet simple..."
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl mb-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
               />
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -1427,9 +1369,10 @@ const MyProjects = () => {
                       : encodeURIComponent('tricot crochet patron')
                     window.open(`https://www.google.com/search?q=${query}`, '_blank')
                   }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
                 >
-                  🌐 Google
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
+                  Google
                 </button>
                 <button
                   type="button"
@@ -1439,15 +1382,16 @@ const MyProjects = () => {
                       : 'https://www.ravelry.com/patterns/search'
                     window.open(url, '_blank')
                   }}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
                 >
-                  🧶 Ravelry
+                  <svg className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm-1 5v2H9v2h2v6h2v-6h2V9h-2V7h-2z"/></svg>
+                  Ravelry
                 </button>
               </div>
             </div>
 
             {/* Boutons de validation */}
-            <div className="flex space-x-3">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => {
@@ -1455,7 +1399,7 @@ const MyProjects = () => {
                   setPatternUrl('')
                   setPatternSearchQuery('')
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition font-medium"
               >
                 Annuler
               </button>
@@ -1472,7 +1416,7 @@ const MyProjects = () => {
                   }
                 }}
                 disabled={!patternUrl.trim()}
-                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Enregistrer
               </button>
@@ -1484,50 +1428,35 @@ const MyProjects = () => {
       {/* Modal ajout texte patron */}
       {showPatternTextModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold">
-                📝 Ajouter le texte du patron
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Copiez-collez le texte de votre patron ici
-              </p>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Texte du patron</h2>
+                <p className="text-sm text-gray-500 mt-0.5">Copiez-collez le texte de votre patron ici</p>
+              </div>
+              <button onClick={() => setShowPatternTextModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
 
             <div className="p-6 flex-1 overflow-y-auto">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Texte du patron <span className="text-red-600">*</span>
-                </label>
-                <textarea
-                  value={patternText}
-                  onChange={(e) => setPatternText(e.target.value)}
-                  rows={20}
-                  placeholder="Collez ici le texte de votre patron...
-
-Exemple :
-Rang 1 : 6 mailles serrées dans un cercle magique
-Rang 2 : 2ms dans chaque maille (12)
-Rang 3 : *1ms, aug* x6 (18)
-Rang 4 : *2ms, aug* x6 (24)
-..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
-                  autoFocus
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  💡 Vous pouvez copier-coller le texte depuis n'importe quelle source
-                </p>
-              </div>
+              <textarea
+                value={patternText}
+                onChange={(e) => setPatternText(e.target.value)}
+                rows={18}
+                placeholder={"Collez ici le texte de votre patron...\n\nExemple :\nRang 1 : 6 mailles serrées dans un cercle magique\nRang 2 : 2ms dans chaque maille (12)\nRang 3 : *1ms, aug* x6 (18)\nRang 4 : *2ms, aug* x6 (24)\n..."}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                autoFocus
+              />
+              <p className="text-xs text-gray-400 mt-2">Vous pouvez copier-coller le texte depuis n'importe quelle source</p>
             </div>
 
-            <div className="p-6 border-t border-gray-200">
-              <div className="flex justify-end space-x-3">
+            <div className="px-6 py-4 border-t border-gray-100">
+              <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowPatternTextModal(false)
-                  }}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                  onClick={() => setShowPatternTextModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition text-sm font-medium"
                 >
                   Annuler
                 </button>
@@ -1543,9 +1472,9 @@ Rang 4 : *2ms, aug* x6 (24)
                     }
                   }}
                   disabled={!patternText.trim()}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  ✓ Valider
+                  Valider
                 </button>
               </div>
             </div>

@@ -53,11 +53,12 @@ class CorsMiddleware
 
         // [AI:Claude] SÉCURITÉ: Valider l'origine avant de l'accepter
         // CRITIQUE: Ne JAMAIS utiliser Access-Control-Allow-Origin: * avec Access-Control-Allow-Credentials: true
-        if (!empty($origin) && in_array($origin, $allowedOrigins, true)) {
+        // Origin vide = app mobile native (Android/iOS) — autorisée via le domaine principal
+        if (empty($origin)) {
+            header('Access-Control-Allow-Origin: ' . ($_ENV['FRONTEND_URL'] ?? 'https://yarnflow.fr'));
+        } elseif (in_array($origin, $allowedOrigins, true)) {
             header('Access-Control-Allow-Origin: ' . $origin);
         } else {
-            // [AI:Claude] Si l'origine n'est pas autorisée, ne pas set le header
-            // Cela empêchera le navigateur d'envoyer les credentials
             error_log("[CORS] Origin non autorisée: $origin");
         }
 

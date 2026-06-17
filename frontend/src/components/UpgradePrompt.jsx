@@ -5,9 +5,11 @@
 
 import { useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
+import { useAuth } from '../contexts/AuthContext'
 
 const FEATURES = {
   tags: {
+    plan: 'plus',
     svg: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
@@ -56,15 +58,35 @@ const FEATURES = {
       </svg>
     ),
     title: 'Bibliothèque illimitée',
-    description: 'Vous avez atteint la limite de 5 patrons en FREE. Passez à PRO pour une bibliothèque sans limite.',
+    description: 'Passez à PLUS ou PRO pour un stockage de fichiers illimité et 200 photos.',
     items: ['Patrons illimités (PDF, URL, texte)', 'Tous vos patrons Ravelry, Etsy...', 'Accessible hors-ligne'],
   },
 }
 
 const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
   const navigate = useNavigate()
+  const { isTWA } = useAuth()
 
   if (!isOpen) return null
+
+  if (isTWA) return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 relative" onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <h3 className="text-lg font-bold text-gray-900 pr-6">Débloquer cette fonctionnalité</h3>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          Pour vous offrir YarnFlow au prix le plus juste sans intermédiaire, la gestion des abonnements se fait exclusivement sur notre site internet. Pour débloquer vos fonctionnalités, connectez-vous simplement à votre compte sur <span className="font-semibold text-primary-700">yarnflow.fr</span> depuis le navigateur de votre téléphone ou de votre ordinateur. Votre application se mettra à jour instantanément !
+        </p>
+        <button onClick={onClose} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700">
+          Fermer
+        </button>
+      </div>
+    </div>
+  )
 
   const content = FEATURES[feature] || FEATURES.tags
 
@@ -99,7 +121,9 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             {content.svg}
           </div>
           <div>
-            <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-0.5">Fonctionnalité PRO</p>
+            <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-0.5">
+              Fonctionnalité {content.plan === 'plus' ? 'PLUS' : 'PRO'}
+            </p>
             <h3 className="text-lg font-bold text-gray-900">{content.title}</h3>
           </div>
         </div>
@@ -119,16 +143,37 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
         </ul>
 
         {/* Prix */}
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <p className="font-bold text-gray-900 text-sm">Plan PRO</p>
-            <p className="text-xs text-gray-500 mt-0.5">Pour les projets sérieux</p>
+        {content.plan === 'plus' ? (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-primary-50 border border-primary-200 rounded-xl p-3 flex flex-col">
+              <p className="font-bold text-gray-900 text-sm">PLUS</p>
+              <p className="text-xs text-gray-500 mt-0.5">Pour les actives</p>
+              <div className="mt-2">
+                <span className="text-xl font-bold text-primary-600">3,99€</span>
+                <span className="text-xs text-gray-500">/mois</span>
+              </div>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex flex-col">
+              <p className="font-bold text-gray-900 text-sm">PRO</p>
+              <p className="text-xs text-gray-500 mt-0.5">Toutes les fonctions</p>
+              <div className="mt-2">
+                <span className="text-xl font-bold text-gray-700">6,99€</span>
+                <span className="text-xs text-gray-500">/mois</span>
+              </div>
+            </div>
           </div>
-          <div className="text-right">
-            <span className="text-2xl font-bold text-primary-600">6,99€</span>
-            <span className="text-xs text-gray-500">/mois</span>
+        ) : (
+          <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="font-bold text-gray-900 text-sm">Plan PRO</p>
+              <p className="text-xs text-gray-500 mt-0.5">Pour les projets sérieux</p>
+            </div>
+            <div className="text-right">
+              <span className="text-2xl font-bold text-primary-600">6,99€</span>
+              <span className="text-xs text-gray-500">/mois</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3">
@@ -142,7 +187,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             onClick={handleUpgrade}
             className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition text-sm font-semibold shadow-sm"
           >
-            Passer à PRO
+            {content.plan === 'plus' ? 'Voir les plans' : 'Passer à PRO'}
           </button>
         </div>
         <p className="text-xs text-gray-400 text-center -mt-2">Sans engagement · Résiliable à tout moment</p>

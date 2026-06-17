@@ -55,10 +55,24 @@ export const useAuth = () => {
   return context
 }
 
+// Détecte si l'app tourne dans une TWA Play Store (android-app://)
+// Stocké en localStorage pour persister après la première page
+const detectTWA = () => {
+  try {
+    if (localStorage.getItem('yf_twa') === '1') return true
+    if (document.referrer.startsWith('android-app://')) {
+      localStorage.setItem('yf_twa', '1')
+      return true
+    }
+  } catch {}
+  return false
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const isTWA = detectTWA()
 
   const lastVisibilityCheck = useRef(0)
   const isLoadingUser = useRef(false)
@@ -221,8 +235,18 @@ export const AuthProvider = ({ children }) => {
     if (!user) return false
     if (user.subscription_type === 'free') return false
 
+    if (!user.subscription_expires_at) return true
     const expiresAt = new Date(user.subscription_expires_at)
     return expiresAt > new Date()
+  }
+
+  // Retourne le tier exact : 'free' | 'plus' | 'pro'
+  const getSubscriptionPlan = () => {
+    if (!user) return 'free'
+    const type = user.subscription_type
+    if (type === 'plus' || type === 'plus_annual') return 'plus'
+    if (type === 'free' || !hasActiveSubscription()) return 'free'
+    return 'pro' // pro, pro_annual, early_bird
   }
 
   const value = {
@@ -234,7 +258,9 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     isAdmin,
-    hasActiveSubscription
+    hasActiveSubscription,
+    getSubscriptionPlan,
+    isTWA,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

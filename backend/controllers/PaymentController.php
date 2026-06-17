@@ -348,7 +348,7 @@ class PaymentController
             return;
         }
 
-        $returnUrl = 'https://yarnflow.fr/subscription';
+        $returnUrl = rtrim($_ENV['FRONTEND_URL'] ?? 'https://yarnflow.fr', '/') . '/subscription';
         $result = $this->stripeService->createPortalSession($customerId, $returnUrl);
 
         if (!$result['success'])
@@ -370,7 +370,7 @@ class PaymentController
             exit;
         }
 
-        // [AI:Claude] Traiter l'événement selon son type
+        // Traiter l'événement selon son type
         try {
             if ($result['event'] === 'checkout_completed') {
                 $this->processCheckoutCompleted($result);
@@ -404,9 +404,8 @@ class PaymentController
      */
     private function processInvoicePaid(array $data): void
     {
-        // Ignorer les invoices qui ne sont pas des renouvellements
         if (($data['billing_reason'] ?? '') === 'subscription_create') {
-            return; // Déjà traité par checkout.session.completed
+            return;
         }
 
         $customerId = $data['customer_id'] ?? null;
@@ -425,7 +424,7 @@ class PaymentController
         if ($subscriptionType === SUBSCRIPTION_FREE) return;
 
         // Prolonger d'un mois ou d'un an selon le plan
-        $isAnnual = in_array($subscriptionType, [SUBSCRIPTION_PRO_ANNUAL, SUBSCRIPTION_PLUS_ANNUAL]);
+        $isAnnual = in_array($subscriptionType, [SUBSCRIPTION_PLUS_ANNUAL, SUBSCRIPTION_PRO_ANNUAL]);
         $newExpiry = date('Y-m-d H:i:s', strtotime($isAnnual ? '+1 year' : '+1 month'));
 
         $this->userModel->updateSubscription($userId, $subscriptionType, $newExpiry);
@@ -436,7 +435,8 @@ class PaymentController
 
     /**
      * Traiter le changement de statut d'abonnement (customer.subscription.updated)
-     * Dégrade en FREE si past_due ou unpaid
+     * Dégrade en FREE si past_due ou unpaid.
+     * Met à jour le plan si changement via le Customer Portal Stripe.
      */
     private function processSubscriptionUpdated(array $data): void
     {
@@ -447,18 +447,57 @@ class PaymentController
         $user = $this->userModel->findOne(['stripe_customer_id' => $customerId]);
         if (!$user) return;
 
-        if (in_array($status, ['past_due', 'unpaid'])) {
-            // Paiement échoué → rétrograder en FREE immédiatement
-            $this->userModel->updateSubscription((int)$user['id'], SUBSCRIPTION_FREE, null);
-            $this->creditManager->initializeUserCredits((int)$user['id'], 'free');
-            error_log("[subscription.updated] User {$user['id']} rétrogradé FREE — statut: {$status}");
+        $userId = (int)$user['id'];
 
-        } elseif ($status === 'active' && $user['subscription_type'] === SUBSCRIPTION_FREE) {
-            // Paiement récupéré après past_due → réactiver le plan PRO via invoice.paid
-            // (invoice.paid se déclenche simultanément et gère la prolongation)
-            // On logue juste pour traçabilité
-            error_log("[subscription.updated] User {$user['id']} repassé active — invoice.paid gérera la réactivation");
+        if (in_array($status, ['past_due', 'unpaid'])) {
+            $this->userModel->updateSubscription($userId, SUBSCRIPTION_FREE, null);
+            $this->creditManager->initializeUserCredits($userId, SUBSCRIPTION_FREE);
+            error_log("[subscription.updated] user={$userId} rétrogradé FREE — statut={$status}");
+            return;
         }
+
+        if ($status !== 'active') return;
+
+        $subscriptionId = $data['subscription_id'] ?? null;
+        $storedSubId    = $user['stripe_subscription_id'] ?? null;
+        $currentPlan    = $user['subscription_type'] ?? SUBSCRIPTION_FREE;
+        $priceId        = $data['price_id'] ?? null;
+
+        // Guard 1 : l'activation initiale FREE → paid appartient à checkout.session.completed.
+        if ($currentPlan === SUBSCRIPTION_FREE) return;
+
+        // Guard 2 : ignorer les events d'un abonnement différent (vieux tests, anciens abonnements).
+        if ($subscriptionId && $storedSubId && $subscriptionId !== $storedSubId) {
+            error_log("[subscription.updated] ignoré — subId différent pour user={$userId}");
+            return;
+        }
+
+        if ($priceId) {
+            $newPlan = $this->resolvePlanFromPriceId($priceId);
+            if ($newPlan && $newPlan !== $currentPlan) {
+                $isAnnual = in_array($newPlan, [SUBSCRIPTION_PLUS_ANNUAL, SUBSCRIPTION_PRO_ANNUAL]);
+                $newExpiry = date('Y-m-d H:i:s', strtotime($isAnnual ? '+1 year' : '+1 month'));
+                $this->userModel->updateSubscription($userId, $newPlan, $newExpiry);
+                $this->creditManager->initializeUserCredits($userId, $newPlan);
+                error_log("[subscription.updated] user={$userId} changement de plan : {$currentPlan} → {$newPlan}");
+            }
+        }
+    }
+
+    /**
+     * Résoudre le type d'abonnement à partir d'un Stripe price ID.
+     */
+    private function resolvePlanFromPriceId(string $priceId): ?string
+    {
+        $map = [
+            $_ENV['STRIPE_PRICE_ID_PLUS_MONTHLY']  ?? '' => SUBSCRIPTION_PLUS,
+            $_ENV['STRIPE_PRICE_ID_PLUS_ANNUAL']   ?? '' => SUBSCRIPTION_PLUS_ANNUAL,
+            $_ENV['STRIPE_PRICE_ID_PRO_MONTHLY']   ?? '' => SUBSCRIPTION_PRO,
+            $_ENV['STRIPE_PRICE_ID_PRO_ANNUAL']    ?? '' => SUBSCRIPTION_PRO_ANNUAL,
+            $_ENV['STRIPE_PRICE_ID_EARLY_BIRD']    ?? '' => SUBSCRIPTION_EARLY_BIRD,
+        ];
+        unset($map['']);
+        return $map[$priceId] ?? null;
     }
 
     /**
@@ -470,16 +509,18 @@ class PaymentController
         $patternId = isset($data['pattern_id']) ? (int)$data['pattern_id'] : null;
         $paymentType = $data['payment_type'];
 
-        // [AI:Claude] SÉCURITÉ: Vérifier que le montant payé correspond au prix attendu
+        if ($userId === 0) {
+            error_log("[checkout.completed] ABORT: user_id manquant dans les metadata Stripe (session=" . ($data['session_id'] ?? 'N/A') . ")");
+            return;
+        }
+
+        // Vérifier que le montant payé correspond au prix attendu
         if (isset($data['amount'])) {
             $expectedAmount = $this->getExpectedAmount($paymentType);
             $actualAmount = $data['amount'];
 
-            // Tolérance de 0.01€ pour les arrondis
             if ($expectedAmount !== null && abs($expectedAmount - $actualAmount) > 0.01) {
-                error_log("[PAYMENT SECURITY] ALERTE: Montant incorrect pour {$paymentType}. Attendu: {$expectedAmount}€, Reçu: {$actualAmount}€");
-                error_log("[PAYMENT SECURITY] Session ID: " . ($data['session_id'] ?? 'N/A') . ", User ID: {$userId}");
-                // Ne pas traiter le paiement si le montant est incorrect
+                error_log("[checkout.completed] SECURITY BLOCK: paymentType={$paymentType} expected={$expectedAmount} actual={$actualAmount} session=" . ($data['session_id'] ?? 'N/A'));
                 return;
             }
         }
@@ -495,12 +536,19 @@ class PaymentController
             $this->paymentModel->updateStatus($payment['id'], PAYMENT_COMPLETED);
         }
 
-        // [AI:Claude] Sauvegarder le stripe_customer_id pour le Customer Portal
+        // Sauvegarder stripe_customer_id et stripe_subscription_id
+        $updateFields = [];
         if (!empty($data['customer_id'])) {
             $existingUser = $this->userModel->findById($userId);
             if (empty($existingUser['stripe_customer_id'])) {
-                $this->userModel->update($userId, ['stripe_customer_id' => $data['customer_id']]);
+                $updateFields['stripe_customer_id'] = $data['customer_id'];
             }
+        }
+        if (!empty($data['subscription_id'])) {
+            $updateFields['stripe_subscription_id'] = $data['subscription_id'];
+        }
+        if (!empty($updateFields)) {
+            $this->userModel->update($userId, $updateFields);
         }
 
         // [AI:Claude] Si c'est un abonnement, mettre à jour l'utilisateur
@@ -527,7 +575,7 @@ class PaymentController
 
             // Allouer les crédits mensuels correspondant au nouveau plan
             $this->creditManager->initializeUserCredits($userId, $subscriptionType);
-            error_log("[SUBSCRIPTION] Crédits initialisés pour user {$userId} → plan {$subscriptionType}");
+            error_log("[checkout.completed] user={$userId} plan={$subscriptionType} expires={$expiresAt}");
 
             // [AI:Claude] Si PRO Annuel, ajouter 50 crédits bonus (one-time)
             if ($paymentType === 'subscription_pro_annual') {
@@ -642,8 +690,8 @@ class PaymentController
     private function getExpectedAmount(string $paymentType): ?float
     {
         return match($paymentType) {
-            'subscription_plus' => 6.99,
-            'subscription_plus_annual' => 59.99,
+            'subscription_plus' => 3.99,
+            'subscription_plus_annual' => 35.88,
             'subscription_pro' => 6.99,
             'subscription_pro_annual' => 59.99,
             'subscription_early_bird' => 2.99,

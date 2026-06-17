@@ -40,6 +40,7 @@ export default function SmartProjectCreator() {
   const [analyzingStep, setAnalyzingStep] = useState(0)
   const [extractedData, setExtractedData] = useState(null)
   const [aiStatus, setAiStatus] = useState(null)
+  const [analyzeMetadata, setAnalyzeMetadata] = useState(null)
   const [error, setError] = useState(null)
 
   // Projet éditable
@@ -160,6 +161,11 @@ export default function SmartProjectCreator() {
       if (response.data.success) {
         setExtractedData(response.data.data)
         setAiStatus(response.data.ai_status)
+        setAnalyzeMetadata({
+          source_name: response.data.source_name,
+          processing_time_ms: response.data.processing_time_ms,
+          ai_status: response.data.ai_status
+        })
 
         // Pré-remplir les champs
         setProject({
@@ -215,7 +221,8 @@ export default function SmartProjectCreator() {
         project,
         sections,
         source_type: mode,
-        source_url: mode === 'pdf' ? file?.name : mode === 'library' ? selectedLibraryPattern?.name : url
+        source_url: mode === 'pdf' ? file?.name : mode === 'library' ? selectedLibraryPattern?.name : url,
+        analyze_metadata: analyzeMetadata
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -251,8 +258,8 @@ export default function SmartProjectCreator() {
     setSections(sections.filter((_, i) => i !== index))
   }
 
-  // FREE avec essai déjà utilisé → écran d'upgrade
-  if (!isPro && quota?.free_trial_used) {
+  // FREE avec essai déjà utilisé → écran d'upgrade (seulement à l'étape 1, pas pendant/après le process)
+  if (!isPro && quota?.free_trial_used && step <= 1) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">
@@ -262,15 +269,9 @@ export default function SmartProjectCreator() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Création Intelligente</h1>
-          <p className="text-gray-500">Vous avez utilisé votre essai gratuit. Passez à PRO pour importer autant de patrons que vous voulez.</p>
-          <div className="bg-primary-50 rounded-xl p-4 text-left space-y-2">
-            <p className="text-sm font-semibold text-primary-900">Avec PRO :</p>
-            <p className="text-sm text-primary-700">Imports illimités — PDF, URL, Ravelry</p>
-            <p className="text-sm text-primary-700">Sections et détails techniques créés automatiquement</p>
-            <p className="text-sm text-primary-700">Assistant IA, photos pro, stats complètes</p>
-          </div>
+          <p className="text-gray-500">Vous avez utilisé vos 2 essais gratuits.</p>
           <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
-            Passer à PRO — 6,99€/mois
+            Plus de créations automatiques
           </Link>
           <button onClick={() => navigate(-1)} className="block w-full text-sm text-gray-400 hover:text-gray-600">
             Retour
@@ -302,15 +303,11 @@ export default function SmartProjectCreator() {
 
           {/* Badge quota */}
           {quota && (
-            <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border ${
-              quota.is_pro
-                ? 'bg-primary-50 border-primary-200'
-                : 'bg-amber-50 border-amber-200'
-            }`}>
-              <span className={`text-sm font-medium ${quota.is_pro ? 'text-primary-700' : 'text-amber-700'}`}>
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-primary-50 border-primary-200">
+              <span className="text-sm font-medium text-primary-700">
                 {quota.is_pro
                   ? `${quota.remaining} import${quota.remaining !== 1 ? 's' : ''} restant${quota.remaining !== 1 ? 's' : ''} ce mois`
-                  : 'Essai gratuit — 1 import offert'
+                  : `${quota.remaining} essai${quota.remaining !== 1 ? 's' : ''} gratuit${quota.remaining !== 1 ? 's' : ''} restant${quota.remaining !== 1 ? 's' : ''}`
                 }
               </span>
             </div>
@@ -628,7 +625,7 @@ export default function SmartProjectCreator() {
             </h2>
 
             {aiStatus === 'partial' && (
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 text-sm">
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 text-sm">
                 Certaines informations n'ont pas pu être détectées automatiquement. Complétez les champs manquants.
               </div>
             )}

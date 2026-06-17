@@ -119,35 +119,8 @@ ON DUPLICATE KEY UPDATE
         ELSE 3
     END;
 
--- ============================================================================
--- [AI:Claude] Trigger pour initialiser les crédits des nouveaux utilisateurs
--- ============================================================================
-
-DELIMITER //
-
-DROP TRIGGER IF EXISTS init_user_photo_credits//
-
-CREATE TRIGGER init_user_photo_credits
-AFTER INSERT ON users
-FOR EACH ROW
-BEGIN
-    DECLARE initial_credits INT DEFAULT 3;
-
-    -- [AI:Claude] Définir le quota selon le type d'abonnement
-    IF NEW.subscription_type = 'monthly' THEN
-        SET initial_credits = 30;
-    ELSEIF NEW.subscription_type = 'yearly' THEN
-        SET initial_credits = 120;
-    ELSE
-        SET initial_credits = 3; -- FREE
-    END IF;
-
-    -- [AI:Claude] Créer l'entrée de crédits
-    INSERT INTO user_photo_credits (user_id, monthly_credits, last_reset_at)
-    VALUES (NEW.id, initial_credits, NOW());
-END//
-
-DELIMITER ;
+-- NOTE: Ne pas créer de trigger ici — un trigger after_user_insert_credits existe déjà sur users.
+-- L'initialisation des crédits est gérée par CreditManager::initializeUserCredits() dans AuthController.
 
 -- ============================================================================
 -- [AI:Claude] Event pour reset automatique mensuel des crédits

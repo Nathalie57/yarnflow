@@ -24,6 +24,15 @@ use PDO;
 
 class PhotoController
 {
+    private const PHOTO_QUOTAS = [
+        'free'              => 20,
+        'plus'              => 200,
+        'plus_annual'       => 200,
+        'pro'               => PHP_INT_MAX,
+        'pro_annual'        => PHP_INT_MAX,
+        'early_bird'        => PHP_INT_MAX,
+    ];
+
     private PDO $db;
     private AIPhotoService $photoService;
     private CreditManager $creditManager;
@@ -58,11 +67,13 @@ class PhotoController
                 $limit = 100;
 
             $photos = $this->getUserPhotos($userId, $projectId, $limit, $offset);
+            $quota = $this->getUserPhotoQuota($userId);
 
             $this->sendResponse(200, [
                 'success' => true,
                 'photos' => $photos,
-                'count' => count($photos)
+                'count' => count($photos),
+                'quota' => $quota,
             ]);
 
         } catch (\Exception $e) {
@@ -104,6 +115,18 @@ class PhotoController
 
             // [AI:Claude] Valider le fichier de manière sécurisée
             $this->validateImageFile($file);
+
+            // Vérifier le quota de photos
+            $quota = $this->getUserPhotoQuota($userId);
+            if (!$quota['unlimited'] && $quota['used'] >= $quota['limit']) {
+                $this->sendResponse(403, [
+                    'success' => false,
+                    'error' => 'quota_exceeded',
+                    'message' => "Vous avez atteint la limite de {$quota['limit']} photos. Passez à un plan supérieur pour en ajouter davantage.",
+                    'quota' => $quota,
+                ]);
+                return;
+            }
 
             // [AI:Claude] Sauvegarder le fichier
             $originalPath = $this->saveUploadedFile($file, $userId);
@@ -644,13 +667,15 @@ class PhotoController
         int $limit,
         int $offset
     ): array {
-        $query = "SELECT * FROM user_photos
-                  WHERE user_id = :user_id";
+        $query = "SELECT up.*, p.name as project_name
+                  FROM user_photos up
+                  LEFT JOIN projects p ON up.project_id = p.id
+                  WHERE up.user_id = :user_id";
 
         if ($projectId !== null)
-            $query .= " AND project_id = :project_id";
+            $query .= " AND up.project_id = :project_id";
 
-        $query .= " ORDER BY created_at DESC
+        $query .= " ORDER BY up.created_at DESC
                     LIMIT :limit OFFSET :offset";
 
         $stmt = $this->db->prepare($query);
@@ -872,37 +897,100 @@ class PhotoController
 
     private function saveUploadedFile(array $file, int $userId): string
     {
-        // [AI:Claude] Sauvegarder dans public/uploads pour accès web
         $uploadsDir = __DIR__ . '/../public/uploads/photos/original';
 
         if (!is_dir($uploadsDir))
             mkdir($uploadsDir, 0755, true);
 
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = sprintf(
-            '%s_%s_%s.%s',
-            $userId,
-            date('Ymd_His'),
-            bin2hex(random_bytes(8)),
-            $extension
-        );
-
+        $filename = sprintf('%s_%s_%s.jpg', $userId, date('Ymd_His'), bin2hex(random_bytes(8)));
         $filepath = $uploadsDir . '/' . $filename;
 
-        // [AI:Claude] Debug upload
-        error_log("[PHOTO UPLOAD] Tentative upload: {$file['tmp_name']} -> {$filepath}");
-        error_log("[PHOTO UPLOAD] Dossier existe: " . (is_dir($uploadsDir) ? 'OUI' : 'NON'));
-        error_log("[PHOTO UPLOAD] Temp file existe: " . (file_exists($file['tmp_name']) ? 'OUI' : 'NON'));
-
-        if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-            $error = error_get_last();
-            error_log("[PHOTO UPLOAD] ECHEC move_uploaded_file: " . json_encode($error));
-            throw new \Exception('Erreur sauvegarde fichier: impossible de déplacer le fichier uploadé');
-        }
-
-        error_log("[PHOTO UPLOAD] SUCCESS: fichier sauvegardé dans {$filepath}");
+        $this->compressAndSave($file['tmp_name'], $filepath, $file['size']);
 
         return '/uploads/photos/original/' . $filename;
+    }
+
+    private function getUserPhotoQuota(int $userId): array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT subscription_type FROM users WHERE id = :id'
+        );
+        $stmt->execute([':id' => $userId]);
+        $subType = $stmt->fetchColumn() ?: 'free';
+
+        $limit = self::PHOTO_QUOTAS[$subType] ?? self::PHOTO_QUOTAS['free'];
+
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM user_photos WHERE user_id = :id AND parent_photo_id IS NULL'
+        );
+        $stmt->execute([':id' => $userId]);
+        $used = (int) $stmt->fetchColumn();
+
+        return [
+            'used'  => $used,
+            'limit' => $limit === PHP_INT_MAX ? null : $limit,
+            'unlimited' => $limit === PHP_INT_MAX,
+        ];
+    }
+
+    private function compressAndSave(string $tmpPath, string $destPath, int $originalSize): void
+    {
+        $imageInfo = getimagesize($tmpPath);
+        if (!$imageInfo) {
+            throw new \Exception('Impossible de lire l\'image');
+        }
+
+        $srcImage = match ($imageInfo[2]) {
+            IMAGETYPE_JPEG => imagecreatefromjpeg($tmpPath),
+            IMAGETYPE_PNG  => imagecreatefrompng($tmpPath),
+            IMAGETYPE_WEBP => imagecreatefromwebp($tmpPath),
+            default        => throw new \Exception('Format non supporté'),
+        };
+
+        if (!$srcImage) {
+            throw new \Exception('Erreur lecture image GD');
+        }
+
+        // Redresser l'orientation EXIF (photos mobiles)
+        if ($imageInfo[2] === IMAGETYPE_JPEG && function_exists('exif_read_data')) {
+            $exif = @exif_read_data($tmpPath);
+            $orientation = $exif['Orientation'] ?? 1;
+            $srcImage = match ($orientation) {
+                3 => imagerotate($srcImage, 180, 0),
+                6 => imagerotate($srcImage, -90, 0),
+                8 => imagerotate($srcImage, 90, 0),
+                default => $srcImage,
+            };
+        }
+
+        $srcW = imagesx($srcImage);
+        $srcH = imagesy($srcImage);
+
+        // Redimensionner si plus large que 1920px
+        $maxDim = 1920;
+        if ($srcW > $maxDim || $srcH > $maxDim) {
+            $ratio = min($maxDim / $srcW, $maxDim / $srcH);
+            $newW = (int) round($srcW * $ratio);
+            $newH = (int) round($srcH * $ratio);
+        } else {
+            $newW = $srcW;
+            $newH = $srcH;
+        }
+
+        $dst = imagecreatetruecolor($newW, $newH);
+        imagecopyresampled($dst, $srcImage, 0, 0, 0, 0, $newW, $newH, $srcW, $srcH);
+        imagedestroy($srcImage);
+
+        imagejpeg($dst, $destPath, 85);
+        imagedestroy($dst);
+
+        $finalSize = filesize($destPath);
+        error_log(sprintf(
+            '[PHOTO COMPRESS] %dx%d → %dx%d | %s KB → %s KB',
+            $srcW, $srcH, $newW, $newH,
+            round($originalSize / 1024),
+            round($finalSize / 1024)
+        ));
     }
 
     /**

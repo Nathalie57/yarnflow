@@ -15,13 +15,29 @@ const Dash = () => (
   </svg>
 )
 
+const TWAMessage = () => (
+  <div className="max-w-md mx-auto px-6 py-16 text-center space-y-6">
+    <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto">
+      <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    </div>
+    <h1 className="text-2xl font-bold text-gray-900">Débloquer YarnFlow</h1>
+    <p className="text-gray-600 leading-relaxed">
+      Les abonnements se gèrent sur <span className="font-semibold text-primary-700">yarnflow.fr</span>. Connectez-vous depuis votre navigateur pour débloquer vos fonctionnalités — l'app se met à jour instantanément.
+    </p>
+    <button onClick={() => window.history.back()} className="text-sm text-gray-400 hover:text-gray-600 transition">
+      Retour
+    </button>
+  </div>
+)
+
 const Subscription = () => {
-  const { user } = useAuth()
-  const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick, trackBillingPeriodChange } = useAnalytics()
+  const { user, isTWA } = useAuth()
+  const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick } = useAnalytics()
   const [subscription, setSubscription] = useState(null)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
-  const [billingPeriod, setBillingPeriod] = useState('monthly')
 
   useEffect(() => {
     loadSubscription()
@@ -73,17 +89,37 @@ const Subscription = () => {
     }
   }
 
-  const handleSubscribe = async () => {
+  const handleSubscribePlus = async () => {
     setProcessing(true)
-    trackSubscriptionClick('pro', billingPeriod, 'subscription')
-    // Ouvrir un onglet vide AVANT l'await (dans le contexte du clic) pour contourner le popup blocker mobile
+    trackSubscriptionClick('plus', 'monthly', 'subscription')
     const win = window.open('', '_blank')
     try {
-      const subscriptionType = billingPeriod === 'annual' ? 'pro_annual' : 'pro'
-      const amount = billingPeriod === 'monthly' ? 6.99 : 59.99
-      const response = await paymentsAPI.checkoutSubscription({ type: subscriptionType })
+      const response = await paymentsAPI.checkoutSubscription({ type: 'plus' })
       const { checkout_url } = response.data.data
-      trackBeginCheckout('subscription', subscriptionType, amount)
+      trackBeginCheckout('subscription', 'plus', 3.99)
+      localStorage.setItem('yf_pending_plan', 'plus')
+      if (win) win.location.href = checkout_url
+      else window.location.href = checkout_url
+      setProcessing(false)
+    } catch (error) {
+      if (win) win.close()
+      console.error('Erreur checkout plus:', error)
+      alert(error.response?.data?.message || 'Erreur lors de la création du paiement')
+      setProcessing(false)
+    }
+  }
+
+  const handleSubscribe = async (type = 'pro_annual') => {
+    setProcessing(true)
+    const isAnnual = type === 'pro_annual'
+    trackSubscriptionClick('pro', isAnnual ? 'annual' : 'monthly', 'subscription')
+    const win = window.open('', '_blank')
+    try {
+      const amount = isAnnual ? 59.99 : 6.99
+      const response = await paymentsAPI.checkoutSubscription({ type })
+      const { checkout_url } = response.data.data
+      trackBeginCheckout('subscription', type, amount)
+      localStorage.setItem('yf_pending_plan', ['plus', 'plus_annual'].includes(type) ? 'plus' : 'pro')
       if (win) win.location.href = checkout_url
       else window.location.href = checkout_url
       setProcessing(false)
@@ -116,17 +152,18 @@ const Subscription = () => {
   }
 
   const isFree = !subscription || subscription.type === 'free' || !subscription.is_active
-  // On reconnaît les anciens plans plus/plus_annual comme PRO aussi
+  const isPlus = subscription?.is_active && (
+    subscription?.type === 'plus' || subscription?.type === 'plus_annual'
+  )
   const isPro = subscription?.is_active && (
     subscription?.type === 'pro' ||
     subscription?.type === 'pro_annual' ||
-    subscription?.type === 'plus' ||
-    subscription?.type === 'plus_annual' ||
+    subscription?.type === 'early_bird' ||
     subscription?.type === 'monthly' ||
     subscription?.type === 'annual'
   )
 
-  const proPrice = billingPeriod === 'monthly' ? '6,99€' : '5,00€'
+  const plusPrice = '3,99€'
 
   if (loading) {
     return (
@@ -138,6 +175,8 @@ const Subscription = () => {
       </div>
     )
   }
+
+  if (isTWA) return <TWAMessage />
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-8">
@@ -169,6 +208,33 @@ const Subscription = () => {
         </div>
       </div>
 
+      {/* Abonnement PLUS actif */}
+      {isPlus && (
+        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary-100 rounded-xl flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-semibold text-primary-900 text-sm">Abonnement PLUS actif</p>
+              {subscription?.expires_at && (
+                <p className="text-xs text-primary-600">Renouvellement le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}</p>
+              )}
+              <p className="text-xs text-gray-400 mt-0.5">Pour passer au PRO, cliquez sur Gérer — les jours restants PLUS seront déduits automatiquement.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleManageSubscription}
+            disabled={processing}
+            className="text-xs font-semibold text-primary-700 border border-primary-300 bg-white hover:bg-primary-50 rounded-lg px-3 py-1.5 transition disabled:opacity-60"
+          >
+            {processing ? 'Chargement…' : 'Gérer'}
+          </button>
+        </div>
+      )}
+
       {/* Abonnement PRO actif */}
       {isPro && (
         <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between gap-4">
@@ -195,52 +261,29 @@ const Subscription = () => {
         </div>
       )}
 
-      {/* Toggle mensuel / annuel */}
-      <div className="flex justify-center">
-        <div className="bg-gray-100 rounded-xl p-1 flex gap-1">
-          <button
-            onClick={() => { setBillingPeriod('monthly'); trackBillingPeriodChange('monthly') }}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
-              billingPeriod === 'monthly' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Mensuel
-          </button>
-          <button
-            onClick={() => { setBillingPeriod('annual'); trackBillingPeriodChange('annual') }}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
-              billingPeriod === 'annual' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Annuel
-            <span className="bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">−28%</span>
-          </button>
-        </div>
-      </div>
-
       {/* Plans */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto w-full">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto w-full">
 
         {/* FREE */}
-        <div className={`bg-white rounded-2xl border p-6 shadow-sm flex flex-col ${isFree ? 'border-gray-300' : 'border-gray-200'}`}>
+        <div className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col ${isFree ? 'border-gray-300' : 'border-gray-200'}`}>
           {isFree && (
-            <div className="flex justify-center mb-4">
-              <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">Votre plan actuel</span>
+            <div className="flex justify-center mb-3">
+              <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">Plan actuel</span>
             </div>
           )}
-          <div className="mb-5">
+          <div className="mb-4">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Free</p>
-            <div className="text-4xl font-bold text-gray-900 mb-1">0€</div>
-            <p className="text-sm text-gray-500">L'essentiel pour suivre vos encours et découvrir la puissance de l'IA.</p>
+            <div className="text-3xl font-bold text-gray-900 mb-1">0€</div>
+            <p className="text-sm text-gray-500">L'essentiel pour découvrir YarnFlow.</p>
           </div>
 
-          <ul className="space-y-2.5 mb-6 flex-1">
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">Projets &amp; patrons illimités avec sections</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">1 compteur de rangs actif par projet</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">Timer intégré &amp; statistiques de progression</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700"><span className="font-medium">1 Création Intelligente IA offerte</span> — l'IA configure votre premier projet à partir d'un PDF ou d'une photo</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">3 questions / mois à l'assistant IA tricot</span></li>
-            <li className="flex items-start gap-2.5"><Check /><span className="text-sm text-gray-700">2 crédits / mois au Studio Photo IA</span></li>
+          <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
+            <li className="flex items-start gap-2"><Check /><span>Projets &amp; patrons illimités <span className="text-gray-400 text-xs">(100 Mo de fichiers)</span></span></li>
+            <li className="flex items-start gap-2"><Check /><span>1 compteur par projet</span></li>
+            <li className="flex items-start gap-2"><Check /><span>Notes par section</span></li>
+            <li className="flex items-start gap-2"><Check /><span>2 Créations IA offertes</span></li>
+            <li className="flex items-start gap-2"><Check /><span>5 questions IA / mois</span></li>
+            <li className="flex items-start gap-2"><Check /><span>20 photos · 2 essais gratuits Studio Photo IA</span></li>
           </ul>
 
           <button disabled className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed">
@@ -248,48 +291,97 @@ const Subscription = () => {
           </button>
         </div>
 
+        {/* PLUS */}
+        <div className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col ${isPlus ? 'border-primary-400' : 'border-gray-200'}`}>
+          {isPlus && (
+            <div className="flex justify-center mb-3">
+              <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-1 rounded-full">Plan actuel</span>
+            </div>
+          )}
+          <div className="mb-4">
+            <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">Plus</p>
+            <div className="flex items-baseline gap-1 mb-1">
+              <span className="text-3xl font-bold text-gray-900">{plusPrice}</span>
+              <span className="text-sm text-gray-500">/mois</span>
+            </div>
+            <p className="text-sm text-gray-500">Le confort de gestion au quotidien.</p>
+          </div>
+
+          <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tout le plan FREE</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stockage fichiers illimité</span> · 200 photos</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">2 compteurs simultanés</span></span></li>
+            {/* <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 50 références</span></span></li> */}
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 Créations IA / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>5 crédits Studio Photo / mois</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Statistiques avancées</span></li>
+          </ul>
+
+          <button
+            onClick={isPro ? handleManageSubscription : handleSubscribePlus}
+            disabled={processing || isPlus}
+            className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {processing ? 'Chargement…' : isPlus ? 'Plan actuel' : isPro ? 'Rétrograder vers PLUS' : `Passer à PLUS — ${plusPrice}/mois`}
+          </button>
+        </div>
+
         {/* PRO */}
-        <div className="bg-white rounded-2xl border-2 border-primary-500 p-6 shadow-lg flex flex-col relative">
+        <div className="bg-white rounded-2xl border-2 border-primary-500 p-5 shadow-lg flex flex-col relative">
           <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
             <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">
-              Pour les projets sérieux
+              Pour les passionnées
             </span>
           </div>
 
           {isPro && (
-            <div className="flex justify-center mb-4 mt-2">
-              <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-1 rounded-full">Votre plan actuel</span>
+            <div className="flex justify-center mb-3 mt-2">
+              <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-1 rounded-full">Plan actuel</span>
             </div>
           )}
 
-          <div className="mb-5 mt-2">
+          <div className="mb-4 mt-2">
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">Pro</p>
             <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-4xl font-bold text-gray-900">{proPrice}</span>
+              <span className="text-3xl font-bold text-gray-900">4,99€</span>
               <span className="text-sm text-gray-500">/mois</span>
             </div>
-            {billingPeriod === 'annual' && (
-              <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
-            )}
-            <p className="text-sm text-gray-500">Pour les projets qui méritent mieux qu'un bout de papier.</p>
+            <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
+            <p className="text-sm text-gray-500">L'expérience ultime, sans limites.</p>
           </div>
 
-          <ul className="space-y-3 mb-6 flex-1">
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700">Tout ce qu'inclut le plan FREE</span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Confort de gestion</span><span className="block text-gray-500 text-xs mt-0.5">2 compteurs simultanés, notes privées par section et tags pour trier vos ouvrages</span></span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Création Intelligente IA — 15 imports / mois</span><span className="block text-gray-500 text-xs mt-0.5">Déposez un PDF ou une photo de patron, l'IA pré-remplit tout instantanément</span></span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Assistant IA tricot — 30 questions / mois</span><span className="block text-gray-500 text-xs mt-0.5">Vos doutes expliqués en un clin d'œil, même en pleine nuit</span></span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Studio Photo IA — 20 crédits / mois</span><span className="block text-gray-500 text-xs mt-0.5">Sublimez vos tricots dans des décors pros, prêts à partager</span></span></li>
-            <li className="flex items-start gap-2.5"><Check className="text-primary-600" /><span className="text-sm text-gray-700"><span className="font-medium text-gray-800">Statistiques avancées</span><span className="block text-gray-500 text-xs mt-0.5">Graphiques visuels, badges de progression et temps moyen par session</span></span></li>
+          <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>Tout le plan PLUS</span></li>
+            {/* <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">Stock illimité</span></span></li> */}
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">15 Créations IA / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">30 questions IA / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">20 crédits Studio Photo / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>Statistiques avancées</span></li>
           </ul>
 
-          <button
-            onClick={handleSubscribe}
-            disabled={processing || isPro}
-            className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {processing ? 'Chargement…' : isPro ? 'Plan actuel' : `Passer à PRO — ${proPrice}/mois`}
-          </button>
+          {isPro ? (
+            <button disabled className="w-full py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold opacity-60 cursor-not-allowed">
+              Plan actuel
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <button
+                onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro_annual')}
+                disabled={processing}
+                className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {processing ? 'Chargement…' : 'Passer à PRO (Annuel)'}
+              </button>
+              <button
+                onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro')}
+                disabled={processing}
+                className="w-full py-2.5 border-2 border-primary-600 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {processing ? 'Chargement…' : 'Choisir le Mensuel (6,99€/mois)'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

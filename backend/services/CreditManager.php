@@ -26,11 +26,11 @@ class CreditManager
      * Aligné sur CLAUDE.md
      */
     private const MONTHLY_QUOTAS = [
-        'free'         => 2,   // FREE : 2 crédits/mois
-        'pro'          => 20,  // PRO 3.99€/mois : 20 crédits/mois
-        'pro_annual'   => 20,  // PRO ANNUAL 39.99€/an : 20 crédits/mois
-        'plus'         => 20,  // legacy PLUS → traité comme PRO
-        'plus_annual'  => 20,
+        'free'         => 2,   // FREE : 2 essais gratuits à vie (jamais réinitialisés)
+        'plus'         => 5,
+        'plus_annual'  => 5,
+        'pro'          => 20,  // PRO 6.99€/mois : 20 crédits/mois
+        'pro_annual'   => 20,  // PRO ANNUAL 59.99€/an : 20 crédits/mois
         'early_bird'   => 20,
         // Legacy support
         'standard' => 20,
@@ -243,7 +243,9 @@ class CreditManager
                   (user_id, monthly_credits, last_reset_at)
                   VALUES (:user_id, :monthly_credits, NOW())
                   ON DUPLICATE KEY UPDATE
-                  monthly_credits = VALUES(monthly_credits)";
+                  monthly_credits = VALUES(monthly_credits),
+                  credits_used_this_month = 0,
+                  last_reset_at = NOW()";
 
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
@@ -398,6 +400,11 @@ class CreditManager
         if ($interval->days >= 30) {
             // [AI:Claude] Vérifier si l'abonnement est expiré
             $subscriptionType = $data['subscription_type'];
+
+            // FREE : 1 essai à vie — jamais de reset mensuel
+            if ($subscriptionType === 'free') {
+                return false;
+            }
             if ($subscriptionType !== 'free' && isset($data['subscription_expires_at']) && $data['subscription_expires_at'] !== null) {
                 $expiresAt = strtotime($data['subscription_expires_at']);
                 if ($expiresAt <= time()) {
