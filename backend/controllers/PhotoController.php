@@ -118,7 +118,7 @@ class PhotoController
 
             // Vérifier le quota de photos
             $quota = $this->getUserPhotoQuota($userId);
-            if ($quota['used'] >= $quota['limit']) {
+            if (!$quota['unlimited'] && $quota['used'] >= $quota['limit']) {
                 $this->sendResponse(403, [
                     'success' => false,
                     'error' => 'quota_exceeded',

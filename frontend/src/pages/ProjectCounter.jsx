@@ -5362,61 +5362,73 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal sélection patron depuis bibliothèque */}
       {showPatternLibraryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] shadow-xl flex flex-col">
-            <div className="p-6 border-b border-gray-200 flex-shrink-0">
-              <h2 className="text-2xl font-bold">
-                📚 Choisir un patron depuis ma bibliothèque
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Sélectionnez un patron que vous avez déjà sauvegardé
-              </p>
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] shadow-xl flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Ma bibliothèque de patrons</h2>
+              </div>
+              <p className="text-sm text-gray-500 ml-11">Sélectionnez un patron que vous avez déjà sauvegardé</p>
             </div>
 
             <div className="p-6 overflow-y-auto flex-1">
               {loadingLibraryPatterns ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                 </div>
               ) : libraryPatterns.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-4">📚</div>
-                  <p className="text-gray-600 mb-4">Votre bibliothèque est vide</p>
+                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  </div>
+                  <p className="text-gray-700 font-medium mb-1">Bibliothèque vide</p>
+                  <p className="text-sm text-gray-500 mb-4">Ajoutez des patrons pour les retrouver ici</p>
                   <button
                     onClick={() => {
                       setShowPatternLibraryModal(false)
                       navigate('/pattern-library')
                     }}
-                    className="text-primary-600 hover:text-primary-700 font-medium"
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                   >
-                    Ajouter des patrons à votre bibliothèque →
+                    Aller à la bibliothèque →
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {libraryPatterns.map((pattern) => (
                     <button
                       key={pattern.id}
                       onClick={() => handleSelectLibraryPattern(pattern)}
                       disabled={uploadingPattern}
-                      className="border-2 border-gray-200 rounded-lg p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left disabled:opacity-50"
+                      className="border border-gray-200 rounded-xl p-4 hover:border-primary-300 hover:bg-primary-50 transition text-left disabled:opacity-50 group"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                          {pattern.file_type === 'pdf' ? '📄' : pattern.file_type === 'image' ? '🖼️' : '🔗'}
+                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 group-hover:bg-white rounded-xl flex items-center justify-center transition">
+                          {pattern.file_type === 'pdf' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                          ) : pattern.file_type === 'image' ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate">{pattern.name}</h3>
+                          <h3 className="font-semibold text-gray-900 truncate text-sm">{pattern.name}</h3>
                           {pattern.description && (
-                            <p className="text-xs text-gray-600 mt-1 line-clamp-2">{pattern.description}</p>
+                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{pattern.description}</p>
                           )}
-                          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                            {pattern.category && (
-                              <span className="px-2 py-0.5 bg-gray-100 rounded">{pattern.category}</span>
-                            )}
-                            {pattern.difficulty && (
-                              <span className="px-2 py-0.5 bg-gray-100 rounded">{pattern.difficulty}</span>
-                            )}
-                          </div>
+                          {(pattern.category || pattern.difficulty) && (
+                            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                              {pattern.category && (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{pattern.category}</span>
+                              )}
+                              {pattern.difficulty && (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">{pattern.difficulty}</span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </button>
@@ -5425,10 +5437,10 @@ const ProjectCounter = () => {
               )}
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex-shrink-0">
+            <div className="p-6 border-t border-gray-100 flex-shrink-0">
               <button
                 onClick={() => setShowPatternLibraryModal(false)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition text-sm font-medium"
               >
                 Annuler
               </button>
@@ -5439,89 +5451,97 @@ const ProjectCounter = () => {
 
       {showPatternUrlModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">
-              🔗 Lien vers le patron
-            </h2>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-blue-800">
-                💡 <strong>Workflow rapide :</strong>
-              </p>
-              <ol className="text-xs text-blue-700 mt-2 ml-4 list-decimal space-y-1">
-                <li>Cherchez votre patron avec les boutons Google ou Ravelry ci-dessous</li>
-                <li>Copiez l'URL du patron trouvé</li>
-                <li>Revenez ici et collez dans le champ (appui long ou Ctrl+V)</li>
-              </ol>
-            </div>
-            <input
-              type="url"
-              value={patternUrl}
-              onChange={(e) => setPatternUrl(e.target.value)}
-              placeholder="https://example.com/mon-patron"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 mb-6"
-              autoFocus
-            />
-
-            {/* Séparateur */}
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-xl">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">Lien vers le patron</h2>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Ou chercher un patron</span>
-              </div>
+              <p className="text-sm text-gray-500 ml-11">Collez l'URL ou cherchez directement sur Google ou Ravelry</p>
             </div>
 
-            {/* Recherche rapide */}
-            <div className="mb-6">
+            <div className="p-6 space-y-5">
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">Workflow rapide</p>
+                <ol className="text-xs text-gray-500 ml-3 list-decimal space-y-1">
+                  <li>Cherchez votre patron via Google ou Ravelry ci-dessous</li>
+                  <li>Copiez l'URL du patron trouvé</li>
+                  <li>Revenez ici et collez dans le champ</li>
+                </ol>
+              </div>
+
               <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Ex: pull irlandais, bonnet simple..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 mb-3"
+                type="url"
+                value={patternUrl}
+                onChange={(e) => setPatternUrl(e.target.value)}
+                placeholder="https://example.com/mon-patron"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                autoFocus
               />
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => {
-                    const query = searchQuery.trim()
-                      ? encodeURIComponent(`tricot crochet patron ${searchQuery}`)
-                      : encodeURIComponent('tricot crochet patron')
-                    window.open(`https://www.google.com/search?q=${query}`, '_blank')
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
-                >
-                  🌐 Google
-                </button>
-                <button
-                  onClick={() => {
-                    const url = searchQuery.trim()
-                      ? `https://www.ravelry.com/patterns/search#query=${encodeURIComponent(searchQuery)}`
-                      : 'https://www.ravelry.com/patterns/search'
-                    window.open(url, '_blank')
-                  }}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium"
-                >
-                  🧶 Ravelry
-                </button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="px-2 bg-white text-gray-400">ou chercher un patron</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Ex: pull irlandais, bonnet simple..."
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      const query = searchQuery.trim()
+                        ? encodeURIComponent(`tricot crochet patron ${searchQuery}`)
+                        : encodeURIComponent('tricot crochet patron')
+                      window.open(`https://www.google.com/search?q=${query}`, '_blank')
+                    }}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Google
+                  </button>
+                  <button
+                    onClick={() => {
+                      const url = searchQuery.trim()
+                        ? `https://www.ravelry.com/patterns/search#query=${encodeURIComponent(searchQuery)}`
+                        : 'https://www.ravelry.com/patterns/search'
+                      window.open(url, '_blank')
+                    }}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Ravelry
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="flex space-x-3">
+            <div className="p-6 border-t border-gray-100 flex gap-3">
               <button
                 onClick={() => {
                   setShowPatternUrlModal(false)
                   setPatternUrl('')
                   setSearchQuery('')
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition text-sm font-medium"
               >
                 Annuler
               </button>
               <button
                 onClick={handlePatternUrlSubmit}
                 disabled={uploadingPattern || !patternUrl.trim()}
-                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition disabled:opacity-50 text-sm"
               >
                 {uploadingPattern ? 'Enregistrement...' : 'Enregistrer'}
               </button>
@@ -5797,7 +5817,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     }}
                     className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm"
                   >
-                    Choisir un style
+                    Embellir
                   </button>
                 )}
               </div>
