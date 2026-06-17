@@ -300,9 +300,10 @@ const Gallery = () => {
   const openEnhanceModal = (photo) => {
     setSelectedPhoto(photo)
     setSelectedSeason(null)
-    setManualCategory(null)
     const category = detectProjectCategory(photo.item_type || '')
-    const styles = getAvailableStyles(category)
+    const defaultCategory = category || Object.keys(CATEGORY_LABELS)[0]
+    setManualCategory(category ? null : defaultCategory)
+    const styles = getAvailableStyles(defaultCategory)
     setSelectedContext(styles[0] || null)
     setShowEnhanceModal(true)
   }
@@ -1195,6 +1196,9 @@ const Gallery = () => {
                       </button>
                     ))}
                   </div>
+                  {!manualCategory && (
+                    <p className="text-xs text-amber-600 mt-2">Sélectionnez un type pour continuer</p>
+                  )}
                 </div>
               )}
 
@@ -1336,7 +1340,7 @@ const Gallery = () => {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-primary-900">Essai gratuit disponible</p>
-                        <p className="text-xs text-primary-700 mt-0.5">Générez votre première photo IA gratuitement</p>
+                        <p className="text-xs text-primary-700 mt-0.5">{credits.total_available} essai{credits.total_available > 1 ? 's' : ''} gratuit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}</p>
                       </div>
                     </div>
                   )
