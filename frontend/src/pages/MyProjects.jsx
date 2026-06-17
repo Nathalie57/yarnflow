@@ -1163,7 +1163,7 @@ const MyProjects = () => {
         onClose={handleCancelModal}
         onSubmit={handleCreateProject}
         isSubmitting={creating}
-        submitLabel={creatingStep || 'Création...'}
+        submitLabel={creatingStep || 'Créer le projet'}
         canUseTags={canUseTags}
         popularTags={popularTags}
         smartQuota={smartQuota}

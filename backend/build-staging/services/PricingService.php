@@ -137,7 +137,7 @@ class PricingService
         if ($hasActiveSubscription)
             return true;
 
-        $maxFree = (int)($_ENV['MAX_PATTERNS_FREE'] ?? 3);
+        $maxFree = (int)($_ENV['MAX_PATTERNS_FREE'] ?? 2);
         return $patternsGenerated < $maxFree;
     }
 

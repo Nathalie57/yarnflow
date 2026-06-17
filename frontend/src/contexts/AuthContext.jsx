@@ -235,6 +235,7 @@ export const AuthProvider = ({ children }) => {
     if (!user) return false
     if (user.subscription_type === 'free') return false
 
+    if (!user.subscription_expires_at) return true
     const expiresAt = new Date(user.subscription_expires_at)
     return expiresAt > new Date()
   }

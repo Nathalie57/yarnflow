@@ -85,7 +85,7 @@ class PricingService
     public function canGenerateFree(int $patternsGenerated, bool $hasActiveSubscription): bool
     {
         if ($hasActiveSubscription) return true;
-        return $patternsGenerated < (int)($_ENV['MAX_PATTERNS_FREE'] ?? 3);
+        return $patternsGenerated < (int)($_ENV['MAX_PATTERNS_FREE'] ?? 2);
     }
 
     /**

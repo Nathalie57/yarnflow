@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Nettoyage cache YarnFlow</title>
+</head>
+<body>
+  <h1>Nettoyage du cache...</h1>
+  <p id="status">En cours...</p>
+
+  <script>
+    async function clearAll() {
+      const status = document.getElementById('status');
+
+      // 1. Clear localStorage
+      localStorage.clear();
+      status.innerHTML += '<br>✅ localStorage vidé';
+
+      // 2. Clear sessionStorage
+      sessionStorage.clear();
+      status.innerHTML += '<br>✅ sessionStorage vidé';
+
+      // 3. Unregister all service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+          await registration.unregister();
+        }
+        status.innerHTML += '<br>✅ Service workers désinscrits';
+      }
+
+      // 4. Clear all caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (let cacheName of cacheNames) {
+          await caches.delete(cacheName);
+        }
+        status.innerHTML += '<br>✅ Caches supprimés';
+      }
+
+      status.innerHTML += '<br><br>🎉 Tout est nettoyé ! Fermez cette page et actualisez l\'application.';
+    }
+
+    clearAll();
+  </script>
+</body>
+</html>

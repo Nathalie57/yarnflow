@@ -26,7 +26,7 @@ class CreditManager
      * Aligné sur CLAUDE.md
      */
     private const MONTHLY_QUOTAS = [
-        'free'         => 2,   // FREE : 2 crédits/mois
+        'free'         => 2,   // FREE : 2 essais gratuits à vie (jamais réinitialisés)
         'plus'         => 5,
         'plus_annual'  => 5,
         'pro'          => 20,  // PRO 6.99€/mois : 20 crédits/mois
@@ -400,6 +400,11 @@ class CreditManager
         if ($interval->days >= 30) {
             // [AI:Claude] Vérifier si l'abonnement est expiré
             $subscriptionType = $data['subscription_type'];
+
+            // FREE : 1 essai à vie — jamais de reset mensuel
+            if ($subscriptionType === 'free') {
+                return false;
+            }
             if ($subscriptionType !== 'free' && isset($data['subscription_expires_at']) && $data['subscription_expires_at'] !== null) {
                 $expiresAt = strtotime($data['subscription_expires_at']);
                 if ($expiresAt <= time()) {

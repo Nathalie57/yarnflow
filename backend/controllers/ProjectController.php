@@ -19,18 +19,21 @@ namespace App\Controllers;
 use App\Models\Project;
 use App\Models\User;
 use App\Middleware\AuthMiddleware;
+use App\Services\PatternStorageService;
 
 class ProjectController
 {
     private Project $projectModel;
     private User $userModel;
     private AuthMiddleware $authMiddleware;
+    private PatternStorageService $patternStorage;
 
     public function __construct()
     {
-        $this->projectModel = new Project();
-        $this->userModel = new User();
+        $this->projectModel   = new Project();
+        $this->userModel      = new User();
         $this->authMiddleware = new AuthMiddleware();
+        $this->patternStorage = new PatternStorageService();
     }
 
     /**
@@ -912,59 +915,23 @@ class ProjectController
             $patternType = $_POST['pattern_type'] ?? 'pdf';
             $log("[PATTERN UPLOAD] Fichier reçu: {$file['name']}, Type: $patternType");
 
-            // [AI:Claude] Validation du type de fichier
-            $allowedTypes = [
-                'application/pdf',
-                'image/jpeg',
-                'image/jpg',
-                'image/png',
-                'image/webp'
-            ];
-
+            // Validation type de fichier
+            $allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
             $log("[PATTERN UPLOAD] Type MIME: {$file['type']}");
             if (!in_array($file['type'], $allowedTypes)) {
-                $log("[PATTERN UPLOAD] Type non autorisé!");
                 throw new \Exception('Type de fichier non autorisé. Utilisez PDF ou images (JPG, PNG, WEBP)');
             }
-            $log("[PATTERN UPLOAD] Type validé");
 
-            // [AI:Claude] Validation de la taille (max 50MB) - Augmenté le 2025-12-21
-            $maxSize = 50 * 1024 * 1024;
-            $log("[PATTERN UPLOAD] Taille: {$file['size']} bytes (max: $maxSize)");
-            if ($file['size'] > $maxSize)
-                throw new \Exception('Fichier trop volumineux (max 50MB)');
-            $log("[PATTERN UPLOAD] Taille validée");
+            // Validation taille (PDF 20 MB, image 50 MB) + quota global
+            $this->patternStorage->validateFileSize($file);
+            $this->patternStorage->assertQuotaNotExceeded($userId, $file['size']);
+            $log("[PATTERN UPLOAD] Taille et quota validés");
 
-            // [AI:Claude] Déterminer l'extension
-            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            if ($extension === 'jpg')
-                $extension = 'jpeg';
-            $log("[PATTERN UPLOAD] Extension: $extension");
-
-            // [AI:Claude] Créer le dossier d'uploads s'il n'existe pas (dans public/)
-            $uploadDir = __DIR__.'/../public/uploads/patterns';
-            $log("[PATTERN UPLOAD] Upload dir: $uploadDir");
-            if (!is_dir($uploadDir)) {
-                $log("[PATTERN UPLOAD] Création dossier...");
-                mkdir($uploadDir, 0755, true);
-            }
-            $log("[PATTERN UPLOAD] Dossier OK");
-
-            // [AI:Claude] Nom de fichier unique
-            $filename = 'pattern_'.$id.'_'.time().'.'.$extension;
-            $destination = $uploadDir.'/'.$filename;
-            $log("[PATTERN UPLOAD] Destination: $destination");
-
-            // [AI:Claude] Déplacer le fichier uploadé
-            $log("[PATTERN UPLOAD] Déplacement fichier...");
-            if (!move_uploaded_file($file['tmp_name'], $destination)) {
-                $log("[PATTERN UPLOAD] ERREUR move_uploaded_file!");
-                throw new \Exception('Erreur lors de l\'enregistrement du fichier');
-            }
-            $log("[PATTERN UPLOAD] Fichier déplacé avec succès");
-
-            // [AI:Claude] Mettre à jour le projet avec le chemin du patron (relatif à public/)
-            $relativePath = '/uploads/patterns/'.$filename;
+            // Sauvegarde + compression éventuelle
+            $uploadDir    = __DIR__ . '/../public/uploads/patterns';
+            $filenameBase = 'project_' . $id . '_' . time() . '_' . bin2hex(random_bytes(4));
+            $relativePath = $this->patternStorage->savePatternFile($file, $uploadDir, $filenameBase);
+            $log("[PATTERN UPLOAD] Fichier sauvegardé : $relativePath");
             $log("[PATTERN UPLOAD] Mise à jour BDD avec path: $relativePath");
 
             // [AI:Claude] Fichier et texte s'excluent, mais on garde l'URL si présente

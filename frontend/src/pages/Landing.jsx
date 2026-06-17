@@ -272,7 +272,7 @@ const Landing = () => {
                   "PDF ou URL — Ravelry, Etsy, blog, peu importe la source",
                   'Sections créées automatiquement (dos, devant, manches…)',
                   'Laine, aiguilles, tension extraits du patron',
-                  '1 essai gratuit · 3 imports/mois en PLUS · 15 imports/mois en PRO',
+                  '2 essais gratuits · 3 imports/mois en PLUS · 15 imports/mois en PRO',
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -317,7 +317,7 @@ const Landing = () => {
               </div>
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-4">3 questions / mois en FREE · 10 questions / mois en PLUS · 30 questions / mois en PRO</p>
+          <p className="text-xs text-gray-400 mt-4">5 questions / mois en FREE · 10 questions / mois en PLUS · 30 questions / mois en PRO</p>
         </div>
       </section>
 
@@ -374,7 +374,7 @@ const Landing = () => {
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Projets &amp; patrons illimités avec sections
+                  Projets &amp; patrons illimités (100 Mo pour les fichiers)
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -384,21 +384,21 @@ const Landing = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   Timer intégré &amp; suivi du temps
                 </li>
-                {/* <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  10 pelotes en stock
-                </li> */}
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium">1 Création Intelligente IA offerte</span></span>
+                  Notes par section
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  3 questions / mois à l'assistant IA
+                  <span><span className="font-medium">2 Créations Intelligentes IA offertes</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  2 crédits / mois au Studio Photo IA
+                  5 questions / mois à l'assistant IA
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-gray-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  20 photos · 2 essais gratuits au Studio Photo IA
                 </li>
               </ul>
               <Link to="/register" className="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition text-sm">
@@ -425,14 +425,6 @@ const Landing = () => {
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   <span className="font-medium text-gray-800">2 compteurs simultanés</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Notes privées par section
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Tags pour organiser vos ouvrages
                 </li>
                 {/* <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -533,15 +525,15 @@ const Landing = () => {
             {[
               {
                 q: "C'est vraiment gratuit pour toujours ?",
-                a: "Oui, sans limite de temps. Projets illimités, compteur de rangs, bibliothèque de patrons, détails techniques — sans jamais payer. PLUS et PRO se justifient quand vos projets deviennent plus complexes."
+                a: "Oui, sans limite de temps. Projets illimités, compteur de rangs, bibliothèque de patrons, détails techniques — sans jamais payer. Les fichiers uploadés (PDF, images) sont limités à 100 Mo en FREE ; patrons en URL ou en texte : illimités. PLUS et PRO se justifient quand vos projets grandissent."
               },
               {
                 q: "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, bibliothèque illimitée, 10 pelotes en stock, 1 essai création intelligente, 3 questions IA/mois, 2 crédits photo. PLUS (3,99€/mois) ajoute : 2 compteurs simultanés, notes privées par section, tags, 50 pelotes en stock, 3 imports IA/mois, 10 questions IA/mois, 5 crédits photo, statistiques avancées. PRO (6,99€/mois) débloque tout : stock illimité, 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo."
+                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 2 essais création intelligente, 5 questions IA/mois, 2 crédits photo IA à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, 2 compteurs simultanés, 3 imports IA/mois, 10 questions IA/mois, 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo/mois."
               },
               {
                 q: "La création intelligente, c'est quoi exactement ?",
-                a: "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 1 essai gratuit offert pour tous, puis 3 imports/mois en PLUS ou 15 imports/mois en PRO."
+                a: "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 2 essais gratuits offerts pour tous, puis 3 imports/mois en PLUS ou 15 imports/mois en PRO."
               },
               {
                 q: "Ça marche sur quels appareils ?",

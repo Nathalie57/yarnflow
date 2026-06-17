@@ -189,7 +189,7 @@ const CreateProjectWizard = ({
                 )}
                 {isFreeTrialAvailable && (
                   <p className="text-xs text-primary-600 mt-0.5">
-                    <span className="font-semibold">1 essai gratuit</span> disponible
+                    <span className="font-semibold">{smartQuota?.remaining ?? 2} essai{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''} gratuit{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''}</span> disponible{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''}
                   </p>
                 )}
                 {isTrialUsed && (

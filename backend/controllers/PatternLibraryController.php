@@ -20,6 +20,7 @@ use App\Models\PatternUsageNote;
 use App\Models\User;
 use App\Middleware\AuthMiddleware;
 use App\Helpers\SecurityHelper;
+use App\Services\PatternStorageService;
 
 class PatternLibraryController
 {
@@ -28,6 +29,7 @@ class PatternLibraryController
     private PatternUsageNote $usageNoteModel;
     private User $userModel;
     private AuthMiddleware $authMiddleware;
+    private PatternStorageService $patternStorage;
 
     public function __construct()
     {
@@ -36,6 +38,7 @@ class PatternLibraryController
         $this->usageNoteModel = new PatternUsageNote();
         $this->userModel = new User();
         $this->authMiddleware = new AuthMiddleware();
+        $this->patternStorage = new PatternStorageService();
     }
 
     /**
@@ -399,46 +402,22 @@ class PatternLibraryController
     {
         $file = $_FILES['file'];
 
-        // [AI:Claude] Validation du type de fichier
-        $allowedTypes = [
-            'application/pdf',
-            'image/jpeg',
-            'image/jpg',
-            'image/png',
-            'image/webp'
-        ];
-
+        // Validation type
+        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!in_array($file['type'], $allowedTypes))
             throw new \InvalidArgumentException('Type de fichier non autorisé. Utilisez PDF ou images (JPG, PNG, WEBP)');
 
-        // [AI:Claude] Validation de la taille (max 50MB) - Augmenté le 2025-12-21
-        $maxSize = 50 * 1024 * 1024;
-        if ($file['size'] > $maxSize)
-            throw new \Exception('Fichier trop volumineux (max 50MB)');
+        // Validation taille (PDF 20 MB, image 50 MB) + quota global
+        $this->patternStorage->validateFileSize($file);
+        $this->patternStorage->assertQuotaNotExceeded($userId, $file['size']);
 
-        // [AI:Claude] Déterminer le type de fichier et l'extension
-        $isPdf = $file['type'] === 'application/pdf';
-        $fileType = $isPdf ? 'pdf' : 'image';
+        $isPdf     = $file['type'] === 'application/pdf';
+        $fileType  = $isPdf ? 'pdf' : 'image';
 
-        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if ($extension === 'jpg')
-            $extension = 'jpeg';
-
-        // [AI:Claude] Créer le dossier d'uploads s'il n'existe pas
-        $uploadDir = __DIR__.'/../public/uploads/patterns';
-        if (!is_dir($uploadDir))
-            mkdir($uploadDir, 0755, true);
-
-        // [AI:Claude] Nom de fichier unique
-        $filename = 'pattern_'.$userId.'_'.time().'.'.$extension;
-        $destination = $uploadDir.'/'.$filename;
-
-        // [AI:Claude] Déplacer le fichier uploadé
-        if (!move_uploaded_file($file['tmp_name'], $destination))
-            throw new \Exception('Erreur lors de l\'enregistrement du fichier');
-
-        // [AI:Claude] Chemin relatif
-        $relativePath = '/uploads/patterns/'.$filename;
+        // Sauvegarde + compression éventuelle
+        $uploadDir    = __DIR__ . '/../public/uploads/patterns';
+        $filenameBase = 'lib_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(4));
+        $relativePath = $this->patternStorage->savePatternFile($file, $uploadDir, $filenameBase);
 
         // [AI:Claude] Récupérer les autres données du formulaire
         $name = $_POST['name'] ?? pathinfo($file['name'], PATHINFO_FILENAME);
@@ -657,48 +636,23 @@ class PatternLibraryController
     {
         $file = $_FILES['file'];
 
-        // [AI:Claude] Validation du type de fichier
-        $allowedTypes = [
-            'application/pdf',
-            'image/jpeg',
-            'image/jpg',
-            'image/png',
-            'image/webp'
-        ];
-
+        // Validation type
+        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
         if (!in_array($file['type'], $allowedTypes))
             throw new \InvalidArgumentException('Type de fichier non autorisé. Utilisez PDF ou images (JPG, PNG, WEBP)');
 
-        // [AI:Claude] Validation de la taille (max 50MB)
-        $maxSize = 50 * 1024 * 1024;
-        if ($file['size'] > $maxSize)
-            throw new \Exception('Fichier trop volumineux (max 50MB)');
+        // Validation taille + quota (le nouveau fichier remplace l'ancien — pas de double comptage)
+        $this->patternStorage->validateFileSize($file);
+        $this->patternStorage->assertQuotaNotExceeded($userId, $file['size']);
 
-        // [AI:Claude] Déterminer le type de fichier et l'extension
-        $isPdf = $file['type'] === 'application/pdf';
+        $isPdf    = $file['type'] === 'application/pdf';
         $fileType = $isPdf ? 'pdf' : 'image';
 
-        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if ($extension === 'jpg')
-            $extension = 'jpeg';
+        $uploadDir    = __DIR__ . '/../public/uploads/patterns';
+        $filenameBase = 'lib_' . $userId . '_' . time() . '_' . bin2hex(random_bytes(4));
+        $relativePath = $this->patternStorage->savePatternFile($file, $uploadDir, $filenameBase);
 
-        // [AI:Claude] Créer le dossier d'uploads s'il n'existe pas
-        $uploadDir = __DIR__.'/../public/uploads/patterns';
-        if (!is_dir($uploadDir))
-            mkdir($uploadDir, 0755, true);
-
-        // [AI:Claude] Nom de fichier unique
-        $filename = 'pattern_'.$userId.'_'.time().'.'.$extension;
-        $destination = $uploadDir.'/'.$filename;
-
-        // [AI:Claude] Déplacer le fichier uploadé
-        if (!move_uploaded_file($file['tmp_name'], $destination))
-            throw new \Exception('Erreur lors de l\'enregistrement du fichier');
-
-        // [AI:Claude] Chemin relatif
-        $relativePath = '/uploads/patterns/'.$filename;
-
-        // [AI:Claude] Récupérer les autres données du formulaire
+        // Récupérer les autres données du formulaire
         $updateData = [
             'name' => $_POST['name'] ?? null,
             'description' => $_POST['description'] ?? null,

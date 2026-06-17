@@ -22,6 +22,7 @@ const Gallery = () => {
   const navigate = useNavigate()
   const [creditsPurchased, setCreditsPurchased] = useState(false)
   const [photos, setPhotos] = useState([])
+  const [photoQuota, setPhotoQuota] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [credits, setCredits] = useState(null)
@@ -61,12 +62,8 @@ const Gallery = () => {
   const [showInstagramModal, setShowInstagramModal] = useState(false)
 
   // [AI:Claude] Upload de photo
-  const [uploadData, setUploadData] = useState({
-    photo: null,
-    item_name: '',
-    item_type: '',
-    technique: ''
-  })
+  const [uploadData, setUploadData] = useState({ photo: null })
+  const [manualCategory, setManualCategory] = useState(null) // catégorie choisie dans la modale enhance si pas de projet
   const [uploading, setUploading] = useState(false)
 
   // [AI:Claude] Embellissement IA - v0.12.1 SIMPLIFIÉ (1 photo, preset auto)
@@ -132,10 +129,9 @@ const Gallery = () => {
       setError(null)
 
       const response = await api.get('/photos')
-      // [AI:Claude] Filtrer UNIQUEMENT les photos IA (avec enhanced_path)
       const allPhotos = response.data.photos || []
-      const aiPhotos = allPhotos.filter(p => p.enhanced_path)
-      setPhotos(aiPhotos)
+      setPhotos(allPhotos)
+      if (response.data.quota) setPhotoQuota(response.data.quota)
     } catch (err) {
       console.error('Erreur chargement photos:', err)
       if (err.response?.status === 404 || err.response?.data?.photos === null) {
@@ -197,11 +193,12 @@ const Gallery = () => {
 
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
+        const matchProject = photo.project_name?.toLowerCase().includes(query)
         const matchName = photo.item_name?.toLowerCase().includes(query)
         const matchType = photo.item_type?.toLowerCase().includes(query)
         const matchTechnique = photo.technique?.toLowerCase().includes(query)
 
-        if (!matchName && !matchType && !matchTechnique)
+        if (!matchProject && !matchName && !matchType && !matchTechnique)
           return false
       }
       return true
@@ -217,17 +214,12 @@ const Gallery = () => {
       const formData = new FormData()
       formData.append('photo', uploadData.photo)
 
-      // [AI:Claude] Si projet sélectionné, utiliser ses infos, sinon les champs du formulaire
       if (selectedProjectId) {
         const selectedProject = projects.find(p => String(p.id) === String(selectedProjectId))
         formData.append('item_name', selectedProject?.name || '')
         formData.append('item_type', selectedProject?.type || '')
         formData.append('technique', selectedProject?.technique || '')
         formData.append('project_id', selectedProjectId)
-      } else {
-        formData.append('item_name', uploadData.item_name)
-        formData.append('item_type', uploadData.item_type)
-        formData.append('technique', uploadData.technique)
       }
 
       const response = await api.post('/photos/upload', formData, {
@@ -237,12 +229,7 @@ const Gallery = () => {
       const newPhoto = response.data.photo
       setPhotos([newPhoto, ...photos])
 
-      setUploadData({
-        photo: null,
-        item_name: '',
-        item_type: '',
-        technique: ''
-      })
+      setUploadData({ photo: null })
       setSelectedProjectId('')
       setShowUploadModal(false)
 
@@ -312,10 +299,11 @@ const Gallery = () => {
   // [AI:Claude] Ouvrir modal d'embellissement avec sélection du premier style par défaut
   const openEnhanceModal = (photo) => {
     setSelectedPhoto(photo)
-    setSelectedSeason(null) // [AI:Claude] Réinitialiser la saison
+    setSelectedSeason(null)
+    setManualCategory(null)
     const category = detectProjectCategory(photo.item_type || '')
     const styles = getAvailableStyles(category)
-    setSelectedContext(styles[0]) // Premier style par défaut
+    setSelectedContext(styles[0] || null)
     setShowEnhanceModal(true)
   }
 
@@ -464,17 +452,9 @@ const Gallery = () => {
     ]
   }
 
-  // Retourne tous les styles avec un flag `locked` selon le plan
+  // Tous les styles disponibles pour tous les plans
   const getAvailableStyles = (category) => {
-    const allStyles = stylesByCategory[category] || []
-    const sub = user?.subscription_type || 'free'
-    const isPro = ['subscription_pro', 'subscription_pro_annual'].includes(sub)
-    const isPlus = ['subscription_plus', 'subscription_plus_annual'].includes(sub)
-
-    return allStyles.map(s => ({
-      ...s,
-      locked: (isPro || isPlus) ? false : s.tier !== 'free'
-    }))
+    return (stylesByCategory[category] || []).map(s => ({ ...s, locked: false }))
   }
 
   return (
@@ -519,7 +499,7 @@ const Gallery = () => {
                   <p className="text-sm text-gray-600">
                     {(() => {
                       const subType = user?.subscription_type;
-                      if (!subType || subType === 'free') return 'Plan FREE : 2 crédits/mois';
+                      if (!subType || subType === 'free') return 'Plan FREE · 2 essais IA offerts';
                       if (subType === 'plus' || subType === 'plus_annual') return 'Plan PLUS : 5 crédits/mois';
                       return 'Plan PRO : 20 crédits/mois';
                     })()}
@@ -528,7 +508,7 @@ const Gallery = () => {
               </div>
               <div className="flex items-baseline gap-2 ml-11">
                 <span className="text-4xl font-bold text-primary-600">{credits.total_available}</span>
-                <span className="text-gray-600">crédits disponibles</span>
+                <span className="text-gray-600">crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}</span>
               </div>
               {credits.credits_used_this_month > 0 && (
                 <p className="text-xs text-gray-500 mt-2 ml-11">
@@ -538,51 +518,73 @@ const Gallery = () => {
             </div>
 
             <div className="flex flex-col gap-2 w-full sm:w-auto">
-              {credits.total_available === 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
-                  <p className="text-sm text-amber-800 font-medium">
-                    Plus de crédits ce mois-ci
-                  </p>
-                  <p className="text-xs text-amber-700 mt-0.5">
-                    Rechargement le {user?.subscription_expires_at ? `le ${new Date(user.subscription_expires_at).getDate()} de chaque mois` : 'le prochain renouvellement'}
-                  </p>
-                </div>
-              )}
-
-              {(!user?.subscription_type || user?.subscription_type === 'free') ? (
-                <Link
-                  to="/subscription"
-                  className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition"
-                >
-                  Obtenir plus de crédits
-                </Link>
-              ) : (
-                <div className="flex flex-col gap-2 items-center sm:items-end">
-                  <Link
-                    to="/subscription#credits"
-                    className="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition"
-                  >
-                    Acheter des crédits
-                  </Link>
-                  <span className="text-xs text-gray-400">Rechargement le {user?.subscription_expires_at ? `le ${new Date(user.subscription_expires_at).getDate()} de chaque mois` : 'le prochain renouvellement'}</span>
-                </div>
-              )}
+              {(() => {
+                const isFree = !user?.subscription_type || user?.subscription_type === 'free'
+                if (isFree && credits.total_available === 0) {
+                  return (
+                    <>
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
+                        <p className="text-sm text-amber-800 font-medium">Essai gratuit utilisé</p>
+                        <p className="text-xs text-amber-700 mt-0.5">Abonnez-vous pour continuer à embellir vos photos</p>
+                      </div>
+                      <Link to="/subscription" className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition">
+                        Voir les abonnements
+                      </Link>
+                    </>
+                  )
+                }
+                if (isFree) {
+                  return (
+                    <Link to="/subscription" className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition">
+                      Obtenir plus de crédits
+                    </Link>
+                  )
+                }
+                return (
+                  <div className="flex flex-col gap-2 items-center sm:items-end">
+                    {credits.total_available === 0 && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2 w-full">
+                        <p className="text-sm text-amber-800 font-medium">Plus de crédits ce mois-ci</p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                          Rechargement {user?.subscription_expires_at ? `le ${new Date(user.subscription_expires_at).getDate()} de chaque mois` : 'au prochain renouvellement'}
+                        </p>
+                      </div>
+                    )}
+                    <Link to="/subscription#credits" className="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition">
+                      Acheter des crédits
+                    </Link>
+                    <span className="text-xs text-gray-400">Rechargement {user?.subscription_expires_at ? `le ${new Date(user.subscription_expires_at).getDate()} de chaque mois` : 'au prochain renouvellement'}</span>
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </div>
       )}
 
-      {/* Bouton CTA pour générer une photo IA */}
-      <div className="mb-6 flex justify-center">
+      {/* Bouton CTA + quota */}
+      <div className="mb-6 flex flex-col items-center gap-2">
+        {photoQuota && !photoQuota.unlimited && (
+          <p className="text-xs text-gray-500">
+            {photoQuota.used} / {photoQuota.limit} photos
+            {photoQuota.used >= photoQuota.limit && (
+              <a href="/subscription" className="ml-2 text-primary-600 font-semibold hover:underline">Passer en PLUS</a>
+            )}
+          </p>
+        )}
         <button
-          onClick={() => setShowUploadModal(true)}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg rounded-xl shadow-sm hover:shadow-md transition"
+          onClick={() => {
+            if (photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit) return
+            setShowUploadModal(true)
+          }}
+          disabled={photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit}
+          className="inline-flex items-center gap-3 px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg rounded-xl shadow-sm hover:shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span>Embellir une photo</span>
+          <span>{photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit ? 'Quota atteint' : 'Ajouter une photo'}</span>
         </button>
       </div>
 
@@ -614,7 +616,7 @@ const Gallery = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher par nom, type, style..."
+              placeholder="Rechercher par projet, type..."
               className="w-full pl-11 pr-12 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
             />
             {searchQuery && (
@@ -708,7 +710,7 @@ const Gallery = () => {
                 >
                   {/* Photo (originale ou embellie selon toggle) */}
                   <img
-                    src={`${import.meta.env.VITE_BACKEND_URL}${viewingOriginalIds.has(photo.id) ? photo.original_path : photo.enhanced_path}`}
+                    src={`${import.meta.env.VITE_BACKEND_URL}${viewingOriginalIds.has(photo.id) ? photo.original_path : (photo.enhanced_path || photo.original_path)}`}
                     alt={photo.item_name || 'Photo IA'}
                     className="w-full h-full object-cover rounded-lg transition-opacity duration-300"
                     onError={(e) => {
@@ -726,29 +728,34 @@ const Gallery = () => {
 
                   {/* Overlay minimaliste au hover */}
                   <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 rounded-lg ${openMenuId === photo.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                    {/* Nom de la photo */}
-                    <div className="absolute top-3 left-3 right-10">
-                      <p className="text-white text-sm font-semibold drop-shadow-lg line-clamp-1">
-                        {photo.item_name || 'Sans nom'}
-                      </p>
-                    </div>
+                    {/* Nom de la photo — projet > item_name > type */}
+                    {(photo.project_name || photo.item_name || photo.item_type) && (
+                      <div className="absolute top-3 left-3 right-3">
+                        <p className="text-white text-sm font-semibold drop-shadow-lg line-clamp-1">
+                          {photo.project_name || photo.item_name || photo.item_type}
+                        </p>
+                      </div>
+                    )}
 
-                    {/* Toggle avant/après */}
-                    <button
-                      onClick={(e) => toggleOriginal(photo.id, e)}
-                      className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-800 text-xs font-semibold px-2 py-1 rounded-full transition shadow"
-                      title={viewingOriginalIds.has(photo.id) ? 'Voir le résultat IA' : 'Voir l\'original'}
-                    >
-                      {viewingOriginalIds.has(photo.id) ? 'Après →' : '← Avant'}
-                    </button>
+                    {/* Toggle avant/après — uniquement pour les photos IA */}
+                    {photo.enhanced_path && (
+                      <button
+                        onClick={(e) => toggleOriginal(photo.id, e)}
+                        className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-800 text-xs font-semibold px-2 py-1 rounded-full transition shadow"
+                        title={viewingOriginalIds.has(photo.id) ? 'Voir le résultat IA' : 'Voir l\'original'}
+                      >
+                        {viewingOriginalIds.has(photo.id) ? 'Après →' : '← Avant'}
+                      </button>
+                    )}
+
 
                     {/* Actions principales (3 boutons) */}
-                    <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center gap-3">
+                    <div className={`absolute left-4 right-4 flex items-center justify-center gap-3 ${photo.enhanced_path ? 'bottom-4' : 'bottom-14'}`}>
                       {/* Voir en grand */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          const src = viewingOriginalIds.has(photo.id) ? photo.original_path : photo.enhanced_path
+                          const src = viewingOriginalIds.has(photo.id) ? photo.original_path : (photo.enhanced_path || photo.original_path)
                           window.open(`${import.meta.env.VITE_BACKEND_URL}${src}`, '_blank')
                         }}
                         className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
@@ -765,7 +772,7 @@ const Gallery = () => {
                         onClick={(e) => {
                           e.stopPropagation()
                           const link = document.createElement('a')
-                          const src = viewingOriginalIds.has(photo.id) ? photo.original_path : photo.enhanced_path
+                          const src = viewingOriginalIds.has(photo.id) ? photo.original_path : (photo.enhanced_path || photo.original_path)
                           link.href = `${import.meta.env.VITE_BACKEND_URL}${src}`
                           link.download = `${photo.item_name || 'photo'}.jpg`
                           link.click()
@@ -832,7 +839,7 @@ const Gallery = () => {
                               onClick={async (e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
-                                const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
+                                const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path || photo.original_path}`
 
                                 if (navigator.share && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
                                   // Mobile : utiliser le menu de partage natif
@@ -903,7 +910,7 @@ const Gallery = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
+                                const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path || photo.original_path}`
                                 const description = photo.item_name || 'Photo tricot/crochet'
                                 window.open(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(url)}&description=${encodeURIComponent(description)}`, '_blank')
                                 setOpenMenuId(null)
@@ -954,7 +961,7 @@ const Gallery = () => {
                             <button
                               onClick={async (e) => {
                                 e.stopPropagation()
-                                const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path}`
+                                const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path || photo.original_path}`
                                 try {
                                   await navigator.clipboard.writeText(url)
                                   alert('✅ Lien copié !')
@@ -993,6 +1000,29 @@ const Gallery = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Nom du projet — badge en haut à gauche */}
+                  {photo.project_name && (
+                    <div className="absolute top-2 left-2 z-10 bg-black bg-opacity-50 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1 max-w-[80%]">
+                      <svg className="w-3 h-3 flex-shrink-0 opacity-70" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                      <span className="truncate">{photo.project_name}</span>
+                    </div>
+                  )}
+
+                  {/* Barre Embellir — toujours visible sur les photos sans IA */}
+                  {!photo.enhanced_path && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openEnhanceModal(photo) }}
+                      className="absolute bottom-0 left-0 right-0 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold py-2.5 rounded-b-lg transition flex items-center justify-center gap-2 z-10"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
+                      </svg>
+                      Embellir
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -1074,14 +1104,14 @@ const Gallery = () => {
               {/* Projet (optionnel) - PLACÉ EN PREMIER */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Lier à un projet <span className="text-gray-400">(optionnel)</span>
+                  <span className="text-gray-400">Optionnel</span>
                 </label>
                 <select
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
-                  <option value="">Aucun projet - saisir les infos manuellement</option>
+                  <option value="">Aucun projet</option>
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name} {project.type ? `(${project.type})` : ''}
@@ -1089,119 +1119,9 @@ const Gallery = () => {
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {selectedProjectId
-                    ? '✓ Les infos du projet seront utilisées automatiquement'
-                    : 'Sélectionnez un projet ou remplissez les champs ci-dessous'
-                  }
+                  {selectedProjectId ? '✓ Les infos du projet seront utilisées automatiquement' : 'Optionnel — vous pourrez choisir le type lors de l\'embellissement'}
                 </p>
               </div>
-
-              {/* Affichage du projet sélectionné */}
-              {selectedProjectId && (() => {
-                const selectedProject = projects.find(p => String(p.id) === String(selectedProjectId))
-                return selectedProject ? (
-                  <div className="mb-4 p-4 bg-primary-50 rounded-lg border border-primary-200">
-                    <div className="flex items-center gap-3">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-primary-600">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="M12 3c0 0-3 4-3 9s3 9 3 9"/>
-                        <path d="M3 12h18"/>
-                      </svg>
-                      <div>
-                        <p className="font-semibold text-primary-900">{selectedProject.name}</p>
-                        <p className="text-sm text-primary-700">
-                          {selectedProject.type && <span className="mr-2">{selectedProject.type}</span>}
-                          {selectedProject.technique && <span>• {selectedProject.technique === 'tricot' ? 'Tricot' : 'Crochet'}</span>}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ) : null
-              })()}
-
-              {/* Champs manuels - uniquement si pas de projet sélectionné */}
-              {!selectedProjectId && (
-                <>
-                  {/* Nom de l'ouvrage */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom de l'ouvrage <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={uploadData.item_name}
-                      onChange={(e) => setUploadData({ ...uploadData, item_name: e.target.value })}
-                      required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="Ex: Mon bonnet rouge"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    {/* Type d'ouvrage */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Type d'ouvrage <span className="text-red-600">*</span>
-                      </label>
-                      <select
-                        value={uploadData.item_type}
-                        onChange={(e) => setUploadData({ ...uploadData, item_type: e.target.value })}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">-- Sélectionner --</option>
-                        <optgroup label="Vêtements">
-                          <option value="bonnet">Bonnet</option>
-                          <option value="écharpe">Écharpe</option>
-                          <option value="pull">Pull</option>
-                          <option value="chaussettes">Chaussettes</option>
-                          <option value="snood">Snood</option>
-                        </optgroup>
-                        <optgroup label="Vêtements bébé">
-                          <option value="body bébé">Body bébé</option>
-                          <option value="barboteuse">Barboteuse</option>
-                          <option value="gilet bébé">Gilet bébé</option>
-                          <option value="chaussons bébé">Chaussons bébé</option>
-                          <option value="bonnet bébé">Bonnet bébé</option>
-                          <option value="couverture bébé">Couverture bébé</option>
-                        </optgroup>
-                        <optgroup label="Amigurumis">
-                          <option value="amigurumi">Amigurumi</option>
-                          <option value="peluche">Peluche</option>
-                          <option value="doudou">Doudou</option>
-                        </optgroup>
-                        <optgroup label="Accessoires">
-                          <option value="sac">Sac</option>
-                          <option value="pochette">Pochette</option>
-                          <option value="trousse">Trousse</option>
-                        </optgroup>
-                        <optgroup label="Déco maison">
-                          <option value="couverture">Couverture</option>
-                          <option value="plaid">Plaid</option>
-                          <option value="coussin">Coussin</option>
-                        </optgroup>
-                      </select>
-                    </div>
-
-                    {/* Technique */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Technique
-                      </label>
-                      <select
-                        value={uploadData.technique}
-                        onChange={(e) => setUploadData({ ...uploadData, technique: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">-- Sélectionner --</option>
-                        <option value="crochet">Crochet</option>
-                        <option value="tricot">Tricot</option>
-                        <option value="autre">Autre</option>
-                      </select>
-                    </div>
-                  </div>
-                </>
-              )}
 
               {/* Boutons */}
               <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
@@ -1214,14 +1134,10 @@ const Gallery = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={
-                    uploading ||
-                    !uploadData.photo ||
-                    (!selectedProjectId && (!uploadData.item_name || !uploadData.item_type))
-                  }
+                  disabled={uploading || !uploadData.photo}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
-                  {uploading ? 'Chargement...' : 'Embellir avec l\'IA'}
+                  {uploading ? 'Chargement...' : 'Ajouter'}
                 </button>
               </div>
             </form>
@@ -1230,7 +1146,7 @@ const Gallery = () => {
       )}
 
       {/* Modal d'embellissement IA - v0.12.1 SIMPLIFIÉ */}
-      {showEnhanceModal && selectedPhoto && selectedContext && (
+      {showEnhanceModal && selectedPhoto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
           <div className="bg-white rounded-lg max-w-lg w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg">
@@ -1253,13 +1169,43 @@ const Gallery = () => {
                 />
               </div>
 
+              {/* Sélecteur de catégorie si item_type inconnu */}
+              {!detectProjectCategory(selectedPhoto?.item_type || '') && (
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Type d'ouvrage :
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(CATEGORY_LABELS).map(([key, { label }]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => {
+                          setManualCategory(key)
+                          const styles = getAvailableStyles(key)
+                          setSelectedContext(styles[0] || null)
+                        }}
+                        className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition ${
+                          manualCategory === key
+                            ? 'border-primary-600 bg-primary-50 text-primary-900'
+                            : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Choix du style */}
+              {(detectProjectCategory(selectedPhoto?.item_type || '') || manualCategory) && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Choisissez un style :
                 </label>
                 <div className="space-y-2">
-                  {getAvailableStyles(detectProjectCategory(selectedPhoto.item_type || '')).map(style => (
+                  {getAvailableStyles(manualCategory || detectProjectCategory(selectedPhoto.item_type || '')).map(style => (
                     <label
                       key={style.key}
                       className={`flex items-center gap-3 p-3 border-2 rounded-lg transition ${
@@ -1314,26 +1260,10 @@ const Gallery = () => {
                   </div>
                 )}
 
-                {/* Message upgrade */}
-                {(() => {
-                  const sub = user?.subscription_type || 'free'
-                  const isPro = ['subscription_pro', 'subscription_pro_annual'].includes(sub)
-                  const isPlus = ['subscription_plus', 'subscription_plus_annual'].includes(sub)
-                  if (isPro || isPlus) return null
-                  return (
-                    <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-semibold">6 styles supplémentaires</span> disponibles avec PLUS ou PRO.
-                        <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                          Découvrir les plans
-                        </a>
-                      </p>
-                    </div>
-                  )
-                })()}
               </div>
+              )} {/* fin bloc styles conditionnel */}
 
-              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel, uniquement pour thèmes extérieur/nature) */}
+              {/* Sélecteur de saison (optionnel, uniquement pour thèmes extérieur/nature) */}
               {selectedContext && seasonStyles.includes(selectedContext.key) && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -1393,24 +1323,54 @@ const Gallery = () => {
               )}
 
               {/* Résumé des crédits */}
-              {!enhancing && credits && (
-                <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        Génération = 1 crédit
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
-                      </p>
+              {!enhancing && credits && (() => {
+                const isFree = !user?.subscription_type || user?.subscription_type === 'free'
+
+                if (isFree && credits.total_available > 0) {
+                  return (
+                    <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-primary-900">Essai gratuit disponible</p>
+                        <p className="text-xs text-primary-700 mt-0.5">Générez votre première photo IA gratuitement</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-primary-600">{credits.total_available}</div>
-                      <div className="text-xs text-gray-600">disponible{credits.total_available > 1 ? 's' : ''}</div>
+                  )
+                }
+
+                if (isFree && credits.total_available === 0) {
+                  return (
+                    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <p className="text-sm font-semibold text-amber-900 mb-1">Essai gratuit utilisé</p>
+                      <p className="text-xs text-amber-800 mb-3">Abonnez-vous pour continuer à embellir vos photos</p>
+                      <Link to="/subscription" className="inline-flex items-center justify-center w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition">
+                        Voir les abonnements
+                      </Link>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Génération = 1 crédit</p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary-600">{credits.total_available}</div>
+                        <div className="text-xs text-gray-600">disponible{credits.total_available > 1 ? 's' : ''}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )
+              })()}
 
               {/* Boutons */}
               <div className="flex items-center gap-3">
@@ -1423,14 +1383,15 @@ const Gallery = () => {
                   disabled={enhancing}
                   className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
                 >
-                  Annuler
+                  Pas maintenant
                 </button>
                 <button
                   type="submit"
                   disabled={enhancing || !selectedContext || !credits || credits.total_available < 1}
                   className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
-                  {enhancing ? 'Génération...' : 'Générer (1 crédit)'}
+                  {enhancing ? 'Génération...' : ((!user?.subscription_type || user?.subscription_type === 'free') ? 'Utiliser mon essai gratuit' : `Générer (${credits?.total_available ?? 0} crédit${(credits?.total_available ?? 0) > 1 ? 's' : ''})`)}
+
                 </button>
               </div>
             </form>

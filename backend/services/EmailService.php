@@ -42,7 +42,6 @@ class EmailService
             $this->mailer->Port = (int)($_ENV['SMTP_PORT'] ?? 587);
             $this->mailer->CharSet = 'UTF-8';
 
-            // Désactiver debug SMTP (les erreurs vont dans error_log)
             $this->mailer->SMTPDebug = 0;
 
             // Expéditeur par défaut

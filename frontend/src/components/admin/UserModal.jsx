@@ -246,7 +246,7 @@ const UserModal = ({ user, onClose, onUpdate }) => {
             <div className="space-y-3">
               <h3 className="text-lg font-bold mb-4">Changer l'abonnement</h3>
               {[
-                { type: 'free',        label: 'FREE',          desc: '3 projets, 2 crédits photo/mois, 3 questions IA/mois' },
+                { type: 'free',        label: 'FREE',          desc: 'Projets illimités, 2 crédits photo à vie, 5 questions IA/mois, 2 créations IA à vie' },
                 { type: 'pro',         label: 'PRO Mensuel',   desc: '6,99€/mois — 15 imports IA, 30 questions IA, 20 crédits photo/mois' },
                 { type: 'pro_annual',  label: 'PRO Annuel',    desc: '59,99€/an (5,00€/mois) — mêmes avantages PRO' },
                 { type: 'early_bird',  label: 'Early Bird',    desc: '2,99€/mois × 12 — accès PRO complet, tarif bloqué' },

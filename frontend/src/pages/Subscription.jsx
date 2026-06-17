@@ -278,12 +278,12 @@ const Subscription = () => {
           </div>
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
-            <li className="flex items-start gap-2"><Check /><span>Projets &amp; patrons illimités</span></li>
+            <li className="flex items-start gap-2"><Check /><span>Projets &amp; patrons illimités <span className="text-gray-400 text-xs">(100 Mo de fichiers)</span></span></li>
             <li className="flex items-start gap-2"><Check /><span>1 compteur par projet</span></li>
-            {/* <li className="flex items-start gap-2"><Check /><span>Stock — 10 références</span></li> */}
-            <li className="flex items-start gap-2"><Check /><span>1 Création IA offerte</span></li>
-            <li className="flex items-start gap-2"><Check /><span>3 questions IA / mois</span></li>
-            <li className="flex items-start gap-2"><Check /><span>2 crédits Studio Photo / mois</span></li>
+            <li className="flex items-start gap-2"><Check /><span>Notes par section</span></li>
+            <li className="flex items-start gap-2"><Check /><span>2 Créations IA offertes</span></li>
+            <li className="flex items-start gap-2"><Check /><span>5 questions IA / mois</span></li>
+            <li className="flex items-start gap-2"><Check /><span>20 photos · 2 essais gratuits Studio Photo IA</span></li>
           </ul>
 
           <button disabled className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed">
@@ -309,10 +309,9 @@ const Subscription = () => {
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tout le plan FREE</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stockage fichiers illimité</span> · 200 photos</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">2 compteurs simultanés</span></span></li>
             {/* <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 50 références</span></span></li> */}
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Notes privées par section</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tags pour organiser vos ouvrages</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 Créations IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>5 crédits Studio Photo / mois</span></li>

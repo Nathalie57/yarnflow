@@ -96,6 +96,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Photos du projet
   const [projectPhotos, setProjectPhotos] = useState([])
+  const [photoQuota, setPhotoQuota] = useState(null)
   const [openMenuId, setOpenMenuId] = useState(null) // [AI:Claude] Menu dropdown pour actions photo
   const menuRef = useRef(null) // [AI:Claude] Ref pour fermer le menu au clic extérieur
 
@@ -126,6 +127,8 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Embellir photo avec IA - v0.12.1 SIMPLIFIÉ (1 photo, preset auto)
   const [showEnhanceModal, setShowEnhanceModal] = useState(false)
+  const [showPostUploadModal, setShowPostUploadModal] = useState(false)
+  const [postUploadPhoto, setPostUploadPhoto] = useState(null)
   const [showStyleExamplesModal, setShowStyleExamplesModal] = useState(false)
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [selectedContext, setSelectedContext] = useState(null) // [AI:Claude] Contexte auto-sélectionné
@@ -396,8 +399,15 @@ const ProjectCounter = () => {
             setPausedTime(restoredTime)
             setElapsedTime(restoredTime)
             setIsTimerRunning(true)
-            setIsTimerPaused(true) // Toujours restaurer en pause, l'utilisateur relance explicitement
             setCurrentRow(state.currentRow)
+
+            if (state.isPaused) {
+              setIsTimerPaused(true)
+            } else {
+              // Timer tournait — reprendre automatiquement depuis maintenant
+              setSessionStartTime(Date.now())
+              setIsTimerPaused(false)
+            }
           } else if (hoursSinceSave >= 24) {
             localStorage.removeItem(`timerState_${projectId}`)
             console.log('[TIMER] Session sauvegardée trop ancienne, supprimée')
@@ -636,7 +646,13 @@ const ProjectCounter = () => {
     }
 
     const handleVisibilityChange = () => {
-      if (document.hidden) saveTimerState()
+      if (document.hidden) {
+        saveTimerState()
+      } else if (isTimerRunning && !isTimerPaused && sessionStartTime) {
+        // Retour au premier plan sans rechargement : forcer recalcul immédiat
+        const elapsed = pausedTime + Math.floor((Date.now() - sessionStartTime) / 1000)
+        setElapsedTime(elapsed)
+      }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -645,7 +661,7 @@ const ProjectCounter = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('beforeunload', saveTimerState)
     }
-  }, [sessionId, isTimerRunning, isTimerPaused, pausedTime, sessionStartTime, currentRow, sessionStartRow, projectId, currentSectionId])
+  }, [sessionId, isTimerRunning, isTimerPaused, pausedTime, sessionStartTime, currentRow, sessionStartRow, projectId, currentSectionId, setElapsedTime])
 
   const fetchProject = async () => {
     try {
@@ -795,6 +811,7 @@ const ProjectCounter = () => {
         params: { project_id: projectId }
       })
       setProjectPhotos(response.data.photos || [])
+      if (response.data.quota) setPhotoQuota(response.data.quota)
     } catch (err) {
       console.error('Erreur chargement photos:', err)
     }
@@ -1260,12 +1277,12 @@ const ProjectCounter = () => {
       await fetchProjectPhotos()
       await fetchCredits()
       setShowPhotoUploadModal(false)
-      // Ouvrir directement la modale d'embellissement sur la photo qui vient d'être uploadée
       const photosResponse = await api.get('/photos', { params: { project_id: projectId } })
       const allPhotos = photosResponse.data.photos || []
-      const newPhoto = allPhotos.filter(p => !p.parent_photo_id).slice(-1)[0]
+      const newPhoto = allPhotos.filter(p => !p.parent_photo_id)[0]
       if (newPhoto) {
-        openEnhanceModal(newPhoto)
+        setPostUploadPhoto(newPhoto)
+        setShowPostUploadModal(true)
       }
     } catch (err) {
       console.error('Erreur upload photo:', err)
@@ -1579,23 +1596,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Filtrer les styles selon le plan de l'utilisateur
   const getAvailableStyles = (category) => {
-    const allStyles = stylesByCategory[category] || []
-    const subscriptionType = user?.subscription_type || 'free'
-
-    // Déterminer le tier en fonction du type d'abonnement
-    let userTier = 'free'
-
-    // Plans payants (PLUS legacy + PRO)
-    if (subscriptionType !== 'free') {
-      userTier = 'pro'
-    }
-
-    // Filtrer selon le tier
-    if (userTier === 'free') {
-      return allStyles.filter(s => s.tier === 'free')
-    } else {
-      return allStyles // PRO accède à tout
-    }
+    return stylesByCategory[category] || []
   }
 
 
@@ -4159,19 +4160,16 @@ const ProjectCounter = () => {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                if (!isPaidPlan) { setUpgradeFeature('section_notes'); return }
                                 toggleSectionNotes(section)
                               }}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition shadow-sm ${
-                                !isPaidPlan
-                                  ? 'bg-gray-100 text-gray-400 border border-gray-200 hover:bg-gray-200'
-                                  : expandedNotesSection === section.id
+                                expandedNotesSection === section.id
+                                  ? 'bg-primary-600 text-white shadow-primary-200'
+                                  : section.notes
                                     ? 'bg-primary-600 text-white shadow-primary-200'
-                                    : section.notes
-                                      ? 'bg-primary-600 text-white shadow-primary-200'
-                                      : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
+                                    : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
                               }`}
-                              title={!isPaidPlan ? 'Notes par section — PLUS' : expandedNotesSection === section.id ? 'Fermer les notes' : section.notes ? 'Voir/modifier les notes' : 'Ajouter des notes'}
+                              title={expandedNotesSection === section.id ? 'Fermer les notes' : section.notes ? 'Voir/modifier les notes' : 'Ajouter des notes'}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -4499,10 +4497,16 @@ const ProjectCounter = () => {
                   {projectPhotos.length > 0 && (
                     <div className="mb-4">
                       <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-gray-900">Photos</h2>
+                        <div>
+                          <h2 className="text-lg font-semibold text-gray-900">Photos</h2>
+                          {photoQuota && !photoQuota.unlimited && (
+                            <p className="text-xs text-gray-400">{photoQuota.used} / {photoQuota.limit}</p>
+                          )}
+                        </div>
                         <button
                           onClick={() => setShowPhotoUploadModal(true)}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
+                          disabled={photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit}
+                          className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -4514,55 +4518,36 @@ const ProjectCounter = () => {
                   )}
 
 {projectPhotos.length === 0 ? (
-              <div className="rounded-xl border border-gray-100 bg-gradient-to-b from-primary-50/40 to-white p-6">
-                {/* Avant/Après visuel */}
-                <div className="flex items-center justify-center gap-3 mb-5">
-                  <div className="flex-1 max-w-[120px] rounded-lg overflow-hidden border border-gray-200 shadow-sm">
-                    <div className="bg-gray-100 h-20 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <p className="text-center text-xs text-gray-400 py-1">Votre photo</p>
-                  </div>
-                  <div className="flex flex-col items-center gap-1">
-                    <svg className="w-5 h-5 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 max-w-[120px] rounded-lg overflow-hidden border-2 border-primary-300 shadow-sm">
-                    <div className="bg-gradient-to-br from-primary-100 to-primary-200 h-20 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <p className="text-center text-xs text-primary-600 font-semibold py-1">Mise en valeur</p>
-                  </div>
-                </div>
-
-                <h3 className="text-center font-bold text-gray-900 mb-1 text-sm">
-                  Mettez votre ouvrage en valeur
-                </h3>
-                <p className="text-center text-xs text-gray-500 mb-4">
-                  Fond et éclairage retravaillés — votre création reste identique
-                </p>
-
-                {credits && credits.total_available > 0 && (
-                  <p className="text-center text-xs text-green-700 font-medium mb-3">
-                    {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}
-                  </p>
-                )}
-
-                <button
-                  onClick={() => setShowPhotoUploadModal(true)}
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  Ajouter une photo
-                </button>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-medium text-gray-700">Aucune photo pour ce projet</p>
+                  {credits && credits.total_available > 0 ? (
+                    <p className="text-xs text-gray-500 mt-0.5">Ajoutez une photo pour l'embellir avec le Studio IA</p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-0.5">Ajoutez des photos pour garder une trace de votre avancement</p>
+                  )}
+                </div>
+                {photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit ? (
+                  <a href="/subscription" className="mt-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm">
+                    Passer en PLUS pour plus de photos
+                  </a>
+                ) : (
+                  <button
+                    onClick={() => setShowPhotoUploadModal(true)}
+                    className="mt-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Ajouter une photo
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-6">
@@ -4927,10 +4912,12 @@ const ProjectCounter = () => {
                                       alert('❌ Erreur lors du téléchargement')
                                     }
                                   }}
-                                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs font-medium transition shadow-lg text-center"
+                                  className="flex-1 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
                                   title="Télécharger cette photo"
                                 >
-                                  📥
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                  </svg>
                                 </button>
                                 {/* Bouton supprimer */}
                                 <button
@@ -4938,17 +4925,19 @@ const ProjectCounter = () => {
                                     e.stopPropagation()
                                     handleDeletePhoto(originalPhoto.id)
                                   }}
-                                  className="flex-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs font-medium transition shadow-lg"
+                                  className="flex-1 bg-white bg-opacity-90 hover:bg-red-50 hover:text-red-500 text-gray-500 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
                                   title="Supprimer cette photo"
                                 >
-                                  🗑️
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                  </svg>
                                 </button>
                               </div>
                             </div>
 
                             <div className="flex-1">
                               <h3 className="text-base font-semibold text-gray-900 mb-1">
-                                {originalPhoto.item_name || 'Sans nom'}
+                                {originalPhoto.item_name || originalPhoto.item_type || ''}
                               </h3>
                               {originalPhoto.description && (
                                 <p className="text-sm text-gray-600 mb-2">{originalPhoto.description}</p>
@@ -4958,7 +4947,7 @@ const ProjectCounter = () => {
                               </p>
 
                               {photoVariations.length === 0 ? (
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-1 items-start">
                                   <button
                                     onClick={() => openEnhanceModal(originalPhoto)}
                                     className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm shadow-sm"
@@ -5733,370 +5722,198 @@ Rang 3 : *1ms, aug* x6 (18)
         </div>
       )}
 
-      {/* [AI:Claude] Modal d'embellissement IA - v0.12.1 SIMPLIFIÉ */}
-      {showEnhanceModal && selectedPhoto && selectedContext && (
+      {/* Mini-modale post-upload : proposition d'embellissement */}
+      {showPostUploadModal && postUploadPhoto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] shadow-xl flex flex-col">
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-bold text-gray-900">Embellir ma photo</h2>
-                <button
-                  type="button"
-                  onClick={() => setShowStyleExamplesModal(true)}
-                  className="flex items-center gap-1.5 bg-primary-600 text-white text-sm px-3 py-1.5 rounded-xl font-semibold hover:bg-primary-700 transition"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  Exemples
-                </button>
-              </div>
+          <div className="bg-white rounded-2xl max-w-sm w-full shadow-xl">
+            <div className="px-6 pt-6 pb-2">
+              <h2 className="text-lg font-bold text-gray-900">Embellir cette photo ?</h2>
+              <p className="text-sm text-gray-500 mt-1">Fond et éclairage retravaillés — votre ouvrage reste intact.</p>
             </div>
-
-            <form onSubmit={handleEnhancePhoto} className="flex-1 overflow-y-auto p-6 flex flex-col">
-              {/* Message rassurant */}
-              {!hideAIWarning && (
-                <div className="mb-4 bg-primary-50 border border-primary-100 rounded-xl p-4">
-                  <div className="space-y-2 text-sm text-gray-700">
-                    <p className="flex items-center gap-2.5">
-                      <svg className="w-4 h-4 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      Votre ouvrage reste intact — couleurs, matière et points sont préservés
-                    </p>
-                    <p className="flex items-center gap-2.5">
-                      <svg className="w-4 h-4 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      Seuls le fond et l'éclairage changent pour valoriser votre création
-                    </p>
-                    <p className="flex items-center gap-2.5">
-                      <svg className="w-4 h-4 text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      La photo originale est toujours conservée
-                    </p>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-primary-200">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-500 hover:text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={hideAIWarning}
-                        onChange={handleHideAIWarning}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      Ne plus afficher ce message
-                    </label>
-                  </div>
-                </div>
-              )}
-              {/* Photo actuelle (remplacée par preview pendant génération HD) */}
-              <div className={`mb-6 rounded-lg border-2 p-4 relative ${enhancing && previewImage ? 'bg-green-50 border-green-400' : 'bg-gray-100 border-gray-200'}`}>
-                {enhancing && previewImage && (
-                  <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    Upscaling en cours...
-                  </div>
-                )}
+            <div className="px-6 pb-6 flex flex-col gap-4">
+              <div className="rounded-xl overflow-hidden bg-gray-100 max-h-48 flex items-center justify-center">
                 <img
-                  src={(enhancing && previewImage) ? previewImage : `${import.meta.env.VITE_BACKEND_URL}${selectedPhoto.original_path}`}
-                  alt={selectedPhoto.item_name}
-                  className="max-h-48 w-auto object-contain rounded-lg mx-auto"
+                  src={`${import.meta.env.VITE_BACKEND_URL}${postUploadPhoto.original_path}`}
+                  alt=""
+                  className="max-h-48 w-auto object-contain mx-auto"
                 />
               </div>
 
-              {/* Choix du style */}
-              <div className="mb-6">
-                <div className="flex items-baseline justify-between mb-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Choisissez un style :
-                  </label>
-                  <span className="text-xs text-primary-600 font-medium">
-                    Sélectionné selon votre projet
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {getAvailableStyles(detectProjectCategory(project?.type || '')).map((style, styleIdx) => (
-                    <div key={style.key}>
-                      <label
-                        className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
-                          selectedContext?.key === style.key
-                            ? 'border-primary-600 bg-primary-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="style"
-                          value={style.key}
-                          checked={selectedContext?.key === style.key}
-                          onChange={() => setSelectedContext(style)}
-                          className="text-primary-600 focus:ring-primary-500"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium text-gray-900">{style.label}</p>
-
-                            {style.tier === 'pro' && (
-                              <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-700 rounded font-semibold">PRO</span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-600">{style.desc}</p>
-                        </div>
-                      </label>
-
-                      {/* Sélecteur de genre intégré pour styles "Porté" ou enfant porté */}
-                      {selectedContext?.key === style.key && style.label && (style.label.includes('Porté') || style.key.startsWith('child_garment_c') && ['child_garment_c1', 'child_garment_c4', 'child_garment_c6', 'child_garment_c7', 'child_garment_c9'].includes(style.key)) && (
-                        <div className="mt-2 ml-11 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-xs font-semibold text-gray-700 mb-2">
-                            {style.key.startsWith('child_garment_') ? 'Genre de l\'enfant :' : 'Genre du modèle :'}
-                          </p>
-                          <div className="grid grid-cols-2 gap-2">
-                            <label
-                              className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
-                                modelGender === 'male'
-                                  ? 'border-primary-600 bg-white ring-2 ring-primary-300'
-                                  : 'border-gray-300 bg-white hover:border-primary-400'
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="modelGender"
-                                value="male"
-                                checked={modelGender === 'male'}
-                                onChange={(e) => setModelGender(e.target.value)}
-                                className="sr-only"
-                              />
-                              <span className="text-xs font-semibold text-gray-900">{style.key.startsWith('child_garment_') ? 'Garçon' : 'Homme'}</span>
-                            </label>
-                            <label
-                              className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
-                                modelGender === 'female'
-                                  ? 'border-primary-600 bg-white ring-2 ring-primary-300'
-                                  : 'border-gray-300 bg-white hover:border-primary-400'
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="modelGender"
-                                value="female"
-                                checked={modelGender === 'female'}
-                                onChange={(e) => setModelGender(e.target.value)}
-                                className="sr-only"
-                              />
-                              <span className="text-xs font-semibold text-gray-900">{style.key.startsWith('child_garment_') ? 'Fille' : 'Femme'}</span>
-                            </label>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Message upgrade pour FREE */}
-                {user?.subscription_type === 'free' && (
-                  <div className="mt-3 p-3 bg-primary-50 border border-primary-200 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-semibold">9 styles supplémentaires</span> disponibles avec PRO !
-                      <a href="/subscription" className="ml-2 text-primary-600 hover:text-primary-700 font-semibold underline">
-                        Découvrir le plan PRO
-                      </a>
-                    </p>
+              {credits && (() => {
+                const isFree = !user?.subscription_type || user?.subscription_type === 'free'
+                if (isFree && credits.total_available > 0) return (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                    <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <span className="text-sm text-green-700 font-medium">Essai gratuit disponible</span>
                   </div>
-                )}
-              </div>
+                )
+                if (isFree && credits.total_available === 0) return (
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                      <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <span className="text-sm text-amber-700 font-medium">Votre essai a été utilisé</span>
+                    </div>
+                    <p className="text-xs text-gray-500 px-1">Passez en PLUS pour embellir toutes vos créations</p>
+                  </div>
+                )
+                if (credits.total_available === 0) return (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span className="text-sm text-amber-700">Plus de crédits — rechargement le 1er du mois</span>
+                  </div>
+                )
+                return (
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <span className="text-sm text-gray-600">Crédits disponibles</span>
+                    <span className="text-sm font-bold text-gray-900">{credits.total_available}</span>
+                  </div>
+                )
+              })()}
 
-              {/* [AI:Claude] v0.17.1 - Sélecteur de saison (optionnel, uniquement pour thèmes extérieur/nature) */}
-              {selectedContext && seasonStyles.includes(selectedContext.key) && (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Ambiance saisonnière <span className="text-gray-400 font-normal">(optionnel)</span> :
-                </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {/* Option "Aucune" */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowPostUploadModal(false); setPostUploadPhoto(null) }}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition font-medium text-sm"
+                >
+                  Pas maintenant
+                </button>
+                {credits && credits.total_available === 0 ? (
+                  <a
+                    href="/subscription"
+                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm text-center"
+                  >
+                    {(!user?.subscription_type || user?.subscription_type === 'free')
+                      ? 'Débloquer le Studio Photo IA'
+                      : 'Acheter des crédits'}
+                  </a>
+                ) : (
                   <button
                     type="button"
-                    onClick={() => setSelectedSeason(null)}
-                    className={`flex flex-col items-center gap-1 p-2 border-2 rounded-lg transition ${
-                      selectedSeason === null
-                        ? 'border-primary-600 bg-primary-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    onClick={() => {
+                      setShowPostUploadModal(false)
+                      openEnhanceModal(postUploadPhoto)
+                      setPostUploadPhoto(null)
+                    }}
+                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                    <span className="text-xs font-medium text-gray-700">Aucune</span>
+                    Choisir un style
                   </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-                  {/* Options de saisons */}
-                  {seasons.map(season => (
-                    <button
-                      key={season.key}
-                      type="button"
-                      onClick={() => setSelectedSeason(season.key)}
-                      className={`flex flex-col items-center gap-1 p-2 border-2 rounded-lg transition ${
-                        selectedSeason === season.key
+      {/* Modal d'embellissement IA */}
+      {showEnhanceModal && selectedPhoto && selectedContext && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-xl max-h-[90vh] flex flex-col">
+            <div className="px-6 pt-6 pb-2 flex-shrink-0">
+              <h2 className="text-lg font-bold text-gray-900">Embellir cette photo ?</h2>
+              <p className="text-sm text-gray-500 mt-1">Fond et éclairage retravaillés — votre ouvrage reste intact.</p>
+            </div>
+
+            <form onSubmit={handleEnhancePhoto} className="px-6 pb-6 flex flex-col gap-4 overflow-y-auto">
+              {/* Photo miniature */}
+              <div className="rounded-xl overflow-hidden bg-gray-100 max-h-36 flex items-center justify-center flex-shrink-0">
+                <img
+                  src={`${import.meta.env.VITE_BACKEND_URL}${selectedPhoto.original_path}`}
+                  alt=""
+                  className="max-h-36 w-auto object-contain mx-auto"
+                  onError={(e) => { e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3C/svg%3E' }}
+                />
+              </div>
+
+              {/* Sélecteur de style */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Choisissez un style :</label>
+                <div className="space-y-1.5">
+                  {getAvailableStyles(detectProjectCategory(project?.type || '')).map((style) => (
+                    <label
+                      key={style.key}
+                      className={`flex items-center gap-3 p-2.5 border-2 rounded-lg cursor-pointer transition ${
+                        selectedContext?.key === style.key
                           ? 'border-primary-600 bg-primary-50'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      title={season.desc}
                     >
-                      <span className="text-xs font-medium text-gray-700">{season.label}</span>
-                    </button>
+                      <input
+                        type="radio"
+                        name="style"
+                        value={style.key}
+                        checked={selectedContext?.key === style.key}
+                        onChange={() => setSelectedContext(style)}
+                        className="text-primary-600 focus:ring-primary-500 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-900">{style.label}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 truncate">{style.desc}</p>
+                      </div>
+                    </label>
                   ))}
                 </div>
-                {selectedSeason && (
-                  <p className="text-xs text-primary-600 mt-2">
-                    {seasons.find(s => s.key === selectedSeason)?.desc}
-                  </p>
-                )}
               </div>
-              )}
 
-              {/* Aperçu gratuit - DÉSACTIVÉ pour économiser les coûts API */}
-              {/*
-              {previewImage && !enhancing && (
-                <div className="mb-6 bg-gray-100 rounded-lg border-2 border-green-400 p-4 relative">
-                  <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    0 crédit
+              {/* Crédits */}
+              {credits && (() => {
+                const isFree = !user?.subscription_type || user?.subscription_type === 'free'
+                if (isFree && credits.total_available > 0) return (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                    <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    <span className="text-sm text-green-700 font-medium">Essai gratuit disponible</span>
                   </div>
-                  <img
-                    src={previewImage}
-                    alt="Aperçu"
-                    className="max-h-48 w-auto object-contain rounded-lg mx-auto"
-                  />
-                  <p className="text-center text-sm text-gray-600 mt-2">
-                    Aperçu basse résolution
-                  </p>
-                  <p className="text-center text-xs text-green-700 mt-1 font-medium">
-                    ✓ L'image HD sera générée à partir de cette preview en haute résolution
-                  </p>
-                </div>
-              )}
-
-              {/* Erreur preview */}
-              {/*
-              {previewError && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-700">❌ {previewError}</p>
-                </div>
-              )}
-              */}
-
-              {/* Progression génération preview */}
-              {/*
-              {isGeneratingPreview && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <div>
-                      <h4 className="font-semibold text-blue-900">🔍 Génération de l'aperçu...</h4>
-                      <p className="text-sm text-gray-600">Gratuit et rapide</p>
-                    </div>
+                )
+                if (isFree && credits.total_available === 0) return (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <span className="text-sm text-amber-700">Essai gratuit utilisé — <a href="/subscription" className="font-semibold underline">passer en PLUS</a></span>
                   </div>
-                </div>
-              )}
-              */}
+                )
+                return (
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                    <span className="text-sm text-gray-600">Crédits disponibles</span>
+                    <span className="text-sm font-bold text-gray-900">{credits.total_available}</span>
+                  </div>
+                )
+              })()}
 
-              {/* Progression génération HD */}
+              {/* Génération en cours */}
               {enhancing && (
-                <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-                    <div>
-                      <h4 className="font-semibold text-primary-900">Génération HD en cours...</h4>
-                      <p className="text-sm text-gray-600">Cela peut prendre quelques secondes</p>
-                    </div>
-                  </div>
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
+                  Génération en cours...
                 </div>
               )}
 
-              {/* Résumé des crédits (si génération HD) - DÉSACTIVÉ car preview désactivée */}
-              {/*
-              {!enhancing && !isGeneratingPreview && previewImage && credits && (
-                <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        💎 Photo HD = 1 crédit
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-primary-600">{credits.total_available}</div>
-                      <div className="text-xs text-gray-600">disponible{credits.total_available > 1 ? 's' : ''}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              */}
-
-              {/* Boutons - SIMPLIFIÉ : génération HD directe sans preview */}
-              <div className="flex items-center gap-3 flex-shrink-0 pt-4 border-t border-gray-200 mt-6">
+              {/* Boutons */}
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowEnhanceModal(false)
-                    setSelectedPhoto(null)
-                  }}
+                  onClick={() => { setShowEnhanceModal(false); setSelectedPhoto(null) }}
                   disabled={enhancing}
-                  className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 font-medium"
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 font-medium text-sm"
                 >
-                  Annuler
+                  Pas maintenant
                 </button>
-
                 {credits && credits.total_available < 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => setUpgradeFeature('photo_credits')}
-                    className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition shadow-md"
-                  >
-                    Plus de crédits — PRO
+                  <button type="button" onClick={() => setUpgradeFeature('photo_credits')} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm">
+                    Plus de crédits
                   </button>
                 ) : (
-                  <button
-                    type="submit"
-                    disabled={enhancing || !credits}
-                    className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                  >
-                    {enhancing ? 'Génération...' : 'Générer en HD (1 crédit)'}
+                  <button type="submit" disabled={enhancing || !credits} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition disabled:opacity-50 text-sm">
+                    {enhancing ? 'Génération...' : (
+                      (!user?.subscription_type || user?.subscription_type === 'free')
+                        ? 'Utiliser mon essai gratuit'
+                        : 'Embellir'
+                    )}
                   </button>
                 )}
               </div>
 
-              {/* Message d'information */}
-              <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-xs text-gray-600 text-center leading-relaxed">
-                  <span className="font-semibold text-gray-700">Votre avis compte</span> :
-                  après génération, vous pourrez noter le résultat et nous aider à améliorer le service.
-                </p>
-              </div>
-
-              {/* DÉSACTIVÉ - Boutons de preview pour économiser les coûts API */}
-              {/*
-              <div className="flex items-center gap-3 flex-shrink-0 pt-4 border-t border-gray-200 mt-6">
-                {!previewImage ? (
-                  <button
-                    type="button"
-                    onClick={handleGeneratePreview}
-                    disabled={isGeneratingPreview}
-                    className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                  >
-                    {isGeneratingPreview ? '🔍 Génération...' : '🔍 Aperçu gratuit (0 crédit)'}
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleGeneratePreview}
-                      disabled={enhancing || isGeneratingPreview}
-                      className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
-                    >
-                      {isGeneratingPreview ? '🔄 Génération...' : '🔄 Nouvelle preview'}
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={enhancing || !credits || credits.total_available < 1}
-                      className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                    >
-                      {enhancing ? '✨ Génération...' : '✨ Générer en HD (1 crédit)'}
-                    </button>
-                  </>
-                )}
-              </div>
-              */}
             </form>
           </div>
         </div>

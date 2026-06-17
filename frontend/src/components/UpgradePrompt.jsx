@@ -58,7 +58,7 @@ const FEATURES = {
       </svg>
     ),
     title: 'Bibliothèque illimitée',
-    description: 'Vous avez atteint la limite de 5 patrons en FREE. Passez à PRO pour une bibliothèque sans limite.',
+    description: 'Passez à PLUS ou PRO pour un stockage de fichiers illimité et 200 photos.',
     items: ['Patrons illimités (PDF, URL, texte)', 'Tous vos patrons Ravelry, Etsy...', 'Accessible hors-ligne'],
   },
 }

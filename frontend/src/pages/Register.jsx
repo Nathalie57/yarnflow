@@ -21,6 +21,15 @@ const Register = () => {
   const { register } = useAuth()
   const navigate = useNavigate()
 
+  // Reset loading quand l'app revient au premier plan (TWA/PWA)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') setLoading(false)
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
+
   // Charger les infos du code beta si présent
   useEffect(() => {
     if (betaCode) {
