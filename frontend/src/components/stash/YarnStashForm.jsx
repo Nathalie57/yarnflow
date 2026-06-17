@@ -3,7 +3,8 @@
  * @brief Formulaire d'ajout / modification d'une entrée dans le stock de laine
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { yarnStashAPI } from '../../services/api'
 
 const YARN_WEIGHT_OPTIONS = [
   { value: '',            label: 'Épaisseur (optionnel)' },
@@ -35,8 +36,15 @@ const EMPTY_FORM = {
 
 const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
   const [form, setForm] = useState(EMPTY_FORM)
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [scanning, setScanning] = useState(false)
+  const [scanError, setScanError] = useState(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
+    setPhotoFile(null)
+    setPhotoPreview(null)
     if (entry) {
       setForm({
         brand:                entry.brand              || '',
@@ -64,19 +72,57 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
   const totalWeight  = form.weight_per_skein_g  && form.quantity ? Math.round(parseFloat(form.weight_per_skein_g)  * parseInt(form.quantity) * 10) / 10 : 0
   const totalYardage = form.yardage_per_skein_m && form.quantity ? Math.round(parseFloat(form.yardage_per_skein_m) * parseInt(form.quantity) * 10) / 10 : 0
 
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setPhotoFile(file)
+    setPhotoPreview(URL.createObjectURL(file))
+    setScanError(null)
+
+    // Scan automatique uniquement pour une nouvelle entrée ou si les champs clés sont vides
+    const isEmpty = !form.brand && !form.yarn_name
+    if (!entry || isEmpty) {
+      try {
+        setScanning(true)
+        const res = await yarnStashAPI.scanLabel(file)
+        const d = res.data.data
+        setForm(f => ({
+          ...f,
+          brand:                d.brand              ?? f.brand,
+          yarn_name:            d.yarn_name          ?? f.yarn_name,
+          color_name:           d.color_name         ?? f.color_name,
+          dye_lot:              d.dye_lot            ?? f.dye_lot,
+          composition:          d.composition        ?? f.composition,
+          weight_per_skein_g:   d.weight_per_skein_g  != null ? d.weight_per_skein_g  : f.weight_per_skein_g,
+          yardage_per_skein_m:  d.yardage_per_skein_m != null ? d.yardage_per_skein_m : f.yardage_per_skein_m,
+          needle_size_mm:       d.needle_size_mm      != null ? d.needle_size_mm      : f.needle_size_mm,
+          yarn_weight_category: d.yarn_weight_category ?? f.yarn_weight_category,
+        }))
+      } catch {
+        setScanError('Lecture automatique impossible. Remplis le formulaire manuellement.')
+      } finally {
+        setScanning(false)
+      }
+    }
+  }
+
+  const removePhoto = () => {
+    setPhotoFile(null)
+    setPhotoPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
     const payload = { ...form }
-    // Convertir les numériques
     payload.weight_per_skein_g  = parseFloat(payload.weight_per_skein_g)
     payload.yardage_per_skein_m = parseFloat(payload.yardage_per_skein_m)
     payload.quantity            = parseInt(payload.quantity)
     payload.needle_size_mm      = payload.needle_size_mm !== '' ? parseFloat(payload.needle_size_mm) : null
-    // Vider les optionnels vides → null
     ;['color_name','dye_lot','composition','yarn_weight_category','color_hex','purchase_url','notes'].forEach(k => {
       if (payload[k] === '') payload[k] = null
     })
-    onSubmit(payload)
+    onSubmit(payload, photoFile)
   }
 
   const inputCls = "w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent placeholder-gray-300"
@@ -260,6 +306,70 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           value={form.notes}
           onChange={set('notes')}
           maxLength={2000}
+        />
+      </div>
+
+      {/* Photo d'étiquette */}
+      <div>
+        <label className={labelCls}>
+          Photo de l'étiquette
+          {!entry && <span className="ml-1.5 text-primary-500 font-normal">— remplit le formulaire automatiquement</span>}
+        </label>
+        {scanError && (
+          <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scanError}</p>
+        )}
+        {photoPreview || entry?.photo_url ? (
+          <div className="relative">
+            <img
+              src={photoPreview || (import.meta.env.VITE_API_URL + entry.photo_url)}
+              alt="Étiquette"
+              className={`w-full h-40 object-cover rounded-xl border border-gray-200 transition-opacity ${scanning ? 'opacity-50' : ''}`}
+            />
+            {scanning && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 rounded-xl">
+                <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs font-medium text-primary-700">Lecture de l'étiquette…</span>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={removePhoto}
+              className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
+              title="Supprimer la photo"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            {!photoPreview && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute bottom-2 right-2 bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
+              >
+                Changer
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+            </svg>
+            <span className="text-xs">Photo de l'étiquette</span>
+          </button>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handlePhotoChange}
         />
       </div>
 

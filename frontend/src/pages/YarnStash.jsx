@@ -71,10 +71,13 @@ const YarnStash = () => {
   // CRUD
   // -----------------------------------------------------------------------
 
-  const handleCreate = async (data) => {
+  const handleCreate = async (data, photoFile) => {
     try {
       setSaving(true)
-      await yarnStashAPI.create(data)
+      const res = await yarnStashAPI.create(data)
+      if (photoFile && res.data.entry?.id) {
+        await yarnStashAPI.uploadPhoto(res.data.entry.id, photoFile)
+      }
       setShowAddModal(false)
       loadStash()
     } catch (err) {
@@ -89,10 +92,13 @@ const YarnStash = () => {
     }
   }
 
-  const handleUpdate = async (data) => {
+  const handleUpdate = async (data, photoFile) => {
     try {
       setSaving(true)
       await yarnStashAPI.update(editingEntry.id, data)
+      if (photoFile) {
+        await yarnStashAPI.uploadPhoto(editingEntry.id, photoFile)
+      }
       setEditingEntry(null)
       loadStash()
     } catch (err) {

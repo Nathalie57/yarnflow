@@ -306,7 +306,25 @@ export const yarnStashAPI = {
   create: (data) => api.post('/stash', data),
   getById: (id) => api.get(`/stash/${id}`),
   update: (id, data) => api.put(`/stash/${id}`, data),
-  delete: (id) => api.delete(`/stash/${id}`)
+  delete: (id) => api.delete(`/stash/${id}`),
+  uploadPhoto: (id, file) => {
+    const form = new FormData()
+    form.append('photo', file)
+    return api.post(`/stash/${id}/photo`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
+  },
+  scanLabel: (file) => {
+    const form = new FormData()
+    form.append('photo', file)
+    return api.post('/stash/scan-label', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+  }
+}
+
+export const stashAllocationAPI = {
+  list:         (projectId)                       => api.get(`/projects/${projectId}/allocations`),
+  create:       (projectId, stashEntryId, qty)    => api.post(`/projects/${projectId}/allocations`, { stash_entry_id: stashEntryId, quantity_reserved: qty }),
+  update:       (projectId, stashEntryId, qty)    => api.put(`/projects/${projectId}/allocations/${stashEntryId}`, { quantity_reserved: qty }),
+  remove:       (projectId, stashEntryId)         => api.delete(`/projects/${projectId}/allocations/${stashEntryId}`),
+  closeProject: (projectId, usageData)            => api.post(`/projects/${projectId}/close`, usageData),
 }
 
 // [AI:Claude] Utilitaires de connexion réseau

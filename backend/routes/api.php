@@ -26,6 +26,7 @@ use App\Controllers\WebFetchController;
 use App\Controllers\AiAssistantController;
 use App\Controllers\ContactController;
 use App\Controllers\YarnStashController;
+use App\Controllers\StashAllocationController;
 use App\Middleware\RateLimitMiddleware;
 
 /**
@@ -252,6 +253,16 @@ function route(string $method, string $uri): void
         $method === 'GET' && preg_match('/^stash\/(\d+)$/', $uri, $matches) => (new YarnStashController())->show((int)$matches[1]),
         $method === 'PUT' && preg_match('/^stash\/(\d+)$/', $uri, $matches) => (new YarnStashController())->update((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^stash\/(\d+)$/', $uri, $matches) => (new YarnStashController())->delete((int)$matches[1]),
+        $method === 'POST' && $uri === 'stash/scan-label' => (new YarnStashController())->scanLabel(),
+        $method === 'POST' && preg_match('/^stash\/(\d+)\/photo$/', $uri, $matches) => (new YarnStashController())->uploadPhoto((int)$matches[1]),
+        $method === 'GET' && preg_match('/^uploads\/stash\/(.+)$/', $uri, $matches) => serveUploadFile('stash', $matches[1]),
+
+        // Allocations stock ↔ projets (Phase 3)
+        $method === 'GET'    && preg_match('/^projects\/(\d+)\/allocations$/', $uri, $matches) => (new StashAllocationController())->listByProject((int)$matches[1]),
+        $method === 'POST'   && preg_match('/^projects\/(\d+)\/allocations$/', $uri, $matches) => (new StashAllocationController())->create((int)$matches[1]),
+        $method === 'PUT'    && preg_match('/^projects\/(\d+)\/allocations\/(\d+)$/', $uri, $matches) => (new StashAllocationController())->update((int)$matches[1], (int)$matches[2]),
+        $method === 'DELETE' && preg_match('/^projects\/(\d+)\/allocations\/(\d+)$/', $uri, $matches) => (new StashAllocationController())->delete((int)$matches[1], (int)$matches[2]),
+        $method === 'POST'   && preg_match('/^projects\/(\d+)\/close$/', $uri, $matches) => (new StashAllocationController())->closeProject((int)$matches[1]),
 
         // [AI:Claude] Routes de contact (v0.15.0)
         $method === 'POST' && $uri === 'contact' => (new ContactController())->sendMessage(),

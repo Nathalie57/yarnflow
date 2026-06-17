@@ -76,6 +76,25 @@ class YarnStashController
             $stmt->execute($bind);
             $entries = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            // Réservations actives par entrée (projets non clôturés)
+            $stmtRes = $this->db->prepare(
+                'SELECT a.stash_entry_id,
+                        COALESCE(SUM(a.quantity_reserved), 0) AS quantity_reserved,
+                        GROUP_CONCAT(p.name ORDER BY p.name SEPARATOR ", ") AS project_names
+                 FROM stash_allocations a
+                 JOIN projects p ON p.id = a.project_id
+                 WHERE p.status != "completed" AND p.user_id = :uid
+                 GROUP BY a.stash_entry_id'
+            );
+            $stmtRes->execute([':uid' => $userId]);
+            $reservations = [];
+            foreach ($stmtRes->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $reservations[(int)$r['stash_entry_id']] = [
+                    'quantity_reserved' => (int)$r['quantity_reserved'],
+                    'project_names'     => $r['project_names'],
+                ];
+            }
+
             // Calcul des totaux à la volée
             $totalSkeins   = 0;
             $totalWeightG  = 0.0;
@@ -83,6 +102,10 @@ class YarnStashController
             foreach ($entries as &$e) {
                 $e['total_weight_g']    = round((float)$e['weight_per_skein_g']    * (int)$e['quantity'], 1);
                 $e['total_yardage_m']   = round((float)$e['yardage_per_skein_m']  * (int)$e['quantity'], 1);
+                $res = $reservations[(int)$e['id']] ?? null;
+                $e['quantity_reserved'] = $res ? $res['quantity_reserved'] : 0;
+                $e['reserved_by']       = $res ? $res['project_names']     : null;
+                $e['quantity_available'] = max(0, (int)$e['quantity'] - $e['quantity_reserved']);
                 $totalSkeins            += (int)$e['quantity'];
                 $totalWeightG           += $e['total_weight_g'];
                 $totalYardageM          += $e['total_yardage_m'];
@@ -328,6 +351,153 @@ class YarnStashController
     }
 
     // -------------------------------------------------------------------------
+    // POST /api/stash/scan-label  — lecture IA d'une étiquette de pelote
+    // -------------------------------------------------------------------------
+
+    public function scanLabel(): void
+    {
+        try {
+            $this->getUserIdFromAuth();
+
+            if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Fichier photo manquant ou invalide']);
+                return;
+            }
+
+            $file = $_FILES['photo'];
+            $this->validateImageFile($file);
+
+            $apiKey = $_ENV['GEMINI_API_KEY'] ?? '';
+            if (empty($apiKey)) {
+                $this->sendResponse(503, ['success' => false, 'error' => 'Service IA non configuré']);
+                return;
+            }
+
+            $imageData = base64_encode(file_get_contents($file['tmp_name']));
+            $mimeType  = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+
+            $prompt = <<<PROMPT
+Analyse cette étiquette de pelote de laine et extrais les informations suivantes.
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après, sans bloc markdown.
+
+Champs à extraire (retourne null si non trouvé sur l'étiquette) :
+- brand: marque/fabricant (string)
+- yarn_name: nom de la gamme ou du fil (string)
+- color_name: nom du coloris (string)
+- dye_lot: numéro de bain/lot (string)
+- composition: matières, ex: "100% Mérinos" (string)
+- weight_per_skein_g: poids par pelote en grammes (number)
+- yardage_per_skein_m: métrage par pelote en mètres (number, convertir yards en mètres si besoin : 1 yard = 0.9144 m)
+- needle_size_mm: taille d'aiguille recommandée en mm (number, valeur médiane si plage)
+- yarn_weight_category: parmi "lace","fingering","sport","dk","worsted","aran","bulky","super_bulky" ou null
+
+Exemple: {"brand":"Drops","yarn_name":"Merino Extra Fine","color_name":"Teal","dye_lot":"2024A","composition":"100% Mérinos","weight_per_skein_g":50,"yardage_per_skein_m":190,"needle_size_mm":3.5,"yarn_weight_category":"dk"}
+PROMPT;
+
+            $model    = 'gemini-2.0-flash';
+            $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+
+            $payload = json_encode([
+                'contents' => [[
+                    'parts' => [
+                        ['text' => $prompt],
+                        ['inline_data' => ['mime_type' => $mimeType, 'data' => $imageData]],
+                    ]
+                ]],
+                'generationConfig' => ['temperature' => 0.1, 'topK' => 10, 'topP' => 0.8],
+            ]);
+
+            $ch = curl_init($endpoint);
+            curl_setopt_array($ch, [
+                CURLOPT_POST           => true,
+                CURLOPT_POSTFIELDS     => $payload,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+                CURLOPT_TIMEOUT        => 30,
+            ]);
+            $raw      = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode !== 200 || $raw === false) {
+                $this->sendResponse(502, ['success' => false, 'error' => 'Erreur lors de l\'analyse IA']);
+                return;
+            }
+
+            $response  = json_decode($raw, true);
+            $textPart  = $response['candidates'][0]['content']['parts'][0]['text'] ?? '';
+
+            // Nettoyer les blocs markdown si présents
+            $json = trim(preg_replace('/^```(?:json)?\s*|\s*```$/m', '', trim($textPart)));
+            $data = json_decode($json, true);
+
+            if (!$data || !isset($data['brand'])) {
+                $this->sendResponse(422, ['success' => false, 'error' => 'Impossible de lire l\'étiquette. Essaie avec une photo plus nette.']);
+                return;
+            }
+
+            // Validation légère des types numériques
+            foreach (['weight_per_skein_g', 'yardage_per_skein_m', 'needle_size_mm'] as $field) {
+                if (isset($data[$field])) $data[$field] = is_numeric($data[$field]) ? (float)$data[$field] : null;
+            }
+
+            $allowed = ['lace','fingering','sport','dk','worsted','aran','bulky','super_bulky'];
+            if (!in_array($data['yarn_weight_category'] ?? '', $allowed)) $data['yarn_weight_category'] = null;
+
+            $this->sendResponse(200, ['success' => true, 'data' => $data]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/stash/{id}/photo
+    // -------------------------------------------------------------------------
+
+    public function uploadPhoto(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $entry  = $this->findEntry($id);
+
+            if (!$entry) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Entrée introuvable']);
+                return;
+            }
+
+            if ((int)$entry['user_id'] !== $userId) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Fichier photo manquant ou invalide']);
+                return;
+            }
+
+            $file = $_FILES['photo'];
+            $this->validateImageFile($file);
+            $photoPath = $this->saveStashPhoto($file, $userId);
+
+            if (!empty($entry['photo_url'])) {
+                $oldPath = __DIR__ . '/../public' . $entry['photo_url'];
+                if (file_exists($oldPath)) @unlink($oldPath);
+            }
+
+            $stmt = $this->db->prepare(
+                'UPDATE yarn_stash SET photo_url = :photo WHERE id = :id AND user_id = :uid'
+            );
+            $stmt->execute([':photo' => $photoPath, ':id' => $id, ':uid' => $userId]);
+
+            $this->sendResponse(200, ['success' => true, 'photo_url' => $photoPath]);
+        } catch (\InvalidArgumentException $e) {
+            $this->sendResponse(400, ['success' => false, 'error' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers privés
     // -------------------------------------------------------------------------
 
@@ -376,6 +546,40 @@ class YarnStashController
         $stmt = $this->db->prepare('SELECT COUNT(*) FROM yarn_stash WHERE user_id = :uid');
         $stmt->execute([':uid' => $userId]);
         return (int)$stmt->fetchColumn();
+    }
+
+    private function validateImageFile(array $file): void
+    {
+        $maxSize = 10 * 1024 * 1024;
+        if ($file['size'] > $maxSize)
+            throw new \InvalidArgumentException('Fichier trop volumineux. Maximum : 10 MB');
+        if ($file['size'] === 0)
+            throw new \InvalidArgumentException('Fichier vide');
+
+        $mimeType = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+
+        if (!in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp']))
+            throw new \InvalidArgumentException('Format invalide. Acceptés : JPEG, PNG, WebP');
+
+        $imageInfo = @getimagesize($file['tmp_name']);
+        if ($imageInfo === false)
+            throw new \InvalidArgumentException('Image corrompue ou invalide');
+    }
+
+    private function saveStashPhoto(array $file, int $userId): string
+    {
+        $uploadsDir = __DIR__ . '/../public/uploads/stash';
+        if (!is_dir($uploadsDir))
+            mkdir($uploadsDir, 0755, true);
+
+        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) ?: 'jpg';
+        $filename  = sprintf('%d_%s_%s.%s', $userId, date('Ymd_His'), bin2hex(random_bytes(6)), $extension);
+        $filepath  = $uploadsDir . '/' . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $filepath))
+            throw new \Exception('Impossible de sauvegarder la photo');
+
+        return '/uploads/stash/' . $filename;
     }
 
     private function sendResponse(int $statusCode, array $data): void

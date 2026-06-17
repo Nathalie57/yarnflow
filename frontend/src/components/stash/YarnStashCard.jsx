@@ -3,6 +3,8 @@
  * @brief Carte pelote dans la liste du stock
  */
 
+const API_URL = import.meta.env.VITE_API_URL || ''
+
 const WEIGHT_LABELS = {
   lace:     'Lace',
   fingering: 'Fingering',
@@ -21,11 +23,21 @@ const YarnStashCard = ({ entry, onEdit, onDelete }) => {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
       <div className="flex items-stretch">
-        {/* Pastille couleur */}
-        <div
-          className="w-3 flex-shrink-0"
-          style={{ backgroundColor: entry.color_hex || '#e5e7eb' }}
-        />
+        {/* Photo ou pastille couleur */}
+        {entry.photo_url ? (
+          <div className="w-16 flex-shrink-0 relative">
+            <img
+              src={API_URL + entry.photo_url}
+              alt="Étiquette"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : (
+          <div
+            className="w-3 flex-shrink-0"
+            style={{ backgroundColor: entry.color_hex || '#e5e7eb' }}
+          />
+        )}
 
         <div className="flex-1 p-4">
           {/* En-tête : marque + gamme */}
@@ -98,8 +110,38 @@ const YarnStashCard = ({ entry, onEdit, onDelete }) => {
             )}
           </div>
 
+          {entry.quantity_reserved > 0 && (
+            <div className="mt-2 flex items-center gap-1 text-xs text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5">
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              <span>
+                <strong>{entry.quantity_reserved}</strong> réservée{entry.quantity_reserved > 1 ? 's' : ''}
+                {entry.reserved_by && <span className="text-amber-600"> · {entry.reserved_by}</span>}
+                {entry.quantity_available !== undefined && (
+                  <span className="text-amber-500"> ({entry.quantity_available} disponible{entry.quantity_available > 1 ? 's' : ''})</span>
+                )}
+              </span>
+            </div>
+          )}
+
           {entry.notes && (
             <p className="mt-2 text-xs text-gray-400 line-clamp-2 italic">{entry.notes}</p>
+          )}
+
+          {entry.purchase_url && (
+            <a
+              href={entry.purchase_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-xs text-primary-500 hover:text-primary-700 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+              </svg>
+              Racheter
+            </a>
           )}
         </div>
       </div>
