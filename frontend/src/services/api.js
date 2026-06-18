@@ -315,7 +315,7 @@ export const yarnStashAPI = {
   scanLabel: (file) => {
     const form = new FormData()
     form.append('photo', file)
-    return api.post('/stash/scan-label', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+    return api.post('/stash/scan-label', form, { headers: { 'Content-Type': 'multipart/form-data' }, _retryCount: 99 })
   }
 }
 

@@ -84,7 +84,10 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
     if (!entry || isEmpty) {
       try {
         setScanning(true)
-        const res = await yarnStashAPI.scanLabel(file)
+        const scanTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), 30000)
+        )
+        const res = await Promise.race([yarnStashAPI.scanLabel(file), scanTimeout])
         const d = res.data.data
         setForm(f => ({
           ...f,
@@ -98,8 +101,11 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           needle_size_mm:       d.needle_size_mm      != null ? d.needle_size_mm      : f.needle_size_mm,
           yarn_weight_category: d.yarn_weight_category ?? f.yarn_weight_category,
         }))
-      } catch {
-        setScanError('Lecture automatique impossible. Remplis le formulaire manuellement.')
+      } catch (err) {
+        const msg = err?.message === 'timeout'
+          ? 'Lecture trop longue. Remplis le formulaire manuellement.'
+          : 'Lecture automatique impossible. Remplis le formulaire manuellement.'
+        setScanError(msg)
       } finally {
         setScanning(false)
       }
@@ -130,6 +136,66 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Photo d'étiquette — en premier pour auto-remplir */}
+      {!entry && (
+        <div>
+          {scanError && (
+            <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scanError}</p>
+          )}
+          {photoPreview ? (
+            <div className="relative">
+              <img
+                src={photoPreview}
+                alt="Étiquette"
+                className={`w-full h-40 object-cover rounded-xl border border-gray-200 transition-opacity ${scanning ? 'opacity-50' : ''}`}
+              />
+              {scanning && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 rounded-xl">
+                  <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-medium text-primary-700">Lecture de l'étiquette…</span>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={removePhoto}
+                className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
+                title="Supprimer la photo"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full h-24 border-2 border-dashed border-primary-200 bg-primary-50/40 rounded-xl flex flex-col items-center justify-center gap-1.5 text-primary-400 hover:border-primary-400 hover:text-primary-600 transition-colors cursor-pointer"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+              </svg>
+              <span className="text-xs font-medium">Prendre en photo l'étiquette pour remplir automatiquement</span>
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handlePhotoChange}
+          />
+          {!photoPreview && (
+            <div className="flex items-center gap-3 my-3">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs text-gray-400">ou remplis manuellement</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Marque + Gamme */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
@@ -309,69 +375,62 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
         />
       </div>
 
-      {/* Photo d'étiquette */}
-      <div>
-        <label className={labelCls}>
-          Photo de l'étiquette
-          {!entry && <span className="ml-1.5 text-primary-500 font-normal">— remplit le formulaire automatiquement</span>}
-        </label>
-        {scanError && (
-          <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scanError}</p>
-        )}
-        {photoPreview || entry?.photo_url ? (
-          <div className="relative">
-            <img
-              src={photoPreview || (import.meta.env.VITE_API_URL + entry.photo_url)}
-              alt="Étiquette"
-              className={`w-full h-40 object-cover rounded-xl border border-gray-200 transition-opacity ${scanning ? 'opacity-50' : ''}`}
-            />
-            {scanning && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 rounded-xl">
-                <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs font-medium text-primary-700">Lecture de l'étiquette…</span>
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={removePhoto}
-              className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
-              title="Supprimer la photo"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            {!photoPreview && (
+      {/* Photo d'étiquette — mode édition uniquement (en création elle est en haut) */}
+      {entry && (
+        <div>
+          <label className={labelCls}>Photo de l'étiquette</label>
+          {scanError && (
+            <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scanError}</p>
+          )}
+          {photoPreview || entry.photo_url ? (
+            <div className="relative">
+              <img
+                src={photoPreview || (import.meta.env.VITE_API_URL + entry.photo_url)}
+                alt="Étiquette"
+                className="w-full h-40 object-cover rounded-xl border border-gray-200"
+              />
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute bottom-2 right-2 bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
+                onClick={removePhoto}
+                className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
+                title="Supprimer la photo"
               >
-                Changer
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
-            )}
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-            </svg>
-            <span className="text-xs">Photo de l'étiquette</span>
-          </button>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handlePhotoChange}
-        />
-      </div>
+              {!photoPreview && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute bottom-2 right-2 bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
+                >
+                  Changer
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+              </svg>
+              <span className="text-xs">Ajouter une photo</span>
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handlePhotoChange}
+          />
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">

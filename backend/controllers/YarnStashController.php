@@ -394,7 +394,7 @@ Champs à extraire (retourne null si non trouvé sur l'étiquette) :
 Exemple: {"brand":"Drops","yarn_name":"Merino Extra Fine","color_name":"Teal","dye_lot":"2024A","composition":"100% Mérinos","weight_per_skein_g":50,"yardage_per_skein_m":190,"needle_size_mm":3.5,"yarn_weight_category":"dk"}
 PROMPT;
 
-            $model    = 'gemini-2.0-flash';
+            $model    = 'gemini-2.5-flash';
             $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
 
             $payload = json_encode([
@@ -414,8 +414,10 @@ PROMPT;
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
                 CURLOPT_TIMEOUT        => 30,
+                CURLOPT_CONNECTTIMEOUT => 10,
             ]);
             $raw      = curl_exec($ch);
+            $curlErr  = curl_error($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
 
@@ -445,7 +447,7 @@ PROMPT;
             if (!in_array($data['yarn_weight_category'] ?? '', $allowed)) $data['yarn_weight_category'] = null;
 
             $this->sendResponse(200, ['success' => true, 'data' => $data]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
         }
     }
