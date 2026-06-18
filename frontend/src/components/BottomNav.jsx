@@ -1,9 +1,21 @@
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+
+const STASH_NEW_KEY = 'yf_stash_new_seen'
 
 const BottomNav = ({ onOpenAi }) => {
   const location = useLocation()
   const isActive = (path) => location.pathname === path
   const isLibraryActive = location.pathname === '/bibliotheque' || location.pathname === '/pattern-library' || location.pathname === '/stash' || location.pathname.startsWith('/pattern-library/')
+
+  const [showNew, setShowNew] = useState(() => !localStorage.getItem(STASH_NEW_KEY))
+
+  useEffect(() => {
+    if (isLibraryActive && showNew) {
+      localStorage.setItem(STASH_NEW_KEY, '1')
+      setShowNew(false)
+    }
+  }, [isLibraryActive, showNew])
 
   return (
     <nav
@@ -52,11 +64,14 @@ const BottomNav = ({ onOpenAi }) => {
         </button>
 
         {/* Bibliothèque */}
-        <Link to="/bibliotheque" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1">
-          <div className={`p-1.5 rounded-xl transition-colors duration-150 ${isLibraryActive ? 'bg-primary-50' : ''}`}>
+        <Link to="/bibliotheque" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1 relative">
+          <div className={`p-1.5 rounded-xl transition-colors duration-150 relative ${isLibraryActive ? 'bg-primary-50' : ''}`}>
             <svg className={`w-6 h-6 transition-colors duration-150 ${isLibraryActive ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
             </svg>
+            {showNew && (
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
+            )}
           </div>
           <span className={`text-[10px] font-medium transition-colors duration-150 ${isLibraryActive ? 'text-primary-600' : 'text-gray-400'}`}>
             Ressources
