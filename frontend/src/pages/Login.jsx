@@ -21,7 +21,8 @@ const Login = () => {
     const result = await login(email, password)
 
     if (result.success) {
-      navigate('/dashboard')
+      const pendingImport = localStorage.getItem('yf_pending_import')
+      navigate(pendingImport ? `/import/${pendingImport}` : '/dashboard')
     } else {
       setError(result.error)
     }

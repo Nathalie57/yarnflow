@@ -28,6 +28,7 @@ import Tools from './pages/Tools'
 import PatternLibrary from './pages/PatternLibrary'
 import PatternLibraryDetail from './pages/PatternLibraryDetail'
 import PaymentSuccess from './pages/PaymentSuccess'
+import ImportPartnerPattern from './pages/ImportPartnerPattern'
 
 // Pages légales
 import CGU from './pages/CGU'
@@ -89,6 +90,9 @@ function App() {
 
           {/* Route de confirmation de paiement */}
           <Route path="/payment/success" element={<PaymentSuccess />} />
+
+          {/* Import partenaire via QR code */}
+          <Route path="/import/:code" element={<ImportPartnerPattern />} />
 
           {/* Pages légales */}
           <Route path="/cgu" element={<CGU />} />

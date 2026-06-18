@@ -25,6 +25,7 @@ use App\Controllers\PasswordResetController;
 use App\Controllers\WebFetchController;
 use App\Controllers\AiAssistantController;
 use App\Controllers\ContactController;
+use App\Controllers\PartnerPatternController;
 use App\Middleware\RateLimitMiddleware;
 
 /**
@@ -244,6 +245,12 @@ function route(string $method, string $uri): void
         $method === 'POST' && $uri === 'web-fetch' => (new WebFetchController())->fetch(),
         $method === 'POST' && $uri === 'web-fetch/metadata' => (new WebFetchController())->fetchMetadata(),
         $method === 'GET' && $uri === 'web-fetch/proxy' => (new WebFetchController())->proxy(),
+
+        // Routes import partenaire (QR code)
+        $method === 'GET'  && preg_match('/^import\/([A-Z0-9]+)$/', $uri, $matches) => (new PartnerPatternController())->getByCode($matches[1]),
+        $method === 'POST' && preg_match('/^import\/([A-Z0-9]+)$/', $uri, $matches) => (new PartnerPatternController())->importProject($matches[1]),
+        $method === 'GET'  && $uri === 'admin/partner-patterns' => (new PartnerPatternController())->listTemplates(),
+        $method === 'POST' && $uri === 'admin/partner-patterns' => (new PartnerPatternController())->createTemplate(),
 
         // [AI:Claude] Routes de contact (v0.15.0)
         $method === 'POST' && $uri === 'contact' => (new ContactController())->sendMessage(),
