@@ -43,6 +43,7 @@ import AdminTemplates from './pages/admin/AdminTemplates'
 import AdminPayments from './pages/admin/AdminPayments'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOptions from './pages/admin/AdminOptions'
+import AdminPartnerPatterns from './pages/admin/AdminPartnerPatterns'
 
 // [AI:Claude] Composant pour tracker automatiquement les changements de route
 function AnalyticsTracker() {
@@ -129,6 +130,7 @@ function App() {
             <Route path="/admin/payments" element={<AdminPayments />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/options" element={<AdminOptions />} />
+            <Route path="/admin/partner-patterns" element={<AdminPartnerPatterns />} />
           </Route>
         </Routes>
         </ErrorBoundary>
