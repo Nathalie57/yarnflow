@@ -229,9 +229,12 @@ class PartnerPatternController
 
     private function requireAdmin(): void
     {
-        $userId = $this->getUserIdFromAuth();
-        $user   = $this->getDb()->query("SELECT role FROM users WHERE id = $userId")->fetch(\PDO::FETCH_ASSOC);
-        if (!$user || $user['role'] !== 'admin') {
+        $userData = $this->authMiddleware->authenticate();
+        if (!$userData) {
+            $this->sendResponse(401, ['success' => false, 'error' => 'Non authentifié']);
+            exit;
+        }
+        if (($userData['role'] ?? '') !== 'admin') {
             $this->sendResponse(403, ['success' => false, 'error' => 'Accès refusé']);
             exit;
         }
@@ -239,21 +242,12 @@ class PartnerPatternController
 
     private function getUserIdFromAuth(): int
     {
-        $token = null;
-        $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
-        if (preg_match('/Bearer\s+(.+)$/i', $authHeader, $m)) {
-            $token = $m[1];
-        }
-        if (!$token) {
+        $userData = $this->authMiddleware->authenticate();
+        if (!$userData) {
             $this->sendResponse(401, ['success' => false, 'error' => 'Non authentifié']);
             exit;
         }
-        $userId = $this->authMiddleware->validateToken($token);
-        if (!$userId) {
-            $this->sendResponse(401, ['success' => false, 'error' => 'Token invalide']);
-            exit;
-        }
-        return $userId;
+        return (int)$userData['id'];
     }
 
     private function getDb(): \PDO
