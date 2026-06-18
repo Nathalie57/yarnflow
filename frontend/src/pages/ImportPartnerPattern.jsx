@@ -76,7 +76,7 @@ const ImportPartnerPattern = () => {
   if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -88,7 +88,7 @@ const ImportPartnerPattern = () => {
           <p className="text-4xl mb-4">🧶</p>
           <h1 className="text-lg font-semibold text-gray-800 mb-2">Lien invalide</h1>
           <p className="text-sm text-gray-500 mb-6">{error}</p>
-          <Link to="/" className="text-sm text-violet-600 hover:text-violet-700 font-medium">
+          <Link to="/" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
             Retour à YarnFlow
           </Link>
         </div>
@@ -99,18 +99,18 @@ const ImportPartnerPattern = () => {
   if (importing) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-3">
-        <div className="animate-spin w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full" />
         <p className="text-sm text-gray-500">Création du projet en cours…</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-violet-50 to-white flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex flex-col items-center justify-center px-4 py-12">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-sm w-full">
 
         {/* Partenaire */}
-        <p className="text-xs font-medium text-violet-500 uppercase tracking-wider mb-1">
+        <p className="text-xs font-medium text-primary-600 uppercase tracking-wider mb-1">
           Patron {template.partner_name}
         </p>
 
@@ -125,7 +125,7 @@ const ImportPartnerPattern = () => {
         {/* Infos techniques */}
         <div className="flex flex-wrap gap-2 mb-6">
           {template.technique && (
-            <span className="px-3 py-1 bg-violet-50 text-violet-700 rounded-full text-xs font-medium capitalize">
+            <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-medium capitalize">
               {template.technique}
             </span>
           )}
@@ -163,7 +163,7 @@ const ImportPartnerPattern = () => {
         {/* CTA */}
         <button
           onClick={handleImportClick}
-          className="w-full py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold transition-colors"
+          className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-colors"
         >
           {user ? 'Ajouter à mes projets' : 'Créer un compte pour utiliser ce patron'}
         </button>
@@ -176,7 +176,7 @@ const ImportPartnerPattern = () => {
                 localStorage.setItem(PENDING_IMPORT_KEY, code)
                 navigate('/login', { state: { from: `/import/${code}` } })
               }}
-              className="text-violet-600 hover:text-violet-700 font-medium"
+              className="text-primary-600 hover:text-primary-700 font-medium"
             >
               Se connecter
             </button>

@@ -247,7 +247,7 @@ class PartnerPatternController
             $this->sendResponse(401, ['success' => false, 'error' => 'Non authentifié']);
             exit;
         }
-        return (int)$userData['id'];
+        return (int)$userData['user_id'];
     }
 
     private function getDb(): \PDO
