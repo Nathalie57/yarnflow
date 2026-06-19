@@ -60,7 +60,8 @@ const Register = () => {
       console.log('[Register] Résultat:', result)
 
       if (result.success) {
-        navigate('/dashboard')
+        const pendingImport = localStorage.getItem('yf_pending_import')
+        navigate(pendingImport ? `/import/${pendingImport}` : '/dashboard')
       } else {
         setError(result.error)
         setLoading(false)
