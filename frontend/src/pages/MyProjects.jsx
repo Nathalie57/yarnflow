@@ -16,6 +16,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useAnalytics } from '../hooks/useAnalytics'
 import api, { authAPI } from '../services/api'
 import ProjectFilters from '../components/ProjectFilters'
 import InfoBubble from '../components/InfoBubble'
@@ -27,6 +28,7 @@ const MyProjects = () => {
   const { user, updateUser } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const { trackProjectCreated } = useAnalytics()
 
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [pendingPlan, setPendingPlan] = useState(null)
@@ -475,7 +477,7 @@ const MyProjects = () => {
       const response = await api.post('/projects', projectData)
       newProject = response.data.project
 
-      // [AI:Claude] Tracker l'événement project_created
+      trackProjectCreated('manual', newProject.technique)
       try {
         await api.post('/analytics/track-event', {
           event_name: 'project_created',

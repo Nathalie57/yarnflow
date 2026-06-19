@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useAnalytics } from '../hooks/useAnalytics'
 import axios from 'axios'
 import api from '../services/api'
 
@@ -18,6 +19,7 @@ import api from '../services/api'
 export default function SmartProjectCreator() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { trackSmartAnalysis, trackProjectCreated } = useAnalytics()
 
   const isPro = user && user.subscription_type && user.subscription_type !== 'free' && (
     !user.subscription_expires_at || new Date(user.subscription_expires_at) > new Date()
@@ -181,15 +183,18 @@ export default function SmartProjectCreator() {
 
         setSections(response.data.data.sections || [])
         setStep(3)
+        trackSmartAnalysis(mode, true)
 
         // Recharger le quota
         fetchQuota()
       } else {
+        trackSmartAnalysis(mode, false)
         setError(response.data.error || 'Erreur lors de l\'analyse')
         setAiStatus(response.data.ai_status)
       }
     } catch (err) {
       console.error('Erreur analyze:', err)
+      trackSmartAnalysis(mode, false)
       if (err.response?.status === 403) {
         fetchQuota() // recharge pour afficher l'écran d'upgrade
         setError(err.response.data?.free_trial_used
@@ -233,6 +238,7 @@ export default function SmartProjectCreator() {
       if (response.data.success) {
         setCreatedProject(response.data.project)
         setStep(4)
+        trackProjectCreated('smart', project.craft_type)
       } else {
         setError(response.data.error || 'Erreur lors de la création du projet')
       }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useAnalytics } from '../hooks/useAnalytics'
 import api from '../services/api'
 import PasswordInput from '../components/PasswordInput'
 
@@ -12,6 +13,7 @@ const Login = () => {
   const [oauthLoading, setOauthLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const { trackLogin } = useAnalytics()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -21,6 +23,7 @@ const Login = () => {
     const result = await login(email, password)
 
     if (result.success) {
+      trackLogin('email')
       const pendingImport = localStorage.getItem('yf_pending_import')
       navigate(pendingImport ? `/import/${pendingImport}` : '/dashboard')
     } else {
