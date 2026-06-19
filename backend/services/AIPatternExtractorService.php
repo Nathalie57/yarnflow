@@ -162,8 +162,18 @@ PROMPT;
             $html = (string) $response->getBody();
             $text = $this->extractTextFromHTML($html);
 
-            if (empty($text) || strlen($text) < 100) {
-                return $this->errorResponse('Impossible d\'extraire le contenu de cette page', 0);
+            if (empty($text) || strlen($text) < 500) {
+                return $this->errorResponse(
+                    'Contenu insuffisant extrait de cette page. Elle est peut-être vide ou rendue côté client (JavaScript).',
+                    0
+                );
+            }
+
+            if (!$this->looksLikePatternContent($text)) {
+                return $this->errorResponse(
+                    'Cette page ne semble pas contenir de patron de tricot ou crochet. Vérifiez que l\'URL pointe directement vers les instructions du patron, et non une page de présentation ou de vente qui nécessite une connexion.',
+                    0
+                );
             }
 
             $result = $this->callGeminiWithText($text, $size);
@@ -353,6 +363,16 @@ PROMPT;
             return $this->errorResponse('Aucune information exploitable détectée dans le patron', 0, 'partial');
         }
 
+        // A title with no sections means the page had a title but no actual instructions
+        if (!empty($data['title']) && (empty($data['sections']) || count($data['sections']) === 0)) {
+            return $this->errorResponse(
+                'Seul le titre a pu être extrait ("' . $data['title'] . '"). ' .
+                'Les instructions du patron ne sont pas accessibles depuis cette URL — la page nécessite probablement une connexion ou un achat.',
+                0,
+                'partial'
+            );
+        }
+
         return [
             'success' => true,
             'data' => $data,
@@ -360,6 +380,37 @@ PROMPT;
             'ai_status' => $this->determineStatus($data),
             'raw_response' => $response
         ];
+    }
+
+    /**
+     * Vérifie que le texte extrait contient bien du vocabulaire de patron tricot/crochet.
+     * Évite d'appeler Gemini pour des pages de login, de vente, ou hors-sujet.
+     */
+    private function looksLikePatternContent(string $text): bool
+    {
+        $keywords = [
+            // Français
+            'maille', 'rang', 'tour', 'aiguille', 'crochet', 'tricot', 'augment',
+            'diminut', 'monter', 'rabattre', 'glisser', 'endroit', 'envers',
+            // Anglais
+            'stitch', 'row', 'round', 'needle', 'cast on', 'bind off', 'knit',
+            'purl', 'increase', 'decrease', 'sc', 'dc', 'ch ', 'slip',
+            // Abréviations courantes
+            'ms ', 'ml ', 'mc ', 'end.', 'env.', 'Rnd ', 'rnd ', ' k2tog', 'yo ',
+        ];
+
+        $textLower = mb_strtolower($text);
+        $matches = 0;
+        foreach ($keywords as $keyword) {
+            if (str_contains($textLower, mb_strtolower($keyword))) {
+                $matches++;
+                if ($matches >= 3) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private function extractTextFromHTML(string $html): string

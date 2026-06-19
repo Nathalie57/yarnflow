@@ -375,6 +375,8 @@ class CreditManager
         // [AI:Claude] Récupérer les infos utilisateur et crédits
         $query = "SELECT
                     upc.last_reset_at,
+                    upc.monthly_credits,
+                    upc.credits_used_this_month,
                     u.subscription_type,
                     u.subscription_expires_at
                   FROM user_photo_credits upc
@@ -389,6 +391,30 @@ class CreditManager
 
         if (!$data)
             return false;
+
+        // Détecter une dérive plan/crédits : si l'utilisateur a été upgradé sans que
+        // initializeUserCredits ait été appelé (ex: mise à jour manuelle en DB, webhook manqué),
+        // monthly_credits + credits_used_this_month sera inférieur au quota du plan actuel.
+        if ($data['subscription_type'] !== 'free') {
+            $planQuota = self::getMonthlyQuota($data['subscription_type']);
+            $initializedQuota = (int)$data['monthly_credits'] + (int)$data['credits_used_this_month'];
+
+            if ($planQuota > $initializedQuota) {
+                $updateQuery = "UPDATE user_photo_credits
+                               SET monthly_credits = :new_quota,
+                                   credits_used_this_month = 0,
+                                   last_reset_at = NOW()
+                               WHERE user_id = :user_id";
+
+                $updateStmt = $this->db->prepare($updateQuery);
+                $updateStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+                $updateStmt->bindValue(':new_quota', $planQuota, PDO::PARAM_INT);
+                $updateStmt->execute();
+
+                error_log("[CREDIT SYNC] User $userId - Dérive détectée (avait $initializedQuota, plan {$data['subscription_type']} = $planQuota), crédits corrigés");
+                return true;
+            }
+        }
 
         // [AI:Claude] Vérifier si le dernier reset date de plus d'un mois (30 jours calendaires)
         $lastReset = new \DateTime($data['last_reset_at']);
