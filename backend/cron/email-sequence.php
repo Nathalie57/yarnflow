@@ -54,7 +54,7 @@ $totalSent = 0;
 // Condition : inscrit depuis 1-2j, a au moins 1 projet, n'a pas reçu cet email
 // -------------------------------------------------------------------------
 $stmt = $pdo->query("
-    SELECT u.id, u.email, u.name,
+    SELECT u.id, u.email, u.first_name AS name,
            p.id AS project_id, p.name AS project_name
     FROM users u
     JOIN projects p ON p.user_id = u.id
@@ -85,7 +85,7 @@ foreach ($users as $user) {
 // J+3 : onboarding — "Tu as eu le temps de tricoter ?"
 // -------------------------------------------------------------------------
 $stmt = $pdo->query("
-    SELECT id, email, name
+    SELECT id, email, first_name AS name
     FROM users
     WHERE created_at BETWEEN DATE_SUB(NOW(), INTERVAL 4 DAY) AND DATE_SUB(NOW(), INTERVAL 2 DAY)
 ");

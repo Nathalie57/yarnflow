@@ -45,14 +45,22 @@ $sql = <<<SQL
         p.id            AS project_id,
         p.name          AS project_name,
         p.updated_at    AS last_activity,
-        p.progress,
+        CASE
+            WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0
+                THEN ROUND(
+                    (SELECT COALESCE(SUM(current_row), 0) FROM project_sections WHERE project_id = p.id) /
+                    NULLIF((SELECT COALESCE(SUM(total_rows), 0) FROM project_sections WHERE project_id = p.id), 0) * 100
+                )
+            WHEN p.total_rows > 0 THEN ROUND(p.current_row / p.total_rows * 100)
+            ELSE 0
+        END AS progress,
         u.id            AS user_id,
         u.email,
-        u.name          AS user_name
+        u.first_name    AS user_name
     FROM projects p
     JOIN users u ON u.id = p.user_id
     WHERE p.status = 'in_progress'
-      AND u.inactivity_reminder_enabled = 1
+      AND COALESCE(u.inactivity_reminder_enabled, 1) = 1
       AND p.updated_at < DATE_SUB(NOW(), INTERVAL 7 DAY)
       AND (
             p.last_inactivity_reminder_at IS NULL
