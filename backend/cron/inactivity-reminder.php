@@ -11,6 +11,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Services\EmailService;
+use App\Services\PushService;
 
 // Charger la config DB
 $configPath = __DIR__ . '/../config/database.php';
@@ -34,6 +35,7 @@ try {
 }
 
 $emailService = new EmailService($pdo);
+$pushService  = new PushService();
 $now = new DateTime();
 $sent = 0;
 $errors = 0;
@@ -93,6 +95,18 @@ foreach ($projects as $project) {
         $update->execute([':id' => $project['project_id']]);
         $sent++;
         error_log("[CRON inactivity] Email envoyé → {$project['email']} pour projet #{$project['project_id']}");
+
+        // Push en complément de l'email
+        try {
+            $pushService->sendToUser(
+                (int)$project['user_id'],
+                'Votre projet vous attend 🧶',
+                "{$project['project_name']} — reprenez là où vous vous étiez arrêtée",
+                '/projects/' . $project['project_id']
+            );
+        } catch (\Exception $e) {
+            error_log("[CRON inactivity] Push échoué pour user {$project['user_id']}: " . $e->getMessage());
+        }
     } else {
         $errors++;
         error_log("[CRON inactivity] Échec email → {$project['email']} pour projet #{$project['project_id']}");

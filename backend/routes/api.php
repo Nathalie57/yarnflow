@@ -257,6 +257,11 @@ function route(string $method, string $uri): void
         $method === 'GET' && $uri === 'admin/contact-messages' => (new ContactController())->listMessages(),
         $method === 'PUT' && preg_match('/^admin\/contact-messages\/(\d+)\/read$/', $uri, $matches) => (new ContactController())->markAsRead((int)$matches[1]),
 
+        // Push notifications
+        $method === 'GET'    && $uri === 'push/vapid-public-key' => (new \App\Controllers\PushController())->getVapidPublicKey(),
+        $method === 'POST'   && $uri === 'push/subscribe'        => (new \App\Controllers\PushController())->subscribe(),
+        $method === 'DELETE' && $uri === 'push/subscribe'        => (new \App\Controllers\PushController())->unsubscribe(),
+
         default => notFound()
     };
 }
