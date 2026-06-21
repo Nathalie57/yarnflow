@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { userAPI } from '../services/api'
 import PasswordInput from '../components/PasswordInput'
+import { usePushNotifications } from '../hooks/usePushNotifications'
 
 const Profile = () => {
   const { user, updateUser } = useAuth()
@@ -22,6 +23,7 @@ const Profile = () => {
   const [successMessage, setSuccessMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [inactivityReminder, setInactivityReminder] = useState(true)
+  const { isSupported: pushSupported, isSubscribed, isLoading: pushLoading, permission, subscribe, unsubscribe } = usePushNotifications()
 
   useEffect(() => { loadProfile() }, [])
 
@@ -304,19 +306,47 @@ const Profile = () => {
           {/* Notifications */}
           <div className="card">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Notifications</h2>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Rappel d'inactivité</p>
-                <p className="text-xs text-gray-500 mt-0.5">Reçois un email si tu n'as pas tricoté depuis 7 jours</p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Rappel d'inactivité</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Reçois un email si tu n'as pas tricoté depuis 7 jours</p>
+                </div>
+                <button
+                  onClick={() => handleToggleInactivityReminder(!inactivityReminder)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${inactivityReminder ? 'bg-primary-600' : 'bg-gray-200'}`}
+                  role="switch"
+                  aria-checked={inactivityReminder}
+                >
+                  <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${inactivityReminder ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
               </div>
-              <button
-                onClick={() => handleToggleInactivityReminder(!inactivityReminder)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${inactivityReminder ? 'bg-primary-600' : 'bg-gray-200'}`}
-                role="switch"
-                aria-checked={inactivityReminder}
-              >
-                <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${inactivityReminder ? 'translate-x-5' : 'translate-x-0'}`} />
-              </button>
+
+              {pushSupported && (
+                <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-100">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Notifications push</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {permission === 'denied'
+                        ? 'Bloquées dans votre navigateur — modifiez les permissions du site pour les activer'
+                        : 'Reçois des rappels directement sur ton téléphone'}
+                    </p>
+                  </div>
+                  {permission === 'denied' ? (
+                    <span className="text-xs text-gray-400 flex-shrink-0">Bloquées</span>
+                  ) : (
+                    <button
+                      onClick={isSubscribed ? unsubscribe : subscribe}
+                      disabled={pushLoading}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-60 ${isSubscribed ? 'bg-primary-600' : 'bg-gray-200'}`}
+                      role="switch"
+                      aria-checked={isSubscribed}
+                    >
+                      <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${isSubscribed ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
