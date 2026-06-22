@@ -153,8 +153,6 @@ const ProjectCounter = () => {
   const [generatedPhoto, setGeneratedPhoto] = useState(null)
 
   // Onboarding premier rang
-  const [showFirstRowModal, setShowFirstRowModal] = useState(false)
-  const [firstRowInput, setFirstRowInput] = useState('')
   const [showDemoBanner, setShowDemoBanner] = useState(false)
 
   // [AI:Claude] v0.17.0 - Célébration premier rang
@@ -330,7 +328,6 @@ const ProjectCounter = () => {
       // Onboarding : afficher le prompt "premier rang" si projet fraîchement créé
       const urlParams = new URLSearchParams(window.location.search)
       if (urlParams.get('new') === '1') {
-        if (urlParams.get('demo') !== '1') setShowFirstRowModal(true)
         if (urlParams.get('demo') === '1') setShowDemoBanner(true)
         window.history.replaceState(null, '', window.location.pathname)
       }
@@ -7237,63 +7234,6 @@ Rang 3 : *1ms, aug* x6 (18)
       />
 
       {/* Onboarding premier rang */}
-      {showFirstRowModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[80] p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl p-6">
-            <div className="text-center mb-5">
-              <div className="w-14 h-14 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">Vous tricotez en ce moment ?</h3>
-              <p className="text-sm text-gray-500 mt-1">Entrez votre rang actuel pour commencer à suivre votre progression</p>
-            </div>
-            <div className="mb-5">
-              <input
-                type="number"
-                value={firstRowInput}
-                onChange={(e) => setFirstRowInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const row = parseInt(firstRowInput, 10)
-                    if (!isNaN(row) && row >= 0) {
-                      setCurrentRow(row)
-                      api.post(`/projects/${projectId}/rows`, { row_number: row, note: null }).catch(() => {})
-                    }
-                    setShowFirstRowModal(false)
-                  }
-                }}
-                placeholder="Ex : 47"
-                min="0"
-                autoFocus
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-center text-2xl font-bold focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              />
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowFirstRowModal(false)}
-                className="flex-1 py-2.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl transition"
-              >
-                Je commence au rang 1
-              </button>
-              <button
-                onClick={() => {
-                  const row = parseInt(firstRowInput, 10)
-                  if (!isNaN(row) && row > 0) {
-                    setCurrentRow(row)
-                    api.post(`/projects/${projectId}/rows`, { row_number: row, note: null }).catch(() => {})
-                  }
-                  setShowFirstRowModal(false)
-                }}
-                className="flex-1 py-2.5 text-sm font-semibold bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition"
-              >
-                C'est parti !
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modale reminder déclenché */}
       {activeReminder && (
