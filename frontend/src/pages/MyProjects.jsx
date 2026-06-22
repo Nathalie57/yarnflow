@@ -448,7 +448,7 @@ const MyProjects = () => {
     setIsCreatingDemo(true)
     try {
       const response = await api.post('/projects', {
-        name: 'Bonnet rayé — Exemple',
+        name: 'Cardinal Song — Bonnet (démo)',
         technique: 'tricot',
         type: 'accessoires',
         description: 'Un projet de démonstration pour découvrir YarnFlow. Modifiez-le comme vous voulez !',
@@ -458,12 +458,19 @@ const MyProjects = () => {
       })
       const demoProject = response.data.project
 
-      await api.post(`/projects/${demoProject.id}/sections`, {
-        name: 'Corps du bonnet',
-        total_rows: 80,
-        display_order: 0,
-        notes: null
-      })
+      const demoSections = [
+        { name: 'Côtes 1×1', total_rows: 25 },
+        { name: 'Corps (jersey)', total_rows: 51 },
+        { name: 'Diminutions couronne', total_rows: 26 },
+      ]
+      for (let i = 0; i < demoSections.length; i++) {
+        await api.post(`/projects/${demoProject.id}/sections`, {
+          name: demoSections[i].name,
+          total_rows: demoSections[i].total_rows,
+          display_order: i,
+          notes: null
+        })
+      }
 
       await api.post(`/projects/${demoProject.id}/rows`, { row_number: 15 })
 
