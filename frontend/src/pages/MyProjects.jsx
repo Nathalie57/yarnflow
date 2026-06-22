@@ -837,45 +837,58 @@ const MyProjects = () => {
       {!loading && !error && (
         <>
           {projects.length === 0 ? (
-            <div className="max-w-xl mx-auto py-12 px-6">
+            <div className="max-w-lg mx-auto py-10 px-4">
 
-              {/* Accueil personnalisé */}
-              {user?.first_name && (
-                <p className="text-center text-gray-500 text-sm mb-6">
-                  Bonjour <span className="font-semibold text-gray-700">{user.first_name}</span> — bienvenue sur YarnFlow !
-                </p>
-              )}
-
-              {/* Question directe */}
+              {/* Accueil */}
               <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-                  Vous avez un projet en cours ?
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {user?.first_name ? `Bienvenue, ${user.first_name} !` : 'Bienvenue sur YarnFlow !'}
                 </h2>
-                <p className="text-gray-600 text-base leading-relaxed">
-                  Notez votre rang actuel en 5 secondes.<br />
-                  La prochaine fois que vous reprenez, vous savez exactement où vous en êtes.
-                </p>
+                <p className="text-gray-500 text-sm">Par où voulez-vous commencer ?</p>
               </div>
 
-              {/* CTAs */}
-              {canCreateProject && (
-                <div className="text-center mb-10 flex flex-col items-center gap-3">
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="w-full max-w-xs px-8 py-4 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition-colors shadow-sm hover:shadow-md text-base"
-                  >
-                    Oui — ajouter mon projet
-                  </button>
-                  <Link
-                    to="/tools"
-                    className="text-sm text-gray-400 hover:text-primary-600 transition-colors underline underline-offset-2"
-                  >
-                    Pas encore — je veux d'abord explorer l'app
-                  </Link>
+              {/* Création Intelligente — CTA principal */}
+              <button
+                onClick={() => { navigate(smartQuota?.free_trial_used === false || smartQuota?.remaining > 0 ? '/smart-project-creator' : '/smart-project-creator') }}
+                className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-left transition shadow-md hover:shadow-lg group"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-bold text-white text-base">Importer mon patron</p>
+                      <span className="px-2 py-0.5 bg-white bg-opacity-20 text-white text-xs font-semibold rounded-full">Gratuit</span>
+                    </div>
+                    <p className="text-primary-100 text-sm leading-relaxed">
+                      PDF, lien ou photo — notre IA crée votre projet en 10 secondes : sections, aiguilles, compteurs.
+                    </p>
+                  </div>
                 </div>
-              )}
+              </button>
 
-              {/* Ce que ça fait concrètement */}
+              {/* Créer manuellement */}
+              <button
+                onClick={() => canCreateProject && setShowCreateModal(true)}
+                className="w-full mb-6 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
+                    <svg className="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition">Créer un projet manuellement</p>
+                    <p className="text-gray-400 text-xs mt-0.5">Remplissez les informations vous-même</p>
+                  </div>
+                </div>
+              </button>
+
+              {/* Ce que ça fait concrètement — version condensée */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
                 <div className="flex items-start gap-4 p-4">
                   <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -886,17 +899,6 @@ const MyProjects = () => {
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">Vous êtes interrompue — aucun stress</p>
                     <p className="text-gray-500 text-sm mt-0.5">Un clic pour mémoriser votre rang. Vous retrouvez exactement là où vous étiez.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4 p-4">
-                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">Plusieurs projets en parallèle</p>
-                    <p className="text-gray-500 text-sm mt-0.5">Tricot du soir, cadeau en cours, projet urgent — chacun a son compteur.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 p-4">
@@ -918,6 +920,7 @@ const MyProjects = () => {
                   Bibliothèque de patrons
                 </Link>
               </p>
+
             </div>
           ) : filteredProjects.length === 0 ? (
             <div className="max-w-xl mx-auto text-center py-12 px-6 bg-white rounded-xl border-2 border-gray-200">
