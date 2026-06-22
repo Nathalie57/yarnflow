@@ -210,7 +210,7 @@ const ProjectCounter = () => {
   // [AI:Claude] v0.15.0 - Gestion des tags
   const [localTags, setLocalTags] = useState([])
   const [popularTags, setPopularTags] = useState([])
-  const [canUseTags, setCanUseTags] = useState(false)
+  const [canUseTags, setCanUseTags] = useState(true)
   const [showTagSection, setShowTagSection] = useState(false)
 
   // Gate upgrade modal
@@ -455,7 +455,7 @@ const ProjectCounter = () => {
   useEffect(() => {
     if (user) {
       const tier = user.subscription_type || 'free'
-      setCanUseTags(['plus', 'plus_annual', 'pro', 'pro_annual', 'early_bird'].includes(tier))
+      setCanUseTags(true)
     }
   }, [user])
 
@@ -719,10 +719,6 @@ const ProjectCounter = () => {
 
   // [AI:Claude] v0.15.0 - Gestion des tags
   const handleAddTag = async (tag) => {
-    if (!canUseTags) {
-      setUpgradeFeature('tags')
-      return
-    }
 
     if (!tag || localTags.includes(tag)) return
 
