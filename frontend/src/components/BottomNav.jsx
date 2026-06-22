@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
 const STASH_NEW_KEY = 'yf_stash_new_seen'
@@ -9,13 +9,18 @@ const BottomNav = ({ onOpenAi }) => {
   const isLibraryActive = location.pathname === '/bibliotheque' || location.pathname === '/pattern-library' || location.pathname === '/stash' || location.pathname.startsWith('/pattern-library/')
 
   const [showNew, setShowNew] = useState(() => !localStorage.getItem(STASH_NEW_KEY))
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
     if (isLibraryActive && showNew) {
       localStorage.setItem(STASH_NEW_KEY, '1')
       setShowNew(false)
     }
-  }, [isLibraryActive, showNew])
+  }, [isLibraryActive])
 
   return (
     <nav

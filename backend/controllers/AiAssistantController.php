@@ -155,7 +155,7 @@ class AiAssistantController
                     'headers' => ['content-type' => 'application/json'],
                     'json' => [
                         'systemInstruction' => [
-                            'parts' => [['text' => $this->getSystemPrompt()]]
+                            'parts' => [['text' => $this->getSystemPrompt($plan)]]
                         ],
                         'contents' => $geminiContents,
                         'generationConfig' => ['maxOutputTokens' => 1024]
@@ -182,8 +182,22 @@ class AiAssistantController
         }
     }
 
-    private function getSystemPrompt(): string
+    private function getSystemPrompt(string $plan = 'free'): string
     {
+        $isFree = ($plan === 'free');
+
+        if ($isFree) {
+            $planContext = "L'utilisateur est sur le plan GRATUIT (5 messages IA/mois, 5 pelotes en stock max).
+Les fonctionnalités PLUS incluent : stock jusqu'à 15 références, bibliothèque de patrons illimitée, compteur secondaire, 10 messages IA/mois.
+Si ta réponse soulève naturellement un besoin couvert par PLUS (ex: gérer beaucoup de laines, organiser une grande bibliothèque de patrons), tu peux le mentionner sobrement en fin de réponse — une seule phrase, jamais au milieu, jamais de manière insistante.";
+        } elseif (in_array($plan, ['plus', 'plus_annual'])) {
+            $planContext = "L'utilisateur est abonné PLUS (10 messages IA/mois, 15 pelotes en stock max).
+Les fonctionnalités PRO incluent : stock illimité, 30 messages IA/mois, 15 créations IA/mois, 20 crédits Studio Photo/mois pour générer des photos de ses créations.
+Si ta réponse soulève naturellement un besoin couvert par PRO (ex: gérer un grand stash, générer des photos de ses créations, poser beaucoup de questions), tu peux le mentionner sobrement en fin de réponse — une seule phrase, jamais au milieu, jamais de manière insistante.";
+        } else {
+            $planContext = "L'utilisateur est abonné PRO — il a accès à toutes les fonctionnalités. Ne mentionne aucune limitation.";
+        }
+
         return <<<PROMPT
 Tu es un assistant expert en tricot et crochet, intégré dans YarnFlow, une application de gestion de projets textile.
 
@@ -224,6 +238,8 @@ CONTEXTE YARNFLOW
 ═══════════════════════════════════════
 L'utilisateur gère ses projets dans YarnFlow. Il peut te parler de son projet en cours (sections, rangs, patron importé).
 Si le contexte projet est fourni dans la conversation, tiens-en compte pour personnaliser ta réponse.
+
+$planContext
 PROMPT;
     }
 
