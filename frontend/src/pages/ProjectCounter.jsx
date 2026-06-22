@@ -3180,7 +3180,7 @@ const ProjectCounter = () => {
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-amber-800 text-sm mb-1">Mode démo — Explorez librement !</p>
               <p className="text-amber-700 text-sm leading-relaxed">
-                Le bonnet est déjà au rang 15. Cliquez sur <strong>+</strong> pour incrémenter, déroulez le patron ci-dessous, ou modifiez tout à votre guise.
+                Cliquez sur <strong>+</strong> pour incrémenter, déroulez le patron ci-dessous, ou modifiez tout à votre guise.
               </p>
               <div className="flex items-center gap-3 mt-3">
                 <button
