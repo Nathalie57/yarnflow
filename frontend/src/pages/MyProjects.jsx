@@ -96,6 +96,7 @@ const MyProjects = () => {
   // [AI:Claude] Création de projet via wizard
   const [creating, setCreating] = useState(false)
   const [creatingStep, setCreatingStep] = useState('') // [AI:Claude] Étape en cours
+  const [isCreatingDemo, setIsCreatingDemo] = useState(false)
 
   // [AI:Claude] Import de patron
   const [patternFile, setPatternFile] = useState(null)
@@ -443,6 +444,37 @@ const MyProjects = () => {
   }
 
   // [AI:Claude] Créer un nouveau projet via le wizard
+  const handleCreateDemoProject = async () => {
+    setIsCreatingDemo(true)
+    try {
+      const response = await api.post('/projects', {
+        name: 'Bonnet rayé — Exemple',
+        technique: 'tricot',
+        type: 'accessoires',
+        description: 'Un projet de démonstration pour découvrir YarnFlow. Modifiez-le comme vous voulez !',
+        status: 'in_progress',
+        counter_unit: 'rows',
+        counter_unit_increment: 1.0
+      })
+      const demoProject = response.data.project
+
+      await api.post(`/projects/${demoProject.id}/sections`, {
+        name: 'Corps du bonnet',
+        total_rows: 80,
+        display_order: 0,
+        notes: null
+      })
+
+      await api.post(`/projects/${demoProject.id}/rows`, { row_number: 15 })
+
+      navigate(`/projects/${demoProject.id}?new=1`)
+    } catch (err) {
+      console.error('Erreur création projet démo:', err)
+    } finally {
+      setIsCreatingDemo(false)
+    }
+  }
+
   const handleCreateProject = async (wizardData) => {
     setCreating(true)
     setCreatingStep('Création du projet...')
@@ -873,7 +905,7 @@ const MyProjects = () => {
               {/* Créer manuellement */}
               <button
                 onClick={() => canCreateProject && setShowCreateModal(true)}
-                className="w-full mb-6 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
+                className="w-full mb-3 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
@@ -888,6 +920,28 @@ const MyProjects = () => {
                 </div>
               </button>
 
+              {/* Explorer avec un exemple */}
+              <button
+                onClick={handleCreateDemoProject}
+                disabled={isCreatingDemo}
+                className="w-full mb-6 p-4 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-left rounded-2xl transition group disabled:opacity-60"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-100 group-hover:bg-gray-200 rounded-xl flex items-center justify-center flex-shrink-0 transition">
+                    <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600 text-sm group-hover:text-gray-800 transition">
+                      {isCreatingDemo ? 'Création en cours...' : 'Explorer avec un exemple'}
+                    </p>
+                    <p className="text-gray-400 text-xs mt-0.5">Un bonnet démo pré-rempli pour découvrir l'application</p>
+                  </div>
+                </div>
+              </button>
+
               {/* Ce que ça fait concrètement — version condensée */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
                 <div className="flex items-start gap-4 p-4">
@@ -897,7 +951,7 @@ const MyProjects = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">Vous êtes interrompue — aucun stress</p>
+                    <p className="font-semibold text-gray-900 text-sm">Une pause dans votre tricot ? Aucun stress</p>
                     <p className="text-gray-500 text-sm mt-0.5">Un clic pour mémoriser votre rang. Vous retrouvez exactement là où vous étiez.</p>
                   </div>
                 </div>
