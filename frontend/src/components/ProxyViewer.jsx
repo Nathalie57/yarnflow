@@ -5,7 +5,7 @@
  * @created 2025-12-10
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const getYouTubeEmbedUrl = (url) => {
   try {
@@ -27,6 +27,27 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
 
   const youtubeEmbedUrl = getYouTubeEmbedUrl(url)
   const proxyUrl = `${import.meta.env.VITE_API_URL}/web-fetch/proxy?url=${encodeURIComponent(url)}`
+
+  useEffect(() => {
+    if (youtubeEmbedUrl) {
+      setLoading(false)
+      return
+    }
+    fetch(proxyUrl)
+      .then(res => {
+        if (!res.ok) {
+          setLoading(false)
+          setError(true)
+          if (onError) onError()
+        }
+        // si ok, l'iframe prend le relais
+      })
+      .catch(() => {
+        setLoading(false)
+        setError(true)
+        if (onError) onError()
+      })
+  }, [url])
 
   const handleLoad = () => {
     setLoading(false)
@@ -71,17 +92,23 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
       {/* Message d'erreur */}
       {error && (
         <div className="p-8 text-center">
-          <div className="text-red-500 mb-4 text-4xl">⚠️</div>
-          <p className="text-gray-700 mb-4">
-            Impossible de charger ce patron dans l'application.
-          </p>
+          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+            </svg>
+          </div>
+          <p className="text-gray-700 font-medium mb-1">Ce site ne peut pas être affiché ici</p>
+          <p className="text-gray-400 text-sm mb-5">Il bloque l'affichage intégré — ouvrez-le dans un nouvel onglet.</p>
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition font-medium text-sm"
           >
-            Ouvrir dans un nouvel onglet
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            Ouvrir le patron
           </a>
         </div>
       )}
