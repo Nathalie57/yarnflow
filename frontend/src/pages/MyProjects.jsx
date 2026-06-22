@@ -467,45 +467,7 @@ const MyProjects = () => {
 
       await api.post(`/projects/${demoProject.id}/rows`, { row_number: 15 })
 
-      const PATRON_DEMO = `BONNET CLASSIQUE AU TRICOT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Fournitures :
-• Laine DK — 100 g (200 m environ)
-• Aiguilles circulaires 4 mm
-• Marqueurs de maille, aiguille à laine
-
-Abréviations :
-M = maille endroit  |  E = maille envers
-dim = 2 mailles ensemble endroit
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CORPS DU BONNET — 80 rangs
-
-Monter 96 mailles, joindre en rond.
-
-Rangs 1–12 : Côtes 2×2
-  * 2 M, 2 E * — répéter sur tout le rang.
-
-Rangs 13–65 : Jersey endroit
-  Toutes les mailles à l'endroit.
-
-Rangs 66–80 : Diminutions couronne
-  Rang 66 : * 8 M, dim * — 88 m
-  Rang 68 : * 7 M, dim * — 80 m
-  Rang 70 : * 6 M, dim * — 72 m
-  Rang 72 : * 5 M, dim * — 64 m
-  Rang 74 : * 4 M, dim * — 54 m
-  Rang 75 : * 3 M, dim * — 45 m
-  Rang 76 : * 2 M, dim * — 36 m
-  Rang 77 : * 1 M, dim * — 27 m
-  Rang 78 : dim tout le tour — 14 m
-  Rang 79–80 : Couper le fil (15 cm),
-    passer dans les mailles restantes,
-    serrer et rentrer les fils.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Patron de démonstration YarnFlow`
-
-      await api.post(`/projects/${demoProject.id}/pattern-text`, { pattern_text: PATRON_DEMO })
+      await api.post(`/projects/${demoProject.id}/pattern-url`, { pattern_url: 'https://www.garnstudio.com/pattern.php?id=11639&cid=8' })
 
       navigate(`/projects/${demoProject.id}?new=1&demo=1`)
     } catch (err) {
