@@ -573,7 +573,7 @@ const MyProjects = () => {
       }
 
       // [AI:Claude] Redirection automatique vers le projet pour onboarding "premier rang"
-      window.location.href = `/projects/${newProject.id}`
+      window.location.href = `/projects/${newProject.id}?new=1`
     } catch (err) {
       // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
       let errorMessage = ''
