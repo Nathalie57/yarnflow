@@ -5287,6 +5287,37 @@ const ProjectCounter = () => {
                         </button>
                       </div>
                     </div>
+                    {/* Pelotes réservées depuis le stock — en premier */}
+                    {projectAllocations.length > 0 && (
+                      <div className="mb-5">
+                        <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
+                          </svg>
+                          Laines de mon stock
+                        </h3>
+                        <div className="space-y-2">
+                          {projectAllocations.map(a => (
+                            <div key={a.stash_entry_id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                              {a.photo_url ? (
+                                <img src={(import.meta.env.VITE_API_URL || '') + a.photo_url} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                              ) : (
+                                <div className="w-9 h-9 rounded-lg flex-shrink-0 bg-gray-200" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-800 truncate">{a.brand} — {a.yarn_name}</p>
+                                {a.color_name && <p className="text-xs text-gray-500 truncate">{a.color_name}</p>}
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-sm font-semibold text-gray-700">{a.quantity_reserved} pelote{a.quantity_reserved > 1 ? 's' : ''}</p>
+                                <p className="text-xs text-gray-400">{Math.round(a.total_reserved_g)} g · {Math.round(a.total_reserved_m)} m</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {hasDetails ? (
                       <>
 
@@ -5418,35 +5449,6 @@ const ProjectCounter = () => {
                       </div>
                     )}
 
-                    {/* Pelotes réservées depuis le stock */}
-                    {projectAllocations.length > 0 && (
-                      <div className="mt-5">
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
-                          </svg>
-                          Laines de mon stock
-                        </h3>
-                        <div className="space-y-2">
-                          {projectAllocations.map(a => (
-                            <div key={a.stash_entry_id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                              {a.photo_url ? (
-                                <img src={(import.meta.env.VITE_API_URL || '') + a.photo_url} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
-                              ) : (
-                                <div className="w-9 h-9 rounded-lg flex-shrink-0 bg-gray-200" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-800 truncate">{a.brand} — {a.yarn_name}</p>
-                                {a.color_name && <p className="text-xs text-gray-500 truncate">{a.color_name}</p>}
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                <p className="text-sm font-semibold text-gray-700">{a.quantity_reserved} pelote{a.quantity_reserved > 1 ? 's' : ''}</p>
-                                <p className="text-xs text-gray-400">{Math.round(a.total_reserved_g)} g · {Math.round(a.total_reserved_m)} m</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     )}
                   </div>
                 )
