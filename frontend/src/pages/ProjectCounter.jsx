@@ -5448,8 +5448,6 @@ const ProjectCounter = () => {
                         </button>
                       </div>
                     )}
-
-                    )}
                   </div>
                 )
               })()}
