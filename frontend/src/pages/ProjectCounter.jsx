@@ -4533,7 +4533,7 @@ const ProjectCounter = () => {
               }`}
             >
               Détails
-              {project.technical_details && (
+              {(project.technical_details || projectAllocations.length > 0) && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
             </button>
