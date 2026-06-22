@@ -20,7 +20,7 @@ const YarnStash = () => {
   const plan = getSubscriptionPlan()
   const isPro = plan === 'pro'
   const isPlus = plan === 'plus'
-  const stashLimit = isPro ? null : isPlus ? 50 : 10
+  const stashLimit = isPro ? null : isPlus ? 50 : 5
 
   // Data
   const [entries, setEntries] = useState([])

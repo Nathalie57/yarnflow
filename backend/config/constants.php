@@ -90,7 +90,7 @@ define('SUBSCRIPTION_FEATURES', [
         'name' => 'YarnFlow Free',
         'price' => 0,
         'max_active_projects' => -1,
-        'max_stash_entries' => 10,
+        'max_stash_entries' => 5,
         'photo_credits_per_month' => 2,
         'ai_questions_per_month' => 5,
         'max_library_patterns' => -1,

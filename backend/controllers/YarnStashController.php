@@ -187,11 +187,11 @@ class YarnStashController
 
             if (!$isPro) {
                 $count = $this->getStashCount($userId);
-                $limit = $isPlus ? 50 : 10;
+                $limit = $isPlus ? 50 : 5;
                 if ($count >= $limit) {
                     $error = $isPlus
                         ? 'Limite de 50 références atteinte. Passez à Pro pour un stock illimité.'
-                        : 'Limite de 10 références atteinte. Passez à Plus ou Pro pour plus de stock.';
+                        : 'Limite de 5 références atteinte. Passez à Plus ou Pro pour plus de stock.';
                     $this->sendResponse(403, [
                         'success'          => false,
                         'error'            => $error,
