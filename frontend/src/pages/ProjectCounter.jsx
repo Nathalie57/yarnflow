@@ -153,6 +153,7 @@ const ProjectCounter = () => {
   // Onboarding premier rang
   const [showFirstRowModal, setShowFirstRowModal] = useState(false)
   const [firstRowInput, setFirstRowInput] = useState('')
+  const [showDemoBanner, setShowDemoBanner] = useState(false)
 
   // [AI:Claude] v0.17.0 - Célébration premier rang
   const [showFirstProjectTip, setShowFirstProjectTip] = useState(false) // [AI:Claude] v0.17.1 - Tip premier projet
@@ -315,8 +316,10 @@ const ProjectCounter = () => {
       fetchCredits()
 
       // Onboarding : afficher le prompt "premier rang" si projet fraîchement créé
-      if (new URLSearchParams(window.location.search).get('new') === '1') {
-        setShowFirstRowModal(true)
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('new') === '1') {
+        if (urlParams.get('demo') !== '1') setShowFirstRowModal(true)
+        if (urlParams.get('demo') === '1') setShowDemoBanner(true)
         window.history.replaceState(null, '', window.location.pathname)
       }
 
@@ -3149,6 +3152,38 @@ const ProjectCounter = () => {
                 <br />
                 Laissez-le ouvert pendant que vous tricotez — même si vous faites des pauses.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bandeau mode démo */}
+      {showDemoBanner && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
+          <button
+            onClick={() => setShowDemoBanner(false)}
+            className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
+            aria-label="Fermer"
+          >
+            ×
+          </button>
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-amber-800 text-sm mb-1">Mode démo — Explorez librement !</p>
+              <p className="text-amber-700 text-sm leading-relaxed">
+                Le bonnet est déjà au rang 15. Cliquez sur <strong>+</strong> pour incrémenter, déroulez le patron ci-dessous, ou modifiez tout à votre guise.
+              </p>
+              <div className="flex items-center gap-3 mt-3">
+                <button
+                  onClick={() => { setShowDemoBanner(false); navigate('/my-projects') }}
+                  className="text-xs text-amber-700 hover:text-amber-900 underline"
+                >
+                  Créer mon vrai projet
+                </button>
+              </div>
             </div>
           </div>
         </div>
