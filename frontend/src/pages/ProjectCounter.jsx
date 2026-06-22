@@ -5217,30 +5217,30 @@ const ProjectCounter = () => {
 
                 return (
                   <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-semibold text-gray-900">Détails techniques</h2>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setShowStashPanel(true)}
+                          className="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-medium hover:bg-amber-100 transition text-sm flex items-center gap-1.5"
+                          title="Associer des pelotes de ton stock à ce projet"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
+                          </svg>
+                          Mon stock
+                        </button>
+                        <button
+                          onClick={openTechnicalDetailsModal}
+                          className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          Modifier
+                        </button>
+                      </div>
+                    </div>
                     {hasDetails ? (
                       <>
-                        <div className="flex items-center justify-between mb-4">
-                          <h2 className="text-lg font-semibold text-gray-900">Détails techniques</h2>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setShowStashPanel(true)}
-                              className="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-medium hover:bg-amber-100 transition text-sm flex items-center gap-1.5"
-                              title="Associer des pelotes de ton stock à ce projet"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
-                              </svg>
-                              Mon stock
-                            </button>
-                            <button
-                              onClick={openTechnicalDetailsModal}
-                              className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                              Modifier
-                            </button>
-                          </div>
-                        </div>
 
                         {/* Format fiche technique améliorée */}
                         <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">

@@ -219,6 +219,10 @@ class ProjectController
 
             // [AI:Claude] Vérification des quotas (selon abonnement)
             $user = $this->userModel->findById($userId);
+            if (!$user) {
+                $this->sendResponse(401, ['success' => false, 'error' => 'Utilisateur introuvable']);
+                return;
+            }
             $userProjects = $this->projectModel->getUserProjects($userId);
 
             // [AI:Claude] Compter uniquement les projets ACTIFS (non terminés)
