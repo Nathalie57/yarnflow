@@ -126,7 +126,7 @@ define('SUBSCRIPTION_FEATURES', [
     ],
     'plus_annual' => [
         'name' => 'YarnFlow Plus (Annuel)',
-        'price' => 35.88,                  // 2.99€/mois × 12 = 35.88€/an
+        'price' => 29.99,                  // 2,49€/mois × 12 ≈ 29,99€/an
         'max_active_projects' => -1,
         'max_stash_entries' => 50,
         'photo_credits_per_month' => 5,

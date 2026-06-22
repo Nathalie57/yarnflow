@@ -16,6 +16,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useAnalytics } from '../hooks/useAnalytics'
 import api, { authAPI } from '../services/api'
 import ProjectFilters from '../components/ProjectFilters'
 import InfoBubble from '../components/InfoBubble'
@@ -27,6 +28,7 @@ const MyProjects = () => {
   const { user, updateUser } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const { trackProjectCreated } = useAnalytics()
 
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [pendingPlan, setPendingPlan] = useState(null)
@@ -94,6 +96,7 @@ const MyProjects = () => {
   // [AI:Claude] Création de projet via wizard
   const [creating, setCreating] = useState(false)
   const [creatingStep, setCreatingStep] = useState('') // [AI:Claude] Étape en cours
+  const [isCreatingDemo, setIsCreatingDemo] = useState(false)
 
   // [AI:Claude] Import de patron
   const [patternFile, setPatternFile] = useState(null)
@@ -441,6 +444,46 @@ const MyProjects = () => {
   }
 
   // [AI:Claude] Créer un nouveau projet via le wizard
+  const handleCreateDemoProject = async () => {
+    setIsCreatingDemo(true)
+    try {
+      const response = await api.post('/projects', {
+        name: 'Cardinal Song — Bonnet (démo)',
+        technique: 'tricot',
+        type: 'accessoires',
+        description: 'Un projet de démonstration pour découvrir YarnFlow. Modifiez-le comme vous voulez !',
+        status: 'in_progress',
+        counter_unit: 'rows',
+        counter_unit_increment: 1.0
+      })
+      const demoProject = response.data.project
+
+      const demoSections = [
+        { name: 'Côtes 1×1', total_rows: 25 },
+        { name: 'Corps (jersey)', total_rows: 51 },
+        { name: 'Diminutions couronne', total_rows: 26 },
+      ]
+      for (let i = 0; i < demoSections.length; i++) {
+        await api.post(`/projects/${demoProject.id}/sections`, {
+          name: demoSections[i].name,
+          total_rows: demoSections[i].total_rows,
+          display_order: i,
+          notes: null
+        })
+      }
+
+      await api.post(`/projects/${demoProject.id}/rows`, { row_number: 15 })
+
+      await api.post(`/projects/${demoProject.id}/pattern-url`, { pattern_url: 'https://www.garnstudio.com/pattern.php?id=11639&cid=8' })
+
+      navigate(`/projects/${demoProject.id}?new=1&demo=1`)
+    } catch (err) {
+      console.error('Erreur création projet démo:', err)
+    } finally {
+      setIsCreatingDemo(false)
+    }
+  }
+
   const handleCreateProject = async (wizardData) => {
     setCreating(true)
     setCreatingStep('Création du projet...')
@@ -475,7 +518,7 @@ const MyProjects = () => {
       const response = await api.post('/projects', projectData)
       newProject = response.data.project
 
-      // [AI:Claude] Tracker l'événement project_created
+      trackProjectCreated('manual', newProject.technique)
       try {
         await api.post('/analytics/track-event', {
           event_name: 'project_created',
@@ -571,7 +614,7 @@ const MyProjects = () => {
       }
 
       // [AI:Claude] Redirection automatique vers le projet pour onboarding "premier rang"
-      window.location.href = `/projects/${newProject.id}`
+      window.location.href = `/projects/${newProject.id}?new=1`
     } catch (err) {
       // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
       let errorMessage = ''
@@ -835,45 +878,80 @@ const MyProjects = () => {
       {!loading && !error && (
         <>
           {projects.length === 0 ? (
-            <div className="max-w-xl mx-auto py-12 px-6">
+            <div className="max-w-lg mx-auto py-10 px-4">
 
-              {/* Accueil personnalisé */}
-              {user?.first_name && (
-                <p className="text-center text-gray-500 text-sm mb-6">
-                  Bonjour <span className="font-semibold text-gray-700">{user.first_name}</span> — bienvenue sur YarnFlow !
-                </p>
-              )}
-
-              {/* Question directe */}
+              {/* Accueil */}
               <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-                  Vous avez un projet en cours ?
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {user?.first_name ? `Bienvenue, ${user.first_name} !` : 'Bienvenue sur YarnFlow !'}
                 </h2>
-                <p className="text-gray-600 text-base leading-relaxed">
-                  Notez votre rang actuel en 5 secondes.<br />
-                  La prochaine fois que vous reprenez, vous savez exactement où vous en êtes.
-                </p>
+                <p className="text-gray-500 text-sm">Par où voulez-vous commencer ?</p>
               </div>
 
-              {/* CTAs */}
-              {canCreateProject && (
-                <div className="text-center mb-10 flex flex-col items-center gap-3">
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="w-full max-w-xs px-8 py-4 bg-primary-600 text-white rounded-2xl font-semibold hover:bg-primary-700 transition-colors shadow-sm hover:shadow-md text-base"
-                  >
-                    Oui — ajouter mon projet
-                  </button>
-                  <Link
-                    to="/tools"
-                    className="text-sm text-gray-400 hover:text-primary-600 transition-colors underline underline-offset-2"
-                  >
-                    Pas encore — je veux d'abord explorer l'app
-                  </Link>
+              {/* Création Intelligente — CTA principal */}
+              <button
+                onClick={() => { navigate(smartQuota?.free_trial_used === false || smartQuota?.remaining > 0 ? '/smart-project-creator' : '/smart-project-creator') }}
+                className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-left transition shadow-md hover:shadow-lg group"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-bold text-white text-base">Importer mon patron</p>
+                      <span className="px-2 py-0.5 bg-white bg-opacity-20 text-white text-xs font-semibold rounded-full">Gratuit</span>
+                    </div>
+                    <p className="text-primary-100 text-sm leading-relaxed">
+                      PDF, lien ou photo — notre IA crée votre projet en 10 secondes : sections, aiguilles, compteurs.
+                    </p>
+                  </div>
                 </div>
-              )}
+              </button>
 
-              {/* Ce que ça fait concrètement */}
+              {/* Créer manuellement */}
+              <button
+                onClick={() => canCreateProject && setShowCreateModal(true)}
+                className="w-full mb-3 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
+                    <svg className="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition">Créer un projet manuellement</p>
+                    <p className="text-gray-400 text-xs mt-0.5">Remplissez les informations vous-même</p>
+                  </div>
+                </div>
+              </button>
+
+              {/* Explorer avec un exemple */}
+              <button
+                onClick={handleCreateDemoProject}
+                disabled={isCreatingDemo}
+                className="w-full mb-6 p-4 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-left rounded-2xl transition group disabled:opacity-60"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-100 group-hover:bg-gray-200 rounded-xl flex items-center justify-center flex-shrink-0 transition">
+                    <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-600 text-sm group-hover:text-gray-800 transition">
+                      {isCreatingDemo ? 'Création en cours...' : 'Explorer avec un exemple'}
+                    </p>
+                    <p className="text-gray-400 text-xs mt-0.5">Un bonnet démo pré-rempli pour découvrir l'application</p>
+                  </div>
+                </div>
+              </button>
+
+              {/* Ce que ça fait concrètement — version condensée */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
                 <div className="flex items-start gap-4 p-4">
                   <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -882,19 +960,8 @@ const MyProjects = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">Vous êtes interrompue — aucun stress</p>
+                    <p className="font-semibold text-gray-900 text-sm">Une pause dans votre tricot ? Aucun stress</p>
                     <p className="text-gray-500 text-sm mt-0.5">Un clic pour mémoriser votre rang. Vous retrouvez exactement là où vous étiez.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4 p-4">
-                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 0 1 0 3.75H5.625a1.875 1.875 0 0 1 0-3.75Z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">Plusieurs projets en parallèle</p>
-                    <p className="text-gray-500 text-sm mt-0.5">Tricot du soir, cadeau en cours, projet urgent — chacun a son compteur.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4 p-4">
@@ -916,6 +983,7 @@ const MyProjects = () => {
                   Bibliothèque de patrons
                 </Link>
               </p>
+
             </div>
           ) : filteredProjects.length === 0 ? (
             <div className="max-w-xl mx-auto text-center py-12 px-6 bg-white rounded-xl border-2 border-gray-200">

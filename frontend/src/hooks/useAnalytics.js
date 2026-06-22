@@ -173,6 +173,70 @@ export const useAnalytics = () => {
     })
   }
 
+  // method: 'email' | 'google' | 'facebook'
+  const trackSignup = (method = 'email') => {
+    trackEvent('sign_up', {
+      event_category: 'auth',
+      method,
+    })
+  }
+
+  // method: 'email' | 'google' | 'facebook'
+  const trackLogin = (method = 'email') => {
+    trackEvent('login', {
+      event_category: 'auth',
+      method,
+    })
+  }
+
+  // source: 'manual' | 'smart' | 'partner_import'
+  const trackProjectCreated = (source = 'manual', technique = null) => {
+    trackEvent('project_created', {
+      event_category: 'engagement',
+      source,
+      technique,
+    })
+  }
+
+  // mode: 'pdf' | 'url' | 'library'
+  const trackSmartAnalysis = (mode, success = true) => {
+    trackEvent('smart_analysis', {
+      event_category: 'feature',
+      event_label: success ? 'success' : 'failure',
+      mode,
+      success,
+    })
+  }
+
+  const trackPhotoEnhanced = (style = null, success = true) => {
+    trackEvent('photo_enhanced', {
+      event_category: 'feature',
+      event_label: success ? 'success' : 'failure',
+      style,
+      success,
+    })
+  }
+
+  const trackPhotoDownloaded = () => {
+    trackEvent('photo_downloaded', {
+      event_category: 'engagement',
+    })
+  }
+
+  const trackAiQuestion = () => {
+    trackEvent('ai_question_asked', {
+      event_category: 'feature',
+    })
+  }
+
+  // feature: 'photos' | 'ai_questions' | 'smart_imports'
+  const trackQuotaReached = (feature) => {
+    trackEvent('quota_reached', {
+      event_category: 'engagement',
+      feature,
+    })
+  }
+
   return {
     trackEvent,
     trackPageView,
@@ -183,7 +247,15 @@ export const useAnalytics = () => {
     trackBeginCheckout,
     trackPurchase,
     trackCreditsClick,
-    trackBillingPeriodChange
+    trackBillingPeriodChange,
+    trackSignup,
+    trackLogin,
+    trackProjectCreated,
+    trackSmartAnalysis,
+    trackPhotoEnhanced,
+    trackPhotoDownloaded,
+    trackAiQuestion,
+    trackQuotaReached,
   }
 }
 

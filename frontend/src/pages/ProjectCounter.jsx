@@ -152,6 +152,11 @@ const ProjectCounter = () => {
   const [showSatisfactionModal, setShowSatisfactionModal] = useState(false)
   const [generatedPhoto, setGeneratedPhoto] = useState(null)
 
+  // Onboarding premier rang
+  const [showFirstRowModal, setShowFirstRowModal] = useState(false)
+  const [firstRowInput, setFirstRowInput] = useState('')
+  const [showDemoBanner, setShowDemoBanner] = useState(false)
+
   // [AI:Claude] v0.17.0 - Célébration premier rang
   const [showFirstProjectTip, setShowFirstProjectTip] = useState(false) // [AI:Claude] v0.17.1 - Tip premier projet
 
@@ -315,6 +320,15 @@ const ProjectCounter = () => {
       }
       fetchProjectPhotos()
       fetchCredits()
+
+      // Onboarding : afficher le prompt "premier rang" si projet fraîchement créé
+      const urlParams = new URLSearchParams(window.location.search)
+      if (urlParams.get('new') === '1') {
+        if (urlParams.get('demo') !== '1') setShowFirstRowModal(true)
+        if (urlParams.get('demo') === '1') setShowDemoBanner(true)
+        window.history.replaceState(null, '', window.location.pathname)
+      }
+
       // Passer le current_section_id du projet fraîchement chargé
       const loadedSections = await fetchSections(projectData?.current_section_id)
 
@@ -3149,6 +3163,38 @@ const ProjectCounter = () => {
         </div>
       )}
 
+      {/* Bandeau mode démo */}
+      {showDemoBanner && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
+          <button
+            onClick={() => setShowDemoBanner(false)}
+            className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
+            aria-label="Fermer"
+          >
+            ×
+          </button>
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-amber-800 text-sm mb-1">Mode démo — Explorez librement !</p>
+              <p className="text-amber-700 text-sm leading-relaxed">
+                Le bonnet est déjà au rang 15. Cliquez sur <strong>+</strong> pour incrémenter, déroulez le patron ci-dessous, ou modifiez tout à votre guise.
+              </p>
+              <div className="flex items-center gap-3 mt-3">
+                <button
+                  onClick={() => { setShowDemoBanner(false); navigate('/my-projects') }}
+                  className="text-xs text-amber-700 hover:text-amber-900 underline"
+                >
+                  Créer mon vrai projet
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Nudge sections */}
       {showSectionsNudge && sections.length === 0 && (
         <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
@@ -4488,7 +4534,7 @@ const ProjectCounter = () => {
               }`}
             >
               Détails
-              {(project.technical_details || project.description) && (
+              {project.technical_details && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
             </button>
@@ -7151,6 +7197,65 @@ Rang 3 : *1ms, aug* x6 (18)
         onClose={() => setUpgradeFeature(null)}
         feature={upgradeFeature || 'tags'}
       />
+
+      {/* Onboarding premier rang */}
+      {showFirstRowModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[80] p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl p-6">
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Vous tricotez en ce moment ?</h3>
+              <p className="text-sm text-gray-500 mt-1">Entrez votre rang actuel pour commencer à suivre votre progression</p>
+            </div>
+            <div className="mb-5">
+              <input
+                type="number"
+                value={firstRowInput}
+                onChange={(e) => setFirstRowInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const row = parseInt(firstRowInput, 10)
+                    if (!isNaN(row) && row >= 0) {
+                      setCurrentRow(row)
+                      api.post(`/projects/${projectId}/rows`, { row_number: row, note: null }).catch(() => {})
+                    }
+                    setShowFirstRowModal(false)
+                  }
+                }}
+                placeholder="Ex : 47"
+                min="0"
+                autoFocus
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-center text-2xl font-bold focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowFirstRowModal(false)}
+                className="flex-1 py-2.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl transition"
+              >
+                Je commence au rang 1
+              </button>
+              <button
+                onClick={() => {
+                  const row = parseInt(firstRowInput, 10)
+                  if (!isNaN(row) && row > 0) {
+                    setCurrentRow(row)
+                    api.post(`/projects/${projectId}/rows`, { row_number: row, note: null }).catch(() => {})
+                  }
+                  setShowFirstRowModal(false)
+                }}
+                className="flex-1 py-2.5 text-sm font-semibold bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition"
+              >
+                C'est parti !
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modale reminder déclenché */}
       {activeReminder && (

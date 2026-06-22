@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useAnalytics } from '../hooks/useAnalytics'
 import api from '../services/api'
 import PasswordInput from '../components/PasswordInput'
 
@@ -20,6 +21,7 @@ const Register = () => {
   const [oauthLoading, setOauthLoading] = useState(false)
   const { register } = useAuth()
   const navigate = useNavigate()
+  const { trackSignup } = useAnalytics()
 
   // Reset loading quand l'app revient au premier plan (TWA/PWA)
   useEffect(() => {
@@ -60,7 +62,9 @@ const Register = () => {
       console.log('[Register] Résultat:', result)
 
       if (result.success) {
-        navigate('/dashboard')
+        trackSignup('email')
+        const pendingImport = localStorage.getItem('yf_pending_import')
+        navigate(pendingImport ? `/import/${pendingImport}` : '/dashboard')
       } else {
         setError(result.error)
         setLoading(false)

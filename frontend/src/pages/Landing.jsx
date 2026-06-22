@@ -413,9 +413,10 @@ const Landing = () => {
               </div>
               <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-3 mt-2">Plus</p>
               <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-bold text-gray-900">3,99€</span>
+                <span className="text-4xl font-bold text-gray-900">2,49€</span>
                 <span className="text-sm text-gray-500">/mois</span>
               </div>
+              <p className="text-xs text-green-600 font-medium mb-1">Facturé 29,99€/an — économisez 17,89€</p>
               <p className="text-sm text-gray-500 mb-6">Pour les tricoteuses organisées qui veulent plus de confort.</p>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
@@ -447,14 +448,23 @@ const Landing = () => {
                   <span>Statistiques avancées</span>
                 </li>
               </ul>
-              <Link
-                to="/register"
-                onClick={() => trackSubscriptionClick('plus', billingPeriod, 'landing')}
-                className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
-              >
-                Passer à PLUS
-              </Link>
-              <p className="text-xs text-gray-400 text-center mt-2">Sans engagement · Résiliable à tout moment</p>
+              <div className="space-y-2">
+                <Link
+                  to="/register"
+                  onClick={() => trackSubscriptionClick('plus', 'annual', 'landing')}
+                  className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
+                >
+                  Passer à PLUS (Annuel) — 29,99€/an
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => trackSubscriptionClick('plus', 'monthly', 'landing')}
+                  className="block w-full text-center text-gray-500 hover:text-gray-700 text-sm py-2 transition"
+                >
+                  Mensuel — 3,99€/mois
+                </Link>
+              </div>
+              <p className="text-xs text-gray-400 text-center mt-1">Sans engagement · Résiliable à tout moment</p>
             </div>
 
             {/* PRO */}

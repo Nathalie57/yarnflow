@@ -27,6 +27,7 @@ use App\Controllers\AiAssistantController;
 use App\Controllers\ContactController;
 use App\Controllers\YarnStashController;
 use App\Controllers\StashAllocationController;
+use App\Controllers\PartnerPatternController;
 use App\Middleware\RateLimitMiddleware;
 
 /**
@@ -264,10 +265,21 @@ function route(string $method, string $uri): void
         $method === 'DELETE' && preg_match('/^projects\/(\d+)\/allocations\/(\d+)$/', $uri, $matches) => (new StashAllocationController())->delete((int)$matches[1], (int)$matches[2]),
         $method === 'POST'   && preg_match('/^projects\/(\d+)\/close$/', $uri, $matches) => (new StashAllocationController())->closeProject((int)$matches[1]),
 
+        // Routes import partenaire (QR code)
+        $method === 'GET'  && preg_match('/^import\/([A-Z0-9]+)$/', $uri, $matches) => (new PartnerPatternController())->getByCode($matches[1]),
+        $method === 'POST' && preg_match('/^import\/([A-Z0-9]+)$/', $uri, $matches) => (new PartnerPatternController())->importProject($matches[1]),
+        $method === 'GET'  && $uri === 'admin/partner-patterns' => (new PartnerPatternController())->listTemplates(),
+        $method === 'POST' && $uri === 'admin/partner-patterns' => (new PartnerPatternController())->createTemplate(),
+
         // [AI:Claude] Routes de contact (v0.15.0)
         $method === 'POST' && $uri === 'contact' => (new ContactController())->sendMessage(),
         $method === 'GET' && $uri === 'admin/contact-messages' => (new ContactController())->listMessages(),
         $method === 'PUT' && preg_match('/^admin\/contact-messages\/(\d+)\/read$/', $uri, $matches) => (new ContactController())->markAsRead((int)$matches[1]),
+
+        // Push notifications
+        $method === 'GET'    && $uri === 'push/vapid-public-key' => (new \App\Controllers\PushController())->getVapidPublicKey(),
+        $method === 'POST'   && $uri === 'push/subscribe'        => (new \App\Controllers\PushController())->subscribe(),
+        $method === 'DELETE' && $uri === 'push/subscribe'        => (new \App\Controllers\PushController())->unsubscribe(),
 
         default => notFound()
     };

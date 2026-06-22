@@ -164,6 +164,8 @@ const Subscription = () => {
   )
 
   const plusPrice = '3,99€'
+  const plusAnnualPrice = '29,99€'
+  const plusMonthlyEquiv = '2,49€'
 
   if (loading) {
     return (
@@ -301,9 +303,10 @@ const Subscription = () => {
           <div className="mb-4">
             <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">Plus</p>
             <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-bold text-gray-900">{plusPrice}</span>
+              <span className="text-3xl font-bold text-gray-900">{plusMonthlyEquiv}</span>
               <span className="text-sm text-gray-500">/mois</span>
             </div>
+            <p className="text-xs text-green-600 font-medium mb-1">Facturé {plusAnnualPrice}/an — économisez 17,89€</p>
             <p className="text-sm text-gray-500">Le confort de gestion au quotidien.</p>
           </div>
 
@@ -318,13 +321,36 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Statistiques avancées</span></li>
           </ul>
 
-          <button
-            onClick={isPro ? handleManageSubscription : handleSubscribePlus}
-            disabled={processing || isPlus}
-            className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {processing ? 'Chargement…' : isPlus ? 'Plan actuel' : isPro ? 'Rétrograder vers PLUS' : `Passer à PLUS — ${plusPrice}/mois`}
-          </button>
+          {isPlus ? (
+            <button disabled className="w-full py-2.5 border-2 border-primary-500 text-primary-700 rounded-xl text-sm font-semibold opacity-60 cursor-not-allowed">
+              Plan actuel
+            </button>
+          ) : isPro ? (
+            <button
+              onClick={handleManageSubscription}
+              disabled={processing}
+              className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              Rétrograder vers PLUS
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <button
+                onClick={() => handleSubscribe('plus_annual')}
+                disabled={processing}
+                className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {processing ? 'Chargement…' : `Passer à PLUS (Annuel) — ${plusAnnualPrice}/an`}
+              </button>
+              <button
+                onClick={handleSubscribePlus}
+                disabled={processing}
+                className="w-full py-2.5 text-gray-500 hover:text-gray-700 text-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {processing ? 'Chargement…' : `Mensuel — ${plusPrice}/mois`}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* PRO */}

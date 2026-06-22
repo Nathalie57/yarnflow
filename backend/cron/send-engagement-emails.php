@@ -52,10 +52,7 @@ try {
             WHERE email_type = 'onboarding_day3'
             AND user_id IS NOT NULL
         )
-        AND u.id NOT IN (
-            SELECT DISTINCT user_id
-            FROM projects
-        )
+        AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 1 DAY))
         AND u.email_verified = 1
     ");
     $stmt->execute();
@@ -222,7 +219,7 @@ try {
         FROM users u
         INNER JOIN projects p ON p.user_id = u.id
         WHERE p.created_at <= DATE_SUB(NOW(), INTERVAL 2 DAY)
-        AND p.status = 'active'
+        AND p.status IN ('in_progress', 'active')
         AND u.id NOT IN (
             SELECT user_id
             FROM emails_sent_log

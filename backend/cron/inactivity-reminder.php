@@ -11,6 +11,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Services\EmailService;
+use App\Services\PushService;
 
 // Charger la config DB
 $configPath = __DIR__ . '/../config/database.php';
@@ -34,6 +35,7 @@ try {
 }
 
 $emailService = new EmailService($pdo);
+$pushService  = new PushService();
 $now = new DateTime();
 $sent = 0;
 $errors = 0;
@@ -45,14 +47,22 @@ $sql = <<<SQL
         p.id            AS project_id,
         p.name          AS project_name,
         p.updated_at    AS last_activity,
-        p.progress,
+        CASE
+            WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0
+                THEN ROUND(
+                    (SELECT COALESCE(SUM(current_row), 0) FROM project_sections WHERE project_id = p.id) /
+                    NULLIF((SELECT COALESCE(SUM(total_rows), 0) FROM project_sections WHERE project_id = p.id), 0) * 100
+                )
+            WHEN p.total_rows > 0 THEN ROUND(p.current_row / p.total_rows * 100)
+            ELSE 0
+        END AS progress,
         u.id            AS user_id,
         u.email,
-        u.name          AS user_name
+        u.first_name    AS user_name
     FROM projects p
     JOIN users u ON u.id = p.user_id
     WHERE p.status = 'in_progress'
-      AND u.inactivity_reminder_enabled = 1
+      AND COALESCE(u.inactivity_reminder_enabled, 1) = 1
       AND p.updated_at < DATE_SUB(NOW(), INTERVAL 7 DAY)
       AND (
             p.last_inactivity_reminder_at IS NULL
@@ -85,6 +95,18 @@ foreach ($projects as $project) {
         $update->execute([':id' => $project['project_id']]);
         $sent++;
         error_log("[CRON inactivity] Email envoyé → {$project['email']} pour projet #{$project['project_id']}");
+
+        // Push en complément de l'email
+        try {
+            $pushService->sendToUser(
+                (int)$project['user_id'],
+                'Votre projet vous attend 🧶',
+                "{$project['project_name']} — reprenez là où vous vous étiez arrêtée",
+                '/projects/' . $project['project_id']
+            );
+        } catch (\Exception $e) {
+            error_log("[CRON inactivity] Push échoué pour user {$project['user_id']}: " . $e->getMessage());
+        }
     } else {
         $errors++;
         error_log("[CRON inactivity] Échec email → {$project['email']} pour projet #{$project['project_id']}");

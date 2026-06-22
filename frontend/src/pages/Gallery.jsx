@@ -14,12 +14,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useAnalytics } from '../hooks/useAnalytics'
 import api from '../services/api'
 
 const Gallery = () => {
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const { trackPhotoEnhanced, trackPhotoDownloaded } = useAnalytics()
   const [creditsPurchased, setCreditsPurchased] = useState(false)
   const [photos, setPhotos] = useState([])
   const [photoQuota, setPhotoQuota] = useState(null)
@@ -271,11 +273,13 @@ const Gallery = () => {
       await fetchPhotos()
       await fetchCredits()
       setShowEnhanceModal(false)
+      trackPhotoEnhanced(selectedContext?.key, true)
       setSelectedPhoto(null)
 
       alert(`✨ Photo générée avec succès !`)
     } catch (err) {
       console.error('Erreur génération IA:', err)
+      trackPhotoEnhanced(selectedContext?.key, false)
       alert(err.response?.data?.error || 'Erreur lors de la génération IA')
     } finally {
       setEnhancing(false)
@@ -777,6 +781,7 @@ const Gallery = () => {
                           link.href = `${import.meta.env.VITE_BACKEND_URL}${src}`
                           link.download = `${photo.item_name || 'photo'}.jpg`
                           link.click()
+                          trackPhotoDownloaded()
                         }}
                         className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
                         title="Télécharger"

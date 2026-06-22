@@ -30,6 +30,7 @@ import PatternLibrary from './pages/PatternLibrary'
 import PatternLibraryDetail from './pages/PatternLibraryDetail'
 import YarnStash from './pages/YarnStash'
 import PaymentSuccess from './pages/PaymentSuccess'
+import ImportPartnerPattern from './pages/ImportPartnerPattern'
 
 // Pages légales
 import CGU from './pages/CGU'
@@ -44,6 +45,7 @@ import AdminTemplates from './pages/admin/AdminTemplates'
 import AdminPayments from './pages/admin/AdminPayments'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOptions from './pages/admin/AdminOptions'
+import AdminPartnerPatterns from './pages/admin/AdminPartnerPatterns'
 
 // [AI:Claude] Composant pour tracker automatiquement les changements de route
 function AnalyticsTracker() {
@@ -92,6 +94,9 @@ function App() {
           {/* Route de confirmation de paiement */}
           <Route path="/payment/success" element={<PaymentSuccess />} />
 
+          {/* Import partenaire via QR code */}
+          <Route path="/import/:code" element={<ImportPartnerPattern />} />
+
           {/* Pages légales */}
           <Route path="/cgu" element={<CGU />} />
           <Route path="/privacy" element={<Privacy />} />
@@ -129,6 +134,7 @@ function App() {
             <Route path="/admin/payments" element={<AdminPayments />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/options" element={<AdminOptions />} />
+            <Route path="/admin/partner-patterns" element={<AdminPartnerPatterns />} />
           </Route>
         </Routes>
         </ErrorBoundary>

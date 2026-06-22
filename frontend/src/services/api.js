@@ -347,4 +347,10 @@ export const networkUtils = {
   }
 }
 
+// Import partenaire (QR code)
+export const partnerImportAPI = {
+  getTemplate: (code) => api.get(`/import/${code}`),
+  importProject: (code) => api.post(`/import/${code}`),
+}
+
 export default api

@@ -63,13 +63,15 @@ const CreateProjectWizard = ({
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(false)
   const [technicalForm, setTechnicalForm] = useState(draft.technicalForm || DEFAULT_TECHNICAL_FORM)
   const [fileDragOver, setFileDragOver] = useState(false)
+  const [selectedPreset, setSelectedPreset] = useState(draft.selectedPreset || null)
+  const [sectionDetails, setSectionDetails] = useState(draft.sectionDetails || [{ name: '', total_rows: '' }])
 
   // Sauvegarde continue dans sessionStorage
   useEffect(() => {
     if (!isOpen) return
     try {
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
-        name, technique, selectedCategory, counterUnit, description, isFavorite, projectTags, technicalForm
+        name, technique, selectedCategory, counterUnit, description, isFavorite, projectTags, technicalForm, selectedPreset, sectionDetails
       }))
     } catch {}
   }, [isOpen, name, technique, selectedCategory, counterUnit, description, isFavorite, projectTags, technicalForm])
@@ -88,14 +90,31 @@ const CreateProjectWizard = ({
       setShowOptions(false)
       setShowTechnicalDetails(false)
       setTechnicalForm(DEFAULT_TECHNICAL_FORM)
+      setSelectedPreset(null)
+      setSectionDetails([{ name: '', total_rows: '' }])
       try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
     }
   }, [isOpen])
 
   const canSubmit = name.trim().length >= 2 && selectedCategory !== null
 
+  const handlePresetSelect = (preset) => {
+    setSelectedPreset(preset.name)
+    if (preset.sections.length > 0) {
+      setSectionDetails(preset.sections.map(s => ({ name: s.name, total_rows: '' })))
+    } else {
+      setSectionDetails([{ name: '', total_rows: '' }])
+    }
+  }
+
   const handleSubmit = () => {
     if (!canSubmit || isSubmitting) return
+    const sections = sectionDetails.map((s, i) => ({
+      name: s.name.trim() || `Partie ${i + 1}`,
+      total_rows: s.total_rows ? parseInt(s.total_rows, 10) : null,
+      description: null,
+      notes: null
+    }))
     onSubmit({
       formData: {
         name: name.trim(),
@@ -104,7 +123,7 @@ const CreateProjectWizard = ({
         counter_unit: counterUnit,
         description
       },
-      sections: [],
+      sections,
       technicalForm,
       isFavorite,
       projectTags
@@ -300,7 +319,7 @@ const CreateProjectWizard = ({
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setSelectedCategory(cat)}
+                  onClick={() => { setSelectedCategory(cat); setSelectedPreset(null); setSectionDetails([{ name: '', total_rows: '' }]) }}
                   className={`py-2.5 px-2 rounded-xl border text-xs font-medium text-center leading-tight transition ${
                     selectedCategory?.id === cat.id
                       ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
@@ -312,6 +331,85 @@ const CreateProjectWizard = ({
               ))}
             </div>
           </div>
+
+          {/* Parties du patron */}
+          {selectedCategory && (() => {
+            const presets = selectedCategory.sectionPresets || []
+            return (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Type d'ouvrage
+                </label>
+                {presets.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {presets.map(preset => (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => handlePresetSelect(preset)}
+                        className={`px-3 py-1.5 rounded-full border text-sm font-medium transition ${
+                          selectedPreset === preset.name
+                            ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        {preset.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {selectedPreset && (
+                  <div className="space-y-2">
+                    {sectionDetails.map((section, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={section.name}
+                          onChange={(e) => {
+                            const next = [...sectionDetails]
+                            next[i] = { ...next[i], name: e.target.value }
+                            setSectionDetails(next)
+                          }}
+                          placeholder={`Partie ${i + 1}`}
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        />
+                        <input
+                          type="number"
+                          value={section.total_rows}
+                          onChange={(e) => {
+                            const next = [...sectionDetails]
+                            next[i] = { ...next[i], total_rows: e.target.value }
+                            setSectionDetails(next)
+                          }}
+                          placeholder="Rangs"
+                          min="0"
+                          className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        />
+                        {sectionDetails.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setSectionDetails(sectionDetails.filter((_, idx) => idx !== i))}
+                            className="p-1.5 text-gray-300 hover:text-red-400 transition flex-shrink-0"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setSectionDetails([...sectionDetails, { name: '', total_rows: '' }])}
+                      className="text-xs text-primary-600 hover:text-primary-700 mt-1"
+                    >
+                      + Ajouter une partie
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Accordion options */}
           <div className="border border-gray-200 rounded-lg overflow-hidden">
