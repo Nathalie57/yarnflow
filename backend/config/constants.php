@@ -109,7 +109,7 @@ define('SUBSCRIPTION_FEATURES', [
         'name' => 'YarnFlow Plus',
         'price' => 3.99,
         'max_active_projects' => -1,
-        'max_stash_entries' => 50,
+        'max_stash_entries' => 15,
         'photo_credits_per_month' => 5,
         'ai_questions_per_month' => 10,
         'max_library_patterns' => -1,
@@ -128,7 +128,7 @@ define('SUBSCRIPTION_FEATURES', [
         'name' => 'YarnFlow Plus (Annuel)',
         'price' => 29.99,                  // 2,49€/mois × 12 ≈ 29,99€/an
         'max_active_projects' => -1,
-        'max_stash_entries' => 50,
+        'max_stash_entries' => 15,
         'photo_credits_per_month' => 5,
         'ai_questions_per_month' => 10,
         'max_library_patterns' => -1,
