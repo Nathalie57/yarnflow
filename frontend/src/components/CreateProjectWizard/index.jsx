@@ -385,6 +385,17 @@ const CreateProjectWizard = ({
                           min="0"
                           className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         />
+                        {sectionDetails.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => setSectionDetails(sectionDetails.filter((_, idx) => idx !== i))}
+                            className="p-1.5 text-gray-300 hover:text-red-400 transition flex-shrink-0"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     ))}
                     <button
