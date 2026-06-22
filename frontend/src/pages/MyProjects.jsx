@@ -476,6 +476,15 @@ const MyProjects = () => {
 
       await api.post(`/projects/${demoProject.id}/pattern-url`, { pattern_url: 'https://www.garnstudio.com/pattern.php?id=11639&cid=8' })
 
+      await api.put(`/projects/${demoProject.id}`, {
+        technical_details: JSON.stringify({
+          description: 'Un projet de démonstration pour découvrir YarnFlow. Modifiez-le comme vous voulez !',
+          yarn: [{ brand: 'Drops', name: 'Merino Extra Fine', url: '', quantities: [{ amount: '2', unit: 'pelotes', color: 'Gris chiné' }] }],
+          needles: [{ type: 'Aiguilles circulaires', size: '3,5', length: '40 cm' }],
+          gauge: { stitches: '22', rows: '30', dimensions: '10 x 10 cm', notes: '' }
+        })
+      })
+
       navigate(`/projects/${demoProject.id}?new=1&demo=1`)
     } catch (err) {
       console.error('Erreur création projet démo:', err)
