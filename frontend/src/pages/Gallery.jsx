@@ -504,7 +504,7 @@ const Gallery = () => {
                   <p className="text-sm text-gray-600">
                     {(() => {
                       const subType = user?.subscription_type;
-                      if (!subType || subType === 'free') return 'Plan FREE · 2 essais IA offerts';
+                      if (!subType || subType === 'free') return 'Plan FREE · 3 essais IA offerts';
                       if (subType === 'plus' || subType === 'plus_annual') return 'Plan PLUS : 5 crédits/mois';
                       return 'Plan PRO : 20 crédits/mois';
                     })()}

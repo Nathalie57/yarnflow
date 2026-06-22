@@ -7,7 +7,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { yarnStashAPI } from '../services/api'
+import { yarnStashAPI, stashAllocationAPI } from '../services/api'
+import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import YarnStashStats from '../components/stash/YarnStashStats'
 import YarnStashCard from '../components/stash/YarnStashCard'
@@ -39,6 +40,14 @@ const YarnStash = () => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingEntry, setEditingEntry] = useState(null)
   const [deletingEntry, setDeletingEntry] = useState(null)
+
+  // Modale assignation à un projet
+  const [assigningEntry, setAssigningEntry] = useState(null)
+  const [activeProjects, setActiveProjects] = useState([])
+  const [assignProjectId, setAssignProjectId] = useState('')
+  const [assignQuantity, setAssignQuantity] = useState(1)
+  const [assignSaving, setAssignSaving] = useState(false)
+  const [assignError, setAssignError] = useState(null)
 
   // -----------------------------------------------------------------------
   // Chargement
@@ -124,6 +133,34 @@ const YarnStash = () => {
   // -----------------------------------------------------------------------
 
   const atLimit = !isPro && stashLimit !== null && (stats?.total_references ?? 0) >= stashLimit
+
+  const handleAssignClick = async (entry) => {
+    setAssigningEntry(entry)
+    setAssignQuantity(1)
+    setAssignProjectId('')
+    setAssignError(null)
+    try {
+      const res = await api.get('/projects?status=in_progress&limit=50')
+      setActiveProjects(res.data.projects || [])
+    } catch {
+      setActiveProjects([])
+    }
+  }
+
+  const handleAssignConfirm = async () => {
+    if (!assignProjectId) { setAssignError('Sélectionnez un projet.'); return }
+    setAssignSaving(true)
+    setAssignError(null)
+    try {
+      await stashAllocationAPI.create(assignProjectId, assigningEntry.id, assignQuantity)
+      setAssigningEntry(null)
+      loadStash()
+    } catch (err) {
+      setAssignError(err.response?.data?.error || 'Erreur lors de la réservation.')
+    } finally {
+      setAssignSaving(false)
+    }
+  }
 
   const handleAddClick = () => {
     if (atLimit) {
@@ -291,6 +328,7 @@ const YarnStash = () => {
                 entry={e}
                 onEdit={setEditingEntry}
                 onDelete={setDeletingEntry}
+                onAssign={handleAssignClick}
               />
             ))}
           </div>
@@ -352,6 +390,72 @@ const YarnStash = () => {
       {/* ===================================================================
           Confirmation suppression
       ==================================================================== */}
+      {/* ===================================================================
+          Assignation à un projet
+      ==================================================================== */}
+      {assigningEntry && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6">
+            <h2 className="font-semibold text-gray-900 mb-1">Utiliser pour un projet</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              <strong>{assigningEntry.brand} — {assigningEntry.yarn_name}</strong>
+              {assigningEntry.color_name ? ` (${assigningEntry.color_name})` : ''}
+            </p>
+
+            <div className="space-y-3 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Projet</label>
+                <select
+                  value={assignProjectId}
+                  onChange={e => setAssignProjectId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+                >
+                  <option value="">Sélectionner un projet…</option>
+                  {activeProjects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                {activeProjects.length === 0 && (
+                  <p className="text-xs text-gray-400 mt-1">Aucun projet en cours trouvé.</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Quantité à réserver (disponible : {assigningEntry.quantity_available ?? assigningEntry.quantity})
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={assigningEntry.quantity_available ?? assigningEntry.quantity}
+                  value={assignQuantity}
+                  onChange={e => setAssignQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+                />
+              </div>
+            </div>
+
+            {assignError && <p className="text-xs text-red-500 mb-3">{assignError}</p>}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setAssigningEntry(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleAssignConfirm}
+                disabled={assignSaving}
+                className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
+              >
+                {assignSaving ? 'Réservation…' : 'Réserver'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deletingEntry && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 text-center">

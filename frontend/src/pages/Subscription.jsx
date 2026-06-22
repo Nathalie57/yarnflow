@@ -283,7 +283,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check /><span>Projets &amp; patrons illimités <span className="text-gray-400 text-xs">(100 Mo de fichiers)</span></span></li>
             <li className="flex items-start gap-2"><Check /><span>1 compteur par projet</span></li>
             <li className="flex items-start gap-2"><Check /><span>Notes par section</span></li>
-            <li className="flex items-start gap-2"><Check /><span>2 Créations IA offertes</span></li>
+            <li className="flex items-start gap-2"><Check /><span>3 Créations IA offertes</span></li>
             <li className="flex items-start gap-2"><Check /><span>5 questions IA / mois</span></li>
             <li className="flex items-start gap-2"><Check /><span>20 photos · 2 essais gratuits Studio Photo IA</span></li>
           </ul>

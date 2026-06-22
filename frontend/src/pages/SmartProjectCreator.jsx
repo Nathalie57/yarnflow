@@ -275,7 +275,7 @@ export default function SmartProjectCreator() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Création Intelligente</h1>
-          <p className="text-gray-500">Vous avez utilisé vos 2 essais gratuits.</p>
+          <p className="text-gray-500">Vous avez utilisé vos 3 essais gratuits.</p>
           <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
             Plus de créations automatiques
           </Link>

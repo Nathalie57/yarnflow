@@ -890,7 +890,7 @@ const MyProjects = () => {
 
               {/* Création Intelligente — CTA principal */}
               <button
-                onClick={() => { navigate(smartQuota?.free_trial_used === false || smartQuota?.remaining > 0 ? '/smart-project-creator' : '/smart-project-creator') }}
+                onClick={() => navigate('/smart-project-creator')}
                 className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-left transition shadow-md hover:shadow-lg group"
               >
                 <div className="flex items-start gap-4">
@@ -900,12 +900,9 @@ const MyProjects = () => {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-white text-base">Importer mon patron</p>
-                      <span className="px-2 py-0.5 bg-white bg-opacity-20 text-white text-xs font-semibold rounded-full">Gratuit</span>
-                    </div>
+                    <p className="font-bold text-white text-base mb-1">Importer mon patron</p>
                     <p className="text-primary-100 text-sm leading-relaxed">
-                      PDF, lien ou photo — notre IA crée votre projet en 10 secondes : sections, aiguilles, compteurs.
+                      PDF, lien ou photo — notre IA crée votre projet en quelques secondes : sections, aiguilles, compteurs.
                     </p>
                   </div>
                 </div>

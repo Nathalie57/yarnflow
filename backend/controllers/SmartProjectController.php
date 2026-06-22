@@ -86,9 +86,9 @@ class SmartProjectController
                     'quota' => [
                         'plan' => 'free',
                         'is_pro' => false,
-                        'free_trial_used' => $totalUsed >= 2,
+                        'free_trial_used' => $totalUsed >= 3,
                         'total_used' => $totalUsed,
-                        'remaining' => max(0, 2 - $totalUsed),
+                        'remaining' => max(0, 3 - $totalUsed),
                     ]
                 ]);
             }
@@ -136,7 +136,7 @@ class SmartProjectController
                 $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id");
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
-                if ($totalUsed >= 2) {
+                if ($totalUsed >= 3) {
                     $this->jsonResponse([
                         'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour continuer',
                         'upgrade_required' => true,
