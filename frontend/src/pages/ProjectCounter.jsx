@@ -5268,7 +5268,7 @@ const ProjectCounter = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setShowStashPanel(true)}
-                          className="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-medium hover:bg-amber-100 transition text-sm flex items-center gap-1.5"
+                          className="px-3 py-1.5 bg-white text-gray-600 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-300 transition text-sm flex items-center gap-1.5"
                           title="Associer des pelotes de ton stock à ce projet"
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
