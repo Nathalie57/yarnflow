@@ -247,8 +247,10 @@ try {
                 $plan,
                 (int)$user['id']
             );
-            if ($ok) { echo "✓\n"; $stats['abandoned']['sent']++; }
-            else      { echo "✗\n"; $stats['abandoned']['errors']++; }
+            if ($ok) {
+                echo "✓\n"; $stats['abandoned']['sent']++;
+                $pushService->sendToUser((int)$user['id'], 'Ton abonnement n\'est pas finalisé', 'Reprends là où tu t\'es arrêtée.', '/subscription');
+            } else { echo "✗\n"; $stats['abandoned']['errors']++; }
         } catch (Exception $e) {
             echo "✗ {$e->getMessage()}\n"; $stats['abandoned']['errors']++;
         }

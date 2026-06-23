@@ -22,6 +22,7 @@ use App\Services\PricingService;
 use App\Services\EarlyBirdService;
 use App\Services\CreditManager;
 use App\Services\EmailService;
+use App\Services\PushService;
 use App\Utils\Response;
 use App\Utils\Validator;
 
@@ -38,6 +39,7 @@ class PaymentController
     private EarlyBirdService $earlyBirdService;
     private CreditManager $creditManager;
     private EmailService $emailService;
+    private PushService $pushService;
 
     public function __construct()
     {
@@ -50,6 +52,7 @@ class PaymentController
         $this->creditManager = new CreditManager();
         $db = \App\Config\Database::getInstance()->getConnection();
         $this->emailService = new EmailService($db);
+        $this->pushService = new PushService();
     }
 
     /**
@@ -584,7 +587,9 @@ class PaymentController
             // Email de bienvenue plan payant
             $user = $this->userModel->findById($userId);
             if ($user && !empty($user['email'])) {
+                $planLabel = str_contains($subscriptionType, 'pro') ? 'PRO' : 'PLUS';
                 $this->emailService->sendPlusWelcomeEmail($user['email'], $user['first_name'] ?? '', $subscriptionType, $userId);
+                $this->pushService->sendToUser($userId, "Bienvenue dans YarnFlow {$planLabel} !", 'Ton abonnement est actif. Découvre tes nouvelles fonctionnalités.', '/subscription');
             }
 
             // [AI:Claude] Si PRO Annuel, ajouter 50 crédits bonus (one-time)

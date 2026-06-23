@@ -19,6 +19,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Config\Database;
 use App\Services\EmailService;
+use App\Services\PushService;
 
 // Charger les variables d'environnement
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
@@ -29,6 +30,7 @@ echo "[CRON] Démarrage du script d'emails de réengagement - " . date('Y-m-d H:
 try {
     $db = Database::getInstance()->getConnection();
     $emailService = new EmailService($db);
+    $pushService = new PushService();
 
     $stats = [
         'day3' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
@@ -270,6 +272,7 @@ try {
                 echo "✓ Envoyé\n";
                 $stats['project_start']['sent']++;
                 $usersEmailed[] = $userId;
+                $pushService->sendToUser($userId, 'Ton projet t\'attend', ""{$row['project_name']}" n'a pas encore son premier rang.", '/my-projects');
             } else {
                 echo "✗ Échec\n";
                 $stats['project_start']['errors']++;
@@ -328,8 +331,10 @@ try {
                 (int)$row['days_since'],
                 $userId
             );
-            if ($ok) { echo "✓\n"; $stats['project_inactive']['sent']++; $usersEmailedInactive[] = $userId; }
-            else      { echo "✗\n"; $stats['project_inactive']['errors']++; }
+            if ($ok) {
+                echo "✓\n"; $stats['project_inactive']['sent']++; $usersEmailedInactive[] = $userId;
+                $pushService->sendToUser($userId, 'Reprends là où tu t\'es arrêtée', ""{$row['project_name']}" t'attend.", '/my-projects');
+            } else { echo "✗\n"; $stats['project_inactive']['errors']++; }
         } catch (Exception $e) {
             echo "✗ {$e->getMessage()}\n"; $stats['project_inactive']['errors']++;
         }
@@ -375,8 +380,10 @@ try {
                 (int)$user['quota'],
                 (int)$user['id']
             );
-            if ($ok) { echo "✓\n"; $stats['ai_exhausted']['sent']++; }
-            else      { echo "✗\n"; $stats['ai_exhausted']['errors']++; }
+            if ($ok) {
+                echo "✓\n"; $stats['ai_exhausted']['sent']++;
+                $pushService->sendToUser((int)$user['id'], 'Quota IA épuisé ce mois', 'Recharge automatique le 1er. Passe à PLUS pour plus de questions.', '/subscription');
+            } else { echo "✗\n"; $stats['ai_exhausted']['errors']++; }
         } catch (Exception $e) {
             echo "✗ {$e->getMessage()}\n"; $stats['ai_exhausted']['errors']++;
         }
@@ -423,8 +430,10 @@ try {
                 (int)$user['total_rows'],
                 (int)$user['id']
             );
-            if ($ok) { echo "✓\n"; $stats['day30']['sent']++; }
-            else      { echo "✗\n"; $stats['day30']['errors']++; }
+            if ($ok) {
+                echo "✓\n"; $stats['day30']['sent']++;
+                $pushService->sendToUser((int)$user['id'], 'Un mois avec YarnFlow', 'Découvre ce que PLUS peut t\'apporter maintenant.', '/subscription');
+            } else { echo "✗\n"; $stats['day30']['errors']++; }
         } catch (Exception $e) {
             echo "✗ {$e->getMessage()}\n"; $stats['day30']['errors']++;
         }
