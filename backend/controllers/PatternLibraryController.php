@@ -491,11 +491,10 @@ class PatternLibraryController
             'file_path' => null,
             'file_type' => null,
             'url' => $url,
-            'preview_image_url' => $previewImageUrl,
             'category' => $data['category'] ?? null,
             'technique' => $data['technique'] ?? null,
             'difficulty' => $data['difficulty'] ?? null,
-            'thumbnail_path' => null,
+            'thumbnail_path' => $previewImageUrl,
             'tags' => $data['tags'] ?? null,
             'notes' => $data['notes'] ?? null
         ];

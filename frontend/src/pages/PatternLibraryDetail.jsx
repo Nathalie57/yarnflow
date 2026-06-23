@@ -12,7 +12,7 @@ import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
-import ProxyViewer from '../components/ProxyViewer'
+import ExternalPatternPreview from '../components/ExternalPatternPreview'
 
 const PatternLibraryDetail = () => {
   const { id } = useParams()
@@ -628,7 +628,7 @@ const PatternLibraryDetail = () => {
 
             {/* URL */}
             {pattern.source_type === 'url' && pattern.url && (
-              <ProxyViewer url={pattern.url} />
+              <ExternalPatternPreview url={pattern.url} />
             )}
 
             {/* Texte */}

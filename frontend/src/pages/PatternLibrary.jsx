@@ -758,9 +758,9 @@ const PatternLibrary = () => {
                       </div>
                     ) : (
                       // [AI:Claude] URL : afficher preview image si disponible, sinon icône
-                      pattern.preview_image_url ? (
+                      (pattern.preview_image_url || pattern.thumbnail_path) ? (
                         <img
-                          src={pattern.preview_image_url}
+                          src={pattern.preview_image_url || pattern.thumbnail_path}
                           alt={pattern.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {
