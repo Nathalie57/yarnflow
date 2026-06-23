@@ -12,7 +12,7 @@ import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
-import ExternalPatternPreview from '../components/ExternalPatternPreview'
+import ProxyViewer from '../components/ProxyViewer'
 
 const PatternLibraryDetail = () => {
   const { id } = useParams()
@@ -628,7 +628,7 @@ const PatternLibraryDetail = () => {
 
             {/* URL */}
             {pattern.source_type === 'url' && pattern.url && (
-              <ExternalPatternPreview url={pattern.url} />
+              <ProxyViewer url={pattern.url} />
             )}
 
             {/* Texte */}
@@ -714,9 +714,9 @@ const PatternLibraryDetail = () => {
 
           {/* Notes personnelles */}
           {pattern.notes && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-amber-900 mb-2">Notes personnelles</h3>
-              <p className="text-sm text-amber-800 whitespace-pre-wrap">{pattern.notes}</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">Notes personnelles</h3>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">{pattern.notes}</p>
             </div>
           )}
 

@@ -24,23 +24,35 @@ const getYouTubeEmbedUrl = (url) => {
 const ProxyViewer = ({ url, onError, onLoad }) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [proxyReady, setProxyReady] = useState(false)
 
   const youtubeEmbedUrl = getYouTubeEmbedUrl(url)
   const proxyUrl = `${import.meta.env.VITE_API_URL}/web-fetch/proxy?url=${encodeURIComponent(url)}`
 
   useEffect(() => {
+    setLoading(true)
+    setError(false)
+    setProxyReady(false)
+
     if (youtubeEmbedUrl) {
       setLoading(false)
+      setProxyReady(true)
       return
     }
+    // Pre-check : vérifie que le proxy peut charger l'URL.
+    // L'iframe ne démarre qu'après ce check — sinon deux requêtes simultanées
+    // partent vers le site cible et la deuxième se prend un 403 (rate-limit).
+    // Quand le pre-check réussit, WebFetchService a mis la réponse en cache,
+    // donc l'iframe la sert depuis le cache sans retoucher le site distant.
     fetch(proxyUrl)
       .then(res => {
         if (!res.ok) {
           setLoading(false)
           setError(true)
           if (onError) onError()
+        } else {
+          setProxyReady(true)
         }
-        // si ok, l'iframe prend le relais
       })
       .catch(() => {
         setLoading(false)
@@ -113,8 +125,8 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
         </div>
       )}
 
-      {/* Iframe YouTube embed ou proxy */}
-      {!error && (
+      {/* Iframe YouTube embed ou proxy — ne monte qu'après que le pre-check ait réussi */}
+      {!error && proxyReady && (
         <iframe
           src={youtubeEmbedUrl || proxyUrl}
           className="w-full border-0"

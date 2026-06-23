@@ -261,6 +261,10 @@ class WebFetchService {
         }
 
         $data = unserialize(file_get_contents($file));
+        if (!is_array($data) || !isset($data['expires'], $data['content'])) {
+            unlink($file);
+            return null;
+        }
         if ($data['expires'] < time()) {
             unlink($file);
             return null;

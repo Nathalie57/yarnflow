@@ -8,6 +8,39 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
 
+const MarkdownText = ({ text }) => {
+  const lines = text.split('\n')
+  return (
+    <div className="space-y-1">
+      {lines.map((line, i) => {
+        if (!line.trim()) return <div key={i} className="h-2" />
+
+        const renderInline = (str) => {
+          const parts = str.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g)
+          return parts.map((part, j) => {
+            if (part.startsWith('**') && part.endsWith('**'))
+              return <strong key={j}>{part.slice(2, -2)}</strong>
+            if (part.startsWith('*') && part.endsWith('*'))
+              return <em key={j}>{part.slice(1, -1)}</em>
+            return part
+          })
+        }
+
+        if (/^#{1,3}\s/.test(line))
+          return <p key={i} className="font-semibold mt-2">{renderInline(line.replace(/^#{1,3}\s/, ''))}</p>
+
+        if (/^\d+\.\s/.test(line))
+          return <p key={i} className="pl-3">{renderInline(line)}</p>
+
+        if (/^[-•]\s/.test(line))
+          return <p key={i} className="pl-3">· {renderInline(line.slice(2))}</p>
+
+        return <p key={i}>{renderInline(line)}</p>
+      })}
+    </div>
+  )
+}
+
 const SUGGESTIONS = [
   'Comment faire une diminution SSK ?',
   'Quelle différence entre k2tog et SSK ?',
@@ -128,7 +161,7 @@ export default function AiAssistant() {
               className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                   m.role === 'user'
                     ? 'bg-primary-600 text-white rounded-br-sm'
                     : m.isError
@@ -136,7 +169,7 @@ export default function AiAssistant() {
                       : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                 }`}
               >
-                {m.content}
+                {m.role === 'user' ? m.content : <MarkdownText text={m.content} />}
               </div>
             </div>
           ))

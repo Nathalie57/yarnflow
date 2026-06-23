@@ -8,12 +8,20 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
 
-const ExternalPatternPreview = ({ url }) => {
+const ExternalPatternPreview = ({ url, savedImage }) => {
   const [metadata, setMetadata] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!savedImage)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    // Si une image est déjà sauvegardée en base, on l'utilise directement
+    // sans appeler le serveur (certains sites bloquent les requêtes server-side)
+    if (savedImage) {
+      setMetadata({ image: savedImage, title: null, description: null })
+      setLoading(false)
+      return
+    }
+
     async function loadMetadata() {
       try {
         setLoading(true)
@@ -35,7 +43,7 @@ const ExternalPatternPreview = ({ url }) => {
     if (url) {
       loadMetadata()
     }
-  }, [url])
+  }, [url, savedImage])
 
   const extractDomain = (url) => {
     try {
