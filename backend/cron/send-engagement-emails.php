@@ -46,11 +46,13 @@ try {
         SELECT u.id, u.email, u.first_name, u.created_at
         FROM users u
         WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 3 DAY)
-        AND u.id NOT IN (
-            SELECT user_id
-            FROM emails_sent_log
-            WHERE email_type = 'onboarding_day3'
-            AND user_id IS NOT NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id AND email_type = 'onboarding_day3' AND status = 'sent'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM email_notifications_sent
+            WHERE user_id = u.id AND notification_type LIKE '%onboarding%'
         )
         AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 1 DAY))
         AND u.email_verified = 1
@@ -96,11 +98,13 @@ try {
         FROM users u
         WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 7 DAY)
         AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 3 DAY))
-        AND u.id NOT IN (
-            SELECT user_id
-            FROM emails_sent_log
-            WHERE email_type = 'reengagement_day7'
-            AND user_id IS NOT NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id AND email_type = 'reengagement_day7' AND status = 'sent'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM email_notifications_sent
+            WHERE user_id = u.id AND notification_type LIKE '%reengagement%'
         )
         AND u.email_verified = 1
     ");
@@ -164,11 +168,13 @@ try {
         FROM users u
         WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 21 DAY)
         AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 14 DAY))
-        AND u.id NOT IN (
-            SELECT user_id
-            FROM emails_sent_log
-            WHERE email_type = 'need_help_day21'
-            AND user_id IS NOT NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id AND email_type = 'need_help_day21' AND status = 'sent'
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM email_notifications_sent
+            WHERE user_id = u.id AND notification_type LIKE '%need_help%'
         )
         AND u.email_verified = 1
     ");
@@ -220,11 +226,11 @@ try {
         INNER JOIN projects p ON p.user_id = u.id
         WHERE p.created_at <= DATE_SUB(NOW(), INTERVAL 2 DAY)
         AND p.status IN ('in_progress', 'active')
-        AND u.id NOT IN (
-            SELECT user_id
-            FROM emails_sent_log
-            WHERE email_type = 'project_start_reminder'
-            AND user_id IS NOT NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id
+            AND (email_type = 'project_start_reminder' OR subject LIKE '%attend son premier rang%')
+            AND status = 'sent'
         )
         AND COALESCE(p.current_row, 0) = 0
         AND COALESCE((SELECT SUM(current_row) FROM project_sections ps WHERE ps.project_id = p.id), 0) = 0

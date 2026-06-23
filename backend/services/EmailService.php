@@ -1042,4 +1042,263 @@ HTML;
 </html>
 HTML;
     }
+
+    // =========================================================================
+    // TRIGGERS COMPORTEMENTAUX
+    // =========================================================================
+
+    public function sendStashLimitApproachingEmail(string $email, string $name, int $currentCount, ?int $userId = null): bool
+    {
+        $subject = 'Ton stock de laines est presque plein';
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getStashLimitApproachingTemplate($name, $currentCount);
+            $mail->AltBody = "Bonjour $name,\n\nTu as ajouté $currentCount pelotes sur 5 dans ton stock. La prochaine s'arrêtera là — à moins de passer à PLUS (15 références, 3,99€/mois).\n\nPasser à PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] stash_limit_approaching: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'stash_limit_approaching', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getStashLimitApproachingTemplate(string $name, int $currentCount): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $remaining = 5 - $currentCount;
+        $remainingLabel = $remaining === 1 ? 'Plus qu\'une place' : "{$remaining} places restantes";
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef3c7;border-radius:8px;margin:0 0 28px;">
+        <tr><td style="padding:16px 20px;text-align:center;">
+            <p style="margin:0;font-size:15px;color:#92400e;font-weight:600;">{$remainingLabel} dans ton stock gratuit</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#b45309;">{$currentCount} / 5 références utilisées</p>
+        </td></tr>
+    </table>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Tu as catalogué <strong>{$currentCount} références</strong> dans ton stock. Le plan gratuit s'arrête à 5 — la prochaine pelote que tu voudras ajouter se heurtera à cette limite.
+    </p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
+        Avec PLUS, tu passes à <strong>15 références</strong> et tu gardes l'historique complet de ta collection — coloris, métrages, épaisseurs, et les projets auxquels chaque pelote est assignée.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/subscription" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Passer à PLUS — 3,99€/mois
+            </a>
+        </td></tr>
+        <tr><td align="center" style="padding-top:10px;">
+            <p style="margin:0;font-size:12px;color:#9ca3af;">Ou 29,99€/an — soit 2,49€/mois</p>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    public function sendAiQuotaApproachingEmail(string $email, string $name, int $used, int $limit, ?int $userId = null): bool
+    {
+        $subject = 'Il te reste ' . ($limit - $used) . ' question' . ($limit - $used > 1 ? 's' : '') . ' IA ce mois-ci';
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getAiQuotaApproachingTemplate($name, $used, $limit);
+            $remaining = $limit - $used;
+            $mail->AltBody = "Bonjour $name,\n\nTu as utilisé {$used} de tes {$limit} questions à l'assistant IA ce mois-ci. Il t'en reste {$remaining}.\n\nAvec PLUS, tu passes à 10 questions/mois. Avec PRO, 30 questions.\n\nDécouvrir les plans : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] ai_quota_approaching: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'ai_quota_approaching', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getAiQuotaApproachingTemplate(string $name, int $used, int $limit): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $remaining = $limit - $used;
+        $pct = (int)(($used / $limit) * 100);
+        $upgradeTo = $limit <= 5 ? 'PLUS (10 questions/mois)' : 'PRO (30 questions/mois)';
+        $upgradePrice = $limit <= 5 ? '3,99€/mois' : '6,99€/mois';
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 20px;">
+        Tu as posé <strong>{$used} questions</strong> à l'assistant IA ce mois-ci — il t'en reste <strong>{$remaining}</strong> avant la limite.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+        <tr><td style="padding:4px 0;">
+            <div style="background:#e5e7eb;border-radius:99px;height:8px;overflow:hidden;">
+                <div style="background:#557055;width:{$pct}%;height:100%;border-radius:99px;"></div>
+            </div>
+            <p style="margin:6px 0 0;font-size:12px;color:#9ca3af;text-align:right;">{$used} / {$limit} questions utilisées</p>
+        </td></tr>
+    </table>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
+        Passe à {$upgradeTo} pour ne jamais tomber à court au milieu d'un projet complexe.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/subscription" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Voir les plans — à partir de {$upgradePrice}
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    public function sendActiveUserUpgradeEmail(string $email, string $name, int $projectCount, ?int $userId = null): bool
+    {
+        $subject = 'Tu as ' . $projectCount . ' projet' . ($projectCount > 1 ? 's' : '') . ' en cours — voilà ce que tu peux faire de plus';
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getActiveUserUpgradeTemplate($name, $projectCount);
+            $mail->AltBody = "Bonjour $name,\n\nTu utilises activement YarnFlow avec {$projectCount} projets en cours. Voici ce que PLUS peut t'apporter : stock de laines jusqu'à 15 références, compteur secondaire, 10 questions IA par mois, statistiques.\n\nDécouvrir PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] active_user_upgrade: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'active_user_upgrade', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getActiveUserUpgradeTemplate(string $name, int $projectCount): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $projectLabel = $projectCount > 1 ? "{$projectCount} projets en cours" : "un projet en cours";
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Tu travailles sur <strong>{$projectLabel}</strong> avec YarnFlow cette semaine. Voici trois choses que tu pourrais faire en plus avec PLUS :
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
+        <tr>
+            <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Ton stock de laines</strong> — Catalogue tes pelotes, associe-les à tes projets, ne rachète plus ce que tu as déjà.</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Compteur secondaire</strong> — Pour les diminutions, les répétitions de motif, ou tout ce qui se compte en parallèle.</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:16px 20px;">
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">10 questions IA / mois</strong> — Techniques, calculs, lecture de patron : un assistant qui connaît le tricot.</p>
+            </td>
+        </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/subscription" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Essayer PLUS — 3,99€/mois
+            </a>
+        </td></tr>
+        <tr><td align="center" style="padding-top:10px;">
+            <p style="margin:0;font-size:12px;color:#9ca3af;">Ou 29,99€/an — soit 2,49€/mois</p>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+
+    <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:0;">
+        <a href="https://yarnflow.fr/profile" style="color:#9ca3af;text-decoration:underline;">Se désinscrire de ces emails</a>
+    </p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
 }
