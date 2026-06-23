@@ -34,7 +34,7 @@ const TWAMessage = () => (
 
 const Subscription = () => {
   const { user, isTWA } = useAuth()
-  const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick } = useAnalytics()
+  const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick, trackEvent } = useAnalytics()
   const [subscription, setSubscription] = useState(null)
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
@@ -81,7 +81,20 @@ const Subscription = () => {
   const loadSubscription = async () => {
     try {
       const response = await userAPI.getSubscription()
-      setSubscription(response.data.data.subscription)
+      const sub = response.data.data.subscription
+      setSubscription(sub)
+
+      const pendingPlan = localStorage.getItem('yf_pending_plan')
+      if (pendingPlan && sub?.type && sub.type !== 'free') {
+        const price = pendingPlan === 'plus' ? 3.99 : 6.99
+        trackEvent('purchase', {
+          transaction_id: `sub_${Date.now()}`,
+          value: price,
+          currency: 'EUR',
+          items: [{ item_id: pendingPlan, item_name: `YarnFlow ${pendingPlan.toUpperCase()}`, price, quantity: 1 }]
+        })
+        localStorage.removeItem('yf_pending_plan')
+      }
     } catch (error) {
       console.error('Erreur chargement abonnement:', error)
     } finally {
