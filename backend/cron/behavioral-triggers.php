@@ -33,7 +33,8 @@ try {
     $stats = [
         'stash'   => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'ai'      => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
-        'upgrade' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'upgrade'   => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'abandoned' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
     ];
 
     $currentMonth = date('Y-m');
@@ -207,14 +208,63 @@ try {
     }
 
     // =========================================================================
+    // 4. PANIER ABANDONNÉ — paiement subscription pending depuis 2h-48h, user toujours FREE
+    // =========================================================================
+    echo "\n[ABANDON] Recherche des paniers abonnement abandonnés...\n";
+
+    $stmt = $db->prepare("
+        SELECT
+            u.id, u.email, u.first_name,
+            pay.payment_type
+        FROM payments pay
+        JOIN users u ON u.id = pay.user_id
+        WHERE pay.status = 'pending'
+        AND pay.payment_type LIKE 'subscription_%'
+        AND pay.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 48 HOUR) AND DATE_SUB(NOW(), INTERVAL 2 HOUR)
+        AND (u.subscription_type = 'free' OR u.subscription_type IS NULL)
+        AND u.email_verified = 1
+        AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id
+            AND email_type = 'abandoned_checkout'
+            AND status = 'sent'
+            AND DATE(sent_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        )
+        GROUP BY u.id
+    ");
+    $stmt->execute();
+    $abandonedUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo "[ABANDON] " . count($abandonedUsers) . " utilisatrice(s) éligible(s)\n";
+
+    foreach ($abandonedUsers as $user) {
+        $plan = str_contains($user['payment_type'], 'pro') ? 'pro' : 'plus';
+        echo "[ABANDON] Envoi à {$user['email']} (plan: {$plan})... ";
+        try {
+            $ok = $emailService->sendAbandonedCheckoutEmail(
+                $user['email'],
+                $user['first_name'] ?? 'Utilisatrice',
+                $plan,
+                (int)$user['id']
+            );
+            if ($ok) { echo "✓\n"; $stats['abandoned']['sent']++; }
+            else      { echo "✗\n"; $stats['abandoned']['errors']++; }
+        } catch (Exception $e) {
+            echo "✗ {$e->getMessage()}\n"; $stats['abandoned']['errors']++;
+        }
+        sleep(2);
+    }
+
+    // =========================================================================
     // RÉSUMÉ
     // =========================================================================
     echo "\n" . str_repeat("=", 60) . "\n";
     echo "RÉSUMÉ\n";
     echo str_repeat("=", 60) . "\n";
-    echo sprintf("STASH   : %d envoyés, %d erreurs\n", $stats['stash']['sent'], $stats['stash']['errors']);
-    echo sprintf("AI      : %d envoyés, %d erreurs\n", $stats['ai']['sent'], $stats['ai']['errors']);
-    echo sprintf("UPGRADE : %d envoyés, %d erreurs\n", $stats['upgrade']['sent'], $stats['upgrade']['errors']);
+    echo sprintf("STASH    : %d envoyés, %d erreurs\n", $stats['stash']['sent'], $stats['stash']['errors']);
+    echo sprintf("AI       : %d envoyés, %d erreurs\n", $stats['ai']['sent'], $stats['ai']['errors']);
+    echo sprintf("UPGRADE  : %d envoyés, %d erreurs\n", $stats['upgrade']['sent'], $stats['upgrade']['errors']);
+    echo sprintf("ABANDON  : %d envoyés, %d erreurs\n", $stats['abandoned']['sent'], $stats['abandoned']['errors']);
     $total = array_sum(array_column($stats, 'sent'));
     echo "TOTAL   : {$total} emails envoyés\n";
     echo "[CRON] Terminé - " . date('Y-m-d H:i:s') . "\n\n";

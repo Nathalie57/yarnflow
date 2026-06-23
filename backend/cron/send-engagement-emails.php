@@ -34,7 +34,11 @@ try {
         'day3' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'day7' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'day21' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
-        'project_start' => ['sent' => 0, 'skipped' => 0, 'errors' => 0]
+        'project_start'    => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'project_inactive' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'ai_exhausted'     => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'day30'            => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'reactivation'     => ['sent' => 0, 'skipped' => 0, 'errors' => 0]
     ];
 
     // =========================================
@@ -279,19 +283,212 @@ try {
     }
 
     // =========================================
+    // PROJET INACTIF : projets actifs non modifiés depuis 7-14 jours
+    // =========================================
+    echo "\n[PROJET_INACTIF] Recherche des projets actifs sans activité depuis 7-14 jours...\n";
+
+    $stmt = $db->prepare("
+        SELECT
+            u.id AS user_id,
+            u.email,
+            u.first_name,
+            p.id AS project_id,
+            p.name AS project_name,
+            DATEDIFF(NOW(), p.updated_at) AS days_since
+        FROM users u
+        INNER JOIN projects p ON p.user_id = u.id
+        WHERE p.status IN ('in_progress', 'active')
+        AND p.updated_at BETWEEN DATE_SUB(NOW(), INTERVAL 14 DAY) AND DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND u.email_verified = 1
+        AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id
+            AND email_type = 'project_inactive_reminder'
+            AND status = 'sent'
+            AND DATE(sent_at) >= DATE_SUB(CURDATE(), INTERVAL 14 DAY)
+        )
+        ORDER BY p.updated_at ASC
+    ");
+    $stmt->execute();
+    $inactiveProjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo "[PROJET_INACTIF] Trouvé " . count($inactiveProjects) . " projet(s) éligible(s)\n";
+
+    $usersEmailedInactive = [];
+    foreach ($inactiveProjects as $row) {
+        $userId = (int)$row['user_id'];
+        if (in_array($userId, $usersEmailedInactive)) continue;
+
+        echo "[PROJET_INACTIF] Envoi à {$row['email']} (projet: {$row['project_name']}, {$row['days_since']}j)... ";
+        try {
+            $ok = $emailService->sendProjectInactiveReminderEmail(
+                $row['email'],
+                $row['first_name'] ?? 'Utilisatrice',
+                $row['project_name'],
+                (int)$row['days_since'],
+                $userId
+            );
+            if ($ok) { echo "✓\n"; $stats['project_inactive']['sent']++; $usersEmailedInactive[] = $userId; }
+            else      { echo "✗\n"; $stats['project_inactive']['errors']++; }
+        } catch (Exception $e) {
+            echo "✗ {$e->getMessage()}\n"; $stats['project_inactive']['errors']++;
+        }
+        sleep(2);
+    }
+
+    // =========================================
+    // QUOTA IA ÉPUISÉ : FREE à 5/5, PLUS à 10/10 ce mois
+    // =========================================
+    echo "\n[AI_EPUISE] Recherche des utilisatrices ayant épuisé leur quota IA...\n";
+
+    $currentMonth = date('Y-m');
+    $stmt = $db->prepare("
+        SELECT
+            u.id, u.email, u.first_name,
+            COALESCE(u.subscription_type, 'free') AS plan,
+            COALESCE(au.count, 0) AS used,
+            CASE WHEN COALESCE(u.subscription_type, 'free') IN ('plus', 'plus_annual') THEN 10 ELSE 5 END AS quota
+        FROM users u
+        LEFT JOIN ai_usage au ON au.user_id = u.id AND au.month = :month
+        WHERE u.email_verified = 1
+        AND COALESCE(u.subscription_type, 'free') IN ('free', 'plus', 'plus_annual')
+        AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id
+            AND email_type = 'ai_quota_exhausted'
+            AND status = 'sent'
+            AND DATE_FORMAT(sent_at, '%Y-%m') = :month2
+        )
+        HAVING used >= quota
+    ");
+    $stmt->execute([':month' => $currentMonth, ':month2' => $currentMonth]);
+    $exhaustedUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo "[AI_EPUISE] Trouvé " . count($exhaustedUsers) . " utilisatrice(s) éligible(s)\n";
+
+    foreach ($exhaustedUsers as $user) {
+        echo "[AI_EPUISE] Envoi à {$user['email']} ({$user['used']}/{$user['quota']})... ";
+        try {
+            $ok = $emailService->sendAiQuotaExhaustedEmail(
+                $user['email'],
+                $user['first_name'] ?? 'Utilisatrice',
+                (int)$user['quota'],
+                (int)$user['id']
+            );
+            if ($ok) { echo "✓\n"; $stats['ai_exhausted']['sent']++; }
+            else      { echo "✗\n"; $stats['ai_exhausted']['errors']++; }
+        } catch (Exception $e) {
+            echo "✗ {$e->getMessage()}\n"; $stats['ai_exhausted']['errors']++;
+        }
+        sleep(2);
+    }
+
+    // =========================================
+    // J+30 FREE ACTIVE : inscrite il y a 25-35 jours, active, toujours FREE
+    // =========================================
+    echo "\n[J+30] Recherche des utilisatrices FREE actives depuis 30 jours...\n";
+
+    $stmt = $db->prepare("
+        SELECT
+            u.id, u.email, u.first_name,
+            COUNT(DISTINCT p.id) AS project_count,
+            COALESCE(SUM(p.current_row), 0) AS total_rows
+        FROM users u
+        LEFT JOIN projects p ON p.user_id = u.id AND p.status IN ('in_progress', 'active', 'finished')
+        WHERE u.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 35 DAY) AND DATE_SUB(NOW(), INTERVAL 25 DAY)
+        AND u.last_login_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND (u.subscription_type = 'free' OR u.subscription_type IS NULL)
+        AND u.email_verified = 1
+        AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id
+            AND email_type = 'active_free_day30'
+            AND status = 'sent'
+        )
+        GROUP BY u.id
+        HAVING project_count >= 1
+    ");
+    $stmt->execute();
+    $day30Users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo "[J+30] Trouvé " . count($day30Users) . " utilisatrice(s) éligible(s)\n";
+
+    foreach ($day30Users as $user) {
+        echo "[J+30] Envoi à {$user['email']} ({$user['project_count']} projets, {$user['total_rows']} rangs)... ";
+        try {
+            $ok = $emailService->sendActiveFreeDay30Email(
+                $user['email'],
+                $user['first_name'] ?? 'Utilisatrice',
+                (int)$user['project_count'],
+                (int)$user['total_rows'],
+                (int)$user['id']
+            );
+            if ($ok) { echo "✓\n"; $stats['day30']['sent']++; }
+            else      { echo "✗\n"; $stats['day30']['errors']++; }
+        } catch (Exception $e) {
+            echo "✗ {$e->getMessage()}\n"; $stats['day30']['errors']++;
+        }
+        sleep(2);
+    }
+
+    // =========================================
+    // RÉACTIVATION J+45 : dernière connexion entre 45 et 60 jours
+    // =========================================
+    echo "\n[REACTIV] Recherche des utilisatrices absentes depuis 45-60 jours...\n";
+
+    $stmt = $db->prepare("
+        SELECT u.id, u.email, u.first_name,
+            DATEDIFF(NOW(), u.last_login_at) AS days_since
+        FROM users u
+        WHERE u.last_login_at BETWEEN DATE_SUB(NOW(), INTERVAL 60 DAY) AND DATE_SUB(NOW(), INTERVAL 45 DAY)
+        AND u.email_verified = 1
+        AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id
+            AND email_type = 'reactivation'
+            AND status = 'sent'
+        )
+    ");
+    $stmt->execute();
+    $reactivUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo "[REACTIV] Trouvé " . count($reactivUsers) . " utilisatrice(s) éligible(s)\n";
+
+    foreach ($reactivUsers as $user) {
+        echo "[REACTIV] Envoi à {$user['email']} ({$user['days_since']}j d'absence)... ";
+        try {
+            $ok = $emailService->sendReactivationEmail(
+                $user['email'],
+                $user['first_name'] ?? 'Utilisatrice',
+                (int)$user['days_since'],
+                (int)$user['id']
+            );
+            if ($ok) { echo "✓\n"; $stats['reactivation']['sent']++; }
+            else      { echo "✗\n"; $stats['reactivation']['errors']++; }
+        } catch (Exception $e) {
+            echo "✗ {$e->getMessage()}\n"; $stats['reactivation']['errors']++;
+        }
+        sleep(2);
+    }
+
+    // =========================================
     // RÉSUMÉ
     // =========================================
     echo "\n" . str_repeat("=", 60) . "\n";
     echo "RÉSUMÉ DES ENVOIS\n";
     echo str_repeat("=", 60) . "\n";
-    echo sprintf("J+3  : %d envoyés, %d erreurs (onboarding)\n", $stats['day3']['sent'], $stats['day3']['errors']);
-    echo sprintf("J+7  : %d envoyés, %d erreurs (réengagement)\n", $stats['day7']['sent'], $stats['day7']['errors']);
-    echo sprintf("J+21 : %d envoyés, %d erreurs (besoin d'aide)\n", $stats['day21']['sent'], $stats['day21']['errors']);
-    echo sprintf("PROJ : %d envoyés, %d erreurs (projet sans compteur)\n", $stats['project_start']['sent'], $stats['project_start']['errors']);
+    echo sprintf("J+3      : %d envoyés, %d erreurs (onboarding)\n", $stats['day3']['sent'], $stats['day3']['errors']);
+    echo sprintf("J+7      : %d envoyés, %d erreurs (réengagement inactif)\n", $stats['day7']['sent'], $stats['day7']['errors']);
+    echo sprintf("J+21     : %d envoyés, %d erreurs (besoin d'aide)\n", $stats['day21']['sent'], $stats['day21']['errors']);
+    echo sprintf("J+30     : %d envoyés, %d erreurs (FREE active 30j)\n", $stats['day30']['sent'], $stats['day30']['errors']);
+    echo sprintf("J+45     : %d envoyés, %d erreurs (réactivation)\n", $stats['reactivation']['sent'], $stats['reactivation']['errors']);
+    echo sprintf("PROJ_START  : %d envoyés, %d erreurs (projet sans compteur)\n", $stats['project_start']['sent'], $stats['project_start']['errors']);
+    echo sprintf("PROJ_INACT  : %d envoyés, %d erreurs (projet inactif 7-14j)\n", $stats['project_inactive']['sent'], $stats['project_inactive']['errors']);
+    echo sprintf("AI_EPUISE   : %d envoyés, %d erreurs (quota IA épuisé)\n", $stats['ai_exhausted']['sent'], $stats['ai_exhausted']['errors']);
     echo str_repeat("=", 60) . "\n";
 
-    $totalSent = $stats['day3']['sent'] + $stats['day7']['sent'] + $stats['day21']['sent'] + $stats['project_start']['sent'];
-    $totalErrors = $stats['day3']['errors'] + $stats['day7']['errors'] + $stats['day21']['errors'] + $stats['project_start']['errors'];
+    $totalSent = array_sum(array_column($stats, 'sent'));
+    $totalErrors = array_sum(array_column($stats, 'errors'));
 
     echo "TOTAL : {$totalSent} emails envoyés, {$totalErrors} erreurs\n";
     echo "[CRON] Terminé - " . date('Y-m-d H:i:s') . "\n\n";

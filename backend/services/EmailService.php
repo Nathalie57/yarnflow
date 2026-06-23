@@ -1301,4 +1301,478 @@ HTML;
 </html>
 HTML;
     }
+
+    // =========================================================================
+    // EMAILS RÉTENTION & CONVERSION (série 2)
+    // =========================================================================
+
+    public function sendPlusWelcomeEmail(string $email, string $name, string $plan, ?int $userId = null): bool
+    {
+        $isPro = str_contains($plan, 'pro');
+        $planLabel = $isPro ? 'PRO' : 'PLUS';
+        $subject = "Bienvenue dans YarnFlow {$planLabel} !";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getPlusWelcomeTemplate($name, $planLabel, $isPro);
+            $mail->AltBody = "Bonjour $name,\n\nTon abonnement YarnFlow {$planLabel} est actif. Voici ce que tu peux faire maintenant :\n" . ($isPro ? "- 30 questions IA/mois\n- Stock illimité\n- Studio Photo" : "- 10 questions IA/mois\n- Stock jusqu'à 15 références\n- Compteur secondaire") . "\n\nOuvrir YarnFlow : https://yarnflow.fr\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] plus_welcome: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'plus_welcome', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getPlusWelcomeTemplate(string $name, string $planLabel, bool $isPro): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $features = $isPro
+            ? [
+                ['title' => '30 questions IA / mois', 'desc' => 'Techniques, calculs, lectures de patron — sans limite mensuelle contraignante.'],
+                ['title' => 'Stock illimité', 'desc' => 'Toutes tes pelotes, coloris et métrages catalogués sans restriction.'],
+                ['title' => 'Studio Photo', 'desc' => 'Génère des visuels de tes projets depuis l\'app.'],
+                ['title' => 'Statistiques avancées', 'desc' => 'Rangs comptés, temps passé, progression par projet.'],
+            ]
+            : [
+                ['title' => '10 questions IA / mois', 'desc' => 'Deux fois plus de questions pour avancer sur tes projets.'],
+                ['title' => 'Stock jusqu\'à 15 références', 'desc' => 'Catalogue tes pelotes, associe-les à tes projets, évite les doublons.'],
+                ['title' => 'Compteur secondaire', 'desc' => 'Pour les diminutions, motifs répétés, ou tout ce qui se compte en parallèle.'],
+                ['title' => 'Historique complet', 'desc' => 'Retrouve tous tes projets terminés avec leurs statistiques.'],
+            ];
+
+        $featuresHtml = '';
+        foreach ($features as $f) {
+            $featuresHtml .= "<tr><td style=\"padding:12px 20px;border-bottom:1px solid #e8ede8;\"><p style=\"margin:0;font-size:15px;color:#374151;\"><strong style=\"color:#111827;\">{$f['title']}</strong> — {$f['desc']}</p></td></tr>";
+        }
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Ton abonnement <strong>YarnFlow {$planLabel}</strong> est actif. Voici ce que tu as maintenant :
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
+        {$featuresHtml}
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Ouvrir YarnFlow
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    public function sendProjectInactiveReminderEmail(string $email, string $name, string $projectName, int $daysSince, ?int $userId = null): bool
+    {
+        $subject = "Ton projet \"{$projectName}\" t'attend";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getProjectInactiveTemplate($name, $projectName, $daysSince);
+            $mail->AltBody = "Bonjour $name,\n\nTon projet \"{$projectName}\" n'a pas bougé depuis {$daysSince} jours. La prochaine fois que tu tricotas, ouvre YarnFlow avant de commencer.\n\nReprendre : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] project_inactive_reminder: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'project_inactive_reminder', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getProjectInactiveTemplate(string $name, string $projectName, int $daysSince): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $daysLabel = $daysSince === 1 ? 'hier' : "il y a {$daysSince} jours";
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Ton projet <strong>"{$projectName}"</strong> n'a pas bougé depuis {$daysLabel}. Les pelotes n'ont pas perdu patience — mais c'est toujours agréable de retrouver là où on en était.
+    </p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
+        La prochaine fois que tu prends les aiguilles, ouvre YarnFlow avant de commencer. Ton rang sera noté dès le premier point.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Reprendre "{$projectName}"
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne reprise,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    public function sendAiQuotaExhaustedEmail(string $email, string $name, int $limit, ?int $userId = null): bool
+    {
+        $renewDate = date('1er F', strtotime('first day of next month'));
+        $subject = "Ton quota IA est épuisé — recharge le 1er";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getAiQuotaExhaustedTemplate($name, $limit, $renewDate);
+            $mail->AltBody = "Bonjour $name,\n\nTu as utilisé tes {$limit} questions IA ce mois-ci. Ton quota se recharge automatiquement le {$renewDate}.\n\nAvec PLUS, tu passes à 10 questions/mois. Avec PRO, 30 questions.\n\nVoir les plans : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] ai_quota_exhausted: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'ai_quota_exhausted', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getAiQuotaExhaustedTemplate(string $name, int $limit, string $renewDate): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $upgradeLimit = $limit <= 5 ? 10 : 30;
+        $upgradePlan  = $limit <= 5 ? 'PLUS' : 'PRO';
+        $upgradePrice = $limit <= 5 ? '3,99€/mois' : '6,99€/mois';
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Tu as posé tes <strong>{$limit} questions</strong> à l'assistant IA ce mois-ci. Ton quota se recharge automatiquement le <strong>{$renewDate}</strong> — tu n'as rien à faire.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:8px;margin:0 0 28px;">
+        <tr><td style="padding:16px 20px;text-align:center;">
+            <p style="margin:0;font-size:15px;color:#166534;font-weight:600;">Recharge automatique le {$renewDate}</p>
+            <p style="margin:6px 0 0;font-size:13px;color:#15803d;">Aucune action requise</p>
+        </td></tr>
+    </table>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
+        Si tu ne peux pas attendre, passe à {$upgradePlan} pour <strong>{$upgradeLimit} questions par mois</strong>.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/subscription" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:15px;font-weight:600;">
+                Passer à {$upgradePlan} — {$upgradePrice}
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    public function sendAbandonedCheckoutEmail(string $email, string $name, string $plan, ?int $userId = null): bool
+    {
+        $planLabel = str_contains($plan, 'pro') ? 'PRO' : 'PLUS';
+        $subject = "Tu n'as pas finalisé ton abonnement YarnFlow {$planLabel}";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getAbandonedCheckoutTemplate($name, $planLabel);
+            $mail->AltBody = "Bonjour $name,\n\nTu as commencé à t'abonner à YarnFlow {$planLabel} mais n'as pas finalisé. Si quelque chose t'a bloquée, réponds à cet email et je t'aide.\n\nReprendre l'abonnement : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] abandoned_checkout: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'abandoned_checkout', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getAbandonedCheckoutTemplate(string $name, string $planLabel): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $price = $planLabel === 'PRO' ? '6,99€/mois' : '3,99€/mois';
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Tu avais commencé à t'abonner à YarnFlow <strong>{$planLabel}</strong> mais n'as pas finalisé. Si quelque chose t'a bloquée — une question sur le paiement, une hésitation — réponds directement à cet email, je t'aide.
+    </p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
+        Si c'est le bon moment, ton abonnement t'attend :
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/subscription" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Finaliser mon abonnement {$planLabel} — {$price}
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    public function sendActiveFreeDay30Email(string $email, string $name, int $projectCount, int $totalRows, ?int $userId = null): bool
+    {
+        $subject = "Un mois avec YarnFlow — et si on allait plus loin ?";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getActiveFreeDay30Template($name, $projectCount, $totalRows);
+            $mail->AltBody = "Bonjour $name,\n\nUn mois que tu utilises YarnFlow — {$projectCount} projets, {$totalRows} rangs comptés. C'est le bon moment pour découvrir PLUS : stock de 15 références, compteur secondaire, 10 questions IA.\n\nDécouvrir PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] active_free_day30: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'active_free_day30', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getActiveFreeDay30Template(string $name, int $projectCount, int $totalRows): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $projectLabel = $projectCount > 1 ? "{$projectCount} projets" : "1 projet";
+        $rowsLabel    = $totalRows > 0 ? number_format($totalRows, 0, ',', ' ') . ' rangs comptés' : 'des projets en cours';
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 20px;">
+        Un mois que tu utilises YarnFlow — <strong>{$projectLabel}</strong>, <strong>{$rowsLabel}</strong>. Tu fais partie des utilisatrices qui s'en servent vraiment.
+    </p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Voici ce que PLUS peut t'apporter maintenant que tu connais l'app :
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
+        <tr><td style="padding:14px 20px;border-bottom:1px solid #e8ede8;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Stock de laines (15 références)</strong> — cataloguer tes pelotes, associer à tes projets.</p></td></tr>
+        <tr><td style="padding:14px 20px;border-bottom:1px solid #e8ede8;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Compteur secondaire</strong> — diminutions, répétitions, tout ce qui se compte en parallèle.</p></td></tr>
+        <tr><td style="padding:14px 20px;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">10 questions IA / mois</strong> — techniques, calculs, lectures de patron.</p></td></tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/subscription" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Essayer PLUS — 3,99€/mois
+            </a>
+        </td></tr>
+        <tr><td align="center" style="padding-top:10px;">
+            <p style="margin:0;font-size:12px;color:#9ca3af;">Ou 29,99€/an — soit 2,49€/mois</p>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    public function sendReactivationEmail(string $email, string $name, int $daysSince, ?int $userId = null): bool
+    {
+        $subject = "YarnFlow a changé depuis ta dernière visite";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getReactivationTemplate($name, $daysSince);
+            $mail->AltBody = "Bonjour $name,\n\nTu n'as pas ouvert YarnFlow depuis {$daysSince} jours. Depuis, on a ajouté le stock de laines, l'assistant IA et les statistiques de projets.\n\nRevenirs voir : https://yarnflow.fr\n\nNathalie — YarnFlow";
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] reactivation: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'reactivation', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getReactivationTemplate(string $name, int $daysSince): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Tu n'as pas ouvert YarnFlow depuis <strong>{$daysSince} jours</strong>. Depuis ta dernière visite, on a ajouté quelques choses :
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
+        <tr><td style="padding:14px 20px;border-bottom:1px solid #e8ede8;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Stock de laines</strong> — catalogue tes pelotes et associe-les à tes projets.</p></td></tr>
+        <tr><td style="padding:14px 20px;border-bottom:1px solid #e8ede8;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Assistant IA</strong> — répond à tes questions techniques, calcule les jauges, lit les patrons.</p></td></tr>
+        <tr><td style="padding:14px 20px;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Statistiques</strong> — rangs comptés, temps passé, progression sur chaque projet.</p></td></tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Revenir sur YarnFlow
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+    <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:0;">
+        <a href="https://yarnflow.fr/profile" style="color:#9ca3af;text-decoration:underline;">Se désinscrire de ces emails</a>
+    </p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
 }

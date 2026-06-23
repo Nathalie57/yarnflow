@@ -21,6 +21,7 @@ use App\Services\StripeService;
 use App\Services\PricingService;
 use App\Services\EarlyBirdService;
 use App\Services\CreditManager;
+use App\Services\EmailService;
 use App\Utils\Response;
 use App\Utils\Validator;
 
@@ -36,6 +37,7 @@ class PaymentController
     private PricingService $pricingService;
     private EarlyBirdService $earlyBirdService;
     private CreditManager $creditManager;
+    private EmailService $emailService;
 
     public function __construct()
     {
@@ -46,6 +48,8 @@ class PaymentController
         $this->pricingService = new PricingService();
         $this->earlyBirdService = new EarlyBirdService();
         $this->creditManager = new CreditManager();
+        $db = \App\Config\Database::getInstance()->getConnection();
+        $this->emailService = new EmailService($db);
     }
 
     /**
@@ -576,6 +580,12 @@ class PaymentController
             // Allouer les crédits mensuels correspondant au nouveau plan
             $this->creditManager->initializeUserCredits($userId, $subscriptionType);
             error_log("[checkout.completed] user={$userId} plan={$subscriptionType} expires={$expiresAt}");
+
+            // Email de bienvenue plan payant
+            $user = $this->userModel->findById($userId);
+            if ($user && !empty($user['email'])) {
+                $this->emailService->sendPlusWelcomeEmail($user['email'], $user['first_name'] ?? '', $subscriptionType, $userId);
+            }
 
             // [AI:Claude] Si PRO Annuel, ajouter 50 crédits bonus (one-time)
             if ($paymentType === 'subscription_pro_annual') {
