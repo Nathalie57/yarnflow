@@ -79,6 +79,17 @@ const Landing = () => {
             </svg>
           </Link>
           <a
+            href="https://play.google.com/store/apps/details?id=app.yarnflow.fr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 bg-white text-gray-700 text-base px-6 py-3.5 rounded-xl font-medium transition"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3.18 23.76c.3.17.65.19.97.07l11.65-6.73-2.55-2.55-10.07 9.21zM.44 1.6C.17 1.93 0 2.4 0 3.01v17.98c0 .61.17 1.08.44 1.41l.07.07 10.07-10.07v-.24L.51 1.53l-.07.07zM19.69 8.6l-2.88-1.66-2.86 2.86 2.86 2.86 2.9-1.67c.83-.48.83-1.26-.02-1.39zM3.18.24L13.25 9.45l-2.55 2.55L-.01.31C.32.19.67.21.97.07z"/>
+            </svg>
+            Disponible sur Google Play
+          </a>
+          <a
             href="#pricing"
             className="inline-flex items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 text-gray-700 text-base px-8 py-3.5 rounded-xl font-medium transition"
           >
@@ -588,15 +599,28 @@ const Landing = () => {
           <p className="text-lg mb-8 opacity-90 leading-relaxed">
             Rejoignez les passionné·es qui ont troqué les carnets froissés contre YarnFlow.
           </p>
-          <Link
-            to="/register"
-            className="inline-flex items-center gap-2 bg-white text-primary-600 hover:bg-gray-100 text-base px-8 py-3.5 rounded-xl font-semibold transition shadow-lg"
-          >
-            Créer mon compte gratuit
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 bg-white text-primary-600 hover:bg-gray-100 text-base px-8 py-3.5 rounded-xl font-semibold transition shadow-lg"
+            >
+              Créer mon compte gratuit
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </Link>
+            <a
+              href="https://play.google.com/store/apps/details?id=app.yarnflow.fr"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/30 text-base px-6 py-3.5 rounded-xl font-medium transition"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3.18 23.76c.3.17.65.19.97.07l11.65-6.73-2.55-2.55-10.07 9.21zM.44 1.6C.17 1.93 0 2.4 0 3.01v17.98c0 .61.17 1.08.44 1.41l.07.07 10.07-10.07v-.24L.51 1.53l-.07.07zM19.69 8.6l-2.88-1.66-2.86 2.86 2.86 2.86 2.9-1.67c.83-.48.83-1.26-.02-1.39zM3.18.24L13.25 9.45l-2.55 2.55L-.01.31C.32.19.67.21.97.07z"/>
+              </svg>
+              Google Play
+            </a>
+          </div>
           <p className="mt-4 text-sm opacity-70">
             Déjà inscrit·e ? <Link to="/login" className="underline hover:no-underline font-medium">Connexion</Link>
           </p>
