@@ -23,6 +23,7 @@ import InfoBubble from '../components/InfoBubble'
 import TagBadge from '../components/TagBadge'
 import UpgradePrompt from '../components/UpgradePrompt'
 import CreateProjectWizard from '../components/CreateProjectWizard'
+import PushNotificationModal, { PUSH_MODAL_STORAGE_KEY } from '../components/PushNotificationModal'
 
 const MyProjects = () => {
   const { user, updateUser } = useAuth()
@@ -32,6 +33,8 @@ const MyProjects = () => {
 
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [pendingPlan, setPendingPlan] = useState(null)
+  const [showPushModal, setShowPushModal] = useState(false)
+  const [pendingRedirectUrl, setPendingRedirectUrl] = useState(null)
 
   // Détection retour Stripe : ?payment=success dans l'URL
   useEffect(() => {
@@ -619,8 +622,19 @@ const MyProjects = () => {
         sessionStorage.setItem('showFirstProjectTip', 'true')
       }
 
-      // [AI:Claude] Redirection automatique vers le projet pour onboarding "premier rang"
-      window.location.href = `/projects/${newProject.id}?new=1`
+      const redirectUrl = `/projects/${newProject.id}?new=1`
+
+      // Proposer les notifications push après le premier projet, si pas encore demandé
+      const pushSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+      const pushAlreadyPrompted = localStorage.getItem(PUSH_MODAL_STORAGE_KEY)
+      const pushPermission = 'Notification' in window ? Notification.permission : 'denied'
+
+      if (projects.length === 0 && pushSupported && !pushAlreadyPrompted && pushPermission === 'default') {
+        setPendingRedirectUrl(redirectUrl)
+        setShowPushModal(true)
+      } else {
+        window.location.href = redirectUrl
+      }
     } catch (err) {
       // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
       let errorMessage = ''
@@ -1655,6 +1669,17 @@ const MyProjects = () => {
         onClose={() => setShowUpgradePrompt(false)}
         feature="tags"
       />
+
+      {showPushModal && (
+        <PushNotificationModal
+          onClose={() => {
+            setShowPushModal(false)
+            if (pendingRedirectUrl) {
+              window.location.href = pendingRedirectUrl
+            }
+          }}
+        />
+      )}
     </div>
   )
 }
