@@ -9,7 +9,9 @@ const urlBase64ToUint8Array = (base64String) => {
 }
 
 export function usePushNotifications() {
-  const [permission, setPermission] = useState(Notification.permission)
+  const [permission, setPermission] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+  )
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
