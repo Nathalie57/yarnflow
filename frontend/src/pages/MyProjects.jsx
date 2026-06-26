@@ -370,10 +370,10 @@ const MyProjects = () => {
         try {
           await api.delete(`/projects/${projectId}`)
           setProjects(projects.filter(p => p.id !== projectId))
-          showAlert('✅ Suppression réussie', 'Le projet a été supprimé avec succès.', 'success')
+          showAlert('Suppression réussie', 'Le projet a été supprimé avec succès.', 'success')
         } catch (err) {
           console.error('Erreur suppression:', err)
-          showAlert('❌ Erreur', 'Erreur lors de la suppression du projet', 'error')
+          showAlert('Erreur', 'Erreur lors de la suppression du projet', 'error')
         }
       }
     )
@@ -650,7 +650,7 @@ const MyProjects = () => {
         errorMessage = apiError || 'Erreur lors de la création du projet'
       }
 
-      showAlert('❌ Erreur', errorMessage, 'error')
+      showAlert('Erreur', errorMessage, 'error')
 
       // [AI:Claude] Si le projet a été créé, l'ajouter quand même à la liste
       if (newProject) {

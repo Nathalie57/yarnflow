@@ -1094,7 +1094,7 @@ const ProjectCounter = () => {
           difficulty: 'intermediate'
         })
 
-        console.log('✅ Opening library modal')
+        console.log('Opening library modal')
         setShowAddToLibraryModal(true)
       } else {
         console.warn('⚠️ No pattern_path in project data')
@@ -1167,7 +1167,7 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowPatternLibraryModal(false)
-      showAlert(`✅ Patron "${pattern.name}" ajouté au projet !`, 'success')
+      showAlert(`Patron "${pattern.name}" ajouté au projet !`, 'success')
     } catch (err) {
       console.error('Erreur ajout patron depuis bibliothèque:', err)
       showAlert('Erreur lors de l\'ajout du patron', 'error')
@@ -1203,7 +1203,7 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowPatternTextModal(false)
-      showAlert('✅ Patron texte enregistré avec succès !', 'success')
+      showAlert('Patron texte enregistré avec succès !', 'success')
     } catch (err) {
       console.error('Erreur sauvegarde patron texte:', err)
       showAlert('Erreur lors de la sauvegarde du patron', 'error')
@@ -1246,7 +1246,7 @@ const ProjectCounter = () => {
         difficulty: 'intermediate'
       })
 
-      showAlert('✅ Patron ajouté à votre bibliothèque !', 'success')
+      showAlert('Patron ajouté à votre bibliothèque !', 'success')
     } catch (err) {
       console.error('Erreur ajout bibliothèque:', err)
       const errorMsg = err.response?.data?.error || 'Erreur lors de l\'ajout à la bibliothèque'
@@ -2846,7 +2846,7 @@ const ProjectCounter = () => {
 
       await fetchSections()
       await fetchProject()
-      let alertMessage = newState ? '✅ Section marquée comme terminée' : 'Section réouverte'
+      let alertMessage = newState ? 'Section marquée comme terminée' : 'Section réouverte'
 
       // [AI:Claude] Recharger les sections pour avoir les données à jour
       const response = await api.get(`/projects/${projectId}/sections`)
@@ -4404,7 +4404,7 @@ const ProjectCounter = () => {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                           >
-                            {isCompleted ? '✅ Terminée' : '✓ Marquer terminée'}
+                            {isCompleted ? 'Terminée' : '✓ Marquer terminée'}
                           </button>
                           {/* Menu "..." pour modifier/supprimer */}
                           <div className="relative">
@@ -4704,12 +4704,12 @@ const ProjectCounter = () => {
                                                 e.stopPropagation()
                                                 try {
                                                   await api.put(`/projects/${project.id}/set-cover-photo`, { photo_id: variation.id })
-                                                  alert('✅ Photo de couverture mise à jour !')
+                                                  alert('Photo de couverture mise à jour !')
                                                   fetchProject()
                                                   setOpenMenuId(null)
                                                 } catch (err) {
                                                   console.error('Erreur:', err)
-                                                  alert('❌ Erreur lors de la mise à jour')
+                                                  alert('Erreur lors de la mise à jour')
                                                 }
                                               }}
                                               className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
@@ -4780,7 +4780,7 @@ const ProjectCounter = () => {
                                                       setShowInstagramModal(true)
                                                     } catch (err) {
                                                       console.error('Erreur téléchargement Instagram:', err)
-                                                      alert('❌ Erreur lors du téléchargement de l\'image')
+                                                      alert('Erreur lors du téléchargement de l\'image')
                                                     }
                                                     setOpenMenuId(null)
                                                   }}
@@ -4860,11 +4860,11 @@ const ProjectCounter = () => {
                                                     const url = `${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`
                                                     try {
                                                       await navigator.clipboard.writeText(url)
-                                                      alert('✅ Lien copié !')
+                                                      alert('Lien copié !')
                                                       setOpenMenuId(null)
                                                     } catch (err) {
                                                       console.error('Erreur copie:', err)
-                                                      alert('❌ Impossible de copier le lien')
+                                                      alert('Impossible de copier le lien')
                                                     }
                                                   }}
                                                   className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
@@ -4960,7 +4960,7 @@ const ProjectCounter = () => {
                                       window.URL.revokeObjectURL(url)
                                     } catch (err) {
                                       console.error('Erreur:', err)
-                                      alert('❌ Erreur lors du téléchargement')
+                                      alert('Erreur lors du téléchargement')
                                     }
                                   }}
                                   className="flex-1 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
