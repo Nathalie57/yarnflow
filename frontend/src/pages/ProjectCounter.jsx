@@ -3873,7 +3873,7 @@ const ProjectCounter = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleSecondaryDecrement}
-                    className="w-8 h-8 bg-red-100 text-red-600 rounded-full text-base font-bold hover:bg-red-200 transition flex-shrink-0"
+                    className="w-8 h-8 bg-gray-100 text-gray-600 rounded-full text-base font-bold hover:bg-gray-200 transition flex-shrink-0"
                   >
                     −
                   </button>
@@ -3890,7 +3890,7 @@ const ProjectCounter = () => {
                     disabled={secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence}
                     className={`w-8 h-8 rounded-full text-base font-bold transition flex-shrink-0 ${
                       secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence
-                        ? 'bg-green-500 text-white cursor-not-allowed'
+                        ? 'bg-primary-600 text-white cursor-not-allowed opacity-60'
                         : 'bg-primary-600 text-white hover:bg-primary-700'
                     }`}
                   >
