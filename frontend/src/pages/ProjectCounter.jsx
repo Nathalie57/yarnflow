@@ -868,7 +868,7 @@ const ProjectCounter = () => {
   // [AI:Claude] Helper pour afficher une alerte
   const showAlert = (message, type = 'info', title = '') => {
     setAlertData({
-      title: title || (type === 'success' ? '✅ Succès' : type === 'error' ? '❌ Erreur' : 'ℹ️ Information'),
+      title: title || (type === 'success' ? 'Terminé' : type === 'error' ? 'Erreur' : 'Information'),
       message,
       type
     })
@@ -1878,7 +1878,7 @@ const ProjectCounter = () => {
       const numMax = Number(maxRows)
       const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
       const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-      showAlert(`🎉 Vous avez terminé (${displayMax}/${displayMax} ${unitLabel}) !`, 'success')
+      showAlert(`Vous avez terminé (${displayMax}/${displayMax} ${unitLabel}) !`, 'success')
       return
     }
 
@@ -1928,7 +1928,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           } else {
             await api.put(`/projects/${projectId}`, { status: 'completed' })
             if (isTimerRunning) {
@@ -1937,7 +1937,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           }
         }
       } catch (err) {
@@ -2036,7 +2036,7 @@ const ProjectCounter = () => {
               // Pas d'alert ici — la modale de complétion prend le relais
               await handleAllSectionsCompleted()
             } else {
-              showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+              showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
               await fetchProject()
             }
           } catch (err) {
@@ -2044,7 +2044,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           }
         } else {
           // Pas de sections, marquer le projet global comme terminé
@@ -2058,13 +2058,13 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           } catch (err) {
             console.error('Erreur marquage projet terminé:', err)
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           }
         }
       }
@@ -2891,7 +2891,7 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, { status: 'completed' })
       await fetchProject()
       setShowProjectCompletionModal(false)
-      showAlert('🎉 Projet marqué comme terminé !', 'success')
+      showAlert('Projet marqué comme terminé !', 'success')
     } catch (err) {
       console.error('Erreur terminer projet:', err)
       showAlert('Erreur lors de la finalisation du projet', 'error')
@@ -2951,7 +2951,7 @@ const ProjectCounter = () => {
       await fetchProject()
 
       showAlert(
-        isCompleted ? 'Projet réouvert' : '🎉 Projet marqué comme terminé !',
+        isCompleted ? 'Projet réouvert' : 'Projet marqué comme terminé !',
         'success'
       )
     } catch (err) {
@@ -6683,17 +6683,14 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
             <h3 className={`text-xl font-bold mb-4 ${
-              alertData.type === 'success' ? 'text-green-600' :
-              alertData.type === 'error' ? 'text-red-600' :
-              'text-primary-600'
+              alertData.type === 'error' ? 'text-red-600' : 'text-gray-900'
             }`}>
               {alertData.title}
             </h3>
-            <p className="text-gray-700 mb-6 whitespace-pre-line">{alertData.message}</p>
+            <p className="text-gray-600 mb-6 whitespace-pre-line">{alertData.message}</p>
             <button
               onClick={() => setShowAlertModal(false)}
               className={`w-full px-4 py-3 rounded-lg font-medium text-white transition ${
-                alertData.type === 'success' ? 'bg-green-600 hover:bg-green-700' :
                 alertData.type === 'error' ? 'bg-red-600 hover:bg-red-700' :
                 'bg-primary-600 hover:bg-primary-700'
               }`}
