@@ -49,7 +49,6 @@ try {
         FROM users u
         JOIN yarn_stash ys ON ys.user_id = u.id
         WHERE (u.subscription_type = 'free' OR u.subscription_type IS NULL)
-        AND u.email_verified = 1
         AND u.id NOT IN (
             SELECT user_id FROM emails_sent_log
             WHERE email_type = 'stash_limit_approaching'
@@ -110,8 +109,7 @@ try {
             END AS quota
         FROM users u
         LEFT JOIN ai_usage au ON au.user_id = u.id AND au.month = :month
-        WHERE u.email_verified = 1
-        AND COALESCE(u.subscription_type, 'free') IN ('free', 'plus', 'plus_annual')
+        WHERE COALESCE(u.subscription_type, 'free') IN ('free', 'plus', 'plus_annual')
         AND u.id NOT IN (
             SELECT user_id FROM emails_sent_log
             WHERE email_type = 'ai_quota_approaching'
@@ -170,7 +168,6 @@ try {
         WHERE u.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 14 DAY) AND DATE_SUB(NOW(), INTERVAL 7 DAY)
         AND u.last_login_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)
         AND (u.subscription_type = 'free' OR u.subscription_type IS NULL)
-        AND u.email_verified = 1
         AND u.id NOT IN (
             SELECT user_id FROM emails_sent_log
             WHERE email_type = 'active_user_upgrade'
@@ -222,7 +219,6 @@ try {
         AND pay.payment_type LIKE 'subscription_%'
         AND pay.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 48 HOUR) AND DATE_SUB(NOW(), INTERVAL 2 HOUR)
         AND (u.subscription_type = 'free' OR u.subscription_type IS NULL)
-        AND u.email_verified = 1
         AND NOT EXISTS (
             SELECT 1 FROM emails_sent_log
             WHERE user_id = u.id
