@@ -28,6 +28,7 @@ use App\Controllers\ContactController;
 use App\Controllers\YarnStashController;
 use App\Controllers\StashAllocationController;
 use App\Controllers\PartnerPatternController;
+use App\Controllers\PatternTranslatorController;
 use App\Middleware\RateLimitMiddleware;
 
 /**
@@ -275,6 +276,10 @@ function route(string $method, string $uri): void
         $method === 'POST' && $uri === 'contact' => (new ContactController())->sendMessage(),
         $method === 'GET' && $uri === 'admin/contact-messages' => (new ContactController())->listMessages(),
         $method === 'PUT' && preg_match('/^admin\/contact-messages\/(\d+)\/read$/', $uri, $matches) => (new ContactController())->markAsRead((int)$matches[1]),
+
+        // Traduction de patrons
+        $method === 'GET'  && $uri === 'pattern-translator/quota'     => (new PatternTranslatorController())->getQuota(),
+        $method === 'POST' && $uri === 'pattern-translator/translate'  => (new PatternTranslatorController())->translate(),
 
         // Push notifications
         $method === 'GET'    && $uri === 'push/vapid-public-key' => (new \App\Controllers\PushController())->getVapidPublicKey(),

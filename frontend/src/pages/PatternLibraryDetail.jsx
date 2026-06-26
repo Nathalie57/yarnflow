@@ -473,6 +473,20 @@ const PatternLibraryDetail = () => {
             <p className="text-gray-600 break-words">{pattern.description}</p>
           )}
 
+          {/* Traduire ce patron */}
+          <div>
+            <Link
+              to="/pattern-translator"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-500 hover:border-primary-300 hover:text-primary-700 transition"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                <path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/>
+                <path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>
+              </svg>
+              Traduire ce patron
+            </Link>
+          </div>
+
           {/* Tags */}
           {(pattern.category || pattern.technique || pattern.difficulty) && (
             <div className="flex flex-wrap gap-2">

@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import DistributeIncrDec from '../components/tools/DistributeIncrDec'
 import GaugeCalculator from '../components/tools/GaugeCalculator'
 import NeedleConverter from '../components/tools/NeedleConverter'
@@ -191,6 +192,30 @@ export default function Tools() {
       <p className="text-gray-500 text-sm mb-6">Calculateurs et assistants pour vos projets</p>
 
       <div className="grid grid-cols-2 gap-3">
+        {/* Traducteur de patron — page dédiée */}
+        <Link
+          to="/pattern-translator"
+          className="bg-white border border-gray-200 rounded-2xl p-5 text-left hover:border-primary-300 hover:shadow-md transition flex flex-col gap-3"
+        >
+          <span className="w-10 h-10 text-primary-600">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+              <path d="M5 8l6 6"/>
+              <path d="M4 14l6-6 2-3"/>
+              <path d="M2 5h12"/>
+              <path d="M7 2h1"/>
+              <path d="M22 22l-5-10-5 10"/>
+              <path d="M14 18h6"/>
+            </svg>
+          </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="font-semibold text-gray-900 text-sm leading-tight">Traduire un patron</div>
+              <span className="bg-primary-100 text-primary-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">IA</span>
+            </div>
+            <div className="text-xs text-gray-500 mt-1 leading-snug">Traduit un patron anglais en français, avec les abréviations tricot & crochet.</div>
+          </div>
+        </Link>
+
         {TOOLS.map(t => {
           const { Icon } = t
           return (

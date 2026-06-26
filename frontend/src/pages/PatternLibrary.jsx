@@ -542,15 +542,27 @@ const PatternLibrary = () => {
           </div>
         )}
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition bg-primary-600 text-white hover:bg-primary-700"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Ajouter un patron
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          <Link
+            to="/pattern-translator"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition border border-gray-200 text-gray-600 hover:border-primary-300 hover:text-primary-700 text-sm"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/>
+              <path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>
+            </svg>
+            Traduire
+          </Link>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition bg-primary-600 text-white hover:bg-primary-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Ajouter un patron
+          </button>
+        </div>
       </div>
 
       {/* Filtres et recherche */}
