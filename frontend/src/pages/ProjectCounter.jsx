@@ -5924,8 +5924,8 @@ Rang 3 : *1ms, aug* x6 (18)
 
       {/* Modal d'embellissement IA */}
       {showEnhanceModal && selectedPhoto && selectedContext && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4 pb-20 sm:pb-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-xl max-h-[calc(100vh-6rem)] flex flex-col">
             <div className="px-6 pt-6 pb-2 flex-shrink-0">
               <h2 className="text-lg font-bold text-gray-900">Embellir cette photo ?</h2>
               <p className="text-sm text-gray-500 mt-1">Fond et éclairage retravaillés — votre ouvrage reste intact.</p>
