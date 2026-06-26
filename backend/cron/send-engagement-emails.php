@@ -61,7 +61,6 @@ try {
             WHERE user_id = u.id AND notification_type LIKE '%onboarding%'
         )
         AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 1 DAY))
-        AND u.email_verified = 1
     ");
     $stmt->execute();
     $usersDay3 = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -112,7 +111,6 @@ try {
             SELECT 1 FROM email_notifications_sent
             WHERE user_id = u.id AND notification_type LIKE '%reengagement%'
         )
-        AND u.email_verified = 1
     ");
     $stmt->execute();
     $usersDay7 = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -182,7 +180,6 @@ try {
             SELECT 1 FROM email_notifications_sent
             WHERE user_id = u.id AND notification_type LIKE '%need_help%'
         )
-        AND u.email_verified = 1
     ");
     $stmt->execute();
     $usersDay21 = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -450,7 +447,6 @@ try {
             DATEDIFF(NOW(), u.last_login_at) AS days_since
         FROM users u
         WHERE u.last_login_at BETWEEN DATE_SUB(NOW(), INTERVAL 60 DAY) AND DATE_SUB(NOW(), INTERVAL 45 DAY)
-        AND u.email_verified = 1
         AND NOT EXISTS (
             SELECT 1 FROM emails_sent_log
             WHERE user_id = u.id
