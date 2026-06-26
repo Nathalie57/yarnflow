@@ -1415,7 +1415,7 @@ const ProjectCounter = () => {
   const handleFeedbackSubmitted = (feedbackData) => {
     const rating = feedbackData.rating || 0
     if (rating >= 4) {
-      showAlert('Merci pour votre retour positif ! 😊', 'success')
+      showAlert('Merci pour votre retour !', 'success')
     } else if (rating === 3) {
       showAlert('Merci pour votre retour ! Nous travaillons à améliorer le service.', 'success')
     } else if (rating <= 2) {
