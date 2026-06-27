@@ -1,30 +1,81 @@
-/**
- * @file AdminDashboard.jsx
- * @brief Dashboard administrateur YarnFlow
- * @author Nathalie + AI Assistants
- * @created 2025-11-13
- * @modified 2025-12-12 - Mise à jour pour YarnFlow (projets + photos IA)
- */
-
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminAPI } from '../../services/api'
+
+const StatCard = ({ label, value, sub, accent = 'primary' }) => {
+  const colors = {
+    primary: 'text-primary-700',
+    blue: 'text-blue-600',
+    amber: 'text-amber-600',
+    green: 'text-green-600',
+    purple: 'text-purple-600',
+  }
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1">{label}</p>
+      <p className={`text-3xl font-bold ${colors[accent] || colors.primary}`}>{value}</p>
+      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    </div>
+  )
+}
+
+const PlanBar = ({ label, count, total, color }) => {
+  const pct = total > 0 ? Math.round(count / total * 100) : 0
+  return (
+    <div>
+      <div className="flex justify-between text-sm mb-1">
+        <span className="text-gray-600">{label}</span>
+        <span className="font-semibold text-gray-800">{count} <span className="text-gray-400 font-normal">({pct}%)</span></span>
+      </div>
+      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
+
+const planLabel = (type) => {
+  const map = {
+    free: 'FREE', plus: 'PLUS', plus_annual: 'PLUS Annuel',
+    pro: 'PRO', pro_annual: 'PRO Annuel', early_bird: 'Early Bird'
+  }
+  return map[type] || type
+}
+
+const planColor = (type) => {
+  if (type === 'free') return 'bg-gray-100 text-gray-500'
+  if (type?.includes('pro')) return 'bg-purple-100 text-purple-700'
+  if (type === 'early_bird') return 'bg-amber-100 text-amber-700'
+  return 'bg-primary-100 text-primary-700'
+}
+
+const formatDate = (d) => {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+}
+
+const formatRelative = (d) => {
+  if (!d) return null
+  const diff = Math.floor((Date.now() - new Date(d)) / 60000)
+  if (diff < 60) return `il y a ${diff}min`
+  if (diff < 1440) return `il y a ${Math.floor(diff / 60)}h`
+  if (diff < 10080) return `il y a ${Math.floor(diff / 1440)}j`
+  return null
+}
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
-    loadStats()
-  }, [])
+  useEffect(() => { loadStats() }, [])
 
   const loadStats = async () => {
+    setLoading(true)
     try {
       const response = await adminAPI.getStats()
       setStats(response.data.data)
     } catch (err) {
-      console.error('Erreur chargement stats:', err)
       setError('Impossible de charger les statistiques')
     } finally {
       setLoading(false)
@@ -34,255 +85,158 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-        <h3 className="text-lg font-bold text-red-900 mb-2">Erreur</h3>
-        <p className="text-red-700">{error}</p>
-        <button
-          onClick={loadStats}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-        >
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-md mx-auto mt-10">
+        <p className="text-red-700 font-medium">{error}</p>
+        <button onClick={loadStats} className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition">
           Réessayer
         </button>
       </div>
     )
   }
 
+  const u = stats?.users || {}
+  const p = stats?.projects || {}
+  const s = stats?.subscriptions || {}
+  const r = stats?.revenue || {}
+  const ph = stats?.photos || {}
+
+  const totalUsers = u.total || 0
+  const totalPaid = s.active || 0
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold mb-6">⚙️ Dashboard Admin - YarnFlow</h1>
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
-      {/* Statistiques principales - 4 colonnes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Utilisateurs */}
-        <div className="bg-white rounded-lg border-l-4 border-blue-500 p-6 shadow">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-600 font-medium">👥 Utilisateurs</h3>
-          </div>
-          <p className="text-3xl font-bold text-blue-600 mb-1">
-            {stats?.users?.total || 0}
-          </p>
-          <p className="text-sm text-gray-500">
-            +{stats?.users?.new_this_month || 0} ce mois
-          </p>
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>FREE: {stats?.users?.free || 0}</span>
-              <span>PRO: {stats?.subscriptions?.active || 0}</span>
-            </div>
-          </div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-400 mt-0.5">YarnFlow — vue d'ensemble</p>
         </div>
-
-        {/* Projets */}
-        <div className="bg-white rounded-lg border-l-4 border-primary-500 p-6 shadow">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-600 font-medium">🧶 Projets</h3>
-          </div>
-          <p className="text-3xl font-bold text-primary-600 mb-1">
-            {stats?.projects?.total || 0}
-          </p>
-          <p className="text-sm text-gray-500">
-            {stats?.projects?.this_month || 0} ce mois
-          </p>
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="flex justify-between text-xs text-gray-600">
-              <span>🪡 Crochet: {stats?.projects?.crochet || 0}</span>
-              <span>🧶 Tricot: {stats?.projects?.tricot || 0}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Photos IA */}
-        <div className="bg-white rounded-lg border-l-4 border-green-500 p-6 shadow">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-600 font-medium">📸 Photos IA</h3>
-          </div>
-          <p className="text-3xl font-bold text-green-600 mb-1">
-            {stats?.photos?.total_ai || 0}
-          </p>
-          <p className="text-sm text-gray-500">
-            {stats?.photos?.this_month || 0} ce mois
-          </p>
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <p className="text-xs text-gray-600">
-              {stats?.photos?.users_using_ai || 0} utilisateurs actifs
-            </p>
-          </div>
-        </div>
-
-        {/* Revenus */}
-        <div className="bg-white rounded-lg border-l-4 border-yellow-500 p-6 shadow">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-gray-600 font-medium">💰 Revenus</h3>
-          </div>
-          <p className="text-3xl font-bold text-yellow-600 mb-1">
-            {stats?.revenue?.this_month?.toFixed(2) || '0.00'} €
-          </p>
-          <p className="text-sm text-gray-500">Ce mois</p>
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <p className="text-xs text-gray-600">
-              Total : {stats?.revenue?.total?.toFixed(2) || '0.00'} €
-            </p>
-          </div>
-        </div>
+        <button onClick={loadStats} className="text-xs text-gray-400 hover:text-gray-600 transition px-3 py-1.5 border border-gray-200 rounded-lg">
+          Actualiser
+        </button>
       </div>
 
-      {/* Stats secondaires - Abonnements et Crédits */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* Abonnements */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow">
-          <h2 className="text-xl font-bold mb-4">📊 Répartition des abonnements</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-              <span className="font-medium">FREE</span>
-              <span className="text-2xl font-bold text-gray-600">{stats?.users?.free || 0}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-primary-50 rounded">
-              <span className="font-medium">PRO (mensuel)</span>
-              <span className="text-2xl font-bold text-primary-600">{stats?.subscriptions?.pro || 0}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-purple-50 rounded">
-              <span className="font-medium">PRO (annuel)</span>
-              <span className="text-2xl font-bold text-purple-600">{stats?.subscriptions?.pro_annual || 0}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-yellow-50 rounded">
-              <span className="font-medium">Early Bird</span>
-              <span className="text-2xl font-bold text-yellow-600">{stats?.subscriptions?.early_bird || 0}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Crédits photos IA */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow">
-          <h2 className="text-xl font-bold mb-4">📸 Crédits photos IA</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-blue-50 rounded">
-              <span className="font-medium">Crédits mensuels alloués</span>
-              <span className="text-2xl font-bold text-blue-600">{stats?.credits?.monthly_allocated || 0}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded">
-              <span className="font-medium">Crédits achetés (total)</span>
-              <span className="text-2xl font-bold text-green-600">{stats?.credits?.purchased_total || 0}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-orange-50 rounded">
-              <span className="font-medium">Utilisés ce mois</span>
-              <span className="text-2xl font-bold text-orange-600">{stats?.credits?.used_this_month || 0}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
-              <span className="font-medium">Total utilisés (all time)</span>
-              <span className="text-2xl font-bold text-gray-600">{stats?.credits?.total_used || 0}</span>
-            </div>
-          </div>
-        </div>
+      {/* Chiffres clés */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard label="Inscriptions aujourd'hui" value={u.new_today ?? 0} sub={`+${u.new_this_month ?? 0} ce mois`} accent="primary" />
+        <StatCard label="Utilisateurs total" value={totalUsers} sub={`${u.active_last_7_days ?? 0} actifs / 7j`} accent="blue" />
+        <StatCard label="Abonnés payants" value={totalPaid} sub={`${s.conversion_rate ?? 0}% de conversion`} accent="purple" />
+        <StatCard label="Revenu du mois" value={`${(r.this_month ?? 0).toFixed(2)} €`} sub={`Total : ${(r.total ?? 0).toFixed(2)} €`} accent="amber" />
       </div>
 
-      {/* Liens rapides de gestion */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <Link to="/admin/users" className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold mb-2">👥 Utilisateurs</h3>
-              <p className="text-gray-600">Gérer les comptes</p>
-            </div>
-            <span className="text-4xl">→</span>
-          </div>
-        </Link>
-
-        <Link to="/admin/payments" className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold mb-2">💰 Paiements</h3>
-              <p className="text-gray-600">Historique et stats</p>
-            </div>
-            <span className="text-4xl">→</span>
-          </div>
-        </Link>
-
-        <Link to="/admin/categories" className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold mb-2">📂 Catégories</h3>
-              <p className="text-gray-600">Gérer les catégories</p>
-            </div>
-            <span className="text-4xl">→</span>
-          </div>
-        </Link>
-      </div>
-
-      {/* Activité récente */}
+      {/* Engagement + Plans */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Derniers utilisateurs */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow">
-          <h2 className="text-xl font-bold mb-4">👥 Derniers utilisateurs inscrits</h2>
-          {stats?.recent_users && stats.recent_users.length > 0 ? (
-            <div className="space-y-3">
-              {stats.recent_users.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div>
-                    <div className="font-medium">{user.first_name} {user.last_name}</div>
-                    <div className="text-sm text-gray-600">{user.email}</div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
-                      user.subscription_type === 'pro' || user.subscription_type === 'pro_annual'
-                        ? 'bg-primary-100 text-primary-800'
-                        : user.subscription_type === 'early_bird'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {user.subscription_type}
-                    </span>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {new Date(user.created_at).toLocaleDateString('fr-FR')}
-                    </div>
-                  </div>
-                </div>
-              ))}
+
+        {/* Engagement */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-5">
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Engagement</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-3xl font-bold text-primary-700">{u.engagement_rate ?? 0}%</p>
+              <p className="text-xs text-gray-400 mt-1">ont créé un projet</p>
             </div>
-          ) : (
-            <p className="text-gray-500 text-center py-4">Aucun utilisateur récent</p>
-          )}
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-3xl font-bold text-blue-600">{p.total ?? 0}</p>
+              <p className="text-xs text-gray-400 mt-1">projets au total</p>
+            </div>
+          </div>
+          <div className="space-y-2 pt-2 border-t border-gray-100">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Projets ce mois</span>
+              <span className="font-medium text-gray-800">{p.this_month ?? 0}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">En cours</span>
+              <span className="font-medium text-gray-800">{p.in_progress ?? 0}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Terminés</span>
+              <span className="font-medium text-gray-800">{p.completed ?? 0}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">Studio photo</span>
+              <span className="font-medium text-gray-800">{ph.total_ai ?? 0} générations</span>
+            </div>
+          </div>
         </div>
 
-        {/* Derniers projets */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow">
-          <h2 className="text-xl font-bold mb-4">🧶 Derniers projets créés</h2>
-          {stats?.recent_projects && stats.recent_projects.length > 0 ? (
-            <div className="space-y-3">
-              {stats.recent_projects.map((project) => (
-                <div key={project.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                  <div>
-                    <div className="font-medium">{project.name}</div>
-                    <div className="text-sm text-gray-600">
-                      Par {project.first_name} {project.last_name}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
-                      project.technique === 'crochet'
-                        ? 'bg-pink-100 text-pink-800'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {project.technique === 'crochet' ? '🪡 Crochet' : '🧶 Tricot'}
-                    </span>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {new Date(project.created_at).toLocaleDateString('fr-FR')}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-4">Aucun projet récent</p>
-          )}
+        {/* Plans */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-4">
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Répartition des plans</h2>
+          <div className="space-y-3">
+            <PlanBar label="FREE" count={u.free ?? 0} total={totalUsers} color="bg-gray-300" />
+            <PlanBar label="PLUS mensuel" count={u.plus ?? 0} total={totalUsers} color="bg-primary-400" />
+            <PlanBar label="PLUS annuel" count={u.plus_annual ?? 0} total={totalUsers} color="bg-primary-600" />
+            <PlanBar label="PRO mensuel" count={u.pro ?? 0} total={totalUsers} color="bg-purple-400" />
+            <PlanBar label="PRO annuel" count={u.pro_annual ?? 0} total={totalUsers} color="bg-purple-600" />
+            <PlanBar label="Early Bird" count={u.early_bird ?? 0} total={totalUsers} color="bg-amber-400" />
+          </div>
         </div>
       </div>
+
+      {/* Dernières inscriptions */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Dernières inscriptions</h2>
+          <Link to="/admin/users" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
+            Voir tout
+          </Link>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {(stats?.recent_users || []).map((user) => {
+            const rel = formatRelative(user.last_seen)
+            return (
+              <div key={user.id} className="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                    {(user.first_name?.[0] || user.email?.[0] || '?').toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">
+                      {user.first_name ? `${user.first_name} ${user.last_name || ''}` : user.email}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                  {parseInt(user.project_count) > 0 ? (
+                    <span className="text-xs text-green-600 font-medium">{user.project_count} projet{user.project_count > 1 ? 's' : ''}</span>
+                  ) : (
+                    <span className="text-xs text-gray-300">sans projet</span>
+                  )}
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${planColor(user.subscription_type)}`}>
+                    {planLabel(user.subscription_type)}
+                  </span>
+                  <span className="text-xs text-gray-300 w-16 text-right">{rel || formatDate(user.created_at)}</span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Navigation rapide */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {[
+          { to: '/admin/users', label: 'Utilisateurs' },
+          { to: '/admin/payments', label: 'Paiements' },
+          { to: '/admin/categories', label: 'Catégories' },
+          { to: '/admin/templates', label: 'Templates IA' },
+        ].map(({ to, label }) => (
+          <Link key={to} to={to} className="bg-white border border-gray-100 rounded-xl px-4 py-3 text-sm font-medium text-gray-600 hover:border-primary-200 hover:text-primary-700 hover:shadow-sm transition text-center">
+            {label}
+          </Link>
+        ))}
+      </div>
+
     </div>
   )
 }
