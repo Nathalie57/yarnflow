@@ -1383,10 +1383,10 @@ const ProjectCounter = () => {
           setGeneratedPhoto(fullPhoto)
           setShowSatisfactionModal(true)
         } else {
-          showAlert(`✨ Photo générée avec succès !`, 'success')
+          showAlert(`Photo générée avec succès`, 'success')
         }
       } else {
-        showAlert(`✨ Photo générée avec succès !`, 'success')
+        showAlert(`Photo générée avec succès`, 'success')
       }
     } catch (err) {
       console.error('Erreur embellissement photo:', err)
@@ -4620,7 +4620,7 @@ const ProjectCounter = () => {
                         {photoVariations.length > 0 && (
                           <div className="p-6 bg-gradient-to-br from-primary-50 to-pink-50">
                             <h4 className="text-lg font-bold text-primary-900 mb-4 flex items-center gap-2">
-                              ✨ Photos générées par IA
+                              Studio photo
                               <span className="px-2 py-0.5 bg-primary-600 text-white text-xs rounded-full">
                                 {photoVariations.length}
                               </span>
@@ -5022,7 +5022,7 @@ const ProjectCounter = () => {
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                   </svg>
-                                  Nouvelle variation IA
+                                  Nouvelle variation
                                 </button>
                               )}
                             </div>
@@ -5900,7 +5900,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm text-center"
                   >
                     {(!user?.subscription_type || user?.subscription_type === 'free')
-                      ? 'Débloquer le Studio Photo IA'
+                      ? 'Débloquer le Studio photo'
                       : 'Acheter des crédits'}
                   </a>
                 ) : (
@@ -6040,7 +6040,7 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="bg-primary-700 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
-              <h2 className="text-lg font-bold">Exemples de styles IA</h2>
+              <h2 className="text-lg font-bold">Exemples de styles</h2>
               <button
                 onClick={() => setShowStyleExamplesModal(false)}
                 className="text-white hover:bg-white/20 rounded-full p-2 transition"
