@@ -86,7 +86,7 @@ class AdminController
                 SUM(CASE WHEN subscription_type = 'early_bird' THEN 1 ELSE 0 END) as early_bird,
                 SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as new_today,
                 SUM(CASE WHEN DATE(created_at) >= DATE_FORMAT(NOW(), '%Y-%m-01') THEN 1 ELSE 0 END) as new_this_month,
-                SUM(CASE WHEN last_seen >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as active_last_7_days
+                SUM(CASE WHEN last_seen_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as active_last_7_days
             FROM users
         ");
         $userStats = $stmtUsers->fetch(\PDO::FETCH_ASSOC);
@@ -144,7 +144,7 @@ class AdminController
         // Derniers utilisateurs avec indicateur d'engagement
         $stmtRecentUsers = $db->query("
             SELECT u.id, u.email, u.first_name, u.last_name, u.subscription_type,
-                   u.created_at, u.last_seen,
+                   u.created_at, u.last_seen_at,
                    COUNT(p.id) as project_count
             FROM users u
             LEFT JOIN projects p ON p.user_id = u.id

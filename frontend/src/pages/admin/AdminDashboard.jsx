@@ -192,7 +192,7 @@ const AdminDashboard = () => {
         </div>
         <div className="divide-y divide-gray-50">
           {(stats?.recent_users || []).map((user) => {
-            const rel = formatRelative(user.last_seen)
+            const rel = formatRelative(user.last_seen_at)
             return (
               <div key={user.id} className="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition">
                 <div className="flex items-center gap-3 min-w-0">
