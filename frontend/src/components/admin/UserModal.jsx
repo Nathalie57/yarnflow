@@ -218,7 +218,7 @@ const UserModal = ({ user, onClose, onUpdate }) => {
                 <div>
                   <label className="text-sm font-medium text-gray-600">Dernière connexion</label>
                   <p className="text-gray-900">
-                    {user.last_login ? new Date(user.last_login).toLocaleDateString('fr-FR') : 'Jamais'}
+                    {user.last_login_at ? new Date(user.last_login_at).toLocaleDateString('fr-FR') : 'Jamais'}
                   </p>
                 </div>
               </div>
