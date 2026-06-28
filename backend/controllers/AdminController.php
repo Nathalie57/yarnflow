@@ -74,18 +74,29 @@ class AdminController
 
         $db = $this->userModel->getDb();
 
-        // [AI:Claude] Statistiques utilisateurs
+        // Statistiques utilisateurs
         $stmtUsers = $db->query("
             SELECT
                 COUNT(*) as total,
                 SUM(CASE WHEN subscription_type = 'free' THEN 1 ELSE 0 END) as free,
+                SUM(CASE WHEN subscription_type = 'plus' THEN 1 ELSE 0 END) as plus,
+                SUM(CASE WHEN subscription_type = 'plus_annual' THEN 1 ELSE 0 END) as plus_annual,
                 SUM(CASE WHEN subscription_type = 'pro' THEN 1 ELSE 0 END) as pro,
                 SUM(CASE WHEN subscription_type = 'pro_annual' THEN 1 ELSE 0 END) as pro_annual,
                 SUM(CASE WHEN subscription_type = 'early_bird' THEN 1 ELSE 0 END) as early_bird,
-                SUM(CASE WHEN DATE(created_at) >= DATE_FORMAT(NOW(), '%Y-%m-01') THEN 1 ELSE 0 END) as new_this_month
+                SUM(CASE WHEN DATE(created_at) = CURDATE() THEN 1 ELSE 0 END) as new_today,
+                SUM(CASE WHEN DATE(created_at) >= DATE_FORMAT(NOW(), '%Y-%m-01') THEN 1 ELSE 0 END) as new_this_month,
+                SUM(CASE WHEN last_seen_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) as active_last_7_days
             FROM users
         ");
         $userStats = $stmtUsers->fetch(\PDO::FETCH_ASSOC);
+
+        // Utilisateurs avec au moins 1 projet (taux d'engagement)
+        $stmtEngagement = $db->query("
+            SELECT COUNT(DISTINCT user_id) as users_with_projects
+            FROM projects
+        ");
+        $engagementStats = $stmtEngagement->fetch(\PDO::FETCH_ASSOC);
 
         // [AI:Claude] Statistiques projets (CŒUR DE L'APP)
         $stmtProjects = $db->query("
@@ -130,12 +141,16 @@ class AdminController
         $currentMonthEnd = date('Y-m-t');
         $monthlyRevenue = $this->paymentModel->getTotalRevenue($currentMonthStart, $currentMonthEnd);
 
-        // [AI:Claude] Derniers utilisateurs
+        // Derniers utilisateurs avec indicateur d'engagement
         $stmtRecentUsers = $db->query("
-            SELECT id, email, first_name, last_name, subscription_type, created_at
-            FROM users
-            ORDER BY created_at DESC
-            LIMIT 5
+            SELECT u.id, u.email, u.first_name, u.last_name, u.subscription_type,
+                   u.created_at, u.last_seen_at,
+                   COUNT(p.id) as project_count
+            FROM users u
+            LEFT JOIN projects p ON p.user_id = u.id
+            GROUP BY u.id
+            ORDER BY u.created_at DESC
+            LIMIT 10
         ");
         $recentUsers = $stmtRecentUsers->fetchAll(\PDO::FETCH_ASSOC);
 
@@ -150,14 +165,27 @@ class AdminController
         ");
         $recentProjects = $stmtRecentProjects->fetchAll(\PDO::FETCH_ASSOC);
 
+        $totalPaid = (int)$userStats['plus'] + (int)$userStats['plus_annual']
+                   + (int)$userStats['pro'] + (int)$userStats['pro_annual']
+                   + (int)$userStats['early_bird'];
+        $totalUsers = (int)$userStats['total'];
+
         Response::success([
             'users' => [
-                'total' => (int)$userStats['total'],
+                'total' => $totalUsers,
                 'free' => (int)$userStats['free'],
+                'plus' => (int)$userStats['plus'],
+                'plus_annual' => (int)$userStats['plus_annual'],
                 'pro' => (int)$userStats['pro'],
                 'pro_annual' => (int)$userStats['pro_annual'],
                 'early_bird' => (int)$userStats['early_bird'],
-                'new_this_month' => (int)$userStats['new_this_month']
+                'new_today' => (int)$userStats['new_today'],
+                'new_this_month' => (int)$userStats['new_this_month'],
+                'active_last_7_days' => (int)$userStats['active_last_7_days'],
+                'with_projects' => (int)$engagementStats['users_with_projects'],
+                'engagement_rate' => $totalUsers > 0
+                    ? round((int)$engagementStats['users_with_projects'] / $totalUsers * 100)
+                    : 0
             ],
             'projects' => [
                 'total' => (int)$projectStats['total'],
@@ -179,7 +207,10 @@ class AdminController
                 'total_used' => (int)$creditStats['total_used']
             ],
             'subscriptions' => [
-                'active' => (int)$userStats['pro'] + (int)$userStats['pro_annual'] + (int)$userStats['early_bird'],
+                'active' => $totalPaid,
+                'conversion_rate' => $totalUsers > 0 ? round($totalPaid / $totalUsers * 100) : 0,
+                'plus' => (int)$userStats['plus'],
+                'plus_annual' => (int)$userStats['plus_annual'],
                 'pro' => (int)$userStats['pro'],
                 'pro_annual' => (int)$userStats['pro_annual'],
                 'early_bird' => (int)$userStats['early_bird']
@@ -207,7 +238,12 @@ class AdminController
         $limit = (int)($_GET['limit'] ?? 20);
         $offset = ($page - 1) * $limit;
 
-        $users = $this->userModel->findAll($limit, $offset);
+        $db = $this->userModel->getDb();
+        $stmt = $db->prepare("SELECT * FROM users ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+        $users = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         $total = $this->userModel->count([]);
 
         // [AI:Claude] Retirer les mots de passe

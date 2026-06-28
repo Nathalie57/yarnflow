@@ -818,11 +818,11 @@ const Gallery = () => {
                                     await api.put(`/projects/${photo.project_id}/set-cover-photo`, {
                                       photo_id: photo.id
                                     })
-                                    alert('✅ Photo de couverture mise à jour !')
+                                    alert('Photo de couverture mise à jour !')
                                     setOpenMenuId(null)
                                   } catch (err) {
                                     console.error('Erreur:', err)
-                                    alert('❌ Erreur lors de la mise à jour')
+                                    alert('Erreur lors de la mise à jour')
                                   }
                                 }}
                                 className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
@@ -889,7 +889,7 @@ const Gallery = () => {
                                     setShowInstagramModal(true)
                                   } catch (err) {
                                     console.error('Erreur téléchargement Instagram:', err)
-                                    alert('❌ Erreur lors du téléchargement de l\'image')
+                                    alert('Erreur lors du téléchargement de l\'image')
                                   }
                                   setOpenMenuId(null)
                                 }
@@ -970,11 +970,11 @@ const Gallery = () => {
                                 const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path || photo.original_path}`
                                 try {
                                   await navigator.clipboard.writeText(url)
-                                  alert('✅ Lien copié !')
+                                  alert('Lien copié !')
                                   setOpenMenuId(null)
                                 } catch (err) {
                                   console.error('Erreur copie:', err)
-                                  alert('❌ Impossible de copier le lien')
+                                  alert('Impossible de copier le lien')
                                 }
                               }}
                               className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"

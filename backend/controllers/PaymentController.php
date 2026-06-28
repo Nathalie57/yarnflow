@@ -521,8 +521,8 @@ class PaymentController
             return;
         }
 
-        // Vérifier que le montant payé correspond au prix attendu
-        if (isset($data['amount'])) {
+        // Vérifier que le montant payé correspond au prix attendu (sauf coupons 100%)
+        if (isset($data['amount']) && $data['amount'] > 0) {
             $expectedAmount = $this->getExpectedAmount($paymentType);
             $actualAmount = $data['amount'];
 

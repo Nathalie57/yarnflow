@@ -868,7 +868,7 @@ const ProjectCounter = () => {
   // [AI:Claude] Helper pour afficher une alerte
   const showAlert = (message, type = 'info', title = '') => {
     setAlertData({
-      title: title || (type === 'success' ? '✅ Succès' : type === 'error' ? '❌ Erreur' : 'ℹ️ Information'),
+      title: title || (type === 'success' ? 'Terminé' : type === 'error' ? 'Erreur' : 'Information'),
       message,
       type
     })
@@ -1094,7 +1094,7 @@ const ProjectCounter = () => {
           difficulty: 'intermediate'
         })
 
-        console.log('✅ Opening library modal')
+        console.log('Opening library modal')
         setShowAddToLibraryModal(true)
       } else {
         console.warn('⚠️ No pattern_path in project data')
@@ -1167,7 +1167,7 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowPatternLibraryModal(false)
-      showAlert(`✅ Patron "${pattern.name}" ajouté au projet !`, 'success')
+      showAlert(`Patron "${pattern.name}" ajouté au projet !`, 'success')
     } catch (err) {
       console.error('Erreur ajout patron depuis bibliothèque:', err)
       showAlert('Erreur lors de l\'ajout du patron', 'error')
@@ -1203,7 +1203,7 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowPatternTextModal(false)
-      showAlert('✅ Patron texte enregistré avec succès !', 'success')
+      showAlert('Patron texte enregistré avec succès !', 'success')
     } catch (err) {
       console.error('Erreur sauvegarde patron texte:', err)
       showAlert('Erreur lors de la sauvegarde du patron', 'error')
@@ -1246,7 +1246,7 @@ const ProjectCounter = () => {
         difficulty: 'intermediate'
       })
 
-      showAlert('✅ Patron ajouté à votre bibliothèque !', 'success')
+      showAlert('Patron ajouté à votre bibliothèque !', 'success')
     } catch (err) {
       console.error('Erreur ajout bibliothèque:', err)
       const errorMsg = err.response?.data?.error || 'Erreur lors de l\'ajout à la bibliothèque'
@@ -1383,10 +1383,10 @@ const ProjectCounter = () => {
           setGeneratedPhoto(fullPhoto)
           setShowSatisfactionModal(true)
         } else {
-          showAlert(`✨ Photo générée avec succès !`, 'success')
+          showAlert(`Photo générée avec succès`, 'success')
         }
       } else {
-        showAlert(`✨ Photo générée avec succès !`, 'success')
+        showAlert(`Photo générée avec succès`, 'success')
       }
     } catch (err) {
       console.error('Erreur embellissement photo:', err)
@@ -1415,7 +1415,7 @@ const ProjectCounter = () => {
   const handleFeedbackSubmitted = (feedbackData) => {
     const rating = feedbackData.rating || 0
     if (rating >= 4) {
-      showAlert('Merci pour votre retour positif ! 😊', 'success')
+      showAlert('Merci pour votre retour !', 'success')
     } else if (rating === 3) {
       showAlert('Merci pour votre retour ! Nous travaillons à améliorer le service.', 'success')
     } else if (rating <= 2) {
@@ -1878,7 +1878,7 @@ const ProjectCounter = () => {
       const numMax = Number(maxRows)
       const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
       const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-      showAlert(`🎉 Vous avez terminé (${displayMax}/${displayMax} ${unitLabel}) !`, 'success')
+      showAlert(`Vous avez terminé (${displayMax}/${displayMax} ${unitLabel}) !`, 'success')
       return
     }
 
@@ -1928,7 +1928,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           } else {
             await api.put(`/projects/${projectId}`, { status: 'completed' })
             if (isTimerRunning) {
@@ -1937,7 +1937,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           }
         }
       } catch (err) {
@@ -2036,7 +2036,7 @@ const ProjectCounter = () => {
               // Pas d'alert ici — la modale de complétion prend le relais
               await handleAllSectionsCompleted()
             } else {
-              showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+              showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
               await fetchProject()
             }
           } catch (err) {
@@ -2044,7 +2044,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           }
         } else {
           // Pas de sections, marquer le projet global comme terminé
@@ -2058,13 +2058,13 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           } catch (err) {
             console.error('Erreur marquage projet terminé:', err)
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`🎉 Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
           }
         }
       }
@@ -2846,7 +2846,7 @@ const ProjectCounter = () => {
 
       await fetchSections()
       await fetchProject()
-      let alertMessage = newState ? '✅ Section marquée comme terminée' : 'Section réouverte'
+      let alertMessage = newState ? 'Section marquée comme terminée' : 'Section réouverte'
 
       // [AI:Claude] Recharger les sections pour avoir les données à jour
       const response = await api.get(`/projects/${projectId}/sections`)
@@ -2891,7 +2891,7 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, { status: 'completed' })
       await fetchProject()
       setShowProjectCompletionModal(false)
-      showAlert('🎉 Projet marqué comme terminé !', 'success')
+      showAlert('Projet marqué comme terminé !', 'success')
     } catch (err) {
       console.error('Erreur terminer projet:', err)
       showAlert('Erreur lors de la finalisation du projet', 'error')
@@ -2951,7 +2951,7 @@ const ProjectCounter = () => {
       await fetchProject()
 
       showAlert(
-        isCompleted ? 'Projet réouvert' : '🎉 Projet marqué comme terminé !',
+        isCompleted ? 'Projet réouvert' : 'Projet marqué comme terminé !',
         'success'
       )
     } catch (err) {
@@ -3873,7 +3873,7 @@ const ProjectCounter = () => {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={handleSecondaryDecrement}
-                    className="w-8 h-8 bg-red-100 text-red-600 rounded-full text-base font-bold hover:bg-red-200 transition flex-shrink-0"
+                    className="w-8 h-8 bg-gray-100 text-gray-600 rounded-full text-base font-bold hover:bg-gray-200 transition flex-shrink-0"
                   >
                     −
                   </button>
@@ -3890,7 +3890,7 @@ const ProjectCounter = () => {
                     disabled={secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence}
                     className={`w-8 h-8 rounded-full text-base font-bold transition flex-shrink-0 ${
                       secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence
-                        ? 'bg-green-500 text-white cursor-not-allowed'
+                        ? 'bg-primary-600 text-white cursor-not-allowed opacity-60'
                         : 'bg-primary-600 text-white hover:bg-primary-700'
                     }`}
                   >
@@ -4404,7 +4404,7 @@ const ProjectCounter = () => {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                           >
-                            {isCompleted ? '✅ Terminée' : '✓ Marquer terminée'}
+                            {isCompleted ? 'Terminée' : '✓ Marquer terminée'}
                           </button>
                           {/* Menu "..." pour modifier/supprimer */}
                           <div className="relative">
@@ -4620,7 +4620,7 @@ const ProjectCounter = () => {
                         {photoVariations.length > 0 && (
                           <div className="p-6 bg-gradient-to-br from-primary-50 to-pink-50">
                             <h4 className="text-lg font-bold text-primary-900 mb-4 flex items-center gap-2">
-                              ✨ Photos générées par IA
+                              Studio photo
                               <span className="px-2 py-0.5 bg-primary-600 text-white text-xs rounded-full">
                                 {photoVariations.length}
                               </span>
@@ -4704,12 +4704,12 @@ const ProjectCounter = () => {
                                                 e.stopPropagation()
                                                 try {
                                                   await api.put(`/projects/${project.id}/set-cover-photo`, { photo_id: variation.id })
-                                                  alert('✅ Photo de couverture mise à jour !')
+                                                  alert('Photo de couverture mise à jour !')
                                                   fetchProject()
                                                   setOpenMenuId(null)
                                                 } catch (err) {
                                                   console.error('Erreur:', err)
-                                                  alert('❌ Erreur lors de la mise à jour')
+                                                  alert('Erreur lors de la mise à jour')
                                                 }
                                               }}
                                               className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
@@ -4780,7 +4780,7 @@ const ProjectCounter = () => {
                                                       setShowInstagramModal(true)
                                                     } catch (err) {
                                                       console.error('Erreur téléchargement Instagram:', err)
-                                                      alert('❌ Erreur lors du téléchargement de l\'image')
+                                                      alert('Erreur lors du téléchargement de l\'image')
                                                     }
                                                     setOpenMenuId(null)
                                                   }}
@@ -4860,11 +4860,11 @@ const ProjectCounter = () => {
                                                     const url = `${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`
                                                     try {
                                                       await navigator.clipboard.writeText(url)
-                                                      alert('✅ Lien copié !')
+                                                      alert('Lien copié !')
                                                       setOpenMenuId(null)
                                                     } catch (err) {
                                                       console.error('Erreur copie:', err)
-                                                      alert('❌ Impossible de copier le lien')
+                                                      alert('Impossible de copier le lien')
                                                     }
                                                   }}
                                                   className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
@@ -4960,7 +4960,7 @@ const ProjectCounter = () => {
                                       window.URL.revokeObjectURL(url)
                                     } catch (err) {
                                       console.error('Erreur:', err)
-                                      alert('❌ Erreur lors du téléchargement')
+                                      alert('Erreur lors du téléchargement')
                                     }
                                   }}
                                   className="flex-1 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
@@ -5022,7 +5022,7 @@ const ProjectCounter = () => {
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                   </svg>
-                                  Nouvelle variation IA
+                                  Nouvelle variation
                                 </button>
                               )}
                             </div>
@@ -5900,7 +5900,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm text-center"
                   >
                     {(!user?.subscription_type || user?.subscription_type === 'free')
-                      ? 'Débloquer le Studio Photo IA'
+                      ? 'Débloquer le Studio photo'
                       : 'Acheter des crédits'}
                   </a>
                 ) : (
@@ -5924,8 +5924,8 @@ Rang 3 : *1ms, aug* x6 (18)
 
       {/* Modal d'embellissement IA */}
       {showEnhanceModal && selectedPhoto && selectedContext && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4 pb-20 sm:pb-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-xl max-h-[calc(100vh-6rem)] flex flex-col">
             <div className="px-6 pt-6 pb-2 flex-shrink-0">
               <h2 className="text-lg font-bold text-gray-900">Embellir cette photo ?</h2>
               <p className="text-sm text-gray-500 mt-1">Fond et éclairage retravaillés — votre ouvrage reste intact.</p>
@@ -6040,7 +6040,7 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="bg-primary-700 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
-              <h2 className="text-lg font-bold">Exemples de styles IA</h2>
+              <h2 className="text-lg font-bold">Exemples de styles</h2>
               <button
                 onClick={() => setShowStyleExamplesModal(false)}
                 className="text-white hover:bg-white/20 rounded-full p-2 transition"
@@ -6683,17 +6683,14 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
             <h3 className={`text-xl font-bold mb-4 ${
-              alertData.type === 'success' ? 'text-green-600' :
-              alertData.type === 'error' ? 'text-red-600' :
-              'text-primary-600'
+              alertData.type === 'error' ? 'text-red-600' : 'text-gray-900'
             }`}>
               {alertData.title}
             </h3>
-            <p className="text-gray-700 mb-6 whitespace-pre-line">{alertData.message}</p>
+            <p className="text-gray-600 mb-6 whitespace-pre-line">{alertData.message}</p>
             <button
               onClick={() => setShowAlertModal(false)}
               className={`w-full px-4 py-3 rounded-lg font-medium text-white transition ${
-                alertData.type === 'success' ? 'bg-green-600 hover:bg-green-700' :
                 alertData.type === 'error' ? 'bg-red-600 hover:bg-red-700' :
                 'bg-primary-600 hover:bg-primary-700'
               }`}
