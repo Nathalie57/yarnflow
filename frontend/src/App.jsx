@@ -141,35 +141,56 @@ function App() {
         <PWAPrompt />
         <ContextualHint />
 
-        {/* [AI:Claude] Bannière informative (mode cookieless = pas besoin de consentement) */}
         <CookieConsent
           location="bottom"
-          buttonText="Compris"
-          cookieName="yarnflow_privacy_notice"
+          buttonText="Accepter"
+          declineButtonText="Refuser"
+          enableDeclineButton
+          cookieName="yarnflow_cookie_consent"
+          expires={365}
+          onAccept={() => {
+            if (window.gtag) {
+              window.gtag('consent', 'update', { 'analytics_storage': 'granted' })
+            }
+          }}
+          onDecline={() => {
+            if (window.gtag) {
+              window.gtag('consent', 'update', { 'analytics_storage': 'denied' })
+            }
+          }}
           style={{
-            background: '#1f2937',
-            padding: '16px 20px',
-            alignItems: 'center'
+            background: '#fff',
+            color: '#374151',
+            borderTop: '1px solid #e5e7eb',
+            padding: '14px 20px',
+            alignItems: 'center',
+            fontSize: '13px',
+            boxShadow: '0 -2px 10px rgba(0,0,0,0.06)'
           }}
           buttonStyle={{
-            background: '#8b5cf6',
+            background: '#557055',
             color: '#fff',
-            fontSize: '14px',
+            fontSize: '13px',
             borderRadius: '8px',
-            padding: '8px 20px',
-            fontWeight: '600'
+            padding: '8px 18px',
+            fontWeight: '600',
+            margin: '0 0 0 8px'
           }}
-          expires={365}
+          declineButtonStyle={{
+            background: 'transparent',
+            color: '#9ca3af',
+            fontSize: '13px',
+            borderRadius: '8px',
+            padding: '8px 14px',
+            fontWeight: '500',
+            border: '1px solid #e5e7eb',
+            margin: '0'
+          }}
         >
-          <div style={{ fontSize: '13px', lineHeight: '1.5' }}>
-            <strong>🔒 Respect de votre vie privée</strong>
-            <p style={{ margin: '6px 0 0 0', opacity: 0.9 }}>
-              Nous utilisons un tracking 100% anonymisé (sans cookies personnels) pour améliorer l'application.
-              <a href="/privacy" style={{ color: '#a78bfa', marginLeft: '4px', textDecoration: 'underline' }}>
-                Politique de confidentialité
-              </a>
-            </p>
-          </div>
+          Nous utilisons des cookies d'analyse pour améliorer l'application.{' '}
+          <a href="/privacy" style={{ color: '#557055', textDecoration: 'underline' }}>
+            Politique de confidentialité
+          </a>
         </CookieConsent>
         </HintsProvider>
       </AuthProvider>

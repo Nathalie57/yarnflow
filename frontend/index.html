@@ -65,25 +65,30 @@
     }
     </script>
 
-    <!-- Google Analytics 4 - Mode Cookieless (RGPD-friendly) -->
+    <!-- Google Analytics 4 - Consent Mode v2 (RGPD) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-43HS92RL3J"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
 
-      // [AI:Claude] Mode cookieless - tracking anonymisé SANS cookies (conforme RGPD)
-      // Permet de collecter des stats de base sans consentement explicite
-      gtag('config', 'G-43HS92RL3J', {
-        'anonymize_ip': true,
-        'cookie_flags': 'max-age=7200;secure;samesite=none', // Cookies de session uniquement (2h)
-        'client_storage': 'none', // Désactive le stockage local
-        'allow_google_signals': false, // Désactive le tracking cross-device
-        'allow_ad_personalization_signals': false // Désactive la personnalisation publicitaire
+      // Consent mode : refusé par défaut, mis à jour si l'utilisateur accepte
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied',
+        'wait_for_update': 500
       });
 
-      // [AI:Claude] Tracking manuel des pages (sera complété par React Router)
-      console.log('[Analytics] GA4 initialized in cookieless mode (RGPD-friendly)');
+      gtag('js', new Date());
+      gtag('config', 'G-43HS92RL3J', {
+        'anonymize_ip': true,
+        'allow_google_signals': false,
+        'allow_ad_personalization_signals': false
+      });
+
+      // Restaurer le consentement si déjà donné
+      if (document.cookie.indexOf('yarnflow_cookie_consent=true') !== -1) {
+        gtag('consent', 'update', { 'analytics_storage': 'granted' });
+      }
     </script>
   </head>
   <body>
