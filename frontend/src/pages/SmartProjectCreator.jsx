@@ -304,7 +304,7 @@ export default function SmartProjectCreator() {
             Création Intelligente
           </h1>
           <p className="text-gray-600">
-            Importez un patron PDF ou URL et laissez l'IA créer votre projet automatiquement
+            Importez un patron PDF ou un lien et votre projet est créé en quelques secondes.
           </p>
 
           {/* Badge quota */}

@@ -920,9 +920,9 @@ const MyProjects = () => {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white text-base mb-1">Importer mon patron</p>
+                    <p className="font-bold text-white text-base mb-1">Démarrer un nouveau projet</p>
                     <p className="text-primary-100 text-sm leading-relaxed">
-                      PDF, lien ou photo — notre IA crée votre projet en quelques secondes : sections, aiguilles, compteurs.
+                      PDF ou lien — votre projet est prêt en quelques secondes.
                     </p>
                   </div>
                 </div>
@@ -968,38 +968,51 @@ const MyProjects = () => {
                 </div>
               </button>
 
-              {/* Ce que ça fait concrètement — version condensée */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm divide-y divide-gray-50">
-                <div className="flex items-start gap-4 p-4">
-                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                    </svg>
+              {/* Ce que ça fait concrètement — informatif, non cliquable */}
+              <div className="rounded-2xl bg-gray-50 px-4 py-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Comment ça marche</p>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-primary-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-700 text-sm">Reprenez là où vous étiez</p>
+                      <p className="text-gray-400 text-xs mt-0.5">Un clic pour mémoriser votre rang, même des semaines plus tard.</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">Une pause dans votre tricot ? Aucun stress</p>
-                    <p className="text-gray-500 text-sm mt-0.5">Un clic pour mémoriser votre rang. Vous retrouvez exactement là où vous étiez.</p>
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-primary-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-700 text-sm">Votre patron toujours à portée</p>
+                      <p className="text-gray-400 text-xs mt-0.5">PDF ou lien attaché au projet — fini les onglets perdus.</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-4 p-4">
-                  <div className="w-9 h-9 bg-primary-50 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-primary-600">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 text-sm">Votre patron toujours avec vous</p>
-                    <p className="text-gray-500 text-sm mt-0.5">Attachez votre PDF ou notez le lien — plus besoin de chercher sur quel onglet il était.</p>
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-primary-600">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-700 text-sm">Bibliothèque et stock de pelotes</p>
+                      <p className="text-gray-400 text-xs mt-0.5">
+                        Sauvegardez vos patrons dans la{' '}
+                        <Link to="/pattern-library" className="text-primary-600 hover:underline">bibliothèque</Link>
+                        {' '}ou gérez vos pelotes dans le{' '}
+                        <Link to="/stash" className="text-primary-600 hover:underline">stock</Link>.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <p className="text-center text-xs text-gray-400 mt-6">
-                Besoin d'organiser vos patrons sans créer de projet ?{' '}
-                <Link to="/pattern-library" className="text-primary-600 hover:text-primary-700 underline">
-                  Bibliothèque de patrons
-                </Link>
-              </p>
 
             </div>
           ) : filteredProjects.length === 0 ? (
