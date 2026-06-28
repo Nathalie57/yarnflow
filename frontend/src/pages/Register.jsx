@@ -64,7 +64,7 @@ const Register = () => {
       if (result.success) {
         trackSignup('email')
         const pendingImport = localStorage.getItem('yf_pending_import')
-        navigate(pendingImport ? `/import/${pendingImport}` : '/dashboard')
+        navigate(pendingImport ? `/import/${pendingImport}` : '/my-projects?welcome=1')
       } else {
         setError(result.error)
         setLoading(false)
