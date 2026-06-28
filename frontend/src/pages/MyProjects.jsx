@@ -491,8 +491,6 @@ const MyProjects = () => {
         })
       }
 
-      await api.post(`/projects/${demoProject.id}/rows`, { row_number: 15 })
-
       await api.post(`/projects/${demoProject.id}/pattern-url`, { pattern_url: 'https://www.garnstudio.com/pattern.php?id=11639&cid=8' })
 
       navigate(`/projects/${demoProject.id}?new=1&demo=1`)
