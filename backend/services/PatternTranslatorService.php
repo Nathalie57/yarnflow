@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use GuzzleHttp\Client;
+use App\Services\WebFetchService;
 
 class PatternTranslatorService
 {
@@ -93,12 +94,13 @@ PROMPT;
      */
     public function translateFromUrl(string $url): array
     {
-        $webFetchService = new WebFetchService();
-        $content = $webFetchService->fetch($url);
+        $fetched = WebFetchService::fetchHTML($url);
 
-        if (!$content || empty(trim($content))) {
+        if (!$fetched['success'] || empty($fetched['html'])) {
             return ['success' => false, 'error' => 'Impossible de récupérer le contenu de cette URL. Le site bloque peut-être les requêtes automatiques.'];
         }
+
+        $content = $fetched['html'];
 
         // Nettoyer le HTML pour ne garder que le texte
         $text = $this->cleanHtmlToText($content);

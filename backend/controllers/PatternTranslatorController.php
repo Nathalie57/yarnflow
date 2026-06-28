@@ -132,9 +132,9 @@ class PatternTranslatorController
                 'quota' => $quota,
             ]);
 
-        } catch (\Exception $e) {
-            error_log('[PatternTranslator] Erreur: ' . $e->getMessage());
-            $this->json(['error' => 'Erreur lors de la traduction'], 500);
+        } catch (\Throwable $e) {
+            error_log('[PatternTranslator] translate() error: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+            $this->json(['error' => 'Erreur lors de la traduction', 'detail' => $e->getMessage()], 500);
         }
     }
 
