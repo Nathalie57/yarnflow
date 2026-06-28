@@ -459,6 +459,7 @@ const MyProjects = () => {
   // [AI:Claude] Créer un nouveau projet via le wizard
   const handleCreateDemoProject = async () => {
     setIsCreatingDemo(true)
+    let demoProjectId = null
     try {
       const response = await api.post('/projects', {
         name: 'Cardinal Song — Bonnet (démo)',
@@ -475,7 +476,7 @@ const MyProjects = () => {
           gauge: { stitches: '22', rows: '30', dimensions: '10 x 10 cm', notes: '' }
         })
       })
-      const demoProject = response.data.project
+      demoProjectId = response.data.project?.id
 
       const demoSections = [
         { name: 'Côtes 1×1', total_rows: 25 },
@@ -483,7 +484,7 @@ const MyProjects = () => {
         { name: 'Diminutions couronne', total_rows: 26 },
       ]
       for (let i = 0; i < demoSections.length; i++) {
-        await api.post(`/projects/${demoProject.id}/sections`, {
+        await api.post(`/projects/${demoProjectId}/sections`, {
           name: demoSections[i].name,
           total_rows: demoSections[i].total_rows,
           display_order: i,
@@ -491,13 +492,14 @@ const MyProjects = () => {
         })
       }
 
-      await api.post(`/projects/${demoProject.id}/pattern-url`, { pattern_url: 'https://www.garnstudio.com/pattern.php?id=11639&cid=8' })
-
-      navigate(`/projects/${demoProject.id}?new=1&demo=1`)
+      await api.post(`/projects/${demoProjectId}/pattern-url`, { pattern_url: 'https://www.garnstudio.com/pattern.php?id=11639&cid=8' })
     } catch (err) {
       console.error('Erreur création projet démo:', err)
     } finally {
       setIsCreatingDemo(false)
+      if (demoProjectId) {
+        navigate(`/projects/${demoProjectId}?new=1&demo=1`)
+      }
     }
   }
 
