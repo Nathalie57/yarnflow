@@ -223,6 +223,31 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Derniers projets créés */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Derniers projets créés</h2>
+        </div>
+        <div className="divide-y divide-gray-50">
+          {(stats?.recent_projects || []).map((project) => (
+            <div key={project.id} className="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate">{project.name}</p>
+                <p className="text-xs text-gray-400">{project.first_name} {project.last_name}</p>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                  project.technique === 'crochet' ? 'bg-pink-100 text-pink-700' : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {project.technique === 'crochet' ? 'Crochet' : 'Tricot'}
+                </span>
+                <span className="text-xs text-gray-300 w-16 text-right">{formatDate(project.created_at)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Navigation rapide */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[

@@ -238,7 +238,12 @@ class AdminController
         $limit = (int)($_GET['limit'] ?? 20);
         $offset = ($page - 1) * $limit;
 
-        $users = $this->userModel->findAll($limit, $offset);
+        $db = $this->userModel->getDb();
+        $stmt = $db->prepare("SELECT * FROM users ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
+        $stmt->execute();
+        $users = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         $total = $this->userModel->count([]);
 
         // [AI:Claude] Retirer les mots de passe
