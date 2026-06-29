@@ -61,9 +61,29 @@ class SmartProjectController
             $plan = $this->getSmartImportPlan($user['subscription_type'], $userId);
 
             if ($plan['monthly_limit'] > 0) {
-                // PLUS (3/mois) ou PRO (15/mois) : quota mensuel
-                $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
-                $stmt->execute(['user_id' => $userId]);
+                // PLUS/PRO : quota sur fenêtre glissante de 30j depuis subscription_expires_at - 30j
+                $subscriptionExpiresAt = $user['subscription_expires_at'] ?? null;
+                $periodStart = null;
+                $nextReset = null;
+
+                if ($subscriptionExpiresAt) {
+                    $expiresAt = new \DateTime($subscriptionExpiresAt);
+                    $now = new \DateTime();
+                    // Reculer d'intervalles de 30j depuis expires_at jusqu'à trouver le début de période actuelle
+                    $periodStart = clone $expiresAt;
+                    while ($periodStart > $now) {
+                        $periodStart->modify('-30 days');
+                    }
+                    $nextReset = clone $periodStart;
+                    $nextReset->modify('+30 days');
+                } else {
+                    // Fallback : mois calendaire
+                    $periodStart = new \DateTime('first day of this month 00:00:00');
+                    $nextReset = new \DateTime('first day of next month 00:00:00');
+                }
+
+                $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND created_at >= :period_start");
+                $stmt->execute(['user_id' => $userId, 'period_start' => $periodStart->format('Y-m-d H:i:s')]);
                 $usedThisMonth = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 $this->jsonResponse([
                     'success' => true,
@@ -74,6 +94,7 @@ class SmartProjectController
                         'used_this_month' => $usedThisMonth,
                         'limit_monthly' => $plan['monthly_limit'],
                         'remaining' => max(0, $plan['monthly_limit'] - $usedThisMonth),
+                        'next_reset_date' => $nextReset->format('Y-m-d'),
                     ]
                 ]);
             } else {
