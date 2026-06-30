@@ -155,8 +155,15 @@ PROMPT;
         try {
             $response = $this->httpClient->get($url, [
                 'headers' => [
-                    'User-Agent' => 'YarnFlow Pattern Importer/1.0'
-                ]
+                    'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+                    'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language' => 'fr-FR,fr;q=0.9,en;q=0.8',
+                    'Accept-Encoding' => 'gzip, deflate, br',
+                    'Cache-Control'   => 'no-cache',
+                    'Pragma'          => 'no-cache',
+                ],
+                'allow_redirects' => true,
+                'timeout'         => 15,
             ]);
 
             $html = (string) $response->getBody();
@@ -184,7 +191,14 @@ PROMPT;
             return $result;
 
         } catch (GuzzleException $e) {
-            return $this->errorResponse('Erreur lors de l\'accès à l\'URL: ' . $e->getMessage(), 0);
+            $msg = $e->getMessage();
+            if (strpos($msg, '403') !== false || strpos($msg, 'Forbidden') !== false) {
+                return $this->errorResponse('Ce site bloque l\'accès automatique à ses pages. Essayez de copier-coller le texte du patron directement.', 0);
+            }
+            if (strpos($msg, '404') !== false) {
+                return $this->errorResponse('Page introuvable (404). Vérifiez que l\'URL est correcte.', 0);
+            }
+            return $this->errorResponse('Impossible d\'accéder à cette URL. Essayez de copier-coller le texte du patron directement.', 0);
         }
     }
 
