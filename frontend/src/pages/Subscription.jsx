@@ -298,7 +298,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check /><span>Notes par section</span></li>
             <li className="flex items-start gap-2"><Check /><span>3 Créations IA offertes</span></li>
             <li className="flex items-start gap-2"><Check /><span>5 questions IA / mois</span></li>
-            <li className="flex items-start gap-2"><Check /><span>20 photos · 2 essais gratuits Studio Photo IA</span></li>
+            <li className="flex items-start gap-2"><Check /><span>2 photos offertes au Studio Photo</span></li>
           </ul>
 
           <button disabled className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed">
@@ -330,7 +330,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 15 références</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 Créations IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>5 crédits Studio Photo / mois</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>5 crédits / mois au Studio Photo</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Statistiques avancées</span></li>
           </ul>
 
@@ -395,7 +395,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">Stock illimité</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">15 Créations IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">30 questions IA / mois</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">20 crédits Studio Photo / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">20 crédits / mois au Studio Photo</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>Statistiques avancées</span></li>
           </ul>
 
