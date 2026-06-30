@@ -21,14 +21,14 @@ class PatternTranslatorService
     private const MAX_CONTENT_LENGTH = 50000;
 
     private const TRANSLATION_PROMPT = <<<'PROMPT'
-Tu es un expert en traduction de patrons de tricot et crochet de l'anglais vers le français.
+Tu es un expert en traduction de patrons de tricot et crochet vers le français, quelle que soit la langue source (anglais, allemand, néerlandais, norvégien, espagnol, etc.).
 
 RÈGLES IMPORTANTES :
 1. Traduis UNIQUEMENT le texte, ne modifie pas la structure ni le formatage (sauts de ligne, tirets, numéros de rangs, astérisques, crochets)
 2. Conserve TOUS les chiffres exacts (nombre de mailles, rangs, tailles)
-3. Pour les abréviations, utilise ce glossaire (anglais → français) :
+3. Pour les abréviations, utilise ce glossaire multilingue (→ français) :
 
-ABRÉVIATIONS COURANTES :
+ABRÉVIATIONS ANGLAISES :
 k = m end (maille endroit)
 p = m env (maille envers)
 k2tog = 2 m ens end (2 mailles ensemble endroit)
@@ -72,6 +72,44 @@ rem = rest (restant/e/s)
 approx = env (environ)
 beg = deb (début)
 end = fin
+
+ABRÉVIATIONS NORVÉGIENNES/DANOISES (DROPS et similaires) :
+r = rang / tour
+m = m (maille)
+om = ensemble
+strik ret = tricotez à l'endroit
+strik vrangt = tricotez à l'envers
+omg = tour
+beg = début
+sl = glisser
+jf = jeté
+ret m = maille endroit
+vrang m = maille envers
+tag = prendre / monter
+luk = rabattre
+
+ABRÉVIATIONS NÉERLANDAISES :
+st = m (maille)
+r = rang / tour
+afw = diminution
+toe = augmentation
+rech = endroit
+aver = envers
+oph = maille en l'air
+hlv = demi-bride
+vas = maille serrée
+
+ABRÉVIATIONS ALLEMANDES :
+M = m (maille)
+R = rang / tour
+re = endroit
+li = envers
+zun = augmentation
+abn = diminution
+Ldm = glisser
+Umschl = jeté
+LM = maille en l'air
+fM = maille serrée
 
 4. Si une abréviation est définie dans le patron lui-même (ex: "MB = Make Bobble"), conserve-la ET traduis sa définition
 5. Ajoute une note en bas si tu as fait des choix de traduction non standards
