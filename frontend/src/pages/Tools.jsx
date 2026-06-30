@@ -13,6 +13,7 @@ import AiAssistant from '../components/tools/AiAssistant'
 import LengthConverter from '../components/tools/LengthConverter'
 import RemainingYarn from '../components/tools/RemainingYarn'
 import YarnWeightConverter from '../components/tools/YarnWeightConverter'
+import YarnSubstitution from '../components/tools/YarnSubstitution'
 
 const IconDistribute = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
@@ -86,6 +87,13 @@ const IconLayers = () => (
   </svg>
 )
 
+const IconSubstitution = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+    <path d="M7 16V4m0 0L3 8m4-4l4 4"/>
+    <path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
+  </svg>
+)
+
 const IconMessage = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -148,6 +156,13 @@ const TOOLS = [
     title: 'Épaisseur de laine',
     description: 'Correspondance Lace / Fingering / DK / Worsted / Bulky en FR, US et UK avec aiguilles recommandées.',
     component: YarnWeightConverter,
+  },
+  {
+    id: 'substitution',
+    Icon: IconSubstitution,
+    title: 'Substitution de laine',
+    description: 'Trouver un fil équivalent quand vous n\'avez pas celui du patron.',
+    component: YarnSubstitution,
   },
   {
     id: 'ai',

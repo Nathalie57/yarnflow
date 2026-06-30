@@ -28,6 +28,7 @@ use App\Controllers\ContactController;
 use App\Controllers\YarnStashController;
 use App\Controllers\StashAllocationController;
 use App\Controllers\PartnerPatternController;
+use App\Controllers\YarnSubstitutionController;
 use App\Middleware\RateLimitMiddleware;
 
 /**
@@ -270,6 +271,9 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^import\/([A-Z0-9]+)$/', $uri, $matches) => (new PartnerPatternController())->importProject($matches[1]),
         $method === 'GET'  && $uri === 'admin/partner-patterns' => (new PartnerPatternController())->listTemplates(),
         $method === 'POST' && $uri === 'admin/partner-patterns' => (new PartnerPatternController())->createTemplate(),
+
+        // Substitution de laine
+        $method === 'POST' && $uri === 'yarn-substitution' => (new YarnSubstitutionController())->suggest(),
 
         // [AI:Claude] Routes de contact (v0.15.0)
         $method === 'POST' && $uri === 'contact' => (new ContactController())->sendMessage(),
