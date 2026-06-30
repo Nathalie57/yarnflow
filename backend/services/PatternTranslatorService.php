@@ -232,7 +232,7 @@ PROMPT;
                 'source_name' => $sourceName,
             ];
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->deleteGeminiFile($fileUri);
             error_log('[PatternTranslator] Erreur Gemini Files: ' . $e->getMessage());
             return ['success' => false, 'error' => 'Erreur lors de la traduction du PDF.'];
@@ -268,6 +268,11 @@ PROMPT;
 
             // Étape 2 : envoyer le contenu en streaming
             $fp = fopen($filePath, 'rb');
+            if ($fp === false) {
+                error_log('[PatternTranslator] fopen échoué sur: ' . $filePath);
+                return null;
+            }
+
             $uploadResponse = $this->httpClient->put($uploadUrl, [
                 'headers' => [
                     'Content-Length'         => $fileSize,
@@ -276,12 +281,13 @@ PROMPT;
                 ],
                 'body' => $fp,
             ]);
-            fclose($fp);
+
+            if (is_resource($fp)) fclose($fp);
 
             $data = json_decode($uploadResponse->getBody()->getContents(), true);
             return $data['file']['uri'] ?? null;
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             error_log('[PatternTranslator] Erreur upload resumable: ' . $e->getMessage());
             return null;
         }
