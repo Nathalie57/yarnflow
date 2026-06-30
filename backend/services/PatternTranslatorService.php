@@ -20,8 +20,16 @@ class PatternTranslatorService
     private const TIMEOUT_SECONDS = 120;
     private const MAX_CONTENT_LENGTH = 50000;
 
+    private const TARGET_LANGUAGES = [
+        'fr' => 'français',
+        'en' => 'anglais',
+        'de' => 'allemand',
+        'nl' => 'néerlandais',
+        'es' => 'espagnol',
+    ];
+
     private const TRANSLATION_PROMPT = <<<'PROMPT'
-Tu es un expert en traduction de patrons de tricot et crochet vers le français, quelle que soit la langue source (anglais, allemand, néerlandais, norvégien, espagnol, etc.).
+Tu es un expert en traduction de patrons de tricot et crochet vers le {TARGET_LANGUAGE}, quelle que soit la langue source.
 
 RÈGLES IMPORTANTES :
 1. Traduis UNIQUEMENT le texte, ne modifie pas la structure ni le formatage (sauts de ligne, tirets, numéros de rangs, astérisques, crochets)
@@ -130,7 +138,7 @@ PROMPT;
     /**
      * Traduit un patron depuis une URL
      */
-    public function translateFromUrl(string $url): array
+    public function translateFromUrl(string $url, string $targetLang = 'fr'): array
     {
         $fetched = WebFetchService::fetchHTML($url);
 
@@ -147,40 +155,39 @@ PROMPT;
             return ['success' => false, 'error' => 'Aucun texte exploitable trouvé sur cette page.'];
         }
 
-        return $this->translateText($text, 'url', $url);
+        return $this->translateText($text, 'url', $url, $targetLang);
     }
 
     /**
      * Traduit un patron depuis un fichier PDF (chemin absolu)
      */
-    public function translateFromPdf(string $filePath): array
+    public function translateFromPdf(string $filePath, string $targetLang = 'fr'): array
     {
-        // Utiliser pdftotext si disponible, sinon Gemini Files API
         $text = $this->extractTextFromPdf($filePath);
 
         if (!$text || empty(trim($text))) {
             return ['success' => false, 'error' => 'Impossible d\'extraire le texte de ce PDF. Le fichier est peut-être scanné (image) ou protégé.'];
         }
 
-        return $this->translateText($text, 'pdf', basename($filePath));
+        return $this->translateText($text, 'pdf', basename($filePath), $targetLang);
     }
 
     /**
      * Traduit un texte brut fourni directement
      */
-    public function translateFromText(string $text): array
+    public function translateFromText(string $text, string $targetLang = 'fr'): array
     {
         if (empty(trim($text))) {
             return ['success' => false, 'error' => 'Texte vide.'];
         }
 
-        return $this->translateText($text, 'text', 'texte direct');
+        return $this->translateText($text, 'text', 'texte direct', $targetLang);
     }
 
     /**
      * Appel Gemini pour traduire
      */
-    private function translateText(string $text, string $sourceType, string $sourceName): array
+    private function translateText(string $text, string $sourceType, string $sourceName, string $targetLang = 'fr'): array
     {
         // Tronquer si trop long
         if (mb_strlen($text) > self::MAX_CONTENT_LENGTH) {
@@ -188,7 +195,8 @@ PROMPT;
             $truncated = true;
         }
 
-        $prompt = self::TRANSLATION_PROMPT . "\n\n---\n\nTEXTE À TRADUIRE :\n\n" . $text;
+        $targetLanguage = self::TARGET_LANGUAGES[$targetLang] ?? 'français';
+        $prompt = str_replace('{TARGET_LANGUAGE}', $targetLanguage, self::TRANSLATION_PROMPT) . "\n\n---\n\nTEXTE À TRADUIRE :\n\n" . $text;
 
         try {
             $response = $this->httpClient->post(

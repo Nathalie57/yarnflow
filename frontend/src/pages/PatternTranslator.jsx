@@ -1,6 +1,6 @@
 /**
  * @file PatternTranslator.jsx
- * @brief Traducteur de patrons tricot/crochet (anglais → français)
+ * @brief Traducteur de patrons tricot/crochet multilingue
  */
 
 import { useState, useEffect, useRef } from 'react'
@@ -11,6 +11,7 @@ import api from '../services/api'
 export default function PatternTranslator() {
   const navigate = useNavigate()
   const [mode, setMode] = useState('url')
+  const [targetLang, setTargetLang] = useState('fr')
   const [url, setUrl] = useState('')
   const [text, setText] = useState('')
   const [file, setFile] = useState(null)
@@ -51,6 +52,8 @@ export default function PatternTranslator() {
         if (!file) { setError('Sélectionnez un fichier PDF.'); setLoading(false); return }
         formData.append('file', file)
       }
+
+      formData.append('target_lang', targetLang)
 
       const res = await api.post('/pattern-translator/translate', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -260,6 +263,32 @@ export default function PatternTranslator() {
             {m.label}
           </button>
         ))}
+      </div>
+
+      {/* Langue cible */}
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-gray-500 shrink-0">Traduire vers</span>
+        <div className="flex gap-2 flex-wrap">
+          {[
+            { code: 'fr', label: 'Français' },
+            { code: 'en', label: 'English' },
+            { code: 'de', label: 'Deutsch' },
+            { code: 'nl', label: 'Nederlands' },
+            { code: 'es', label: 'Español' },
+          ].map(lang => (
+            <button
+              key={lang.code}
+              onClick={() => setTargetLang(lang.code)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                targetLang === lang.code
+                  ? 'bg-primary-600 text-white border-primary-600'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300'
+              }`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Saisie selon le mode */}

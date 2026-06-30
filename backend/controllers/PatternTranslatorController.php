@@ -72,6 +72,10 @@ class PatternTranslatorController
                 return;
             }
 
+            // Langue cible
+            $allowedLangs = ['fr', 'en', 'de', 'nl', 'es'];
+            $targetLang = in_array($_POST['target_lang'] ?? '', $allowedLangs) ? $_POST['target_lang'] : 'fr';
+
             // Déterminer la source
             $sourceType = null;
             $result = null;
@@ -92,20 +96,20 @@ class PatternTranslatorController
 
                 $sourceType = 'pdf';
                 $sourceName = $file['name'];
-                $result = $this->translatorService->translateFromPdf($tempPath);
+                $result = $this->translatorService->translateFromPdf($tempPath, $targetLang);
                 unlink($tempPath);
 
             } elseif (!empty($_POST['url'] ?? '')) {
                 $url = trim($_POST['url']);
                 $sourceType = 'url';
                 $sourceName = $url;
-                $result = $this->translatorService->translateFromUrl($url);
+                $result = $this->translatorService->translateFromUrl($url, $targetLang);
 
             } elseif (!empty($_POST['text'] ?? '')) {
                 $text = trim($_POST['text']);
                 $sourceType = 'text';
                 $sourceName = 'texte direct';
-                $result = $this->translatorService->translateFromText($text);
+                $result = $this->translatorService->translateFromText($text, $targetLang);
 
             } else {
                 $this->json(['error' => 'Fournissez une URL, un fichier PDF ou un texte à traduire'], 400);
