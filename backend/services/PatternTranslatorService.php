@@ -161,16 +161,139 @@ PROMPT;
 
     /**
      * Traduit un patron depuis un fichier PDF (chemin absolu)
+     * Essaie pdftotext d'abord, puis Gemini Files API en fallback (PDFs image-based)
      */
     public function translateFromPdf(string $filePath, string $targetLang = 'fr'): array
     {
         $text = $this->extractTextFromPdf($filePath);
 
-        if (!$text || empty(trim($text))) {
-            return ['success' => false, 'error' => 'Impossible d\'extraire le texte de ce PDF. Le fichier est peut-être scanné (image) ou protégé.'];
+        if ($text && !empty(trim($text))) {
+            return $this->translateText($text, 'pdf', basename($filePath), $targetLang);
         }
 
-        return $this->translateText($text, 'pdf', basename($filePath), $targetLang);
+        // Fallback : envoyer le PDF directement à Gemini (supporte les PDFs image-based)
+        return $this->translatePdfViaGeminiFiles($filePath, basename($filePath), $targetLang);
+    }
+
+    /**
+     * Upload le PDF vers Gemini Files API et traduit directement
+     */
+    private function translatePdfViaGeminiFiles(string $filePath, string $sourceName, string $targetLang): array
+    {
+        // 1. Upload du fichier
+        $fileUri = $this->uploadToGeminiFiles($filePath);
+        if (!$fileUri) {
+            return ['success' => false, 'error' => 'Impossible de traiter ce PDF. Le fichier est peut-être protégé ou corrompu.'];
+        }
+
+        // 2. Attendre que le fichier soit actif (max 30s)
+        $active = $this->waitForGeminiFile($fileUri, 30);
+        if (!$active) {
+            $this->deleteGeminiFile($fileUri);
+            return ['success' => false, 'error' => 'Délai dépassé lors du traitement du PDF. Réessayez.'];
+        }
+
+        // 3. Traduire via generateContent avec le fichier
+        $targetLanguage = self::TARGET_LANGUAGES[$targetLang] ?? 'français';
+        $prompt = str_replace('{TARGET_LANGUAGE}', $targetLanguage, self::TRANSLATION_PROMPT);
+
+        try {
+            $response = $this->httpClient->post(
+                'https://generativelanguage.googleapis.com/v1beta/models/' . self::GEMINI_MODEL . ':generateContent?key=' . $this->geminiApiKey,
+                [
+                    'headers' => ['Content-Type' => 'application/json'],
+                    'json' => [
+                        'contents' => [[
+                            'role' => 'user',
+                            'parts' => [
+                                ['file_data' => ['mime_type' => 'application/pdf', 'file_uri' => $fileUri]],
+                                ['text' => $prompt],
+                            ]
+                        ]],
+                        'generationConfig' => ['temperature' => 0.2, 'maxOutputTokens' => 8192],
+                    ]
+                ]
+            );
+
+            $data = json_decode($response->getBody()->getContents(), true);
+            $translated = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+
+            $this->deleteGeminiFile($fileUri);
+
+            if (!$translated) {
+                return ['success' => false, 'error' => 'La traduction a échoué. Réessayez.'];
+            }
+
+            return [
+                'success' => true,
+                'translation' => $translated,
+                'truncated' => false,
+                'source_type' => 'pdf',
+                'source_name' => $sourceName,
+            ];
+
+        } catch (\Exception $e) {
+            $this->deleteGeminiFile($fileUri);
+            error_log('[PatternTranslator] Erreur Gemini Files: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Erreur lors de la traduction du PDF.'];
+        }
+    }
+
+    private function uploadToGeminiFiles(string $filePath): ?string
+    {
+        $boundary = 'boundary_' . uniqid();
+        $metadata = json_encode(['file' => ['display_name' => basename($filePath)]]);
+        $fileContent = file_get_contents($filePath);
+
+        $body = "--{$boundary}\r\nContent-Type: application/json\r\n\r\n{$metadata}\r\n"
+              . "--{$boundary}\r\nContent-Type: application/pdf\r\n\r\n{$fileContent}\r\n"
+              . "--{$boundary}--";
+
+        try {
+            $response = $this->httpClient->post(
+                'https://generativelanguage.googleapis.com/upload/v1beta/files?key=' . $this->geminiApiKey,
+                [
+                    'headers' => ['Content-Type' => "multipart/related; boundary={$boundary}"],
+                    'body' => $body,
+                ]
+            );
+            $data = json_decode($response->getBody()->getContents(), true);
+            return $data['file']['uri'] ?? null;
+        } catch (\Exception $e) {
+            error_log('[PatternTranslator] Erreur upload: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function waitForGeminiFile(string $fileUri, int $maxSeconds): bool
+    {
+        $fileName = basename(parse_url($fileUri, PHP_URL_PATH));
+        $deadline = time() + $maxSeconds;
+        while (time() < $deadline) {
+            try {
+                $response = $this->httpClient->get(
+                    "https://generativelanguage.googleapis.com/v1beta/files/{$fileName}?key=" . $this->geminiApiKey
+                );
+                $data = json_decode($response->getBody()->getContents(), true);
+                if (($data['state'] ?? '') === 'ACTIVE') return true;
+            } catch (\Exception $e) {
+                // continue
+            }
+            sleep(2);
+        }
+        return false;
+    }
+
+    private function deleteGeminiFile(string $fileUri): void
+    {
+        try {
+            $fileName = basename(parse_url($fileUri, PHP_URL_PATH));
+            $this->httpClient->delete(
+                "https://generativelanguage.googleapis.com/v1beta/files/{$fileName}?key=" . $this->geminiApiKey
+            );
+        } catch (\Exception $e) {
+            // ignore
+        }
     }
 
     /**
