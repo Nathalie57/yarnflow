@@ -57,8 +57,11 @@ class Project extends BaseModel
             ':is_public' => isset($data['is_public']) ? (int)$data['is_public'] : 0
         ];
 
-        if ($stmt->execute($params))
-            return (int) $this->db->lastInsertId();
+        if ($stmt->execute($params)) {
+            $projectId = (int) $this->db->lastInsertId();
+            $this->recalculateUserStats((int)$data['user_id']);
+            return $projectId;
+        }
 
         return false;
     }
@@ -251,8 +254,17 @@ class Project extends BaseModel
 
         $query = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
         $stmt = $this->db->prepare($query);
+        $result = $stmt->execute($params);
 
-        return $stmt->execute($params);
+        // Recalculer les stats seulement si le statut change (pas sur chaque incrément de rang)
+        if ($result && isset($data['status'])) {
+            $userStmt = $this->db->prepare("SELECT user_id FROM {$this->table} WHERE id = :id");
+            $userStmt->execute([':id' => $projectId]);
+            $userId = $userStmt->fetchColumn();
+            if ($userId) $this->recalculateUserStats((int)$userId);
+        }
+
+        return $result;
     }
 
     /**
@@ -463,8 +475,10 @@ class Project extends BaseModel
      */
     public function endSession(int $sessionId, int $rowsCompleted = 0, ?string $notes = null, ?int $duration = null): bool
     {
-        // [AI:Claude] Récupérer la session pour obtenir project_id et section_id
-        $sessionQuery = "SELECT project_id, section_id FROM project_sessions WHERE id = :id";
+        $sessionQuery = "SELECT ps.project_id, ps.section_id, p.user_id
+                         FROM project_sessions ps
+                         JOIN projects p ON p.id = ps.project_id
+                         WHERE ps.id = :id";
         $sessionStmt = $this->db->prepare($sessionQuery);
         $sessionStmt->bindValue(':id', $sessionId, PDO::PARAM_INT);
         $sessionStmt->execute();
@@ -556,6 +570,8 @@ class Project extends BaseModel
         } else {
             error_log("[Project] ATTENTION: durée de session = 0, rien à ajouter");
         }
+
+        $this->recalculateUserStats((int)$session['user_id']);
 
         return true;
     }
