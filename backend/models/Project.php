@@ -706,13 +706,11 @@ class Project extends BaseModel
         $stmt->execute();
         $progressionData = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
-        // [AI:Claude] Calcul du streak (jours consécutifs de travail)
-        // Récupérer tous les jours distincts où l'utilisateur a travaillé
-        $workDaysQuery = "SELECT DISTINCT DATE(ps.started_at) as work_date
-                          FROM project_sessions ps
-                          JOIN {$this->table} p ON ps.project_id = p.id
+        // Streak basé sur project_rows (fonctionne même sans timer)
+        $workDaysQuery = "SELECT DISTINCT DATE(pr.completed_at) as work_date
+                          FROM project_rows pr
+                          JOIN {$this->table} p ON pr.project_id = p.id
                           WHERE p.user_id = :user_id
-                          AND ps.started_at IS NOT NULL
                           ORDER BY work_date DESC
                           LIMIT 365";
 
@@ -819,47 +817,145 @@ class Project extends BaseModel
      */
     public function recalculateUserStats(int $userId): bool
     {
-        $query = "INSERT INTO project_stats (
-                      user_id,
-                      total_projects,
-                      completed_projects,
-                      in_progress_projects,
-                      total_crochet_time,
-                      total_stitches,
-                      total_rows,
-                      first_project_at,
-                      last_project_at,
-                      last_calculated_at
-                  )
-                  SELECT
-                      :user_id,
-                      COUNT(*),
-                      SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END),
-                      SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END),
-                      SUM(total_time),
-                      SUM(total_stitches),
-                      SUM(current_row),
-                      MIN(started_at),
-                      MAX(last_worked_at),
-                      NOW()
-                  FROM projects
-                  WHERE user_id = :user_id2
-                  ON DUPLICATE KEY UPDATE
-                      total_projects = VALUES(total_projects),
-                      completed_projects = VALUES(completed_projects),
-                      in_progress_projects = VALUES(in_progress_projects),
-                      total_crochet_time = VALUES(total_crochet_time),
-                      total_stitches = VALUES(total_stitches),
-                      total_rows = VALUES(total_rows),
-                      first_project_at = VALUES(first_project_at),
-                      last_project_at = VALUES(last_project_at),
-                      last_calculated_at = VALUES(last_calculated_at)";
+        try {
+            // Stats de base depuis projects
+            $baseStmt = $this->db->prepare(
+                "SELECT COUNT(*) as total_projects,
+                        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_projects,
+                        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress_projects,
+                        SUM(total_time) as total_crochet_time,
+                        SUM(total_stitches) as total_stitches,
+                        SUM(current_row) as total_rows,
+                        MIN(started_at) as first_project_at,
+                        MAX(last_worked_at) as last_project_at
+                 FROM projects WHERE user_id = :user_id"
+            );
+            $baseStmt->execute([':user_id' => $userId]);
+            $base = $baseStmt->fetch(PDO::FETCH_ASSOC);
 
-        $stmt = $this->db->prepare($query);
-        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
-        $stmt->bindValue(':user_id2', $userId, PDO::PARAM_INT);
+            $totalProjects    = (int)($base['total_projects'] ?? 0);
+            $completedProjects = (int)($base['completed_projects'] ?? 0);
+            $completionRate   = $totalProjects > 0 ? round($completedProjects / $totalProjects * 100, 2) : 0;
 
-        return $stmt->execute();
+            // Technique favorite
+            $techStmt = $this->db->prepare(
+                "SELECT technique FROM projects
+                 WHERE user_id = :user_id AND technique IS NOT NULL
+                 GROUP BY technique ORDER BY COUNT(*) DESC LIMIT 1"
+            );
+            $techStmt->execute([':user_id' => $userId]);
+            $favTechnique = $techStmt->fetchColumn() ?: null;
+
+            // Sessions
+            $sessionStmt = $this->db->prepare(
+                "SELECT COUNT(*) as total_sessions,
+                        COALESCE(AVG(NULLIF(duration, 0)), 0) as avg_duration
+                 FROM project_sessions ps
+                 JOIN projects p ON p.id = ps.project_id
+                 WHERE p.user_id = :user_id AND ps.ended_at IS NOT NULL"
+            );
+            $sessionStmt->execute([':user_id' => $userId]);
+            $sessions = $sessionStmt->fetch(PDO::FETCH_ASSOC);
+
+            // Streak basé sur project_rows (fonctionne même sans timer)
+            $daysStmt = $this->db->prepare(
+                "SELECT DISTINCT DATE(pr.completed_at) as active_day
+                 FROM project_rows pr
+                 JOIN projects p ON p.id = pr.project_id
+                 WHERE p.user_id = :user_id
+                 ORDER BY active_day DESC
+                 LIMIT 365"
+            );
+            $daysStmt->execute([':user_id' => $userId]);
+            $days = $daysStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            [$currentStreak, $longestStreak] = $this->calculateStreaks($days);
+
+            $stmt = $this->db->prepare(
+                "INSERT INTO project_stats (
+                     user_id, total_projects, completed_projects, in_progress_projects,
+                     total_crochet_time, total_stitches, total_rows,
+                     current_streak, longest_streak, completion_rate,
+                     total_sessions, avg_session_duration, favorite_technique,
+                     first_project_at, last_project_at, last_calculated_at
+                 ) VALUES (
+                     :user_id, :total_projects, :completed_projects, :in_progress_projects,
+                     :total_crochet_time, :total_stitches, :total_rows,
+                     :current_streak, :longest_streak, :completion_rate,
+                     :total_sessions, :avg_session_duration, :favorite_technique,
+                     :first_project_at, :last_project_at, NOW()
+                 )
+                 ON DUPLICATE KEY UPDATE
+                     total_projects = VALUES(total_projects),
+                     completed_projects = VALUES(completed_projects),
+                     in_progress_projects = VALUES(in_progress_projects),
+                     total_crochet_time = VALUES(total_crochet_time),
+                     total_stitches = VALUES(total_stitches),
+                     total_rows = VALUES(total_rows),
+                     current_streak = VALUES(current_streak),
+                     longest_streak = VALUES(longest_streak),
+                     completion_rate = VALUES(completion_rate),
+                     total_sessions = VALUES(total_sessions),
+                     avg_session_duration = VALUES(avg_session_duration),
+                     favorite_technique = VALUES(favorite_technique),
+                     first_project_at = VALUES(first_project_at),
+                     last_project_at = VALUES(last_project_at),
+                     last_calculated_at = VALUES(last_calculated_at)"
+            );
+
+            return $stmt->execute([
+                ':user_id'              => $userId,
+                ':total_projects'       => $totalProjects,
+                ':completed_projects'   => $completedProjects,
+                ':in_progress_projects' => (int)($base['in_progress_projects'] ?? 0),
+                ':total_crochet_time'   => (int)($base['total_crochet_time'] ?? 0),
+                ':total_stitches'       => (int)($base['total_stitches'] ?? 0),
+                ':total_rows'           => (int)($base['total_rows'] ?? 0),
+                ':current_streak'       => $currentStreak,
+                ':longest_streak'       => $longestStreak,
+                ':completion_rate'      => $completionRate,
+                ':total_sessions'       => (int)($sessions['total_sessions'] ?? 0),
+                ':avg_session_duration' => (int)($sessions['avg_duration'] ?? 0),
+                ':favorite_technique'   => $favTechnique,
+                ':first_project_at'     => $base['first_project_at'],
+                ':last_project_at'      => $base['last_project_at'],
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("[Project] Erreur recalculateUserStats user $userId: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function calculateStreaks(array $days): array
+    {
+        if (empty($days)) return [0, 0];
+
+        $yesterday = (new \DateTime('today'))->modify('-1 day');
+        $firstDay  = new \DateTime($days[0]);
+
+        $streak        = 1;
+        $longestStreak = 1;
+        $isActive      = ($firstDay >= $yesterday);
+        $currentStreak = $isActive ? 1 : 0;
+
+        for ($i = 1; $i < count($days); $i++) {
+            $prev = new \DateTime($days[$i - 1]);
+            $curr = new \DateTime($days[$i]);
+            $diff = (int)$prev->diff($curr)->days;
+
+            if ($diff === 1) {
+                $streak++;
+                if ($isActive) $currentStreak++;
+                $longestStreak = max($longestStreak, $streak);
+            } else {
+                $isActive = false;
+                $longestStreak = max($longestStreak, $streak);
+                $streak = 1;
+            }
+        }
+
+        return [$currentStreak, $longestStreak];
     }
 
     /**
