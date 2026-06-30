@@ -63,11 +63,32 @@ export default function PatternTranslator() {
       const translation = res.data.translation
 
       // Auto-fill nom
+      const NOISE = ['partages', 'share', 'shares', 'partager', 'tweeter', 'tweet',
+        'épingler', 'pin', 'suivre', 'follow', 'commenter', 'comment',
+        'imprimer', 'print', 'enregistrer', 'save']
       let autoName = ''
       if (mode === 'pdf' && file) {
         autoName = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ')
-      } else {
-        const firstLine = translation.split('\n').find(l => l.trim().length > 3 && l.trim().length < 80)
+      } else if (mode === 'url' && url) {
+        // Essayer d'extraire le slug de l'URL
+        const slug = url.replace(/\/$/, '').split('/').pop()
+          ?.replace(/[?#].*$/, '')
+          ?.replace(/[-_]/g, ' ')
+          ?.replace(/\.(html?|php|asp)$/i, '')
+          ?.trim()
+        if (slug && slug.length > 4) {
+          autoName = slug
+        }
+      }
+      if (!autoName) {
+        // Fallback : première ligne non-parasite
+        const firstLine = translation.split('\n').find(l => {
+          const t = l.trim()
+          if (t.length < 5 || t.length > 80) return false
+          if (/^\d+$/.test(t)) return false
+          if (NOISE.includes(t.toLowerCase())) return false
+          return true
+        })
         autoName = firstLine?.trim() ?? ''
       }
       setSaveName(autoName)
@@ -293,13 +314,16 @@ export default function PatternTranslator() {
 
       {/* Saisie selon le mode */}
       {mode === 'url' && (
-        <input
-          type="url"
-          placeholder="https://www.ravelry.com/patterns/..."
-          value={url}
-          onChange={e => setUrl(e.target.value)}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary-400"
-        />
+        <>
+          <input
+            type="url"
+            placeholder="https://www.ravelry.com/patterns/..."
+            value={url}
+            onChange={e => setUrl(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary-400"
+          />
+          <p className="text-xs text-gray-400 -mt-4">Fonctionne pour les sites en HTML classique. Si le résultat est incomplet, téléchargez le PDF ou copiez le texte du patron.</p>
+        </>
       )}
 
       {mode === 'text' && (
