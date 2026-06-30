@@ -241,26 +241,48 @@ PROMPT;
 
     private function uploadToGeminiFiles(string $filePath): ?string
     {
-        $boundary = 'boundary_' . uniqid();
-        $metadata = json_encode(['file' => ['display_name' => basename($filePath)]]);
-        $fileContent = file_get_contents($filePath);
-
-        $body = "--{$boundary}\r\nContent-Type: application/json\r\n\r\n{$metadata}\r\n"
-              . "--{$boundary}\r\nContent-Type: application/pdf\r\n\r\n{$fileContent}\r\n"
-              . "--{$boundary}--";
+        $fileSize = filesize($filePath);
+        $fileName = basename($filePath);
 
         try {
-            $response = $this->httpClient->post(
+            // Étape 1 : initier l'upload resumable
+            $initResponse = $this->httpClient->post(
                 'https://generativelanguage.googleapis.com/upload/v1beta/files?key=' . $this->geminiApiKey,
                 [
-                    'headers' => ['Content-Type' => "multipart/related; boundary={$boundary}"],
-                    'body' => $body,
+                    'headers' => [
+                        'X-Goog-Upload-Protocol'              => 'resumable',
+                        'X-Goog-Upload-Command'               => 'start',
+                        'X-Goog-Upload-Header-Content-Length' => $fileSize,
+                        'X-Goog-Upload-Header-Content-Type'   => 'application/pdf',
+                        'Content-Type'                        => 'application/json',
+                    ],
+                    'json' => ['file' => ['display_name' => $fileName]],
                 ]
             );
-            $data = json_decode($response->getBody()->getContents(), true);
+
+            $uploadUrl = $initResponse->getHeader('X-Goog-Upload-URL')[0] ?? null;
+            if (!$uploadUrl) {
+                error_log('[PatternTranslator] Pas d\'URL d\'upload dans la réponse');
+                return null;
+            }
+
+            // Étape 2 : envoyer le contenu en streaming
+            $fp = fopen($filePath, 'rb');
+            $uploadResponse = $this->httpClient->put($uploadUrl, [
+                'headers' => [
+                    'Content-Length'         => $fileSize,
+                    'X-Goog-Upload-Offset'   => '0',
+                    'X-Goog-Upload-Command'  => 'upload, finalize',
+                ],
+                'body' => $fp,
+            ]);
+            fclose($fp);
+
+            $data = json_decode($uploadResponse->getBody()->getContents(), true);
             return $data['file']['uri'] ?? null;
+
         } catch (\Exception $e) {
-            error_log('[PatternTranslator] Erreur upload: ' . $e->getMessage());
+            error_log('[PatternTranslator] Erreur upload resumable: ' . $e->getMessage());
             return null;
         }
     }
