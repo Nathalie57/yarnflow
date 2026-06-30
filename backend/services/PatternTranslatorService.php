@@ -254,34 +254,103 @@ PROMPT;
     }
 
     /**
+     * Score un texte selon sa ressemblance à un patron tricot/crochet
+     */
+    private function scorePatternContent(string $text): float
+    {
+        if (mb_strlen($text) < 100) return 0.0;
+
+        $lower = mb_strtolower($text);
+
+        $patternKeywords = [
+            'rang', 'maille', 'tricoter', 'crocheter', 'augment', 'diminut', 'monter', 'rabattre',
+            'row', 'stitch', 'knit', 'purl', 'cast on', 'bind off', 'increase', 'decrease',
+            'reihe', 'masche', 'stricken', 'häkeln', 'zunehmen', 'abnehmen',
+            'rij', 'steek', 'breien', 'haken', 'meerderen', 'minderen',
+            'strikk', 'maske', 'hækling', 'øke', 'minke',
+        ];
+
+        $shopKeywords = [
+            'commander', 'ajouter au panier', 'add to cart', 'checkout',
+            'livraison', 'shipping', 'prix', 'price', '£', '€', '$',
+        ];
+
+        $patternScore = 0;
+        foreach ($patternKeywords as $kw) {
+            $patternScore += substr_count($lower, $kw);
+        }
+
+        $shopScore = 0;
+        foreach ($shopKeywords as $kw) {
+            $shopScore += substr_count($lower, $kw);
+        }
+
+        $lengthBonus = min(mb_strlen($text) / 1000, 5.0);
+
+        return max(0.0, ($patternScore * 2) - $shopScore + $lengthBonus);
+    }
+
+    /**
      * Nettoie le HTML pour extraire le texte lisible
      */
     private function cleanHtmlToText(string $html): string
     {
-        // Extraire le contenu principal si disponible (évite nav/shop/pub avant le patron)
+        // Supprimer scripts, styles et blocs de navigation
+        $html = preg_replace('/<(script|style|nav|header|footer|aside)[^>]*>.*?<\/\1>/si', '', $html);
+
+        // Collecter les blocs de contenu candidats (main, article, section, div substantiels)
+        $candidates = [];
+
+        // Priorité 1 : main, article
         foreach (['main', 'article'] as $tag) {
-            if (preg_match('/<' . $tag . '[^>]*>(.*?)<\/' . $tag . '>/si', $html, $m)) {
-                $html = $m[1];
-                break;
+            if (preg_match_all('/<' . $tag . '[^>]*>(.*?)<\/' . $tag . '>/si', $html, $m)) {
+                foreach ($m[1] as $block) {
+                    $text = $this->htmlBlockToText($block);
+                    if (mb_strlen($text) > 300) {
+                        $candidates[] = ['text' => $text, 'priority' => 2];
+                    }
+                }
             }
         }
 
-        // Supprimer les scripts, styles, nav, header, footer
-        $html = preg_replace('/<(script|style|nav|header|footer|aside)[^>]*>.*?<\/\1>/si', '', $html);
+        // Priorité 2 : sections et divs avec classes/ids liés aux patrons
+        if (preg_match_all('/<(?:section|div)[^>]*(?:class|id)="[^"]*(?:pattern|recipe|instructions?|content|description)[^"]*"[^>]*>(.*?)<\/(?:section|div)>/si', $html, $m)) {
+            foreach ($m[1] as $block) {
+                $text = $this->htmlBlockToText($block);
+                if (mb_strlen($text) > 300) {
+                    $candidates[] = ['text' => $text, 'priority' => 3];
+                }
+            }
+        }
 
-        // Convertir les balises de structure en sauts de ligne
+        // Priorité 3 : page entière comme fallback
+        $fullText = $this->htmlBlockToText($html);
+        $candidates[] = ['text' => $fullText, 'priority' => 1];
+
+        // Choisir le meilleur candidat selon le score
+        $best = '';
+        $bestScore = -1;
+        foreach ($candidates as $c) {
+            $score = $this->scorePatternContent($c['text']) * $c['priority'];
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $best = $c['text'];
+            }
+        }
+
+        return $best ?: $fullText;
+    }
+
+    /**
+     * Convertit un bloc HTML en texte propre
+     */
+    private function htmlBlockToText(string $html): string
+    {
         $html = preg_replace('/<(br|p|div|li|h[1-6]|tr)[^>]*>/i', "\n", $html);
-
-        // Supprimer toutes les balises restantes
         $text = strip_tags($html);
-
-        // Décoder les entités HTML
         $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-        // Nettoyer les espaces multiples
         $text = preg_replace('/[ \t]+/', ' ', $text);
         $text = preg_replace('/\n{3,}/', "\n\n", $text);
-
         return trim($text);
     }
 }
