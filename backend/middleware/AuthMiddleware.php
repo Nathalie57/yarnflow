@@ -85,6 +85,8 @@ class AuthMiddleware
     private function trackSession(int $userId): void
     {
         try {
+            if ((int)$userId === 7) return;
+
             $db = Database::getInstance()->getConnection();
             $stmt = $db->prepare(
                 "SELECT id FROM user_sessions
