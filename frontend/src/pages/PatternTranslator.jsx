@@ -152,7 +152,10 @@ export default function PatternTranslator() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => setResult(null)}
+            onClick={() => {
+              if (!window.confirm('Quitter sans enregistrer ? La traduction sera définitivement perdue.')) return
+              setResult(null)
+            }}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
@@ -186,7 +189,7 @@ export default function PatternTranslator() {
         <div className="bg-primary-50 border border-primary-200 rounded-2xl p-5 space-y-4">
           <div>
             <p className="text-sm font-semibold text-primary-800">Enregistrer dans la bibliothèque</p>
-            <p className="text-xs text-primary-600 mt-0.5">Le patron traduit sera accessible depuis votre bibliothèque.</p>
+            <p className="text-xs text-primary-600 mt-0.5">Un crédit a été utilisé. Si vous ne sauvegardez pas maintenant, la traduction sera perdue.</p>
           </div>
           <input
             type="text"
