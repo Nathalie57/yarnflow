@@ -327,18 +327,38 @@ PROMPT;
         $fullText = $this->htmlBlockToText($html);
         $candidates[] = ['text' => $fullText, 'priority' => 1];
 
-        // Choisir le meilleur candidat selon le score
-        $best = '';
-        $bestScore = -1;
-        foreach ($candidates as $c) {
+        // Scorer chaque candidat
+        $scored = [];
+        foreach ($candidates as $i => $c) {
             $score = $this->scorePatternContent($c['text']) * $c['priority'];
-            if ($score > $bestScore) {
-                $bestScore = $score;
-                $best = $c['text'];
-            }
+            $scored[] = ['text' => $c['text'], 'score' => $score, 'index' => $i, 'priority' => $c['priority']];
         }
 
-        return $best ?: $fullText;
+        // Trouver le meilleur score de référence
+        $maxScore = max(array_column($scored, 'score'));
+
+        if ($maxScore <= 0) {
+            return $fullText;
+        }
+
+        // Si le meilleur est la page entière (priority=1), la retourner telle quelle
+        $best = array_reduce($scored, fn($carry, $c) => (!$carry || $c['score'] > $carry['score']) ? $c : $carry);
+        if ($best['priority'] === 1) {
+            return $best['text'];
+        }
+
+        // Sinon, combiner tous les blocs qui ont un score > 30% du max (ordre document préservé)
+        $threshold = $maxScore * 0.3;
+        $combined = [];
+        foreach ($scored as $c) {
+            if ($c['score'] >= $threshold && $c['priority'] > 1) {
+                $combined[] = ['text' => $c['text'], 'index' => $c['index']];
+            }
+        }
+        usort($combined, fn($a, $b) => $a['index'] - $b['index']);
+
+        $result = implode("\n\n", array_unique(array_column($combined, 'text')));
+        return $result ?: $fullText;
     }
 
     /**
