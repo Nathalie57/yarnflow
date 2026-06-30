@@ -152,22 +152,21 @@ PROMPT;
             return $this->errorResponse('URL invalide', 0);
         }
 
-        try {
-            $response = $this->httpClient->get($url, [
-                'headers' => [
-                    'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-                    'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Accept-Language' => 'fr-FR,fr;q=0.9,en;q=0.8',
-                    'Accept-Encoding' => 'gzip, deflate, br',
-                    'Cache-Control'   => 'no-cache',
-                    'Pragma'          => 'no-cache',
-                ],
-                'allow_redirects' => true,
-                'timeout'         => 15,
-            ]);
+        $fetch = WebFetchService::fetchHTML($url);
 
-            $html = (string) $response->getBody();
-            $text = $this->extractTextFromHTML($html);
+        if (!$fetch['success']) {
+            $statusCode = $fetch['status_code'] ?? 0;
+            if ($statusCode === 404) {
+                return $this->errorResponse('Page introuvable (404). Vérifiez que l\'URL est correcte.', 0);
+            }
+            if ($statusCode === 403) {
+                return $this->errorResponse('Ce site bloque l\'accès automatique à ses pages. Essayez de copier-coller le texte du patron directement.', 0);
+            }
+            return $this->errorResponse($fetch['error'] ?? 'Impossible d\'accéder à cette URL. Essayez de copier-coller le texte du patron directement.', 0);
+        }
+
+        try {
+            $text = $this->extractTextFromHTML($fetch['html']);
 
             if (empty($text) || strlen($text) < 500) {
                 return $this->errorResponse(
@@ -190,15 +189,8 @@ PROMPT;
 
             return $result;
 
-        } catch (GuzzleException $e) {
-            $msg = $e->getMessage();
-            if (strpos($msg, '403') !== false || strpos($msg, 'Forbidden') !== false) {
-                return $this->errorResponse('Ce site bloque l\'accès automatique à ses pages. Essayez de copier-coller le texte du patron directement.', 0);
-            }
-            if (strpos($msg, '404') !== false) {
-                return $this->errorResponse('Page introuvable (404). Vérifiez que l\'URL est correcte.', 0);
-            }
-            return $this->errorResponse('Impossible d\'accéder à cette URL. Essayez de copier-coller le texte du patron directement.', 0);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Erreur lors de l\'analyse: ' . $e->getMessage(), 0);
         }
     }
 
