@@ -476,8 +476,9 @@ class Project extends BaseModel
         // [AI:Claude] FIX BUG: Si la durée est fournie par le frontend, l'utiliser directement
         // Sinon, calculer avec TIMESTAMPDIFF (rétrocompatibilité)
         if ($duration !== null) {
+            // ended_at = started_at + durée réelle : évite les écarts quand la requête arrive tardivement
             $query = "UPDATE project_sessions
-                      SET ended_at = NOW(),
+                      SET ended_at = DATE_ADD(started_at, INTERVAL :duration SECOND),
                           duration = :duration,
                           rows_completed = :rows_completed,
                           notes = :notes
@@ -489,7 +490,7 @@ class Project extends BaseModel
             $stmt->bindValue(':rows_completed', $rowsCompleted, PDO::PARAM_INT);
             $stmt->bindValue(':notes', $notes, PDO::PARAM_STR);
         } else {
-            // [AI:Claude] Fallback : calculer la durée côté backend
+            // Fallback : calculer la durée côté backend (pas de timer frontend)
             $query = "UPDATE project_sessions
                       SET ended_at = NOW(),
                           duration = TIMESTAMPDIFF(SECOND, started_at, NOW()),
