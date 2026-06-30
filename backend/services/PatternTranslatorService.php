@@ -212,6 +212,14 @@ PROMPT;
      */
     private function cleanHtmlToText(string $html): string
     {
+        // Extraire le contenu principal si disponible (évite nav/shop/pub avant le patron)
+        foreach (['main', 'article'] as $tag) {
+            if (preg_match('/<' . $tag . '[^>]*>(.*?)<\/' . $tag . '>/si', $html, $m)) {
+                $html = $m[1];
+                break;
+            }
+        }
+
         // Supprimer les scripts, styles, nav, header, footer
         $html = preg_replace('/<(script|style|nav|header|footer|aside)[^>]*>.*?<\/\1>/si', '', $html);
 
