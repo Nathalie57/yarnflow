@@ -21,7 +21,7 @@ class PatternTranslatorController
     private \PDO $db;
 
     private const UPLOAD_DIR = __DIR__ . '/../../uploads/patterns/';
-    private const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    private const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
     public function __construct()
     {
