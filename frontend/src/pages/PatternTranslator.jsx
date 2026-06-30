@@ -57,8 +57,24 @@ export default function PatternTranslator() {
         timeout: 120000,
       })
 
-      setResult(res.data.translation)
-      setSaveName('')
+      const translation = res.data.translation
+
+      // Auto-fill nom
+      let autoName = ''
+      if (mode === 'pdf' && file) {
+        autoName = file.name.replace(/\.pdf$/i, '').replace(/[-_]/g, ' ')
+      } else {
+        const firstLine = translation.split('\n').find(l => l.trim().length > 3 && l.trim().length < 80)
+        autoName = firstLine?.trim() ?? ''
+      }
+      setSaveName(autoName)
+
+      // Auto-detect technique
+      const lower = translation.toLowerCase()
+      const crochetKeywords = ['maille serrée', ' ms ', 'bride', 'demi-bride', 'chainette', 'crochet']
+      setSaveTechnique(crochetKeywords.some(k => lower.includes(k)) ? 'crochet' : 'tricot')
+
+      setResult(translation)
       setSaveError(null)
       if (res.data.quota) setQuota(res.data.quota)
       if (res.data.truncated) setError('Le patron était très long — seule la première partie a été traduite.')
@@ -142,14 +158,6 @@ export default function PatternTranslator() {
           </button>
         </div>
 
-        {/* Texte traduit */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6">
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Patron traduit</h2>
-          <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap font-mono">
-            {result}
-          </div>
-        </div>
-
         {/* Enregistrer dans la bibliothèque */}
         <div className="bg-primary-50 border border-primary-200 rounded-2xl p-5 space-y-4">
           <div>
@@ -187,6 +195,14 @@ export default function PatternTranslator() {
           >
             {saving ? 'Enregistrement…' : 'Enregistrer dans la bibliothèque'}
           </button>
+        </div>
+
+        {/* Texte traduit */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Patron traduit</h2>
+          <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap font-mono">
+            {result}
+          </div>
         </div>
 
       </div>
