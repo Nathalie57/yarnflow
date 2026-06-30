@@ -52,6 +52,7 @@ try {
         SELECT u.id, u.email, u.first_name, u.created_at
         FROM users u
         WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+        AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 2 DAY))
         AND NOT EXISTS (
             SELECT 1 FROM emails_sent_log
             WHERE user_id = u.id AND email_type = 'onboarding_day3' AND status = 'sent'
