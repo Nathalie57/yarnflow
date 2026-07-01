@@ -299,7 +299,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check /><span>3 Créations IA offertes</span></li>
             <li className="flex items-start gap-2"><Check /><span>5 questions IA / mois</span></li>
             <li className="flex items-start gap-2"><Check /><span>20 photos · 2 essais gratuits Studio Photo IA</span></li>
-            <li className="flex items-start gap-2"><Check /><span>3 traductions de patron à vie</span></li>
+            <li className="flex items-start gap-2"><Check /><span>3 traductions de patron offertes</span></li>
           </ul>
 
           <button disabled className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed">
