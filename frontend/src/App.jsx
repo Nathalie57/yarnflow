@@ -31,6 +31,7 @@ import PatternLibraryDetail from './pages/PatternLibraryDetail'
 import YarnStash from './pages/YarnStash'
 import PaymentSuccess from './pages/PaymentSuccess'
 import ImportPartnerPattern from './pages/ImportPartnerPattern'
+import PatternTranslator from './pages/PatternTranslator'
 
 // Pages légales
 import CGU from './pages/CGU'
@@ -117,6 +118,7 @@ function App() {
             <Route path="/smart-project-creator" element={<SmartProjectCreator />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/tools" element={<Tools />} />
+            <Route path="/pattern-translator" element={<PatternTranslator />} />
 
             {/* Routes galerie photos IA (v0.10.0) */}
             <Route path="/gallery" element={<Gallery />} />
