@@ -319,6 +319,10 @@ export const yarnStashAPI = {
   }
 }
 
+export const yarnSubstitutionAPI = {
+  suggest: (yarnName) => api.post('/yarn-substitution', { yarn_name: yarnName }),
+}
+
 export const stashAllocationAPI = {
   list:         (projectId)                       => api.get(`/projects/${projectId}/allocations`),
   create:       (projectId, stashEntryId, qty)    => api.post(`/projects/${projectId}/allocations`, { stash_entry_id: stashEntryId, quantity_reserved: qty }),

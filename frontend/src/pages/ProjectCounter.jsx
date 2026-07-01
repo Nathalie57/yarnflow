@@ -107,7 +107,7 @@ const ProjectCounter = () => {
   const [uploadingPattern, setUploadingPattern] = useState(false)
   const [showPatternUrlModal, setShowPatternUrlModal] = useState(false)
   const [patternUrl, setPatternUrl] = useState('')
-  const [proxyError, setProxyError] = useState(false) // [AI:Claude] Erreur de chargement du proxy
+  const [proxyError, setProxyError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   // [AI:Claude] Choisir patron depuis bibliothèque
@@ -308,6 +308,10 @@ const ProjectCounter = () => {
   useEffect(() => {
     if (projectId) localStorage.setItem('yf_last_project_id', projectId)
   }, [projectId])
+
+  useEffect(() => {
+    setProxyError(null)
+  }, [project?.pattern_url])
 
   // [AI:Claude] Charger le projet au montage
   useEffect(() => {
@@ -5075,7 +5079,7 @@ const ProjectCounter = () => {
                             </pre>
                           </div>
                         </div>
-                      ) : proxyError ? (
+                      ) : proxyError === true ? (
                         // Pas de texte ET erreur proxy - proposer d'en ajouter
                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 text-center">
                           <div className="flex justify-center mb-3">

@@ -152,15 +152,21 @@ PROMPT;
             return $this->errorResponse('URL invalide', 0);
         }
 
-        try {
-            $response = $this->httpClient->get($url, [
-                'headers' => [
-                    'User-Agent' => 'YarnFlow Pattern Importer/1.0'
-                ]
-            ]);
+        $fetch = WebFetchService::fetchHTML($url);
 
-            $html = (string) $response->getBody();
-            $text = $this->extractTextFromHTML($html);
+        if (!$fetch['success']) {
+            $statusCode = $fetch['status_code'] ?? 0;
+            if ($statusCode === 404) {
+                return $this->errorResponse('Page introuvable (404). Vérifiez que l\'URL est correcte.', 0);
+            }
+            if ($statusCode === 403) {
+                return $this->errorResponse('Ce site bloque l\'accès automatique à ses pages. Essayez de copier-coller le texte du patron directement.', 0);
+            }
+            return $this->errorResponse($fetch['error'] ?? 'Impossible d\'accéder à cette URL. Essayez de copier-coller le texte du patron directement.', 0);
+        }
+
+        try {
+            $text = $this->extractTextFromHTML($fetch['html']);
 
             if (empty($text) || strlen($text) < 500) {
                 return $this->errorResponse(
@@ -183,8 +189,8 @@ PROMPT;
 
             return $result;
 
-        } catch (GuzzleException $e) {
-            return $this->errorResponse('Erreur lors de l\'accès à l\'URL: ' . $e->getMessage(), 0);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Erreur lors de l\'analyse: ' . $e->getMessage(), 0);
         }
     }
 

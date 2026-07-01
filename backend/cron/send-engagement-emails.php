@@ -52,6 +52,7 @@ try {
         SELECT u.id, u.email, u.first_name, u.created_at
         FROM users u
         WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+        AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 2 DAY))
         AND NOT EXISTS (
             SELECT 1 FROM emails_sent_log
             WHERE user_id = u.id AND email_type = 'onboarding_day3' AND status = 'sent'
@@ -60,7 +61,6 @@ try {
             SELECT 1 FROM email_notifications_sent
             WHERE user_id = u.id AND notification_type LIKE '%onboarding%'
         )
-        AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 1 DAY))
     ");
     $stmt->execute();
     $usersDay3 = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -269,7 +269,7 @@ try {
                 echo "✓ Envoyé\n";
                 $stats['project_start']['sent']++;
                 $usersEmailed[] = $userId;
-                $pushService->sendToUser($userId, 'Ton projet t\'attend', ""{$row['project_name']}" n'a pas encore son premier rang.", '/my-projects');
+                $pushService->sendToUser($userId, 'Ton projet t\'attend', "\"{$row['project_name']}\" n'a pas encore son premier rang.", '/my-projects');
             } else {
                 echo "✗ Échec\n";
                 $stats['project_start']['errors']++;
@@ -330,7 +330,7 @@ try {
             );
             if ($ok) {
                 echo "✓\n"; $stats['project_inactive']['sent']++; $usersEmailedInactive[] = $userId;
-                $pushService->sendToUser($userId, 'Reprends là où tu t\'es arrêtée', ""{$row['project_name']}" t'attend.", '/my-projects');
+                $pushService->sendToUser($userId, 'Reprends là où tu t\'es arrêtée', "\"{$row['project_name']}\" t'attend.", '/my-projects');
             } else { echo "✗\n"; $stats['project_inactive']['errors']++; }
         } catch (Exception $e) {
             echo "✗ {$e->getMessage()}\n"; $stats['project_inactive']['errors']++;

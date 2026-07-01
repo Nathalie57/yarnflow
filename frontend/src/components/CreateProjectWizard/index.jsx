@@ -201,8 +201,8 @@ const CreateProjectWizard = ({
                 {isPaidWithImports && (
                   <p className="text-xs text-primary-600 mt-0.5">
                     <span className="font-semibold">{smartQuota.remaining} création{smartQuota.remaining !== 1 ? 's' : ''}</span> disponible{smartQuota.remaining !== 1 ? 's' : ''} ce mois
-                    {user?.subscription_expires_at && (
-                      <span className="text-gray-400"> — recharge le {new Date(user.subscription_expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</span>
+                    {smartQuota.next_reset_date && (
+                      <span className="text-gray-400"> — recharge le {new Date(smartQuota.next_reset_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</span>
                     )}
                   </p>
                 )}

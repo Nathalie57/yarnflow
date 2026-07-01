@@ -14,6 +14,7 @@ namespace App\Middleware;
 use App\Services\JWTService;
 use App\Utils\Response;
 use App\Models\User;
+use App\Config\Database;
 
 /**
  * [AI:Claude] Middleware pour protéger les routes avec JWT
@@ -73,13 +74,39 @@ class AuthMiddleware
             return null;
         }
 
-        // [AI:Claude] Mettre à jour last_seen_at à chaque requête authentifiée
-        // Permet de tracker l'activité réelle (pas seulement les connexions)
         if (isset($userData['user_id'])) {
             $this->userModel->updateLastSeen($userData['user_id']);
+            $this->trackSession((int)$userData['user_id']);
         }
 
         return $userData;
+    }
+
+    private function trackSession(int $userId): void
+    {
+        try {
+            if ((int)$userId === 7) return;
+
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare(
+                "SELECT id FROM user_sessions
+                 WHERE user_id = :uid
+                   AND last_activity_at >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+                 ORDER BY last_activity_at DESC LIMIT 1"
+            );
+            $stmt->execute(['uid' => $userId]);
+            $session = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if ($session) {
+                $db->prepare("UPDATE user_sessions SET last_activity_at = NOW() WHERE id = :id")
+                   ->execute(['id' => $session['id']]);
+            } else {
+                $db->prepare("INSERT INTO user_sessions (user_id, started_at, last_activity_at) VALUES (:uid, NOW(), NOW())")
+                   ->execute(['uid' => $userId]);
+            }
+        } catch (\Throwable $e) {
+            error_log('[Session] trackSession error: ' . $e->getMessage());
+        }
     }
 
     /**
