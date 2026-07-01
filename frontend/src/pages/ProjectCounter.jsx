@@ -3320,7 +3320,7 @@ const ProjectCounter = () => {
                         project.technique === 'tricot' ? 'bg-primary-50 font-bold text-primary-700' : 'text-gray-700'
                       }`}
                     >
-                      🧶 Tricot
+                      Tricot
                     </button>
                     <button
                       onClick={() => handleChangeTechnique('crochet')}
@@ -4066,9 +4066,9 @@ const ProjectCounter = () => {
                       {/* Nom */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          {isActive && !isCompleted && <span className="text-primary-600 font-bold">●</span>}
-                          {isActive && isCompleted && <span className="text-green-600 font-bold">●</span>}
-                          {!isActive && isCompleted && <span className="text-green-600 font-bold">✓</span>}
+                          {isActive && !isCompleted && <span className="w-2 h-2 rounded-full bg-primary-600 flex-shrink-0 inline-block" />}
+                          {isActive && isCompleted && <span className="w-2 h-2 rounded-full bg-green-600 flex-shrink-0 inline-block" />}
+                          {!isActive && isCompleted && <svg className="w-3.5 h-3.5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                           <span className={`text-sm font-medium ${
                             isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
                           }`}>
@@ -4159,12 +4159,14 @@ const ProjectCounter = () => {
                       {/* Statut */}
                       <td className="px-4 py-3">
                         {isCompleted ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            ✓ Terminée
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            Terminée
                           </span>
                         ) : isActive ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
-                            ● En cours
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary-600 inline-block flex-shrink-0" />
+                            En cours
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
@@ -4188,7 +4190,7 @@ const ProjectCounter = () => {
                             }`}
                             title={isCompleted ? 'Marquer comme non terminée' : 'Marquer comme terminée'}
                           >
-                            ✓
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                           </button>
                           <button
                             onClick={(e) => {
@@ -4358,12 +4360,14 @@ const ProjectCounter = () => {
                         {/* Statut */}
                         <div>
                           {isCompleted ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              ✓ Terminée
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                              Terminée
                             </span>
                           ) : isActive ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
-                              ● En cours
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary-600 inline-block flex-shrink-0" />
+                              En cours
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
@@ -7132,7 +7136,7 @@ Rang 3 : *1ms, aug* x6 (18)
                 }}
                 className="w-full px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition shadow-lg font-semibold text-left flex items-center gap-3"
               >
-                <span className="text-2xl">✅</span>
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                 <div>
                   <div className="font-bold">Attribuer à la section</div>
                   <div className="text-sm text-primary-100">
