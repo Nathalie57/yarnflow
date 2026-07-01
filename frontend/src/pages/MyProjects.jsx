@@ -1189,9 +1189,7 @@ const MyProjects = () => {
                         <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                           <div
                             className={`h-2 rounded-full transition-all duration-500 ${
-                              project.status === 'completed'
-                                ? 'bg-gradient-to-r from-green-400 to-emerald-500'
-                                : 'bg-gradient-to-r from-primary-400 to-primary-600'
+                              'bg-gradient-to-r from-primary-400 to-primary-600'
                             }`}
                             style={{
                               width: project.status === 'completed'

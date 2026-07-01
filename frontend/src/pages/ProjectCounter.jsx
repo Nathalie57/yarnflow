@@ -3432,7 +3432,7 @@ const ProjectCounter = () => {
             <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
               <div
                 className={`h-2 rounded-full transition-all duration-500 ${
-                  project.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-primary-400 to-primary-600'
+                  'bg-gradient-to-r from-primary-400 to-primary-600'
                 }`}
                 style={{ width: `${globalProgressPercentage || 0}%` }}
               ></div>
@@ -4138,7 +4138,7 @@ const ProjectCounter = () => {
                             <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden min-w-[60px]">
                               <div
                                 className={`h-full transition-all ${
-                                  isCompleted ? 'bg-green-500' : 'bg-primary-600'
+                                  'bg-primary-600'
                                 }`}
                                 style={{ width: `${sectionProgress}%` }}
                               ></div>
@@ -4382,7 +4382,7 @@ const ProjectCounter = () => {
                             <div className="bg-gray-200 rounded-full h-2.5 overflow-hidden">
                               <div
                                 className={`h-full transition-all ${
-                                  isCompleted ? 'bg-green-500' : 'bg-primary-600'
+                                  'bg-primary-600'
                                 }`}
                                 style={{ width: `${sectionProgress}%` }}
                               ></div>
