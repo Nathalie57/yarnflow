@@ -418,6 +418,7 @@ Champs à extraire (retourne null si non trouvé sur l'étiquette) :
 - brand: marque/fabricant (string)
 - yarn_name: nom de la gamme ou du fil (string)
 - color_name: nom du coloris (string)
+- color_hex: code couleur hexadécimal (ex: "#3a5f8a") estimé en REGARDANT la couleur réelle du fil/de la pelote visible sur la ou les photos — pas en devinant depuis le nom du coloris. Si le fil n'est pas visible ou si la couleur est peu claire, retourne null.
 - dye_lot: numéro de bain/lot (string)
 - composition: matières, ex: "100% Mérinos" (string)
 - weight_per_skein_g: poids par pelote en grammes (number)
@@ -425,7 +426,7 @@ Champs à extraire (retourne null si non trouvé sur l'étiquette) :
 - needle_size_mm: taille d'aiguille recommandée en mm (number, valeur médiane si plage)
 - yarn_weight_category: parmi "lace","fingering","sport","dk","worsted","aran","bulky","super_bulky" ou null
 
-Exemple: {"brand":"Drops","yarn_name":"Merino Extra Fine","color_name":"Teal","dye_lot":"2024A","composition":"100% Mérinos","weight_per_skein_g":50,"yardage_per_skein_m":190,"needle_size_mm":3.5,"yarn_weight_category":"dk"}
+Exemple: {"brand":"Drops","yarn_name":"Merino Extra Fine","color_name":"Teal","color_hex":"#2f7d7a","dye_lot":"2024A","composition":"100% Mérinos","weight_per_skein_g":50,"yardage_per_skein_m":190,"needle_size_mm":3.5,"yarn_weight_category":"dk"}
 PROMPT;
 
             $model    = 'gemini-2.5-flash';
@@ -476,6 +477,8 @@ PROMPT;
 
             $allowed = ['lace','fingering','sport','dk','worsted','aran','bulky','super_bulky'];
             if (!in_array($data['yarn_weight_category'] ?? '', $allowed)) $data['yarn_weight_category'] = null;
+
+            if (!preg_match('/^#[0-9a-fA-F]{6}$/', $data['color_hex'] ?? '')) $data['color_hex'] = null;
 
             $this->sendResponse(200, ['success' => true, 'data' => $data]);
         } catch (\Throwable $e) {

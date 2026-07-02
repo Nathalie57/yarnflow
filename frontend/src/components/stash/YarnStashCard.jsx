@@ -3,8 +3,6 @@
  * @brief Carte pelote dans la liste du stock
  */
 
-const API_URL = import.meta.env.VITE_API_URL || ''
-
 const WEIGHT_LABELS = {
   lace:     'Lace',
   fingering: 'Fingering',
@@ -23,21 +21,11 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
       <div className="flex items-stretch">
-        {/* Photo ou pastille couleur */}
-        {entry.photo_url ? (
-          <div className="w-16 flex-shrink-0 relative">
-            <img
-              src={API_URL + entry.photo_url}
-              alt="Étiquette"
-              className="h-full w-full object-cover"
-            />
-          </div>
-        ) : (
-          <div
-            className="w-3 flex-shrink-0"
-            style={{ backgroundColor: entry.color_hex || '#e5e7eb' }}
-          />
-        )}
+        {/* Pastille couleur — repère visuel rapide, plus utile qu'une vignette photo */}
+        <div
+          className="w-3 flex-shrink-0"
+          style={{ backgroundColor: entry.color_hex || '#e5e7eb' }}
+        />
 
         <div className="flex-1 p-4">
           {/* En-tête : marque + gamme */}

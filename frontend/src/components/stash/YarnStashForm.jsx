@@ -115,6 +115,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           brand:                d.brand              ?? f.brand,
           yarn_name:            d.yarn_name          ?? f.yarn_name,
           color_name:           d.color_name         ?? f.color_name,
+          color_hex:            d.color_hex          ?? f.color_hex,
           dye_lot:              d.dye_lot            ?? f.dye_lot,
           composition:          d.composition        ?? f.composition,
           weight_per_skein_g:   d.weight_per_skein_g  != null ? d.weight_per_skein_g  : f.weight_per_skein_g,
