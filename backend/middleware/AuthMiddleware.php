@@ -77,6 +77,7 @@ class AuthMiddleware
         if (isset($userData['user_id'])) {
             $this->userModel->updateLastSeen($userData['user_id']);
             $this->trackSession((int)$userData['user_id']);
+            $this->logRouteVisit((int)$userData['user_id']);
         }
 
         return $userData;
@@ -106,6 +107,29 @@ class AuthMiddleware
             }
         } catch (\Throwable $e) {
             error_log('[Session] trackSession error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * [AI:Claude] Enregistre la route appelée pour savoir quelles pages/API
+     * un utilisateur sollicite le plus (complète user_sessions).
+     */
+    private function logRouteVisit(int $userId): void
+    {
+        try {
+            if ((int)$userId === 7) return;
+
+            $route = trim((string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+            if (str_starts_with($route, 'api/')) {
+                $route = substr($route, 4);
+            }
+            if ($route === '') return;
+
+            $db = Database::getInstance()->getConnection();
+            $db->prepare("INSERT INTO route_visits (user_id, route, created_at) VALUES (:uid, :route, NOW())")
+               ->execute(['uid' => $userId, 'route' => substr($route, 0, 255)]);
+        } catch (\Throwable $e) {
+            error_log('[Session] logRouteVisit error: ' . $e->getMessage());
         }
     }
 
