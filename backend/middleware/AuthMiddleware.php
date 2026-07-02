@@ -125,9 +125,11 @@ class AuthMiddleware
             }
             if ($route === '') return;
 
+            $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+
             $db = Database::getInstance()->getConnection();
-            $db->prepare("INSERT INTO route_visits (user_id, route, created_at) VALUES (:uid, :route, NOW())")
-               ->execute(['uid' => $userId, 'route' => substr($route, 0, 255)]);
+            $db->prepare("INSERT INTO route_visits (user_id, route, method, created_at) VALUES (:uid, :route, :method, NOW())")
+               ->execute(['uid' => $userId, 'route' => substr($route, 0, 255), 'method' => $method]);
         } catch (\Throwable $e) {
             error_log('[Session] logRouteVisit error: ' . $e->getMessage());
         }
