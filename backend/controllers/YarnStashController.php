@@ -359,13 +359,35 @@ class YarnStashController
         try {
             $this->getUserIdFromAuth();
 
-            if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
+            // Accepte soit plusieurs photos (photos[]), soit une seule (photo) pour compatibilité
+            $files = [];
+            if (isset($_FILES['photos']) && is_array($_FILES['photos']['name'] ?? null)) {
+                $count = count($_FILES['photos']['name']);
+                for ($i = 0; $i < $count; $i++) {
+                    if (($_FILES['photos']['error'][$i] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                        $files[] = [
+                            'name'     => $_FILES['photos']['name'][$i],
+                            'type'     => $_FILES['photos']['type'][$i],
+                            'tmp_name' => $_FILES['photos']['tmp_name'][$i],
+                            'error'    => $_FILES['photos']['error'][$i],
+                            'size'     => $_FILES['photos']['size'][$i],
+                        ];
+                    }
+                }
+            } elseif (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+                $files[] = $_FILES['photo'];
+            }
+
+            if (empty($files)) {
                 $this->sendResponse(400, ['success' => false, 'error' => 'Fichier photo manquant ou invalide']);
                 return;
             }
 
-            $file = $_FILES['photo'];
-            $this->validateImageFile($file);
+            // Max 2 photos (recto/verso de l'étiquette enroulée autour de la pelote)
+            $files = array_slice($files, 0, 2);
+            foreach ($files as $file) {
+                $this->validateImageFile($file);
+            }
 
             $apiKey = $_ENV['GEMINI_API_KEY'] ?? '';
             if (empty($apiKey)) {
@@ -373,12 +395,24 @@ class YarnStashController
                 return;
             }
 
-            $imageData = base64_encode(file_get_contents($file['tmp_name']));
-            $mimeType  = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+            $imageParts = [];
+            foreach ($files as $file) {
+                $imageParts[] = [
+                    'inline_data' => [
+                        'mime_type' => (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']),
+                        'data'      => base64_encode(file_get_contents($file['tmp_name'])),
+                    ]
+                ];
+            }
+
+            $multiPhotoNote = count($files) > 1
+                ? "\nCes photos montrent la même étiquette sous différents angles (l'étiquette est enroulée autour de la pelote) — combine les informations visibles sur toutes les photos pour compléter les champs."
+                : '';
 
             $prompt = <<<PROMPT
 Analyse cette étiquette de pelote de laine et extrais les informations suivantes.
 Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ou après, sans bloc markdown.
+$multiPhotoNote
 
 Champs à extraire (retourne null si non trouvé sur l'étiquette) :
 - brand: marque/fabricant (string)
@@ -399,10 +433,7 @@ PROMPT;
 
             $payload = json_encode([
                 'contents' => [[
-                    'parts' => [
-                        ['text' => $prompt],
-                        ['inline_data' => ['mime_type' => $mimeType, 'data' => $imageData]],
-                    ]
+                    'parts' => array_merge([['text' => $prompt]], $imageParts)
                 ]],
                 'generationConfig' => ['temperature' => 0.1, 'topK' => 10, 'topP' => 0.8],
             ]);

@@ -312,9 +312,10 @@ export const yarnStashAPI = {
     form.append('photo', file)
     return api.post(`/stash/${id}/photo`, form, { headers: { 'Content-Type': 'multipart/form-data' } })
   },
-  scanLabel: (file) => {
+  scanLabel: (files) => {
     const form = new FormData()
-    form.append('photo', file)
+    const list = Array.isArray(files) ? files : [files]
+    list.forEach(file => form.append('photos[]', file))
     return api.post('/stash/scan-label', form, { headers: { 'Content-Type': 'multipart/form-data' }, _retryCount: 99 })
   }
 }
