@@ -41,6 +41,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState(null)
   const fileInputRef = useRef(null)
+  const galleryInputRef = useRef(null)
 
   useEffect(() => {
     setPhotoFile(null)
@@ -179,10 +180,27 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               <span className="text-xs font-medium">Prendre en photo l'étiquette pour remplir automatiquement</span>
             </button>
           )}
+          {!photoPreview && (
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              className="w-full mt-2 text-xs text-gray-400 hover:text-primary-600 transition-colors"
+            >
+              ou importer une photo existante
+            </button>
+          )}
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePhotoChange}
+          />
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
             className="hidden"
             onChange={handlePhotoChange}
           />
@@ -400,32 +418,58 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                 </svg>
               </button>
               {!photoPreview && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-2 right-2 bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
-                >
-                  Changer
-                </button>
+                <div className="absolute bottom-2 right-2 flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
+                  >
+                    Galerie
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
+                  >
+                    Changer
+                  </button>
+                </div>
               )}
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
-              </svg>
-              <span className="text-xs">Ajouter une photo</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                </svg>
+                <span className="text-xs">Ajouter une photo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                className="w-full mt-2 text-xs text-gray-400 hover:text-primary-600 transition-colors"
+              >
+                ou importer une photo existante
+              </button>
+            </>
           )}
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handlePhotoChange}
+          />
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
             className="hidden"
             onChange={handlePhotoChange}
           />
