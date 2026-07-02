@@ -61,22 +61,40 @@ uploads/*
 *.tar.gz
 *.rar
 
-# Test files
+# Test files (tirets ET underscores — ne jamais committer de script one-shot dans public/)
 backend/public/test-*.php
+backend/public/test_*.php
 backend/public/phpinfo-test.php
+backend/public/simple-test.php
+backend/public/verify_*.php
+backend/public/*test.php
 test.php
 
 # Debug files
 backend/public/debug-*.php
+backend/public/debug_*.php
 backend/public/check-*.php
+backend/public/check_*.php
 backend/public/fix-*.php
+backend/public/fix_*.php
 backend/public/delete-*.php
+backend/public/delete_*.php
 backend/public/simulate-*.php
 backend/public/view-*.php
+backend/public/view_*.php
 backend/public/transfer-*.php
+backend/public/transfer_*.php
 backend/public/migrate-*.php
+backend/public/migrate_*.php
+backend/public/cleanup_*.php
+backend/public/generate_expired_*.php
+backend/public/list-upload-files.php
+backend/public/activate_subscription.php
+backend/public/stats-utilisateurs.php
+backend/public/info.php
 backend/public/*.html
 backend/public/debug-*.txt
+backend/public/error_log
 
 # Cache
 backend/cache/
