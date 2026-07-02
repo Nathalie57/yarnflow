@@ -239,13 +239,23 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => openPhotoInput('extra', fileInputRef)}
-                className="w-full mt-2 text-xs text-primary-500 hover:text-primary-700 font-medium"
-              >
-                + Ajouter une 2e photo (si l'étiquette ne tenait pas entièrement dans le cadre)
-              </button>
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => openPhotoInput('extra', fileInputRef)}
+                  className="text-primary-500 hover:text-primary-700 font-medium"
+                >
+                  + Ajouter une 2e photo (si l'étiquette ne tenait pas entièrement dans le cadre)
+                </button>
+                <span className="text-gray-300">·</span>
+                <button
+                  type="button"
+                  onClick={() => openPhotoInput('extra', galleryInputRef)}
+                  className="text-gray-400 hover:text-primary-600"
+                >
+                  importer
+                </button>
+              </div>
             )
           )}
 
@@ -540,13 +550,23 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => openPhotoInput('extra', fileInputRef)}
-                className="w-full mt-2 text-xs text-primary-500 hover:text-primary-700 font-medium"
-              >
-                + Ajouter une 2e photo (si l'étiquette ne tenait pas entièrement dans le cadre)
-              </button>
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => openPhotoInput('extra', fileInputRef)}
+                  className="text-primary-500 hover:text-primary-700 font-medium"
+                >
+                  + Ajouter une 2e photo (si l'étiquette ne tenait pas entièrement dans le cadre)
+                </button>
+                <span className="text-gray-300">·</span>
+                <button
+                  type="button"
+                  onClick={() => openPhotoInput('extra', galleryInputRef)}
+                  className="text-gray-400 hover:text-primary-600"
+                >
+                  importer
+                </button>
+              </div>
             )
           )}
 
