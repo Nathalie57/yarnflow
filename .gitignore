@@ -91,6 +91,8 @@ backend/public/generate_expired_*.php
 backend/public/list-upload-files.php
 backend/public/activate_subscription.php
 backend/public/stats-utilisateurs.php
+backend/public/clear-cache.php
+backend/public/clear-opcache.php
 backend/public/info.php
 backend/public/*.html
 backend/public/debug-*.txt
