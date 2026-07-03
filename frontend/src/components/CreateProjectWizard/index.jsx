@@ -182,7 +182,7 @@ const CreateProjectWizard = ({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-white text-base">Création Intelligente</p>
-                <p className="text-xs text-white/80 mt-0.5">Importez votre patron (PDF, URL, photo) — on remplit tout en 30 secondes</p>
+                <p className="text-xs text-white/80 mt-0.5">Importez votre patron (PDF, URL, photo) — on remplit tout automatiquement</p>
                 {isPaidWithImports && (
                   <p className="text-xs text-white/90 mt-2 font-medium">
                     {smartQuota.remaining} création{smartQuota.remaining !== 1 ? 's' : ''} disponible{smartQuota.remaining !== 1 ? 's' : ''} ce mois
@@ -217,7 +217,7 @@ const CreateProjectWizard = ({
             {/* Manuel — option secondaire, discrète */}
             <button
               onClick={() => setMode('manual')}
-              className="w-full text-center mt-3 py-2 text-xs text-gray-400 hover:text-gray-600 transition"
+              className="w-full text-center mt-3 py-2 text-sm text-gray-500 hover:text-gray-700 underline underline-offset-2 transition"
             >
               ou remplir moi-même les informations
             </button>
