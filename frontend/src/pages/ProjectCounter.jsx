@@ -68,6 +68,10 @@ const ProjectCounter = () => {
   const [isEditingCounter, setIsEditingCounter] = useState(false) // [AI:Claude] v0.16.2 - Mode édition du compteur
   const [counterInputValue, setCounterInputValue] = useState('') // [AI:Claude] v0.16.2 - Valeur temporaire de l'input
   const [isSavingRow, setIsSavingRow] = useState(false) // [AI:Claude] Anti double-clic sur compteur
+  // [AI:Claude] isSavingRow (state) est asynchrone : des clics très rapprochés peuvent passer
+  // avant que React n'ait rendu la mise à jour, contournant la protection. Un ref est lu/écrit
+  // immédiatement et bloque vraiment les appels qui se chevauchent.
+  const isSavingRowRef = useRef(false)
   const [isOnline, setIsOnline] = useState(networkUtils.isOnline()) // [AI:Claude] Détection hors-ligne
   const [pendingSync, setPendingSync] = useState(false) // Actions en attente de sync
   const pendingRowsRef = useRef([]) // Queue des rows à POSTer quand connexion revient
@@ -1856,8 +1860,9 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Incrémenter le rang (sauvegarde directe sans modal)
   const handleIncrementRow = async () => {
-    // [AI:Claude] Anti double-clic
-    if (isSavingRow) return
+    // [AI:Claude] Anti double-clic (ref = blocage immédiat, pas soumis au cycle de rendu)
+    if (isSavingRowRef.current) return
+    isSavingRowRef.current = true
     setIsSavingRow(true)
 
     // Masquer le guidage onboarding au premier rang
@@ -1883,6 +1888,8 @@ const ProjectCounter = () => {
       const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
       const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
       showAlert(`Vous avez terminé (${displayMax}/${displayMax} ${unitLabel}) !`, 'success')
+      isSavingRowRef.current = false
+      setIsSavingRow(false)
       return
     }
 
@@ -1963,6 +1970,7 @@ const ProjectCounter = () => {
           }))
         }
       } finally {
+        isSavingRowRef.current = false
         setIsSavingRow(false)
       }
       return
@@ -2130,16 +2138,18 @@ const ProjectCounter = () => {
         }
       }
     } finally {
+      isSavingRowRef.current = false
       setIsSavingRow(false)
     }
   }
 
   // [AI:Claude] Décrémenter le rang (supprime le dernier rang au lieu de créer un nouveau)
   const handleDecrementRow = async () => {
-    // [AI:Claude] Anti double-clic
-    if (isSavingRow) return
+    // [AI:Claude] Anti double-clic (ref = blocage immédiat, pas soumis au cycle de rendu)
+    if (isSavingRowRef.current) return
 
     if (currentRow > 0) {
+      isSavingRowRef.current = true
       setIsSavingRow(true)
       // [AI:Claude] v0.16.2 - Calculer newRow selon l'unité
       const increment = parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0)
@@ -2241,6 +2251,7 @@ const ProjectCounter = () => {
           }
         }
       } finally {
+        isSavingRowRef.current = false
         setIsSavingRow(false)
       }
     }
