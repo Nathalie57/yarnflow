@@ -2203,11 +2203,13 @@ const ProjectCounter = () => {
 
         // [AI:Claude] FIX: Trouver le rang avec row_number = currentRow (le dernier)
         // Comparaison qui gère null correctement
+        // [AI:Claude] Number(...) : l'API peut renvoyer les IDs/numéros en string selon le
+        // driver PDO — une égalité stricte (===) entre "7" et 7 échouerait silencieusement
         const lastRow = rows.find(r => {
           const sectionMatch = currentSectionId
-            ? r.section_id === currentSectionId
+            ? Number(r.section_id) === Number(currentSectionId)
             : (r.section_id === null || r.section_id === undefined)
-          return r.row_num === oldRow && sectionMatch
+          return Number(r.row_num) === Number(oldRow) && sectionMatch
         })
 
         if (lastRow) {
