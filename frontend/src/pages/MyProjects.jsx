@@ -932,7 +932,7 @@ const MyProjects = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-white text-base mb-1">Démarrer un nouveau projet</p>
                     <p className="text-primary-100 text-sm leading-relaxed">
-                      PDF ou lien — votre projet est prêt en quelques secondes.
+                      PDF ou lien — on remplit tout automatiquement.
                     </p>
                   </div>
                 </div>
@@ -1287,7 +1287,7 @@ const MyProjects = () => {
                 className="w-full p-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-left transition"
               >
                 <p className="font-semibold text-sm">Importer un patron</p>
-                <p className="text-primary-100 text-xs mt-0.5">PDF ou lien — votre projet est créé en quelques secondes</p>
+                <p className="text-primary-100 text-xs mt-0.5">PDF ou lien — on remplit tout automatiquement</p>
               </button>
 
               <button
