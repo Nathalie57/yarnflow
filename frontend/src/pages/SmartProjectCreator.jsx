@@ -166,7 +166,8 @@ export default function SmartProjectCreator() {
         setAnalyzeMetadata({
           source_name: response.data.source_name,
           processing_time_ms: response.data.processing_time_ms,
-          ai_status: response.data.ai_status
+          ai_status: response.data.ai_status,
+          import_id: response.data.import_id
         })
 
         // Pré-remplir les champs

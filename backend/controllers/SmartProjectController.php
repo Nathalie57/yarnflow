@@ -278,7 +278,8 @@ class SmartProjectController
             }
 
             // Logger ici : Gemini a été appelé et a répondu — le quota est consommé maintenant
-            $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'], null, $processingTime, null);
+            // [AI:Claude] L'ID est renvoyé au frontend pour être relié au projet lors du confirm()
+            $importId = $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'], null, $processingTime, null);
 
             $this->jsonResponse([
                 'success' => true,
@@ -286,7 +287,8 @@ class SmartProjectController
                 'ai_status' => $result['ai_status'],
                 'processing_time_ms' => $processingTime,
                 'source_type' => $sourceType,
-                'source_name' => $sourceName
+                'source_name' => $sourceName,
+                'import_id' => $importId
             ]);
 
         } catch (\Exception $e) {
@@ -389,6 +391,21 @@ class SmartProjectController
                     }
                 }
 
+                // [AI:Claude] Relier le log d'import IA (créé lors de l'analyse, avant que
+                // le projet n'existe) au projet fraîchement créé
+                $importId = $analyzeMetadata['import_id'] ?? null;
+                if ($importId) {
+                    $stmt = $db->prepare("
+                        UPDATE ai_pattern_imports SET project_id = :project_id
+                        WHERE id = :import_id AND user_id = :user_id
+                    ");
+                    $stmt->execute([
+                        'project_id' => $projectId,
+                        'import_id' => $importId,
+                        'user_id' => $userId
+                    ]);
+                }
+
                 $db->commit();
 
                 // Récupérer le projet complet
@@ -451,7 +468,7 @@ class SmartProjectController
         ?array $aiResponse,
         int $processingTime,
         ?string $error
-    ): void {
+    ): ?int {
         try {
             $db = \App\Config\Database::getInstance()->getConnection();
             $stmt = $db->prepare("
@@ -472,8 +489,11 @@ class SmartProjectController
                 'error' => $error,
                 'ip' => $_SERVER['REMOTE_ADDR'] ?? null
             ]);
+
+            return (int) $db->lastInsertId();
         } catch (\Exception $e) {
             error_log('[SmartProject] Erreur logImport: ' . $e->getMessage());
+            return null;
         }
     }
 
