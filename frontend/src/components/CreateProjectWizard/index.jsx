@@ -169,67 +169,57 @@ const CreateProjectWizard = ({
               </svg>
             </button>
           </div>
-          <div className="p-4 space-y-3">
-            {/* Manuel */}
-            <button
-              onClick={() => setMode('manual')}
-              className="w-full flex items-center gap-4 p-4 border border-gray-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition text-left group"
-            >
-              <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
-                <svg className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">Créer manuellement</p>
-                <p className="text-xs text-gray-500 mt-0.5">Remplissez les informations vous-même</p>
-              </div>
-            </button>
-
-            {/* Création Intelligente */}
+          <div className="p-4">
+            {/* Création Intelligente — mise en avant, choix principal */}
             <button
               onClick={() => { onClose(); navigate(isTrialUsed || isPlusExhausted ? '/subscription' : '/smart-project-creator') }}
-              className="w-full flex items-center gap-4 p-4 border border-primary-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 bg-primary-50/50 transition text-left group"
+              className="w-full flex items-start gap-3 p-5 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-md transition text-left group"
             >
-              <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+              <div className="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-primary-900 text-sm">Création Intelligente</p>
+                <p className="font-bold text-white text-base">Création Intelligente</p>
+                <p className="text-xs text-white/80 mt-0.5">Importez votre patron (PDF, URL, photo) — on remplit tout en 30 secondes</p>
                 {isPaidWithImports && (
-                  <p className="text-xs text-primary-600 mt-0.5">
-                    <span className="font-semibold">{smartQuota.remaining} création{smartQuota.remaining !== 1 ? 's' : ''}</span> disponible{smartQuota.remaining !== 1 ? 's' : ''} ce mois
+                  <p className="text-xs text-white/90 mt-2 font-medium">
+                    {smartQuota.remaining} création{smartQuota.remaining !== 1 ? 's' : ''} disponible{smartQuota.remaining !== 1 ? 's' : ''} ce mois
                     {smartQuota.next_reset_date && (
-                      <span className="text-gray-400"> — recharge le {new Date(smartQuota.next_reset_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</span>
+                      <span className="text-white/60"> — recharge le {new Date(smartQuota.next_reset_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</span>
                     )}
                   </p>
                 )}
                 {isFreeTrialAvailable && (
-                  <p className="text-xs text-primary-600 mt-0.5">
-                    <span className="font-semibold">{smartQuota?.remaining ?? 2} essai{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''} gratuit{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''}</span> disponible{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''}
+                  <p className="text-xs text-white/90 mt-2 font-medium">
+                    {smartQuota?.remaining ?? 2} essai{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''} gratuit{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''} disponible{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''}
                   </p>
                 )}
                 {isTrialUsed && (
-                  <p className="text-xs mt-0.5 flex items-center gap-1.5">
-                    <span className="text-gray-400">Essai utilisé</span>
-                    <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Débloquer</span>
+                  <p className="text-xs mt-2 flex items-center gap-1.5">
+                    <span className="text-white/70">Essai utilisé</span>
+                    <span className="bg-white text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Débloquer</span>
                   </p>
                 )}
                 {isPlusExhausted && (
-                  <p className="text-xs mt-0.5 flex items-center gap-1.5">
-                    <span className="text-gray-400">3/3 utilisées ce mois</span>
-                    <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Passer à PRO</span>
+                  <p className="text-xs mt-2 flex items-center gap-1.5">
+                    <span className="text-white/70">3/3 utilisées ce mois</span>
+                    <span className="bg-white text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Passer à PRO</span>
                   </p>
                 )}
                 {isProExhausted && (
-                  <p className="text-xs text-gray-400 mt-0.5">15/15 utilisées — renouvellement le 1er du mois</p>
-                )}
-                {!smartQuota && (
-                  <p className="text-xs text-primary-600 mt-0.5">Importez un PDF ou une URL</p>
+                  <p className="text-xs text-white/70 mt-2">15/15 utilisées — renouvellement le 1er du mois</p>
                 )}
               </div>
+            </button>
+
+            {/* Manuel — option secondaire, discrète */}
+            <button
+              onClick={() => setMode('manual')}
+              className="w-full text-center mt-3 py-2 text-xs text-gray-400 hover:text-gray-600 transition"
+            >
+              ou remplir moi-même les informations
             </button>
           </div>
         </div>
