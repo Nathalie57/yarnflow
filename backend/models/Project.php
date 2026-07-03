@@ -333,16 +333,24 @@ class Project extends BaseModel
      */
     public function addRow(int $projectId, array $rowData): int|false
     {
-        // [AI:Claude] Pas de ON DUPLICATE KEY UPDATE ici volontairement : un row_num déjà
-        // pris pour ce projet/section signale une désynchronisation du compteur (bug ou
-        // données corrompues). Mieux vaut une erreur visible qu'une écriture fantôme qui
-        // écrase silencieusement un ancien rang sans jamais créer le nouveau.
         $query = "INSERT INTO project_rows
                   (project_id, section_id, row_num, stitch_count, stitch_type, duration, notes, difficulty_rating, photo, completed_at,
                    secondary_count, secondary_target, secondary_label)
                   VALUES
                   (:project_id, :section_id, :row_num, :stitch_count, :stitch_type, :duration, :notes, :difficulty_rating, :photo, :completed_at,
-                   :secondary_count, :secondary_target, :secondary_label)";
+                   :secondary_count, :secondary_target, :secondary_label)
+                  ON DUPLICATE KEY UPDATE
+                  section_id = VALUES(section_id),
+                  stitch_count = VALUES(stitch_count),
+                  stitch_type = VALUES(stitch_type),
+                  duration = VALUES(duration),
+                  notes = VALUES(notes),
+                  difficulty_rating = VALUES(difficulty_rating),
+                  photo = VALUES(photo),
+                  completed_at = VALUES(completed_at),
+                  secondary_count = VALUES(secondary_count),
+                  secondary_target = VALUES(secondary_target),
+                  secondary_label = VALUES(secondary_label)";
 
         $stmt = $this->db->prepare($query);
 
@@ -362,19 +370,8 @@ class Project extends BaseModel
             ':secondary_label' => $rowData['secondary_label'] ?? null,
         ];
 
-        try {
-            if (!$stmt->execute($params))
-                return false;
-        } catch (\PDOException $e) {
-            // [AI:Claude] Code 23000 = violation de contrainte (row_num déjà utilisé)
-            if ($e->getCode() === '23000') {
-                throw new \RuntimeException(
-                    "Ce rang existe déjà dans l'historique (désynchronisation du compteur). " .
-                    "Corrige le compteur manuellement (clique dessus) avant de continuer."
-                );
-            }
-            throw $e;
-        }
+        if (!$stmt->execute($params))
+            return false;
 
         $rowId = (int) $this->db->lastInsertId();
 
