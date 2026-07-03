@@ -43,6 +43,10 @@ try {
         'reactivation'     => ['sent' => 0, 'skipped' => 0, 'errors' => 0]
     ];
 
+    // [AI:Claude] Un seul email d'engagement par utilisateur et par jour, tous types confondus
+    // (évite qu'une même personne corresponde à plusieurs conditions le même jour)
+    $usersEmailedToday = [];
+
     // =========================================
     // EMAIL J+3 : Utilisateurs inscrits il y a 3 jours
     // =========================================
@@ -68,6 +72,12 @@ try {
     echo "[J+3] Trouvé " . count($usersDay3) . " utilisateur(s) éligible(s)\n";
 
     foreach ($usersDay3 as $user) {
+        if (isset($usersEmailedToday[(int)$user['id']])) {
+            echo "[J+3] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
+            $stats['day3']['skipped']++;
+            continue;
+        }
+
         echo "[J+3] Envoi à {$user['email']} (ID: {$user['id']})... ";
 
         try {
@@ -80,6 +90,7 @@ try {
             if ($success) {
                 echo "✓ Envoyé\n";
                 $stats['day3']['sent']++;
+                $usersEmailedToday[(int)$user['id']] = true;
             } else {
                 echo "✗ Échec\n";
                 $stats['day3']['errors']++;
@@ -118,6 +129,12 @@ try {
     echo "[J+7] Trouvé " . count($usersDay7) . " utilisateur(s) éligible(s)\n";
 
     foreach ($usersDay7 as $user) {
+        if (isset($usersEmailedToday[(int)$user['id']])) {
+            echo "[J+7] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
+            $stats['day7']['skipped']++;
+            continue;
+        }
+
         echo "[J+7] Envoi à {$user['email']} (ID: {$user['id']})... ";
 
         try {
@@ -150,6 +167,7 @@ try {
             if ($success) {
                 echo "✓ Envoyé\n";
                 $stats['day7']['sent']++;
+                $usersEmailedToday[(int)$user['id']] = true;
             } else {
                 echo "✗ Échec\n";
                 $stats['day7']['errors']++;
@@ -187,6 +205,12 @@ try {
     echo "[J+21] Trouvé " . count($usersDay21) . " utilisateur(s) éligible(s)\n";
 
     foreach ($usersDay21 as $user) {
+        if (isset($usersEmailedToday[(int)$user['id']])) {
+            echo "[J+21] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
+            $stats['day21']['skipped']++;
+            continue;
+        }
+
         echo "[J+21] Envoi à {$user['email']} (ID: {$user['id']})... ";
 
         try {
@@ -199,6 +223,7 @@ try {
             if ($success) {
                 echo "✓ Envoyé\n";
                 $stats['day21']['sent']++;
+                $usersEmailedToday[(int)$user['id']] = true;
             } else {
                 echo "✗ Échec\n";
                 $stats['day21']['errors']++;
@@ -255,6 +280,12 @@ try {
             continue;
         }
 
+        if (isset($usersEmailedToday[$userId])) {
+            echo "[PROJECT_START] {$row['email']} déjà emailée aujourd'hui, ignoré\n";
+            $stats['project_start']['skipped']++;
+            continue;
+        }
+
         echo "[PROJECT_START] Envoi à {$row['email']} (projet: {$row['project_name']})... ";
 
         try {
@@ -269,6 +300,7 @@ try {
                 echo "✓ Envoyé\n";
                 $stats['project_start']['sent']++;
                 $usersEmailed[] = $userId;
+                $usersEmailedToday[$userId] = true;
                 $pushService->sendToUser($userId, 'Ton projet t\'attend', "\"{$row['project_name']}\" n'a pas encore son premier rang.", '/my-projects');
             } else {
                 echo "✗ Échec\n";
@@ -319,6 +351,12 @@ try {
         $userId = (int)$row['user_id'];
         if (in_array($userId, $usersEmailedInactive)) continue;
 
+        if (isset($usersEmailedToday[$userId])) {
+            echo "[PROJET_INACTIF] {$row['email']} déjà emailée aujourd'hui, ignoré\n";
+            $stats['project_inactive']['skipped']++;
+            continue;
+        }
+
         echo "[PROJET_INACTIF] Envoi à {$row['email']} (projet: {$row['project_name']}, {$row['days_since']}j)... ";
         try {
             $ok = $emailService->sendProjectInactiveReminderEmail(
@@ -329,7 +367,7 @@ try {
                 $userId
             );
             if ($ok) {
-                echo "✓\n"; $stats['project_inactive']['sent']++; $usersEmailedInactive[] = $userId;
+                echo "✓\n"; $stats['project_inactive']['sent']++; $usersEmailedInactive[] = $userId; $usersEmailedToday[$userId] = true;
                 $pushService->sendToUser($userId, 'Reprends là où tu t\'es arrêtée', "\"{$row['project_name']}\" t'attend.", '/my-projects');
             } else { echo "✗\n"; $stats['project_inactive']['errors']++; }
         } catch (Exception $e) {
@@ -369,6 +407,12 @@ try {
     echo "[AI_EPUISE] Trouvé " . count($exhaustedUsers) . " utilisatrice(s) éligible(s)\n";
 
     foreach ($exhaustedUsers as $user) {
+        if (isset($usersEmailedToday[(int)$user['id']])) {
+            echo "[AI_EPUISE] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
+            $stats['ai_exhausted']['skipped']++;
+            continue;
+        }
+
         echo "[AI_EPUISE] Envoi à {$user['email']} ({$user['used']}/{$user['quota']})... ";
         try {
             $ok = $emailService->sendAiQuotaExhaustedEmail(
@@ -378,7 +422,7 @@ try {
                 (int)$user['id']
             );
             if ($ok) {
-                echo "✓\n"; $stats['ai_exhausted']['sent']++;
+                echo "✓\n"; $stats['ai_exhausted']['sent']++; $usersEmailedToday[(int)$user['id']] = true;
                 $pushService->sendToUser((int)$user['id'], 'Quota IA épuisé ce mois', 'Recharge automatique le 1er. Passe à PLUS pour plus de questions.', '/subscription');
             } else { echo "✗\n"; $stats['ai_exhausted']['errors']++; }
         } catch (Exception $e) {
@@ -418,6 +462,12 @@ try {
     echo "[J+30] Trouvé " . count($day30Users) . " utilisatrice(s) éligible(s)\n";
 
     foreach ($day30Users as $user) {
+        if (isset($usersEmailedToday[(int)$user['id']])) {
+            echo "[J+30] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
+            $stats['day30']['skipped']++;
+            continue;
+        }
+
         echo "[J+30] Envoi à {$user['email']} ({$user['project_count']} projets, {$user['total_rows']} rangs)... ";
         try {
             $ok = $emailService->sendActiveFreeDay30Email(
@@ -428,7 +478,7 @@ try {
                 (int)$user['id']
             );
             if ($ok) {
-                echo "✓\n"; $stats['day30']['sent']++;
+                echo "✓\n"; $stats['day30']['sent']++; $usersEmailedToday[(int)$user['id']] = true;
                 $pushService->sendToUser((int)$user['id'], 'Un mois avec YarnFlow', 'Découvre ce que PLUS peut t\'apporter maintenant.', '/subscription');
             } else { echo "✗\n"; $stats['day30']['errors']++; }
         } catch (Exception $e) {
@@ -460,6 +510,12 @@ try {
     echo "[REACTIV] Trouvé " . count($reactivUsers) . " utilisatrice(s) éligible(s)\n";
 
     foreach ($reactivUsers as $user) {
+        if (isset($usersEmailedToday[(int)$user['id']])) {
+            echo "[REACTIV] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
+            $stats['reactivation']['skipped']++;
+            continue;
+        }
+
         echo "[REACTIV] Envoi à {$user['email']} ({$user['days_since']}j d'absence)... ";
         try {
             $ok = $emailService->sendReactivationEmail(
@@ -468,7 +524,7 @@ try {
                 (int)$user['days_since'],
                 (int)$user['id']
             );
-            if ($ok) { echo "✓\n"; $stats['reactivation']['sent']++; }
+            if ($ok) { echo "✓\n"; $stats['reactivation']['sent']++; $usersEmailedToday[(int)$user['id']] = true; }
             else      { echo "✗\n"; $stats['reactivation']['errors']++; }
         } catch (Exception $e) {
             echo "✗ {$e->getMessage()}\n"; $stats['reactivation']['errors']++;
