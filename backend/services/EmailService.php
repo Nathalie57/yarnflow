@@ -451,6 +451,10 @@ HTML;
         </tr>
     </table>
 
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;">
+        Envie d'échanger avec d'autres tricoteuses/crocheteuses ? <a href="https://www.facebook.com/groups/844543658285999" style="color:#557055;text-decoration:underline;">Rejoignez la communauté YarnFlow sur Facebook</a>.
+    </p>
+
     <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
     <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
 </td></tr>
