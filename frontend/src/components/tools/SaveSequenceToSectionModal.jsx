@@ -48,18 +48,19 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
     }
 
     try {
-      await api.put(`/projects/${selectedProjectId}/sections/${selectedSectionId}`, {
-        secondary_sequence: JSON.stringify(sequenceData),
-        secondary_label: label,
-        secondary_target: steps[0]?.target,
-        secondary_count: 0
+      // [AI:Claude] Crée un nouveau compteur secondaire (une section peut désormais en avoir plusieurs)
+      await api.post(`/projects/${selectedProjectId}/secondary-counters`, {
+        section_id: selectedSectionId,
+        label,
+        target: steps[0]?.target,
+        sequence: sequenceData
       })
       setSaving(false)
       setSaved(true)
       setTimeout(onClose, 1200)
     } catch (err) {
       console.error('Erreur sauvegarde séquence:', err)
-      setError('Erreur lors de la sauvegarde. Vérifiez que la migration SQL a bien été exécutée.')
+      setError(err.response?.data?.error || 'Erreur lors de la sauvegarde.')
       setSaving(false)
     }
   }

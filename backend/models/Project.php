@@ -1119,6 +1119,148 @@ class Project extends BaseModel
         return $stmt->execute($params);
     }
 
+    // -------------------------------------------------------------------------
+    // [AI:Claude] Compteurs secondaires (plusieurs par section ou par projet)
+    // -------------------------------------------------------------------------
+
+    private const MAX_SECONDARY_COUNTERS = 10;
+
+    /**
+     * Liste les compteurs secondaires d'une section (ou du projet si $sectionId est null).
+     *
+     * @param int $projectId ID du projet
+     * @param int|null $sectionId ID de la section, ou null pour un projet sans sections
+     * @return array Liste des compteurs, triés par display_order
+     */
+    public function getSecondaryCounters(int $projectId, ?int $sectionId): array
+    {
+        $query = "SELECT * FROM project_secondary_counters
+                  WHERE project_id = :project_id AND section_id " . ($sectionId === null ? 'IS NULL' : '= :section_id') . "
+                  ORDER BY display_order ASC, id ASC";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        if ($sectionId !== null) {
+            $stmt->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Ajoute un compteur secondaire. Retourne false si la limite (10) est atteinte.
+     *
+     * @param int $projectId ID du projet
+     * @param int|null $sectionId ID de la section, ou null pour un projet sans sections
+     * @param array $data label (requis), target (optionnel), sequence (optionnel)
+     * @return int|false ID du compteur créé, ou false
+     */
+    public function addSecondaryCounter(int $projectId, ?int $sectionId, array $data): int|false
+    {
+        $existing = $this->getSecondaryCounters($projectId, $sectionId);
+        if (count($existing) >= self::MAX_SECONDARY_COUNTERS) {
+            return false;
+        }
+
+        $maxOrder = 0;
+        foreach ($existing as $counter) {
+            $maxOrder = max($maxOrder, (int)$counter['display_order']);
+        }
+
+        $query = "INSERT INTO project_secondary_counters
+                  (project_id, section_id, label, target, count, sequence, display_order)
+                  VALUES (:project_id, :section_id, :label, :target, :count, :sequence, :display_order)";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        if ($sectionId === null) {
+            $stmt->bindValue(':section_id', null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+        }
+        $stmt->bindValue(':label', $data['label']);
+        $stmt->bindValue(':target', $data['target'] ?? null, isset($data['target']) ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue(':count', (int)($data['count'] ?? 0), PDO::PARAM_INT);
+        $stmt->bindValue(':sequence', isset($data['sequence']) ? json_encode($data['sequence']) : null);
+        $stmt->bindValue(':display_order', $maxOrder + 1, PDO::PARAM_INT);
+
+        if (!$stmt->execute()) {
+            return false;
+        }
+
+        return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * Récupère un compteur secondaire par ID, en vérifiant qu'il appartient au projet donné.
+     *
+     * @param int $counterId ID du compteur
+     * @param int $projectId ID du projet (contrôle d'appartenance)
+     * @return array|null Compteur ou null
+     */
+    public function getSecondaryCounterById(int $counterId, int $projectId): ?array
+    {
+        $query = "SELECT * FROM project_secondary_counters WHERE id = :id AND project_id = :project_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':id', $counterId, PDO::PARAM_INT);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $counter = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $counter ?: null;
+    }
+
+    /**
+     * Met à jour un compteur secondaire (label, target, count, sequence).
+     *
+     * @param int $counterId ID du compteur
+     * @param array $data Champs à modifier
+     * @return bool Succès
+     */
+    public function updateSecondaryCounter(int $counterId, array $data): bool
+    {
+        $allowedFields = ['label', 'target', 'count', 'display_order'];
+        $fields = [];
+        $params = [':id' => $counterId];
+
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $fields[] = "$field = :$field";
+                $params[":$field"] = $data[$field];
+            }
+        }
+
+        if (array_key_exists('sequence', $data)) {
+            $fields[] = "sequence = :sequence";
+            $params[':sequence'] = $data['sequence'] !== null ? json_encode($data['sequence']) : null;
+        }
+
+        if (empty($fields)) {
+            return false;
+        }
+
+        $query = "UPDATE project_secondary_counters SET " . implode(', ', $fields) . " WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+
+        return $stmt->execute($params);
+    }
+
+    /**
+     * Supprime un compteur secondaire.
+     *
+     * @param int $counterId ID du compteur
+     * @return bool Succès
+     */
+    public function deleteSecondaryCounter(int $counterId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM project_secondary_counters WHERE id = :id");
+        $stmt->bindValue(':id', $counterId, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
     /**
      * [AI:Claude] Supprimer une section
      *

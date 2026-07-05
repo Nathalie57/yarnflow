@@ -327,7 +327,7 @@ const Subscription = () => {
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tout le plan FREE</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stockage fichiers illimité</span> · 200 photos</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">2 compteurs simultanés</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Jusqu'à 10 compteurs secondaires</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 15 références</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 Créations IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>

@@ -113,7 +113,7 @@ const Landing = () => {
               </div>
               <div>
                 <p className="font-bold text-gray-900 mb-1">Projets complexes, enfin maîtrisés</p>
-                <p className="text-sm text-gray-600">Sections, 2 compteurs simultanés, notes par section — même un pull avec manches raglan</p>
+                <p className="text-sm text-gray-600">Sections, plusieurs compteurs secondaires par section, notes par section — même un pull avec manches raglan</p>
               </div>
             </div>
 
@@ -169,7 +169,7 @@ const Landing = () => {
                   'Timer intégré pour mesurer votre temps de travail',
                   "Wake lock : l'écran reste allumé pendant que vous tricotez",
                   'Sections indépendantes par partie de projet',
-                  '2 compteurs simultanés pour les projets complexes (PLUS & PRO)',
+                  "Jusqu'à 10 compteurs secondaires par section — augmentations, diminutions, rangs libres (PLUS & PRO)",
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -440,7 +440,7 @@ const Landing = () => {
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span className="font-medium text-gray-800">2 compteurs simultanés</span>
+                  <span className="font-medium text-gray-800">Jusqu'à 10 compteurs secondaires</span>
                 </li>
                 {/* <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -562,7 +562,7 @@ const Landing = () => {
               },
               {
                 q: "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 2 essais création intelligente, 5 questions IA/mois, 2 crédits photo IA à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, 2 compteurs simultanés, 3 imports IA/mois, 10 questions IA/mois, 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo/mois."
+                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 2 essais création intelligente, 5 questions IA/mois, 2 crédits photo IA à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, jusqu'à 10 compteurs secondaires par section, 3 imports IA/mois, 10 questions IA/mois, 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo/mois."
               },
               {
                 q: "La création intelligente, c'est quoi exactement ?",

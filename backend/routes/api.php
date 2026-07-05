@@ -193,6 +193,12 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^projects\/(\d+)\/sections\/(\d+)\/complete$/', $uri, $matches) => (new ProjectController())->toggleSectionComplete((int)$matches[1], (int)$matches[2]),
         $method === 'GET' && preg_match('/^projects\/(\d+)\/sections\/(\d+)\/rows$/', $uri, $matches) => (new ProjectController())->getSectionRows((int)$matches[1], (int)$matches[2], $_GET),
 
+        // [AI:Claude] Compteurs secondaires (plusieurs par section ou par projet)
+        $method === 'GET' && preg_match('/^projects\/(\d+)\/secondary-counters$/', $uri, $matches) => (new ProjectController())->getSecondaryCounters((int)$matches[1], $_GET),
+        $method === 'POST' && preg_match('/^projects\/(\d+)\/secondary-counters$/', $uri, $matches) => (new ProjectController())->addSecondaryCounter((int)$matches[1]),
+        $method === 'PUT' && preg_match('/^projects\/(\d+)\/secondary-counters\/(\d+)$/', $uri, $matches) => (new ProjectController())->updateSecondaryCounter((int)$matches[1], (int)$matches[2]),
+        $method === 'DELETE' && preg_match('/^projects\/(\d+)\/secondary-counters\/(\d+)$/', $uri, $matches) => (new ProjectController())->deleteSecondaryCounter((int)$matches[1], (int)$matches[2]),
+
         // [AI:Claude] Routes de gestion des tags et favoris (v0.15.0)
         $method === 'POST' && preg_match('/^projects\/(\d+)\/tags$/', $uri, $matches) => (new ProjectController())->addTags((int)$matches[1]),
         $method === 'GET' && preg_match('/^projects\/(\d+)\/tags$/', $uri, $matches) => (new ProjectController())->getTags((int)$matches[1]),

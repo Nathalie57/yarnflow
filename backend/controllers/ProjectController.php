@@ -1518,6 +1518,164 @@ class ProjectController
         }
     }
 
+    // -------------------------------------------------------------------------
+    // [AI:Claude] Compteurs secondaires (plusieurs par section ou par projet)
+    // -------------------------------------------------------------------------
+
+    /**
+     * GET /api/projects/{projectId}/secondary-counters?section_id={id}
+     * section_id omis ou vide = compteurs attachés directement au projet (sans section)
+     */
+    public function getSecondaryCounters(int $projectId, array $params = []): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($projectId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $sectionId = isset($params['section_id']) && $params['section_id'] !== ''
+                ? (int)$params['section_id']
+                : null;
+
+            $counters = $this->projectModel->getSecondaryCounters($projectId, $sectionId);
+
+            $this->sendResponse(200, ['success' => true, 'counters' => $counters]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la récupération des compteurs',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * POST /api/projects/{projectId}/secondary-counters
+     * Body: { section_id?: int|null, label: string, target?: int }
+     */
+    public function addSecondaryCounter(int $projectId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($projectId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+
+            if (empty($data['label'])) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Le libellé du compteur est requis']);
+                return;
+            }
+
+            $sectionId = isset($data['section_id']) && $data['section_id'] !== null
+                ? (int)$data['section_id']
+                : null;
+
+            $counterData = [
+                'label' => trim($data['label']),
+                'target' => isset($data['target']) && $data['target'] !== '' ? (int)$data['target'] : null,
+            ];
+            if (isset($data['sequence'])) {
+                $counterData['sequence'] = $data['sequence'];
+            }
+
+            $counterId = $this->projectModel->addSecondaryCounter($projectId, $sectionId, $counterData);
+
+            if (!$counterId) {
+                $this->sendResponse(400, [
+                    'success' => false,
+                    'error' => 'Limite de 10 compteurs secondaires atteinte pour cette section'
+                ]);
+                return;
+            }
+
+            $counter = $this->projectModel->getSecondaryCounterById($counterId, $projectId);
+
+            $this->sendResponse(201, ['success' => true, 'counter' => $counter]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la création du compteur',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * PUT /api/projects/{projectId}/secondary-counters/{counterId}
+     * Body: { label?, target?, count?, sequence? }
+     */
+    public function updateSecondaryCounter(int $projectId, int $counterId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($projectId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            if (!$this->projectModel->getSecondaryCounterById($counterId, $projectId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Compteur introuvable']);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+            $success = $this->projectModel->updateSecondaryCounter($counterId, $data);
+
+            if (!$success) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Aucune modification à effectuer']);
+                return;
+            }
+
+            $counter = $this->projectModel->getSecondaryCounterById($counterId, $projectId);
+
+            $this->sendResponse(200, ['success' => true, 'counter' => $counter]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la mise à jour du compteur',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * DELETE /api/projects/{projectId}/secondary-counters/{counterId}
+     */
+    public function deleteSecondaryCounter(int $projectId, int $counterId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($projectId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            if (!$this->projectModel->getSecondaryCounterById($counterId, $projectId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Compteur introuvable']);
+                return;
+            }
+
+            $this->projectModel->deleteSecondaryCounter($counterId);
+
+            $this->sendResponse(200, ['success' => true, 'message' => 'Compteur supprimé']);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la suppression du compteur',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * [AI:Claude] DELETE /api/projects/{projectId}/sections/{sectionId} - Supprimer une section
      *

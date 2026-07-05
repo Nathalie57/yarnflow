@@ -76,16 +76,16 @@ const ProjectCounter = () => {
   const [pendingSync, setPendingSync] = useState(false) // Actions en attente de sync
   const pendingRowsRef = useRef([]) // Queue des rows à POSTer quand connexion revient
 
-  // [AI:Claude] Compteur secondaire (PLUS/PRO)
-  const [secondaryActive, setSecondaryActive] = useState(false)
-  const [secondaryCount, setSecondaryCount] = useState(0)
-  const [secondaryTarget, setSecondaryTarget] = useState(null)
-  const [secondaryLabel, setSecondaryLabel] = useState('')
-  const [isEditingSecondary, setIsEditingSecondary] = useState(false)
-  const [showSecondaryMenu, setShowSecondaryMenu] = useState(false)
+  // [AI:Claude] Compteurs secondaires (PLUS/PRO) — plusieurs par section (ou par
+  // projet si pas de sections), stockés dans project_secondary_counters.
+  const MAX_SECONDARY_COUNTERS = 10
+  const [secondaryCounters, setSecondaryCounters] = useState([]) // [{id, label, target, count, sequence, ...}]
+  const [editingCounterId, setEditingCounterId] = useState(null) // id du compteur en édition, ou null
+  const [showSecondaryMenuFor, setShowSecondaryMenuFor] = useState(null) // id du compteur dont le menu "⋮" est ouvert
   const [secondaryLabelInput, setSecondaryLabelInput] = useState('')
   const [secondaryTargetInput, setSecondaryTargetInput] = useState('')
-  const [secondarySequence, setSecondarySequence] = useState(null) // [AI:Claude] v0.18.1 - Séquence structurée
+  const [isAddingCounter, setIsAddingCounter] = useState(false) // formulaire "+ Ajouter un compteur" ouvert
+  const counterSaveTimers = useRef({}) // debounce PUT par compteur : { [counterId]: timeoutId }
 
   // [AI:Claude] Timer de session
   const [sessionId, setSessionId] = useState(null)
@@ -343,28 +343,14 @@ const ProjectCounter = () => {
       // Passer le current_section_id du projet fraîchement chargé
       const loadedSections = await fetchSections(projectData?.current_section_id)
 
-      // Restaurer le compteur secondaire depuis la section active
+      // Charger les compteurs secondaires de la section active (ou du projet si pas de section)
       const activeSectionId = projectData?.current_section_id
-      if (activeSectionId && loadedSections?.length > 0) {
-        const activeSection = loadedSections.find(s => s.id === activeSectionId)
-        if (activeSection?.secondary_label) {
-          setSecondaryLabel(activeSection.secondary_label)
-          setSecondaryTarget(activeSection.secondary_target || null)
-          setSecondaryCount(activeSection.secondary_count || 0)
-          setSecondaryActive(true)
-          setSecondaryLabelInput(activeSection.secondary_label)
-          setSecondaryTargetInput(activeSection.secondary_target ? String(activeSection.secondary_target) : '')
-        }
-        // [AI:Claude] v0.18.1 - Restaurer la séquence structurée
-        if (activeSection?.secondary_sequence) {
-          const seq = typeof activeSection.secondary_sequence === 'string'
-            ? JSON.parse(activeSection.secondary_sequence)
-            : activeSection.secondary_sequence
-          setSecondarySequence(seq)
-        } else {
-          setSecondarySequence(null)
-        }
+      const activeSection = activeSectionId && loadedSections?.length > 0
+        ? loadedSections.find(s => s.id === activeSectionId)
+        : null
+      const loadedCounters = await fetchSecondaryCounters(activeSection ? activeSection.id : null)
 
+      if (activeSectionId && loadedSections?.length > 0) {
         // Reminders de la section active
         if (activeSection?.reminders) {
           const rem = typeof activeSection.reminders === 'string'
@@ -406,7 +392,7 @@ const ProjectCounter = () => {
       }
 
       // Tip compteur secondaire — une fois pour les PRO, si pas encore vu
-      if (hasActiveSubscription() && !localStorage.getItem('yf_secondary_tip_seen') && !activeSection?.secondary_label) {
+      if (hasActiveSubscription() && !localStorage.getItem('yf_secondary_tip_seen') && loadedCounters.length === 0) {
         setShowSecondaryTip(true)
       }
 
@@ -503,30 +489,22 @@ const ProjectCounter = () => {
     localStorage.setItem('sectionsSortBy', sectionsSortBy)
   }, [sectionsSortBy])
 
-  // Sync compteur secondaire vers la section courante - débounce 1.5s
-  // On sauvegarde dans project_sections (par section) pour sync multi-appareils.
-  // On ne poste PAS dans project_rows ici : ça écrasait section.current_row avec des valeurs
-  // stale (currentRow et currentSectionId n'étaient pas dans les deps). Les données secondaires
-  // sont déjà enregistrées dans project_rows lors de chaque incrément du compteur principal.
-  useEffect(() => {
-    if (!projectId || !currentSectionId) return
-    const timer = setTimeout(() => {
-      // [AI:Claude] v0.18.1 - Ne pas écraser les champs secondaires avec null quand le compteur
-      // est inactif : évite la race condition avec SaveSequenceToSectionModal (autre onglet/page)
-      if (secondaryActive) {
-        const debouncePayload = {
-          secondary_label: secondaryLabel || null,
-          secondary_target: secondaryTarget || null,
-          secondary_count: secondaryCount,
-        }
-        if (secondarySequence !== null) {
-          debouncePayload.secondary_sequence = JSON.stringify(secondarySequence)
-        }
-        api.put(`/projects/${projectId}/sections/${currentSectionId}`, debouncePayload).catch(() => {})
+  // [AI:Claude] Sauvegarde débouncée (1.5s) d'un compteur secondaire précis — chaque compteur
+  // a son propre timer indépendant (counterSaveTimers), pour ne pas se marcher dessus quand
+  // plusieurs compteurs sont modifiés à la suite.
+  const scheduleSaveSecondaryCounter = (counterId, fields) => {
+    if (counterSaveTimers.current[counterId]) {
+      clearTimeout(counterSaveTimers.current[counterId])
+    }
+    counterSaveTimers.current[counterId] = setTimeout(() => {
+      const payload = { ...fields }
+      if ('sequence' in payload) {
+        payload.sequence = payload.sequence !== null ? payload.sequence : null
       }
+      api.put(`/projects/${projectId}/secondary-counters/${counterId}`, payload).catch(() => {})
+      delete counterSaveTimers.current[counterId]
     }, 1500)
-    return () => clearTimeout(timer)
-  }, [secondaryActive, secondaryLabel, secondaryTarget, secondaryCount, secondarySequence, projectId, currentSectionId])
+  }
 
   // [AI:Claude] Fermer les menus quand on clique en dehors
   useEffect(() => {
@@ -824,6 +802,25 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur chargement sections:', err)
       // [AI:Claude] Pas d'erreur fatale si pas de sections
+      return []
+    }
+  }
+
+  // [AI:Claude] Charge les compteurs secondaires de la section (ou du projet si sectionId est null)
+  const fetchSecondaryCounters = async (sectionId = null) => {
+    try {
+      const response = await api.get(`/projects/${projectId}/secondary-counters`, {
+        params: sectionId ? { section_id: sectionId } : {}
+      })
+      const counters = (response.data.counters || []).map(c => ({
+        ...c,
+        sequence: typeof c.sequence === 'string' ? JSON.parse(c.sequence) : c.sequence
+      }))
+      setSecondaryCounters(counters)
+      return counters
+    } catch (err) {
+      console.error('Erreur chargement compteurs secondaires:', err)
+      setSecondaryCounters([])
       return []
     }
   }
@@ -1985,9 +1982,11 @@ const ProjectCounter = () => {
         duration: null,
         notes: null,
         difficulty_rating: null,
-        secondary_count: secondaryActive ? secondaryCount : null,
-        secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
-        secondary_label: secondaryActive && secondaryLabel ? secondaryLabel : null,
+        // [AI:Claude] project_rows ne stocke qu'un seul compteur secondaire (colonnes historiques
+        // scalaires) — on y met un instantané du premier compteur actif, à titre indicatif.
+        secondary_count: secondaryCounters[0]?.count ?? null,
+        secondary_target: secondaryCounters[0]?.target ?? null,
+        secondary_label: secondaryCounters[0]?.label ?? null,
       }
 
       await api.post(`/projects/${projectId}/rows`, rowData)
@@ -2279,22 +2278,25 @@ const ProjectCounter = () => {
     setSectionNotesText('')
     setOpenSectionMenu(null)
 
-    // Sauvegarder immédiatement l'état du compteur secondaire sur la section qu'on quitte
-    // (la sync debounce ne serait pas encore passée)
-    if (currentSectionId) {
-      api.put(`/projects/${projectId}/sections/${currentSectionId}`, {
-        secondary_label: secondaryActive ? (secondaryLabel || null) : null,
-        secondary_target: secondaryActive && secondaryTarget ? secondaryTarget : null,
-        secondary_count: secondaryActive ? secondaryCount : 0
-      }).catch(() => {})
-    }
+    // Sauvegarder immédiatement les compteurs secondaires de la section qu'on quitte
+    // (au cas où une sauvegarde débouncée serait encore en attente)
+    secondaryCounters.forEach(counter => {
+      if (counterSaveTimers.current[counter.id]) {
+        clearTimeout(counterSaveTimers.current[counter.id])
+        delete counterSaveTimers.current[counter.id]
+        api.put(`/projects/${projectId}/secondary-counters/${counter.id}`, {
+          label: counter.label,
+          target: counter.target,
+          count: counter.count,
+          sequence: counter.sequence ?? null
+        }).catch(() => {})
+      }
+    })
 
-    // Reset local du compteur secondaire
-    setSecondaryActive(false)
-    setSecondaryCount(0)
-    setSecondaryTarget(null)
-    setSecondaryLabel('')
-    setIsEditingSecondary(false)
+    // Reset local des compteurs secondaires (rechargés pour la nouvelle section plus bas)
+    setSecondaryCounters([])
+    setEditingCounterId(null)
+    setIsAddingCounter(false)
     setSecondaryLabelInput('')
     setSecondaryTargetInput('')
 
@@ -2373,34 +2375,9 @@ const ProjectCounter = () => {
       const loadedSections = await fetchSections(sectionId)
       await fetchProject()
 
-      // Restaurer le compteur secondaire depuis la section cible (données par section en DB)
-      // On écrase ce que fetchProject() a pu restaurer depuis le champ global du projet
+      // Charger les compteurs secondaires de la section cible
       const targetSection = loadedSections.find(s => s.id === sectionId)
-      if (targetSection?.secondary_label) {
-        setSecondaryLabel(targetSection.secondary_label)
-        setSecondaryTarget(targetSection.secondary_target || null)
-        setSecondaryCount(targetSection.secondary_count || 0)
-        setSecondaryActive(true)
-        setSecondaryLabelInput(targetSection.secondary_label)
-        setSecondaryTargetInput(targetSection.secondary_target ? String(targetSection.secondary_target) : '')
-      } else {
-        setSecondaryActive(false)
-        setSecondaryCount(0)
-        setSecondaryTarget(null)
-        setSecondaryLabel('')
-        setIsEditingSecondary(false)
-        setSecondaryLabelInput('')
-        setSecondaryTargetInput('')
-      }
-      // [AI:Claude] v0.18.1 - Restaurer la séquence structurée
-      if (targetSection?.secondary_sequence) {
-        const seq = typeof targetSection.secondary_sequence === 'string'
-          ? JSON.parse(targetSection.secondary_sequence)
-          : targetSection.secondary_sequence
-        setSecondarySequence(seq)
-      } else {
-        setSecondarySequence(null)
-      }
+      await fetchSecondaryCounters(targetSection ? targetSection.id : null)
       // Reminders de la section
       if (targetSection?.reminders) {
         const rem = typeof targetSection.reminders === 'string'
@@ -2718,27 +2695,91 @@ const ProjectCounter = () => {
     saveReminders(newReminders)
   }
 
-  // Sauvegarder l'état courant du compteur secondaire dans project_rows (avant reset)
-  const flushSecondaryToHistory = () => {
-    if (!secondaryActive || !secondaryLabel || secondaryCount === 0) return
+  // Met à jour un compteur localement et programme sa sauvegarde débouncée
+  const patchSecondaryCounter = (counterId, fields) => {
+    setSecondaryCounters(prev => prev.map(c => c.id === counterId ? { ...c, ...fields } : c))
+    scheduleSaveSecondaryCounter(counterId, fields)
+  }
+
+  // Sauvegarder l'état d'un compteur dans project_rows (avant reset/suppression)
+  const flushSecondaryToHistory = (counter) => {
+    if (!counter || !counter.label || counter.count === 0) return
     api.post(`/projects/${projectId}/rows`, {
       row_number: currentRow,
       section_id: currentSectionId || null,
-      secondary_count: secondaryCount,
-      secondary_target: secondaryTarget,
-      secondary_label: secondaryLabel
+      secondary_count: counter.count,
+      secondary_target: counter.target,
+      secondary_label: counter.label
     }).catch(() => {})
   }
 
-  // [AI:Claude] v0.18.1 - Incrémenter le compteur secondaire avec gestion de séquence
-  const handleSecondaryIncrement = () => {
-    if (!secondarySequence) {
-      // Comportement normal sans séquence
-      setSecondaryCount(prev => prev + 1)
+  // Ajouter un nouveau compteur secondaire (max 10 par section/projet, vérifié aussi côté serveur)
+  const handleAddSecondaryCounter = async () => {
+    if (!secondaryLabelInput.trim() || secondaryCounters.length >= MAX_SECONDARY_COUNTERS) return
+    try {
+      const response = await api.post(`/projects/${projectId}/secondary-counters`, {
+        section_id: currentSectionId || null,
+        label: secondaryLabelInput.trim(),
+        target: secondaryTargetInput ? Number(secondaryTargetInput) : null
+      })
+      setSecondaryCounters(prev => [...prev, response.data.counter])
+      setIsAddingCounter(false)
+      setSecondaryLabelInput('')
+      setSecondaryTargetInput('')
+    } catch (err) {
+      showAlert(err.response?.data?.error || 'Erreur lors de la création du compteur', 'error')
+    }
+  }
+
+  // Modifier le libellé/objectif d'un compteur existant
+  const handleEditSecondaryCounter = (counterId) => {
+    patchSecondaryCounter(counterId, {
+      label: secondaryLabelInput.trim() || 'Compteur',
+      target: secondaryTargetInput ? Number(secondaryTargetInput) : null
+    })
+    setEditingCounterId(null)
+  }
+
+  // Réinitialiser un compteur (garde label/objectif, remet le compte à 0)
+  const handleResetSecondaryCounter = (counterId) => {
+    const counter = secondaryCounters.find(c => c.id === counterId)
+    flushSecondaryToHistory(counter)
+    const patch = { count: 0 }
+    if (counter?.sequence) {
+      patch.sequence = { ...counter.sequence, current_step: 0, current_done: 0 }
+    }
+    patchSecondaryCounter(counterId, patch)
+    setShowSecondaryMenuFor(null)
+  }
+
+  // Supprimer définitivement un compteur
+  const handleDeleteSecondaryCounter = async (counterId) => {
+    const counter = secondaryCounters.find(c => c.id === counterId)
+    flushSecondaryToHistory(counter)
+    if (counterSaveTimers.current[counterId]) {
+      clearTimeout(counterSaveTimers.current[counterId])
+      delete counterSaveTimers.current[counterId]
+    }
+    setSecondaryCounters(prev => prev.filter(c => c.id !== counterId))
+    setShowSecondaryMenuFor(null)
+    try {
+      await api.delete(`/projects/${projectId}/secondary-counters/${counterId}`)
+    } catch (err) {
+      console.error('Erreur suppression compteur:', err)
+    }
+  }
+
+  // [AI:Claude] v0.18.1 - Incrémenter un compteur secondaire avec gestion de séquence
+  const handleSecondaryIncrement = (counterId) => {
+    const counter = secondaryCounters.find(c => c.id === counterId)
+    if (!counter) return
+
+    if (!counter.sequence) {
+      patchSecondaryCounter(counterId, { count: counter.count + 1 })
       return
     }
 
-    const seq = secondarySequence
+    const seq = counter.sequence
     const step = seq.steps[seq.current_step]
     if (!step) return
 
@@ -2748,41 +2789,39 @@ const ProjectCounter = () => {
       // Étape terminée, passer à la suivante
       const nextStep = seq.current_step + 1
       const newSeq = { ...seq, current_step: nextStep, current_done: 0 }
-      setSecondarySequence(newSeq)
-      setSecondaryCount(0)
+      const patch = { sequence: newSeq, count: 0 }
       if (nextStep < seq.steps.length) {
-        setSecondaryTarget(seq.steps[nextStep].target)
+        patch.target = seq.steps[nextStep].target
       }
-      // La persistence est assurée par le useEffect debounce
+      patchSecondaryCounter(counterId, patch)
     } else {
       const newSeq = { ...seq, current_done: newDone }
-      setSecondarySequence(newSeq)
-      setSecondaryCount(prev => prev + 1)
+      patchSecondaryCounter(counterId, { sequence: newSeq, count: counter.count + 1 })
     }
   }
 
-  // [AI:Claude] v0.18.1 - Décrémenter le compteur secondaire avec gestion de séquence
-  const handleSecondaryDecrement = () => {
-    if (!secondarySequence) {
-      setSecondaryCount(prev => Math.max(0, prev - 1))
+  // [AI:Claude] v0.18.1 - Décrémenter un compteur secondaire avec gestion de séquence
+  const handleSecondaryDecrement = (counterId) => {
+    const counter = secondaryCounters.find(c => c.id === counterId)
+    if (!counter) return
+
+    if (!counter.sequence) {
+      patchSecondaryCounter(counterId, { count: Math.max(0, counter.count - 1) })
       return
     }
 
-    const seq = secondarySequence
+    const seq = counter.sequence
 
     if (seq.current_done > 0) {
       // Reculer dans l'étape courante
       const newSeq = { ...seq, current_done: seq.current_done - 1 }
-      setSecondarySequence(newSeq)
-      setSecondaryCount(prev => Math.max(0, prev - 1))
+      patchSecondaryCounter(counterId, { sequence: newSeq, count: Math.max(0, counter.count - 1) })
     } else if (seq.current_step > 0) {
       // Revenir à l'étape précédente, à sa dernière valeur
       const prevStepIndex = seq.current_step - 1
       const prevStep = seq.steps[prevStepIndex]
       const newSeq = { ...seq, current_step: prevStepIndex, current_done: prevStep.repeat - 1 }
-      setSecondarySequence(newSeq)
-      setSecondaryTarget(prevStep.target)
-      setSecondaryCount(prevStep.repeat - 1)
+      patchSecondaryCounter(counterId, { sequence: newSeq, target: prevStep.target, count: prevStep.repeat - 1 })
     }
     // Déjà au début (étape 0, done 0) : rien à faire
   }
@@ -3756,7 +3795,7 @@ const ProjectCounter = () => {
           </div>
         </div>
 
-        {/* [AI:Claude] Compteur secondaire (PLUS/PRO) */}
+        {/* [AI:Claude] Compteurs secondaires (PLUS/PRO) — plusieurs par section/projet, max {MAX_SECONDARY_COUNTERS} */}
         {!isPaidPlan ? (
           <div className="pt-2 border-t border-primary-300/50">
             <button
@@ -3769,40 +3808,167 @@ const ProjectCounter = () => {
               Compteur secondaire — PLUS
             </button>
           </div>
-        ) : !secondaryActive ? (
-          <div className="pt-2 border-t border-primary-300/50">
-            <div className="relative">
-              <button
-                onClick={() => { setSecondaryLabelInput(''); setSecondaryTargetInput(''); setSecondaryActive(true); setIsEditingSecondary(true); setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
-                className="text-xs text-primary-700 flex items-center gap-1 hover:text-primary-900 transition font-medium"
-              >
-                ＋ Ajouter un compteur secondaire
-              </button>
-              {showSecondaryTip && (
-                <div className="absolute left-0 top-7 z-20 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 w-56 shadow-lg">
-                  <button
-                    onClick={() => { setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
-                    className="absolute top-1.5 right-2 text-gray-400 hover:text-white leading-none"
-                  >×</button>
-                  <p className="font-semibold mb-1">Compteur secondaire</p>
-                  <p className="text-gray-300 leading-relaxed">Suivez vos augmentations, diminutions ou tout autre comptage en parallèle.</p>
-                  <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
-                </div>
-              )}
-            </div>
-          </div>
         ) : (
-          <div className="pt-2 border-t border-primary-300/50">
-            {isEditingSecondary ? (
-              // Mode édition label + cible
+          <div className="pt-2 border-t border-primary-300/50 space-y-3">
+            {secondaryCounters.map(counter => (
+              <div key={counter.id} className="bg-primary-50/40 rounded-xl p-2.5">
+                {editingCounterId === counter.id ? (
+                  // Mode édition label + cible
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="text"
+                      value={secondaryLabelInput}
+                      onChange={e => setSecondaryLabelInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleEditSecondaryCounter(counter.id)
+                        if (e.key === 'Escape') setEditingCounterId(null)
+                      }}
+                      placeholder="ex: Dim."
+                      maxLength={20}
+                      autoFocus
+                      className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                    <input
+                      type="number"
+                      value={secondaryTargetInput}
+                      onChange={e => setSecondaryTargetInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleEditSecondaryCounter(counter.id)
+                        if (e.key === 'Escape') setEditingCounterId(null)
+                      }}
+                      placeholder="Objectif (opt.)"
+                      min="1"
+                      className="w-28 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                    <button
+                      onClick={() => handleEditSecondaryCounter(counter.id)}
+                      className="px-2 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 transition"
+                    >
+                      OK
+                    </button>
+                    <button
+                      onClick={() => setEditingCounterId(null)}
+                      className="text-xs text-gray-400 hover:text-gray-600"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                ) : (
+                  // Compteur actif
+                  <div className="space-y-2">
+                    {/* Ligne 1 : label + menu ⋮ */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                        {counter.label || 'Compteur'}
+                      </span>
+                      <div className="relative">
+                        {showSecondaryMenuFor === counter.id && (
+                          <div className="fixed inset-0 z-10" onClick={() => setShowSecondaryMenuFor(null)} />
+                        )}
+                        <button
+                          onClick={() => setShowSecondaryMenuFor(v => v === counter.id ? null : counter.id)}
+                          className="w-6 h-6 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition relative z-20"
+                          title="Options"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                        </button>
+                        {showSecondaryMenuFor === counter.id && (
+                          <div className="absolute right-0 top-7 z-20 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-44">
+                            <button
+                              onClick={() => { setSecondaryLabelInput(counter.label); setSecondaryTargetInput(counter.target ? String(counter.target) : ''); setEditingCounterId(counter.id); setIsAddingCounter(false); setShowSecondaryMenuFor(null) }}
+                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
+                            >
+                              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                              Modifier
+                            </button>
+                            <button
+                              onClick={() => handleResetSecondaryCounter(counter.id)}
+                              className="w-full text-left px-4 py-2.5 text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                              Réinitialiser
+                            </button>
+                            <div className="border-t border-gray-100 my-1" />
+                            <button
+                              onClick={() => handleDeleteSecondaryCounter(counter.id)}
+                              className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 flex items-center gap-3"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              Supprimer
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Ligne 2 : compteur */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleSecondaryDecrement(counter.id)}
+                        className="w-8 h-8 bg-gray-100 text-gray-600 rounded-full text-base font-bold hover:bg-gray-200 transition flex-shrink-0"
+                      >
+                        −
+                      </button>
+                      <div className="flex-1 text-center">
+                        <span className="font-bold text-xl text-gray-900">{counter.count}</span>
+                        {counter.sequence && counter.sequence.steps?.[counter.sequence.current_step] ? (
+                          <span className="text-gray-400 font-normal text-sm"> / {counter.sequence.steps[counter.sequence.current_step].repeat}</span>
+                        ) : counter.target ? (
+                          <span className="text-gray-400 font-normal text-sm"> / {counter.target}</span>
+                        ) : null}
+                      </div>
+                      <button
+                        onClick={() => handleSecondaryIncrement(counter.id)}
+                        disabled={counter.target !== null && counter.count >= counter.target && !counter.sequence}
+                        className={`w-8 h-8 rounded-full text-base font-bold transition flex-shrink-0 ${
+                          counter.target !== null && counter.count >= counter.target && !counter.sequence
+                            ? 'bg-primary-600 text-white cursor-not-allowed opacity-60'
+                            : 'bg-primary-600 text-white hover:bg-primary-700'
+                        }`}
+                      >
+                        {counter.target !== null && counter.count >= counter.target && !counter.sequence ? '✓' : '+'}
+                      </button>
+                    </div>
+
+                    {/* Ligne 3 : infos séquence */}
+                    {counter.sequence && counter.sequence.steps && counter.sequence.current_step < counter.sequence.steps.length && (
+                      <div className="pt-2 border-t border-primary-200/50 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>Étape {counter.sequence.current_step + 1}/{counter.sequence.steps.length} — tous les <strong className="text-gray-700">{counter.sequence.steps[counter.sequence.current_step]?.target}</strong> ({counter.sequence.steps[counter.sequence.current_step]?.repeat}×)</span>
+                        </div>
+                        {(() => {
+                          const totalReps = counter.sequence.steps.reduce((sum, s) => sum + s.repeat, 0)
+                          const doneBefore = counter.sequence.steps.slice(0, counter.sequence.current_step).reduce((sum, s) => sum + s.repeat, 0)
+                          const totalDone = doneBefore + counter.sequence.current_done
+                          const pct = totalReps > 0 ? Math.round((totalDone / totalReps) * 100) : 0
+                          return (
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div className="bg-primary-500 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    )}
+                    {counter.sequence && counter.sequence.steps && counter.sequence.current_step >= counter.sequence.steps.length && (
+                      <div className="pt-2 border-t border-green-200">
+                        <p className="text-xs text-green-700 font-medium text-center">✓ Séquence terminée</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {/* Ajouter un compteur */}
+            {isAddingCounter ? (
               <div className="flex items-center gap-2 flex-wrap">
                 <input
                   type="text"
                   value={secondaryLabelInput}
                   onChange={e => setSecondaryLabelInput(e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === 'Enter') { setSecondaryLabel(secondaryLabelInput); setSecondaryTarget(secondaryTargetInput ? Number(secondaryTargetInput) : null); setIsEditingSecondary(false) }
-                    if (e.key === 'Escape') setIsEditingSecondary(false)
+                    if (e.key === 'Enter') handleAddSecondaryCounter()
+                    if (e.key === 'Escape') setIsAddingCounter(false)
                   }}
                   placeholder="ex: Dim."
                   maxLength={20}
@@ -3814,133 +3980,48 @@ const ProjectCounter = () => {
                   value={secondaryTargetInput}
                   onChange={e => setSecondaryTargetInput(e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === 'Enter') { setSecondaryLabel(secondaryLabelInput); setSecondaryTarget(secondaryTargetInput ? Number(secondaryTargetInput) : null); setIsEditingSecondary(false) }
-                    if (e.key === 'Escape') setIsEditingSecondary(false)
+                    if (e.key === 'Enter') handleAddSecondaryCounter()
+                    if (e.key === 'Escape') setIsAddingCounter(false)
                   }}
                   placeholder="Objectif (opt.)"
                   min="1"
                   className="w-28 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                 />
                 <button
-                  onClick={() => {
-                    setSecondaryLabel(secondaryLabelInput)
-                    setSecondaryTarget(secondaryTargetInput ? Number(secondaryTargetInput) : null)
-                    setIsEditingSecondary(false)
-                  }}
+                  onClick={handleAddSecondaryCounter}
                   className="px-2 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 transition"
                 >
-                  OK
+                  Ajouter
                 </button>
                 <button
-                  onClick={() => setIsEditingSecondary(false)}
+                  onClick={() => { setIsAddingCounter(false); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
                   className="text-xs text-gray-400 hover:text-gray-600"
                 >
                   Annuler
                 </button>
               </div>
-            ) : (
-              // Compteur secondaire actif
-              <div className="space-y-2">
-                {/* Ligne 1 : label + menu ⋮ */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    {secondaryLabel || 'Compteur'}
-                  </span>
-                  <div className="relative">
-                    {showSecondaryMenu && (
-                      <div className="fixed inset-0 z-10" onClick={() => setShowSecondaryMenu(false)} />
-                    )}
+            ) : secondaryCounters.length < MAX_SECONDARY_COUNTERS ? (
+              <div className="relative">
+                <button
+                  onClick={() => { setSecondaryLabelInput(''); setSecondaryTargetInput(''); setIsAddingCounter(true); setEditingCounterId(null); setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
+                  className="text-xs text-primary-700 flex items-center gap-1 hover:text-primary-900 transition font-medium"
+                >
+                  ＋ Ajouter un compteur secondaire
+                </button>
+                {showSecondaryTip && (
+                  <div className="absolute left-0 top-7 z-20 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 w-56 shadow-lg">
                     <button
-                      onClick={() => setShowSecondaryMenu(v => !v)}
-                      className="w-6 h-6 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition relative z-20"
-                      title="Options"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-                    </button>
-                    {showSecondaryMenu && (
-                      <div className="absolute right-0 top-7 z-20 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-44">
-                        <button
-                          onClick={() => { setSecondaryLabelInput(secondaryLabel); setSecondaryTargetInput(secondaryTarget ? String(secondaryTarget) : ''); setIsEditingSecondary(true); setShowSecondaryMenu(false) }}
-                          className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
-                        >
-                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                          Modifier
-                        </button>
-                        <button
-                          onClick={() => { flushSecondaryToHistory(); setSecondaryCount(0); setShowSecondaryMenu(false) }}
-                          className="w-full text-left px-4 py-2.5 text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                          Réinitialiser
-                        </button>
-                        <div className="border-t border-gray-100 my-1" />
-                        <button
-                          onClick={() => { flushSecondaryToHistory(); setSecondaryActive(false); setSecondaryCount(0); setSecondaryLabel(''); setSecondaryTarget(null); setSecondaryLabelInput(''); setSecondaryTargetInput(''); setSecondarySequence(null); setShowSecondaryMenu(false) }}
-                          className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 flex items-center gap-3"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          Supprimer
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Ligne 2 : compteur */}
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleSecondaryDecrement}
-                    className="w-8 h-8 bg-gray-100 text-gray-600 rounded-full text-base font-bold hover:bg-gray-200 transition flex-shrink-0"
-                  >
-                    −
-                  </button>
-                  <div className="flex-1 text-center">
-                    <span className="font-bold text-xl text-gray-900">{secondaryCount}</span>
-                    {secondarySequence && secondarySequence.steps?.[secondarySequence.current_step] ? (
-                      <span className="text-gray-400 font-normal text-sm"> / {secondarySequence.steps[secondarySequence.current_step].repeat}</span>
-                    ) : secondaryTarget ? (
-                      <span className="text-gray-400 font-normal text-sm"> / {secondaryTarget}</span>
-                    ) : null}
-                  </div>
-                  <button
-                    onClick={handleSecondaryIncrement}
-                    disabled={secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence}
-                    className={`w-8 h-8 rounded-full text-base font-bold transition flex-shrink-0 ${
-                      secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence
-                        ? 'bg-primary-600 text-white cursor-not-allowed opacity-60'
-                        : 'bg-primary-600 text-white hover:bg-primary-700'
-                    }`}
-                  >
-                    {secondaryTarget !== null && secondaryCount >= secondaryTarget && !secondarySequence ? '✓' : '+'}
-                  </button>
-                </div>
-
-                {/* Ligne 3 : infos séquence */}
-                {/* [AI:Claude] v0.18.1 - Affichage séquence structurée */}
-                {secondarySequence && secondarySequence.steps && secondarySequence.current_step < secondarySequence.steps.length && (
-                  <div className="pt-2 border-t border-primary-200/50 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>Étape {secondarySequence.current_step + 1}/{secondarySequence.steps.length} — tous les <strong className="text-gray-700">{secondarySequence.steps[secondarySequence.current_step]?.target}</strong> ({secondarySequence.steps[secondarySequence.current_step]?.repeat}×)</span>
-                    </div>
-                    {(() => {
-                      const totalReps = secondarySequence.steps.reduce((sum, s) => sum + s.repeat, 0)
-                      const doneBefore = secondarySequence.steps.slice(0, secondarySequence.current_step).reduce((sum, s) => sum + s.repeat, 0)
-                      const totalDone = doneBefore + secondarySequence.current_done
-                      const pct = totalReps > 0 ? Math.round((totalDone / totalReps) * 100) : 0
-                      return (
-                        <div className="w-full bg-gray-200 rounded-full h-1.5">
-                          <div className="bg-primary-500 h-1.5 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                        </div>
-                      )
-                    })()}
-                  </div>
-                )}
-                {secondarySequence && secondarySequence.steps && secondarySequence.current_step >= secondarySequence.steps.length && (
-                  <div className="pt-2 border-t border-green-200">
-                    <p className="text-xs text-green-700 font-medium text-center">✓ Séquence terminée</p>
+                      onClick={() => { setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
+                      className="absolute top-1.5 right-2 text-gray-400 hover:text-white leading-none"
+                    >×</button>
+                    <p className="font-semibold mb-1">Compteur secondaire</p>
+                    <p className="text-gray-300 leading-relaxed">Suivez vos augmentations, diminutions ou tout autre comptage en parallèle — autant que nécessaire.</p>
+                    <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
                   </div>
                 )}
               </div>
+            ) : (
+              <p className="text-xs text-gray-400">Limite de {MAX_SECONDARY_COUNTERS} compteurs atteinte pour cette section</p>
             )}
           </div>
         )}
