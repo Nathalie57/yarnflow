@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
@@ -11,14 +11,28 @@ const Login = () => {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
-  const { login } = useAuth()
+  const { login, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
   const { trackLogin } = useAnalytics()
+
+  // [AI:Claude] Une soumission depuis ce formulaire gère déjà sa propre
+  // redirection (pendingImport, etc.) — l'effet ci-dessous ne doit se
+  // déclencher que pour une session déjà valide au chargement de la page
+  const submittedRef = useRef(false)
+
+  // [AI:Claude] Déjà connecté (session valide restaurée au chargement) → ne pas
+  // laisser l'utilisateur bloqué devant le formulaire, le rediriger direct
+  useEffect(() => {
+    if (!authLoading && user && !submittedRef.current) {
+      navigate('/my-projects', { replace: true })
+    }
+  }, [authLoading, user, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setLoading(true)
+    submittedRef.current = true
 
     const result = await login(email, password)
 
