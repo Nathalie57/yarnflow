@@ -1261,6 +1261,151 @@ class Project extends BaseModel
         return $stmt->execute();
     }
 
+    // -------------------------------------------------------------------------
+    // Grilles jacquard/colorwork
+    // -------------------------------------------------------------------------
+
+    /**
+     * Liste les grilles d'un projet (et éventuellement filtrées par section).
+     *
+     * @param int $projectId ID du projet
+     * @param int|null $sectionId ID de la section pour filtrer, ou null pour tout le projet
+     * @return array Liste des grilles (sans le détail des cases, pour l'affichage en liste)
+     */
+    public function getCharts(int $projectId, ?int $sectionId = null): array
+    {
+        $query = "SELECT id, project_id, section_id, name, width, height, current_row, created_at, updated_at
+                  FROM project_charts
+                  WHERE project_id = :project_id" . ($sectionId !== null ? " AND section_id = :section_id" : "") . "
+                  ORDER BY created_at DESC";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        if ($sectionId !== null) {
+            $stmt->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupère une grille par ID (avec palette et cases), en vérifiant qu'elle appartient au projet donné.
+     *
+     * @param int $chartId ID de la grille
+     * @param int $projectId ID du projet (contrôle d'appartenance)
+     * @return array|null Grille (palette et cells décodés) ou null
+     */
+    public function getChartById(int $chartId, int $projectId): ?array
+    {
+        $query = "SELECT * FROM project_charts WHERE id = :id AND project_id = :project_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':id', $chartId, PDO::PARAM_INT);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $chart = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$chart) {
+            return null;
+        }
+
+        $chart['palette'] = json_decode($chart['palette'], true);
+        $chart['cells'] = json_decode($chart['cells'], true);
+
+        return $chart;
+    }
+
+    /**
+     * Crée une grille vide (toutes les cases à l'indice 0 de la palette).
+     *
+     * @param int $projectId ID du projet
+     * @param int|null $sectionId ID de la section, ou null pour une grille sans section
+     * @param array $data name (requis), width (requis), height (requis), palette (optionnel, défaut 2 couleurs)
+     * @return int ID de la grille créée
+     */
+    public function createChart(int $projectId, ?int $sectionId, array $data): int
+    {
+        $palette = $data['palette'] ?? ['#FFFFFF', '#000000'];
+        $width = (int)$data['width'];
+        $height = (int)$data['height'];
+        $cells = array_fill(0, $height, array_fill(0, $width, 0));
+
+        $query = "INSERT INTO project_charts
+                  (project_id, section_id, name, width, height, palette, cells, current_row)
+                  VALUES (:project_id, :section_id, :name, :width, :height, :palette, :cells, 0)";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        if ($sectionId === null) {
+            $stmt->bindValue(':section_id', null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
+        }
+        $stmt->bindValue(':name', $data['name']);
+        $stmt->bindValue(':width', $width, PDO::PARAM_INT);
+        $stmt->bindValue(':height', $height, PDO::PARAM_INT);
+        $stmt->bindValue(':palette', json_encode($palette));
+        $stmt->bindValue(':cells', json_encode($cells));
+        $stmt->execute();
+
+        return (int) $this->db->lastInsertId();
+    }
+
+    /**
+     * Met à jour une grille (nom, palette, cases, dimensions, ligne en cours).
+     *
+     * @param int $chartId ID de la grille
+     * @param array $data Champs à modifier
+     * @return bool Succès
+     */
+    public function updateChart(int $chartId, array $data): bool
+    {
+        $allowedFields = ['name', 'width', 'height', 'current_row'];
+        $fields = [];
+        $params = [':id' => $chartId];
+
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data)) {
+                $fields[] = "$field = :$field";
+                $params[":$field"] = $data[$field];
+            }
+        }
+
+        if (array_key_exists('palette', $data)) {
+            $fields[] = "palette = :palette";
+            $params[':palette'] = json_encode($data['palette']);
+        }
+
+        if (array_key_exists('cells', $data)) {
+            $fields[] = "cells = :cells";
+            $params[':cells'] = json_encode($data['cells']);
+        }
+
+        if (empty($fields)) {
+            return false;
+        }
+
+        $query = "UPDATE project_charts SET " . implode(', ', $fields) . " WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+
+        return $stmt->execute($params);
+    }
+
+    /**
+     * Supprime une grille.
+     *
+     * @param int $chartId ID de la grille
+     * @return bool Succès
+     */
+    public function deleteChart(int $chartId): bool
+    {
+        $stmt = $this->db->prepare("DELETE FROM project_charts WHERE id = :id");
+        $stmt->bindValue(':id', $chartId, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    }
+
     /**
      * [AI:Claude] Supprimer une section
      *

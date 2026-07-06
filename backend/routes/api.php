@@ -199,6 +199,13 @@ function route(string $method, string $uri): void
         $method === 'PUT' && preg_match('/^projects\/(\d+)\/secondary-counters\/(\d+)$/', $uri, $matches) => (new ProjectController())->updateSecondaryCounter((int)$matches[1], (int)$matches[2]),
         $method === 'DELETE' && preg_match('/^projects\/(\d+)\/secondary-counters\/(\d+)$/', $uri, $matches) => (new ProjectController())->deleteSecondaryCounter((int)$matches[1], (int)$matches[2]),
 
+        // [AI:Claude] Grilles jacquard/colorwork
+        $method === 'GET' && preg_match('/^projects\/(\d+)\/charts$/', $uri, $matches) => (new ProjectController())->getCharts((int)$matches[1], $_GET),
+        $method === 'POST' && preg_match('/^projects\/(\d+)\/charts$/', $uri, $matches) => (new ProjectController())->createChart((int)$matches[1]),
+        $method === 'GET' && preg_match('/^projects\/(\d+)\/charts\/(\d+)$/', $uri, $matches) => (new ProjectController())->getChart((int)$matches[1], (int)$matches[2]),
+        $method === 'PUT' && preg_match('/^projects\/(\d+)\/charts\/(\d+)$/', $uri, $matches) => (new ProjectController())->updateChart((int)$matches[1], (int)$matches[2]),
+        $method === 'DELETE' && preg_match('/^projects\/(\d+)\/charts\/(\d+)$/', $uri, $matches) => (new ProjectController())->deleteChart((int)$matches[1], (int)$matches[2]),
+
         // [AI:Claude] Routes de gestion des tags et favoris (v0.15.0)
         $method === 'POST' && preg_match('/^projects\/(\d+)\/tags$/', $uri, $matches) => (new ProjectController())->addTags((int)$matches[1]),
         $method === 'GET' && preg_match('/^projects\/(\d+)\/tags$/', $uri, $matches) => (new ProjectController())->getTags((int)$matches[1]),

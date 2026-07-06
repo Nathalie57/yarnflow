@@ -1676,6 +1676,190 @@ class ProjectController
         }
     }
 
+    // -------------------------------------------------------------------------
+    // Grilles jacquard/colorwork
+    // -------------------------------------------------------------------------
+
+    /**
+     * GET /api/projects/{projectId}/charts?section_id={id}
+     */
+    public function getCharts(int $projectId, array $params = []): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($projectId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $sectionId = isset($params['section_id']) && $params['section_id'] !== ''
+                ? (int)$params['section_id']
+                : null;
+
+            $charts = $this->projectModel->getCharts($projectId, $sectionId);
+
+            $this->sendResponse(200, ['success' => true, 'charts' => $charts]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la récupération des grilles',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * GET /api/projects/{projectId}/charts/{chartId}
+     */
+    public function getChart(int $projectId, int $chartId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($projectId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $chart = $this->projectModel->getChartById($chartId, $projectId);
+
+            if (!$chart) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Grille introuvable']);
+                return;
+            }
+
+            $this->sendResponse(200, ['success' => true, 'chart' => $chart]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la récupération de la grille',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * POST /api/projects/{projectId}/charts
+     * Body: { section_id?: int|null, name: string, width: int, height: int, palette?: string[] }
+     */
+    public function createChart(int $projectId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($projectId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+
+            if (empty($data['name']) || empty($data['width']) || empty($data['height'])) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Nom, largeur et hauteur sont requis']);
+                return;
+            }
+
+            if ((int)$data['width'] > 200 || (int)$data['height'] > 200) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'La grille ne peut pas dépasser 200x200 cases']);
+                return;
+            }
+
+            $sectionId = isset($data['section_id']) && $data['section_id'] !== null
+                ? (int)$data['section_id']
+                : null;
+
+            $chartData = [
+                'name' => trim($data['name']),
+                'width' => (int)$data['width'],
+                'height' => (int)$data['height'],
+            ];
+            if (isset($data['palette'])) {
+                $chartData['palette'] = $data['palette'];
+            }
+
+            $chartId = $this->projectModel->createChart($projectId, $sectionId, $chartData);
+            $chart = $this->projectModel->getChartById($chartId, $projectId);
+
+            $this->sendResponse(201, ['success' => true, 'chart' => $chart]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la création de la grille',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * PUT /api/projects/{projectId}/charts/{chartId}
+     * Body: { name?, palette?, cells?, current_row? }
+     */
+    public function updateChart(int $projectId, int $chartId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($projectId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            if (!$this->projectModel->getChartById($chartId, $projectId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Grille introuvable']);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+            $success = $this->projectModel->updateChart($chartId, $data);
+
+            if (!$success) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Aucune modification à effectuer']);
+                return;
+            }
+
+            $chart = $this->projectModel->getChartById($chartId, $projectId);
+
+            $this->sendResponse(200, ['success' => true, 'chart' => $chart]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la mise à jour de la grille',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * DELETE /api/projects/{projectId}/charts/{chartId}
+     */
+    public function deleteChart(int $projectId, int $chartId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($projectId, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            if (!$this->projectModel->getChartById($chartId, $projectId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Grille introuvable']);
+                return;
+            }
+
+            $this->projectModel->deleteChart($chartId);
+
+            $this->sendResponse(200, ['success' => true, 'message' => 'Grille supprimée']);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la suppression de la grille',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * [AI:Claude] DELETE /api/projects/{projectId}/sections/{sectionId} - Supprimer une section
      *
