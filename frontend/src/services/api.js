@@ -50,6 +50,18 @@ const getAPIUrl = () => {
   return import.meta.env.VITE_API_URL || 'http://patron-maker.local/api'
 }
 
+// [AI:Claude] Mode d'affichage (navigateur classique / PWA installée / TWA Android)
+// pour distinguer en base une vraie utilisation active d'une relance en tâche
+// de fond par l'OS (cf. route_visits.display_mode)
+const getDisplayMode = () => {
+  try {
+    if (localStorage.getItem('yf_twa') === '1') return 'twa'
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return 'standalone'
+    if (window.navigator.standalone) return 'standalone' // iOS Safari "ajouter à l'écran d'accueil"
+  } catch { /* ignore */ }
+  return 'browser'
+}
+
 const api = axios.create({
   baseURL: getAPIUrl(),
   headers: {
@@ -65,6 +77,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    config.headers['X-Display-Mode'] = getDisplayMode()
     return config
   },
   (error) => {
