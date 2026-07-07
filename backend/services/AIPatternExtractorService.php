@@ -70,11 +70,13 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
 }
 
 RÈGLES STRICTES :
+- LANGUE : ne JAMAIS traduire le contenu du patron. sections[].name, sections[].description, title et pattern_notes doivent rester dans la langue et le vocabulaire d'origine du patron (ex: patron en anglais → noms de section en anglais comme "Sleeve", "Back", pas "Manche", "Dos"). L'utilisatrice doit pouvoir suivre le patron original en parallèle sans confusion de vocabulaire. Seuls craft_type et category (valeurs fixes de l'énum ci-dessous) restent dans leur format prévu.
 - Si une information est absente/incertaine → null
 - craft_type : détecter selon vocabulaire (ms/ml/mc/bride = crochet, m/end/env/jersey = tricot)
 - category : utiliser les catégories YarnFlow existantes uniquement
 - sections : découper logiquement (Corps, Manches, Col, Assemblage, Finitions...) — chaque partie du vêtement/ouvrage doit être une section distincte : "Dos" et "Devant" = 2 sections séparées, "Bras gauche" et "Bras droit" = 2 sections séparées, "Manche gauche" et "Manche droite" = 2 sections séparées. Ne jamais regrouper des parties distinctes dans une même section.
 - sections.description : INCLURE TOUTES LES INSTRUCTIONS détaillées de cette section (tous les rangs, toutes les étapes)
+- RÉFÉRENCES CROISÉES : si le patron renvoie vers une autre partie au lieu de réécrire les instructions (ex: "Deuxième manche : comme la première", "Devant droit : comme le devant gauche en inversant les diminutions", "idem dos"), NE JAMAIS laisser une description vague de type "comme la section X" — répéter/développer TOUJOURS les instructions complètes dans cette section (en adaptant les inversions gauche/droite si précisé), pour que chaque section soit utilisable seule, indépendamment des autres. Ne jamais omettre une section sous prétexte qu'elle duplique une autre partie du patron.
 - Conserver les abréviations du patron (ms, ml, mc, m, end, env, etc.)
 - Numéroter les rangs/tours si présents (ex: "Rang 1: ..., Rang 2: ..., etc.")
 - Privilégier "rangs" pour crochet, "cm" pour tricot (sauf si explicite dans le patron)
@@ -285,7 +287,7 @@ PROMPT;
                 'temperature' => 0.1,
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 32768
+                'maxOutputTokens' => 65536
             ]
         ];
 
@@ -323,7 +325,7 @@ PROMPT;
                 'temperature' => 0.1,
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 32768
+                'maxOutputTokens' => 65536
             ]
         ];
 

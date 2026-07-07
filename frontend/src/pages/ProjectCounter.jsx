@@ -3565,7 +3565,7 @@ const ProjectCounter = () => {
             {/* Section active mobile */}
             <div className="text-left flex-shrink min-w-0">
               <div className="text-xs text-gray-500">Section active</div>
-              <div className="font-semibold text-gray-900 text-sm truncate max-w-[140px]">
+              <div className="font-semibold text-gray-900 text-sm line-clamp-2 max-w-[180px]">
                 {currentSectionId ? (
                   sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
                 ) : (
@@ -4386,7 +4386,7 @@ const ProjectCounter = () => {
                         {isActive && !isCompleted && <span className="text-primary-600 font-bold text-xs flex-shrink-0">●</span>}
                         {isActive && isCompleted && <span className="text-green-600 font-bold text-xs flex-shrink-0">●</span>}
                         <div className="min-w-0">
-                          <h3 className={`text-sm font-semibold truncate ${
+                          <h3 className={`text-sm font-semibold line-clamp-2 ${
                             isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
                           }`}>
                             {section.name}
