@@ -72,7 +72,10 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
 RÈGLES STRICTES :
 - LANGUE : ne JAMAIS traduire le contenu du patron. sections[].name, sections[].description, title et pattern_notes doivent rester dans la langue et le vocabulaire d'origine du patron (ex: patron en anglais → noms de section en anglais comme "Sleeve", "Back", pas "Manche", "Dos"). L'utilisatrice doit pouvoir suivre le patron original en parallèle sans confusion de vocabulaire. Seuls craft_type et category (valeurs fixes de l'énum ci-dessous) restent dans leur format prévu.
 - Si une information est absente/incertaine → null
-- craft_type : détecter selon vocabulaire (ms/ml/mc/bride = crochet, m/end/env/jersey = tricot)
+- craft_type : détecter selon vocabulaire, quelle que soit la langue du patron.
+  Crochet : ms/ml/mc/bride (FR), sc/dc/hdc/tr/ch/sl st/hook/single crochet/double crochet (EN).
+  Tricot : m/end/env/jersey (FR), k/p/yo/ssk/k2tog/kfb/needle/knit/purl/stockinette/garter/cast on/bind off (EN).
+  Ne jamais se baser uniquement sur le vocabulaire français si le patron est dans une autre langue.
 - category : utiliser les catégories YarnFlow existantes uniquement
 - sections : découper logiquement (Corps, Manches, Col, Assemblage, Finitions...) — chaque partie du vêtement/ouvrage doit être une section distincte : "Dos" et "Devant" = 2 sections séparées, "Bras gauche" et "Bras droit" = 2 sections séparées, "Manche gauche" et "Manche droite" = 2 sections séparées. Ne jamais regrouper des parties distinctes dans une même section.
 - sections.description : INCLURE TOUTES LES INSTRUCTIONS détaillées de cette section (tous les rangs, toutes les étapes)
