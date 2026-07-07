@@ -2509,14 +2509,47 @@ const ProjectCounter = () => {
 
       case 'created':
       default:
-        // [AI:Claude] v0.14.0 - Tri par date de création (défaut)
+        // [AI:Claude] Ordre personnalisé — basé sur display_order (réorganisable manuellement),
+        // avec la date de création en repli pour les sections qui n'en ont pas encore
         return sorted.sort((a, b) => {
-          // Tri par date de création, puis alphabétique si égalité
+          const orderA = a.display_order ?? 0
+          const orderB = b.display_order ?? 0
+          if (orderA !== orderB) return orderA - orderB
           const dateA = new Date(a.created_at)
           const dateB = new Date(b.created_at)
           if (dateA.getTime() === dateB.getTime()) return naturalSort(a, b)
           return dateA - dateB
         })
+    }
+  }
+
+  // [AI:Claude] Réorganisation manuelle des sections (mode "Ordre personnalisé" uniquement)
+  const moveSection = async (sectionId, direction) => {
+    const ordered = getSortedSections()
+    const index = ordered.findIndex(s => s.id === sectionId)
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (index === -1 || targetIndex < 0 || targetIndex >= ordered.length) return
+
+    const current = ordered[index]
+    const target = ordered[targetIndex]
+    const currentOrder = current.display_order ?? index
+    const targetOrder = target.display_order ?? targetIndex
+
+    // Mise à jour optimiste locale
+    setSections(prev => prev.map(s => {
+      if (s.id === current.id) return { ...s, display_order: targetOrder }
+      if (s.id === target.id) return { ...s, display_order: currentOrder }
+      return s
+    }))
+
+    try {
+      await Promise.all([
+        api.put(`/projects/${projectId}/sections/${current.id}`, { display_order: targetOrder }),
+        api.put(`/projects/${projectId}/sections/${target.id}`, { display_order: currentOrder }),
+      ])
+    } catch (err) {
+      console.error('Erreur réorganisation sections:', err)
+      fetchSections()
     }
   }
 
@@ -4106,7 +4139,7 @@ const ProjectCounter = () => {
                         onChange={(e) => setSectionsSortBy(e.target.value)}
                         className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                       >
-                        <option value="created">Ordre de création</option>
+                        <option value="created">Ordre personnalisé</option>
                         <option value="name-az">Nom (A-Z)</option>
                         <option value="progress">Progression croissante</option>
                         <option value="progress-desc">Progression décroissante</option>
@@ -4272,6 +4305,25 @@ const ProjectCounter = () => {
                       {/* Actions - Toujours visibles */}
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1">
+                          {sectionsSortBy === 'created' && (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up') }}
+                                className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Déplacer vers le haut"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down') }}
+                                className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Déplacer vers le bas"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                              </button>
+                              <div className="w-px h-4 bg-gray-200 mx-0.5" />
+                            </>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -4405,6 +4457,24 @@ const ProjectCounter = () => {
                           )}
                         </div>
                       </div>
+                      {sectionsSortBy === 'created' && (
+                        <div className="flex items-center flex-shrink-0">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up') }}
+                            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded transition"
+                            title="Déplacer vers le haut"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down') }}
+                            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded transition"
+                            title="Déplacer vers le bas"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                          </button>
+                        </div>
+                      )}
                       {/* Bouton notes dans le header - style bulle */}
                       <button
                         onClick={(e) => {
