@@ -1,0 +1,138 @@
+/**
+ * @file ProjectCharts.jsx
+ * @brief Liste des grilles jacquard/colorwork d'un projet + création
+ */
+
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import api from '../services/api'
+
+const ProjectCharts = () => {
+  const { projectId } = useParams()
+  const navigate = useNavigate()
+
+  const [charts, setCharts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [isCreating, setIsCreating] = useState(false)
+  const [name, setName] = useState('')
+  const [width, setWidth] = useState(20)
+  const [height, setHeight] = useState(20)
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const loadCharts = async () => {
+    try {
+      const res = await api.get(`/projects/${projectId}/charts`)
+      setCharts(res.data.charts || [])
+    } catch {
+      setError('Impossible de charger les grilles')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { loadCharts() }, [projectId])
+
+  const handleCreate = async () => {
+    if (!name.trim() || !width || !height) return
+    setSaving(true)
+    setError('')
+    try {
+      const res = await api.post(`/projects/${projectId}/charts`, {
+        name: name.trim(),
+        width: Number(width),
+        height: Number(height),
+      })
+      navigate(`/projects/${projectId}/charts/${res.data.chart.id}`)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Erreur lors de la création')
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (chartId) => {
+    if (!window.confirm('Supprimer cette grille ?')) return
+    try {
+      await api.delete(`/projects/${projectId}/charts/${chartId}`)
+      setCharts(prev => prev.filter(c => c.id !== chartId))
+    } catch {
+      setError('Erreur lors de la suppression')
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24">
+      <div className="max-w-2xl mx-auto p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <Link to={`/projects/${projectId}`} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            Retour au projet
+          </Link>
+          <h1 className="text-lg font-bold text-gray-900">Grilles jacquard</h1>
+          <div className="w-24" />
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-400 p-3 rounded text-sm text-red-700">{error}</div>
+        )}
+
+        {loading ? (
+          <p className="text-center text-gray-400 py-8">Chargement...</p>
+        ) : (
+          <div className="space-y-2">
+            {charts.map(c => (
+              <div key={c.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+                <Link to={`/projects/${projectId}/charts/${c.id}`} className="flex-1">
+                  <p className="font-semibold text-gray-900">{c.name}</p>
+                  <p className="text-xs text-gray-400">{c.width} × {c.height} — rang {c.current_row}/{c.height}</p>
+                </Link>
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  className="text-red-400 hover:text-red-600 p-2"
+                  title="Supprimer"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isCreating ? (
+          <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Nom de la grille (ex: Motif manche)"
+              maxLength={100}
+              autoFocus
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-gray-600">Largeur (mailles)</label>
+              <input type="number" min="1" max="200" value={width} onChange={e => setWidth(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
+              <label className="text-sm text-gray-600">Hauteur (rangs)</label>
+              <input type="number" min="1" max="200" value={height} onChange={e => setHeight(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">Annuler</button>
+              <button onClick={handleCreate} disabled={saving || !name.trim()} className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">
+                {saving ? 'Création...' : 'Créer'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setIsCreating(true)}
+            className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-primary-400 hover:text-primary-600 text-sm font-medium"
+          >
+            ＋ Nouvelle grille
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default ProjectCharts
