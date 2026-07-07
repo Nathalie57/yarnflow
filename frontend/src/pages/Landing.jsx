@@ -4,11 +4,14 @@
  */
 
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAnalytics, useScrollTracking } from '../hooks/useAnalytics'
+import { useAuth } from '../contexts/AuthContext'
 
 const Landing = () => {
   const [openFAQ, setOpenFAQ] = useState(null)
+  const { user, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
 
   const { trackPageView, trackSubscriptionClick } = useAnalytics()
   useScrollTracking()
@@ -16,6 +19,14 @@ const Landing = () => {
   useEffect(() => {
     trackPageView('Landing Page - v4', '/')
   }, [])
+
+  // [AI:Claude] Session déjà valide → pas besoin de repasser par la landing,
+  // direct sur l'app (qui reprend elle-même le dernier projet en cours)
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/my-projects', { replace: true })
+    }
+  }, [authLoading, user, navigate])
 
   const toggleFAQ = (index) => setOpenFAQ(openFAQ === index ? null : index)
 
