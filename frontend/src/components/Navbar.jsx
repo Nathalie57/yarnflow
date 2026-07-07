@@ -101,6 +101,16 @@ const Navbar = () => {
             )}
             </div>
 
+            {/* Avatar utilisateur - confirme visuellement qu'on est connecté, sans avoir à ouvrir le menu */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="w-9 h-9 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0"
+              aria-label="Connecté"
+              title={`Connecté en tant que ${user?.first_name || user?.email || ''}`}
+            >
+              {(user?.first_name || user?.email || '?').charAt(0).toUpperCase()}
+            </button>
+
             {/* Mobile Menu Button - Mobile uniquement */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
