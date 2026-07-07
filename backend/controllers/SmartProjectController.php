@@ -500,25 +500,32 @@ class SmartProjectController
     /**
      * Map catégorie détectée → type projet (hat, scarf, etc.)
      */
+    /**
+     * [AI:Claude] Convertit la catégorie détectée par l'IA vers les mêmes libellés
+     * français que le menu manuel de sélection de catégorie (ProjectCounter.jsx
+     * getProjectTypes()) — auparavant ceci renvoyait des codes internes anglais
+     * ("garment", "hat"...) qui n'apparaissaient dans aucune option du menu,
+     * rendant la catégorie illisible et non modifiable depuis l'app.
+     */
     private function mapCategoryToType(?string $category): ?string
     {
         if (!$category) return null;
 
         $mapping = [
-            'bonnet' => 'hat',
-            'écharpe' => 'scarf',
-            'amigurumi' => 'amigurumi',
-            'sac' => 'bag',
-            'pull' => 'garment',
-            'vêtements' => 'garment',
-            'vêtements bébé' => 'baby_garment',
-            'accessoires bébé' => 'other',
-            'jouets/peluches' => 'toy',
-            'maison/déco' => 'home_decor',
-            'couverture' => 'other'
+            'bonnet' => 'Accessoires',
+            'écharpe' => 'Accessoires',
+            'amigurumi' => 'Jouets/Peluches',
+            'sac' => 'Accessoires',
+            'pull' => 'Vêtements',
+            'vêtements' => 'Vêtements',
+            'vêtements bébé' => 'Vêtements bébé',
+            'accessoires bébé' => 'Accessoires bébé',
+            'jouets/peluches' => 'Jouets/Peluches',
+            'maison/déco' => 'Maison/Déco',
+            'couverture' => 'Maison/Déco'
         ];
 
-        return $mapping[$category] ?? 'other';
+        return $mapping[$category] ?? 'Autre';
     }
 
     /**
