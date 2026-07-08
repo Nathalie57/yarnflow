@@ -440,8 +440,9 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Charger le tri des sections depuis localStorage
   useEffect(() => {
+    const VALID_SORTS = ['created', 'name-az', 'progress', 'progress-desc', 'status']
     const savedSort = localStorage.getItem('sectionsSortBy')
-    if (savedSort) {
+    if (savedSort && VALID_SORTS.includes(savedSort)) {
       setSectionsSortBy(savedSort)
     }
   }, [])
