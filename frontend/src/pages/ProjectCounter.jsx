@@ -215,6 +215,14 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Tabs pour Patron/Photos/Description
   const [activeTab, setActiveTab] = useState('patron')
+  // [AI:Claude] Les onglets sont rendus après la liste des sections (peut être longue) —
+  // ce ref permet d'y accéder d'un clic depuis un raccourci placé plus haut, sans avoir
+  // à scroller manuellement (retour Véronique : "on ne le voit jamais")
+  const tabsRef = useRef(null)
+  const jumpToTab = (tab) => {
+    setActiveTab(tab)
+    setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
 
   // [AI:Claude] v0.15.0 - Gestion des tags
   const [localTags, setLocalTags] = useState([])
@@ -4061,6 +4069,38 @@ const ProjectCounter = () => {
         )}
       </div>
 
+      {/* [AI:Claude] Accès rapide Patron/Photos/Détails — toujours visible sans avoir
+          à scroller sous la liste des sections (retour Véronique) */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => jumpToTab('patron')}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+        >
+          Patron
+          {(project.pattern_path || project.pattern_url) && (
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          )}
+        </button>
+        <button
+          onClick={() => jumpToTab('photos')}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+        >
+          Photos
+          {projectPhotos.length > 0 && (
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+          )}
+        </button>
+        <button
+          onClick={() => jumpToTab('description')}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+        >
+          Détails techniques
+          {(project.technical_details || projectAllocations.length > 0) && (
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+          )}
+        </button>
+      </div>
+
       <div className="flex flex-col gap-3">
 
       {/* Guidage sections — première visite avec sections */}
@@ -4667,7 +4707,7 @@ const ProjectCounter = () => {
       </div>
 
       {/* [AI:Claude] Tabs compacts */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div ref={tabsRef} className="bg-white rounded-xl border border-gray-200 overflow-hidden scroll-mt-20">
         {/* Tabs header */}
         <div className="border-b border-gray-100">
           <div className="flex">
@@ -4705,7 +4745,7 @@ const ProjectCounter = () => {
                   : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              Détails
+              Détails techniques
               {(project.technical_details || projectAllocations.length > 0) && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
@@ -4714,7 +4754,10 @@ const ProjectCounter = () => {
         </div>
 
             {/* Tab content */}
-            <div className="p-4">
+            {/* [AI:Claude] min-h pour garantir assez de place au scroll vers cet onglet
+                même quand son contenu est court (ex: "Aucune photo") — sinon le
+                navigateur ne peut pas amener l'onglet en haut de l'écran, il "coince" */}
+            <div className="p-4 min-h-[60vh]">
               {/* TAB PHOTOS */}
               {activeTab === 'photos' && (
                 <div>
