@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import DistributeIncrDec from '../components/tools/DistributeIncrDec'
 import GaugeCalculator from '../components/tools/GaugeCalculator'
 import NeedleConverter from '../components/tools/NeedleConverter'
@@ -14,6 +15,7 @@ import AiAssistant from '../components/tools/AiAssistant'
 import LengthConverter from '../components/tools/LengthConverter'
 import RemainingYarn from '../components/tools/RemainingYarn'
 import YarnWeightConverter from '../components/tools/YarnWeightConverter'
+import ChartDesigner from '../components/tools/ChartDesigner'
 
 const IconDistribute = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
@@ -93,6 +95,15 @@ const IconMessage = () => (
   </svg>
 )
 
+const IconGrid = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+    <rect x="3" y="3" width="7" height="7"/>
+    <rect x="14" y="3" width="7" height="7"/>
+    <rect x="3" y="14" width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/>
+  </svg>
+)
+
 const TOOLS = [
   {
     id: 'distribute',
@@ -157,12 +168,22 @@ const TOOLS = [
     description: 'Posez toutes vos questions sur les techniques, patrons et points. 3/mois en FREE, 10/mois en PLUS, 30/mois en PRO.',
     component: AiAssistant,
   },
+  {
+    id: 'chart-designer',
+    Icon: IconGrid,
+    title: 'Grille jacquard (admin)',
+    description: 'Dessinez une grille jacquard/colorwork, puis enregistrez-la dans un de vos projets.',
+    component: ChartDesigner,
+    adminOnly: true,
+  },
 ]
 
 export default function Tools() {
   const [activeTool, setActiveTool] = useState(null)
+  const { isAdmin } = useAuth()
+  const visibleTools = TOOLS.filter(t => !t.adminOnly || isAdmin())
 
-  const tool = TOOLS.find(t => t.id === activeTool)
+  const tool = visibleTools.find(t => t.id === activeTool)
 
   if (tool) {
     const ToolComponent = tool.component
@@ -216,7 +237,7 @@ export default function Tools() {
           </div>
         </Link>
 
-        {TOOLS.map(t => {
+        {visibleTools.map(t => {
           const { Icon } = t
           return (
             <button

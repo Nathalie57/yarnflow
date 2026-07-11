@@ -1777,6 +1777,11 @@ class ProjectController
             if (isset($data['palette'])) {
                 $chartData['palette'] = $data['palette'];
             }
+            // [AI:Claude] Permet d'enregistrer une grille déjà dessinée (outil
+            // "bac à sable" dans Outils) au lieu d'une grille vierge par défaut
+            if (isset($data['cells'])) {
+                $chartData['cells'] = $data['cells'];
+            }
 
             $chartId = $this->projectModel->createChart($projectId, $sectionId, $chartData);
             $chart = $this->projectModel->getChartById($chartId, $projectId);

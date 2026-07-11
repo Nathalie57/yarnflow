@@ -1329,7 +1329,9 @@ class Project extends BaseModel
         $palette = $data['palette'] ?? ['#FFFFFF', '#000000'];
         $width = (int)$data['width'];
         $height = (int)$data['height'];
-        $cells = array_fill(0, $height, array_fill(0, $width, 0));
+        // [AI:Claude] Permet de créer une grille déjà dessinée (ex: conçue dans
+        // l'outil "bac à sable" puis enregistrée dans un projet) — sinon grille vierge
+        $cells = $data['cells'] ?? array_fill(0, $height, array_fill(0, $width, 0));
 
         $query = "INSERT INTO project_charts
                   (project_id, section_id, name, width, height, palette, cells, current_row)
@@ -1370,6 +1372,11 @@ class Project extends BaseModel
                 $fields[] = "$field = :$field";
                 $params[":$field"] = $data[$field];
             }
+        }
+
+        if (array_key_exists('locked', $data)) {
+            $fields[] = "locked = :locked";
+            $params[':locked'] = $data['locked'] ? 1 : 0;
         }
 
         if (array_key_exists('palette', $data)) {

@@ -43,7 +43,7 @@ const ProjectCharts = () => {
         width: Number(width),
         height: Number(height),
       })
-      navigate(`/projects/${projectId}/charts/${res.data.chart.id}`)
+      navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la création')
       setSaving(false)

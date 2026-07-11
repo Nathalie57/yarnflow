@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import api from '../services/api'
 
 const MAX_GRID_SIZE = 200
@@ -14,6 +14,8 @@ const DEFAULT_CELL_PX = 24
 const ChartEditor = () => {
   const { projectId, chartId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const justCreated = location.state?.justCreated === true
 
   const [chart, setChart] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -21,6 +23,12 @@ const ChartEditor = () => {
   const [selectedColor, setSelectedColor] = useState(1)
   const [cellPx, setCellPx] = useState(DEFAULT_CELL_PX)
   const [editingPaletteIndex, setEditingPaletteIndex] = useState(null)
+  // [AI:Claude] Verrou anti-modification accidentelle, persisté côté serveur (champ
+  // locked) — modifiable juste après la création, verrouillée automatiquement dès
+  // qu'on y accède autrement (liste du projet), et le reste tant qu'on n'a pas
+  // cliqué sur "Modifier". PDO peut renvoyer 0/1 sous forme de string — Boolean("0")
+  // vaudrait true à tort, d'où la comparaison explicite plutôt qu'une conversion générique.
+  const isLocked = chart?.locked === 1 || chart?.locked === '1' || chart?.locked === true
 
   const canvasRef = useRef(null)
   const isPaintingRef = useRef(false)
@@ -31,7 +39,18 @@ const ChartEditor = () => {
     const loadChart = async () => {
       try {
         const res = await api.get(`/projects/${projectId}/charts/${chartId}`)
-        setChart(res.data.chart)
+        const loadedChart = res.data.chart
+        const alreadyLocked = loadedChart.locked === 1 || loadedChart.locked === '1' || loadedChart.locked === true
+
+        // [AI:Claude] Verrouillage automatique à l'arrivée, sauf juste après la création
+        if (!justCreated && !alreadyLocked) {
+          try {
+            await api.put(`/projects/${projectId}/charts/${chartId}`, { locked: true })
+            loadedChart.locked = true
+          } catch { /* on affiche quand même la grille si le verrouillage échoue */ }
+        }
+
+        setChart(loadedChart)
       } catch (err) {
         setError(err.response?.data?.error || 'Impossible de charger cette grille')
       } finally {
@@ -81,6 +100,17 @@ const ChartEditor = () => {
       }
     }
 
+    // [AI:Claude] Éclaircir/délaver les rangs déjà tricotés (sous le rang en cours,
+    // convention bas → haut). Un blanc pur ne peut pas être "éclairci" (déjà la
+    // valeur la plus claire possible) donc on utilise une teinte pâle colorée
+    // (vert clair de la charte) qui délave les couleurs foncées ET reste visible
+    // sur les cases blanches, contrairement à un simple voile blanc.
+    const doneBelowY = chart.height - chart.current_row
+    if (doneBelowY < chart.height) {
+      ctx.fillStyle = 'rgba(85, 112, 85, 0.28)'
+      ctx.fillRect(0, doneBelowY * cellPx, chart.width * cellPx, (chart.height - doneBelowY) * cellPx)
+    }
+
     // Grille
     ctx.strokeStyle = 'rgba(0,0,0,0.15)'
     ctx.lineWidth = 1
@@ -124,15 +154,26 @@ const ChartEditor = () => {
   }
 
   const handlePointerDown = (e) => {
+    if (isLocked) return
     isPaintingRef.current = true
     paintValueRef.current = selectedColor
     paintCellAt(e.clientX, e.clientY)
   }
   const handlePointerMove = (e) => {
-    if (!isPaintingRef.current) return
+    if (isLocked || !isPaintingRef.current) return
     paintCellAt(e.clientX, e.clientY)
   }
   const handlePointerUp = () => { isPaintingRef.current = false }
+
+  const toggleLock = async () => {
+    const next = !isLocked
+    setChart(prev => ({ ...prev, locked: next }))
+    try {
+      await api.put(`/projects/${projectId}/charts/${chartId}`, { locked: next })
+    } catch {
+      setChart(prev => ({ ...prev, locked: !next })) // revert si échec
+    }
+  }
 
   const addRow = (position) => {
     updateChart(prev => {
@@ -228,10 +269,30 @@ const ChartEditor = () => {
             type="text"
             value={chart.name}
             onChange={e => updateChart(prev => ({ ...prev, name: e.target.value }))}
-            className="text-lg font-bold text-gray-900 text-center bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary-500 focus:outline-none px-2"
+            disabled={isLocked}
+            className="text-lg font-bold text-gray-900 text-center bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary-500 focus:outline-none px-2 disabled:opacity-70"
           />
-          <div className="w-16" />
+          <button
+            onClick={toggleLock}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              isLocked ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-primary-600 text-white hover:bg-primary-700'
+            }`}
+            title={isLocked ? 'Grille verrouillée — cliquez pour la modifier' : 'Verrouiller la grille pour suivre votre progression sans risque'}
+          >
+            {isLocked ? (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-8 4h8m-8 0a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2v-6a2 2 0 00-2-2" /></svg>
+            ) : (
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+            )}
+            {isLocked ? 'Modifier' : 'Enregistrer'}
+          </button>
         </div>
+
+        {isLocked && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800 text-center">
+            Grille verrouillée — vous pouvez suivre votre progression sans risque de la modifier par erreur. Cliquez sur "Modifier" pour la déverrouiller et dessiner.
+          </div>
+        )}
 
         {/* Zoom */}
         <div className="flex items-center justify-center gap-3">
@@ -243,13 +304,13 @@ const ChartEditor = () => {
         {/* Grille avec boutons d'ajout/retrait */}
         <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">
           <div className="flex justify-center mb-2 gap-2">
-            <button onClick={() => addColumn('left')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">+ Colonne gauche</button>
-            <button onClick={() => removeColumn('left')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">− Colonne gauche</button>
+            <button disabled={isLocked} onClick={() => addColumn('left')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">+ Colonne gauche</button>
+            <button disabled={isLocked} onClick={() => removeColumn('left')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">− Colonne gauche</button>
           </div>
           <div className="flex items-start gap-2 justify-center">
             <div className="flex flex-col gap-2 pt-8">
-              <button onClick={() => addRow('top')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">+ Rang haut</button>
-              <button onClick={() => removeRow('top')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">− Rang haut</button>
+              <button disabled={isLocked} onClick={() => addRow('top')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">+ Rang haut</button>
+              <button disabled={isLocked} onClick={() => removeRow('top')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">− Rang haut</button>
             </div>
             <canvas
               ref={canvasRef}
@@ -263,13 +324,13 @@ const ChartEditor = () => {
               onTouchEnd={handlePointerUp}
             />
             <div className="flex flex-col gap-2 pt-8">
-              <button onClick={() => addRow('bottom')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">+ Rang bas</button>
-              <button onClick={() => removeRow('bottom')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">− Rang bas</button>
+              <button disabled={isLocked} onClick={() => addRow('bottom')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">+ Rang bas</button>
+              <button disabled={isLocked} onClick={() => removeRow('bottom')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">− Rang bas</button>
             </div>
           </div>
           <div className="flex justify-center mt-2 gap-2">
-            <button onClick={() => addColumn('right')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">+ Colonne droite</button>
-            <button onClick={() => removeColumn('right')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200">− Colonne droite</button>
+            <button disabled={isLocked} onClick={() => addColumn('right')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">+ Colonne droite</button>
+            <button disabled={isLocked} onClick={() => removeColumn('right')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">− Colonne droite</button>
           </div>
         </div>
 
@@ -281,7 +342,7 @@ const ChartEditor = () => {
               <div key={i} className="relative">
                 <button
                   onClick={() => setSelectedColor(i)}
-                  onDoubleClick={() => setEditingPaletteIndex(i)}
+                  onDoubleClick={() => !isLocked && setEditingPaletteIndex(i)}
                   className={`w-9 h-9 rounded-lg border-2 transition ${selectedColor === i ? 'border-primary-600 ring-2 ring-primary-300 ring-offset-1 scale-110' : 'border-gray-200'}`}
                   style={{ backgroundColor: hex }}
                   title={i === 0 ? 'Fond' : `Couleur ${i}`}
@@ -307,7 +368,7 @@ const ChartEditor = () => {
                     </button>
                   </div>
                 )}
-                {i > 0 && (
+                {i > 0 && !isLocked && (
                   <button
                     onClick={() => removePaletteColor(i)}
                     className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] leading-none flex items-center justify-center hover:bg-red-600"
@@ -316,13 +377,15 @@ const ChartEditor = () => {
                 )}
               </div>
             ))}
-            <button
-              onClick={addPaletteColor}
-              className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
-              title="Ajouter une couleur"
-            >＋</button>
+            {!isLocked && (
+              <button
+                onClick={addPaletteColor}
+                className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
+                title="Ajouter une couleur"
+              >＋</button>
+            )}
           </div>
-          <p className="text-xs text-gray-400 mt-2">Double-cliquez une couleur pour la modifier.</p>
+          <p className="text-xs text-gray-400 mt-2">{isLocked ? 'Cliquez une couleur pour la sélectionner.' : 'Double-cliquez une couleur pour la modifier.'}</p>
         </div>
 
         {/* Progression */}
