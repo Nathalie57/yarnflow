@@ -160,9 +160,14 @@ export const AuthProvider = ({ children }) => {
           setUser(freshUser)
           storage.setItem('user', JSON.stringify(freshUser))
         }
-      } catch {
-        // Silencieux — erreur réseau, serveur temporaire, etc.
-        // Si le token est vraiment révoqué, le prochain loadUser() au redémarrage le détectera.
+      } catch (err) {
+        // Erreur réseau ou serveur temporaire → silencieux, on garde la session locale
+        // Seul un 401 confirmé (token révoqué) doit déconnecter, comme dans loadUser()
+        if (err.response?.status === 401 && err._refreshFailed) {
+          storage.removeItem('token')
+          storage.removeItem('user')
+          setUser(null)
+        }
       }
     }
 

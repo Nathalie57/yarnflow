@@ -40,16 +40,28 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
   "category": "bonnet" | "écharpe" | "pull" | "amigurumi" | "couverture" | "sac" | "vêtements" | "accessoires bébé" | "vêtements bébé" | "jouets/peluches" | "maison/déco" | "autre" | null,
   "description": "résumé du projet en 1-2 phrases (string ou null)",
 
-  "yarn": {
-    "brand": "marque de la laine (string ou null)",
-    "color": "couleur principale (string ou null)",
-    "weight": "épaisseur (Lace|Fingering|Sport|DK|Worsted|Aran|Bulky|Super Bulky ou null)",
-    "composition": "composition (ex: 100% coton, string ou null)"
-  },
+  "yarn": [
+    {
+      "brand": "marque/studio (ex: DROPS, Garnstudio, string ou null)",
+      "name": "nom de la laine chez cette marque, différent de la marque (ex: 'Air' pour DROPS Air, string ou null)",
+      "color": "couleur (nom et/ou numéro de coloris, string ou null)",
+      "weight": "épaisseur — utiliser Lace|Fingering|Sport|DK|Worsted|Aran|Bulky|Super Bulky si ça correspond clairement, SINON garder le terme exact du patron (ex: 'Groupe C' pour un système de classification propre à la marque) plutôt que de forcer une mauvaise correspondance",
+      "composition": "composition (ex: 100% coton, string ou null)",
+      "quantity_needed": {
+        "amount": "quantité totale nécessaire pour CE fil — nombre seul, sans unité (int ou null). Pour un patron multi-tailles avec plusieurs valeurs (ex: 150-200-200-200-250-250 g), prendre celle de TAILLE CHOISIE PAR L'UTILISATRICE si précisée, sinon null",
+        "unit": "unité de cette quantité : 'g' | 'pelotes' | 'écheveaux' | null"
+      }
+    }
+  ],
 
-  "hook_or_needles": {
-    "size": "taille crochet/aiguilles (ex: 4.5, 5mm, string ou null)"
-  },
+  "needles": [
+    {
+      "type": "type d'aiguille/crochet (ex: circulaire, droite, crochet, double-pointe, string ou null)",
+      "size": "taille (ex: 4.5, 5mm, string ou null)",
+      "length": "longueur si précisée (ex: 40 cm, 60-80 cm, string ou null)",
+      "usage": "à quoi elle sert si précisé (ex: pour le jersey, pour les côtes, string ou null)"
+    }
+  ],
 
   "gauge": {
     "stitches": nombre de mailles sur 10cm (int ou null),
@@ -70,17 +82,23 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
 }
 
 RÈGLES STRICTES :
+- LANGUE : ne JAMAIS traduire le contenu du patron. sections[].name, sections[].description, title et pattern_notes doivent rester dans la langue et le vocabulaire d'origine du patron (ex: patron en anglais → noms de section en anglais comme "Sleeve", "Back", pas "Manche", "Dos"). L'utilisatrice doit pouvoir suivre le patron original en parallèle sans confusion de vocabulaire. Seuls craft_type et category (valeurs fixes de l'énum ci-dessous) restent dans leur format prévu.
 - Si une information est absente/incertaine → null
-- craft_type : détecter selon vocabulaire (ms/ml/mc/bride = crochet, m/end/env/jersey = tricot)
+- craft_type : détecter selon vocabulaire, quelle que soit la langue du patron.
+  Crochet : ms/ml/mc/bride (FR), sc/dc/hdc/tr/ch/sl st/hook/single crochet/double crochet (EN).
+  Tricot : m/end/env/jersey (FR), k/p/yo/ssk/k2tog/kfb/needle/knit/purl/stockinette/garter/cast on/bind off (EN).
+  Ne jamais se baser uniquement sur le vocabulaire français si le patron est dans une autre langue.
 - category : utiliser les catégories YarnFlow existantes uniquement
+- yarn : lister CHAQUE fil/coloris séparément (un patron jacquard/colorwork utilise souvent 2-3 couleurs différentes) — ne jamais fusionner plusieurs fils en une seule entrée
 - sections : découper logiquement (Corps, Manches, Col, Assemblage, Finitions...) — chaque partie du vêtement/ouvrage doit être une section distincte : "Dos" et "Devant" = 2 sections séparées, "Bras gauche" et "Bras droit" = 2 sections séparées, "Manche gauche" et "Manche droite" = 2 sections séparées. Ne jamais regrouper des parties distinctes dans une même section.
 - sections.description : INCLURE TOUTES LES INSTRUCTIONS détaillées de cette section (tous les rangs, toutes les étapes)
+- RÉFÉRENCES CROISÉES : si le patron renvoie vers une autre partie au lieu de réécrire les instructions (ex: "Deuxième manche : comme la première", "Devant droit : comme le devant gauche en inversant les diminutions", "idem dos"), NE JAMAIS laisser une description vague de type "comme la section X" — répéter/développer TOUJOURS les instructions complètes dans cette section (en adaptant les inversions gauche/droite si précisé), pour que chaque section soit utilisable seule, indépendamment des autres. Ne jamais omettre une section sous prétexte qu'elle duplique une autre partie du patron.
 - Conserver les abréviations du patron (ms, ml, mc, m, end, env, etc.)
 - Numéroter les rangs/tours si présents (ex: "Rang 1: ..., Rang 2: ..., etc.")
 - Privilégier "rangs" pour crochet, "cm" pour tricot (sauf si explicite dans le patron)
 - gauge : toujours ramener à 10cm (si échantillon donné pour 5cm, multiplier par 2)
 - yarn.weight : utiliser uniquement les catégories standard (pas de "moyen", "épais" français)
-- hook_or_needles.size : extraire uniquement le nombre et mm (ex: "4.5" depuis "crochet 4.5mm")
+- needles : lister TOUTES les aiguilles/crochets mentionnés séparément, pas juste le premier — un patron a souvent une taille pour le corps et une autre pour les côtes/bords. size : extraire uniquement le nombre et mm (ex: "4.5" depuis "crochet 4.5mm")
 
 Retourne UNIQUEMENT le JSON, sans texte avant/après, sans markdown.
 PROMPT;
@@ -285,7 +303,7 @@ PROMPT;
                 'temperature' => 0.1,
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 32768
+                'maxOutputTokens' => 65536
             ]
         ];
 
@@ -323,7 +341,7 @@ PROMPT;
                 'temperature' => 0.1,
                 'topK' => 1,
                 'topP' => 0.8,
-                'maxOutputTokens' => 32768
+                'maxOutputTokens' => 65536
             ]
         ];
 
@@ -432,7 +450,7 @@ PROMPT;
     private function determineStatus(array $data): string
     {
         $requiredFields = ['title', 'craft_type', 'sections'];
-        $optionalFields = ['yarn', 'gauge', 'hook_or_needles'];
+        $optionalFields = ['yarn', 'gauge', 'needles'];
 
         $hasRequired = true;
         foreach ($requiredFields as $field) {

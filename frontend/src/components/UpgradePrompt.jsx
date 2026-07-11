@@ -21,14 +21,15 @@ const FEATURES = {
     items: ['Tags illimités (cadeau, bébé, Noël...)', 'Filtrage multi-tags', 'Retrouvez vos projets en 1 clic'],
   },
   secondary_counter: {
+    plan: 'plus',
     svg: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
       </svg>
     ),
-    title: '2e compteur par projet',
-    description: 'Comptez vos augmentations, diminutions et répétitions en parallèle de votre compteur principal.',
-    items: ['Indépendant du compteur principal', 'Label personnalisable (ex: "Dim.")', 'Idéal pour pulls, châles, chaussettes'],
+    title: 'Compteurs secondaires',
+    description: 'Ajoutez jusqu\'à 10 compteurs secondaires par section, pour suivre vos augmentations, diminutions et répétitions en parallèle de votre compteur principal.',
+    items: ['Jusqu\'à 10 compteurs par section', 'Label personnalisable (ex: "Dim.")', 'Idéal pour pulls, châles, chaussettes'],
   },
   section_notes: {
     svg: (
@@ -142,24 +143,26 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
           ))}
         </ul>
 
-        {/* Prix */}
+        {/* Prix (équivalent mensuel de l'offre annuelle, comme sur /subscription) */}
         {content.plan === 'plus' ? (
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-primary-50 border border-primary-200 rounded-xl p-3 flex flex-col">
               <p className="font-bold text-gray-900 text-sm">PLUS</p>
               <p className="text-xs text-gray-500 mt-0.5">Pour les actives</p>
               <div className="mt-2">
-                <span className="text-xl font-bold text-primary-600">3,99€</span>
+                <span className="text-xl font-bold text-primary-600">2,49€</span>
                 <span className="text-xs text-gray-500">/mois</span>
               </div>
+              <p className="text-[11px] text-green-600 font-medium mt-0.5">Facturé 29,99€/an</p>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex flex-col">
               <p className="font-bold text-gray-900 text-sm">PRO</p>
               <p className="text-xs text-gray-500 mt-0.5">Toutes les fonctions</p>
               <div className="mt-2">
-                <span className="text-xl font-bold text-gray-700">6,99€</span>
+                <span className="text-xl font-bold text-gray-700">4,99€</span>
                 <span className="text-xs text-gray-500">/mois</span>
               </div>
+              <p className="text-[11px] text-green-600 font-medium mt-0.5">Facturé 59,99€/an</p>
             </div>
           </div>
         ) : (
@@ -167,9 +170,10 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             <div>
               <p className="font-bold text-gray-900 text-sm">Plan PRO</p>
               <p className="text-xs text-gray-500 mt-0.5">Pour les projets sérieux</p>
+              <p className="text-[11px] text-green-600 font-medium mt-1">Facturé 59,99€/an</p>
             </div>
             <div className="text-right">
-              <span className="text-2xl font-bold text-primary-600">6,99€</span>
+              <span className="text-2xl font-bold text-primary-600">4,99€</span>
               <span className="text-xs text-gray-500">/mois</span>
             </div>
           </div>

@@ -344,18 +344,20 @@ class SmartProjectController
                     'status' => 'in_progress'
                 ];
 
-                // Détails techniques
-                if (isset($projectData['yarn']['brand'])) {
-                    $insertData['yarn_brand'] = $projectData['yarn']['brand'];
+                // Détails techniques — yarn est maintenant une liste (colorwork = plusieurs fils),
+                // les colonnes plates ci-dessous ne gardent que le premier fil pour compatibilité
+                $firstYarn = $projectData['yarn'][0] ?? null;
+                if (isset($firstYarn['brand'])) {
+                    $insertData['yarn_brand'] = $firstYarn['brand'];
                 }
-                if (isset($projectData['yarn']['color'])) {
-                    $insertData['yarn_color'] = $projectData['yarn']['color'];
+                if (isset($firstYarn['color'])) {
+                    $insertData['yarn_color'] = $firstYarn['color'];
                 }
-                if (isset($projectData['yarn']['weight'])) {
-                    $insertData['yarn_weight'] = $projectData['yarn']['weight'];
+                if (isset($firstYarn['weight'])) {
+                    $insertData['yarn_weight'] = $firstYarn['weight'];
                 }
-                if (isset($projectData['hook_or_needles']['size'])) {
-                    $insertData['hook_size'] = $projectData['hook_or_needles']['size'];
+                if (isset($projectData['needles'][0]['size'])) {
+                    $insertData['hook_size'] = $projectData['needles'][0]['size'];
                 }
                 if (isset($projectData['gauge']['stitches'])) {
                     $insertData['gauge_stitches'] = $projectData['gauge']['stitches'];
@@ -366,6 +368,59 @@ class SmartProjectController
                 if (isset($projectData['gauge']['size_cm'])) {
                     $insertData['gauge_size_cm'] = $projectData['gauge']['size_cm'];
                 }
+
+                // [AI:Claude] L'onglet "Détails techniques" de ProjectCounter ne lit QUE le
+                // JSON technical_details (yarn/needles/gauge), jamais les colonnes plates
+                // ci-dessus (gauge_stitches, yarn_brand, hook_size...). Sans ce bloc,
+                // l'échantillon et le reste des détails extraits par l'IA restaient invisibles
+                // nulle part dans l'app, alors qu'ils étaient bien enregistrés en base.
+                $sizeCm = $projectData['gauge']['size_cm'] ?? 10;
+                $insertData['technical_details'] = json_encode([
+                    'yarn' => !empty($projectData['yarn']) ? array_map(function ($y) {
+                        // [AI:Claude] Suit la convention du formulaire manuel : "Marque" = marque + nom
+                        // du fil (ex: "DROPS Air"), "Nom" = composition ou épaisseur si le patron
+                        // utilise un système propriétaire (ex: "Groupe C") plutôt qu'une catégorie standard
+                        $brand = trim(($y['brand'] ?? '') . ' ' . ($y['name'] ?? ''));
+                        $nameField = $y['composition'] ?? ($y['weight'] ?? '');
+                        return [
+                            'brand' => $brand,
+                            'name' => $nameField,
+                            'url' => '',
+                            'quantities' => [[
+                                'amount' => $y['quantity_needed']['amount'] ?? '',
+                                'unit' => $y['quantity_needed']['unit'] ?? 'pelotes',
+                                'color' => $y['color'] ?? ''
+                            ]]
+                        ];
+                    }, $projectData['yarn']) : [[
+                        'brand' => '',
+                        'name' => '',
+                        'url' => '',
+                        'quantities' => [['amount' => '', 'unit' => 'pelotes', 'color' => '']]
+                    ]],
+                    'needles' => !empty($projectData['needles']) ? array_map(function ($n) use ($projectData) {
+                        $type = $n['type'] ?? (($projectData['craft_type'] ?? '') === 'crochet' ? 'Crochet' : 'Aiguilles');
+                        if (!empty($n['usage'])) {
+                            $type .= " — {$n['usage']}";
+                        }
+                        return [
+                            'type' => $type,
+                            'size' => $n['size'] ?? '',
+                            'length' => $n['length'] ?? ''
+                        ];
+                    }, $projectData['needles']) : [[
+                        'type' => ($projectData['craft_type'] ?? '') === 'crochet' ? 'Crochet' : 'Aiguilles',
+                        'size' => '',
+                        'length' => ''
+                    ]],
+                    'gauge' => [
+                        'stitches' => $projectData['gauge']['stitches'] ?? '',
+                        'rows' => $projectData['gauge']['rows'] ?? '',
+                        'dimensions' => "{$sizeCm} x {$sizeCm} cm",
+                        'notes' => ''
+                    ],
+                    'description' => $projectData['description'] ?? ''
+                ]);
 
                 // Insérer le projet
                 $projectId = $this->projectModel->create($insertData);
@@ -500,25 +555,32 @@ class SmartProjectController
     /**
      * Map catégorie détectée → type projet (hat, scarf, etc.)
      */
+    /**
+     * [AI:Claude] Convertit la catégorie détectée par l'IA vers les mêmes libellés
+     * français que le menu manuel de sélection de catégorie (ProjectCounter.jsx
+     * getProjectTypes()) — auparavant ceci renvoyait des codes internes anglais
+     * ("garment", "hat"...) qui n'apparaissaient dans aucune option du menu,
+     * rendant la catégorie illisible et non modifiable depuis l'app.
+     */
     private function mapCategoryToType(?string $category): ?string
     {
         if (!$category) return null;
 
         $mapping = [
-            'bonnet' => 'hat',
-            'écharpe' => 'scarf',
-            'amigurumi' => 'amigurumi',
-            'sac' => 'bag',
-            'pull' => 'garment',
-            'vêtements' => 'garment',
-            'vêtements bébé' => 'baby_garment',
-            'accessoires bébé' => 'other',
-            'jouets/peluches' => 'toy',
-            'maison/déco' => 'home_decor',
-            'couverture' => 'other'
+            'bonnet' => 'Accessoires',
+            'écharpe' => 'Accessoires',
+            'amigurumi' => 'Jouets/Peluches',
+            'sac' => 'Accessoires',
+            'pull' => 'Vêtements',
+            'vêtements' => 'Vêtements',
+            'vêtements bébé' => 'Vêtements bébé',
+            'accessoires bébé' => 'Accessoires bébé',
+            'jouets/peluches' => 'Jouets/Peluches',
+            'maison/déco' => 'Maison/Déco',
+            'couverture' => 'Maison/Déco'
         ];
 
-        return $mapping[$category] ?? 'other';
+        return $mapping[$category] ?? 'Autre';
     }
 
     /**

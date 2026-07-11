@@ -126,10 +126,14 @@ class AuthMiddleware
             if ($route === '') return;
 
             $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+            $displayMode = $_SERVER['HTTP_X_DISPLAY_MODE'] ?? 'browser';
+            if (!in_array($displayMode, ['browser', 'standalone', 'twa'], true)) {
+                $displayMode = 'browser';
+            }
 
             $db = Database::getInstance()->getConnection();
-            $db->prepare("INSERT INTO route_visits (user_id, route, method, created_at) VALUES (:uid, :route, :method, NOW())")
-               ->execute(['uid' => $userId, 'route' => substr($route, 0, 255), 'method' => $method]);
+            $db->prepare("INSERT INTO route_visits (user_id, route, method, display_mode, created_at) VALUES (:uid, :route, :method, :display_mode, NOW())")
+               ->execute(['uid' => $userId, 'route' => substr($route, 0, 255), 'method' => $method, 'display_mode' => $displayMode]);
         } catch (\Throwable $e) {
             error_log('[Session] logRouteVisit error: ' . $e->getMessage());
         }

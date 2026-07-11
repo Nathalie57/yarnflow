@@ -83,7 +83,7 @@ class PasswordResetService
             $insertStmt->execute();
 
             // Envoyer l'email
-            $resetLink = $frontendUrl . '/reset-password?token=' . $token;
+            $resetLink = rtrim($frontendUrl, '/') . '/reset-password?token=' . $token;
 
             try {
                 $emailSent = $this->emailService->sendPasswordResetEmail(

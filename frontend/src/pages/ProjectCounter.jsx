@@ -215,6 +215,14 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Tabs pour Patron/Photos/Description
   const [activeTab, setActiveTab] = useState('patron')
+  // [AI:Claude] Les onglets sont rendus après la liste des sections (peut être longue) —
+  // ce ref permet d'y accéder d'un clic depuis un raccourci placé plus haut, sans avoir
+  // à scroller manuellement (retour Véronique : "on ne le voit jamais")
+  const tabsRef = useRef(null)
+  const jumpToTab = (tab) => {
+    setActiveTab(tab)
+    setTimeout(() => tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+  }
 
   // [AI:Claude] v0.15.0 - Gestion des tags
   const [localTags, setLocalTags] = useState([])
@@ -440,8 +448,9 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Charger le tri des sections depuis localStorage
   useEffect(() => {
+    const VALID_SORTS = ['created', 'name-az', 'progress', 'progress-desc', 'status']
     const savedSort = localStorage.getItem('sectionsSortBy')
-    if (savedSort) {
+    if (savedSort && VALID_SORTS.includes(savedSort)) {
       setSectionsSortBy(savedSort)
     }
   }, [])
@@ -2509,14 +2518,47 @@ const ProjectCounter = () => {
 
       case 'created':
       default:
-        // [AI:Claude] v0.14.0 - Tri par date de création (défaut)
+        // [AI:Claude] Ordre personnalisé — basé sur display_order (réorganisable manuellement),
+        // avec la date de création en repli pour les sections qui n'en ont pas encore
         return sorted.sort((a, b) => {
-          // Tri par date de création, puis alphabétique si égalité
+          const orderA = a.display_order ?? 0
+          const orderB = b.display_order ?? 0
+          if (orderA !== orderB) return orderA - orderB
           const dateA = new Date(a.created_at)
           const dateB = new Date(b.created_at)
           if (dateA.getTime() === dateB.getTime()) return naturalSort(a, b)
           return dateA - dateB
         })
+    }
+  }
+
+  // [AI:Claude] Réorganisation manuelle des sections (mode "Ordre personnalisé" uniquement)
+  const moveSection = async (sectionId, direction) => {
+    const ordered = getSortedSections()
+    const index = ordered.findIndex(s => s.id === sectionId)
+    const targetIndex = direction === 'up' ? index - 1 : index + 1
+    if (index === -1 || targetIndex < 0 || targetIndex >= ordered.length) return
+
+    const current = ordered[index]
+    const target = ordered[targetIndex]
+    const currentOrder = current.display_order ?? index
+    const targetOrder = target.display_order ?? targetIndex
+
+    // Mise à jour optimiste locale
+    setSections(prev => prev.map(s => {
+      if (s.id === current.id) return { ...s, display_order: targetOrder }
+      if (s.id === target.id) return { ...s, display_order: currentOrder }
+      return s
+    }))
+
+    try {
+      await Promise.all([
+        api.put(`/projects/${projectId}/sections/${current.id}`, { display_order: targetOrder }),
+        api.put(`/projects/${projectId}/sections/${target.id}`, { display_order: currentOrder }),
+      ])
+    } catch (err) {
+      console.error('Erreur réorganisation sections:', err)
+      fetchSections()
     }
   }
 
@@ -3565,7 +3607,7 @@ const ProjectCounter = () => {
             {/* Section active mobile */}
             <div className="text-left flex-shrink min-w-0">
               <div className="text-xs text-gray-500">Section active</div>
-              <div className="font-semibold text-gray-900 text-sm truncate max-w-[140px]">
+              <div className="font-semibold text-gray-900 text-sm line-clamp-2 max-w-[180px]">
                 {currentSectionId ? (
                   sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
                 ) : (
@@ -4041,6 +4083,38 @@ const ProjectCounter = () => {
         )}
       </div>
 
+      {/* [AI:Claude] Accès rapide Patron/Photos/Détails — toujours visible sans avoir
+          à scroller sous la liste des sections (retour Véronique) */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => jumpToTab('patron')}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+        >
+          Patron
+          {(project.pattern_path || project.pattern_url) && (
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          )}
+        </button>
+        <button
+          onClick={() => jumpToTab('photos')}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+        >
+          Photos
+          {projectPhotos.length > 0 && (
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+          )}
+        </button>
+        <button
+          onClick={() => jumpToTab('description')}
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+        >
+          Détails techniques
+          {(project.technical_details || projectAllocations.length > 0) && (
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+          )}
+        </button>
+      </div>
+
       <div className="flex flex-col gap-3">
 
       {/* Guidage sections — première visite avec sections */}
@@ -4120,7 +4194,7 @@ const ProjectCounter = () => {
                         onChange={(e) => setSectionsSortBy(e.target.value)}
                         className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                       >
-                        <option value="created">Ordre de création</option>
+                        <option value="created">Ordre personnalisé</option>
                         <option value="name-az">Nom (A-Z)</option>
                         <option value="progress">Progression croissante</option>
                         <option value="progress-desc">Progression décroissante</option>
@@ -4286,6 +4360,25 @@ const ProjectCounter = () => {
                       {/* Actions - Toujours visibles */}
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-center gap-1">
+                          {sectionsSortBy === 'created' && (
+                            <>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up') }}
+                                className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Déplacer vers le haut"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down') }}
+                                className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Déplacer vers le bas"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                              </button>
+                              <div className="w-px h-4 bg-gray-200 mx-0.5" />
+                            </>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
@@ -4400,7 +4493,7 @@ const ProjectCounter = () => {
                         {isActive && !isCompleted && <span className="text-primary-600 font-bold text-xs flex-shrink-0">●</span>}
                         {isActive && isCompleted && <span className="text-green-600 font-bold text-xs flex-shrink-0">●</span>}
                         <div className="min-w-0">
-                          <h3 className={`text-sm font-semibold truncate ${
+                          <h3 className={`text-sm font-semibold line-clamp-2 ${
                             isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
                           }`}>
                             {section.name}
@@ -4419,6 +4512,24 @@ const ProjectCounter = () => {
                           )}
                         </div>
                       </div>
+                      {sectionsSortBy === 'created' && (
+                        <div className="flex items-center flex-shrink-0">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up') }}
+                            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded transition"
+                            title="Déplacer vers le haut"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down') }}
+                            className="p-1.5 text-gray-500 hover:bg-gray-100 rounded transition"
+                            title="Déplacer vers le bas"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+                          </button>
+                        </div>
+                      )}
                       {/* Bouton notes dans le header - style bulle */}
                       <button
                         onClick={(e) => {
@@ -4610,7 +4721,7 @@ const ProjectCounter = () => {
       </div>
 
       {/* [AI:Claude] Tabs compacts */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div ref={tabsRef} className="bg-white rounded-xl border border-gray-200 overflow-hidden scroll-mt-20">
         {/* Tabs header */}
         <div className="border-b border-gray-100">
           <div className="flex">
@@ -4648,7 +4759,7 @@ const ProjectCounter = () => {
                   : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              Détails
+              Détails techniques
               {(project.technical_details || projectAllocations.length > 0) && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
@@ -4657,7 +4768,10 @@ const ProjectCounter = () => {
         </div>
 
             {/* Tab content */}
-            <div className="p-4">
+            {/* [AI:Claude] min-h pour garantir assez de place au scroll vers cet onglet
+                même quand son contenu est court (ex: "Aucune photo") — sinon le
+                navigateur ne peut pas amener l'onglet en haut de l'écran, il "coince" */}
+            <div className="p-4 min-h-[60vh]">
               {/* TAB PHOTOS */}
               {activeTab === 'photos' && (
                 <div>
