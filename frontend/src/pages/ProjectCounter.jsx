@@ -33,6 +33,9 @@ const ProjectCounter = () => {
   const { projectId } = useParams()
   const navigate = useNavigate()
   const { user, hasActiveSubscription, isAdmin } = useAuth()
+  // [AI:Claude] Grille jacquard encore en test — réservée aux admins + la bêta-testeuse
+  // (user 30) à l'origine de la demande, le temps de valider plus largement
+  const canAccessJacquard = isAdmin() || user?.id === 30
   const {
     previewImage,
     isGeneratingPreview,
@@ -4068,19 +4071,6 @@ const ProjectCounter = () => {
           </div>
         )}
 
-        {isAdmin() && (
-          <div className="pt-2 border-t border-primary-300/50">
-            <Link
-              to={`/projects/${projectId}/charts`}
-              className="text-xs text-primary-700 flex items-center gap-1.5 hover:text-primary-900 transition font-medium"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
-              </svg>
-              Grilles jacquard <span className="text-primary-400 font-normal">(admin only)</span>
-            </Link>
-          </div>
-        )}
       </div>
 
       {/* [AI:Claude] Accès rapide Patron/Photos/Détails — toujours visible sans avoir
@@ -4113,6 +4103,17 @@ const ProjectCounter = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
           )}
         </button>
+        {canAccessJacquard && (
+          <Link
+            to={`/projects/${projectId}/charts`}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
+            </svg>
+            Grilles <span className="text-gray-400">(bêta)</span>
+          </Link>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">

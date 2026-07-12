@@ -171,17 +171,20 @@ const TOOLS = [
   {
     id: 'chart-designer',
     Icon: IconGrid,
-    title: 'Grille jacquard (admin)',
+    title: 'Grille jacquard (bêta)',
     description: 'Dessinez une grille jacquard/colorwork, puis enregistrez-la dans un de vos projets.',
     component: ChartDesigner,
-    adminOnly: true,
+    betaOnly: true,
   },
 ]
 
 export default function Tools() {
   const [activeTool, setActiveTool] = useState(null)
-  const { isAdmin } = useAuth()
-  const visibleTools = TOOLS.filter(t => !t.adminOnly || isAdmin())
+  const { user, isAdmin } = useAuth()
+  // [AI:Claude] Grille jacquard encore en test — réservée aux admins + la
+  // bêta-testeuse (user 30) à l'origine de la demande
+  const canAccessJacquard = isAdmin() || user?.id === 30
+  const visibleTools = TOOLS.filter(t => !t.betaOnly || canAccessJacquard)
 
   const tool = visibleTools.find(t => t.id === activeTool)
 
