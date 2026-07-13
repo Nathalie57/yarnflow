@@ -819,6 +819,48 @@ class AdminController
     }
 
     /**
+     * [AI:Claude] Lister les feedbacks utilisateurs sur les photos IA générées,
+     * pour repérer les générations à problème (mauvaise note / commentaire)
+     * GET /api/admin/photo-feedback
+     * Query params : max_rating (filtrer les notes <= N), limit
+     */
+    public function listPhotoFeedback(): void
+    {
+        $userData = $this->requireAdmin();
+        if ($userData === null)
+            return;
+
+        $limit = (int)($_GET['limit'] ?? 100);
+        $maxRating = isset($_GET['max_rating']) && $_GET['max_rating'] !== ''
+            ? (int)$_GET['max_rating']
+            : null;
+
+        $db = $this->userModel->getDb();
+        $sql = "SELECT pf.id, pf.rating, pf.comment, pf.created_at,
+                       u.id as user_id, u.email as user_email, u.first_name, u.last_name,
+                       up.id as photo_id, up.enhanced_path, up.original_path, up.thumbnail_path,
+                       up.item_name, up.ai_style, up.ai_purpose
+                FROM photo_feedback pf
+                LEFT JOIN users u ON pf.user_id = u.id
+                LEFT JOIN user_photos up ON pf.photo_id = up.id"
+                . ($maxRating !== null ? " WHERE pf.rating <= :max_rating" : "") .
+                " ORDER BY pf.created_at DESC
+                LIMIT :limit";
+
+        $stmt = $db->prepare($sql);
+        if ($maxRating !== null) {
+            $stmt->bindValue(':max_rating', $maxRating, \PDO::PARAM_INT);
+        }
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        $feedback = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        Response::success([
+            'feedback' => $feedback
+        ]);
+    }
+
+    /**
      * [AI:Claude] Générer les codes Early Bird pour tous les inscrits waitlist
      * POST /api/admin/early-bird/generate-codes
      *

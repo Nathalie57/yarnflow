@@ -44,6 +44,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminTemplates from './pages/admin/AdminTemplates'
 import AdminPayments from './pages/admin/AdminPayments'
+import AdminPhotoFeedback from './pages/admin/AdminPhotoFeedback'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOptions from './pages/admin/AdminOptions'
 import AdminPartnerPatterns from './pages/admin/AdminPartnerPatterns'
@@ -134,6 +135,7 @@ function App() {
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/templates" element={<AdminTemplates />} />
             <Route path="/admin/payments" element={<AdminPayments />} />
+            <Route path="/admin/photo-feedback" element={<AdminPhotoFeedback />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/options" element={<AdminOptions />} />
             <Route path="/admin/partner-patterns" element={<AdminPartnerPatterns />} />

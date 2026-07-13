@@ -140,6 +140,7 @@ function route(string $method, string $uri): void
         $method === 'PUT' && preg_match('/^admin\/templates\/(\d+)$/', $uri, $matches) => (new AdminController())->updateTemplate((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^admin\/templates\/(\d+)$/', $uri, $matches) => (new AdminController())->deleteTemplate((int)$matches[1]),
         $method === 'GET' && $uri === 'admin/payments' => (new AdminController())->listPayments(),
+        $method === 'GET' && $uri === 'admin/photo-feedback' => (new AdminController())->listPhotoFeedback(),
 
         // [AI:Claude] Routes de gestion des catégories (public)
         $method === 'GET' && $uri === 'categories' => (new CategoryController())->index(),

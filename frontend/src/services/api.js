@@ -286,6 +286,7 @@ export const adminAPI = {
   updateTemplate: (id, data) => api.put(`/admin/templates/${id}`, data),
   deleteTemplate: (id) => api.delete(`/admin/templates/${id}`),
   getPayments: (params) => api.get('/admin/payments', { params }),
+  getPhotoFeedback: (params) => api.get('/admin/photo-feedback', { params }),
   getCategories: () => api.get('/categories'),
   createCategory: (data) => api.post('/admin/categories', data),
   createSubtype: (categoryKey, data) => api.post(`/admin/categories/${categoryKey}/subtypes`, data),
