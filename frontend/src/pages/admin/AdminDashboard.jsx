@@ -253,6 +253,7 @@ const AdminDashboard = () => {
         {[
           { to: '/admin/users', label: 'Utilisateurs' },
           { to: '/admin/payments', label: 'Paiements' },
+          { to: '/admin/photo-feedback', label: 'Feedback Photos' },
           { to: '/admin/categories', label: 'Catégories' },
           { to: '/admin/templates', label: 'Templates IA' },
         ].map(({ to, label }) => (
