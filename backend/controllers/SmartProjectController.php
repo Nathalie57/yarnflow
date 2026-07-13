@@ -82,7 +82,7 @@ class SmartProjectController
                     $nextReset = new \DateTime('first day of next month 00:00:00');
                 }
 
-                $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND created_at >= :period_start");
+                $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND created_at >= :period_start AND project_id IS NOT NULL");
                 $stmt->execute(['user_id' => $userId, 'period_start' => $periodStart->format('Y-m-d H:i:s')]);
                 $usedThisMonth = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 $this->jsonResponse([
@@ -99,7 +99,7 @@ class SmartProjectController
                 ]);
             } else {
                 // FREE : 2 essais à vie
-                $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id");
+                $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND project_id IS NOT NULL");
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 $this->jsonResponse([
@@ -150,10 +150,10 @@ class SmartProjectController
                     while ($periodStart > $now) {
                         $periodStart->modify('-30 days');
                     }
-                    $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND created_at >= :period_start");
+                    $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND created_at >= :period_start AND project_id IS NOT NULL");
                     $stmt->execute(['user_id' => $userId, 'period_start' => $periodStart->format('Y-m-d H:i:s')]);
                 } else {
-                    $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW())");
+                    $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW()) AND project_id IS NOT NULL");
                     $stmt->execute(['user_id' => $userId]);
                 }
                 $usedThisMonth = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
@@ -166,7 +166,7 @@ class SmartProjectController
                 }
             } else {
                 // FREE : 3 essais à vie
-                $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id");
+                $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND project_id IS NOT NULL");
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 if ($totalUsed >= 3) {
