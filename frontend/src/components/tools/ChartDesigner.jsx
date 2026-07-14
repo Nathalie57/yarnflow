@@ -30,9 +30,14 @@ const dist2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) 
 // comparer des milliers de pixels entre eux), fusionnés par ordre de
 // fréquence tant qu'ils sont assez proches pour être la même couleur.
 const MAX_AUTO_COLORS = 20
-const MERGE_THRESHOLD = 32
+// 55 plutôt qu'un seuil serré : un diagramme avec plusieurs couleurs proches
+// (nuances d'un même ton dues à l'anti-crénelage/JPEG) éclate sinon une seule
+// couleur voulue en plusieurs clusters quasi identiques.
+const MERGE_THRESHOLD = 55
 
-const autoQuantizeColors = (pixels, mergeThreshold = MERGE_THRESHOLD, maxColors = MAX_AUTO_COLORS) => {
+// Construit la palette à partir de TOUS les pixels intérieurs des cases (pas
+// des médianes par case) : retourne les clusters de couleurs [r,g,b].
+const buildPaletteFromPixels = (pixels, mergeThreshold = MERGE_THRESHOLD, maxColors = MAX_AUTO_COLORS) => {
   const bucketSize = 12
   const buckets = new Map()
   for (const p of pixels) {
@@ -63,12 +68,10 @@ const autoQuantizeColors = (pixels, mergeThreshold = MERGE_THRESHOLD, maxColors 
     }
   }
 
-  // Le bruit JPEG/anti-crénelage laisse plein de petits clusters parasites
-  // (gris intermédiaires entre deux vraies couleurs) après la fusion fine :
-  // une couleur réellement utilisée dans le motif couvre une part
-  // significative des cases, un artefact de compression non. On absorbe donc
-  // les clusters minoritaires dans leur voisin le plus proche.
-  const minorThreshold = Math.max(3, Math.round(pixels.length * 0.10))
+  // Filet minimal : n'absorbe que les toutes petites miettes de bruit JPEG
+  // résiduel. Un seuil élevé ici supprimerait à tort de vraies petites
+  // touches de couleur voulues (ex: les yeux, un petit motif dans un coin).
+  const minorThreshold = Math.max(10, Math.round(pixels.length * 0.005))
   while (clusters.length > 1) {
     let minIdx = 0
     for (let i = 1; i < clusters.length; i++) if (clusters[i].count < clusters[minIdx].count) minIdx = i
@@ -104,17 +107,7 @@ const autoQuantizeColors = (pixels, mergeThreshold = MERGE_THRESHOLD, maxColors 
     clusters.splice(bj, 1)
   }
 
-  const indices = pixels.map(p => {
-    let best = 0
-    let bestDist = Infinity
-    for (let i = 0; i < clusters.length; i++) {
-      const d = dist2(p, clusters[i].color)
-      if (d < bestDist) { bestDist = d; best = i }
-    }
-    return best
-  })
-
-  return { palette: clusters.map(c => rgbToHex(c.color)), indices }
+  return clusters.map(c => c.color)
 }
 
 const luminance = (r, g, b) => 0.299 * r + 0.587 * g + 0.114 * b
@@ -236,7 +229,15 @@ const detectGridFromImage = (img) => {
   const numRows = hLines.length - 1
   if (numCols < 2 || numRows < 2 || numCols > MAX_GRID_SIZE || numRows > MAX_GRID_SIZE) return null
 
-  const pixels = []
+  // Échantillonnage par VOTE : beaucoup de diagrammes ont des symboles
+  // imprimés dans les cases (point de croix) — une médiane par case mélange
+  // la couleur de fond avec l'encre du symbole et produit des teintes boueuses
+  // et des couleurs dédoublées. À la place : palette construite sur tous les
+  // pixels intérieurs de l'image, puis chaque pixel d'une case vote pour sa
+  // couleur de palette la plus proche — le fond gagne le vote même avec un
+  // symbole par-dessus.
+  const cellPixelLists = []
+  const allPixels = []
   for (let r = 0; r < numRows; r++) {
     const y0 = hLines[r]
     const y1 = hLines[r + 1]
@@ -245,33 +246,114 @@ const detectGridFromImage = (img) => {
       const x0 = vLines[c]
       const x1 = vLines[c + 1]
       const mx = Math.max(0.5, (x1 - x0) * 0.25)
-      // Médiane plutôt que moyenne : plus robuste aux quelques pixels de
-      // bruit JPEG/anti-crénelage qui traînent encore dans la marge.
-      const rArr = [], gArr = [], bArr = []
+      const pix = []
       for (let y = Math.ceil(y0 + my); y <= Math.floor(y1 - my); y++) {
         for (let x = Math.ceil(x0 + mx); x <= Math.floor(x1 - mx); x++) {
           if (x < 0 || x >= W || y < 0 || y >= H) continue
           const i = (y * W + x) * 4
-          rArr.push(data[i]); gArr.push(data[i + 1]); bArr.push(data[i + 2])
+          const p = [data[i], data[i + 1], data[i + 2]]
+          pix.push(p)
+          allPixels.push(p)
         }
       }
-      const n = rArr.length
-      const median = (arr) => { arr.sort((a, b) => a - b); return arr[Math.floor(arr.length / 2)] }
-      if (n === 0) {
+      if (pix.length === 0) {
         const cx = Math.min(W - 1, Math.max(0, Math.round((x0 + x1) / 2)))
         const cy = Math.min(H - 1, Math.max(0, Math.round((y0 + y1) / 2)))
         const i = (cy * W + cx) * 4
-        pixels.push([data[i], data[i + 1], data[i + 2]])
-      } else {
-        pixels.push([median(rArr), median(gArr), median(bArr)])
+        pix.push([data[i], data[i + 1], data[i + 2]])
+      }
+      cellPixelLists.push(pix)
+    }
+  }
+
+  const paletteColors = buildPaletteFromPixels(allPixels)
+  const cells = []
+  for (let r = 0; r < numRows; r++) {
+    const row = []
+    for (let c = 0; c < numCols; c++) {
+      const votes = new Array(paletteColors.length).fill(0)
+      for (const p of cellPixelLists[r * numCols + c]) {
+        let best = 0
+        let bestDist = Infinity
+        for (let i = 0; i < paletteColors.length; i++) {
+          const d = dist2(p, paletteColors[i])
+          if (d < bestDist) { bestDist = d; best = i }
+        }
+        votes[best]++
+      }
+      let winner = 0
+      for (let i = 1; i < votes.length; i++) if (votes[i] > votes[winner]) winner = i
+      row.push(winner)
+    }
+    cells.push(row)
+  }
+
+  // Fusion des couleurs "mouchetées" : une vraie couleur de fil forme des
+  // zones continues (forte auto-adjacence entre cases voisines), une nuance
+  // parasite issue du JPEG est dispersée en poivre-et-sel dans une autre
+  // couleur (auto-adjacence quasi nulle). On fusionne les mouchetées dans la
+  // couleur la plus proche, MAIS seulement si la distance RGB est raisonnable
+  // — ça protège les détails réellement isolés mais distincts (yeux noirs,
+  // points des papillons), qui ont eux aussi une faible auto-adjacence.
+  const protectedIdx = new Set()
+  for (let iter = 0; iter < 30; iter++) {
+    const n = paletteColors.length
+    const counts = new Array(n).fill(0)
+    const selfAdj = new Array(n).fill(0)
+    const totalAdj = new Array(n).fill(0)
+    for (let r = 0; r < numRows; r++) {
+      for (let c = 0; c < numCols; c++) {
+        const k = cells[r][c]
+        counts[k]++
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nc = c + dx
+          const nr = r + dy
+          if (nc < 0 || nc >= numCols || nr < 0 || nr >= numRows) continue
+          totalAdj[k]++
+          if (cells[nr][nc] === k) selfAdj[k]++
+        }
+      }
+    }
+    let worst = -1
+    let worstRatio = 0.42
+    for (let k = 0; k < n; k++) {
+      if (counts[k] === 0 || totalAdj[k] === 0 || protectedIdx.has(k)) continue
+      const ratio = selfAdj[k] / totalAdj[k]
+      if (ratio < worstRatio) { worstRatio = ratio; worst = k }
+    }
+    if (worst < 0) break
+
+    let nearest = -1
+    let nearestD = Infinity
+    for (let k = 0; k < n; k++) {
+      if (k === worst || counts[k] === 0) continue
+      const d = dist2(paletteColors[worst], paletteColors[k])
+      if (d < nearestD) { nearestD = d; nearest = k }
+    }
+    if (nearest < 0 || nearestD > 90 * 90) {
+      // Couleur mouchetée mais sans voisine plausible : c'est un vrai détail
+      // isolé (yeux, petits points) — on la garde telle quelle.
+      protectedIdx.add(worst)
+      continue
+    }
+    for (let r = 0; r < numRows; r++) {
+      for (let c = 0; c < numCols; c++) {
+        if (cells[r][c] === worst) cells[r][c] = nearest
       }
     }
   }
 
-  const { palette, indices } = autoQuantizeColors(pixels)
-  const cells = []
-  for (let r = 0; r < numRows; r++) cells.push(indices.slice(r * numCols, (r + 1) * numCols))
-  return { width: numCols, height: numRows, palette, cells }
+  // Compacter la palette : retirer les couleurs qui n'ont plus aucune case
+  const usedIdx = new Set()
+  for (const row of cells) for (const k of row) usedIdx.add(k)
+  const remap = new Map()
+  const finalPalette = []
+  for (let k = 0; k < paletteColors.length; k++) {
+    if (usedIdx.has(k)) { remap.set(k, finalPalette.length); finalPalette.push(paletteColors[k]) }
+  }
+  for (const row of cells) for (let c = 0; c < row.length; c++) row[c] = remap.get(row[c])
+
+  return { width: numCols, height: numRows, palette: finalPalette.map(rgbToHex), cells }
 }
 
 const NO_GRID_DETECTED = 'NO_GRID_DETECTED'
@@ -303,6 +385,7 @@ export default function ChartDesigner() {
   const [selectedColor, setSelectedColor] = useState(1)
   const [cellPx, setCellPx] = useState(DEFAULT_CELL_PX)
   const [editingPaletteIndex, setEditingPaletteIndex] = useState(null)
+  const [mergingPaletteIndex, setMergingPaletteIndex] = useState(null)
   const [showSaveModal, setShowSaveModal] = useState(false)
 
   const [imageFile, setImageFile] = useState(null)
@@ -352,7 +435,7 @@ export default function ChartDesigner() {
       const result = await imageFileToChart(imageFile)
       setChart({ name: name.trim(), width: result.width, height: result.height, palette: result.palette, cells: result.cells })
       const colorCount = result.palette.length
-      setImportNote(`Grille détectée automatiquement depuis l'image : ${result.width} × ${result.height} cases, ${colorCount} couleur${colorCount > 1 ? 's' : ''} identifiée${colorCount > 1 ? 's' : ''}. Vous pouvez fusionner des couleurs dans la palette ci-dessous si besoin.`)
+      setImportNote(`Grille détectée automatiquement depuis l'image : ${result.width} × ${result.height} cases, ${colorCount} couleur${colorCount > 1 ? 's' : ''} identifiée${colorCount > 1 ? 's' : ''}. Si un gris parasite s'est glissé dans la palette ci-dessous, un × apparaîtra dessus pour le fusionner avec la bonne couleur.`)
     } catch (e) {
       setImageError(e.message === NO_GRID_DETECTED
         ? "Cette image ne ressemble pas à une grille de motif (aucune ligne régulière détectée). Essayez une image avec des lignes de grille visibles, ou dessinez votre motif à la main."
@@ -476,15 +559,25 @@ export default function ChartDesigner() {
     })
   }
 
-  const removePaletteColor = (index) => {
-    if (index === 0) return
+  // Fusionne sourceIndex dans targetIndex : toutes les cases de la couleur
+  // source basculent vers la couleur cible, puis la source disparaît de la
+  // palette. Contrairement à un simple "supprimer", on choisit vers quelle
+  // couleur reporter les cases (pas systématiquement le fond).
+  const mergePaletteColor = (sourceIndex, targetIndex) => {
+    if (sourceIndex === 0 || sourceIndex === targetIndex) return
     updateChart(prev => {
       if (prev.palette.length <= 2) return prev
-      const palette = prev.palette.filter((_, i) => i !== index)
-      const cells = prev.cells.map(row => row.map(c => (c === index ? 0 : c > index ? c - 1 : c)))
+      const newTarget = targetIndex > sourceIndex ? targetIndex - 1 : targetIndex
+      const cells = prev.cells.map(row => row.map(c => {
+        if (c === sourceIndex) return newTarget
+        if (c > sourceIndex) return c - 1
+        return c
+      }))
+      const palette = prev.palette.filter((_, i) => i !== sourceIndex)
       return { ...prev, palette, cells }
     })
-    if (selectedColor === index) setSelectedColor(0)
+    if (selectedColor === sourceIndex) setSelectedColor(0)
+    setMergingPaletteIndex(null)
   }
 
   // Étape 1 : dimensions (dessin libre ou import d'image)
@@ -571,6 +664,35 @@ export default function ChartDesigner() {
     )
   }
 
+  // Une couleur n'a besoin d'être fusionnée que si elle est probablement un
+  // artefact (bruit de compression, sur-segmentation) plutôt qu'une vraie
+  // couleur voulue du motif : soit elle ne couvre presque aucune case, soit
+  // elle est visuellement quasi identique à une autre couleur de la palette.
+  // Sans ce filtre, le bouton "fusionner" apparaît même sur des couleurs
+  // parfaitement légitimes (ex: vert et rose dans un motif floral), ce qui
+  // n'a pas de sens à proposer.
+  const hexToRgb = (hex) => {
+    const v = hex.replace('#', '')
+    return [parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)]
+  }
+  const paletteUsageCounts = new Array(chart.palette.length).fill(0)
+  let paletteTotalCells = 0
+  for (const row of chart.cells) {
+    for (const c of row) { paletteUsageCounts[c] = (paletteUsageCounts[c] || 0) + 1; paletteTotalCells++ }
+  }
+  const isSuspiciousColor = (index) => {
+    if (index === 0) return false
+    const usageRatio = paletteTotalCells > 0 ? (paletteUsageCounts[index] || 0) / paletteTotalCells : 0
+    if (usageRatio > 0 && usageRatio < 0.05) return true
+    const rgb = hexToRgb(chart.palette[index])
+    return chart.palette.some((otherHex, j) => {
+      if (j === index) return false
+      const other = hexToRgb(otherHex)
+      const d2 = (rgb[0] - other[0]) ** 2 + (rgb[1] - other[1]) ** 2 + (rgb[2] - other[2]) ** 2
+      return d2 < 40 * 40
+    })
+  }
+
   // Étape 2 : dessin
   return (
     <div className="space-y-4">
@@ -599,6 +721,64 @@ export default function ChartDesigner() {
         <span className="text-xs text-gray-400">{chart.name} — {chart.width} × {chart.height}</span>
         <button onClick={() => setCellPx(v => Math.min(48, v + 2))} className="w-7 h-7 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-gray-100">+</button>
         <button onClick={fitZoomToScreen} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-600">Ajuster à l'écran</button>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-sm p-4">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Palette — cliquez pour peindre</p>
+        <div className="flex flex-wrap gap-2">
+          {chart.palette.map((hex, i) => (
+            <div key={i} className="relative">
+              <button
+                onClick={() => setSelectedColor(i)}
+                onDoubleClick={() => setEditingPaletteIndex(i)}
+                className={`w-9 h-9 rounded-lg border-2 transition ${selectedColor === i ? 'border-primary-600 ring-2 ring-primary-300 ring-offset-1 scale-110' : 'border-gray-200'}`}
+                style={{ backgroundColor: hex }}
+                title={i === 0 ? 'Fond' : `Couleur ${i}`}
+              />
+              {selectedColor === i && (
+                <span className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-primary-600 text-white rounded-full text-[10px] leading-none flex items-center justify-center shadow">
+                  ✓
+                </span>
+              )}
+              {editingPaletteIndex === i && (
+                <div className="absolute top-10 left-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 whitespace-nowrap">
+                  <input type="color" autoFocus value={hex} onChange={e => changePaletteColor(i, e.target.value)} />
+                  <button onClick={() => setEditingPaletteIndex(null)} className="text-xs px-2 py-1 bg-primary-600 text-white rounded hover:bg-primary-700">Terminé</button>
+                </div>
+              )}
+              {i > 0 && isSuspiciousColor(i) && (
+                <button
+                  onClick={() => setMergingPaletteIndex(i)}
+                  className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs leading-none flex items-center justify-center hover:bg-red-600 z-10"
+                  title="Cette couleur ressemble à un artefact — fusionner avec une autre couleur"
+                >×</button>
+              )}
+              {mergingPaletteIndex === i && (
+                <div className="absolute top-10 right-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 whitespace-nowrap">
+                  <p className="text-xs text-gray-500 mb-2">Fusionner avec :</p>
+                  <div className="flex items-center gap-1.5">
+                    {chart.palette.map((targetHex, ti) => ti !== i && (
+                      <button
+                        key={ti}
+                        onClick={() => mergePaletteColor(i, ti)}
+                        className="w-6 h-6 rounded border border-gray-300 hover:ring-2 hover:ring-primary-400"
+                        style={{ backgroundColor: targetHex }}
+                        title={ti === 0 ? 'Fond' : `Couleur ${ti}`}
+                      />
+                    ))}
+                    <button onClick={() => setMergingPaletteIndex(null)} className="text-xs px-2 py-1 ml-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-500">Annuler</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={addPaletteColor}
+            className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
+            title="Ajouter une couleur"
+          >＋</button>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">Double-cliquez une couleur pour la modifier. Si une couleur ressemble à un artefact (très peu utilisée ou quasi identique à une autre), un × apparaît pour la fusionner avec la bonne couleur.</p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">
@@ -631,47 +811,6 @@ export default function ChartDesigner() {
           <button onClick={() => addRow('bottom')} title="Ajouter un rang en-dessous" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
           <button onClick={() => removeRow('bottom')} title="Retirer le rang du dessous" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
         </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm p-4">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Palette — cliquez pour peindre</p>
-        <div className="flex flex-wrap gap-2">
-          {chart.palette.map((hex, i) => (
-            <div key={i} className="relative">
-              <button
-                onClick={() => setSelectedColor(i)}
-                onDoubleClick={() => setEditingPaletteIndex(i)}
-                className={`w-9 h-9 rounded-lg border-2 transition ${selectedColor === i ? 'border-primary-600 ring-2 ring-primary-300 ring-offset-1 scale-110' : 'border-gray-200'}`}
-                style={{ backgroundColor: hex }}
-                title={i === 0 ? 'Fond' : `Couleur ${i}`}
-              />
-              {selectedColor === i && (
-                <span className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-primary-600 text-white rounded-full text-[10px] leading-none flex items-center justify-center shadow">
-                  ✓
-                </span>
-              )}
-              {editingPaletteIndex === i && (
-                <div className="absolute top-10 left-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 whitespace-nowrap">
-                  <input type="color" autoFocus value={hex} onChange={e => changePaletteColor(i, e.target.value)} />
-                  <button onClick={() => setEditingPaletteIndex(null)} className="text-xs px-2 py-1 bg-primary-600 text-white rounded hover:bg-primary-700">Terminé</button>
-                </div>
-              )}
-              {i > 0 && (
-                <button
-                  onClick={() => removePaletteColor(i)}
-                  className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] leading-none flex items-center justify-center hover:bg-red-600"
-                  title="Supprimer cette couleur"
-                >×</button>
-              )}
-            </div>
-          ))}
-          <button
-            onClick={addPaletteColor}
-            className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
-            title="Ajouter une couleur"
-          >＋</button>
-        </div>
-        <p className="text-xs text-gray-400 mt-2">Double-cliquez une couleur pour la modifier.</p>
       </div>
 
       {showSaveModal && (
