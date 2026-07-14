@@ -210,7 +210,9 @@ PROMPT;
                                 ['text' => $prompt],
                             ]
                         ]],
-                        'generationConfig' => ['temperature' => 0.2, 'maxOutputTokens' => 8192],
+                        // [AI:Claude] 65536 = plafond max de gemini-2.5-flash. À 8192, les
+                        // patrons longs étaient silencieusement tronqués aux 3/4.
+                        'generationConfig' => ['temperature' => 0.2, 'maxOutputTokens' => 65536],
                     ]
                 ]
             );
@@ -361,7 +363,9 @@ PROMPT;
                         ],
                         'generationConfig' => [
                             'temperature' => 0.2,
-                            'maxOutputTokens' => 8192,
+                            // [AI:Claude] 65536 = plafond max de gemini-2.5-flash. À 8192,
+                            // les patrons longs étaient silencieusement tronqués aux 3/4.
+                            'maxOutputTokens' => 65536,
                         ]
                     ]
                 ]
