@@ -172,18 +172,21 @@ const TOOLS = [
     id: 'chart-designer',
     Icon: IconGrid,
     title: 'Grille jacquard (bêta)',
-    description: 'Dessinez une grille jacquard/colorwork, puis enregistrez-la dans un de vos projets.',
+    description: 'Dessinez une grille jacquard/colorwork, ou importez-la depuis une image, puis enregistrez-la dans un de vos projets.',
     component: ChartDesigner,
     betaOnly: true,
+    badge: 'PLUS/PRO',
+    wide: true,
   },
 ]
 
 export default function Tools() {
   const [activeTool, setActiveTool] = useState(null)
-  const { user, isAdmin } = useAuth()
-  // [AI:Claude] Grille jacquard encore en test — réservée aux admins + la
-  // bêta-testeuse (user 30) à l'origine de la demande
-  const canAccessJacquard = isAdmin() || user?.id === 30
+  const { user, isAdmin, hasActiveSubscription } = useAuth()
+  // [AI:Claude] Grille jacquard réservée aux abonnés (PLUS/PRO) + admins +
+  // la bêta-testeuse (user 30) à l'origine de la demande, qui garde l'accès
+  // même sans abonnement actif pour continuer à tester
+  const canAccessJacquard = isAdmin() || user?.id === 30 || hasActiveSubscription()
   const visibleTools = TOOLS.filter(t => !t.betaOnly || canAccessJacquard)
 
   const tool = visibleTools.find(t => t.id === activeTool)
@@ -192,7 +195,7 @@ export default function Tools() {
     const ToolComponent = tool.component
     const { Icon } = tool
     return (
-      <div className="max-w-lg mx-auto px-4 py-6 pb-24">
+      <div className={`${tool.wide ? 'max-w-4xl' : 'max-w-lg'} mx-auto px-4 py-6 pb-24`}>
         <button
           onClick={() => setActiveTool(null)}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition"
