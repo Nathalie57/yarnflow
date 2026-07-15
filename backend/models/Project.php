@@ -510,7 +510,7 @@ class Project extends BaseModel
      */
     public function endSession(int $sessionId, int $rowsCompleted = 0, ?string $notes = null, ?int $duration = null): bool
     {
-        $sessionQuery = "SELECT ps.project_id, ps.section_id, p.user_id
+        $sessionQuery = "SELECT ps.project_id, ps.section_id, ps.ended_at, p.user_id
                          FROM project_sessions ps
                          JOIN projects p ON p.id = ps.project_id
                          WHERE ps.id = :id";
@@ -521,6 +521,12 @@ class Project extends BaseModel
 
         if (!$session)
             return false;
+
+        // [AI:Claude] Session déjà fermée (ex: par closeDanglingSessions() suite à un
+        // démarrage sur un autre appareil) — ne rien refaire, sinon la durée serait
+        // recréditée une seconde fois sur total_time/time_spent.
+        if ($session['ended_at'] !== null)
+            return true;
 
         // [AI:Claude] FIX BUG: Si la durée est fournie par le frontend, l'utiliser directement
         // Sinon, calculer avec TIMESTAMPDIFF (rétrocompatibilité)
