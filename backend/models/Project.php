@@ -451,6 +451,14 @@ class Project extends BaseModel
      */
     public function startSession(int $projectId, ?int $sectionId = null): int|false
     {
+        // [AI:Claude] `beforeunload` (seul déclencheur de fermeture normale)
+        // ne se déclenche pas de façon fiable sur mobile/PWA quand l'app est
+        // mise en arrière-plan ou tuée par l'OS — ça laissait des sessions
+        // avec ended_at=NULL/duration=0 s'accumuler indéfiniment. On ferme
+        // donc toute session restée ouverte sur ce projet avant d'en démarrer
+        // une nouvelle (voir closeDanglingSessions pour le plafond de durée).
+        $this->closeDanglingSessions($projectId);
+
         $query = "INSERT INTO project_sessions (project_id, section_id, started_at)
                   VALUES (:project_id, :section_id, NOW())";
 
@@ -462,6 +470,33 @@ class Project extends BaseModel
             return (int) $this->db->lastInsertId();
 
         return false;
+    }
+
+    /**
+     * [AI:Claude] Referme les sessions restées ouvertes (ended_at IS NULL) sur
+     * un projet, avec une durée plafonnée pour ne pas polluer les stats si la
+     * session est restée ouverte des heures/jours (app tuée en arrière-plan,
+     * téléphone éteint, etc.) — voir startSession() et le cron
+     * close-stale-sessions.php pour les sessions dont l'utilisateur ne
+     * revient jamais démarrer de nouvelle session sur le même projet.
+     *
+     * @param int $projectId ID du projet
+     * @param int $maxDurationSeconds Plafond de durée recréditée (défaut 3h)
+     */
+    public function closeDanglingSessions(int $projectId, int $maxDurationSeconds = 10800): void
+    {
+        $query = "SELECT id, TIMESTAMPDIFF(SECOND, started_at, NOW()) as elapsed
+                  FROM project_sessions
+                  WHERE project_id = :project_id AND ended_at IS NULL";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->execute();
+        $dangling = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($dangling as $row) {
+            $cappedDuration = max(0, min((int) $row['elapsed'], $maxDurationSeconds));
+            $this->endSession((int) $row['id'], 0, 'Fermée automatiquement (session non terminée normalement)', $cappedDuration);
+        }
     }
 
     /**
