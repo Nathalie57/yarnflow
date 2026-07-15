@@ -532,16 +532,20 @@ class Project extends BaseModel
         // Sinon, calculer avec TIMESTAMPDIFF (rétrocompatibilité)
         if ($duration !== null) {
             // ended_at = started_at + durée réelle : évite les écarts quand la requête arrive tardivement
+            // [AI:Claude] :duration_end / :duration_val distincts — PDO en mode prepared
+            // statements natif (non émulé) refuse de réutiliser le même paramètre nommé
+            // deux fois dans une requête (SQLSTATE[HY093]: Invalid parameter number).
             $query = "UPDATE project_sessions
-                      SET ended_at = DATE_ADD(started_at, INTERVAL :duration SECOND),
-                          duration = :duration,
+                      SET ended_at = DATE_ADD(started_at, INTERVAL :duration_end SECOND),
+                          duration = :duration_val,
                           rows_completed = :rows_completed,
                           notes = :notes
                       WHERE id = :id";
 
             $stmt = $this->db->prepare($query);
             $stmt->bindValue(':id', $sessionId, PDO::PARAM_INT);
-            $stmt->bindValue(':duration', $duration, PDO::PARAM_INT);
+            $stmt->bindValue(':duration_end', $duration, PDO::PARAM_INT);
+            $stmt->bindValue(':duration_val', $duration, PDO::PARAM_INT);
             $stmt->bindValue(':rows_completed', $rowsCompleted, PDO::PARAM_INT);
             $stmt->bindValue(':notes', $notes, PDO::PARAM_STR);
         } else {
