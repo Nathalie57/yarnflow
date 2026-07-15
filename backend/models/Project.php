@@ -451,6 +451,14 @@ class Project extends BaseModel
      */
     public function startSession(int $projectId, ?int $sectionId = null): int|false
     {
+        // [AI:Claude] `beforeunload` (seul déclencheur de fermeture normale)
+        // ne se déclenche pas de façon fiable sur mobile/PWA quand l'app est
+        // mise en arrière-plan ou tuée par l'OS — ça laissait des sessions
+        // avec ended_at=NULL/duration=0 s'accumuler indéfiniment. On ferme
+        // donc toute session restée ouverte sur ce projet avant d'en démarrer
+        // une nouvelle (voir closeDanglingSessions pour le plafond de durée).
+        $this->closeDanglingSessions($projectId);
+
         $query = "INSERT INTO project_sessions (project_id, section_id, started_at)
                   VALUES (:project_id, :section_id, NOW())";
 
@@ -465,6 +473,33 @@ class Project extends BaseModel
     }
 
     /**
+     * [AI:Claude] Referme les sessions restées ouvertes (ended_at IS NULL) sur
+     * un projet, avec une durée plafonnée pour ne pas polluer les stats si la
+     * session est restée ouverte des heures/jours (app tuée en arrière-plan,
+     * téléphone éteint, etc.) — voir startSession() et le cron
+     * close-stale-sessions.php pour les sessions dont l'utilisateur ne
+     * revient jamais démarrer de nouvelle session sur le même projet.
+     *
+     * @param int $projectId ID du projet
+     * @param int $maxDurationSeconds Plafond de durée recréditée (défaut 3h)
+     */
+    public function closeDanglingSessions(int $projectId, int $maxDurationSeconds = 10800): void
+    {
+        $query = "SELECT id, TIMESTAMPDIFF(SECOND, started_at, NOW()) as elapsed
+                  FROM project_sessions
+                  WHERE project_id = :project_id AND ended_at IS NULL";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->execute();
+        $dangling = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($dangling as $row) {
+            $cappedDuration = max(0, min((int) $row['elapsed'], $maxDurationSeconds));
+            $this->endSession((int) $row['id'], 0, 'Fermée automatiquement (session non terminée normalement)', $cappedDuration);
+        }
+    }
+
+    /**
      * [AI:Claude] Terminer une session de travail
      *
      * @param int $sessionId ID de la session
@@ -475,7 +510,7 @@ class Project extends BaseModel
      */
     public function endSession(int $sessionId, int $rowsCompleted = 0, ?string $notes = null, ?int $duration = null): bool
     {
-        $sessionQuery = "SELECT ps.project_id, ps.section_id, p.user_id
+        $sessionQuery = "SELECT ps.project_id, ps.section_id, ps.ended_at, p.user_id
                          FROM project_sessions ps
                          JOIN projects p ON p.id = ps.project_id
                          WHERE ps.id = :id";
@@ -487,20 +522,30 @@ class Project extends BaseModel
         if (!$session)
             return false;
 
+        // [AI:Claude] Session déjà fermée (ex: par closeDanglingSessions() suite à un
+        // démarrage sur un autre appareil) — ne rien refaire, sinon la durée serait
+        // recréditée une seconde fois sur total_time/time_spent.
+        if ($session['ended_at'] !== null)
+            return true;
+
         // [AI:Claude] FIX BUG: Si la durée est fournie par le frontend, l'utiliser directement
         // Sinon, calculer avec TIMESTAMPDIFF (rétrocompatibilité)
         if ($duration !== null) {
             // ended_at = started_at + durée réelle : évite les écarts quand la requête arrive tardivement
+            // [AI:Claude] :duration_end / :duration_val distincts — PDO en mode prepared
+            // statements natif (non émulé) refuse de réutiliser le même paramètre nommé
+            // deux fois dans une requête (SQLSTATE[HY093]: Invalid parameter number).
             $query = "UPDATE project_sessions
-                      SET ended_at = DATE_ADD(started_at, INTERVAL :duration SECOND),
-                          duration = :duration,
+                      SET ended_at = DATE_ADD(started_at, INTERVAL :duration_end SECOND),
+                          duration = :duration_val,
                           rows_completed = :rows_completed,
                           notes = :notes
                       WHERE id = :id";
 
             $stmt = $this->db->prepare($query);
             $stmt->bindValue(':id', $sessionId, PDO::PARAM_INT);
-            $stmt->bindValue(':duration', $duration, PDO::PARAM_INT);
+            $stmt->bindValue(':duration_end', $duration, PDO::PARAM_INT);
+            $stmt->bindValue(':duration_val', $duration, PDO::PARAM_INT);
             $stmt->bindValue(':rows_completed', $rowsCompleted, PDO::PARAM_INT);
             $stmt->bindValue(':notes', $notes, PDO::PARAM_STR);
         } else {

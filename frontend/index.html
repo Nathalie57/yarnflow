@@ -90,8 +90,27 @@
         gtag('consent', 'update', { 'analytics_storage': 'granted' });
       }
     </script>
+
+    <!-- Meta Pixel - chargé uniquement après consentement RGPD (pas de mode
+         "consent" natif comme gtag, donc on ne l'injecte pas du tout tant que
+         le cookie de consentement n'est pas accepté) -->
+    <script>
+      function loadFacebookPixel() {
+        if (window.fbq) return;
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '1018618181083011');
+        fbq('track', 'PageView');
+      }
+      if (document.cookie.indexOf('yarnflow_cookie_consent=true') !== -1) {
+        loadFacebookPixel();
+      }
+    </script>
+    <!-- End Meta Pixel Code -->
   </head>
   <body>
+    <!-- noscript du Meta Pixel : doit être dans <body>, pas <head> (le HTML
+         n'autorise pas <img> dans un <noscript> placé dans <head>) -->
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1018618181083011&ev=PageView&noscript=1" alt="" /></noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 

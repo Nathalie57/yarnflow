@@ -160,6 +160,9 @@ function App() {
             if (window.gtag) {
               window.gtag('consent', 'update', { 'analytics_storage': 'granted' })
             }
+            if (window.loadFacebookPixel) {
+              window.loadFacebookPixel()
+            }
           }}
           onDecline={() => {
             if (window.gtag) {
