@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import api from '../services/api'
+import SaveChartToProjectModal from '../components/tools/SaveChartToProjectModal'
 
 const MAX_GRID_SIZE = 200
 const MIN_GRID_SIZE = 1
@@ -23,6 +24,7 @@ const ChartEditor = () => {
   const [selectedColor, setSelectedColor] = useState(1)
   const [cellPx, setCellPx] = useState(DEFAULT_CELL_PX)
   const [editingPaletteIndex, setEditingPaletteIndex] = useState(null)
+  const [showAssignModal, setShowAssignModal] = useState(false)
   // [AI:Claude] Verrou anti-modification accidentelle, persisté côté serveur (champ
   // locked) — modifiable juste après la création, verrouillée automatiquement dès
   // qu'on y accède autrement (liste du projet), et le reste tant qu'on n'a pas
@@ -31,9 +33,33 @@ const ChartEditor = () => {
   const isLocked = chart?.locked === 1 || chart?.locked === '1' || chart?.locked === true
 
   const canvasRef = useRef(null)
+  const canvasRowRef = useRef(null)
   const isPaintingRef = useRef(false)
   const paintValueRef = useRef(1)
   const saveTimeoutRef = useRef(null)
+  const lastFitDimsRef = useRef(null)
+
+  // [AI:Claude] Ajuste le zoom pour que toute la grille tienne à l'écran à
+  // l'ouverture — sans ça une grande grille (ex: 55×60 importée d'une image)
+  // démarre au zoom fixe par défaut, bien trop grand, et donne l'impression
+  // qu'un bout du motif manque alors qu'on n'en voit qu'une portion zoomée.
+  const fitZoomToScreen = () => {
+    const row = canvasRowRef.current
+    if (!row || !chart) return
+    const sideButtonsWidth = 80 // boutons +/− compacts de part et d'autre du canevas
+    const usable = Math.max(80, row.clientWidth - sideButtonsWidth)
+    const fit = Math.floor(usable / chart.width)
+    setCellPx(Math.max(2, Math.min(DEFAULT_CELL_PX, fit)))
+  }
+
+  useEffect(() => {
+    if (!chart) return
+    const dims = `${chart.width}x${chart.height}`
+    if (lastFitDimsRef.current === dims) return
+    lastFitDimsRef.current = dims
+    requestAnimationFrame(fitZoomToScreen)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chart?.width, chart?.height])
 
   useEffect(() => {
     const loadChart = async () => {
@@ -100,17 +126,6 @@ const ChartEditor = () => {
       }
     }
 
-    // [AI:Claude] Éclaircir/délaver les rangs déjà tricotés (sous le rang en cours,
-    // convention bas → haut). Un blanc pur ne peut pas être "éclairci" (déjà la
-    // valeur la plus claire possible) donc on utilise une teinte pâle colorée
-    // (vert clair de la charte) qui délave les couleurs foncées ET reste visible
-    // sur les cases blanches, contrairement à un simple voile blanc.
-    const doneBelowY = chart.height - chart.current_row
-    if (doneBelowY < chart.height) {
-      ctx.fillStyle = 'rgba(85, 112, 85, 0.28)'
-      ctx.fillRect(0, doneBelowY * cellPx, chart.width * cellPx, (chart.height - doneBelowY) * cellPx)
-    }
-
     // Grille
     ctx.strokeStyle = 'rgba(0,0,0,0.15)'
     ctx.lineWidth = 1
@@ -125,14 +140,6 @@ const ChartEditor = () => {
       ctx.moveTo(0, y * cellPx)
       ctx.lineTo(chart.width * cellPx, y * cellPx)
       ctx.stroke()
-    }
-
-    // Surlignage du rang en cours (lu de bas en haut, convention tricot)
-    const highlightY = chart.height - 1 - chart.current_row
-    if (highlightY >= 0 && highlightY < chart.height) {
-      ctx.strokeStyle = '#557055'
-      ctx.lineWidth = 3
-      ctx.strokeRect(0, highlightY * cellPx + 1.5, chart.width * cellPx, cellPx - 3)
     }
   }, [chart, cellPx])
 
@@ -237,10 +244,6 @@ const ChartEditor = () => {
     if (selectedColor === index) setSelectedColor(0)
   }
 
-  const setCurrentRow = (row) => {
-    updateChart(prev => ({ ...prev, current_row: Math.max(0, Math.min(prev.height, row)) }))
-  }
-
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center text-gray-400">Chargement de la grille...</div>
   }
@@ -260,21 +263,21 @@ const ChartEditor = () => {
     <div className="min-h-screen bg-gray-50 pb-24">
       <div className="max-w-3xl mx-auto p-4 space-y-4">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <button onClick={() => navigate(`/projects/${projectId}`)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+        <div className="flex items-center justify-between gap-2">
+          <button onClick={() => navigate(`/projects/${projectId}`)} className="flex-shrink-0 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            Retour
+            <span className="hidden sm:inline">Retour</span>
           </button>
           <input
             type="text"
             value={chart.name}
             onChange={e => updateChart(prev => ({ ...prev, name: e.target.value }))}
             disabled={isLocked}
-            className="text-lg font-bold text-gray-900 text-center bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary-500 focus:outline-none px-2 disabled:opacity-70"
+            className="flex-1 min-w-0 text-lg font-bold text-gray-900 text-center bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary-500 focus:outline-none px-2 disabled:opacity-70"
           />
           <button
             onClick={toggleLock}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+            className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               isLocked ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-primary-600 text-white hover:bg-primary-700'
             }`}
             title={isLocked ? 'Grille verrouillée — cliquez pour la modifier' : 'Verrouiller la grille pour suivre votre progression sans risque'}
@@ -284,7 +287,7 @@ const ChartEditor = () => {
             ) : (
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
             )}
-            {isLocked ? 'Modifier' : 'Enregistrer'}
+            <span className="hidden sm:inline">{isLocked ? 'Modifier' : 'Enregistrer'}</span>
           </button>
         </div>
 
@@ -294,24 +297,92 @@ const ChartEditor = () => {
           </div>
         )}
 
+        {/* Association projet/section — une grille peut être réutilisée sur un
+            autre projet après sa création (ex: même motif sur un autre pull) */}
+        <button
+          onClick={() => setShowAssignModal(true)}
+          className="w-full text-xs px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition text-gray-600 flex items-center justify-center gap-1.5"
+        >
+          🔗 {chart.section_id ? 'Changer de projet/section' : 'Associer à un projet/section'}
+        </button>
+
         {/* Zoom */}
         <div className="flex items-center justify-center gap-3">
-          <button onClick={() => setCellPx(v => Math.max(6, v - 4))} className="w-7 h-7 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-gray-100">−</button>
+          <button onClick={() => setCellPx(v => Math.max(2, v - 2))} className="w-7 h-7 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-gray-100">−</button>
           <span className="text-xs text-gray-400">{chart.width} × {chart.height}</span>
-          <button onClick={() => setCellPx(v => Math.min(48, v + 4))} className="w-7 h-7 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-gray-100">+</button>
+          <button onClick={() => setCellPx(v => Math.min(48, v + 2))} className="w-7 h-7 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-gray-100">+</button>
+          <button onClick={fitZoomToScreen} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-600">Ajuster à l'écran</button>
         </div>
 
-        {/* Grille avec boutons d'ajout/retrait */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">
-          <div className="flex justify-center mb-2 gap-2">
-            <button disabled={isLocked} onClick={() => addColumn('left')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">+ Colonne gauche</button>
-            <button disabled={isLocked} onClick={() => removeColumn('left')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">− Colonne gauche</button>
-          </div>
-          <div className="flex items-start gap-2 justify-center">
-            <div className="flex flex-col gap-2 pt-8">
-              <button disabled={isLocked} onClick={() => addRow('top')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">+ Rang haut</button>
-              <button disabled={isLocked} onClick={() => removeRow('top')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">− Rang haut</button>
+        {/* Palette — masquée grille verrouillée : la peinture y est désactivée */}
+        {!isLocked && (
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Palette — cliquez pour peindre</p>
+            <div className="flex flex-wrap gap-2">
+              {chart.palette.map((hex, i) => (
+                <div key={i} className="relative">
+                  <button
+                    onClick={() => setSelectedColor(i)}
+                    onDoubleClick={() => setEditingPaletteIndex(i)}
+                    className={`w-9 h-9 rounded-lg border-2 transition ${selectedColor === i ? 'border-primary-600 ring-2 ring-primary-300 ring-offset-1 scale-110' : 'border-gray-200'}`}
+                    style={{ backgroundColor: hex }}
+                    title={i === 0 ? 'Fond' : `Couleur ${i}`}
+                  />
+                  {selectedColor === i && (
+                    <span className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-primary-600 text-white rounded-full text-[10px] leading-none flex items-center justify-center shadow">
+                      ✓
+                    </span>
+                  )}
+                  {editingPaletteIndex === i && (
+                    <div className="absolute top-10 left-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 whitespace-nowrap">
+                      <input
+                        type="color"
+                        autoFocus
+                        value={hex}
+                        onChange={e => changePaletteColor(i, e.target.value)}
+                      />
+                      <button
+                        onClick={() => setEditingPaletteIndex(null)}
+                        className="text-xs px-2 py-1 bg-primary-600 text-white rounded hover:bg-primary-700"
+                      >
+                        Terminé
+                      </button>
+                    </div>
+                  )}
+                  {i > 0 && (
+                    <button
+                      onClick={() => removePaletteColor(i)}
+                      className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] leading-none flex items-center justify-center hover:bg-red-600"
+                      title="Supprimer cette couleur"
+                    >×</button>
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={addPaletteColor}
+                className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
+                title="Ajouter une couleur"
+              >＋</button>
             </div>
+            <p className="text-xs text-gray-400 mt-2">Double-cliquez une couleur pour la modifier.</p>
+          </div>
+        )}
+
+        {/* Grille avec boutons d'ajout/retrait — masqués grille verrouillée */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">
+          {!isLocked && (
+            <div className="flex justify-center mb-1 gap-1.5">
+              <button onClick={() => addRow('top')} title="Ajouter un rang au-dessus" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+              <button onClick={() => removeRow('top')} title="Retirer le rang du dessus" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+            </div>
+          )}
+          <div ref={canvasRowRef} className="flex items-center gap-1.5 justify-center">
+            {!isLocked && (
+              <div className="flex flex-col gap-1.5">
+                <button onClick={() => addColumn('left')} title="Ajouter une colonne à gauche" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+                <button onClick={() => removeColumn('left')} title="Retirer la colonne de gauche" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+              </div>
+            )}
             <canvas
               ref={canvasRef}
               className="touch-none cursor-crosshair border border-gray-200 rounded"
@@ -323,84 +394,37 @@ const ChartEditor = () => {
               onTouchMove={e => { e.preventDefault(); const t = e.touches[0]; handlePointerMove({ clientX: t.clientX, clientY: t.clientY }) }}
               onTouchEnd={handlePointerUp}
             />
-            <div className="flex flex-col gap-2 pt-8">
-              <button disabled={isLocked} onClick={() => addRow('bottom')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">+ Rang bas</button>
-              <button disabled={isLocked} onClick={() => removeRow('bottom')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">− Rang bas</button>
-            </div>
-          </div>
-          <div className="flex justify-center mt-2 gap-2">
-            <button disabled={isLocked} onClick={() => addColumn('right')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">+ Colonne droite</button>
-            <button disabled={isLocked} onClick={() => removeColumn('right')} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed">− Colonne droite</button>
-          </div>
-        </div>
-
-        {/* Palette */}
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Palette — cliquez pour peindre</p>
-          <div className="flex flex-wrap gap-2">
-            {chart.palette.map((hex, i) => (
-              <div key={i} className="relative">
-                <button
-                  onClick={() => setSelectedColor(i)}
-                  onDoubleClick={() => !isLocked && setEditingPaletteIndex(i)}
-                  className={`w-9 h-9 rounded-lg border-2 transition ${selectedColor === i ? 'border-primary-600 ring-2 ring-primary-300 ring-offset-1 scale-110' : 'border-gray-200'}`}
-                  style={{ backgroundColor: hex }}
-                  title={i === 0 ? 'Fond' : `Couleur ${i}`}
-                />
-                {selectedColor === i && (
-                  <span className="absolute -top-1.5 -left-1.5 w-4 h-4 bg-primary-600 text-white rounded-full text-[10px] leading-none flex items-center justify-center shadow">
-                    ✓
-                  </span>
-                )}
-                {editingPaletteIndex === i && (
-                  <div className="absolute top-10 left-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 whitespace-nowrap">
-                    <input
-                      type="color"
-                      autoFocus
-                      value={hex}
-                      onChange={e => changePaletteColor(i, e.target.value)}
-                    />
-                    <button
-                      onClick={() => setEditingPaletteIndex(null)}
-                      className="text-xs px-2 py-1 bg-primary-600 text-white rounded hover:bg-primary-700"
-                    >
-                      Terminé
-                    </button>
-                  </div>
-                )}
-                {i > 0 && !isLocked && (
-                  <button
-                    onClick={() => removePaletteColor(i)}
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] leading-none flex items-center justify-center hover:bg-red-600"
-                    title="Supprimer cette couleur"
-                  >×</button>
-                )}
-              </div>
-            ))}
             {!isLocked && (
-              <button
-                onClick={addPaletteColor}
-                className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
-                title="Ajouter une couleur"
-              >＋</button>
+              <div className="flex flex-col gap-1.5">
+                <button onClick={() => addColumn('right')} title="Ajouter une colonne à droite" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+                <button onClick={() => removeColumn('right')} title="Retirer la colonne de droite" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+              </div>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-2">{isLocked ? 'Cliquez une couleur pour la sélectionner.' : 'Double-cliquez une couleur pour la modifier.'}</p>
-        </div>
-
-        {/* Progression */}
-        <div className="bg-white rounded-2xl shadow-sm p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Progression</p>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setCurrentRow(chart.current_row - 1)} className="w-8 h-8 bg-gray-100 text-gray-600 rounded-full font-bold hover:bg-gray-200">−</button>
-            <div className="flex-1 text-center">
-              <span className="font-bold text-xl text-gray-900">{chart.current_row}</span>
-              <span className="text-gray-400 font-normal text-sm"> / {chart.height}</span>
+          {!isLocked && (
+            <div className="flex justify-center mt-1 gap-1.5">
+              <button onClick={() => addRow('bottom')} title="Ajouter un rang en-dessous" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+              <button onClick={() => removeRow('bottom')} title="Retirer le rang du dessous" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
             </div>
-            <button onClick={() => setCurrentRow(chart.current_row + 1)} className="w-8 h-8 bg-primary-600 text-white rounded-full font-bold hover:bg-primary-700">+</button>
-          </div>
+          )}
         </div>
       </div>
+
+      {showAssignModal && (
+        <SaveChartToProjectModal
+          existingChart={chart}
+          onClose={() => setShowAssignModal(false)}
+          onSaved={(updatedChart) => {
+            // [AI:Claude] Si la grille a changé de projet, l'URL actuelle (ancien
+            // projectId) ne correspond plus — on redirige vers la nouvelle.
+            if (updatedChart && String(updatedChart.project_id) !== String(projectId)) {
+              navigate(`/projects/${updatedChart.project_id}/charts/${chartId}`, { replace: true })
+            } else {
+              setChart(updatedChart)
+            }
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -1,16 +1,20 @@
 /**
  * @file SaveChartToProjectModal.jsx
- * @brief Modal pour enregistrer une grille jacquard dessinée dans l'outil vers un projet
+ * @brief Modal pour associer une grille jacquard à un projet/section — soit à
+ * la création (outil bac à sable), soit pour réassigner une grille existante
+ * (même motif réutilisé sur un autre projet/section plus tard).
  */
 
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
 
-export default function SaveChartToProjectModal({ chart, onClose, onSaved }) {
+export default function SaveChartToProjectModal({ chart, existingChart, onClose, onSaved }) {
+  const isReassign = !!existingChart
   const [projects, setProjects] = useState([])
   const [sections, setSections] = useState([])
-  const [selectedProjectId, setSelectedProjectId] = useState('')
-  const [selectedSectionId, setSelectedSectionId] = useState('')
+  const [selectedProjectId, setSelectedProjectId] = useState(isReassign ? String(existingChart.project_id) : '')
+  const [selectedSectionId, setSelectedSectionId] = useState(isReassign && existingChart.section_id ? String(existingChart.section_id) : '')
+  const [startRow, setStartRow] = useState(isReassign ? (existingChart.start_row || 0) : 0)
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [loadingSections, setLoadingSections] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -27,27 +31,56 @@ export default function SaveChartToProjectModal({ chart, onClose, onSaved }) {
   useEffect(() => {
     if (!selectedProjectId) { setSections([]); setSelectedSectionId(''); return }
     setLoadingSections(true)
-    setSelectedSectionId('')
+    // [AI:Claude] Ne pas réinitialiser la section/le rang de départ si on ne
+    // fait que pré-remplir le projet initial en mode réassignation
+    if (!isReassign || selectedProjectId !== String(existingChart.project_id)) {
+      setSelectedSectionId('')
+      setStartRow(0)
+    }
     api.get(`/projects/${selectedProjectId}/sections`).then(res => {
       setSections(res.data?.sections || res.data || [])
       setLoadingSections(false)
     }).catch(() => setLoadingSections(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProjectId])
 
+  const selectedSection = sections.find(s => String(s.id) === String(selectedSectionId))
+  const chartHeight = isReassign ? existingChart.height : chart.height
+
   const handleSave = async () => {
-    if (!selectedProjectId) return
+    if (isReassign && !selectedProjectId) return
     setSaving(true)
     setError('')
 
     try {
-      const res = await api.post(`/projects/${selectedProjectId}/charts`, {
-        section_id: selectedSectionId || null,
-        name: chart.name,
-        width: chart.width,
-        height: chart.height,
-        palette: chart.palette,
-        cells: chart.cells,
-      })
+      let res
+      if (isReassign) {
+        res = await api.put(`/projects/${existingChart.project_id}/charts/${existingChart.id}`, {
+          project_id: Number(selectedProjectId),
+          section_id: selectedSectionId || null,
+          start_row: selectedSectionId ? Number(startRow) || 0 : 0,
+        })
+      } else if (selectedProjectId) {
+        res = await api.post(`/projects/${selectedProjectId}/charts`, {
+          section_id: selectedSectionId || null,
+          start_row: selectedSectionId ? Number(startRow) || 0 : 0,
+          name: chart.name,
+          width: chart.width,
+          height: chart.height,
+          palette: chart.palette,
+          cells: chart.cells,
+        })
+      } else {
+        // [AI:Claude] Pas de projet choisi : la grille est enregistrée seule,
+        // visible uniquement dans "Mes grilles".
+        res = await api.post(`/charts`, {
+          name: chart.name,
+          width: chart.width,
+          height: chart.height,
+          palette: chart.palette,
+          cells: chart.cells,
+        })
+      }
       setSaving(false)
       setSaved(true)
       if (onSaved) onSaved(res.data.chart)
@@ -63,8 +96,10 @@ export default function SaveChartToProjectModal({ chart, onClose, onSaved }) {
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 max-h-[calc(100vh-6rem)] sm:max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Enregistrer la grille</h2>
-          <p className="text-sm text-gray-500 mt-1">{chart.name} — {chart.width} × {chart.height}</p>
+          <h2 className="text-lg font-bold text-gray-900">{isReassign ? 'Associer à un projet/section' : 'Enregistrer la grille'}</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {isReassign ? existingChart.name : chart.name} — {isReassign ? existingChart.width : chart.width} × {chartHeight}
+          </p>
         </div>
 
         {loadingProjects ? (
@@ -74,13 +109,17 @@ export default function SaveChartToProjectModal({ chart, onClose, onSaved }) {
         ) : (
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Projet <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Projet {isReassign && <span className="text-red-500">*</span>}
+              </label>
               <select
                 value={selectedProjectId}
                 onChange={e => setSelectedProjectId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="">-- Choisir un projet --</option>
+                <option value="">
+                  {isReassign ? '-- Choisir un projet --' : '-- Aucun projet, juste dans "Mes grilles" --'}
+                </option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
@@ -108,11 +147,39 @@ export default function SaveChartToProjectModal({ chart, onClose, onSaved }) {
                 )}
               </div>
             )}
+
+            {selectedSectionId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rang de départ dans la section
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={startRow}
+                  onChange={e => setStartRow(e.target.value)}
+                  className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Combien de rangs de la section sont déjà faits quand ce motif commence (0 si le motif démarre au tout premier rang de la section).
+                  {selectedSection?.total_rows > 0 && (
+                    <>
+                      {' '}La grille couvrira les rangs {Number(startRow) + 1} à {Number(startRow) + chartHeight} sur {selectedSection.total_rows}.
+                      {Number(startRow) + chartHeight > selectedSection.total_rows && (
+                        <span className="text-amber-600 font-medium"> ⚠️ Ça dépasse le total de rangs de la section.</span>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {saved && (
-          <p className="text-sm text-green-600 font-medium text-center">Grille enregistrée !</p>
+          <p className="text-sm text-green-600 font-medium text-center">
+            {isReassign ? 'Grille réassignée !' : (selectedProjectId ? 'Grille enregistrée !' : 'Grille enregistrée dans "Mes grilles" !')}
+          </p>
         )}
         {error && (
           <p className="text-sm text-red-600 text-center">{error}</p>
@@ -127,10 +194,10 @@ export default function SaveChartToProjectModal({ chart, onClose, onSaved }) {
           </button>
           <button
             onClick={handleSave}
-            disabled={!selectedProjectId || saving || saved}
+            disabled={(isReassign && !selectedProjectId) || saving || saved}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
           >
-            {saving ? 'Enregistrement...' : 'Enregistrer'}
+            {saving ? 'Enregistrement...' : (isReassign ? 'Associer' : 'Enregistrer')}
           </button>
         </div>
       </div>

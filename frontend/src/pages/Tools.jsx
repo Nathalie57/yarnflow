@@ -183,10 +183,10 @@ const TOOLS = [
 export default function Tools() {
   const [activeTool, setActiveTool] = useState(null)
   const { user, isAdmin, hasActiveSubscription } = useAuth()
-  // [AI:Claude] Grille jacquard réservée aux abonnés (PLUS/PRO) + admins +
-  // la bêta-testeuse (user 30) à l'origine de la demande, qui garde l'accès
-  // même sans abonnement actif pour continuer à tester
-  const canAccessJacquard = isAdmin() || user?.id === 30 || hasActiveSubscription()
+  // [AI:Claude] Grille jacquard réservée aux abonnés (PLUS/PRO) + admins.
+  // Accès user 30 (bêta-testeuse) désactivé temporairement — Nathalie teste
+  // d'abord elle-même avant d'ouvrir l'accès.
+  const canAccessJacquard = isAdmin() || /* user?.id === 30 || */ hasActiveSubscription()
   const visibleTools = TOOLS.filter(t => !t.betaOnly || canAccessJacquard)
 
   const tool = visibleTools.find(t => t.id === activeTool)

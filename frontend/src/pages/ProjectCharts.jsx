@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
+import { imageFileToChart, NO_GRID_DETECTED } from '../utils/chartImageImport'
 
 const ProjectCharts = () => {
   const { projectId } = useParams()
@@ -14,11 +15,17 @@ const ProjectCharts = () => {
   const [charts, setCharts] = useState([])
   const [loading, setLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
+  const [mode, setMode] = useState('draw')
   const [name, setName] = useState('')
   const [width, setWidth] = useState(20)
   const [height, setHeight] = useState(20)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
+  const [imageFile, setImageFile] = useState(null)
+  const [isProcessingImage, setIsProcessingImage] = useState(false)
+  const [sections, setSections] = useState([])
+  const [sectionId, setSectionId] = useState('')
+  const [startRow, setStartRow] = useState(0)
 
   const loadCharts = async () => {
     try {
@@ -33,6 +40,14 @@ const ProjectCharts = () => {
 
   useEffect(() => { loadCharts() }, [projectId])
 
+  useEffect(() => {
+    api.get(`/projects/${projectId}/sections`).then(res => {
+      setSections(res.data?.sections || res.data || [])
+    }).catch(() => setSections([]))
+  }, [projectId])
+
+  const selectedSection = sections.find(s => String(s.id) === String(sectionId))
+
   const handleCreate = async () => {
     if (!name.trim() || !width || !height) return
     setSaving(true)
@@ -42,11 +57,40 @@ const ProjectCharts = () => {
         name: name.trim(),
         width: Number(width),
         height: Number(height),
+        section_id: sectionId || null,
+        start_row: sectionId ? Number(startRow) || 0 : 0,
       })
       navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
       setError(err.response?.data?.error || 'Erreur lors de la création')
       setSaving(false)
+    }
+  }
+
+  const handleCreateFromImage = async () => {
+    if (!name.trim() || !imageFile) return
+    setIsProcessingImage(true)
+    setError('')
+    try {
+      const result = await imageFileToChart(imageFile)
+      setSaving(true)
+      const res = await api.post(`/projects/${projectId}/charts`, {
+        name: name.trim(),
+        width: result.width,
+        height: result.height,
+        palette: result.palette,
+        cells: result.cells,
+        section_id: sectionId || null,
+        start_row: sectionId ? Number(startRow) || 0 : 0,
+      })
+      navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
+    } catch (err) {
+      setError(err?.message === NO_GRID_DETECTED
+        ? "Cette image ne ressemble pas à une grille de motif (aucune ligne régulière détectée). Essayez une image avec des lignes de grille visibles, ou dessinez votre motif à la main."
+        : (err.response?.data?.error || 'Impossible de traiter cette image. Essayez avec un autre fichier.'))
+      setSaving(false)
+    } finally {
+      setIsProcessingImage(false)
     }
   }
 
@@ -100,6 +144,21 @@ const ProjectCharts = () => {
 
         {isCreating ? (
           <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
+            <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setMode('draw')}
+                className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'draw' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
+              >
+                Dessiner à la main
+              </button>
+              <button
+                onClick={() => setMode('image')}
+                className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'image' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
+              >
+                Importer une image
+              </button>
+            </div>
+
             <input
               type="text"
               value={name}
@@ -109,18 +168,89 @@ const ProjectCharts = () => {
               autoFocus
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-gray-600">Largeur (mailles)</label>
-              <input type="number" min="1" max="200" value={width} onChange={e => setWidth(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
-              <label className="text-sm text-gray-600">Hauteur (rangs)</label>
-              <input type="number" min="1" max="200" value={height} onChange={e => setHeight(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">Annuler</button>
-              <button onClick={handleCreate} disabled={saving || !name.trim()} className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">
-                {saving ? 'Création...' : 'Créer'}
-              </button>
-            </div>
+
+            {sections.length > 0 && (
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Section (optionnel)</label>
+                <select
+                  value={sectionId}
+                  onChange={e => setSectionId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">-- Aucune section (projet entier) --</option>
+                  {sections.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {sectionId && (
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Rang de départ dans la section</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={startRow}
+                  onChange={e => setStartRow(e.target.value)}
+                  className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Combien de rangs de la section sont déjà faits quand ce motif commence (0 si le motif démarre au tout premier rang de la section).
+                  {selectedSection?.total_rows > 0 && mode === 'draw' && (
+                    <>
+                      {' '}La grille couvrira les rangs {Number(startRow) + 1} à {Number(startRow) + Number(height)} sur {selectedSection.total_rows}.
+                      {Number(startRow) + Number(height) > selectedSection.total_rows && (
+                        <span className="text-amber-600 font-medium"> ⚠️ Ça dépasse le total de rangs de la section.</span>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {mode === 'draw' && (
+              <>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-gray-600">Largeur (mailles)</label>
+                  <input type="number" min="1" max="200" value={width} onChange={e => setWidth(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
+                  <label className="text-sm text-gray-600">Hauteur (rangs)</label>
+                  <input type="number" min="1" max="200" value={height} onChange={e => setHeight(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">Annuler</button>
+                  <button onClick={handleCreate} disabled={saving || !name.trim()} className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">
+                    {saving ? 'Création...' : 'Créer'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {mode === 'image' && (
+              <>
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => { setImageFile(e.target.files?.[0] || null); setError('') }}
+                    className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    La taille de la grille et le nombre de couleurs sont détectés automatiquement depuis l'image.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">Annuler</button>
+                  <button
+                    onClick={handleCreateFromImage}
+                    disabled={saving || isProcessingImage || !name.trim() || !imageFile}
+                    className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+                  >
+                    {isProcessingImage ? 'Traitement...' : saving ? 'Création...' : "Générer depuis l'image"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <button

@@ -1311,6 +1311,33 @@ class Project extends BaseModel
     // -------------------------------------------------------------------------
 
     /**
+     * [AI:Claude] Liste TOUTES les grilles d'un utilisateur, tous projets
+     * confondus — vue globale "Mes grilles" (outil bac à sable).
+     *
+     * @param int $userId ID de l'utilisateur
+     * @return array Liste des grilles avec nom du projet/section
+     */
+    public function getAllChartsForUser(int $userId): array
+    {
+        // [AI:Claude] LEFT JOIN sur projects : une grille peut n'être rattachée
+        // à aucun projet (enregistrée directement dans "Mes grilles").
+        $query = "SELECT pc.id, pc.project_id, pc.section_id, pc.name, pc.width, pc.height,
+                         pc.current_row, pc.created_at, pc.updated_at,
+                         p.name AS project_name, ps.name AS section_name
+                  FROM project_charts pc
+                  LEFT JOIN projects p ON p.id = pc.project_id
+                  LEFT JOIN project_sections ps ON ps.id = pc.section_id
+                  WHERE pc.user_id = :user_id
+                  ORDER BY pc.updated_at DESC";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Liste les grilles d'un projet (et éventuellement filtrées par section).
      *
      * @param int $projectId ID du projet
@@ -1343,11 +1370,61 @@ class Project extends BaseModel
      */
     public function getChartById(int $chartId, int $projectId): ?array
     {
-        $query = "SELECT * FROM project_charts WHERE id = :id AND project_id = :project_id";
+        // [AI:Claude] Jointure sur la section pour lier la progression de la
+        // grille au compteur de rangs de la section (source unique) quand la
+        // grille y est rattachée, au lieu de son propre current_row isolé.
+        $query = "SELECT pc.*, ps.name AS section_name, ps.current_row AS section_current_row,
+                         ps.total_rows AS section_total_rows, ps.counter_unit AS section_counter_unit
+                  FROM project_charts pc
+                  LEFT JOIN project_sections ps ON ps.id = pc.section_id
+                  WHERE pc.id = :id AND pc.project_id = :project_id";
 
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':id', $chartId, PDO::PARAM_INT);
         $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $chart = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$chart) {
+            return null;
+        }
+
+        $chart['palette'] = json_decode($chart['palette'], true);
+        $chart['cells'] = json_decode($chart['cells'], true);
+
+        if ($chart['section_id'] !== null && $chart['section_current_row'] !== null) {
+            // [AI:Claude] Un jacquard ne couvre en général qu'une partie des rangs
+            // d'une section (ex: 5 rangs unis, puis 50 de motif, puis 15 unis) —
+            // start_row indique combien de rangs de la section sont déjà faits
+            // quand la grille démarre. On décale donc le rang de section pour
+            // obtenir le rang correspondant DANS la grille, borné à sa hauteur.
+            $startRow = (int) ($chart['start_row'] ?? 0);
+            $sectionRow = (int) round((float) $chart['section_current_row']);
+            $chart['current_row'] = max(0, min((int) $chart['height'], $sectionRow - $startRow));
+            $chart['linked_to_section'] = true;
+        } else {
+            $chart['linked_to_section'] = false;
+        }
+
+        return $chart;
+    }
+
+    /**
+     * [AI:Claude] Récupère une grille par ID en vérifiant l'appartenance directe
+     * via user_id (pas via un projet) — utilisé pour les grilles sans projet
+     * ("Mes grilles") créées/éditées depuis l'outil bac à sable.
+     *
+     * @param int $chartId ID de la grille
+     * @param int $userId ID de l'utilisateur (contrôle d'appartenance)
+     * @return array|null Grille (palette et cells décodés) ou null
+     */
+    public function getChartByUser(int $chartId, int $userId): ?array
+    {
+        $query = "SELECT * FROM project_charts WHERE id = :id AND user_id = :user_id";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':id', $chartId, PDO::PARAM_INT);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $stmt->execute();
 
         $chart = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -1364,12 +1441,13 @@ class Project extends BaseModel
     /**
      * Crée une grille vide (toutes les cases à l'indice 0 de la palette).
      *
-     * @param int $projectId ID du projet
+     * @param int|null $projectId ID du projet, ou null pour une grille sans projet ("Mes grilles")
      * @param int|null $sectionId ID de la section, ou null pour une grille sans section
+     * @param int $userId ID de l'utilisateur propriétaire (appartenance directe, indépendante du projet)
      * @param array $data name (requis), width (requis), height (requis), palette (optionnel, défaut 2 couleurs)
      * @return int ID de la grille créée
      */
-    public function createChart(int $projectId, ?int $sectionId, array $data): int
+    public function createChart(?int $projectId, ?int $sectionId, int $userId, array $data): int
     {
         $palette = $data['palette'] ?? ['#FFFFFF', '#000000'];
         $width = (int)$data['width'];
@@ -1378,17 +1456,25 @@ class Project extends BaseModel
         // l'outil "bac à sable" puis enregistrée dans un projet) — sinon grille vierge
         $cells = $data['cells'] ?? array_fill(0, $height, array_fill(0, $width, 0));
 
+        $startRow = (int) ($data['start_row'] ?? 0);
+
         $query = "INSERT INTO project_charts
-                  (project_id, section_id, name, width, height, palette, cells, current_row)
-                  VALUES (:project_id, :section_id, :name, :width, :height, :palette, :cells, 0)";
+                  (user_id, project_id, section_id, start_row, name, width, height, palette, cells, current_row)
+                  VALUES (:user_id, :project_id, :section_id, :start_row, :name, :width, :height, :palette, :cells, 0)";
 
         $stmt = $this->db->prepare($query);
-        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        if ($projectId === null) {
+            $stmt->bindValue(':project_id', null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        }
         if ($sectionId === null) {
             $stmt->bindValue(':section_id', null, PDO::PARAM_NULL);
         } else {
             $stmt->bindValue(':section_id', $sectionId, PDO::PARAM_INT);
         }
+        $stmt->bindValue(':start_row', $startRow, PDO::PARAM_INT);
         $stmt->bindValue(':name', $data['name']);
         $stmt->bindValue(':width', $width, PDO::PARAM_INT);
         $stmt->bindValue(':height', $height, PDO::PARAM_INT);
@@ -1408,7 +1494,10 @@ class Project extends BaseModel
      */
     public function updateChart(int $chartId, array $data): bool
     {
-        $allowedFields = ['name', 'width', 'height', 'current_row'];
+        // [AI:Claude] project_id/section_id : réassignation d'une grille existante à un
+        // autre projet/section (voir ProjectController::updateChart pour la validation
+        // d'appartenance avant d'autoriser le changement).
+        $allowedFields = ['name', 'width', 'height', 'current_row', 'start_row', 'project_id', 'section_id'];
         $fields = [];
         $params = [':id' => $chartId];
 

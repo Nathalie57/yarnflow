@@ -1710,6 +1710,26 @@ class ProjectController
     }
 
     /**
+     * [AI:Claude] GET /api/charts — toutes les grilles de l'utilisateur, tous
+     * projets confondus (vue globale "Mes grilles")
+     */
+    public function getAllCharts(): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $charts = $this->projectModel->getAllChartsForUser($userId);
+
+            $this->sendResponse(200, ['success' => true, 'charts' => $charts]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la récupération des grilles',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * GET /api/projects/{projectId}/charts/{chartId}
      */
     public function getChart(int $projectId, int $chartId): void
@@ -1782,8 +1802,13 @@ class ProjectController
             if (isset($data['cells'])) {
                 $chartData['cells'] = $data['cells'];
             }
+            // [AI:Claude] Rang de la section déjà fait quand la grille démarre (ex: 5
+            // rangs unis avant le motif) — voir Project::getChartById pour le calcul.
+            if (isset($data['start_row'])) {
+                $chartData['start_row'] = (int) $data['start_row'];
+            }
 
-            $chartId = $this->projectModel->createChart($projectId, $sectionId, $chartData);
+            $chartId = $this->projectModel->createChart($projectId, $sectionId, $userId, $chartData);
             $chart = $this->projectModel->getChartById($chartId, $projectId);
 
             $this->sendResponse(201, ['success' => true, 'chart' => $chart]);
@@ -1791,6 +1816,139 @@ class ProjectController
             $this->sendResponse(500, [
                 'success' => false,
                 'error' => 'Erreur lors de la création de la grille',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] POST /api/charts — crée une grille sans projet, juste
+     * enregistrée dans "Mes grilles" (ex: depuis l'outil bac à sable, sans
+     * vouloir l'associer à un projet tout de suite).
+     * Body: { name: string, width: int, height: int, palette?: string[], cells?: array }
+     */
+    public function createUnassignedChart(): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+
+            if (empty($data['name']) || empty($data['width']) || empty($data['height'])) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Nom, largeur et hauteur sont requis']);
+                return;
+            }
+
+            if ((int)$data['width'] > 200 || (int)$data['height'] > 200) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'La grille ne peut pas dépasser 200x200 cases']);
+                return;
+            }
+
+            $chartData = [
+                'name' => trim($data['name']),
+                'width' => (int)$data['width'],
+                'height' => (int)$data['height'],
+            ];
+            if (isset($data['palette'])) {
+                $chartData['palette'] = $data['palette'];
+            }
+            if (isset($data['cells'])) {
+                $chartData['cells'] = $data['cells'];
+            }
+
+            $chartId = $this->projectModel->createChart(null, null, $userId, $chartData);
+            $chart = $this->projectModel->getChartByUser($chartId, $userId);
+
+            $this->sendResponse(201, ['success' => true, 'chart' => $chart]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la création de la grille',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] GET /api/charts/{chartId} — grille par ID, appartenance
+     * vérifiée directement via user_id (fonctionne avec ou sans projet).
+     */
+    public function getUnassignedChart(int $chartId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $chart = $this->projectModel->getChartByUser($chartId, $userId);
+
+            if (!$chart) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Grille introuvable']);
+                return;
+            }
+
+            $this->sendResponse(200, ['success' => true, 'chart' => $chart]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la récupération de la grille',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] PUT /api/charts/{chartId} — met à jour une grille en vérifiant
+     * l'appartenance via user_id (pas via un projet) ; permet aussi de
+     * l'associer à un projet/section (ex: décidé après coup depuis "Mes grilles").
+     * Body: { name?, width?, height?, palette?, cells?, project_id?, section_id?, start_row? }
+     */
+    public function updateUnassignedChart(int $chartId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            $existingChart = $this->projectModel->getChartByUser($chartId, $userId);
+            if (!$existingChart) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Grille introuvable']);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+
+            if (array_key_exists('project_id', $data) && $data['project_id'] !== null && $data['project_id'] !== '') {
+                $targetProjectId = (int) $data['project_id'];
+                if (!$this->projectModel->belongsToUser($targetProjectId, $userId)) {
+                    $this->sendResponse(403, ['success' => false, 'error' => 'Le projet cible ne vous appartient pas']);
+                    return;
+                }
+                $data['project_id'] = $targetProjectId;
+
+                if (array_key_exists('section_id', $data) && $data['section_id'] !== null && $data['section_id'] !== '') {
+                    $targetSectionId = (int) $data['section_id'];
+                    $section = $this->projectModel->getSectionById($targetSectionId);
+                    if (!$section || (int) $section['project_id'] !== $targetProjectId) {
+                        $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet cible"]);
+                        return;
+                    }
+                    $data['section_id'] = $targetSectionId;
+                } else {
+                    $data['section_id'] = null;
+                }
+            } else {
+                unset($data['project_id'], $data['section_id']);
+            }
+
+            $chartUpdated = !empty($data) && $this->projectModel->updateChart($chartId, $data);
+
+            if (!$chartUpdated) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Aucune modification à effectuer']);
+                return;
+            }
+
+            $chart = $this->projectModel->getChartByUser($chartId, $userId);
+
+            $this->sendResponse(200, ['success' => true, 'chart' => $chart]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la mise à jour de la grille',
                 'message' => $e->getMessage()
             ]);
         }
@@ -1810,20 +1968,85 @@ class ProjectController
                 return;
             }
 
-            if (!$this->projectModel->getChartById($chartId, $projectId)) {
+            $existingChart = $this->projectModel->getChartById($chartId, $projectId);
+            if (!$existingChart) {
                 $this->sendResponse(404, ['success' => false, 'error' => 'Grille introuvable']);
                 return;
             }
 
             $data = $this->getJsonInput();
-            $success = $this->projectModel->updateChart($chartId, $data);
 
-            if (!$success) {
+            // [AI:Claude] Réassignation à un autre projet/section — une grille peut être
+            // réutilisée ailleurs après sa création (ex: même motif sur un autre pull).
+            // On vérifie que la cible appartient bien à l'utilisateur avant d'appliquer.
+            $targetProjectId = $projectId;
+            if (array_key_exists('project_id', $data) && $data['project_id'] !== null) {
+                $requestedProjectId = (int) $data['project_id'];
+                if ($requestedProjectId !== $projectId) {
+                    if (!$this->projectModel->belongsToUser($requestedProjectId, $userId)) {
+                        $this->sendResponse(403, ['success' => false, 'error' => 'Le projet cible ne vous appartient pas']);
+                        return;
+                    }
+                    $targetProjectId = $requestedProjectId;
+                    $data['project_id'] = $targetProjectId;
+                } else {
+                    unset($data['project_id']);
+                }
+            }
+
+            if (array_key_exists('section_id', $data) && $data['section_id'] !== null && $data['section_id'] !== '') {
+                $targetSectionId = (int) $data['section_id'];
+                $section = $this->projectModel->getSectionById($targetSectionId);
+                if (!$section || (int) $section['project_id'] !== $targetProjectId) {
+                    $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet cible"]);
+                    return;
+                }
+                $data['section_id'] = $targetSectionId;
+            } elseif (array_key_exists('section_id', $data)) {
+                $data['section_id'] = null;
+            }
+
+            // [AI:Claude] Grille liée à une section : le rang courant est piloté par le
+            // compteur de la section (source unique, visible aussi sur la page projet),
+            // pas par le current_row propre à la grille. On passe par le même chemin
+            // que le compteur principal (addRow en mode rangs, écriture directe en mode
+            // cm) pour que l'historique/streak reste cohérent entre les deux vues.
+            $sectionUpdated = false;
+            if (!empty($existingChart['section_id']) && array_key_exists('current_row', $data)) {
+                $sectionId = (int) $existingChart['section_id'];
+                // [AI:Claude] Un rang de grille correspond au rang (start_row + rang de
+                // grille) de la section — la grille ne couvre en général qu'une partie
+                // des rangs de la section (ex: 5 rangs unis avant le motif).
+                $startRow = (int) ($existingChart['start_row'] ?? 0);
+                $requestedRow = $startRow + (int) $data['current_row'];
+                // [AI:Claude] On ne doit jamais pousser le compteur de la section au-delà
+                // de son propre total, sinon la progression affichée sur la page projet
+                // devient aberrante (ex: 60/51).
+                if (!empty($existingChart['section_total_rows'])) {
+                    $requestedRow = min($requestedRow, (int) $existingChart['section_total_rows']);
+                }
+                if (($existingChart['section_counter_unit'] ?? 'rows') === 'cm') {
+                    $sectionUpdated = $this->projectModel->updateSection($sectionId, ['current_row' => $requestedRow]);
+                } else {
+                    $sectionUpdated = $this->projectModel->addRow($projectId, [
+                        'section_id' => $sectionId,
+                        'row_number' => $requestedRow,
+                    ]) !== false;
+                }
+                unset($data['current_row']);
+            }
+
+            $chartUpdated = !empty($data) && $this->projectModel->updateChart($chartId, $data);
+
+            if (!$sectionUpdated && !$chartUpdated) {
                 $this->sendResponse(400, ['success' => false, 'error' => 'Aucune modification à effectuer']);
                 return;
             }
 
-            $chart = $this->projectModel->getChartById($chartId, $projectId);
+            // [AI:Claude] Si la grille a été réassignée à un autre projet, elle ne se
+            // trouve plus sous l'ancien project_id (celui de l'URL) — la relire sous
+            // le nouveau, sinon getChartById ne la retrouve plus.
+            $chart = $this->projectModel->getChartById($chartId, $targetProjectId);
 
             $this->sendResponse(200, ['success' => true, 'chart' => $chart]);
         } catch (\Exception $e) {
