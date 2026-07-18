@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
 import { imageFileToChart, NO_GRID_DETECTED } from '../utils/chartImageImport'
+import { photoFileToChart } from '../utils/photoToChart'
 
 const ProjectCharts = () => {
   const { projectId } = useParams()
@@ -23,6 +24,10 @@ const ProjectCharts = () => {
   const [saving, setSaving] = useState(false)
   const [imageFile, setImageFile] = useState(null)
   const [isProcessingImage, setIsProcessingImage] = useState(false)
+  const [photoFile, setPhotoFile] = useState(null)
+  const [photoGridWidth, setPhotoGridWidth] = useState(50)
+  const [photoMaxColors, setPhotoMaxColors] = useState(8)
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false)
   const [sections, setSections] = useState([])
   const [sectionId, setSectionId] = useState('')
   const [startRow, setStartRow] = useState(0)
@@ -94,6 +99,31 @@ const ProjectCharts = () => {
     }
   }
 
+  const handleCreateFromPhoto = async () => {
+    if (!name.trim() || !photoFile) return
+    setIsProcessingPhoto(true)
+    setError('')
+    try {
+      const result = await photoFileToChart(photoFile, Number(photoGridWidth), Number(photoMaxColors))
+      setSaving(true)
+      const res = await api.post(`/projects/${projectId}/charts`, {
+        name: name.trim(),
+        width: result.width,
+        height: result.height,
+        palette: result.palette,
+        cells: result.cells,
+        section_id: sectionId || null,
+        start_row: sectionId ? Number(startRow) || 0 : 0,
+      })
+      navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
+    } catch (err) {
+      setError(err.response?.data?.error || 'Impossible de traiter cette image. Essayez avec un autre fichier.')
+      setSaving(false)
+    } finally {
+      setIsProcessingPhoto(false)
+    }
+  }
+
   const handleDelete = async (chartId) => {
     if (!window.confirm('Supprimer cette grille ?')) return
     try {
@@ -155,7 +185,13 @@ const ProjectCharts = () => {
                 onClick={() => setMode('image')}
                 className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'image' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
               >
-                Importer une image
+                Importer un diagramme
+              </button>
+              <button
+                onClick={() => setMode('photo')}
+                className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'photo' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
+              >
+                Créer depuis une photo
               </button>
             </div>
 
@@ -236,7 +272,7 @@ const ProjectCharts = () => {
                     className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                   />
                   <p className="text-xs text-gray-400 mt-1">
-                    La taille de la grille et le nombre de couleurs sont détectés automatiquement depuis l'image.
+                    La taille de la grille et le nombre de couleurs sont détectés automatiquement depuis l'image. Le résultat peut nécessiter quelques ajustements à la main (retoucher des cases, fusionner des couleurs).
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -247,6 +283,42 @@ const ProjectCharts = () => {
                     className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
                   >
                     {isProcessingImage ? 'Traitement...' : saving ? 'Création...' : "Générer depuis l'image"}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {mode === 'photo' && (
+              <>
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => { setPhotoFile(e.target.files?.[0] || null); setError('') }}
+                    className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Convertit n'importe quelle image (photo, logo, dessin) en motif jacquard façon pixelart. Ce n'est pas un diagramme existant qui est détecté — c'est une nouvelle grille créée à partir de l'image. Le résultat peut nécessiter quelques ajustements à la main (retoucher des cases, fusionner des couleurs).
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Largeur de grille (mailles)</label>
+                    <input type="number" min="10" max="200" value={photoGridWidth} onChange={e => setPhotoGridWidth(e.target.value)} className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Couleurs max</label>
+                    <input type="number" min="2" max="20" value={photoMaxColors} onChange={e => setPhotoMaxColors(e.target.value)} className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">Annuler</button>
+                  <button
+                    onClick={handleCreateFromPhoto}
+                    disabled={saving || isProcessingPhoto || !name.trim() || !photoFile}
+                    className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+                  >
+                    {isProcessingPhoto ? 'Traitement...' : saving ? 'Création...' : "Générer depuis la photo"}
                   </button>
                 </div>
               </>
