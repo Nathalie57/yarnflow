@@ -406,7 +406,7 @@ export default function ChartDesigner() {
                 className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
               />
               <p className="text-xs text-gray-400 mt-1">
-                La taille de la grille et le nombre de couleurs sont détectés automatiquement depuis l'image. Vous pourrez fusionner des couleurs ensuite si besoin.
+                La taille de la grille et le nombre de couleurs sont détectés automatiquement depuis l'image. Le résultat peut nécessiter quelques ajustements à la main (retoucher des cases, fusionner des couleurs).
               </p>
             </div>
             {imageError && <p className="text-xs text-red-500">{imageError}</p>}
@@ -431,7 +431,7 @@ export default function ChartDesigner() {
                 className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
               />
               <p className="text-xs text-gray-400 mt-1">
-                Convertit n'importe quelle image (photo, logo, dessin) en motif jacquard façon pixelart. Contrairement à "Importer une image", ce n'est pas un diagramme existant qui est détecté — c'est une nouvelle grille créée à partir de l'image.
+                Convertit n'importe quelle image (photo, logo, dessin) en motif jacquard façon pixelart. Contrairement à "Importer un diagramme", ce n'est pas un diagramme existant qui est détecté — c'est une nouvelle grille créée à partir de l'image. Le résultat peut nécessiter quelques ajustements à la main (retoucher des cases, fusionner des couleurs).
               </p>
             </div>
             <div className="flex items-center gap-3">
