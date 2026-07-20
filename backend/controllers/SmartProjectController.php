@@ -337,6 +337,13 @@ class SmartProjectController
                     'name' => $projectData['title'] ?? 'Nouveau projet',
                     'type' => $this->mapCategoryToType($projectData['category'] ?? null),
                     'craft_type' => $projectData['craft_type'] ?? null,
+                    // [AI:Claude] Sans ce champ, Project::createProject applique son défaut
+                    // silencieux 'crochet' quel que soit le craft_type détecté par l'IA — un
+                    // projet tricot se retrouvait avec technique=crochet en base (filtres et
+                    // badge "Tricot/Crochet" de MyProjects.jsx faux).
+                    'technique' => in_array($projectData['craft_type'] ?? null, ['tricot', 'crochet'], true)
+                        ? $projectData['craft_type']
+                        : 'crochet',
                     'description' => $projectData['description'] ?? null,
                     'pattern_notes' => $projectData['pattern_notes'] ?? null,
                     'source_type' => $sourceType,
