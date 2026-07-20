@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 
 /**
  * @file CGU.jsx
@@ -7,6 +8,10 @@ import { Link } from 'react-router-dom';
  * @created 2025-11-20
  */
 export default function CGU() {
+  useDocumentMeta(
+    "Conditions générales d'utilisation — YarnFlow",
+    "Les conditions générales d'utilisation de YarnFlow, l'assistant tricot & crochet."
+  );
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">

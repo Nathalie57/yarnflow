@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 
 /**
  * @file Privacy.jsx
@@ -7,6 +8,10 @@ import { Link } from 'react-router-dom';
  * @created 2025-11-20
  */
 export default function Privacy() {
+  useDocumentMeta(
+    'Politique de confidentialité — YarnFlow',
+    'Comment YarnFlow collecte, utilise et protège vos données personnelles, conformément au RGPD.'
+  );
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">

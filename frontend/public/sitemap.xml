@@ -4,7 +4,7 @@
 
   <!-- Landing Page (priorité max) -->
   <url>
-    <loc>https://yarnflow.com/</loc>
+    <loc>https://yarnflow.fr/</loc>
     <lastmod>2025-11-20</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
@@ -12,21 +12,21 @@
 
   <!-- Pages légales -->
   <url>
-    <loc>https://yarnflow.com/cgu</loc>
+    <loc>https://yarnflow.fr/cgu</loc>
     <lastmod>2025-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
-    <loc>https://yarnflow.com/privacy</loc>
+    <loc>https://yarnflow.fr/privacy</loc>
     <lastmod>2025-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
 
   <url>
-    <loc>https://yarnflow.com/mentions</loc>
+    <loc>https://yarnflow.fr/mentions</loc>
     <lastmod>2025-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
