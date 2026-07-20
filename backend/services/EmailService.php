@@ -22,6 +22,9 @@ class EmailService
 {
     private PHPMailer $mailer;
     private ?PDO $db = null;
+    // [AI:Claude] Jeton de suivi d'ouverture généré juste avant l'envoi, consommé par
+    // logEmail() juste après — évite de modifier la signature des ~16 appels existants.
+    private ?string $lastTrackingToken = null;
 
     /**
      * Constructeur - Configure PHPMailer avec les paramètres SMTP
@@ -277,6 +280,40 @@ HTML;
     }
 
     /**
+     * [AI:Claude] Génère un jeton unique de suivi d'ouverture pour un envoi.
+     *
+     * @return string Jeton hexadécimal de 32 caractères
+     */
+    private function generateTrackingToken(): string
+    {
+        return bin2hex(random_bytes(16));
+    }
+
+    /**
+     * [AI:Claude] Insère un pixel de suivi invisible juste avant la fermeture du
+     * <body> — au chargement de l'image par le client mail, /api/email/track-open
+     * marque l'email comme ouvert. Limite connue : Apple Mail Privacy Protection
+     * précharge les images systématiquement, donc le taux d'ouverture est surestimé
+     * pour les destinataires Apple Mail — à lire comme un signal relatif, pas absolu.
+     *
+     * @param string $html Corps HTML de l'email
+     * @param string $token Jeton de suivi unique pour cet envoi
+     * @return string HTML avec le pixel injecté
+     */
+    private function injectTrackingPixel(string $html, string $token): string
+    {
+        $baseUrl = $_ENV['APP_URL'] ?? 'https://yarnflow.fr';
+        $pixel = '<img src="' . htmlspecialchars($baseUrl) . '/api/email/track-open?t=' . $token
+            . '" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />';
+
+        if (str_contains($html, '</body>')) {
+            return str_replace('</body>', $pixel . '</body>', $html);
+        }
+
+        return $html . $pixel;
+    }
+
+    /**
      * [AI:Claude] Logger l'envoi d'un email dans la base de données
      *
      * @param string $recipientEmail Email du destinataire
@@ -297,6 +334,12 @@ HTML;
         ?string $errorMessage = null,
         ?int $userId = null
     ): void {
+        // [AI:Claude] Jeton de suivi d'ouverture consommé ici : généré par
+        // injectTrackingPixel() juste avant l'envoi, propriété réinitialisée après
+        // usage pour ne jamais être réutilisé par erreur sur un envoi suivant.
+        $trackingToken = $this->lastTrackingToken;
+        $this->lastTrackingToken = null;
+
         // Si pas de connexion DB, ne pas logger (mode dégradé)
         if ($this->db === null) {
             return;
@@ -305,8 +348,8 @@ HTML;
         try {
             $sql = "
                 INSERT INTO emails_sent_log
-                (user_id, recipient_email, recipient_name, email_type, subject, status, error_message, sent_at)
-                VALUES (:user_id, :recipient_email, :recipient_name, :email_type, :subject, :status, :error_message, NOW())
+                (user_id, recipient_email, recipient_name, email_type, subject, status, error_message, tracking_token, sent_at)
+                VALUES (:user_id, :recipient_email, :recipient_name, :email_type, :subject, :status, :error_message, :tracking_token, NOW())
             ";
 
             $stmt = $this->db->prepare($sql);
@@ -317,7 +360,8 @@ HTML;
                 'email_type' => $emailType,
                 'subject' => $subject,
                 'status' => $success ? 'sent' : 'failed',
-                'error_message' => $errorMessage
+                'error_message' => $errorMessage,
+                'tracking_token' => $trackingToken
             ]);
 
         } catch (\Exception $e) {
@@ -354,6 +398,8 @@ HTML;
             // Version texte
             $mail->AltBody = "Bonjour $name,\n\nVotre compte est actif.\n\nUne seule chose à faire maintenant : ajouter votre projet en cours.\n\nNotez votre rang actuel. La prochaine fois que vous reprenez votre tricot, vous saurez exactement où vous en êtes — même si vous avez été interrompue trois fois entre-temps.\n\nAjouter mon projet : https://yarnflow.fr/my-projects\n\nBonne création,\nNathalie\nYarnFlow";
 
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
             error_log("[EMAIL] Email de bienvenue envoyé à: $email");
@@ -489,6 +535,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getPasswordResetEmailTemplate($name, $resetLink);
             $mail->AltBody = "Bonjour $name,\n\nVous avez demandé à réinitialiser votre mot de passe YarnFlow.\n\nCliquez sur ce lien pour créer un nouveau mot de passe :\n$resetLink\n\nCe lien est valide pendant 1 heure.\n\nSi vous n'avez pas demandé cette réinitialisation, ignorez cet email.\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
             error_log("[EMAIL] Email de reset password envoyé à: $email");
@@ -584,6 +632,8 @@ HTML;
             $mail->Body = $this->getOnboardingDay3EmailTemplate($name);
             $mail->AltBody = "Bonjour $name,\n\nDepuis votre inscription il y a 3 jours, avez-vous eu l'occasion de tricoter ?\n\nSi oui — c'est le bon moment pour ouvrir YarnFlow et noter votre rang actuel. Deux secondes, et vous ne perdrez plus jamais votre place.\n\nSi pas encore — c'est normal. Gardez juste YarnFlow en tête pour la prochaine session.\n\nAjouter mon projet : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
             error_log("[EMAIL] Email onboarding J+3 envoyé à: $email");
@@ -693,6 +743,8 @@ HTML;
             $mail->Body = $this->getReengagementDay7EmailTemplate($name, $projectData);
             $mail->AltBody = "Bonjour $name,\n\nCela fait une semaine. Votre projet est toujours là, au rang où vous l'avez laissé.\n\nReprendre : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
             error_log("[EMAIL] Email réengagement J+7 envoyé à: $email");
@@ -802,6 +854,8 @@ HTML;
             $mail->Body = $this->getNeedHelpDay21EmailTemplate($name);
             $mail->AltBody = "Bonjour $name,\n\nCela fait trois semaines. Vos projets sont toujours là, au rang où vous les avez laissés.\n\nSi vous avez un projet en cours — c'est le bon moment pour ouvrir YarnFlow avant votre prochaine session de tricot. Vous saurez exactement où vous en êtes, même si vous avez été interrompue.\n\nReprendre mes projets : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
             error_log("[EMAIL] Email 'besoin d'aide' J+21 envoyé à: $email");
@@ -844,6 +898,8 @@ HTML;
             $mail->Body = $this->getProjectStartReminderEmailTemplate($name, $projectName);
             $mail->AltBody = "Bonjour $name,\n\nVous avez créé le projet \"$projectName\" — il attend son premier rang.\n\nLa prochaine fois que vous tricotez, ouvrez YarnFlow avant de commencer. Quand vous serez interrompue, votre rang sera déjà noté.\n\nOuvrir mon projet : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
             error_log("[EMAIL] Email project_start_reminder envoyé à: $email (projet: $projectName)");
@@ -932,6 +988,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getFirstProjectReadyTemplate($name, $projectName, $projectUrl);
             $mail->AltBody = "Bonjour $name,\n\nTon projet \"$projectName\" est prêt.\n\nLa prochaine fois que tu tricotes, ouvre YarnFlow et appuie sur + à chaque rang. Quand tu es interrompue, ton rang est déjà sauvegardé.\n\nOuvrir le compteur : $projectUrl\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
             error_log("[EMAIL] Email first_project_ready envoyé à: $email");
@@ -1065,6 +1123,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getStashLimitApproachingTemplate($name, $currentCount);
             $mail->AltBody = "Bonjour $name,\n\nTu as ajouté $currentCount pelotes sur 5 dans ton stock. La prochaine s'arrêtera là — à moins de passer à PLUS (15 références, 3,99€/mois).\n\nPasser à PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
         } catch (Exception $e) {
@@ -1147,6 +1207,8 @@ HTML;
             $mail->Body = $this->getAiQuotaApproachingTemplate($name, $used, $limit);
             $remaining = $limit - $used;
             $mail->AltBody = "Bonjour $name,\n\nTu as utilisé {$used} de tes {$limit} questions à l'assistant IA ce mois-ci. Il t'en reste {$remaining}.\n\nAvec PLUS, tu passes à 10 questions/mois. Avec PRO, 30 questions.\n\nDécouvrir les plans : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
         } catch (Exception $e) {
@@ -1229,6 +1291,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getActiveUserUpgradeTemplate($name, $projectCount);
             $mail->AltBody = "Bonjour $name,\n\nTu utilises activement YarnFlow avec {$projectCount} projets en cours. Voici ce que PLUS peut t'apporter : stock de laines jusqu'à 15 références, compteur secondaire, 10 questions IA par mois, statistiques.\n\nDécouvrir PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
         } catch (Exception $e) {
@@ -1326,6 +1390,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getPlusWelcomeTemplate($name, $planLabel, $isPro);
             $mail->AltBody = "Bonjour $name,\n\nTon abonnement YarnFlow {$planLabel} est actif. Voici ce que tu peux faire maintenant :\n" . ($isPro ? "- 30 questions IA/mois\n- Stock illimité\n- Studio Photo" : "- 10 questions IA/mois\n- Stock jusqu'à 15 références\n- Compteur secondaire") . "\n\nOuvrir YarnFlow : https://yarnflow.fr\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
         } catch (Exception $e) {
@@ -1414,6 +1480,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getProjectInactiveTemplate($name, $projectName, $daysSince);
             $mail->AltBody = "Bonjour $name,\n\nTon projet \"{$projectName}\" n'a pas bougé depuis {$daysSince} jours. La prochaine fois que tu tricotas, ouvre YarnFlow avant de commencer.\n\nReprendre : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
         } catch (Exception $e) {
@@ -1486,6 +1554,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getAiQuotaExhaustedTemplate($name, $limit, $renewDate);
             $mail->AltBody = "Bonjour $name,\n\nTu as utilisé tes {$limit} questions IA ce mois-ci. Ton quota se recharge automatiquement le {$renewDate}.\n\nAvec PLUS, tu passes à 10 questions/mois. Avec PRO, 30 questions.\n\nVoir les plans : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
         } catch (Exception $e) {
@@ -1567,6 +1637,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getAbandonedCheckoutTemplate($name, $planLabel);
             $mail->AltBody = "Bonjour $name,\n\nTu as commencé à t'abonner à YarnFlow {$planLabel} mais n'as pas finalisé. Si quelque chose t'a bloquée, réponds à cet email et je t'aide.\n\nReprendre l'abonnement : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
         } catch (Exception $e) {
@@ -1638,6 +1710,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getActiveFreeDay30Template($name, $projectCount, $totalRows);
             $mail->AltBody = "Bonjour $name,\n\nUn mois que tu utilises YarnFlow — {$projectCount} projets, {$totalRows} rangs comptés. C'est le bon moment pour découvrir PLUS : stock de 15 références, compteur secondaire, 10 questions IA.\n\nDécouvrir PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
         } catch (Exception $e) {
@@ -1719,6 +1793,8 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getReactivationTemplate($name, $daysSince);
             $mail->AltBody = "Bonjour $name,\n\nTu n'as pas ouvert YarnFlow depuis {$daysSince} jours. Depuis, on a ajouté le stock de laines, l'assistant IA et les statistiques de projets.\n\nRevenirs voir : https://yarnflow.fr\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
             $success = true;
         } catch (Exception $e) {

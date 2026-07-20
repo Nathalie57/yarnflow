@@ -29,6 +29,7 @@ use App\Controllers\YarnStashController;
 use App\Controllers\StashAllocationController;
 use App\Controllers\PartnerPatternController;
 use App\Controllers\PatternTranslatorController;
+use App\Controllers\EmailTrackingController;
 use App\Middleware\RateLimitMiddleware;
 
 /**
@@ -91,6 +92,10 @@ function route(string $method, string $uri): void
         $method === 'POST' && $uri === 'auth/forgot-password' => (function() { applyRateLimit('/api/auth/forgot-password'); return (new PasswordResetController())->requestReset(); })(),
         $method === 'POST' && $uri === 'auth/verify-reset-token' => (new PasswordResetController())->verifyToken(),
         $method === 'POST' && $uri === 'auth/reset-password' => (new PasswordResetController())->resetPassword(),
+
+        // [AI:Claude] Suivi d'ouverture email (pixel invisible, public — pas d'auth possible
+        // depuis un client mail)
+        $method === 'GET' && $uri === 'email/track-open' => (new EmailTrackingController())->trackOpen(),
 
         // [AI:Claude] Routes waitlist (publiques)
         $method === 'POST' && $uri === 'waitlist/subscribe' => (new WaitlistController())->subscribe(),
