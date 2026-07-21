@@ -366,7 +366,7 @@ class AIPhotoService
         if ($isWornContext) {
             // Pour photos portées : préciser le genre du modèle si demandé
             error_log("[PROMPT] Contexte porté" . ($season ? " - Saison: {$season}" : ""));
-            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. L'article doit être porté par {$modelText}, PAS un mannequin de vitrine en plastique. ÉTAPES CRITIQUES : 1) Garde l'ouvrage fait main porté par le modèle. 2) RETIRE tous les éléments parasites : mains qui tiennent artificiellement l'ouvrage (sauf si elles font naturellement partie de la pose), objets indésirables, fond original moche. 3) Place le modèle portant l'ouvrage dans le nouveau contexte avec une pose naturelle et appropriée. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la pose du modèle, la position dans l'espace pour créer une belle composition naturelle, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage lui-même (couleurs, motifs, texture). L'ouvrage porté doit être bien mis en valeur dans une scène réaliste.";
+            return "Tu dois créer une nouvelle photo professionnelle {$contextDescription}{$seasonDescription}. L'article doit être porté par {$modelText}, PAS un mannequin de vitrine en plastique. ÉTAPES CRITIQUES : 1) Garde l'ouvrage fait main porté par le modèle. 2) RETIRE tous les éléments parasites : mains qui tiennent artificiellement l'ouvrage (sauf si elles font naturellement partie de la pose), objets indésirables, fond original moche. 3) Place le modèle portant l'ouvrage dans le nouveau contexte avec une pose naturelle et appropriée. SI la photo originale est un selfie pris devant un miroir (téléphone visible dans le reflet, cadre du miroir visible, bras levé tenant le téléphone) : ignore complètement le téléphone, le miroir, son cadre et le bras qui tient le téléphone — recrée entièrement une nouvelle photo du modèle portant l'ouvrage dans une pose naturelle adaptée au nouveau contexte, sans aucune trace du miroir ni du téléphone. RÈGLE ABSOLUE sur les détails visuels de l'ouvrage porté : conserve EXACTEMENT les COULEURS, la TEXTURE, le MOTIF et tous les détails visuels. Tu PEUX changer l'angle de vue, la pose du modèle, la position dans l'espace pour créer une belle composition naturelle, mais tu NE PEUX PAS changer l'apparence visuelle de l'ouvrage lui-même (couleurs, motifs, texture). L'ouvrage porté doit être bien mis en valeur dans une scène réaliste.";
         }
 
         // [AI:Claude] v0.14.0 - Prompt spécifique pour accessoires bébé et vêtements bébé À PLAT
@@ -479,6 +479,13 @@ class AIPhotoService
         // [AI:Claude] Vérifier structure réponse
         if (!isset($response['candidates'][0]['content']['parts'][0])) {
             error_log("[GEMINI PARSE ERROR] Structure invalide: " . json_encode($response));
+            // [AI:Claude] finishReason présent (ex: IMAGE_OTHER) = Gemini a bien traité la
+            // demande mais n'est pas parvenu à produire une image (contrairement à une
+            // réponse vraiment vide/malformée) — message actionnable plutôt que technique.
+            $finishReason = $response['candidates'][0]['finishReason'] ?? null;
+            if ($finishReason) {
+                throw new \Exception("La génération a échoué pour cette photo (le modèle IA n'a pas réussi à créer l'image). Essayez avec une autre photo, ou réessayez dans quelques instants.");
+            }
             throw new \Exception("Réponse Gemini invalide");
         }
 
@@ -505,11 +512,11 @@ class AIPhotoService
 
         if (isset($part['text'])) {
             error_log("[GEMINI PARSE] Texte reçu au lieu d'image: " . substr($part['text'], 0, 100));
-            throw new \Exception("Gemini a retourné du texte au lieu d'une image");
+            throw new \Exception("La génération a échoué pour cette photo (le modèle IA n'a pas réussi à créer l'image). Essayez avec une autre photo, ou réessayez dans quelques instants.");
         }
 
         error_log("[GEMINI PARSE ERROR] Structure part: " . json_encode($part));
-        throw new \Exception("Aucune image générée par Gemini");
+        throw new \Exception("La génération a échoué pour cette photo (le modèle IA n'a pas réussi à créer l'image). Essayez avec une autre photo, ou réessayez dans quelques instants.");
     }
 
     /**
