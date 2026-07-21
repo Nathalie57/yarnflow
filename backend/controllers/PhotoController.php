@@ -417,6 +417,15 @@ class PhotoController
                 $this->creditManager->useCredit($userId);
             }
 
+            // [AI:Claude] Si AUCUNE génération n'a réussi, ne pas renvoyer un succès trompeur —
+            // sans ce garde-fou, un échec IA sur tous les contextes (timeout, erreur provider...)
+            // était absorbé silencieusement par le catch de la boucle ci-dessus et l'app annonçait
+            // "photo générée avec succès" côté frontend alors que rien n'était en base ni facturé.
+            if ($successCount === 0) {
+                $firstError = $generatedPhotos[0]['error'] ?? 'Erreur lors de la génération IA';
+                throw new \Exception($firstError);
+            }
+
             $this->sendResponse(200, [
                 'success' => true,
                 'message' => "$successCount photo(s) générée(s) avec succès",

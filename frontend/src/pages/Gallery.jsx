@@ -241,6 +241,7 @@ const Gallery = () => {
       openEnhanceModal(newPhoto)
     } catch (err) {
       console.error('Erreur upload:', err)
+      setUploading(false)
       alert(err.response?.data?.error || 'Erreur lors de l\'upload')
     } finally {
       setUploading(false)
@@ -270,19 +271,33 @@ const Gallery = () => {
         model_gender: modelGender // Genre du modèle (male, female)
       })
 
+      // [AI:Claude] Filet de sécurité côté frontend : le backend renvoie normalement une
+      // erreur HTTP si aucune génération n'a réussi (voir PhotoController::enhanceMultiple),
+      // mais on vérifie quand même success_count ici pour ne jamais afficher un faux succès
+      // si ce garde-fou venait à manquer sur un autre chemin de réponse.
+      if (!response.data.success_count) {
+        const firstError = response.data.generated_photos?.[0]?.error
+        throw new Error(firstError || 'La génération IA a échoué')
+      }
+
       await fetchPhotos()
       await fetchCredits()
       setShowEnhanceModal(false)
       trackPhotoEnhanced(selectedContext?.key, true)
       setSelectedPhoto(null)
+      // [AI:Claude] Remettre l'état à zéro AVANT l'alert() bloquant — sur iOS/Safari,
+      // alert() peut geler le rendu React avant qu'il n'ait repeint les changements
+      // d'état en attente, laissant le panneau "Génération en cours..." affiché à
+      // l'écran (superposé par l'alerte) jusqu'à sa fermeture. Le faire dépendre du
+      // finally (exécuté après l'alert) donnait l'impression d'un blocage infini.
+      setEnhancing(false)
 
       alert(`✨ Photo générée avec succès !`)
     } catch (err) {
       console.error('Erreur génération IA:', err)
       trackPhotoEnhanced(selectedContext?.key, false)
-      alert(err.response?.data?.error || 'Erreur lors de la génération IA')
-    } finally {
       setEnhancing(false)
+      alert(err.response?.data?.error || err.message || 'Erreur lors de la génération IA')
     }
   }
 
