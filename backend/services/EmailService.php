@@ -302,8 +302,11 @@ HTML;
      */
     private function injectTrackingPixel(string $html, string $token): string
     {
-        $baseUrl = $_ENV['APP_URL'] ?? 'https://yarnflow.fr';
-        $pixel = '<img src="' . htmlspecialchars($baseUrl) . '/api/email/track-open?t=' . $token
+        // [AI:Claude] APP_URL vaut déjà "https://yarnflow.fr/api" (voir build-production.sh) —
+        // ne PAS rajouter un second "/api" ici, sinon 404 (bug réel qui a fait que le pixel
+        // n'a jamais été atteignable depuis sa mise en place : /api/api/email/track-open).
+        $baseUrl = $_ENV['APP_URL'] ?? 'https://yarnflow.fr/api';
+        $pixel = '<img src="' . htmlspecialchars($baseUrl) . '/email/track-open?t=' . $token
             . '" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />';
 
         if (str_contains($html, '</body>')) {
