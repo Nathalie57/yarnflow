@@ -102,8 +102,11 @@ class AuthMiddleware
                 $db->prepare("UPDATE user_sessions SET last_activity_at = NOW() WHERE id = :id")
                    ->execute(['id' => $session['id']]);
             } else {
-                $db->prepare("INSERT INTO user_sessions (user_id, started_at, last_activity_at) VALUES (:uid, NOW(), NOW())")
-                   ->execute(['uid' => $userId]);
+                // [AI:Claude] User-agent capturé une fois par session (au démarrage), pas à
+                // chaque activité — suffisant pour déduire le device/OS de l'utilisateur.
+                $userAgent = substr((string)($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255);
+                $db->prepare("INSERT INTO user_sessions (user_id, started_at, last_activity_at, user_agent) VALUES (:uid, NOW(), NOW(), :user_agent)")
+                   ->execute(['uid' => $userId, 'user_agent' => $userAgent ?: null]);
             }
         } catch (\Throwable $e) {
             error_log('[Session] trackSession error: ' . $e->getMessage());
