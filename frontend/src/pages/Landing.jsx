@@ -64,19 +64,19 @@ const Landing = () => {
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-4 pt-14 pb-16 text-center">
 
-        <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-full px-4 py-1.5 text-xs font-semibold text-primary-700 mb-8">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-full px-4 py-2 text-sm font-bold text-primary-700 mb-8">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.499z" />
           </svg>
-          Créé par une crocheteuse passionnée
+          Enfin une application créée PAR une crocheteuse, POUR les crocheteuses
         </div>
 
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-          Le carnet de tricot & crochet<br className="hidden md:block" /> que vous méritez vraiment
+          Ne perdez plus jamais<br className="hidden md:block" /> le fil de vos créations
         </h1>
 
         <p className="text-xl text-gray-600 mb-10 leading-relaxed max-w-2xl mx-auto">
-          Fini de jongler entre trois apps différentes et vos notes papier. YarnFlow gère vos projets du premier rang jusqu'à la photo finale — dans une seule app.
+          Suivez chaque projet du premier rang jusqu'à la photo finale : patrons, compteurs, progression et souvenirs, dans une seule application.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
@@ -180,7 +180,7 @@ const Landing = () => {
                   'Timer intégré pour mesurer votre temps de travail',
                   "Wake lock : l'écran reste allumé pendant que vous tricotez",
                   'Sections indépendantes par partie de projet',
-                  "Jusqu'à 10 compteurs secondaires par section — augmentations, diminutions, rangs libres (PLUS & PRO)",
+                  "Comptez vos augmentations, diminutions ou répétitions sans jamais perdre le fil (PLUS & PRO)",
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -193,15 +193,39 @@ const Landing = () => {
             </div>
           </div>
 
+          {/* Argument différenciant — sections + compteurs multiples */}
+          <div className="bg-primary-50 border border-primary-200 rounded-3xl p-8 md:p-10 mb-20">
+            <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Pour les projets complexes</span>
+            <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-3">
+              Enfin un suivi adapté aux vrais projets
+            </h2>
+            <p className="text-gray-600 leading-relaxed mb-6 max-w-2xl">
+              Un pull n'est pas un simple compteur. Il a un dos, un devant, deux manches, un col — chacun avec son propre rythme d'augmentations et de diminutions. YarnFlow suit chaque partie séparément, pas juste un chiffre global qui mélange tout.
+            </p>
+            <ul className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 max-w-3xl">
+              {[
+                'Dos', 'Devant', 'Manches',
+                'Augmentations', 'Diminutions', 'Col',
+              ].map((item, i) => (
+                <li key={i} className="flex items-center gap-2 bg-white rounded-xl border border-primary-200 px-3.5 py-2.5 text-sm font-medium text-gray-800">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {/* Feature detail — Photo IA */}
           <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
             <div className="order-2 md:order-1">
-              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Photo Studio IA</span>
+              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Studio Photo</span>
               <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
                 Vos créations méritent<br />de belles photos
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                Une photo prise à la va-vite sur le canapé ? L'IA sublime l'éclairage, adoucit le fond et met votre ouvrage en valeur — sans le dénaturer. Parfait pour partager sur Instagram, vendre sur Etsy, ou simplement garder un beau souvenir de vos créations.
+                Transformez une photo prise à la va-vite sur le canapé en un rendu digne d'une vitrine Etsy, en un clic — éclairage sublimé, fond adouci, votre ouvrage mis en valeur sans être dénaturé.
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
@@ -287,7 +311,7 @@ const Landing = () => {
                 Importez un patron PDF ou une URL.<br />Le projet se crée tout seul.
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                Téléchargez votre patron en PDF ou collez une URL — l'IA lit le document, crée les sections, remplit les détails techniques et structure votre projet en quelques secondes. Personne d'autre ne fait ça.
+                Téléchargez votre patron en PDF ou collez une URL — l'IA lit le document, crée les sections, remplit les détails techniques et structure votre projet en quelques secondes.
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600 mb-6">
                 {[
@@ -305,7 +329,7 @@ const Landing = () => {
                 ))}
               </ul>
               <span className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-200">
-                Unique sur le marché du tricot &amp; crochet
+                Une façon unique de transformer vos patrons en projets organisés
               </span>
             </div>
 
@@ -316,7 +340,7 @@ const Landing = () => {
       {/* Assistant IA */}
       <section className="py-14 bg-white">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Assistant IA</span>
+          <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Assistant tricot & crochet</span>
           <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">Un expert tricot & crochet disponible à tout moment</h2>
           <p className="text-gray-600 leading-relaxed mb-8 max-w-xl mx-auto">
             Comment calculer les diminutions pour ma taille ? Quel point pour remplacer celui du patron ? L'assistant connaît votre projet et répond en contexte — pas des réponses génériques.
@@ -346,20 +370,17 @@ const Landing = () => {
       {/* Témoignages */}
       <section className="bg-primary-50 border-y border-primary-100 py-14">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-10">Ce qu'en disent nos premières utilisatrices</h2>
-          <div className="grid md:grid-cols-3 gap-5">
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">Ce qu'en disent nos premières utilisatrices</h2>
+          <p className="text-center text-sm text-gray-500 mb-10">Témoignages de nos premières bêta-testeuses</p>
+          <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto">
             {[
               {
-                quote: "J'avais essayé d'autres apps, mais c'est la première fois que je peux vraiment gérer mon pull avec les deux manches en même temps. Les sections changent tout.",
-                name: "Marie-Claire",
+                quote: "Très complet et intuitif : pouvoir créer plusieurs ouvrages en même temps et insérer chaque détail est vraiment top. Le compteur de rangs est fort utile, le minuteur aussi. Les photos générées sont formidables pour visualiser et mettre en valeur mes projets.",
+                name: "Une utilisatrice YarnFlow",
               },
               {
-                quote: "Les photos IA sont bluffantes. Je poste maintenant mes créations sur Instagram sans complexe — et les gens me demandent toujours quel photographe j'ai utilisé.",
-                name: "Louisa",
-              },
-              {
-                quote: "Je cherchais un carnet numérique sérieux depuis des années. YarnFlow c'est exactement ça — simple pour commencer, puissant quand on en a besoin.",
-                name: "Sophie",
+                quote: "Super pratique quand on tricote et crochète plusieurs encours en même temps : tout y est au même endroit — explications, étapes, photos et notes. Il y a même des petits conseils et des outils pratiques pour nous faciliter à tricoter nos modèles personnels ou adapter un modèle.",
+                name: "Une utilisatrice YarnFlow",
               },
             ].map((t, i) => (
               <div key={i} className="bg-white rounded-2xl border border-primary-200 p-6 shadow-sm">
@@ -443,7 +464,7 @@ const Landing = () => {
                 <span className="text-sm text-gray-500">/mois</span>
               </div>
               <p className="text-xs text-green-600 font-medium mb-1">Facturé 29,99€/an — économisez 17,89€</p>
-              <p className="text-sm text-gray-500 mb-6">Pour les tricoteuses organisées qui veulent plus de confort.</p>
+              <p className="text-sm text-gray-500 mb-6">Pour celles qui terminent plusieurs projets par an.</p>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -508,7 +529,7 @@ const Landing = () => {
                 <span className="text-sm text-gray-500">/mois</span>
               </div>
               <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
-              <p className="text-sm text-gray-500 mb-6">Pour les projets qui méritent tout.</p>
+              <p className="text-sm text-gray-500 mb-6">Pour les passionnées qui veulent garder l'historique complet de leurs créations.</p>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
