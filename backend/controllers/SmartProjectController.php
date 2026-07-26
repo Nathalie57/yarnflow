@@ -434,6 +434,15 @@ class SmartProjectController
                 // Insérer le projet
                 $projectId = $this->projectModel->create($insertData);
 
+                // [AI:Claude] Filtrer les sections vides (nom ET description absents) — l'IA
+                // renvoie parfois des sections fantômes (artefacts de fin de PDF, numérotation
+                // résiduelle), qui créaient des sections sans nom ni contenu dans le projet,
+                // perturbantes pour l'utilisatrice sans qu'aucune erreur ne soit remontée.
+                $sectionsData = array_values(array_filter($sectionsData, function ($section) {
+                    return trim((string)($section['name'] ?? '')) !== ''
+                        || trim((string)($section['description'] ?? '')) !== '';
+                }));
+
                 // Créer les sections
                 if (!empty($sectionsData)) {
                     $stmt = $db->prepare("
