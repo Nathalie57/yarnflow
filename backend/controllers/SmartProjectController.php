@@ -279,7 +279,9 @@ class SmartProjectController
 
             // Logger ici : Gemini a été appelé et a répondu — le quota est consommé maintenant
             // [AI:Claude] L'ID est renvoyé au frontend pour être relié au projet lors du confirm()
-            $importId = $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'], null, $processingTime, null);
+            // [AI:Claude] $result['data'] (pas null) : sans le PDF conservé, ai_response_json est
+            // la seule trace permettant d'auditer a posteriori la qualité d'une extraction.
+            $importId = $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'], $result['data'] ?? null, $processingTime, null);
 
             $this->jsonResponse([
                 'success' => true,
