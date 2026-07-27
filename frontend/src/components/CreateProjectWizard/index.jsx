@@ -22,6 +22,7 @@ const DRAFT_KEY = 'yf_wizard'
 
 const CreateProjectWizard = ({
   isOpen,
+  initialMode = null,
   onClose,
   onSubmit,
   isSubmitting,
@@ -43,7 +44,7 @@ const CreateProjectWizard = ({
 }) => {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [mode, setMode] = useState(null) // null = choix, 'manual' = formulaire
+  const [mode, setMode] = useState(initialMode) // null = choix, 'manual' = formulaire
 
   const [draft] = useState(() => {
     try {
@@ -75,6 +76,13 @@ const CreateProjectWizard = ({
       }))
     } catch {}
   }, [isOpen, name, technique, selectedCategory, counterUnit, description, isFavorite, projectTags, technicalForm])
+
+  // [AI:Claude] À l'ouverture, synchroniser mode avec initialMode — ex: le bouton
+  // "Créer un projet manuellement" passe initialMode="manual" pour sauter l'écran
+  // de choix interne (Création Intelligente / manuel), déjà tranché par ce bouton.
+  useEffect(() => {
+    if (isOpen) setMode(initialMode)
+  }, [isOpen, initialMode])
 
   // Reset complet à la fermeture
   useEffect(() => {

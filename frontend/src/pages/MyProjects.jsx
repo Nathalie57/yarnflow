@@ -71,12 +71,15 @@ const MyProjects = () => {
     }
   }, [])
 
-  // Onboarding premier accès — déclenché par ?welcome=1 depuis Register
+  // [AI:Claude] Onboarding premier accès — déclenché par ?welcome=1 depuis Register.
+  // Pas de modale ici : l'écran "0 projet" plus bas (Bienvenue + Création Intelligente
+  // + Créer manuellement + Explorer avec un exemple) s'affiche déjà naturellement pour
+  // un nouveau compte. Une modale dupliquait ce même écran mais SANS l'option démo,
+  // ce qui la cachait aux nouveaux utilisateurs tant qu'ils ne la fermaient pas.
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     if (params.get('welcome') === '1') {
       navigate('/my-projects', { replace: true })
-      setShowOnboarding(true)
     }
   }, [])
 
@@ -95,7 +98,11 @@ const MyProjects = () => {
   const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('') // Recherche par nom/description
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showOnboarding, setShowOnboarding] = useState(false)
+  // [AI:Claude] Quand on ouvre la modale depuis un bouton qui a déjà précisé
+  // l'intention ("Créer un projet manuellement"), on saute l'écran de choix
+  // interne du wizard (Création Intelligente vs manuel) — l'utilisateur vient
+  // justement de faire ce choix, le lui reposer était source de confusion.
+  const [createModalInitialMode, setCreateModalInitialMode] = useState(null)
 
   // [AI:Claude] Détecter si on est sur mobile
   const [isMobile, setIsMobile] = useState(false)
@@ -493,6 +500,12 @@ const MyProjects = () => {
       }
 
       await api.post(`/projects/${demoProjectId}/pattern-url`, { pattern_url: 'https://www.garnstudio.com/pattern.php?id=11639&cid=8' })
+
+      // [AI:Claude] Pas de colonne is_demo en base — on marque ce projet comme
+      // "démo" via localStorage (même convention que l'onboarding yf_onboarded_*)
+      // pour que la checklist du tutoriel réapparaisse après un rechargement,
+      // même une fois le paramètre ?demo=1 nettoyé de l'URL.
+      localStorage.setItem('yf_demo_project_' + demoProjectId, '1')
     } catch (err) {
       console.error('Erreur création projet démo:', err)
     } finally {
@@ -703,6 +716,7 @@ const MyProjects = () => {
     setSelectedLibraryPattern(null)
     setPatternSearchQuery('')
     setShowCreateModal(false)
+    setCreateModalInitialMode(null)
     setShowPatternUrlModal(false)
     setShowPatternTextModal(false)
     try { sessionStorage.removeItem('yf_wizard_pattern') } catch {}
@@ -940,7 +954,7 @@ const MyProjects = () => {
 
               {/* Créer manuellement */}
               <button
-                onClick={() => canCreateProject && setShowCreateModal(true)}
+                onClick={() => { if (canCreateProject) { setCreateModalInitialMode('manual'); setShowCreateModal(true) } }}
                 className="w-full mb-3 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
               >
                 <div className="flex items-center gap-4">
@@ -1263,55 +1277,10 @@ const MyProjects = () => {
         </>
       )}
 
-      {/* Modale d'onboarding — premier accès après inscription */}
-      {showOnboarding && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[80] p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-8 shadow-2xl">
-            <div className="text-center mb-6">
-              <div className="w-14 h-14 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.355a7.5 7.5 0 0 1-3 0M6.75 12a5.25 5.25 0 1 1 10.5 0" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
-                {user?.first_name ? `Bienvenue, ${user.first_name} !` : 'Bienvenue sur YarnFlow !'}
-              </h2>
-              <p className="text-gray-500 text-sm leading-relaxed">
-                Pour commencer, importez un patron ou créez votre premier projet.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={() => { setShowOnboarding(false); navigate('/smart-project-creator') }}
-                className="w-full p-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-left transition"
-              >
-                <p className="font-semibold text-sm">Importer un patron</p>
-                <p className="text-primary-100 text-xs mt-0.5">PDF ou lien — on remplit tout automatiquement</p>
-              </button>
-
-              <button
-                onClick={() => { setShowOnboarding(false); canCreateProject && setShowCreateModal(true) }}
-                className="w-full p-4 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-left rounded-xl transition"
-              >
-                <p className="font-semibold text-sm text-gray-800">Créer un projet manuellement</p>
-                <p className="text-gray-400 text-xs mt-0.5">Remplissez les informations vous-même</p>
-              </button>
-            </div>
-
-            <button
-              onClick={() => setShowOnboarding(false)}
-              className="w-full mt-4 text-xs text-gray-400 hover:text-gray-600 transition py-2"
-            >
-              Passer pour l'instant
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Wizard de création de projet */}
       <CreateProjectWizard
         isOpen={showCreateModal}
+        initialMode={createModalInitialMode}
         onClose={handleCancelModal}
         onSubmit={handleCreateProject}
         isSubmitting={creating}

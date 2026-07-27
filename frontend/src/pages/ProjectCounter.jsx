@@ -159,11 +159,35 @@ const ProjectCounter = () => {
   const [showSatisfactionModal, setShowSatisfactionModal] = useState(false)
   const [generatedPhoto, setGeneratedPhoto] = useState(null)
 
-  // Onboarding premier rang
-  const [showDemoBanner, setShowDemoBanner] = useState(false)
+  // [AI:Claude] Tutoriel interactif du projet démo — checklist "rangs / section / photo"
+  // au lieu du bandeau statique d'exploration libre. Persisté en localStorage (pas de
+  // colonne is_demo en base), même convention que yf_onboarded_${projectId} ci-dessous.
+  const [isDemoProject, setIsDemoProject] = useState(false)
+  const [demoSteps, setDemoSteps] = useState({ rows: 0, section: false, photo: false, dismissed: false })
+  const [demoRowsCelebrate, setDemoRowsCelebrate] = useState(false)
+
+  const updateDemoSteps = (updater) => {
+    setDemoSteps(prev => {
+      const next = updater(prev)
+      try { localStorage.setItem('yf_tutorial_steps_' + projectId, JSON.stringify(next)) } catch { /* ignore */ }
+      return next
+    })
+  }
+
+  useEffect(() => {
+    if (!demoRowsCelebrate) return
+    const timer = setTimeout(() => setDemoRowsCelebrate(false), 4000)
+    return () => clearTimeout(timer)
+  }, [demoRowsCelebrate])
 
   // [AI:Claude] v0.17.0 - Célébration premier rang
-  const [showFirstProjectTip, setShowFirstProjectTip] = useState(false) // [AI:Claude] v0.17.1 - Tip premier projet
+  // [AI:Claude] Remplace l'ancien tip statique "showFirstProjectTip" — sert maintenant
+  // à activer la checklist tutoriel (voir isDemoProject/demoSteps) sur le premier vrai
+  // projet, en plus du projet démo.
+  const [isFirstProject, setIsFirstProject] = useState(false)
+
+  // Affiche la checklist tutoriel sur le projet démo OU le premier vrai projet
+  const showTutorial = isDemoProject || isFirstProject
 
   // Onboarding guidage visuel — affiché une seule fois par projet si rang = 0
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -347,9 +371,23 @@ const ProjectCounter = () => {
       // Onboarding : afficher le prompt "premier rang" si projet fraîchement créé
       const urlParams = new URLSearchParams(window.location.search)
       if (urlParams.get('new') === '1') {
-        if (urlParams.get('demo') === '1') setShowDemoBanner(true)
+        if (urlParams.get('demo') === '1') {
+          try { localStorage.setItem('yf_demo_project_' + projectId, '1') } catch { /* ignore */ }
+        }
         window.history.replaceState(null, '', window.location.pathname)
       }
+
+      // [AI:Claude] Le paramètre ?demo=1 est nettoyé de l'URL juste au-dessus et ne
+      // survit pas à un rechargement — on se base aussi sur le flag localStorage posé
+      // à la création (MyProjects.jsx::handleCreateDemoProject) pour que la checklist
+      // du tutoriel réapparaisse correctement après un F5.
+      try {
+        if (localStorage.getItem('yf_demo_project_' + projectId) === '1') {
+          setIsDemoProject(true)
+          const savedSteps = JSON.parse(localStorage.getItem('yf_tutorial_steps_' + projectId) || 'null')
+          if (savedSteps) setDemoSteps(savedSteps)
+        }
+      } catch { /* ignore */ }
 
       // Passer le current_section_id du projet fraîchement chargé
       const loadedSections = await fetchSections(projectData?.current_section_id)
@@ -382,10 +420,10 @@ const ProjectCounter = () => {
       // Deadline
       if (projectData?.deadline) setDeadline(projectData.deadline.substring(0, 10))
 
-      // [AI:Claude] v0.17.1 - Vérifier si c'est le premier projet (tip onboarding)
+      // [AI:Claude] Vérifier si c'est le premier projet — active la checklist tutoriel
       if (sessionStorage.getItem('showFirstProjectTip') === 'true') {
         sessionStorage.removeItem('showFirstProjectTip')
-        setShowFirstProjectTip(true)
+        setIsFirstProject(true)
       }
 
       // Guidage visuel première visite — si rang = 0 et jamais vu
@@ -1313,6 +1351,12 @@ const ProjectCounter = () => {
       await fetchProjectPhotos()
       await fetchCredits()
       setShowPhotoUploadModal(false)
+
+      // [AI:Claude] Tutoriel — étape "ajouter une photo"
+      if (showTutorial) {
+        updateDemoSteps(prev => ({ ...prev, photo: true }))
+      }
+
       const photosResponse = await api.get('/photos', { params: { project_id: projectId } })
       const allPhotos = photosResponse.data.photos || []
       const newPhoto = allPhotos.filter(p => !p.parent_photo_id)[0]
@@ -1878,6 +1922,16 @@ const ProjectCounter = () => {
     if (showOnboarding) {
       setShowOnboarding(false)
       localStorage.setItem(`yf_onboarded_${projectId}`, '1')
+    }
+
+    // [AI:Claude] Tutoriel — étape "ajouter des rangs" (plafonnée à 5)
+    if (showTutorial) {
+      updateDemoSteps(prev => {
+        if (prev.rows >= 5) return prev
+        const rows = prev.rows + 1
+        if (rows >= 5) setDemoRowsCelebrate(true)
+        return { ...prev, rows }
+      })
     }
 
     // [AI:Claude] Vérifier si on a atteint le maximum
@@ -2669,6 +2723,11 @@ const ProjectCounter = () => {
         setCurrentRow(initialCurrentRow)
       }
 
+      // [AI:Claude] Tutoriel — étape "modifier une section" (création ou édition)
+      if (showTutorial) {
+        updateDemoSteps(prev => ({ ...prev, section: true }))
+      }
+
       setShowAddSectionModal(false)
       setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
       setEditingSection(null)
@@ -3239,59 +3298,91 @@ const ProjectCounter = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-3">
 
-      {/* [AI:Claude] v0.17.1 - Tip premier projet */}
-      {showFirstProjectTip && (
-        <div className="mb-4 bg-primary-50 border border-primary-200 rounded-xl p-4 relative">
-          <button
-            onClick={() => setShowFirstProjectTip(false)}
-            className="absolute top-2 right-2 text-primary-400 hover:text-primary-600 text-xl leading-none"
-            aria-label="Fermer"
-          >
-            ×
-          </button>
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
-            <div>
-              <p className="font-semibold text-primary-800 mb-1">Astuce</p>
-              <p className="text-primary-700 text-sm leading-relaxed">
-                YarnFlow est surtout utile quand vous êtes interrompue.
-                <br />
-                Laissez-le ouvert pendant que vous tricotez — même si vous faites des pauses.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Bandeau mode démo */}
-      {showDemoBanner && (
+      {/* [AI:Claude] Tutoriel interactif — checklist "rangs / section / photo", affichée
+          sur le projet démo ET sur le premier vrai projet (showTutorial) */}
+      {showTutorial && !demoSteps.dismissed && (
         <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
           <button
-            onClick={() => setShowDemoBanner(false)}
+            onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
             className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
             aria-label="Fermer"
           >
             ×
           </button>
-          <div className="flex items-start gap-3">
-            <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-amber-800 text-sm mb-1">Mode démo — Explorez librement !</p>
-              <p className="text-amber-700 text-sm leading-relaxed">
-                Cliquez sur <strong>+</strong> pour incrémenter, déroulez le patron ci-dessous, ou modifiez tout à votre guise.
-              </p>
-              <div className="flex items-center gap-3 mt-3">
-                <button
-                  onClick={() => { setShowDemoBanner(false); navigate('/my-projects') }}
-                  className="text-xs text-amber-700 hover:text-amber-900 underline"
-                >
-                  Créer mon vrai projet
-                </button>
+
+          {demoSteps.rows >= 5 && demoSteps.section && demoSteps.photo ? (
+            <div className="flex items-start gap-3 pr-6">
+              <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-amber-800 text-sm mb-1">Vous avez fait le tour ! 🎉</p>
+                {isDemoProject ? (
+                  <>
+                    <p className="text-amber-700 text-sm leading-relaxed mb-3">
+                      Compteur, sections, photo — vous savez déjà utiliser YarnFlow. Prêt·e à créer votre vrai projet ?
+                    </p>
+                    <button
+                      onClick={() => navigate('/my-projects')}
+                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                    >
+                      Créer mon vrai projet
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-amber-700 text-sm leading-relaxed mb-3">
+                      Compteur, sections, photo — vous maîtrisez déjà l'essentiel de YarnFlow !
+                    </p>
+                    <button
+                      onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
+                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                    >
+                      Continuer
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-start gap-3 pr-6">
+              <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-amber-800 text-sm mb-2">
+                  {isDemoProject ? 'Mode démo — Découvrez YarnFlow en 1 minute' : 'Découvrez YarnFlow en 1 minute'}
+                </p>
+                <ul className="space-y-1.5 text-sm">
+                  <li className="flex items-center gap-2 text-amber-700">
+                    <span>{demoSteps.rows >= 5 ? '✅' : '⬜'}</span>
+                    <span>Ajoutez des rangs avec le <strong>+</strong> {demoSteps.rows < 5 && `(${demoSteps.rows}/5)`}</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-amber-700">
+                    <span>{demoSteps.section ? '✅' : '⬜'}</span>
+                    <span>Modifiez une section (dos, manches...)</span>
+                  </li>
+                  <li className="flex items-center gap-2 text-amber-700">
+                    <span>{demoSteps.photo ? '✅' : '⬜'}</span>
+                    <span>Ajoutez une photo de l'ouvrage</span>
+                  </li>
+                </ul>
+                {demoRowsCelebrate && (
+                  <p className="text-xs text-amber-600 mt-2 font-medium">✨ Regardez votre progression avancer !</p>
+                )}
+                {isDemoProject && (
+                  <div className="flex items-center gap-3 mt-3">
+                    <button
+                      onClick={() => { updateDemoSteps(prev => ({ ...prev, dismissed: true })); navigate('/my-projects') }}
+                      className="text-xs text-amber-700 hover:text-amber-900 underline"
+                    >
+                      Créer mon vrai projet
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -3668,16 +3759,10 @@ const ProjectCounter = () => {
               <div className="relative">
                 <button
                   onClick={handleIncrementRow}
-                  className={`w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none ${showOnboarding ? 'ring-4 ring-primary-400 ring-offset-2 animate-pulse' : ''}`}
+                  className="w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
                 >
                   +
                 </button>
-                {showOnboarding && sections.length === 0 && (
-                  <div className="absolute right-14 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 w-44 shadow-lg pointer-events-none z-50">
-                    Appuyez ici à chaque rang terminé
-                    <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-l-6 border-transparent border-l-gray-900" />
-                  </div>
-                )}
               </div>
             </div>
           </div>

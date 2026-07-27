@@ -108,7 +108,7 @@ const Landing = () => {
           </a>
         </div>
 
-        <p className="text-sm text-gray-400">Aucune carte bancaire requise · Gratuit pour toujours</p>
+        <p className="text-sm text-gray-400">Version gratuite disponible · Sans engagement</p>
       </section>
 
       {/* Différenciateur — 3 points forts */}
