@@ -62,53 +62,64 @@ const Landing = () => {
       </header>
 
       {/* Hero */}
-      <section className="max-w-4xl mx-auto px-4 pt-14 pb-16 text-center">
+      <section className="max-w-6xl mx-auto px-4 pt-14 pb-16">
+        <div className="grid md:grid-cols-2 gap-10 md:gap-12 items-center">
 
-        <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-full px-4 py-2 text-sm font-bold text-primary-700 mb-8">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.499z" />
-          </svg>
-          Enfin une application pensée par une passionnée, pour les passionné·es de tricot &amp; crochet
+          <div className="text-center md:text-left">
+            <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-full px-4 py-2 text-sm font-bold text-primary-700 mb-8">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.499z" />
+              </svg>
+              Enfin une application pensée par une passionnée, pour les passionné·es de tricot &amp; crochet
+            </div>
+
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              Ne perdez plus jamais le fil de vos créations
+            </h1>
+
+            <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-2xl mx-auto md:mx-0">
+              Suivez chaque projet du premier rang jusqu'à la photo finale : patrons, compteurs, progression et souvenirs, dans une seule application.
+            </p>
+
+            <div className="flex justify-center md:justify-start mb-3">
+              <Link
+                to="/register"
+                className="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-base px-8 py-3.5 rounded-xl font-semibold transition shadow-md hover:shadow-lg"
+              >
+                Créer mon compte gratuit
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            </div>
+
+            <p className="text-sm text-gray-400 mb-4">Inscription en 30 secondes · Aucune carte bancaire requise</p>
+
+            <div className="flex items-center justify-center md:justify-start gap-3 text-sm text-gray-500">
+              <a href="#pricing" className="hover:text-primary-600 underline underline-offset-2 transition">
+                Voir les tarifs
+              </a>
+              <span className="text-gray-300">·</span>
+              <a
+                href="https://play.google.com/store/apps/details?id=app.yarnflow.fr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-primary-600 underline underline-offset-2 transition"
+              >
+                Disponible sur Google Play
+              </a>
+            </div>
+          </div>
+
+          <div className="flex justify-center md:justify-end">
+            <img
+              src="/screenshots/counter-mobile.jpg"
+              alt="Aperçu de l'application YarnFlow : compteur de rangs et patron affichés côte à côte"
+              className="w-56 md:w-64 rounded-[2rem] shadow-2xl border border-gray-200"
+            />
+          </div>
+
         </div>
-
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-          Ne perdez plus jamais<br className="hidden md:block" /> le fil de vos créations
-        </h1>
-
-        <p className="text-xl text-gray-600 mb-10 leading-relaxed max-w-2xl mx-auto">
-          Suivez chaque projet du premier rang jusqu'à la photo finale : patrons, compteurs, progression et souvenirs, dans une seule application.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
-          <Link
-            to="/register"
-            className="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-base px-8 py-3.5 rounded-xl font-semibold transition shadow-md hover:shadow-lg"
-          >
-            Créer mon compte gratuit
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-            </svg>
-          </Link>
-          <a
-            href="https://play.google.com/store/apps/details?id=app.yarnflow.fr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 bg-white text-gray-700 text-base px-6 py-3.5 rounded-xl font-medium transition"
-          >
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M3.18 23.76c.3.17.65.19.97.07l11.65-6.73-2.55-2.55-10.07 9.21zM.44 1.6C.17 1.93 0 2.4 0 3.01v17.98c0 .61.17 1.08.44 1.41l.07.07 10.07-10.07v-.24L.51 1.53l-.07.07zM19.69 8.6l-2.88-1.66-2.86 2.86 2.86 2.86 2.9-1.67c.83-.48.83-1.26-.02-1.39zM3.18.24L13.25 9.45l-2.55 2.55L-.01.31C.32.19.67.21.97.07z"/>
-            </svg>
-            Disponible sur Google Play
-          </a>
-          <a
-            href="#pricing"
-            className="inline-flex items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 text-gray-700 text-base px-8 py-3.5 rounded-xl font-medium transition"
-          >
-            Voir les tarifs
-          </a>
-        </div>
-
-        <p className="text-sm text-gray-400">Version gratuite disponible · Sans engagement</p>
       </section>
 
       {/* Différenciateur — 3 points forts */}
