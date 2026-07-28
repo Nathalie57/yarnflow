@@ -95,11 +95,7 @@ const Landing = () => {
 
             <p className="text-sm text-gray-400 mb-4">Inscription en 30 secondes · Aucune carte bancaire requise</p>
 
-            <div className="flex items-center justify-center md:justify-start gap-3 text-sm text-gray-500">
-              <a href="#pricing" className="hover:text-primary-600 underline underline-offset-2 transition">
-                Voir les tarifs
-              </a>
-              <span className="text-gray-300">·</span>
+            <div className="flex items-center justify-center md:justify-start text-sm text-gray-500">
               <a
                 href="https://play.google.com/store/apps/details?id=app.yarnflow.fr"
                 target="_blank"
