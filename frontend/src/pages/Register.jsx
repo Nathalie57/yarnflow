@@ -123,29 +123,15 @@ const Register = () => {
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-gray-700 mb-2">Prénom</label>
-              <input
-                type="text"
-                name="first_name"
-                className="input-field"
-                value={formData.first_name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700 mb-2">Nom</label>
-              <input
-                type="text"
-                name="last_name"
-                className="input-field"
-                value={formData.last_name}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">Prénom <span className="text-gray-400 text-sm">(optionnel)</span></label>
+            <input
+              type="text"
+              name="first_name"
+              className="input-field"
+              value={formData.first_name}
+              onChange={handleChange}
+            />
           </div>
 
           <div className="mb-4">
@@ -198,9 +184,6 @@ const Register = () => {
           </button>
         </form>
 
-        {/* [AI:Claude] DÉSACTIVÉ POUR LA BETA - OAuth Google */}
-        {/* Les utilisateurs beta doivent s'inscrire avec l'email exact qui a reçu le code */}
-        {/*
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-gray-300"></div>
@@ -223,7 +206,6 @@ const Register = () => {
           </svg>
           {oauthLoading ? 'Inscription...' : 'Continuer avec Google'}
         </button>
-        */}
 
         <p className="text-center mt-6 text-gray-600">
           Déjà un compte ?{' '}
