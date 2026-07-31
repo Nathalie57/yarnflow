@@ -20,6 +20,8 @@ use App\Models\Project;
 use App\Models\User;
 use App\Middleware\AuthMiddleware;
 use App\Services\PatternStorageService;
+use App\Services\StripeService;
+use App\Services\EmailService;
 
 class ProjectController
 {
@@ -28,12 +30,88 @@ class ProjectController
     private AuthMiddleware $authMiddleware;
     private PatternStorageService $patternStorage;
 
+    // [AI:Claude] Gamification — récompense pour une série de 7 jours,
+    // octroyée une seule fois par compte (voir streak7_bonus_granted_at).
+    // Un code promo (pas des crédits offerts) pour pousser vers la conversion
+    // plutôt que retenir gratuitement des utilisatrices déjà engagées.
+    private const STREAK_BONUS_THRESHOLD = 7;
+
     public function __construct()
     {
         $this->projectModel   = new Project();
         $this->userModel      = new User();
         $this->authMiddleware = new AuthMiddleware();
         $this->patternStorage = new PatternStorageService();
+    }
+
+    /**
+     * [AI:Claude] Récompense pour une série de 7 jours consécutifs : un code
+     * promo Stripe à usage unique, envoyé par email. Une seule fois par
+     * compte. Appelé après chaque ajout de rang.
+     *
+     * Volontairement isolée derrière son propre try/catch : un souci Stripe/email
+     * ne doit jamais faire échouer l'ajout de rang lui-même (déjà en base à ce
+     * stade) — au pire on manque une récompense, on ne casse jamais le compteur.
+     *
+     * @param int $userId ID de l'utilisateur
+     * @return string|null Le code promo si c'est le cas, sinon null
+     */
+    private function grantStreakBonusIfEligible(int $userId): ?string
+    {
+        try {
+            $db = \App\Config\Database::getInstance()->getConnection();
+
+            // [AI:Claude] Vérif bon marché d'abord — évite de recalculer la série
+            // (requête sur 365 jours) pour les comptes qui ont déjà leur récompense
+            $alreadyGranted = $db->prepare(
+                "SELECT 1 FROM users WHERE id = :user_id AND streak7_bonus_granted_at IS NOT NULL"
+            );
+            $alreadyGranted->execute([':user_id' => $userId]);
+            if ($alreadyGranted->fetch()) {
+                return null;
+            }
+
+            $streak = $this->projectModel->getStreakStatus($userId);
+            if ($streak['current_streak'] < self::STREAK_BONUS_THRESHOLD) {
+                return null;
+            }
+
+            $stmt = $db->prepare(
+                "UPDATE users SET streak7_bonus_granted_at = NOW()
+                 WHERE id = :user_id AND streak7_bonus_granted_at IS NULL"
+            );
+            $stmt->execute([':user_id' => $userId]);
+
+            // [AI:Claude] rowCount() = 0 signifie que le bonus a déjà été octroyé
+            // avant (protège contre un double octroi en cas d'appels concurrents)
+            if ($stmt->rowCount() === 0) {
+                return null;
+            }
+
+            $promoCode = (new StripeService())->createOneTimePromoCode($userId);
+            if ($promoCode === null) {
+                // [AI:Claude] Coupon Stripe pas configuré ou erreur API : on annule
+                // le flag pour retenter au prochain rang plutôt que de perdre la récompense
+                $db->prepare("UPDATE users SET streak7_bonus_granted_at = NULL WHERE id = :user_id")
+                   ->execute([':user_id' => $userId]);
+                return null;
+            }
+
+            $user = $this->userModel->findById($userId);
+            if ($user) {
+                (new EmailService($db))->sendStreakRewardEmail(
+                    $user['email'],
+                    $user['first_name'] ?? 'Utilisatrice',
+                    $promoCode,
+                    $userId
+                );
+            }
+
+            return $promoCode;
+        } catch (\Throwable $e) {
+            error_log('[grantStreakBonusIfEligible] Erreur non bloquante : ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -526,11 +604,14 @@ class ProjectController
             // [AI:Claude] Récupérer le projet mis à jour (trigger auto-update)
             $project = $this->projectModel->getProjectById($id);
 
+            $streakPromoCode = $this->grantStreakBonusIfEligible($userId);
+
             $this->sendResponse(201, [
                 'success' => true,
                 'message' => 'Rang ajouté avec succès',
                 'row_id' => $rowId,
-                'project' => $project
+                'project' => $project,
+                'streak_promo_code' => $streakPromoCode
             ]);
         } catch (\InvalidArgumentException $e) {
             $this->sendResponse(400, [

@@ -1699,6 +1699,161 @@ HTML;
 HTML;
     }
 
+    public function sendStreakAtRiskEmail(string $email, string $name, int $streak, ?int $userId = null): bool
+    {
+        $subject = "Votre série de {$streak} jours touche à sa fin ce soir";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getStreakAtRiskTemplate($name, $streak);
+            $mail->AltBody = "Bonjour $name,\n\nVous avez tricoté {$streak} jours de suite, mais pas encore aujourd'hui. Comptez au moins un rang avant minuit pour garder votre série.\n\nOuvrir YarnFlow : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] streak_at_risk: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'streak_at_risk', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getStreakAtRiskTemplate(string $name, int $streak): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border-radius:8px;margin:0 0 28px;">
+        <tr><td style="padding:20px;text-align:center;">
+            <p style="margin:0;font-size:32px;">🔥</p>
+            <p style="margin:8px 0 0;font-size:20px;color:#9a3412;font-weight:700;">{$streak} jours de suite</p>
+        </td></tr>
+    </table>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Vous n'avez pas encore compté de rang aujourd'hui. Un seul suffit avant minuit pour garder votre série intacte.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Compter un rang
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne fin de journée,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    public function sendStreakRewardEmail(string $email, string $name, string $promoCode, ?int $userId = null): bool
+    {
+        $percent = $_ENV['STRIPE_STREAK_COUPON_PERCENT'] ?? '20';
+        $subject = "7 jours de série — un cadeau pour vous";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getStreakRewardTemplate($name, $promoCode, $percent);
+            $mail->AltBody = "Bonjour $name,\n\n7 jours de tricot d'affilée, bravo ! Voici un code promo -{$percent}% valable 7 jours sur un abonnement YarnFlow : {$promoCode}\n\nVoir les plans : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] streak_reward: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'streak_reward', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getStreakRewardTemplate(string $name, string $promoCode, string $percent): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        7 jours de tricot d'affilée — une vraie régularité. Pour vous remercier, voici un code promo sur un abonnement YarnFlow :
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border-radius:8px;margin:0 0 12px;">
+        <tr><td style="padding:20px;text-align:center;">
+            <p style="margin:0;font-size:14px;color:#9a3412;font-weight:600;">-{$percent}% sur votre abonnement</p>
+            <p style="margin:10px 0 0;font-size:22px;color:#9a3412;font-weight:700;letter-spacing:1px;font-family:monospace;">{$promoCode}</p>
+        </td></tr>
+    </table>
+
+    <p style="color:#9ca3af;font-size:13px;line-height:1.5;margin:0 0 28px;">
+        Valable 7 jours, à usage unique.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/subscription" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Voir les plans
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne continuation,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
     public function sendActiveFreeDay30Email(string $email, string $name, int $projectCount, int $totalRows, ?int $userId = null): bool
     {
         $subject = "Un mois avec YarnFlow — et si on allait plus loin ?";

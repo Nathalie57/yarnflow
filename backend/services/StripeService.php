@@ -693,4 +693,41 @@ class StripeService
             ];
         }
     }
+
+    /**
+     * [AI:Claude] Génère un code promo Stripe à usage unique pour un utilisateur
+     * (récompense gamification : série de X jours). S'appuie sur un Coupon
+     * déjà créé une fois dans le Dashboard Stripe (id dans STRIPE_STREAK_COUPON_ID)
+     * — on ne crée ici qu'un PromotionCode jetable qui pointe vers ce coupon,
+     * pas un nouveau coupon à chaque fois.
+     *
+     * @param int $userId ID de l'utilisateur (pour metadata/traçabilité)
+     * @return string|null Le code à donner à l'utilisateur, ou null si le
+     *                      coupon n'est pas configuré ou en cas d'erreur Stripe
+     */
+    public function createOneTimePromoCode(int $userId): ?string
+    {
+        $couponId = $_ENV['STRIPE_STREAK_COUPON_ID'] ?? '';
+        if (empty($couponId)) {
+            error_log('[Stripe] STRIPE_STREAK_COUPON_ID non configuré — récompense série ignorée');
+            return null;
+        }
+
+        try {
+            $code = 'SERIE7-' . strtoupper(bin2hex(random_bytes(4)));
+
+            $promotionCode = \Stripe\PromotionCode::create([
+                'coupon' => $couponId,
+                'code' => $code,
+                'max_redemptions' => 1,
+                'expires_at' => time() + (7 * 86400),
+                'metadata' => ['user_id' => (string)$userId, 'reward' => 'streak_7_days'],
+            ]);
+
+            return $promotionCode->code;
+        } catch (ApiErrorException $e) {
+            error_log('[Stripe] Erreur création code promo série : ' . $e->getMessage());
+            return null;
+        }
+    }
 }

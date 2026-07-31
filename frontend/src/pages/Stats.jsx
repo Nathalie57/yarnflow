@@ -84,10 +84,48 @@ const Stats = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [period, setPeriod] = useState('all')
+  const [celebration, setCelebration] = useState(null)
 
   useEffect(() => {
     fetchStats()
   }, [period])
+
+  // [AI:Claude] Célébration en usage réel — badge nouvellement débloqué ou
+  // record de série battu, détecté en comparant à ce qu'on avait déjà vu
+  // (localStorage), pas seulement sur le projet démo/tutoriel.
+  useEffect(() => {
+    if (!stats) return
+    const { earned } = calculateBadges()
+
+    const badgeKey = 'yf_seen_badges'
+    const streakKey = 'yf_best_streak_seen'
+    const rawSeenBadges = localStorage.getItem(badgeKey)
+    const rawBestStreak = localStorage.getItem(streakKey)
+    const isFirstRun = rawSeenBadges === null && rawBestStreak === null
+
+    let seenIds = []
+    try { seenIds = JSON.parse(rawSeenBadges || '[]') } catch { /* ignore */ }
+    const bestSeen = parseInt(rawBestStreak || '0', 10) || 0
+    const currentStreak = stats.current_streak || 0
+
+    try {
+      localStorage.setItem(badgeKey, JSON.stringify(earned.map(b => b.id)))
+      localStorage.setItem(streakKey, String(Math.max(bestSeen, currentStreak)))
+    } catch { /* ignore */ }
+
+    // Au tout premier chargement on établit juste la référence, sans célébrer
+    // (sinon on célèbrerait d'un coup tous les badges déjà acquis avant cette fonctionnalité)
+    if (isFirstRun) return
+
+    const newlyEarned = earned.filter(b => !seenIds.includes(b.id))
+    const isNewStreakRecord = currentStreak >= 3 && currentStreak > bestSeen
+
+    if (isNewStreakRecord) {
+      setCelebration({ type: 'streak', value: currentStreak })
+    } else if (newlyEarned.length > 0) {
+      setCelebration({ type: 'badge', badge: newlyEarned[0] })
+    }
+  }, [stats, photoStats])
 
   const fetchStats = async () => {
     setLoading(true)
@@ -203,6 +241,34 @@ const Stats = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
+
+      {/* Célébration — badge débloqué ou record de série, en usage réel */}
+      {celebration && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-4" onClick={() => setCelebration(null)}>
+          <div className="bg-white rounded-2xl max-w-sm w-full p-8 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="text-5xl mb-4">{celebration.type === 'streak' ? '🔥' : '🏆'}</div>
+            {celebration.type === 'streak' ? (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Nouveau record de série !</h2>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  {celebration.value} jours consécutifs — votre meilleure série jusqu'ici.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Badge débloqué : {celebration.badge.title}</h2>
+                <p className="text-gray-500 text-sm leading-relaxed">{celebration.badge.desc}</p>
+              </>
+            )}
+            <button
+              onClick={() => setCelebration(null)}
+              className="w-full mt-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition"
+            >
+              Continuer
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">

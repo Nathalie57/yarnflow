@@ -2055,8 +2055,13 @@ const ProjectCounter = () => {
         secondary_label: secondaryCounters[0]?.label ?? null,
       }
 
-      await api.post(`/projects/${projectId}/rows`, rowData)
+      const rowResponse = await api.post(`/projects/${projectId}/rows`, rowData)
 
+      // [AI:Claude] Gamification — série de 7 jours récompensée par un code
+      // promo (envoyé aussi par email), voir ProjectController::grantStreakBonusIfEligible
+      if (rowResponse.data.streak_promo_code) {
+        showAlert(`🔥 7 jours de série ! Code promo envoyé par email : ${rowResponse.data.streak_promo_code}`, 'success')
+      }
 
       // [AI:Claude] FIX v0.16.2: Mettre à jour sections/project AVANT setCurrentRow
       // pour éviter que le useEffect n'écrase avec l'ancienne valeur

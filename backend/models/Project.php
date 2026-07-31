@@ -1004,6 +1004,37 @@ class Project extends BaseModel
     }
 
     /**
+     * [AI:Claude] Statut de série pour un utilisateur, calculé en direct depuis
+     * project_rows (indépendant de project_stats, qui n'est recalculé que
+     * ponctuellement — voir recalculateUserStats). Sert au cron streak_at_risk.
+     *
+     * @param int $userId ID de l'utilisateur
+     * @return array{current_streak: int, last_work_date: ?string}
+     */
+    public function getStreakStatus(int $userId): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT DISTINCT DATE(pr.completed_at) as work_date
+             FROM project_rows pr
+             JOIN {$this->table} p ON pr.project_id = p.id
+             WHERE p.user_id = :user_id
+             ORDER BY work_date DESC
+             LIMIT 365"
+        );
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
+        $stmt->execute();
+        $workDays = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+        if (empty($workDays)) {
+            return ['current_streak' => 0, 'last_work_date' => null];
+        }
+
+        [$currentStreak] = $this->calculateStreaks($workDays);
+
+        return ['current_streak' => $currentStreak, 'last_work_date' => $workDays[0]];
+    }
+
+    /**
      * [AI:Claude] Récupérer les projets publics (galerie communautaire)
      *
      * @param int $limit Limite
