@@ -17,6 +17,7 @@ namespace App\Services;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\ConnectException;
 
 class AIPatternExtractorService
 {
@@ -308,11 +309,7 @@ PROMPT;
         ];
 
         try {
-            $response = $this->httpClient->post($endpoint, [
-                'json' => $payload,
-                'headers' => ['Content-Type' => 'application/json']
-            ]);
-
+            $response = $this->postToGeminiWithRetry($endpoint, $payload);
             $body = json_decode((string) $response->getBody(), true);
             return $this->parseGeminiResponse($body);
 
@@ -346,17 +343,43 @@ PROMPT;
         ];
 
         try {
-            $response = $this->httpClient->post($endpoint, [
-                'json' => $payload,
-                'headers' => ['Content-Type' => 'application/json']
-            ]);
-
+            $response = $this->postToGeminiWithRetry($endpoint, $payload);
             $body = json_decode((string) $response->getBody(), true);
             return $this->parseGeminiResponse($body);
 
         } catch (GuzzleException $e) {
             error_log('[AIPatternExtractor] Erreur Gemini API: ' . $e->getMessage());
             return $this->errorResponse('Erreur API Gemini: ' . $e->getMessage(), 0);
+        }
+    }
+
+    /**
+     * [AI:Claude] Un timeout/coupure réseau vers Gemini (cURL error 28 vu en prod,
+     * "0 bytes received" après 180s) est transitoire dans la plupart des cas —
+     * une nouvelle tentative immédiate réussit souvent (constaté manuellement par
+     * une utilisatrice qui a dû relancer elle-même son import). On ne retente
+     * qu'en cas de ConnectException (échec réseau/connexion), jamais sur une
+     * vraie erreur HTTP de l'API (4xx/5xx) où rejouer serait inutile et
+     * doublerait l'attente pour un échec certain.
+     *
+     * @throws GuzzleException si toutes les tentatives échouent
+     */
+    private function postToGeminiWithRetry(string $endpoint, array $payload, int $maxAttempts = 2)
+    {
+        $attempt = 0;
+        while (true) {
+            $attempt++;
+            try {
+                return $this->httpClient->post($endpoint, [
+                    'json' => $payload,
+                    'headers' => ['Content-Type' => 'application/json']
+                ]);
+            } catch (ConnectException $e) {
+                if ($attempt >= $maxAttempts) {
+                    throw $e;
+                }
+                error_log("[AIPatternExtractor] Timeout/coupure réseau Gemini, nouvelle tentative ({$attempt}/{$maxAttempts})...");
+            }
         }
     }
 
