@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import api from '../services/api'
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth()
@@ -9,6 +10,29 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showHelpMenu, setShowHelpMenu] = useState(false)
   const [showHelpMenuDesktop, setShowHelpMenuDesktop] = useState(false)
+  const [streak, setStreak] = useState(0)
+
+  // [AI:Claude] Rappel passif de la série en cours, visible sur toutes les
+  // pages (contrairement à Stats qu'il faut aller consulter volontairement).
+  // Layout garde Navbar monté en permanence entre les navigations, donc un
+  // seul appel par session suffit.
+  useEffect(() => {
+    if (!user) return
+    api.get('/projects/stats', { params: { period: 'all' } })
+      .then(res => setStreak(res.data?.stats?.current_streak || 0))
+      .catch(() => {})
+  }, [user])
+
+  const StreakBadge = ({ className = '' }) => (
+    streak > 0 ? (
+      <span
+        className={`inline-flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5 ${className}`}
+        title={`${streak} jour${streak > 1 ? 's' : ''} de série consécutifs`}
+      >
+        🔥 {streak}
+      </span>
+    ) : null
+  )
 
   const handleLogout = () => {
     logout()
@@ -100,6 +124,9 @@ const Navbar = () => {
               </>
             )}
             </div>
+
+            {/* Série en cours */}
+            <StreakBadge />
 
             {/* Avatar utilisateur - confirme visuellement qu'on est connecté, sans avoir à ouvrir le menu */}
             <button
@@ -281,6 +308,9 @@ const Navbar = () => {
                 Admin
               </Link>
             )}
+
+            {/* Série en cours */}
+            <StreakBadge />
 
             {/* User menu Desktop */}
             <div className="relative group">
