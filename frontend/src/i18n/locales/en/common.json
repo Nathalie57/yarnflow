@@ -1,0 +1,47 @@
+{
+  "language": {
+    "switchLabel": "Change language",
+    "fr": "FR",
+    "en": "EN"
+  },
+  "nav": {
+    "projects": "Projects",
+    "myProjects": "My Projects",
+    "resources": "Resources",
+    "gallery": "Gallery",
+    "galleryLong": "AI Photo Gallery",
+    "tools": "Tools",
+    "stats": "Stats",
+    "statsLong": "Statistics",
+    "admin": "Admin",
+    "assistant": "Assistant",
+    "features": "Features",
+    "pricing": "Pricing",
+    "contact": "Contact"
+  },
+  "userMenu": {
+    "profile": "My profile",
+    "subscription": "Subscription",
+    "logout": "Log out",
+    "loggedInAs": "Logged in as",
+    "loggedInAsName": "Logged in as {{name}}",
+    "connected": "Logged in"
+  },
+  "help": {
+    "buttonLabel": "Help",
+    "buttonTitle": "Help and getting started guide",
+    "title": "Need help?",
+    "contactUs": "Contact us",
+    "contactUsDesc": "A question? A problem?",
+    "legal": "Terms & Privacy",
+    "legalDesc": "Terms of use",
+    "version": "YarnFlow v0.16 · Made with ♥"
+  },
+  "streak": {
+    "badgeTitle_one": "{{count}} day streak",
+    "badgeTitle_other": "{{count}} day streak"
+  },
+  "menu": {
+    "toggle": "Toggle menu"
+  }
+}

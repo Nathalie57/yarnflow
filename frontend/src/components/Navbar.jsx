@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -27,12 +29,41 @@ const Navbar = () => {
     streak > 0 ? (
       <span
         className={`inline-flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5 ${className}`}
-        title={`${streak} jour${streak > 1 ? 's' : ''} de série consécutifs`}
+        title={t('streak.badgeTitle', { count: streak })}
       >
         🔥 {streak}
       </span>
     ) : null
   )
+
+  // [AI:Claude] Sélecteur de langue — le choix explicite est persisté en
+  // localStorage par le detector d'i18next (voir src/i18n/index.js), et prime
+  // ensuite sur la langue du navigateur.
+  const LanguageSwitcher = ({ className = '' }) => {
+    const current = i18n.resolvedLanguage
+    return (
+      <div
+        className={`inline-flex items-center rounded-full border border-gray-200 overflow-hidden text-xs font-semibold ${className}`}
+        role="group"
+        aria-label={t('language.switchLabel')}
+      >
+        {['fr', 'en'].map(lng => (
+          <button
+            key={lng}
+            onClick={() => i18n.changeLanguage(lng)}
+            aria-pressed={current === lng}
+            className={`px-2 py-0.5 transition ${
+              current === lng
+                ? 'bg-primary-600 text-white'
+                : 'bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            {t(`language.${lng}`)}
+          </button>
+        ))}
+      </div>
+    )
+  }
 
   const handleLogout = () => {
     logout()
@@ -60,7 +91,7 @@ const Navbar = () => {
               <button
                 onClick={() => setShowHelpMenu(!showHelpMenu)}
                 className="p-2 rounded-full bg-primary-100 hover:bg-primary-200 text-primary-700 transition w-10 h-10 flex items-center justify-center"
-                aria-label="Aide"
+                aria-label={t('help.buttonLabel')}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
               </button>
@@ -74,7 +105,7 @@ const Navbar = () => {
                 />
                 <div className="absolute right-0 top-12 z-50 bg-white rounded-xl shadow-2xl border-2 border-primary-200 w-72 overflow-hidden">
                   <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3">
-                    <h3 className="text-white font-bold text-lg">Besoin d'aide ?</h3>
+                    <h3 className="text-white font-bold text-lg">{t('help.title')}</h3>
                   </div>
 
                   <div className="p-2">
@@ -88,10 +119,10 @@ const Navbar = () => {
                       </svg>
                       <div className="flex-1">
                         <p className="font-semibold text-gray-900 group-hover:text-primary-700">
-                          Nous contacter
+                          {t('help.contactUs')}
                         </p>
                         <p className="text-xs text-gray-600">
-                          Une question ? Un problème ?
+                          {t('help.contactUsDesc')}
                         </p>
                       </div>
                     </Link>
@@ -106,10 +137,10 @@ const Navbar = () => {
                       </svg>
                       <div className="flex-1">
                         <p className="font-semibold text-gray-900 group-hover:text-primary-700">
-                          CGU & Confidentialité
+                          {t('help.legal')}
                         </p>
                         <p className="text-xs text-gray-600">
-                          Conditions d'utilisation
+                          {t('help.legalDesc')}
                         </p>
                       </div>
                     </Link>
@@ -117,7 +148,7 @@ const Navbar = () => {
 
                   <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
                     <p className="text-xs text-gray-500 text-center">
-                      YarnFlow v0.16 · Made with ♥
+                      {t('help.version')}
                     </p>
                   </div>
                 </div>
@@ -128,12 +159,15 @@ const Navbar = () => {
             {/* Série en cours */}
             <StreakBadge />
 
+            {/* Sélecteur de langue */}
+            <LanguageSwitcher />
+
             {/* Avatar utilisateur - confirme visuellement qu'on est connecté, sans avoir à ouvrir le menu */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="w-9 h-9 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-bold flex-shrink-0"
-              aria-label="Connecté"
-              title={`Connecté en tant que ${user?.first_name || user?.email || ''}`}
+              aria-label={t('userMenu.connected')}
+              title={t('userMenu.loggedInAsName', { name: user?.first_name || user?.email || '' })}
             >
               {(user?.first_name || user?.email || '?').charAt(0).toUpperCase()}
             </button>
@@ -142,7 +176,7 @@ const Navbar = () => {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg text-gray-800 hover:bg-gray-100 transition"
-              aria-label="Toggle menu"
+              aria-label={t('menu.toggle')}
             >
               {mobileMenuOpen ? (
                 // Close icon
@@ -166,8 +200,8 @@ const Navbar = () => {
               <button
                 onClick={() => setShowHelpMenuDesktop(!showHelpMenuDesktop)}
                 className="p-2 rounded-full bg-primary-100 hover:bg-primary-200 text-primary-700 transition w-10 h-10 flex items-center justify-center font-bold text-lg"
-                aria-label="Aide"
-                title="Aide et guide de démarrage"
+                aria-label={t('help.buttonLabel')}
+                title={t('help.buttonTitle')}
               >
                 ?
               </button>
@@ -181,7 +215,7 @@ const Navbar = () => {
                   />
                   <div className="absolute left-0 top-12 z-50 bg-white rounded-xl shadow-2xl border-2 border-primary-200 w-72 overflow-hidden">
                     <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3">
-                      <h3 className="text-white font-bold text-lg">Besoin d'aide ?</h3>
+                      <h3 className="text-white font-bold text-lg">{t('help.title')}</h3>
                     </div>
 
                     <div className="p-2">
@@ -197,10 +231,10 @@ const Navbar = () => {
                         </div>
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900 group-hover:text-primary-700">
-                            Nous contacter
+                            {t('help.contactUs')}
                           </p>
                           <p className="text-xs text-gray-600">
-                            Une question ? Un problème ?
+                            {t('help.contactUsDesc')}
                           </p>
                         </div>
                       </Link>
@@ -217,10 +251,10 @@ const Navbar = () => {
                         </div>
                         <div className="flex-1">
                           <p className="font-semibold text-gray-900 group-hover:text-primary-700">
-                            CGU & Confidentialité
+                            {t('help.legal')}
                           </p>
                           <p className="text-xs text-gray-600">
-                            Conditions d'utilisation
+                            {t('help.legalDesc')}
                           </p>
                         </div>
                       </Link>
@@ -228,7 +262,7 @@ const Navbar = () => {
 
                     <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
                       <p className="text-xs text-gray-500 text-center">
-                        YarnFlow v0.16 · Made with ♥
+                        {t('help.version')}
                       </p>
                     </div>
                   </div>
@@ -245,7 +279,7 @@ const Navbar = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Projets
+              {t('nav.projects')}
             </Link>
 
             {/* RESSOURCES */}
@@ -257,7 +291,7 @@ const Navbar = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Ressources
+              {t('nav.resources')}
             </Link>
 
             {/* GALERIE PHOTOS IA */}
@@ -269,7 +303,7 @@ const Navbar = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Galerie
+              {t('nav.gallery')}
             </Link>
 
             {/* OUTILS */}
@@ -281,7 +315,7 @@ const Navbar = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Outils
+              {t('nav.tools')}
             </Link>
 
             {/* STATISTIQUES */}
@@ -293,7 +327,7 @@ const Navbar = () => {
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              Stats
+              {t('nav.stats')}
             </Link>
 
             {isAdmin() && (
@@ -305,12 +339,15 @@ const Navbar = () => {
                     : 'text-primary-600 hover:text-primary-700'
                 }`}
               >
-                Admin
+                {t('nav.admin')}
               </Link>
             )}
 
             {/* Série en cours */}
             <StreakBadge />
+
+            {/* Sélecteur de langue */}
+            <LanguageSwitcher />
 
             {/* User menu Desktop */}
             <div className="relative group">
@@ -329,26 +366,26 @@ const Navbar = () => {
                   to="/profile"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 >
-                  Mon profil
+                  {t('userMenu.profile')}
                 </Link>
                 <Link
                   to="/subscription"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 >
-                  Abonnement
+                  {t('userMenu.subscription')}
                 </Link>
                 <Link
                   to="/contact"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                 >
-                  Contact
+                  {t('nav.contact')}
                 </Link>
                 <hr className="my-1 border-gray-100" />
                 <button
                   onClick={handleLogout}
                   className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  Déconnexion
+                  {t('userMenu.logout')}
                 </button>
               </div>
             </div>
@@ -386,7 +423,7 @@ const Navbar = () => {
 
           {/* User Info */}
           <div className="p-4 bg-primary-50 border-b">
-            <div className="text-sm text-gray-600">Connecté en tant que</div>
+            <div className="text-sm text-gray-600">{t('userMenu.loggedInAs')}</div>
             <div className="font-semibold text-primary-900 truncate">
               {user?.first_name || user?.email}
             </div>
@@ -403,7 +440,7 @@ const Navbar = () => {
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Mes Projets
+              {t('nav.myProjects')}
             </Link>
 
             <Link
@@ -415,7 +452,7 @@ const Navbar = () => {
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Ressources
+              {t('nav.resources')}
             </Link>
 
             <Link
@@ -427,7 +464,7 @@ const Navbar = () => {
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Galerie Photos IA
+              {t('nav.galleryLong')}
             </Link>
 
             <Link
@@ -439,7 +476,7 @@ const Navbar = () => {
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Outils
+              {t('nav.tools')}
             </Link>
 
             <Link
@@ -451,7 +488,7 @@ const Navbar = () => {
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
-              Statistiques
+              {t('nav.statsLong')}
             </Link>
 
             {isAdmin() && (
@@ -464,7 +501,7 @@ const Navbar = () => {
                     : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                Admin
+                {t('nav.admin')}
               </Link>
             )}
 
@@ -475,7 +512,7 @@ const Navbar = () => {
               onClick={closeMobileMenu}
               className="block px-4 py-3 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Mon profil
+              {t('userMenu.profile')}
             </Link>
 
             <Link
@@ -483,7 +520,7 @@ const Navbar = () => {
               onClick={closeMobileMenu}
               className="block px-4 py-3 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Abonnement
+              {t('userMenu.subscription')}
             </Link>
 
             <Link
@@ -491,14 +528,14 @@ const Navbar = () => {
               onClick={closeMobileMenu}
               className="block px-4 py-3 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Contact
+              {t('nav.contact')}
             </Link>
 
             <button
               onClick={handleLogout}
               className="w-full text-left px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
             >
-              Déconnexion
+              {t('userMenu.logout')}
             </button>
           </div>
         </div>

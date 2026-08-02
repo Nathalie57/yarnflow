@@ -1,0 +1,47 @@
+{
+  "language": {
+    "switchLabel": "Changer de langue",
+    "fr": "FR",
+    "en": "EN"
+  },
+  "nav": {
+    "projects": "Projets",
+    "myProjects": "Mes Projets",
+    "resources": "Ressources",
+    "gallery": "Galerie",
+    "galleryLong": "Galerie Photos IA",
+    "tools": "Outils",
+    "stats": "Stats",
+    "statsLong": "Statistiques",
+    "admin": "Admin",
+    "assistant": "Assistant",
+    "features": "Fonctionnalités",
+    "pricing": "Tarifs",
+    "contact": "Contact"
+  },
+  "userMenu": {
+    "profile": "Mon profil",
+    "subscription": "Abonnement",
+    "logout": "Déconnexion",
+    "loggedInAs": "Connecté en tant que",
+    "loggedInAsName": "Connecté en tant que {{name}}",
+    "connected": "Connecté"
+  },
+  "help": {
+    "buttonLabel": "Aide",
+    "buttonTitle": "Aide et guide de démarrage",
+    "title": "Besoin d'aide ?",
+    "contactUs": "Nous contacter",
+    "contactUsDesc": "Une question ? Un problème ?",
+    "legal": "CGU & Confidentialité",
+    "legalDesc": "Conditions d'utilisation",
+    "version": "YarnFlow v0.16 · Made with ♥"
+  },
+  "streak": {
+    "badgeTitle_one": "{{count}} jour de série consécutif",
+    "badgeTitle_other": "{{count}} jours de série consécutifs"
+  },
+  "menu": {
+    "toggle": "Ouvrir/fermer le menu"
+  }
+}
