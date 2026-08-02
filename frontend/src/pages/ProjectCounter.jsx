@@ -3772,8 +3772,10 @@ const ProjectCounter = () => {
             </div>
           </div>
 
-          {/* Desktop: Tout sur une ligne | Mobile: Ligne 2 (Timers + Bouton) */}
-          <div className="flex items-center justify-between gap-2 sm:gap-4">
+          {/* Retour à la ligne à toute largeur si Session+Total+Pause+Arrêter ne
+              tiennent pas sur une seule ligne — un seuil fixe (sm:, lg:...) laissait
+              toujours une largeur intermédiaire où ça débordait encore */}
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
             {/* Section active - visible uniquement desktop */}
             <div className="hidden sm:block text-left flex-shrink-0">
               <div className="text-xs text-gray-500">Section active</div>
