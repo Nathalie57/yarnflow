@@ -51,6 +51,50 @@ import AdminCategories from './pages/admin/AdminCategories'
 import AdminOptions from './pages/admin/AdminOptions'
 import AdminPartnerPatterns from './pages/admin/AdminPartnerPatterns'
 
+// [AI:Claude] Titre par route — sans ça, la quasi-totalité des pages héritent
+// du <title> statique d'index.html et GA4 ne voit plus qu'une seule "page"
+// pour toute l'appli (constaté : 4k vues sous ce même titre générique).
+// Correspondance exacte d'abord, puis préfixe pour les routes dynamiques
+// (/projects/:id, /pattern-library/:id...).
+const PAGE_TITLES = {
+  '/': 'Landing',
+  '/home': 'Accueil',
+  '/login': 'Connexion',
+  '/register': 'Inscription',
+  '/forgot-password': 'Mot de passe oublié',
+  '/reset-password': 'Réinitialiser le mot de passe',
+  '/payment/success': 'Paiement réussi',
+  '/cgu': 'CGU',
+  '/privacy': 'Confidentialité',
+  '/mentions': 'Mentions légales',
+  '/contact': 'Contact',
+  '/subscription': 'Abonnement',
+  '/profile': 'Mon profil',
+  '/my-projects': 'Mes projets',
+  '/smart-project-creator': 'Création intelligente',
+  '/stats': 'Statistiques',
+  '/tools': 'Outils',
+  '/pattern-translator': 'Traducteur de patron',
+  '/gallery': 'Galerie',
+  '/bibliotheque': 'Ressources',
+  '/pattern-library': 'Bibliothèque de patrons',
+  '/stash': 'Stock de pelotes',
+  '/admin': 'Admin',
+}
+const PAGE_TITLE_PREFIXES = [
+  [/^\/projects\/[^/]+\/charts\/[^/]+/, 'Éditeur de graphique'],
+  [/^\/projects\/[^/]+\/charts/, 'Graphique du projet'],
+  [/^\/projects\/[^/]+/, 'Compteur de projet'],
+  [/^\/pattern-library\/[^/]+/, 'Détail du patron'],
+  [/^\/admin\//, 'Admin'],
+]
+
+const getPageTitle = (pathname) => {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname]
+  const match = PAGE_TITLE_PREFIXES.find(([re]) => re.test(pathname))
+  return match ? match[1] : document.title
+}
+
 // [AI:Claude] Composant pour tracker automatiquement les changements de route
 function AnalyticsTracker() {
   const location = useLocation()
@@ -58,7 +102,8 @@ function AnalyticsTracker() {
   useEffect(() => {
     // [AI:Claude] Tracker chaque changement de page dans GA4
     if (typeof window !== 'undefined' && window.gtag) {
-      const pageTitle = document.title
+      const pageTitle = `${getPageTitle(location.pathname)} — YarnFlow`
+      document.title = pageTitle
       const pagePath = location.pathname + location.search
 
       window.gtag('event', 'page_view', {
