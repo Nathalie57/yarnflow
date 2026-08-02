@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 
@@ -8,6 +9,7 @@ import api from '../services/api'
  * Cette page gère le retour après l'autorisation OAuth
  */
 const OAuthCallback = () => {
+  const { t } = useTranslation('auth')
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { updateUser } = useAuth()
@@ -29,7 +31,7 @@ const OAuthCallback = () => {
         console.log('🔍 OAuth Callback - Provider:', provider)
 
         if (!code) {
-          setError('Code d\'autorisation manquant')
+          setError(t('oauthCallback.missingCode'))
           setProcessing(false)
           return
         }
@@ -62,14 +64,14 @@ const OAuthCallback = () => {
           navigate('/dashboard', { replace: true })
         } else {
           console.error('❌ OAuth Callback - Invalid response structure:', response.data)
-          setError('Erreur lors de la connexion')
+          setError(t('oauthCallback.genericError'))
           setProcessing(false)
         }
 
       } catch (err) {
         console.error('❌ OAuth callback error:', err)
         console.error('❌ Error response:', err.response?.data)
-        setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de l\'authentification')
+        setError(err.response?.data?.error || err.response?.data?.message || t('oauthCallback.authError'))
         setProcessing(false)
       }
     }
@@ -83,19 +85,19 @@ const OAuthCallback = () => {
         {processing ? (
           <>
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Connexion en cours...</h2>
-            <p className="text-gray-600">Veuillez patienter pendant que nous finalisons votre connexion.</p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('oauthCallback.processing')}</h2>
+            <p className="text-gray-600">{t('oauthCallback.processingDesc')}</p>
           </>
         ) : error ? (
           <>
             <div className="text-6xl mb-4">❌</div>
-            <h2 className="text-xl font-bold text-red-700 mb-2">Erreur de connexion</h2>
+            <h2 className="text-xl font-bold text-red-700 mb-2">{t('oauthCallback.errorTitle')}</h2>
             <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={() => navigate('/login')}
               className="btn-primary"
             >
-              Retour à la connexion
+              {t('oauthCallback.backToLogin')}
             </button>
           </>
         ) : null}

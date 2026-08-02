@@ -43,5 +43,22 @@
   },
   "menu": {
     "toggle": "Toggle menu"
+  },
+  "pwa": {
+    "installTitle": "Install YarnFlow",
+    "installDesc": "Add YarnFlow to your home screen for quick access and the best experience!",
+    "install": "Install",
+    "later": "Later",
+    "updateTitle": "Update available",
+    "updateDesc": "A new version of YarnFlow is available!",
+    "update": "Update",
+    "close": "Close"
+  },
+  "errorBoundary": {
+    "title": "⚠️ Something went wrong",
+    "description": "Sorry, something went wrong. Try refreshing the page.",
+    "technicalDetails": "Technical details (for debugging)",
+    "refresh": "🔄 Refresh the page",
+    "backToProjects": "← Back to projects"
   }
 }

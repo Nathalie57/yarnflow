@@ -11,6 +11,8 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 
 import frCommon from './locales/fr/common.json'
 import enCommon from './locales/en/common.json'
+import frAuth from './locales/fr/auth.json'
+import enAuth from './locales/en/auth.json'
 
 export const LANGUAGE_STORAGE_KEY = 'yarnflow_lang'
 export const SUPPORTED_LANGUAGES = ['fr', 'en']
@@ -19,8 +21,8 @@ export const SUPPORTED_LANGUAGES = ['fr', 'en']
 // petit à l'échelle d'un bundle Vite, pas besoin du backend HTTP d'i18next
 // (qui ajouterait un chargement asynchrone et un risque de flash sans texte).
 const resources = {
-  fr: { common: frCommon },
-  en: { common: enCommon },
+  fr: { common: frCommon, auth: frAuth },
+  en: { common: enCommon, auth: enAuth },
 }
 
 i18n
@@ -31,7 +33,7 @@ i18n
     supportedLngs: SUPPORTED_LANGUAGES,
     fallbackLng: 'fr',
     defaultNS: 'common',
-    ns: ['common'],
+    ns: ['common', 'auth'],
 
     detection: {
       // [AI:Claude] localStorage en premier : un choix explicite via le sélecteur

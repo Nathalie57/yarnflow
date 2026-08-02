@@ -43,5 +43,22 @@
   },
   "menu": {
     "toggle": "Ouvrir/fermer le menu"
+  },
+  "pwa": {
+    "installTitle": "Installer YarnFlow",
+    "installDesc": "Ajoutez YarnFlow à votre écran d'accueil pour un accès rapide et une expérience optimale !",
+    "install": "Installer",
+    "later": "Plus tard",
+    "updateTitle": "Mise à jour disponible",
+    "updateDesc": "Une nouvelle version de YarnFlow est disponible !",
+    "update": "Mettre à jour",
+    "close": "Fermer"
+  },
+  "errorBoundary": {
+    "title": "⚠️ Une erreur s'est produite",
+    "description": "Désolé, quelque chose s'est mal passé. Essayez de rafraîchir la page.",
+    "technicalDetails": "Détails techniques (pour le debug)",
+    "refresh": "🔄 Rafraîchir la page",
+    "backToProjects": "← Retour aux projets"
   }
 }

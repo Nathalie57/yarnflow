@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
+import LanguageSwitcher from './LanguageSwitcher'
 import api from '../services/api'
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth()
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -35,35 +36,6 @@ const Navbar = () => {
       </span>
     ) : null
   )
-
-  // [AI:Claude] Sélecteur de langue — le choix explicite est persisté en
-  // localStorage par le detector d'i18next (voir src/i18n/index.js), et prime
-  // ensuite sur la langue du navigateur.
-  const LanguageSwitcher = ({ className = '' }) => {
-    const current = i18n.resolvedLanguage
-    return (
-      <div
-        className={`inline-flex items-center rounded-full border border-gray-200 overflow-hidden text-xs font-semibold ${className}`}
-        role="group"
-        aria-label={t('language.switchLabel')}
-      >
-        {['fr', 'en'].map(lng => (
-          <button
-            key={lng}
-            onClick={() => i18n.changeLanguage(lng)}
-            aria-pressed={current === lng}
-            className={`px-2 py-0.5 transition ${
-              current === lng
-                ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            {t(`language.${lng}`)}
-          </button>
-        ))}
-      </div>
-    )
-  }
 
   const handleLogout = () => {
     logout()
