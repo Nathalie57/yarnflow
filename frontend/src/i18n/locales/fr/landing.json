@@ -1,0 +1,212 @@
+{
+  "header": {
+    "features": "Fonctionnalités",
+    "pricing": "Tarifs",
+    "contact": "Contact",
+    "login": "Connexion",
+    "ctaLong": "Commencer — c'est gratuit",
+    "ctaShort": "C'est gratuit"
+  },
+  "hero": {
+    "badge": "Enfin une application pensée par une passionnée, pour les passionné·es de tricot & crochet",
+    "title": "Ne perdez plus jamais le fil de vos créations",
+    "subtitle": "Suivez chaque projet du premier rang jusqu'à la photo finale : patrons, compteurs, progression et souvenirs, dans une seule application.",
+    "cta": "Créer mon compte gratuit",
+    "reassurance": "Inscription en 30 secondes · Aucune carte bancaire requise",
+    "googlePlay": "Disponible sur Google Play",
+    "screenshotAlt": "Aperçu de l'application YarnFlow : compteur de rangs et patron affichés côte à côte"
+  },
+  "differentiators": {
+    "complex": {
+      "title": "Projets complexes, enfin maîtrisés",
+      "desc": "Sections, plusieurs compteurs secondaires par section, notes par section — même un pull avec manches raglan"
+    },
+    "import": {
+      "title": "Un patron PDF ou URL → un projet prêt",
+      "desc": "L'IA lit votre patron, crée les sections et remplit les détails — en quelques secondes"
+    },
+    "photos": {
+      "title": "Photos dignes de vos créations",
+      "desc": "L'IA sublime vos photos — éclairage, fond, couleurs — sans toucher à votre ouvrage"
+    }
+  },
+  "counter": {
+    "eyebrow": "Compteur de rangs",
+    "title": "\"Où j'en étais, déjà ?\"<0></0>Plus jamais.",
+    "desc": "Un gros bouton, un rang compté. Interface pensée pour les doigts occupés, progression visible d'un coup d'œil. Et si votre projet a plusieurs sections — dos, devant, manches — chacune a son propre compteur.",
+    "screenshotAlt": "Compteur de rangs YarnFlow",
+    "features": [
+      "Timer intégré pour mesurer votre temps de travail",
+      "Wake lock : l'écran reste allumé pendant que vous tricotez",
+      "Sections indépendantes par partie de projet",
+      "Comptez vos augmentations, diminutions ou répétitions sans jamais perdre le fil (PLUS & PRO)"
+    ]
+  },
+  "sections": {
+    "eyebrow": "Pour les projets complexes",
+    "title": "Enfin un suivi adapté aux vrais projets",
+    "desc": "Un pull n'est pas un simple compteur. Il a un dos, un devant, deux manches, un col — chacun avec son propre rythme d'augmentations et de diminutions. YarnFlow suit chaque partie séparément, pas juste un chiffre global qui mélange tout.",
+    "parts": ["Dos", "Devant", "Manches", "Augmentations", "Diminutions", "Col"]
+  },
+  "photoStudio": {
+    "eyebrow": "Studio Photo",
+    "title": "Vos créations méritent<0></0>de belles photos",
+    "desc": "Transformez une photo prise à la va-vite sur le canapé en un rendu digne d'une vitrine Etsy, en un clic — éclairage sublimé, fond adouci, votre ouvrage mis en valeur sans être dénaturé.",
+    "features": [
+      "9 styles disponibles — Lifestyle, Studio, Scandinavian...",
+      "Votre ouvrage reste 100% authentique",
+      "Parfait pour Etsy, Instagram ou vos archives"
+    ],
+    "beforeAlt": "Avant — photo brute",
+    "afterAlt": "Après — rendu IA Lifestyle",
+    "before": "AVANT",
+    "after": "APRÈS"
+  },
+  "library": {
+    "eyebrow": "Bibliothèque & Organisation",
+    "title": "Tous vos patrons,<0></0>tous vos projets — au même endroit",
+    "desc": "PDF Ravelry, liens Etsy, notes personnelles — tout dans une bibliothèque propre. Filtrez par catégorie, technique ou favoris et retrouvez n'importe quel patron en deux secondes.",
+    "screenshotAlt": "Mes projets YarnFlow",
+    "features": [
+      "Patrons en PDF, URL ou texte libre",
+      "Détails techniques : laine, aiguilles, échantillon, dimensions",
+      "Notes globales par projet",
+      "Filtres par catégorie, technique et favoris"
+    ]
+  },
+  "smartCreation": {
+    "eyebrow": "Création Intelligente",
+    "title": "Importez un patron PDF ou une URL.<0></0>Le projet se crée tout seul.",
+    "desc": "Téléchargez votre patron en PDF ou collez une URL — l'IA lit le document, crée les sections, remplit les détails techniques et structure votre projet en quelques secondes.",
+    "screenshotAlt": "Création intelligente YarnFlow — validation du patron extrait",
+    "features": [
+      "PDF ou URL — Ravelry, Etsy, blog, peu importe la source",
+      "Sections créées automatiquement (dos, devant, manches…)",
+      "Laine, aiguilles, tension extraits du patron",
+      "3 essais gratuits · 3 imports/mois en PLUS · 15 imports/mois en PRO"
+    ],
+    "badge": "Une façon unique de transformer vos patrons en projets organisés"
+  },
+  "assistant": {
+    "eyebrow": "Assistant tricot & crochet",
+    "title": "Un expert tricot & crochet disponible à tout moment",
+    "desc": "Comment calculer les diminutions pour ma taille ? Quel point pour remplacer celui du patron ? L'assistant connaît votre projet et répond en contexte — pas des réponses génériques.",
+    "question": "J'ai raté 3 rangs sur mon dos, comment je rattrape sans détricoter tout ?",
+    "answer": "Pour rattraper 3 rangs sans détricoter, vous pouvez utiliser une aiguille auxiliaire…",
+    "quota": "5 questions / mois en FREE · 10 questions / mois en PLUS · 30 questions / mois en PRO"
+  },
+  "testimonials": {
+    "title": "Ce qu'en disent nos premières utilisatrices",
+    "subtitle": "Témoignages de nos premières bêta-testeuses",
+    "authorFallback": "Une utilisatrice YarnFlow",
+    "items": [
+      "Très complet et intuitif : pouvoir créer plusieurs ouvrages en même temps et insérer chaque détail est vraiment top. Le compteur de rangs est fort utile, le minuteur aussi. Les photos générées sont formidables pour visualiser et mettre en valeur mes projets.",
+      "Super pratique quand on tricote et crochète plusieurs encours en même temps : tout y est au même endroit — explications, étapes, photos et notes. Il y a même des petits conseils et des outils pratiques pour nous faciliter à tricoter nos modèles personnels ou adapter un modèle."
+    ]
+  },
+  "pricing": {
+    "title": "Simple et transparent",
+    "subtitle": "FREE pour toujours. PLUS quand vos projets grandissent. PRO quand ils méritent tout.",
+    "perMonth": "/mois",
+    "noCommitment": "Sans engagement · Résiliable à tout moment",
+    "free": {
+      "name": "Free",
+      "desc": "L'essentiel pour suivre vos encours et découvrir la puissance de l'IA.",
+      "features": [
+        "Projets & patrons illimités (100 Mo pour les fichiers)",
+        "1 compteur de rangs actif par projet",
+        "Timer intégré & suivi du temps",
+        "Notes par section",
+        "3 Créations Intelligentes IA offertes",
+        "5 questions / mois à l'assistant IA",
+        "Studio Photo : 2 crédits offerts",
+        "3 traductions de patron offertes"
+      ],
+      "cta": "Créer mon compte gratuit"
+    },
+    "plus": {
+      "badge": "Nouveau",
+      "name": "Plus",
+      "billing": "Facturé 29,99€/an — économisez 17,89€",
+      "desc": "Pour celles qui terminent plusieurs projets par an.",
+      "features": [
+        "Tout ce qu'inclut le plan FREE",
+        "Jusqu'à 10 compteurs secondaires",
+        "Création Intelligente — 3 imports / mois",
+        "10 questions / mois à l'assistant IA",
+        "Studio Photo : 5 crédits / mois",
+        "3 traductions de patron / mois",
+        "Statistiques avancées"
+      ],
+      "ctaAnnual": "Passer à PLUS (Annuel) — 29,99€/an",
+      "ctaMonthly": "Mensuel — 3,99€/mois"
+    },
+    "pro": {
+      "badge": "Pour les passionnées",
+      "name": "Pro",
+      "billing": "Facturé 59,99€/an — économisez 23,89€",
+      "desc": "Pour les passionnées qui veulent garder l'historique complet de leurs créations.",
+      "includesPlus": "Tout ce qu'inclut le plan PLUS",
+      "smartCreation": "Création Intelligente — 15 imports / mois",
+      "smartCreationDesc": "Déposez un PDF ou une photo, l'IA pré-remplit tout instantanément",
+      "assistant": "Assistant IA tricot — 30 questions / mois",
+      "photoStudio": "Studio Photo : 20 crédits / mois",
+      "translations": "15 traductions de patron / mois",
+      "stats": "Statistiques avancées",
+      "statsDesc": "Graphiques visuels, badges de progression et temps moyen par session",
+      "ctaAnnual": "Passer à PRO (Annuel)",
+      "ctaMonthly": "Choisir le Mensuel (6,99€/mois)"
+    }
+  },
+  "faq": {
+    "title": "Questions fréquentes",
+    "items": [
+      {
+        "q": "C'est vraiment gratuit pour toujours ?",
+        "a": "Oui, sans limite de temps. Projets illimités, compteur de rangs, bibliothèque de patrons, détails techniques — sans jamais payer. Les fichiers uploadés (PDF, images) sont limités à 100 Mo en FREE ; patrons en URL ou en texte : illimités. PLUS et PRO se justifient quand vos projets grandissent."
+      },
+      {
+        "q": "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
+        "a": "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 2 essais création intelligente, 5 questions IA/mois, 2 crédits photo IA à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, jusqu'à 10 compteurs secondaires par section, 3 imports IA/mois, 10 questions IA/mois, 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo/mois."
+      },
+      {
+        "q": "La création intelligente, c'est quoi exactement ?",
+        "a": "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 3 essais gratuits offerts pour tous, puis 3 imports/mois en PLUS ou 15 imports/mois en PRO."
+      },
+      {
+        "q": "Ça marche sur quels appareils ?",
+        "a": "YarnFlow est une PWA — accessible sur tous les navigateurs (mobile, tablette, ordinateur). Vous pouvez l'installer sur votre téléphone comme une vraie app, avec l'icône sur l'écran d'accueil. Aucun téléchargement sur l'App Store requis."
+      },
+      {
+        "q": "Puis-je annuler à tout moment ?",
+        "a": "Oui, sans engagement. Vous annulez depuis votre profil, votre abonnement reste actif jusqu'à la fin de la période payée, puis vous repassez automatiquement en FREE. Vos données sont conservées."
+      },
+      {
+        "q": "Mes patrons et projets sont-ils en sécurité ?",
+        "a": "Vos données sont stockées en sécurité sur nos serveurs, ne sont jamais partagées ou vendues, et vous pouvez les supprimer à tout moment."
+      }
+    ]
+  },
+  "finalCta": {
+    "title": "Votre prochain projet mérite mieux qu'un bout de papier",
+    "subtitle": "Rejoignez les passionné·es qui ont troqué les carnets froissés contre YarnFlow.",
+    "cta": "Créer mon compte gratuit",
+    "googlePlay": "Google Play",
+    "alreadyMember": "Déjà inscrit·e ?",
+    "login": "Connexion"
+  },
+  "footer": {
+    "tagline": "L'outil malin pour les passionné·es de tricot et crochet",
+    "legal": "Légal",
+    "privacy": "Politique de confidentialité",
+    "terms": "Conditions d'utilisation",
+    "legalNotice": "Mentions légales",
+    "support": "Support",
+    "contact": "Contact",
+    "app": "App",
+    "register": "Créer un compte",
+    "login": "Connexion",
+    "pricing": "Tarifs",
+    "copyright": "© 2026 YarnFlow — Tous droits réservés"
+  }
+}
