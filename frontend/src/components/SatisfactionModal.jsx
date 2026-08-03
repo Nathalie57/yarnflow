@@ -9,8 +9,10 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
 import api from '../services/api'
+import { useTranslation } from 'react-i18next'
 
 const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
+  const { t } = useTranslation('tools')
   const [submitting, setSubmitting] = useState(false)
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
@@ -65,8 +67,8 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="text-5xl">🎨</div>
-          <h2 className="text-2xl font-bold text-gray-900">Votre photo est prête !</h2>
-          <p className="text-gray-600">Qu'en pensez-vous ?</p>
+          <h2 className="text-2xl font-bold text-gray-900">{t('ui.photoReady')}</h2>
+          <p className="text-gray-600">{t('ui.whatDoYouThink')}</p>
         </div>
 
         {/* Photo preview */}
@@ -81,7 +83,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
         {/* Système d'étoiles */}
         <div className="space-y-3">
           <label className="block text-center text-sm font-medium text-gray-700">
-            Notez le résultat :
+            {t('ui.rateResult')}
           </label>
 
           {/* Étoiles cliquables */}
@@ -122,12 +124,12 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
         {/* Champ commentaire optionnel */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
-            Commentaire (optionnel)
+            {t('ui.commentOptional')}
           </label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Qu'en pensez-vous ? Qu'auriez-vous aimé améliorer ?"
+            placeholder={t('ui.whatWouldImprove')}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none text-sm focus:ring-2 focus:ring-primary-400 focus:border-transparent"
             rows="3"
             maxLength="500"
@@ -153,7 +155,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
             disabled={submitting}
             className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium transition disabled:opacity-50"
           >
-            Je déciderai plus tard
+            {t('ui.decideLater')}
           </button>
         </div>
       </div>

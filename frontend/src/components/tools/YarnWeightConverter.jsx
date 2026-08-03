@@ -3,6 +3,8 @@
  * @brief Correspondance des épaisseurs de laine EU / US / UK + aiguilles recommandées
  */
 
+import { useTranslation } from 'react-i18next'
+
 const WEIGHTS = [
   {
     eu: 'Dentelle',
@@ -70,6 +72,7 @@ const WEIGHTS = [
 ]
 
 export default function YarnWeightConverter() {
+  const { t } = useTranslation('tools')
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-500">
@@ -88,15 +91,15 @@ export default function YarnWeightConverter() {
           {/* Aiguilles */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-[10px] text-gray-500">Aiguilles (mm)</p>
+              <p className="text-[10px] text-gray-500">{t('ui.needlesMm')}</p>
               <p className="text-sm font-semibold text-gray-800">{w.needlesMm}</p>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">Aiguilles (US)</p>
+              <p className="text-[10px] text-gray-500">{t('ui.needlesUs')}</p>
               <p className="text-sm font-semibold text-gray-800">{w.needlesUs}</p>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">Crochet (mm)</p>
+              <p className="text-[10px] text-gray-500">{t('ui.hookMm')}</p>
               <p className="text-sm font-semibold text-gray-800">{w.crochetMm}</p>
             </div>
           </div>

@@ -16,6 +16,7 @@ import LengthConverter from '../components/tools/LengthConverter'
 import RemainingYarn from '../components/tools/RemainingYarn'
 import YarnWeightConverter from '../components/tools/YarnWeightConverter'
 import ChartDesigner from '../components/tools/ChartDesigner'
+import { useTranslation } from 'react-i18next'
 
 const IconDistribute = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
@@ -181,6 +182,7 @@ const TOOLS = [
 ]
 
 export default function Tools() {
+  const { t } = useTranslation('tools')
   const [activeTool, setActiveTool] = useState(null)
   const { user, isAdmin, hasActiveSubscription } = useAuth()
   // [AI:Claude] Grille jacquard réservée aux abonnés (PLUS/PRO) + admins.
@@ -215,8 +217,8 @@ export default function Tools() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 pb-24">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Outils</h1>
-      <p className="text-gray-500 text-sm mb-6">Calculateurs et assistants pour vos projets</p>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('ui.toolsNav')}</h1>
+      <p className="text-gray-500 text-sm mb-6">{t('ui.toolsTagline')}</p>
 
       <div className="grid grid-cols-2 gap-3">
         {/* Traducteur de patron — page dédiée */}
@@ -236,7 +238,7 @@ export default function Tools() {
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <div className="font-semibold text-gray-900 text-sm leading-tight">Traduire un patron</div>
+              <div className="font-semibold text-gray-900 text-sm leading-tight">{t('ui.translatePattern')}</div>
               <span className="bg-primary-100 text-primary-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">IA</span>
             </div>
             <div className="text-xs text-gray-500 mt-1 leading-snug">Traduit un patron anglais en français, avec les abréviations tricot & crochet.</div>

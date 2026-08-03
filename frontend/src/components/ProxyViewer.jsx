@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const getYouTubeEmbedUrl = (url) => {
   try {
@@ -22,6 +23,7 @@ const getYouTubeEmbedUrl = (url) => {
 }
 
 const ProxyViewer = ({ url, onError, onLoad }) => {
+  const { t } = useTranslation('tools')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [proxyReady, setProxyReady] = useState(false)
@@ -87,7 +89,7 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
           rel="noopener noreferrer"
           className="px-3 py-1 bg-primary-600 text-white rounded text-xs font-medium hover:bg-primary-700 transition whitespace-nowrap ml-2"
         >
-          Ouvrir l'original
+          {t('ui.openOriginal')}
         </a>
       </div>
 
@@ -96,7 +98,7 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
         <div className="flex items-center justify-center bg-white py-20">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-3"></div>
-            <p className="text-gray-600">Chargement du patron...</p>
+            <p className="text-gray-600">{t('ui.loadingPattern')}</p>
           </div>
         </div>
       )}
@@ -109,7 +111,7 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
             </svg>
           </div>
-          <p className="text-gray-700 font-medium mb-1">Ce site ne peut pas être affiché ici</p>
+          <p className="text-gray-700 font-medium mb-1">{t('ui.siteCannotDisplay')}</p>
           <p className="text-gray-400 text-sm mb-5">Il bloque l'affichage intégré — ouvrez-le dans un nouvel onglet.</p>
           <a
             href={url}
@@ -120,7 +122,7 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            Ouvrir le patron
+            {t('ui.openPattern')}
           </a>
         </div>
       )}

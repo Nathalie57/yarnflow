@@ -5,7 +5,10 @@
  * @created 2025-12-10
  */
 
+import { useTranslation } from 'react-i18next'
+
 const PatternLinkBlocked = ({ url, onUploadClick }) => {
+  const { t } = useTranslation('tools')
   const extractDomain = (url) => {
     try {
       return new URL(url).hostname.replace('www.', '')
@@ -24,7 +27,7 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
 
         {/* Message principal */}
         <h3 className="text-xl font-semibold text-gray-900 mb-3">
-          Patron sauvegardé sous forme de lien
+          {t('ui.patternSavedAsLink')}
         </h3>
 
         <p className="text-gray-600 mb-6">
@@ -37,11 +40,11 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
             <span className="text-2xl">💡</span>
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900 mb-2">
-                Pour garder le compteur visible pendant votre tricot :
+                {t('ui.keepCounterVisible')}
               </h4>
               <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
                 <li>Téléchargez le PDF du patron depuis {domain}</li>
-                <li>Uploadez-le dans l'app avec le bouton ci-dessous</li>
+                <li>{t('ui.uploadWithButton')}</li>
                 <li>Profitez du compteur + patron côte-à-côte ! ✨</li>
               </ol>
             </div>

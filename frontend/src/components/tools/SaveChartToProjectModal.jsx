@@ -7,8 +7,10 @@
 
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { useTranslation } from 'react-i18next'
 
 export default function SaveChartToProjectModal({ chart, existingChart, onClose, onSaved }) {
+  const { t } = useTranslation('tools')
   const isReassign = !!existingChart
   const [projects, setProjects] = useState([])
   const [sections, setSections] = useState([])
@@ -103,9 +105,9 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
         </div>
 
         {loadingProjects ? (
-          <p className="text-sm text-gray-400">Chargement des projets...</p>
+          <p className="text-sm text-gray-400">{t('ui.loadingProjects')}</p>
         ) : projects.length === 0 ? (
-          <p className="text-sm text-gray-500">Aucun projet trouvé.</p>
+          <p className="text-sm text-gray-500">{t('ui.noProjectFound')}</p>
         ) : (
           <div className="space-y-3">
             <div>
@@ -128,9 +130,9 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
 
             {selectedProjectId && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Section (optionnel)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.sectionOptional')}</label>
                 {loadingSections ? (
-                  <p className="text-xs text-gray-400">Chargement des sections...</p>
+                  <p className="text-xs text-gray-400">{t('ui.loadingSections')}</p>
                 ) : sections.length === 0 ? (
                   <p className="text-xs text-gray-500">Ce projet n'a pas de section — la grille sera rattachée directement au projet.</p>
                 ) : (
@@ -151,7 +153,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
             {selectedSectionId && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rang de départ dans la section
+                  {t('ui.startRow')}
                 </label>
                 <input
                   type="number"
@@ -190,7 +192,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
             onClick={onClose}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
           >
-            Annuler
+            {t('ui.cancel')}
           </button>
           <button
             onClick={handleSave}

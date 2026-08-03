@@ -5,10 +5,12 @@
 
 import { useState } from 'react'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { useTranslation } from 'react-i18next'
 
 const STORAGE_KEY = 'yf_push_modal_shown'
 
 const PushNotificationModal = ({ onClose }) => {
+  const { t } = useTranslation('tools')
   const { subscribe } = usePushNotifications()
   const [loading, setLoading] = useState(false)
 
@@ -41,10 +43,10 @@ const PushNotificationModal = ({ onClose }) => {
 
         <div className="px-6 pb-6 pt-4 text-center">
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
-            Ne perds jamais le fil
+            {t('ui.neverLoseTrack')}
           </h2>
           <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            Active les notifications pour retrouver tes projets en cours et recevoir des rappels utiles. On ne t'envoie que l'essentiel.
+            {t('ui.enableNotificationsDesc')}
           </p>
 
           <div className="flex flex-col gap-3">
@@ -59,7 +61,7 @@ const PushNotificationModal = ({ onClose }) => {
               onClick={dismiss}
               className="w-full py-2.5 text-gray-400 hover:text-gray-600 transition text-sm"
             >
-              Plus tard
+              {t('ui.later')}
             </button>
           </div>
         </div>

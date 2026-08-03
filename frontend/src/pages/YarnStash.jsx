@@ -13,8 +13,10 @@ import { useAuth } from '../contexts/AuthContext'
 import YarnStashStats from '../components/stash/YarnStashStats'
 import YarnStashCard from '../components/stash/YarnStashCard'
 import YarnStashForm from '../components/stash/YarnStashForm'
+import { useTranslation } from 'react-i18next'
 
 const YarnStash = () => {
+  const { t } = useTranslation('tools')
   const { getSubscriptionPlan } = useAuth()
   const navigate = useNavigate()
   const plan = getSubscriptionPlan()
@@ -183,14 +185,14 @@ const YarnStash = () => {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
-          Ressources
+          {t('ui.resources')}
         </Link>
 
         {/* ---- En-tête ---- */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Mon Stock</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Ton inventaire de pelotes</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('ui.myStash')}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">{t('ui.stashTagline')}</p>
           </div>
           <button
             onClick={handleAddClick}
@@ -199,7 +201,7 @@ const YarnStash = () => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            Ajouter
+            {t('ui.add')}
           </button>
         </div>
 
@@ -236,9 +238,9 @@ const YarnStash = () => {
         {/* ---- Upgrade prompt ---- */}
         {error === 'upgrade_required' && (
           <div className="mb-4 bg-gradient-to-br from-primary-50 to-violet-50 border border-primary-200 rounded-xl p-5 text-center">
-            <p className="font-semibold text-gray-800 mb-1">Votre placard déborde de pépites !</p>
+            <p className="font-semibold text-gray-800 mb-1">{t('ui.stashOverflowing')}</p>
             <p className="text-sm text-gray-600 mb-4">
-              Passez à la version Pro pour débloquer le stock illimité, le futur scanner de code-barres
+              {t('ui.stashProUpsell')}
               et la liaison automatique avec vos projets.
             </p>
             <div className="flex gap-2 justify-center">
@@ -246,13 +248,13 @@ const YarnStash = () => {
                 onClick={() => setError(null)}
                 className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-white transition-colors"
               >
-                Pas maintenant
+                {t('ui.notNow')}
               </button>
               <Link
                 to="/subscription"
                 className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors"
               >
-                Voir les offres Pro
+                {t('ui.viewProOffers')}
               </Link>
             </div>
           </div>
@@ -266,7 +268,7 @@ const YarnStash = () => {
           <div className="flex gap-2 mb-4 flex-wrap">
             <input
               type="text"
-              placeholder="Rechercher…"
+              placeholder={t('ui.search')}
               className="flex-1 min-w-[140px] px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 placeholder-gray-300"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -277,7 +279,7 @@ const YarnStash = () => {
                 value={filterBrand}
                 onChange={(e) => setFilterBrand(e.target.value)}
               >
-                <option value="">Toutes les marques</option>
+                <option value="">{t('ui.allBrands')}</option>
                 {brands.map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             )}
@@ -286,7 +288,7 @@ const YarnStash = () => {
               value={filterWeight}
               onChange={(e) => setFilterWeight(e.target.value)}
             >
-              <option value="">Toutes les épaisseurs</option>
+              <option value="">{t('ui.allWeights')}</option>
               <option value="lace">Lace</option>
               <option value="fingering">Fingering</option>
               <option value="sport">Sport</option>
@@ -294,17 +296,17 @@ const YarnStash = () => {
               <option value="worsted">Worsted</option>
               <option value="aran">Aran</option>
               <option value="bulky">Bulky</option>
-              <option value="super_bulky">Super Bulky</option>
+              <option value="super_bulky">{t('ui.superBulky')}</option>
             </select>
             <select
               className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 text-gray-600"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
-              <option value="date_desc">Plus récent</option>
-              <option value="date_asc">Plus ancien</option>
-              <option value="brand_asc">Marque A→Z</option>
-              <option value="quantity_desc">Quantité ↓</option>
+              <option value="date_desc">{t('ui.sortNewest')}</option>
+              <option value="date_asc">{t('ui.sortOldest')}</option>
+              <option value="brand_asc">{t('ui.sortBrandAZ')}</option>
+              <option value="quantity_desc">{t('ui.sortQtyDesc')}</option>
             </select>
           </div>
         )}
@@ -313,12 +315,12 @@ const YarnStash = () => {
         {loading ? (
           <div className="text-center py-16 text-gray-400">
             <div className="animate-spin w-8 h-8 border-2 border-primary-400 border-t-transparent rounded-full mx-auto mb-3" />
-            Chargement…
+            {t('ui.loadingAlt')}
           </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-16">
-            <p className="font-semibold text-gray-700 mb-2">Ton stock est vide</p>
-            <p className="text-sm text-gray-400">Ajoute ta première pelote pour commencer l'inventaire.</p>
+            <p className="font-semibold text-gray-700 mb-2">{t('ui.emptyStash')}</p>
+            <p className="text-sm text-gray-400">{t('ui.emptyStashDesc')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -342,7 +344,7 @@ const YarnStash = () => {
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Nouvelle pelote</h2>
+              <h2 className="font-semibold text-gray-900">{t('ui.newBall')}</h2>
               <button onClick={() => setShowAddModal(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -368,7 +370,7 @@ const YarnStash = () => {
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Modifier la pelote</h2>
+              <h2 className="font-semibold text-gray-900">{t('ui.editBall')}</h2>
               <button onClick={() => setEditingEntry(null)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -388,15 +390,15 @@ const YarnStash = () => {
       )}
 
       {/* ===================================================================
-          Confirmation suppression
+          {t('ui.deleteConfirmation')}
       ==================================================================== */}
       {/* ===================================================================
-          Assignation à un projet
+          {t('ui.assignToProject')}
       ==================================================================== */}
       {assigningEntry && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6">
-            <h2 className="font-semibold text-gray-900 mb-1">Utiliser pour un projet</h2>
+            <h2 className="font-semibold text-gray-900 mb-1">{t('ui.useForProject')}</h2>
             <p className="text-sm text-gray-500 mb-4">
               <strong>{assigningEntry.brand} — {assigningEntry.yarn_name}</strong>
               {assigningEntry.color_name ? ` (${assigningEntry.color_name})` : ''}
@@ -404,19 +406,19 @@ const YarnStash = () => {
 
             <div className="space-y-3 mb-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Projet</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">{t('ui.project')}</label>
                 <select
                   value={assignProjectId}
                   onChange={e => setAssignProjectId(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
                 >
-                  <option value="">Sélectionner un projet…</option>
+                  <option value="">{t('ui.phSelectProject')}</option>
                   {activeProjects.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
                 {activeProjects.length === 0 && (
-                  <p className="text-xs text-gray-400 mt-1">Aucun projet en cours trouvé.</p>
+                  <p className="text-xs text-gray-400 mt-1">{t('ui.noActiveProject')}</p>
                 )}
               </div>
 
@@ -442,7 +444,7 @@ const YarnStash = () => {
                 onClick={() => setAssigningEntry(null)}
                 className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50"
               >
-                Annuler
+                {t('ui.cancel')}
               </button>
               <button
                 onClick={handleAssignConfirm}
@@ -459,7 +461,7 @@ const YarnStash = () => {
       {deletingEntry && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
           <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 text-center">
-            <h2 className="font-semibold text-gray-900 mb-1">Supprimer cette entrée ?</h2>
+            <h2 className="font-semibold text-gray-900 mb-1">{t('ui.deleteThisEntry')}</h2>
             <p className="text-sm text-gray-500 mb-5">
               <strong>{deletingEntry.brand} — {deletingEntry.yarn_name}</strong>
               {deletingEntry.color_name ? ` (${deletingEntry.color_name})` : ''}
@@ -470,13 +472,13 @@ const YarnStash = () => {
                 onClick={() => setDeletingEntry(null)}
                 className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50"
               >
-                Annuler
+                {t('ui.cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold"
               >
-                Supprimer
+                {t('ui.delete')}
               </button>
             </div>
           </div>

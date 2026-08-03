@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const SLIDES = [
   {
@@ -66,6 +67,7 @@ const SLIDES = [
 ]
 
 export default function OnboardingModal({ onClose }) {
+  const { t } = useTranslation('tools')
   const [current, setCurrent] = useState(0)
   const isLast = current === SLIDES.length - 1
   const slide = SLIDES[current]
@@ -115,13 +117,13 @@ export default function OnboardingModal({ onClose }) {
                 onClick={handleClose}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 transition"
               >
-                Ignorer
+                {t('ui.skip')}
               </button>
               <button
                 onClick={() => setCurrent(c => c + 1)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
               >
-                Suivant
+                {t('ui.next')}
               </button>
             </>
           ) : (
@@ -129,7 +131,7 @@ export default function OnboardingModal({ onClose }) {
               onClick={handleClose}
               className="w-full py-2.5 rounded-xl text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
             >
-              C'est parti !
+              {t('ui.letsGo')}
             </button>
           )}
         </div>

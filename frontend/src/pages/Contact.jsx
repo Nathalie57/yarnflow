@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useTranslation } from 'react-i18next'
 
 const Contact = () => {
+  const { t } = useTranslation('tools')
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -110,7 +112,7 @@ const Contact = () => {
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
           </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Message envoyé</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">{t('ui.messageSent')}</h1>
           <p className="text-gray-600 mb-1">
             Merci ! Nous vous répondrons à <strong>{formData.email || user?.email}</strong>.
           </p>
@@ -126,7 +128,7 @@ const Contact = () => {
               }}
               className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm"
             >
-              Envoyer un autre message
+              {t('ui.sendAnother')}
             </button>
             <button
               onClick={() => { if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current); navigate(user ? '/my-projects' : '/'); }}
@@ -144,8 +146,8 @@ const Contact = () => {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="bg-white rounded-lg border border-gray-200 p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Contactez-nous</h1>
-          <p className="text-gray-500 text-sm">Une question, un bug, une suggestion ? Nous lisons tous les messages.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">{t('ui.contactUs')}</h1>
+          <p className="text-gray-500 text-sm">{t('ui.contactIntro')}</p>
         </div>
 
         {errors.general && (
@@ -163,7 +165,7 @@ const Contact = () => {
                 <input
                   type="text" name="name" value={formData.name} onChange={handleChange}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm ${errors.name ? 'border-red-400' : 'border-gray-300'}`}
-                  placeholder="Votre nom"
+                  placeholder={t('ui.yourName')}
                 />
                 {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
               </div>
@@ -172,7 +174,7 @@ const Contact = () => {
                 <input
                   type="email" name="email" value={formData.email} onChange={handleChange}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm ${errors.email ? 'border-red-400' : 'border-gray-300'}`}
-                  placeholder="votre@email.com"
+                  placeholder={t('ui.phEmail')}
                 />
                 {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
               </div>
@@ -214,7 +216,7 @@ const Contact = () => {
             <input
               type="text" name="subject" value={formData.subject} onChange={handleChange} maxLength={200}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm ${errors.subject ? 'border-red-400' : 'border-gray-300'}`}
-              placeholder="Résumé en quelques mots"
+              placeholder={t('ui.phSubject')}
             />
             {errors.subject && <p className="mt-1 text-xs text-red-600">{errors.subject}</p>}
           </div>
@@ -228,7 +230,7 @@ const Contact = () => {
             <textarea
               name="message" value={formData.message} onChange={handleChange} rows={6} maxLength={5000}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none text-sm ${errors.message ? 'border-red-400' : 'border-gray-300'}`}
-              placeholder="Décrivez votre demande en détail..."
+              placeholder={t('ui.phDescribeRequest')}
             />
             {errors.message && <p className="mt-1 text-xs text-red-600">{errors.message}</p>}
           </div>
@@ -239,7 +241,7 @@ const Contact = () => {
               type="button" onClick={() => navigate(-1)} disabled={loading}
               className="flex-1 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium"
             >
-              Annuler
+              {t('ui.cancel')}
             </button>
             <button
               type="submit" disabled={loading}

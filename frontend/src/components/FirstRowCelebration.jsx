@@ -10,8 +10,10 @@
  */
 
 import React, { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const FirstRowCelebration = ({ onClose, counterUnit = 'rows' }) => {
+  const { t } = useTranslation('tools')
   const [show, setShow] = useState(false)
 
   useEffect(() => {
@@ -47,12 +49,12 @@ const FirstRowCelebration = ({ onClose, counterUnit = 'rows' }) => {
 
         {/* Titre */}
         <h2 className="text-3xl font-bold text-gray-900 mb-3">
-          Bravo !
+          {t('ui.wellDone')}
         </h2>
 
         {/* Message */}
         <p className="text-lg text-gray-700 leading-relaxed mb-2">
-          YarnFlow te suit maintenant
+          {t('ui.yarnflowFollowsYou')}
         </p>
         <p className="text-lg text-gray-700 leading-relaxed">
           {counterUnit === 'cm' ? 'centimètre après centimètre' : 'rang après rang'} 💜
@@ -63,7 +65,7 @@ const FirstRowCelebration = ({ onClose, counterUnit = 'rows' }) => {
           onClick={handleClose}
           className="mt-6 text-sm text-gray-500 hover:text-gray-700 underline"
         >
-          Continuer
+          {t('ui.continueBtn')}
         </button>
       </div>
 

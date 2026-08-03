@@ -9,8 +9,10 @@
 import { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import TagBadge from './TagBadge'
+import { useTranslation } from 'react-i18next'
 
 const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder = 'Ajouter un tag...' }) => {
+  const { t } = useTranslation('tools')
   const [inputValue, setInputValue] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [filteredSuggestions, setFilteredSuggestions] = useState([])
@@ -117,7 +119,7 @@ const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder =
             }}
             disabled={!inputValue.trim() || inputValue.trim().length < 2}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            aria-label="Ajouter le tag"
+            aria-label={t('ui.addTag')}
           >
             +
           </button>

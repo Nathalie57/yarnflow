@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import TagBadge from './TagBadge'
+import { useTranslation } from 'react-i18next'
 
 const ProjectFilters = ({
   onFilterChange,
@@ -17,6 +18,7 @@ const ProjectFilters = ({
   onUpgradeClick,
   userPlan = 'free' // free, plus, pro
 }) => {
+  const { t } = useTranslation('tools')
   const [activeFilter, setActiveFilter] = useState('all')
   const [sortBy, setSortBy] = useState('updated_desc')
   const [selectedTags, setSelectedTags] = useState([])
@@ -104,7 +106,7 @@ const ProjectFilters = ({
             <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span className="hidden sm:inline">Réinitialiser</span>
+            <span className="hidden sm:inline">{t('ui.reset')}</span>
           </button>
         </div>
       )}
@@ -133,7 +135,7 @@ const ProjectFilters = ({
           className="text-sm font-medium text-gray-700 flex items-center gap-2 w-full md:cursor-default"
         >
           <span>📊</span>
-          <span>Trier par :</span>
+          <span>{t('ui.sortBy')}</span>
           <span className="text-xs text-gray-500">
             {sortOptions.find(opt => opt.value === sortBy)?.label}
           </span>
@@ -210,7 +212,7 @@ const ProjectFilters = ({
 
         {selectedTags.length > 0 && (
           <div className="flex items-start md:items-center gap-2 flex-col md:flex-row">
-            <span className="text-xs text-gray-500 whitespace-nowrap">Tags actifs:</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">{t('ui.activeTags')}</span>
             <div className="flex flex-wrap gap-1">
               {selectedTags.map((tag) => (
                 <TagBadge

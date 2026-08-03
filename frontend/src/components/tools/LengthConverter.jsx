@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const UNITS = [
   { id: 'cm', label: 'cm', toMeters: 0.01 },
@@ -23,6 +24,7 @@ function fmt(n) {
 }
 
 export default function LengthConverter() {
+  const { t } = useTranslation('tools')
   const [value, setValue] = useState('')
   const [fromId, setFromId] = useState('cm')
 
@@ -39,7 +41,7 @@ export default function LengthConverter() {
           min="0"
           value={value}
           onChange={e => setValue(e.target.value)}
-          placeholder="Valeur"
+          placeholder={t('ui.phValue')}
           className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-400"
         />
         <select
@@ -69,7 +71,7 @@ export default function LengthConverter() {
       <div className="bg-primary-50 rounded-xl px-4 py-3 text-xs text-primary-700 space-y-1">
         <p>1 pouce = 2,54 cm</p>
         <p>1 yard = 91,44 cm = 3 pieds</p>
-        <p>Les pelotes US sont souvent en yards, les EU en mètres</p>
+        <p>{t('ui.usYardsEuMeters')}</p>
       </div>
     </div>
   )

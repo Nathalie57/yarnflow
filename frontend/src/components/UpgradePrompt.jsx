@@ -6,6 +6,7 @@
 import { useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import { useAuth } from '../contexts/AuthContext'
+import { useTranslation } from 'react-i18next'
 
 const FEATURES = {
   tags: {
@@ -65,6 +66,7 @@ const FEATURES = {
 }
 
 const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
+  const { t } = useTranslation('tools')
   const navigate = useNavigate()
   const { isTWA } = useAuth()
 
@@ -78,12 +80,12 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <h3 className="text-lg font-bold text-gray-900 pr-6">Débloquer cette fonctionnalité</h3>
+        <h3 className="text-lg font-bold text-gray-900 pr-6">{t('ui.unlockFeature')}</h3>
         <p className="text-sm text-gray-600 leading-relaxed">
           Pour vous offrir YarnFlow au prix le plus juste sans intermédiaire, la gestion des abonnements se fait exclusivement sur notre site internet. Pour débloquer vos fonctionnalités, connectez-vous simplement à votre compte sur <span className="font-semibold text-primary-700">yarnflow.fr</span> depuis le navigateur de votre téléphone ou de votre ordinateur. Votre application se mettra à jour instantanément !
         </p>
         <button onClick={onClose} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700">
-          Fermer
+          {t('ui.close')}
         </button>
       </div>
     </div>
@@ -109,7 +111,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
-          aria-label="Fermer"
+          aria-label={t('ui.close')}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -148,7 +150,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-primary-50 border border-primary-200 rounded-xl p-3 flex flex-col">
               <p className="font-bold text-gray-900 text-sm">PLUS</p>
-              <p className="text-xs text-gray-500 mt-0.5">Pour les actives</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('ui.forActive')}</p>
               <div className="mt-2">
                 <span className="text-xl font-bold text-primary-600">2,49€</span>
                 <span className="text-xs text-gray-500">/mois</span>
@@ -157,7 +159,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex flex-col">
               <p className="font-bold text-gray-900 text-sm">PRO</p>
-              <p className="text-xs text-gray-500 mt-0.5">Toutes les fonctions</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('ui.allFeatures')}</p>
               <div className="mt-2">
                 <span className="text-xl font-bold text-gray-700">4,99€</span>
                 <span className="text-xs text-gray-500">/mois</span>
@@ -168,8 +170,8 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
         ) : (
           <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between">
             <div>
-              <p className="font-bold text-gray-900 text-sm">Plan PRO</p>
-              <p className="text-xs text-gray-500 mt-0.5">Pour les projets sérieux</p>
+              <p className="font-bold text-gray-900 text-sm">{t('ui.proPlan')}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('ui.forSeriousProjects')}</p>
               <p className="text-[11px] text-green-600 font-medium mt-1">Facturé 59,99€/an</p>
             </div>
             <div className="text-right">
@@ -185,7 +187,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             onClick={onClose}
             className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
           >
-            Plus tard
+            {t('ui.later')}
           </button>
           <button
             onClick={handleUpgrade}

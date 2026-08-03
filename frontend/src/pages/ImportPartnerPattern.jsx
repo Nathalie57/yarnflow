@@ -12,10 +12,12 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { partnerImportAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
+import { useTranslation } from 'react-i18next'
 
 const PENDING_IMPORT_KEY = 'yf_pending_import'
 
 const ImportPartnerPattern = () => {
+  const { t } = useTranslation('tools')
   const { code }     = useParams()
   const navigate     = useNavigate()
   const { user, loading: authLoading } = useAuth()
@@ -86,10 +88,10 @@ const ImportPartnerPattern = () => {
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 text-center">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-sm w-full">
           <p className="text-4xl mb-4">🧶</p>
-          <h1 className="text-lg font-semibold text-gray-800 mb-2">Lien invalide</h1>
+          <h1 className="text-lg font-semibold text-gray-800 mb-2">{t('ui.invalidLink')}</h1>
           <p className="text-sm text-gray-500 mb-6">{error}</p>
           <Link to="/" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-            Retour à YarnFlow
+            {t('ui.backToYarnFlow')}
           </Link>
         </div>
       </div>
@@ -100,7 +102,7 @@ const ImportPartnerPattern = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-3">
         <div className="animate-spin w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full" />
-        <p className="text-sm text-gray-500">Création du projet en cours…</p>
+        <p className="text-sm text-gray-500">{t('ui.creatingProject')}</p>
       </div>
     )
   }
@@ -178,7 +180,7 @@ const ImportPartnerPattern = () => {
               }}
               className="text-primary-600 hover:text-primary-700 font-medium"
             >
-              Se connecter
+              {t('ui.login')}
             </button>
           </p>
         )}
@@ -186,7 +188,7 @@ const ImportPartnerPattern = () => {
         {/* Logo YarnFlow discret */}
         <div className="mt-6 pt-4 border-t border-gray-100 text-center">
           <Link to="/" className="text-xs text-gray-400 hover:text-gray-500">
-            Propulsé par YarnFlow
+            {t('ui.poweredBy')}
           </Link>
         </div>
       </div>

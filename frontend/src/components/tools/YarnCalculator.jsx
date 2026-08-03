@@ -10,6 +10,7 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { yarnStashAPI } from '../../services/api'
+import { useTranslation } from 'react-i18next'
 
 // Matrice de métrages estimés (en mètres) par [projet][épaisseur][taille]
 const MATRIX = {
@@ -95,6 +96,7 @@ const STASH_CATEGORIES = {
 }
 
 export default function YarnCalculator() {
+  const { t } = useTranslation('tools')
   const [projectType, setProjectType] = useState('')
   const [size, setSize] = useState('')
   const [weight, setWeight] = useState('')
@@ -158,7 +160,7 @@ export default function YarnCalculator() {
       {/* Type de projet */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Type de projet
+          {t('ui.projectType')}
         </label>
         <select
           value={projectType}
@@ -175,7 +177,7 @@ export default function YarnCalculator() {
       {/* Taille */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Taille
+          {t('ui.size')}
         </label>
         <select
           value={size}
@@ -193,7 +195,7 @@ export default function YarnCalculator() {
       {/* Épaisseur */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Épaisseur du fil
+          {t('ui.yarnWeight')}
         </label>
         <select
           value={weight}
@@ -228,14 +230,14 @@ export default function YarnCalculator() {
           {/* Simulateur de pelotes */}
           <div className="border-t border-primary-200 pt-4">
             <label className="block text-sm font-medium text-primary-800 mb-1.5">
-              Métrage de votre pelote (m)
+              {t('ui.ballLength')}
             </label>
             <input
               type="number"
               min="1"
               value={skeinMeters}
               onChange={e => setSkeinMeters(e.target.value)}
-              placeholder="ex : 200"
+              placeholder={t('ui.phEx200b')}
               className="w-full border border-primary-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
             />
             {skeinResult && (
@@ -260,14 +262,14 @@ export default function YarnCalculator() {
               className="w-full flex items-center justify-center gap-2 bg-white border border-primary-400 text-primary-700 font-medium text-sm rounded-lg px-4 py-2.5 hover:bg-primary-50 transition disabled:opacity-60"
             >
               {stockCheck?.loading ? (
-                <span>Vérification…</span>
+                <span>{t('ui.verifying')}</span>
               ) : (
                 <>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 3h-8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" />
                   </svg>
-                  Vérifier dans mon stock
+                  {t('ui.checkMyStash')}
                 </>
               )}
             </button>
@@ -319,7 +321,7 @@ export default function YarnCalculator() {
                   </div>
                 ) : (
                   <p className="text-xs text-gray-500 text-center">
-                    Aucune pelote de cette épaisseur dans votre stock.
+                    {t('ui.noBallOfThisWeight')}
                   </p>
                 )}
 
@@ -327,7 +329,7 @@ export default function YarnCalculator() {
                   <p className="text-xs text-gray-400 text-center pt-1">
                     Stock limité à 10 références en FREE —{' '}
                     <Link to="/subscription" className="text-primary-600 hover:underline font-medium">
-                      Passer à PRO
+                      {t('ui.upgradePro')}
                     </Link>{' '}
                     pour un stock illimité.
                   </p>

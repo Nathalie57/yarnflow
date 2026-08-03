@@ -9,8 +9,10 @@
 
 import { useState, useMemo } from 'react'
 import SaveGaugeToProjectModal from './SaveGaugeToProjectModal'
+import { useTranslation } from 'react-i18next'
 
 export default function GaugeCalculator() {
+  const { t } = useTranslation('tools')
   const [mode, setMode] = useState('simple') // simple | adapt
   const [showSaveModal, setShowSaveModal] = useState(false)
 
@@ -58,7 +60,7 @@ export default function GaugeCalculator() {
             mode === 'simple' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Mes dimensions
+          {t('ui.myDimensions')}
         </button>
         <button
           onClick={() => setMode('adapt')}
@@ -66,7 +68,7 @@ export default function GaugeCalculator() {
             mode === 'adapt' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Adapter un patron
+          {t('ui.adaptPattern')}
         </button>
       </div>
 
@@ -82,7 +84,7 @@ export default function GaugeCalculator() {
                   min="1"
                   value={myStsPer10}
                   onChange={e => setMyStsPer10(e.target.value)}
-                  placeholder="ex: 20"
+                  placeholder={t('ui.phEx20')}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -93,7 +95,7 @@ export default function GaugeCalculator() {
                   min="1"
                   value={myRowsPer10}
                   onChange={e => setMyRowsPer10(e.target.value)}
-                  placeholder="ex: 28"
+                  placeholder={t('ui.phEx28')}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -101,27 +103,27 @@ export default function GaugeCalculator() {
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-3">Dimensions souhaitées</p>
+            <p className="text-xs text-gray-500 mb-3">{t('ui.desiredDimensions')}</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Largeur (cm)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.widthCm')}</label>
                 <input
                   type="number"
                   min="1"
                   value={wantedWidthCm}
                   onChange={e => setWantedWidthCm(e.target.value)}
-                  placeholder="ex: 50"
+                  placeholder={t('ui.phEx50')}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hauteur (cm)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.heightCm')}</label>
                 <input
                   type="number"
                   min="1"
                   value={wantedHeightCm}
                   onChange={e => setWantedHeightCm(e.target.value)}
-                  placeholder="ex: 60"
+                  placeholder={t('ui.phEx60')}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -169,7 +171,7 @@ export default function GaugeCalculator() {
       {mode === 'adapt' && (
         <>
           <div>
-            <p className="text-xs text-gray-500 mb-3">Échantillon indiqué dans le patron</p>
+            <p className="text-xs text-gray-500 mb-3">{t('ui.gaugeInPattern')}</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mailles / 10 cm (patron)</label>
@@ -178,18 +180,18 @@ export default function GaugeCalculator() {
                   min="1"
                   value={patternStsPer10}
                   onChange={e => setPatternStsPer10(e.target.value)}
-                  placeholder="ex: 20"
+                  placeholder={t('ui.phEx20')}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mailles indiquées</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.statedStitches')}</label>
                 <input
                   type="number"
                   min="1"
                   value={patternRows}
                   onChange={e => setPatternRows(e.target.value)}
-                  placeholder="ex: 100"
+                  placeholder={t('ui.phEx100')}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -197,7 +199,7 @@ export default function GaugeCalculator() {
           </div>
 
           <div>
-            <p className="text-xs text-gray-500 mb-3">Mon propre échantillon</p>
+            <p className="text-xs text-gray-500 mb-3">{t('ui.myOwnGauge')}</p>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mes mailles / 10 cm</label>
               <input
@@ -205,7 +207,7 @@ export default function GaugeCalculator() {
                 min="1"
                 value={myAdaptStsPer10}
                 onChange={e => setMyAdaptStsPer10(e.target.value)}
-                placeholder="ex: 18"
+                placeholder={t('ui.phEx18')}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>

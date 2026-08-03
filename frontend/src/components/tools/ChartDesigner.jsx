@@ -10,6 +10,7 @@ import api from '../../services/api'
 import SaveChartToProjectModal from './SaveChartToProjectModal'
 import { MAX_GRID_SIZE, NO_GRID_DETECTED, imageFileToChart } from '../../utils/chartImageImport'
 import { photoFileToChart } from '../../utils/photoToChart'
+import { useTranslation } from 'react-i18next'
 
 const MIN_GRID_SIZE = 1
 const DEFAULT_CELL_PX = 20
@@ -23,6 +24,7 @@ const makeBlankChart = (name, width, height) => ({
 })
 
 export default function ChartDesigner() {
+  const { t } = useTranslation('tools')
   const navigate = useNavigate()
   const [chart, setChart] = useState(null)
   const [mode, setMode] = useState('draw')
@@ -279,14 +281,14 @@ export default function ChartDesigner() {
       <div className="space-y-4">
         <button onClick={() => setShowAllCharts(false)} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          Retour à la création
+          {t('ui.backToCreation')}
         </button>
         <div className="bg-white rounded-2xl shadow-sm p-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Mes grilles</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('ui.myCharts')}</p>
           {loadingMyCharts ? (
-            <p className="text-sm text-gray-400">Chargement...</p>
+            <p className="text-sm text-gray-400">{t('ui.loading')}</p>
           ) : myCharts.length === 0 ? (
-            <p className="text-sm text-gray-500">Aucune grille enregistrée pour l'instant.</p>
+            <p className="text-sm text-gray-500">{t('ui.noChartsYet')}</p>
           ) : (
             <div className="space-y-2">
               {myCharts.map(c => (
@@ -330,7 +332,7 @@ export default function ChartDesigner() {
     return (
       <div className="space-y-4">
         <p className="text-sm text-gray-500">
-          Créez une grille jacquard/colorwork à la main, depuis un diagramme photographié, ou depuis n'importe quelle photo convertie en pixelart, puis enregistrez-la dans un de vos projets une fois terminée.
+          {t('ui.chartDesignerIntro')}
         </p>
         {!loadingMyCharts && myCharts.length > 0 && (
           <button
@@ -346,29 +348,29 @@ export default function ChartDesigner() {
             onClick={() => setMode('draw')}
             className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'draw' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
           >
-            Dessiner à la main
+            {t('ui.drawByHand')}
           </button>
           <button
             onClick={() => setMode('image')}
             className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'image' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
           >
-            Importer un diagramme
+            {t('ui.importChart')}
           </button>
           <button
             onClick={() => setMode('photo')}
             className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'photo' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
           >
-            Créer depuis une photo
+            {t('ui.createFromPhoto')}
           </button>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nom de la grille</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.chartName')}</label>
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            placeholder="Ex: Motif manche"
+            placeholder={t('ui.phChartName')}
             maxLength={100}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
@@ -377,11 +379,11 @@ export default function ChartDesigner() {
           <>
             <div className="flex items-center gap-3">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Largeur (mailles)</label>
+                <label className="block text-sm text-gray-600 mb-1">{t('ui.widthStitches')}</label>
                 <input type="number" min="1" max="200" value={width} onChange={e => setWidth(e.target.value)} className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm" />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Hauteur (rangs)</label>
+                <label className="block text-sm text-gray-600 mb-1">{t('ui.heightRows')}</label>
                 <input type="number" min="1" max="200" value={height} onChange={e => setHeight(e.target.value)} className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm" />
               </div>
             </div>
@@ -390,7 +392,7 @@ export default function ChartDesigner() {
               disabled={!name.trim() || !width || !height}
               className="w-full py-2.5 rounded-lg text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
             >
-              Créer la grille
+              {t('ui.createChart')}
             </button>
           </>
         )}
@@ -398,7 +400,7 @@ export default function ChartDesigner() {
         {mode === 'image' && (
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Photo du diagramme déjà existant</label>
+              <label className="block text-sm text-gray-600 mb-1">{t('ui.existingChartPhoto')}</label>
               <input
                 type="file"
                 accept="image/*"
@@ -406,7 +408,7 @@ export default function ChartDesigner() {
                 className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
               />
               <p className="text-xs text-gray-400 mt-1">
-                La taille de la grille et le nombre de couleurs sont détectés automatiquement depuis l'image. Le résultat peut nécessiter quelques ajustements à la main (retoucher des cases, fusionner des couleurs).
+                {t('ui.chartAutoDetect')}
               </p>
             </div>
             {imageError && <p className="text-xs text-red-500">{imageError}</p>}
@@ -423,7 +425,7 @@ export default function ChartDesigner() {
         {mode === 'photo' && (
           <div className="space-y-3">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">N'importe quelle photo (pas un diagramme)</label>
+              <label className="block text-sm text-gray-600 mb-1">{t('ui.anyPhoto')}</label>
               <input
                 type="file"
                 accept="image/*"
@@ -436,11 +438,11 @@ export default function ChartDesigner() {
             </div>
             <div className="flex items-center gap-3">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Largeur de grille (mailles)</label>
+                <label className="block text-sm text-gray-600 mb-1">{t('ui.chartWidth')}</label>
                 <input type="number" min="10" max="200" value={photoGridWidth} onChange={e => setPhotoGridWidth(e.target.value)} className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm" />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Couleurs max</label>
+                <label className="block text-sm text-gray-600 mb-1">{t('ui.maxColors')}</label>
                 <input type="number" min="2" max="20" value={photoMaxColors} onChange={e => setPhotoMaxColors(e.target.value)} className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm" />
               </div>
             </div>
@@ -493,7 +495,7 @@ export default function ChartDesigner() {
       <div className="flex items-center justify-between">
         <button onClick={() => { setChart(null); setImportNote('') }} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          Recommencer
+          {t('ui.startOver')}
         </button>
         <button
           onClick={() => setShowSaveModal(true)}
@@ -514,7 +516,7 @@ export default function ChartDesigner() {
         <button onClick={() => setCellPx(v => Math.max(2, v - 2))} className="w-7 h-7 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-gray-100">−</button>
         <span className="text-xs text-gray-400">{chart.name} — {chart.width} × {chart.height}</span>
         <button onClick={() => setCellPx(v => Math.min(48, v + 2))} className="w-7 h-7 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-gray-100">+</button>
-        <button onClick={fitZoomToScreen} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-600">Ajuster à l'écran</button>
+        <button onClick={fitZoomToScreen} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-600">{t('ui.fitToScreen')}</button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-4">
@@ -537,19 +539,19 @@ export default function ChartDesigner() {
               {editingPaletteIndex === i && (
                 <div className="absolute top-10 left-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 whitespace-nowrap">
                   <input type="color" autoFocus value={hex} onChange={e => changePaletteColor(i, e.target.value)} />
-                  <button onClick={() => setEditingPaletteIndex(null)} className="text-xs px-2 py-1 bg-primary-600 text-white rounded hover:bg-primary-700">Terminé</button>
+                  <button onClick={() => setEditingPaletteIndex(null)} className="text-xs px-2 py-1 bg-primary-600 text-white rounded hover:bg-primary-700">{t('ui.done')}</button>
                 </div>
               )}
               {i > 0 && isSuspiciousColor(i) && (
                 <button
                   onClick={() => setMergingPaletteIndex(i)}
                   className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs leading-none flex items-center justify-center hover:bg-red-600 z-10"
-                  title="Cette couleur ressemble à un artefact — fusionner avec une autre couleur"
+                  title={t('ui.colorArtifact')}
                 >×</button>
               )}
               {mergingPaletteIndex === i && (
                 <div className="absolute top-10 right-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 whitespace-nowrap">
-                  <p className="text-xs text-gray-500 mb-2">Fusionner avec :</p>
+                  <p className="text-xs text-gray-500 mb-2">{t('ui.mergeWith')}</p>
                   <div className="flex items-center gap-1.5">
                     {chart.palette.map((targetHex, ti) => ti !== i && (
                       <button
@@ -560,7 +562,7 @@ export default function ChartDesigner() {
                         title={ti === 0 ? 'Fond' : `Couleur ${ti}`}
                       />
                     ))}
-                    <button onClick={() => setMergingPaletteIndex(null)} className="text-xs px-2 py-1 ml-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-500">Annuler</button>
+                    <button onClick={() => setMergingPaletteIndex(null)} className="text-xs px-2 py-1 ml-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-500">{t('ui.cancel')}</button>
                   </div>
                 </div>
               )}
@@ -569,7 +571,7 @@ export default function ChartDesigner() {
           <button
             onClick={addPaletteColor}
             className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
-            title="Ajouter une couleur"
+            title={t('ui.addColor')}
           >＋</button>
         </div>
         <p className="text-xs text-gray-400 mt-2">Double-cliquez une couleur pour la modifier. Si une couleur ressemble à un artefact (très peu utilisée ou quasi identique à une autre), un × apparaît pour la fusionner avec la bonne couleur.</p>
@@ -577,13 +579,13 @@ export default function ChartDesigner() {
 
       <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">
         <div className="flex justify-center mb-1 gap-1.5">
-          <button onClick={() => addRow('top')} title="Ajouter un rang au-dessus" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
-          <button onClick={() => removeRow('top')} title="Retirer le rang du dessus" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+          <button onClick={() => addRow('top')} title={t('ui.addRowAbove')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+          <button onClick={() => removeRow('top')} title={t('ui.removeTopRow')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
         </div>
         <div ref={canvasRowRef} className="flex items-center gap-1.5 justify-center">
           <div className="flex flex-col gap-1.5">
-            <button onClick={() => addColumn('left')} title="Ajouter une colonne à gauche" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
-            <button onClick={() => removeColumn('left')} title="Retirer la colonne de gauche" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+            <button onClick={() => addColumn('left')} title={t('ui.addColLeft')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+            <button onClick={() => removeColumn('left')} title={t('ui.removeColLeft')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
           </div>
           <canvas
             ref={canvasRef}
@@ -597,13 +599,13 @@ export default function ChartDesigner() {
             onTouchEnd={handlePointerUp}
           />
           <div className="flex flex-col gap-1.5">
-            <button onClick={() => addColumn('right')} title="Ajouter une colonne à droite" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
-            <button onClick={() => removeColumn('right')} title="Retirer la colonne de droite" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+            <button onClick={() => addColumn('right')} title={t('ui.addColRight')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+            <button onClick={() => removeColumn('right')} title={t('ui.removeColRight')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
           </div>
         </div>
         <div className="flex justify-center mt-1 gap-1.5">
-          <button onClick={() => addRow('bottom')} title="Ajouter un rang en-dessous" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
-          <button onClick={() => removeRow('bottom')} title="Retirer le rang du dessous" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+          <button onClick={() => addRow('bottom')} title={t('ui.addRowBelow')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+          <button onClick={() => removeRow('bottom')} title={t('ui.removeBottomRow')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
         </div>
       </div>
 

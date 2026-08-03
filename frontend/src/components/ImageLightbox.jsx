@@ -7,8 +7,10 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const ImageLightbox = ({ src, alt, onClose }) => {
+  const { t } = useTranslation('tools')
   const [scale, setScale] = useState(1.0)
   const [rotation, setRotation] = useState(0)
 
@@ -79,7 +81,7 @@ const ImageLightbox = ({ src, alt, onClose }) => {
               onClick={resetZoom}
               className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 text-xs transition"
             >
-              Réinitialiser
+              {t('ui.reset')}
             </button>
           )}
 
@@ -88,7 +90,7 @@ const ImageLightbox = ({ src, alt, onClose }) => {
           <button
             onClick={rotate}
             className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 text-sm font-medium transition"
-            title="Rotation 90°"
+            title={t('ui.rotate90')}
           >
             ↻ Pivoter
           </button>

@@ -5,8 +5,10 @@
 
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { useTranslation } from 'react-i18next'
 
 export default function SaveGaugeToProjectModal({ gauge, onClose }) {
+  const { t } = useTranslation('tools')
   const [projects, setProjects] = useState([])
   const [selectedId, setSelectedId] = useState('')
   const [loading, setLoading] = useState(true)
@@ -53,7 +55,7 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 pb-20 sm:pb-4 bg-black/40">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 max-h-[80vh] overflow-y-auto">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Enregistrer l'échantillon</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('ui.saveGauge')}</h2>
           <p className="text-sm text-gray-500 mt-1">
             {gauge.stitches && <span>{gauge.stitches} m</span>}
             {gauge.stitches && gauge.rows && <span> × </span>}
@@ -63,9 +65,9 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-400">Chargement des projets...</p>
+          <p className="text-sm text-gray-400">{t('ui.loadingProjects')}</p>
         ) : projects.length === 0 ? (
-          <p className="text-sm text-gray-500">Aucun projet trouvé.</p>
+          <p className="text-sm text-gray-500">{t('ui.noProjectFound')}</p>
         ) : (
           <select
             value={selectedId}
@@ -80,7 +82,7 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
         )}
 
         {saved && (
-          <p className="text-sm text-green-600 font-medium text-center">Échantillon enregistré !</p>
+          <p className="text-sm text-green-600 font-medium text-center">{t('ui.gaugeSaved')}</p>
         )}
 
         <div className="flex gap-3">
@@ -88,7 +90,7 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
             onClick={onClose}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
           >
-            Annuler
+            {t('ui.cancel')}
           </button>
           <button
             onClick={handleSave}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { userAPI, paymentsAPI } from '../services/api'
 import { useAnalytics } from '../hooks/useAnalytics'
+import { useTranslation } from 'react-i18next'
 
 const Check = ({ className = 'text-primary-500' }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 flex-shrink-0 mt-0.5 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -22,17 +23,18 @@ const TWAMessage = () => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
       </svg>
     </div>
-    <h1 className="text-2xl font-bold text-gray-900">Débloquer YarnFlow</h1>
+    <h1 className="text-2xl font-bold text-gray-900">{t('ui.unlockYarnFlow')}</h1>
     <p className="text-gray-600 leading-relaxed">
       Les abonnements se gèrent sur <span className="font-semibold text-primary-700">yarnflow.fr</span>. Connectez-vous depuis votre navigateur pour débloquer vos fonctionnalités — l'app se met à jour instantanément.
     </p>
     <button onClick={() => window.history.back()} className="text-sm text-gray-400 hover:text-gray-600 transition">
-      Retour
+      {t('ui.back')}
     </button>
   </div>
 )
 
 const Subscription = () => {
+  const { t } = useTranslation('tools')
   const { user, isTWA } = useAuth()
   const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick, trackEvent } = useAnalytics()
   const [subscription, setSubscription] = useState(null)
@@ -201,25 +203,25 @@ const Subscription = () => {
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
-        Retour
+        {t('ui.back')}
       </button>
 
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">Choisissez votre plan</h1>
-        <p className="text-gray-500">Commencez gratuitement. Passez à PRO quand vos projets le méritent.</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-3">{t('ui.choosePlan')}</h1>
+        <p className="text-gray-500">{t('ui.planTagline')}</p>
 
         <div className="flex items-center justify-center gap-2 flex-wrap mt-4 text-xs text-gray-400">
           <span className="flex items-center gap-1">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
-            Paiement sécurisé Stripe
+            {t('ui.stripeSecure')}
           </span>
           <span>·</span>
-          <span>Sans engagement</span>
+          <span>{t('ui.noCommitment')}</span>
           <span>·</span>
-          <span>Résiliable à tout moment</span>
+          <span>{t('ui.cancelAnytime')}</span>
         </div>
       </div>
 
@@ -233,7 +235,7 @@ const Subscription = () => {
               </svg>
             </div>
             <div>
-              <p className="font-semibold text-primary-900 text-sm">Abonnement PLUS actif</p>
+              <p className="font-semibold text-primary-900 text-sm">{t('ui.plusActive')}</p>
               {subscription?.expires_at && (
                 <p className="text-xs text-primary-600">Renouvellement le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}</p>
               )}
@@ -260,7 +262,7 @@ const Subscription = () => {
               </svg>
             </div>
             <div>
-              <p className="font-semibold text-primary-900 text-sm">Abonnement PRO actif</p>
+              <p className="font-semibold text-primary-900 text-sm">{t('ui.proActive')}</p>
               {subscription?.expires_at && (
                 <p className="text-xs text-primary-600">Renouvellement le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}</p>
               )}
@@ -283,19 +285,19 @@ const Subscription = () => {
         <div className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col ${isFree ? 'border-gray-300' : 'border-gray-200'}`}>
           {isFree && (
             <div className="flex justify-center mb-3">
-              <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">Plan actuel</span>
+              <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">{t('ui.currentPlan')}</span>
             </div>
           )}
           <div className="mb-4">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Free</p>
             <div className="text-3xl font-bold text-gray-900 mb-1">0€</div>
-            <p className="text-sm text-gray-500">L'essentiel pour découvrir YarnFlow.</p>
+            <p className="text-sm text-gray-500">{t('ui.freeDesc')}</p>
           </div>
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
             <li className="flex items-start gap-2"><Check /><span>Projets &amp; patrons illimités <span className="text-gray-400 text-xs">(100 Mo de fichiers)</span></span></li>
             <li className="flex items-start gap-2"><Check /><span>1 compteur par projet</span></li>
-            <li className="flex items-start gap-2"><Check /><span>Notes par section</span></li>
+            <li className="flex items-start gap-2"><Check /><span>{t('ui.notesPerSection')}</span></li>
             <li className="flex items-start gap-2"><Check /><span>3 Créations IA offertes</span></li>
             <li className="flex items-start gap-2"><Check /><span>5 questions IA / mois</span></li>
             <li className="flex items-start gap-2"><Check /><span>Studio Photo : 2 crédits offerts</span></li>
@@ -311,7 +313,7 @@ const Subscription = () => {
         <div className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col ${isPlus ? 'border-primary-400' : 'border-gray-200'}`}>
           {isPlus && (
             <div className="flex justify-center mb-3">
-              <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-1 rounded-full">Plan actuel</span>
+              <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-1 rounded-full">{t('ui.currentPlan')}</span>
             </div>
           )}
           <div className="mb-4">
@@ -321,24 +323,24 @@ const Subscription = () => {
               <span className="text-sm text-gray-500">/mois</span>
             </div>
             <p className="text-xs text-green-600 font-medium mb-1">Facturé {plusAnnualPrice}/an — économisez 17,89€</p>
-            <p className="text-sm text-gray-500">Le confort de gestion au quotidien.</p>
+            <p className="text-sm text-gray-500">{t('ui.plusDesc')}</p>
           </div>
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Tout le plan FREE</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stockage fichiers illimité</span> · 200 photos</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>{t('ui.allOfFree')}</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.unlimitedStorage')}</span> · 200 photos</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Jusqu'à 10 compteurs secondaires</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 15 références</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 Créations IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Studio Photo : 5 crédits / mois</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 traductions de patron / mois</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Statistiques avancées</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>{t('ui.advancedStats')}</span></li>
           </ul>
 
           {isPlus ? (
             <button disabled className="w-full py-2.5 border-2 border-primary-500 text-primary-700 rounded-xl text-sm font-semibold opacity-60 cursor-not-allowed">
-              Plan actuel
+              {t('ui.currentPlan')}
             </button>
           ) : isPro ? (
             <button
@@ -346,7 +348,7 @@ const Subscription = () => {
               disabled={processing}
               className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Rétrograder vers PLUS
+              {t('ui.downgradePlus')}
             </button>
           ) : (
             <div className="space-y-2">
@@ -372,13 +374,13 @@ const Subscription = () => {
         <div className="bg-white rounded-2xl border-2 border-primary-500 p-5 shadow-lg flex flex-col relative">
           <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
             <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">
-              Pour les passionnées
+              {t('ui.forEnthusiasts')}
             </span>
           </div>
 
           {isPro && (
             <div className="flex justify-center mb-3 mt-2">
-              <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-1 rounded-full">Plan actuel</span>
+              <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-1 rounded-full">{t('ui.currentPlan')}</span>
             </div>
           )}
 
@@ -389,22 +391,22 @@ const Subscription = () => {
               <span className="text-sm text-gray-500">/mois</span>
             </div>
             <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
-            <p className="text-sm text-gray-500">L'expérience ultime, sans limites.</p>
+            <p className="text-sm text-gray-500">{t('ui.proDesc')}</p>
           </div>
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
-            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>Tout le plan PLUS</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">Stock illimité</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>{t('ui.allOfPlus')}</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.unlimitedStash')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">15 Créations IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">30 questions IA / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">Studio Photo : 20 crédits / mois</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">15 traductions de patron / mois</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>Statistiques avancées</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>{t('ui.advancedStats')}</span></li>
           </ul>
 
           {isPro ? (
             <button disabled className="w-full py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold opacity-60 cursor-not-allowed">
-              Plan actuel
+              {t('ui.currentPlan')}
             </button>
           ) : (
             <div className="space-y-2">
@@ -430,8 +432,8 @@ const Subscription = () => {
       {/* Packs de crédits photos */}
       <div id="credits-packs" className="scroll-mt-20">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Besoin de plus de photos IA ?</h2>
-          <p className="text-sm text-gray-500">Crédits supplémentaires à la carte, sans abonnement, valables à vie</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">{t('ui.needMorePhotos')}</h2>
+          <p className="text-sm text-gray-500">{t('ui.extraCreditsDesc')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
@@ -449,8 +451,8 @@ const Subscription = () => {
             </div>
             <ul className="space-y-2 mb-5">
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">50 photos IA</span></li>
-              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">Valables à vie</span></li>
-              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">Cumulables avec vos crédits mensuels</span></li>
+              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.validForLife')}</span></li>
+              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.stackableCredits')}</span></li>
             </ul>
             <button onClick={() => handleBuyCredits(50)} disabled={processing} className="w-full py-2.5 border-2 border-primary-600 text-primary-600 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60">
               {processing ? 'Chargement…' : 'Acheter 50 crédits'}
@@ -460,7 +462,7 @@ const Subscription = () => {
           {/* Pack 150 */}
           <div className="bg-white rounded-2xl border-2 border-primary-500 p-6 shadow-md relative">
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-              <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">Meilleur prix</span>
+              <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">{t('ui.bestPrice')}</span>
             </div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -474,8 +476,8 @@ const Subscription = () => {
             </div>
             <ul className="space-y-2 mb-5">
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">150 photos IA</span></li>
-              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">Valables à vie</span></li>
-              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">Cumulables avec vos crédits mensuels</span></li>
+              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.validForLife')}</span></li>
+              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.stackableCredits')}</span></li>
             </ul>
             <button onClick={() => handleBuyCredits(150)} disabled={processing} className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition disabled:opacity-60">
               {processing ? 'Chargement…' : 'Acheter 150 crédits'}
@@ -486,7 +488,7 @@ const Subscription = () => {
 
       {/* FAQ */}
       <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 space-y-5">
-        <h2 className="font-bold text-gray-900 text-lg">Questions fréquentes</h2>
+        <h2 className="font-bold text-gray-900 text-lg">{t('ui.faq')}</h2>
 
         {[
           {
