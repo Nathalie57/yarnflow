@@ -2,6 +2,17 @@
  * @file projectTemplates.js
  * @brief Catégories de projet et suggestions de sections pour le wizard
  * @created 2026-01-27 by [AI:Claude]
+ * @modified 2026-08-03 by [AI:Claude] - Clés de traduction (i18n)
+ *
+ * [AI:Claude] Structure i18n :
+ *  - `id` / `presetKey` / `sectionKey` : clés STABLES, jamais affichées, servent
+ *    à retrouver le libellé traduit (namespace "projects", section wizard.*).
+ *  - `value` : valeur enregistrée en base comme type de projet — volontairement
+ *    NON traduite ici pour ne pas changer la donnée stockée. Le wizard affiche
+ *    la traduction via `id` mais enregistre toujours `value`.
+ *  - `sections[].name` : nom pré-rempli d'une section, traduit à l'usage via
+ *    `sectionKey` (contrairement à `value`, c'est du contenu propre au projet
+ *    de l'utilisatrice, qu'elle peut de toute façon éditer ensuite).
  */
 
 export const PROJECT_CATEGORIES = [
@@ -9,34 +20,33 @@ export const PROJECT_CATEGORIES = [
     id: 'vetements',
     value: 'Vêtements',
     icon: '🧥',
-    description: 'Pull, gilet, robe, t-shirt...',
     sectionPresets: [
       {
-        name: 'Pull',
+        presetKey: 'pull',
         icon: '🧶',
         sections: [
-          { name: 'Face', description: '', total_rows: null },
-          { name: 'Dos', description: '', total_rows: null },
-          { name: 'Manche gauche', description: '', total_rows: null },
-          { name: 'Manche droite', description: '', total_rows: null }
+          { sectionKey: 'face', description: '', total_rows: null },
+          { sectionKey: 'dos', description: '', total_rows: null },
+          { sectionKey: 'mancheGauche', description: '', total_rows: null },
+          { sectionKey: 'mancheDroite', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Gilet',
+        presetKey: 'gilet',
         icon: '🧥',
         sections: [
-          { name: 'Face gauche', description: '', total_rows: null },
-          { name: 'Face droite', description: '', total_rows: null },
-          { name: 'Dos', description: '', total_rows: null },
-          { name: 'Manche gauche', description: '', total_rows: null },
-          { name: 'Manche droite', description: '', total_rows: null }
+          { sectionKey: 'faceGauche', description: '', total_rows: null },
+          { sectionKey: 'faceDroite', description: '', total_rows: null },
+          { sectionKey: 'dos', description: '', total_rows: null },
+          { sectionKey: 'mancheGauche', description: '', total_rows: null },
+          { sectionKey: 'mancheDroite', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Personnalisé',
+        presetKey: 'custom',
         icon: '✨',
         sections: [
-          { name: '', description: '', total_rows: null }
+          { sectionKey: null, description: '', total_rows: null }
         ]
       }
     ]
@@ -45,51 +55,50 @@ export const PROJECT_CATEGORIES = [
     id: 'accessoires',
     value: 'Accessoires',
     icon: '👜',
-    description: 'Écharpe, snood, bonnet, sac...',
     sectionPresets: [
       {
-        name: 'Chaussettes',
+        presetKey: 'chaussettes',
         icon: '🧦',
         sections: [
-          { name: 'Chaussette gauche', description: '', total_rows: null },
-          { name: 'Chaussette droite', description: '', total_rows: null }
+          { sectionKey: 'chaussetteGauche', description: '', total_rows: null },
+          { sectionKey: 'chaussetteDroite', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Gants/Moufles',
+        presetKey: 'gants',
         icon: '🧤',
         sections: [
-          { name: 'Main gauche', description: '', total_rows: null },
-          { name: 'Main droite', description: '', total_rows: null }
+          { sectionKey: 'mainGauche', description: '', total_rows: null },
+          { sectionKey: 'mainDroite', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Écharpe',
+        presetKey: 'echarpe',
         icon: '🧣',
         sections: [
-          { name: 'Écharpe', description: '', total_rows: null }
+          { sectionKey: 'echarpe', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Bonnet',
+        presetKey: 'bonnet',
         icon: '🎩',
         sections: [
-          { name: 'Bonnet', description: '', total_rows: null }
+          { sectionKey: 'bonnet', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Sac',
+        presetKey: 'sac',
         icon: '👜',
         sections: [
-          { name: 'Corps du sac', description: '', total_rows: null },
-          { name: 'Anse(s)', description: '', total_rows: null }
+          { sectionKey: 'corpsDuSac', description: '', total_rows: null },
+          { sectionKey: 'anses', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Personnalisé',
+        presetKey: 'custom',
         icon: '✨',
         sections: [
-          { name: '', description: '', total_rows: null }
+          { sectionKey: null, description: '', total_rows: null }
         ]
       }
     ]
@@ -98,25 +107,24 @@ export const PROJECT_CATEGORIES = [
     id: 'jouets',
     value: 'Jouets/Peluches',
     icon: '🧸',
-    description: 'Amigurumi, doudou, personnage...',
     sectionPresets: [
       {
-        name: 'Amigurumi',
+        presetKey: 'amigurumi',
         icon: '🧸',
         sections: [
-          { name: 'Corps', description: '', total_rows: null },
-          { name: 'Tête', description: '', total_rows: null },
-          { name: 'Bras gauche', description: '', total_rows: null },
-          { name: 'Bras droit', description: '', total_rows: null },
-          { name: 'Jambe gauche', description: '', total_rows: null },
-          { name: 'Jambe droite', description: '', total_rows: null }
+          { sectionKey: 'corps', description: '', total_rows: null },
+          { sectionKey: 'tete', description: '', total_rows: null },
+          { sectionKey: 'brasGauche', description: '', total_rows: null },
+          { sectionKey: 'brasDroit', description: '', total_rows: null },
+          { sectionKey: 'jambeGauche', description: '', total_rows: null },
+          { sectionKey: 'jambeDroite', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Personnalisé',
+        presetKey: 'custom',
         icon: '✨',
         sections: [
-          { name: '', description: '', total_rows: null }
+          { sectionKey: null, description: '', total_rows: null }
         ]
       }
     ]
@@ -125,23 +133,22 @@ export const PROJECT_CATEGORIES = [
     id: 'vetements-bebe',
     value: 'Vêtements bébé',
     icon: '👶',
-    description: 'Brassière, chaussons, bonnet bébé...',
     sectionPresets: [
       {
-        name: 'Brassière',
+        presetKey: 'brassiere',
         icon: '👕',
         sections: [
-          { name: 'Face', description: '', total_rows: null },
-          { name: 'Dos', description: '', total_rows: null },
-          { name: 'Manche gauche', description: '', total_rows: null },
-          { name: 'Manche droite', description: '', total_rows: null }
+          { sectionKey: 'face', description: '', total_rows: null },
+          { sectionKey: 'dos', description: '', total_rows: null },
+          { sectionKey: 'mancheGauche', description: '', total_rows: null },
+          { sectionKey: 'mancheDroite', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Personnalisé',
+        presetKey: 'custom',
         icon: '✨',
         sections: [
-          { name: '', description: '', total_rows: null }
+          { sectionKey: null, description: '', total_rows: null }
         ]
       }
     ]
@@ -150,33 +157,32 @@ export const PROJECT_CATEGORIES = [
     id: 'accessoires-bebe',
     value: 'Accessoires bébé',
     icon: '🎀',
-    description: 'Chaussons, moufles, doudou...',
     sectionPresets: [
       {
-        name: 'Chaussons',
+        presetKey: 'chaussons',
         icon: '🧦',
         sections: [
-          { name: 'Chausson gauche', description: '', total_rows: null },
-          { name: 'Chausson droit', description: '', total_rows: null }
+          { sectionKey: 'chaussonGauche', description: '', total_rows: null },
+          { sectionKey: 'chaussonDroit', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Couverture/Nid d\'ange',
+        presetKey: 'couverture',
         icon: '🛏️',
         sections: []
       },
       {
-        name: 'Bonnet bébé',
+        presetKey: 'bonnetBebe',
         icon: '🧢',
         sections: [
-          { name: 'Bonnet', description: '', total_rows: null }
+          { sectionKey: 'bonnet', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Personnalisé',
+        presetKey: 'custom',
         icon: '✨',
         sections: [
-          { name: '', description: '', total_rows: null }
+          { sectionKey: null, description: '', total_rows: null }
         ]
       }
     ]
@@ -185,44 +191,43 @@ export const PROJECT_CATEGORIES = [
     id: 'vetements-enfant',
     value: 'Vêtements enfant',
     icon: '👧',
-    description: 'Pull, gilet, robe enfant (2-10 ans)...',
     sectionPresets: [
       {
-        name: 'Pull enfant',
+        presetKey: 'pullEnfant',
         icon: '🧶',
         sections: [
-          { name: 'Face', description: '', total_rows: null },
-          { name: 'Dos', description: '', total_rows: null },
-          { name: 'Manche gauche', description: '', total_rows: null },
-          { name: 'Manche droite', description: '', total_rows: null }
+          { sectionKey: 'face', description: '', total_rows: null },
+          { sectionKey: 'dos', description: '', total_rows: null },
+          { sectionKey: 'mancheGauche', description: '', total_rows: null },
+          { sectionKey: 'mancheDroite', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Gilet enfant',
+        presetKey: 'giletEnfant',
         icon: '🧥',
         sections: [
-          { name: 'Face gauche', description: '', total_rows: null },
-          { name: 'Face droite', description: '', total_rows: null },
-          { name: 'Dos', description: '', total_rows: null },
-          { name: 'Manche gauche', description: '', total_rows: null },
-          { name: 'Manche droite', description: '', total_rows: null }
+          { sectionKey: 'faceGauche', description: '', total_rows: null },
+          { sectionKey: 'faceDroite', description: '', total_rows: null },
+          { sectionKey: 'dos', description: '', total_rows: null },
+          { sectionKey: 'mancheGauche', description: '', total_rows: null },
+          { sectionKey: 'mancheDroite', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Robe enfant',
+        presetKey: 'robeEnfant',
         icon: '👗',
         sections: [
-          { name: 'Corsage', description: '', total_rows: null },
-          { name: 'Jupe', description: '', total_rows: null },
-          { name: 'Manche gauche', description: '', total_rows: null },
-          { name: 'Manche droite', description: '', total_rows: null }
+          { sectionKey: 'corsage', description: '', total_rows: null },
+          { sectionKey: 'jupe', description: '', total_rows: null },
+          { sectionKey: 'mancheGauche', description: '', total_rows: null },
+          { sectionKey: 'mancheDroite', description: '', total_rows: null }
         ]
       },
       {
-        name: 'Personnalisé',
+        presetKey: 'custom',
         icon: '✨',
         sections: [
-          { name: '', description: '', total_rows: null }
+          { sectionKey: null, description: '', total_rows: null }
         ]
       }
     ]
@@ -231,7 +236,6 @@ export const PROJECT_CATEGORIES = [
     id: 'maison',
     value: 'Maison/Déco',
     icon: '🏠',
-    description: 'Coussin, plaid, napperon...',
     sectionPresets: []
   }
 ]
