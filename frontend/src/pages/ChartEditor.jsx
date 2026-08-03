@@ -255,7 +255,7 @@ const ChartEditor = () => {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
         <p className="text-gray-500">{error || 'Grille introuvable'}</p>
         <Link to={`/projects/${projectId}`} className="text-primary-600 hover:text-primary-700 font-medium">
-          ← Retour au projet
+          {t('ui.backToProject')}
         </Link>
       </div>
     )

@@ -1219,7 +1219,7 @@ const Gallery = () => {
               {selectedContext && seasonStyles.includes(selectedContext.key) && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Ambiance saisonnière <span className="text-gray-400 font-normal">(optionnel)</span> :
+                    {t('ui.seasonalMoodOptional')} <span className="text-gray-400 font-normal">{t('ui.optionalParen')}</span> :
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {/* Option "Aucune" */}

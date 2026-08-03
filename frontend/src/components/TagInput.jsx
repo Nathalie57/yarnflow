@@ -153,7 +153,7 @@ const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder =
 
       {/* Aide */}
       <p className="text-xs text-gray-500">
-        Appuyez sur Entrée ou virgule pour ajouter un tag (2-50 caractères)
+        {t('ui.tagInputHint')}
       </p>
     </div>
   )

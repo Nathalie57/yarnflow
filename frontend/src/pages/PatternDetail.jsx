@@ -112,7 +112,7 @@ const PatternDetail = () => {
       {/* En-tête */}
       <div className="mb-6">
         <Link to="/my-patterns" className="text-primary-600 hover:underline mb-2 inline-block">
-          ← Retour à mes patrons
+          {t('ui.backToMyPatterns')}
         </Link>
         <div className="flex items-center gap-4 mb-2">
           <span className="text-5xl">{getTypeIcon(pattern.type)}</span>
@@ -238,7 +238,7 @@ const PatternDetail = () => {
         {/* Filigrane */}
         {pattern.watermark && (
           <div className="mt-8 pt-6 border-t text-center text-sm text-gray-500">
-            <p>Ce patron a été généré pour : {pattern.watermark}</p>
+            <p>{t('ui.generatedFor')} {pattern.watermark}</p>
             <p className="text-xs mt-1">{t('ui.noReproduction')}</p>
           </div>
         )}
@@ -250,7 +250,7 @@ const PatternDetail = () => {
           <h3 className="font-bold mb-2">{t('ui.technicalInfo')}</h3>
           <div className="space-y-1">
             <div>Provider IA : {pattern.ai_provider}</div>
-            {pattern.tokens_used && <div>Tokens utilisés : {pattern.tokens_used}</div>}
+            {pattern.tokens_used && <div>{t('ui.tokensUsedVal', { n: pattern.tokens_used })}</div>}
             {pattern.price_paid > 0 && <div>Prix payé : {pattern.price_paid.toFixed(2)} €</div>}
           </div>
         </div>

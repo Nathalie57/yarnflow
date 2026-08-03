@@ -223,7 +223,7 @@ export default function YarnCalculator() {
               {estimatedMeters.toLocaleString('fr-FR')} m
             </p>
             <p className="text-xs text-primary-500 mt-1">
-              Estimation indicative — peut varier selon la densité du point et le modèle.
+              {t('ui.estimateDisclaimer')}
             </p>
           </div>
 

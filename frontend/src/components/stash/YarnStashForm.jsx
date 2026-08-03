@@ -217,7 +217,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               onClick={() => openPhotoInput('main', galleryInputRef)}
               className="w-full mt-2 text-xs text-gray-400 hover:text-primary-600 transition-colors"
             >
-              ou importer une photo existante
+              {t('ui.orImportExisting')}
             </button>
           )}
 
@@ -248,7 +248,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   onClick={() => openPhotoInput('extra', fileInputRef)}
                   className="text-primary-500 hover:text-primary-700 font-medium"
                 >
-                  + Ajouter une 2e photo (si l'étiquette ne tenait pas entièrement dans le cadre)
+                  {t('ui.addSecondPhoto')}
                 </button>
                 <span className="text-gray-300">·</span>
                 <button
@@ -527,7 +527,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                 onClick={() => openPhotoInput('main', galleryInputRef)}
                 className="w-full mt-2 text-xs text-gray-400 hover:text-primary-600 transition-colors"
               >
-                ou importer une photo existante
+                {t('ui.orImportExisting')}
               </button>
             </>
           )}
@@ -559,7 +559,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   onClick={() => openPhotoInput('extra', fileInputRef)}
                   className="text-primary-500 hover:text-primary-700 font-medium"
                 >
-                  + Ajouter une 2e photo (si l'étiquette ne tenait pas entièrement dans le cadre)
+                  {t('ui.addSecondPhoto')}
                 </button>
                 <span className="text-gray-300">·</span>
                 <button

@@ -99,7 +99,7 @@ const ImageLightbox = ({ src, alt, onClose }) => {
             onClick={downloadImage}
             className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 text-sm font-medium transition"
           >
-            📥 Télécharger
+            {t('ui.downloadEmoji')}
           </button>
         </div>
 
@@ -107,7 +107,7 @@ const ImageLightbox = ({ src, alt, onClose }) => {
           onClick={onClose}
           className="px-4 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium transition"
         >
-          ✕ Fermer
+          {t('ui.closeX')}
         </button>
       </div>
 
@@ -133,7 +133,7 @@ const ImageLightbox = ({ src, alt, onClose }) => {
 
       {/* Aide */}
       <div className="bg-gray-900 border-t border-gray-700 p-2 text-xs text-gray-400 text-center">
-        💡 Cliquez en dehors de l'image ou appuyez sur Echap pour fermer
+        {t('ui.clickOutsideToClose')}
       </div>
     </div>
   )

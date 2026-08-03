@@ -153,7 +153,7 @@ export default function GaugeCalculator() {
                   onClick={() => setShowSaveModal(true)}
                   className="w-full py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
                 >
-                  Enregistrer l'échantillon dans un projet →
+                  {t('ui.saveGaugeToProjectArrow')}
                 </button>
               )}
             </div>
@@ -201,7 +201,7 @@ export default function GaugeCalculator() {
           <div>
             <p className="text-xs text-gray-500 mb-3">{t('ui.myOwnGauge')}</p>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mes mailles / 10 cm</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.myStitchesPer10')}</label>
               <input
                 type="number"
                 min="1"

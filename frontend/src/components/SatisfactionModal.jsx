@@ -136,7 +136,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
             disabled={submitting}
           />
           <p className="text-xs text-gray-500">
-            💡 Votre retour nous aide à améliorer le service
+            {t('ui.feedbackHelps')}
           </p>
         </div>
 

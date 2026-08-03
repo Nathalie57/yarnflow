@@ -88,7 +88,7 @@ export default function RemainingYarn() {
           </div>
 
           <div className="bg-primary-50 rounded-xl px-4 py-3 text-xs text-primary-700">
-            Densité : {metersPerGram.toFixed(2)} m/g · Il reste {remaining}g sur {total}g
+            {t('ui.densityLine', { mpg: metersPerGram.toFixed(2), remaining, total })}
           </div>
         </div>
       )}

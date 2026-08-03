@@ -150,7 +150,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
         {error && !metadata && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
             <p className="text-xs text-yellow-800">
-              ⚠️ Impossible de charger l'aperçu de ce site
+              {t('ui.cantLoadSitePreview')}
             </p>
           </div>
         )}
@@ -171,7 +171,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
               rel="noopener noreferrer"
               className="block w-full text-center px-6 py-2 border-2 border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition font-medium text-sm"
             >
-              🔗 Ou ouvrir dans un nouvel onglet
+              {t('ui.orOpenNewTab')}
             </a>
           )}
         </div>

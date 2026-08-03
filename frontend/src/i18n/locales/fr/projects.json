@@ -302,6 +302,8 @@
     "seePlans": "Voir les plans",
     "removeX": "✕ Supprimer",
     "selected": "Sélectionné",
-    "previous": "← Précédent"
+    "previous": "← Précédent",
+    "createProjectPlus": "➕ Créer un projet",
+    "addPhotoCamera": "📷 Ajouter une photo"
   }
 }

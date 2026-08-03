@@ -172,7 +172,7 @@ const ImportPartnerPattern = () => {
 
         {!user && (
           <p className="text-center text-xs text-gray-400 mt-3">
-            Déjà un compte ?{' '}
+            {t('ui.alreadyHaveAccount')}{' '}
             <button
               onClick={() => {
                 localStorage.setItem(PENDING_IMPORT_KEY, code)

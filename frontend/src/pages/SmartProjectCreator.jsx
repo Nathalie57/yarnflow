@@ -300,7 +300,7 @@ export default function SmartProjectCreator() {
             onClick={() => navigate('/my-projects')}
             className="text-primary-600 hover:text-primary-700 mb-4 flex items-center gap-2"
           >
-            ← Retour aux projets
+            {t('ui.backToProjectsArrow')}
           </button>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -434,7 +434,7 @@ export default function SmartProjectCreator() {
                   <div className="text-center py-8">
                     <p className="text-gray-500 mb-4">{t('ui.noPdfPattern')}</p>
                     <Link to="/pattern-library" className="text-primary-600 hover:text-primary-700 font-medium">
-                      Aller à la bibliothèque →
+                      {t('ui.goToLibraryArrow')}
                     </Link>
                   </div>
                 ) : (
@@ -559,7 +559,7 @@ export default function SmartProjectCreator() {
                   onClick={() => setStep(3)}
                   className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 flex items-center justify-center gap-2"
                 >
-                  Continuer avec l'analyse précédente →
+                  {t('ui.continuePrevAnalysis')}
                 </button>
               ) : (
                 <button
@@ -779,7 +779,7 @@ export default function SmartProjectCreator() {
                   onClick={addSection}
                   className="px-3 py-1 text-sm bg-primary-600 text-white rounded-xl hover:bg-primary-700"
                 >
-                  + Ajouter
+                  {t('ui.addPlus')}
                 </button>
               </div>
 
@@ -880,7 +880,7 @@ export default function SmartProjectCreator() {
                 onClick={() => navigate(`/projects/${createdProject.id}`)}
                 className="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700"
               >
-                Ouvrir le projet →
+                {t('ui.openProjectArrow')}
               </button>
 
               <button

@@ -644,7 +644,7 @@ const PatternLibrary = () => {
                 onClick={resetFilters}
                 className="px-3 py-1.5 rounded-full text-sm font-medium text-red-600 hover:bg-red-50 transition"
               >
-                ✕ Réinitialiser
+                {t('ui.resetX')}
               </button>
             )}
           </div>
@@ -707,7 +707,7 @@ const PatternLibrary = () => {
 
                 {/* Mention discrète des projets */}
                 <p className="text-sm text-gray-500">
-                  Envie de compter vos rangs ? <Link to="/projects" className="text-primary-600 hover:text-primary-700 underline">{t('ui.createProject')}</Link>
+                  {t('ui.wantToCountRows')} <Link to="/projects" className="text-primary-600 hover:text-primary-700 underline">{t('ui.createProject')}</Link>
                 </p>
               </div>
             )
@@ -1059,7 +1059,7 @@ const PatternLibrary = () => {
               {addType === 'text' && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Texte du patron <span className="text-red-600">*</span>
+                    {t('ui.patternTextLabel')} <span className="text-red-600">*</span>
                   </label>
                   <textarea
                     value={formData.pattern_text}
@@ -1086,7 +1086,7 @@ const PatternLibrary = () => {
               {/* Nom */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom du patron <span className="text-red-600">*</span>
+                  {t('ui.patternNameLabel')} <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -1195,7 +1195,7 @@ const PatternLibrary = () => {
               {(!formData.category || !formData.technique || !formData.difficulty) && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>{t('ui.tip')}</strong> Remplir la catégorie, la technique et le niveau facilite la recherche et le filtrage de vos patrons.
+                    <strong>{t('ui.tip')}</strong> {t('ui.metadataHelpsSearch')}
                   </p>
                 </div>
               )}
@@ -1316,7 +1316,7 @@ const PatternLibrary = () => {
                   )}
                   {editingPattern.source_type !== 'file' && (
                     <p className="text-xs text-gray-600 mb-3">
-                      Vous changez le type de patron vers "Fichier". Un fichier est requis.
+                      {t('ui.switchingToFile')}
                     </p>
                   )}
                   <input
@@ -1389,7 +1389,7 @@ const PatternLibrary = () => {
               {editType === 'text' && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Texte du patron <span className="text-red-600">*</span>
+                    {t('ui.patternTextLabel')} <span className="text-red-600">*</span>
                   </label>
                   <textarea
                     value={formData.pattern_text}
@@ -1412,7 +1412,7 @@ const PatternLibrary = () => {
               {/* Nom */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom du patron <span className="text-red-600">*</span>
+                  {t('ui.patternNameLabel')} <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -1521,7 +1521,7 @@ const PatternLibrary = () => {
               {(!formData.category || !formData.technique || !formData.difficulty) && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>{t('ui.tip')}</strong> Remplir la catégorie, la technique et le niveau facilite la recherche et le filtrage de vos patrons.
+                    <strong>{t('ui.tip')}</strong> {t('ui.metadataHelpsSearch')}
                   </p>
                 </div>
               )}

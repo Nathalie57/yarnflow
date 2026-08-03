@@ -59,7 +59,7 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
               onClick={onUploadClick}
               className="w-full px-6 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-lg shadow-md"
             >
-              📤 Uploader le PDF du patron
+              {t('ui.uploadPatternPdf')}
             </button>
           )}
 

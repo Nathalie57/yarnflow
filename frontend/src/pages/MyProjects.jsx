@@ -1049,7 +1049,7 @@ const MyProjects = () => {
                     onClick={() => setShowCreateModal(true)}
                     className="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
                   >
-                    ➕ Créer un projet
+                    {t('ui.createProjectPlus')}
                   </button>
                 )}
               </div>
@@ -1546,7 +1546,7 @@ const MyProjects = () => {
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold">
-                📷 Ajouter une photo
+                {t('ui.addPhotoCamera')}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {selectedProjectForPhoto?.name}

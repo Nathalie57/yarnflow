@@ -423,7 +423,7 @@ const PatternLibraryDetail = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('ui.patternNotFound')}</h2>
           <p className="text-gray-600 mb-6">{error || t('ui.patternNotFound')}</p>
           <Link to="/pattern-library" className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition inline-block">
-            ← Retour à la bibliothèque
+            {t('ui.backToLibrary')}
           </Link>
         </div>
       </div>
@@ -748,7 +748,7 @@ const PatternLibraryDetail = () => {
                   onClick={() => setShowAddNote(true)}
                   className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  + Ajouter
+                  {t('ui.addPlus')}
                 </button>
               )}
             </div>
@@ -756,10 +756,10 @@ const PatternLibraryDetail = () => {
             {!isPro ? (
               <div>
                 <p className="text-xs text-gray-500 mb-2">
-                  Notez vos adaptations pour chaque utilisation — aiguilles, modifications du patron, fil substitué…
+                  {t('ui.noteAdaptations')}
                 </p>
                 <Link to="/subscription" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
-                  Passer à PRO — 6,99€/mois
+                  {t('ui.goProPrice')}
                 </Link>
               </div>
             ) : (

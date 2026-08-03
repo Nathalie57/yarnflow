@@ -123,7 +123,7 @@ export default function AiAssistant() {
           to="/subscription"
           className="inline-block bg-primary-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
         >
-          Passer à PRO — 6,99€/mois
+          {t('ui.goProPrice')}
         </Link>
         <p className="text-xs text-gray-400">{t('ui.quotaResets')}</p>
       </div>
@@ -137,7 +137,7 @@ export default function AiAssistant() {
         {messages.length === 0 ? (
           <div className="space-y-4 py-2">
             <p className="text-sm text-gray-500 text-center">
-              Posez votre question sur le tricot ou le crochet 🧶
+              {t('ui.askYourQuestion')}
             </p>
             <div className="grid grid-cols-1 gap-2">
               {SUGGESTION_KEYS.map(k => t(`ui.${k}`)).map(s => (

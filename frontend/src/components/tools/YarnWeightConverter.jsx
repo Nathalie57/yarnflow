@@ -76,7 +76,7 @@ export default function YarnWeightConverter() {
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-500">
-        Les noms varient selon les marques — utilisez les aiguilles recommandées comme référence principale.
+        {t('ui.namesVaryByBrand')}
       </p>
 
       {WEIGHTS.map((w, i) => (

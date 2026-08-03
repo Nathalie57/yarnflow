@@ -300,7 +300,7 @@ const ProjectCharts = () => {
                     className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                   />
                   <p className="text-xs text-gray-400 mt-1">
-                    Convertit n'importe quelle image (photo, logo, dessin) en motif jacquard façon pixelart. Ce n'est pas un diagramme existant qui est détecté — c'est une nouvelle grille créée à partir de l'image. Le résultat peut nécessiter quelques ajustements à la main (retoucher des cases, fusionner des couleurs).
+                    {t('ui.convertsAnyImage')}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
