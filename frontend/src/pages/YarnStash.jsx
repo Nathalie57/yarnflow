@@ -320,7 +320,7 @@ const YarnStash = () => {
         ) : entries.length === 0 ? (
           <div className="text-center py-16">
             <p className="font-semibold text-gray-700 mb-2">{t('ui.emptyStash')}</p>
-            <p className="text-sm text-gray-400">{t('ui.emptyStashDesc')}</p>
+            <p className="text-sm text-gray-500">{t('ui.emptyStashDesc')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -418,7 +418,7 @@ const YarnStash = () => {
                   ))}
                 </select>
                 {activeProjects.length === 0 && (
-                  <p className="text-xs text-gray-400 mt-1">{t('ui.noActiveProject')}</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('ui.noActiveProject')}</p>
                 )}
               </div>
 

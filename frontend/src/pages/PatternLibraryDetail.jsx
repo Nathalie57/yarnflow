@@ -1063,7 +1063,7 @@ const PatternLibraryDetail = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                 </svg>
                 <p className="text-sm text-gray-600 mb-1">{t('ui.dragFilesHere')}</p>
-                <p className="text-xs text-gray-400 mb-3">{t('ui.pdfJpgPngWebp')}</p>
+                <p className="text-xs text-gray-500 mb-3">{t('ui.pdfJpgPngWebp')}</p>
                 <label className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 cursor-pointer transition">
                   <input
                     type="file"

@@ -536,7 +536,7 @@ const Stats = () => {
                     <div>
                       <p className="text-xs text-gray-500 mb-0.5">{t('ui.bestHour')}</p>
                       <p className="text-2xl font-bold text-gray-900 tabular-nums">{stats.best_hour}h – {stats.best_hour + 1}h</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{t('ui.fastestSlot')}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{t('ui.fastestSlot')}</p>
                     </div>
                   </div>
                 )}
@@ -585,7 +585,7 @@ const Stats = () => {
                   >
                     {t('ui.unlockWithPro')}
                   </Link>
-                  <p className="text-xs text-gray-400 mt-2">{t('ui.cancelAnytime')}</p>
+                  <p className="text-xs text-gray-500 mt-2">{t('ui.cancelAnytime')}</p>
                 </div>
               </div>
             )}
@@ -615,7 +615,7 @@ const Stats = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400 mb-4">{t('ui.keepKnittingForBadges')}</p>
+                <p className="text-sm text-gray-500 mb-4">{t('ui.keepKnittingForBadges')}</p>
               )}
 
               {/* Badges PRO verrouillés — visibles en grisé pour les FREE */}
@@ -707,7 +707,7 @@ const Stats = () => {
                     {notEarnedBadges.map((badge) => (
                       <div key={badge.id} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
                         <div className="font-semibold text-sm mb-0.5 text-gray-600">{t(`badges.${badge.id}.title`)}</div>
-                        <div className="text-xs text-gray-400 mb-2">{t(`badges.${badge.id}.desc`)}</div>
+                        <div className="text-xs text-gray-500 mb-2">{t(`badges.${badge.id}.desc`)}</div>
                         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary-400 rounded-full transition-all"

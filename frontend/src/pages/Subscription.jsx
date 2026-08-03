@@ -244,7 +244,7 @@ const Subscription = () => {
               {subscription?.expires_at && (
                 <p className="text-xs text-primary-600">{t('ui.renewsOn', { date: new Date(subscription.expires_at).toLocaleDateString(i18n.language) })}</p>
               )}
-              <p className="text-xs text-gray-400 mt-0.5">{t('ui.proUpgradeNote')}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('ui.proUpgradeNote')}</p>
             </div>
           </div>
           <button
@@ -300,7 +300,7 @@ const Subscription = () => {
           </div>
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
-            <li className="flex items-start gap-2"><Check /><span>{t('ui.unlimitedProjectsPatterns')} <span className="text-gray-400 text-xs">{t('ui.filesQuota')}</span></span></li>
+            <li className="flex items-start gap-2"><Check /><span>{t('ui.unlimitedProjectsPatterns')} <span className="text-gray-500 text-xs">{t('ui.filesQuota')}</span></span></li>
             <li className="flex items-start gap-2"><Check /><span>{t('ui.oneCounterPerProject')}</span></li>
             <li className="flex items-start gap-2"><Check /><span>{t('ui.notesPerSection')}</span></li>
             <li className="flex items-start gap-2"><Check /><span>{t('ui.aiCreations3Free')}</span></li>

@@ -519,7 +519,7 @@ export default function SmartProjectCreator() {
             {/* Taille (optionnel, pour patrons multi-tailles) */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('ui.mySize')} <span className="text-gray-400 font-normal">{t('ui.sizeOptionalHint')}</span>
+                {t('ui.mySize')} <span className="text-gray-500 font-normal">{t('ui.sizeOptionalHint')}</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(s => (

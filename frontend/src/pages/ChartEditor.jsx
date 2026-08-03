@@ -247,7 +247,7 @@ const ChartEditor = () => {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400">{t('ui.loadingChart')}</div>
+    return <div className="min-h-screen flex items-center justify-center text-gray-500">{t('ui.loadingChart')}</div>
   }
 
   if (error || !chart) {
@@ -366,7 +366,7 @@ const ChartEditor = () => {
                 title={t('ui.addColor')}
               >＋</button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">{t('ui.doubleClickColor')}</p>
+            <p className="text-xs text-gray-500 mt-2">{t('ui.doubleClickColor')}</p>
           </div>
         )}
 

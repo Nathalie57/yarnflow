@@ -106,7 +106,7 @@ const Landing = () => {
               </Link>
             </div>
 
-            <p className="text-sm text-gray-400 mb-4">{t('hero.reassurance')}</p>
+            <p className="text-sm text-gray-500 mb-4">{t('hero.reassurance')}</p>
 
             <div className="flex items-center justify-center md:justify-start text-sm text-gray-500">
               <a
@@ -371,7 +371,7 @@ const Landing = () => {
               </div>
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-4">{t('assistant.quota')}</p>
+          <p className="text-xs text-gray-500 mt-4">{t('assistant.quota')}</p>
         </div>
       </section>
 
@@ -410,7 +410,7 @@ const Landing = () => {
 
             {/* FREE */}
             <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{t('pricing.free.name')}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{t('pricing.free.name')}</p>
               <div className="text-4xl font-bold text-gray-900 mb-1">0€</div>
               <p className="text-sm text-gray-500 mb-6">{t('pricing.free.desc')}</p>
               <ul className="space-y-3 mb-8">
@@ -462,7 +462,7 @@ const Landing = () => {
                   {t('pricing.plus.ctaMonthly')}
                 </Link>
               </div>
-              <p className="text-xs text-gray-400 text-center mt-1">{t('pricing.noCommitment')}</p>
+              <p className="text-xs text-gray-500 text-center mt-1">{t('pricing.noCommitment')}</p>
             </div>
 
             {/* PRO */}
@@ -523,7 +523,7 @@ const Landing = () => {
                   {t('pricing.pro.ctaMonthly')}
                 </Link>
               </div>
-              <p className="text-xs text-gray-400 text-center mt-2">{t('pricing.noCommitment')}</p>
+              <p className="text-xs text-gray-500 text-center mt-2">{t('pricing.noCommitment')}</p>
             </div>
           </div>
         </div>

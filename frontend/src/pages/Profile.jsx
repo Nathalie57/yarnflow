@@ -353,7 +353,7 @@ const Profile = () => {
                     </p>
                   </div>
                   {permission === 'denied' ? (
-                    <span className="text-xs text-gray-400 flex-shrink-0">{t('ui.reserved')}</span>
+                    <span className="text-xs text-gray-500 flex-shrink-0">{t('ui.reserved')}</span>
                   ) : (
                     <button
                       onClick={isSubscribed ? unsubscribe : subscribe}

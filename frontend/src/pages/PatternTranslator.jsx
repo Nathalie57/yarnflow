@@ -327,7 +327,7 @@ export default function PatternTranslator() {
             onChange={e => setUrl(e.target.value)}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary-400"
           />
-          <p className="text-xs text-gray-400 -mt-4">{t('ui.urlImportHint')}</p>
+          <p className="text-xs text-gray-500 -mt-4">{t('ui.urlImportHint')}</p>
         </>
       )}
 
@@ -340,7 +340,7 @@ export default function PatternTranslator() {
             rows={12}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary-400 resize-y"
           />
-          <p className="text-xs text-gray-400 -mt-4">{t('ui.translatorDisclaimer')}</p>
+          <p className="text-xs text-gray-500 -mt-4">{t('ui.translatorDisclaimer')}</p>
         </>
       )}
 

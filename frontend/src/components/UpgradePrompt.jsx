@@ -181,7 +181,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             {content.plan === 'plus' ? t('ui.seePlans') : t('ui.goPro')}
           </button>
         </div>
-        <p className="text-xs text-gray-400 text-center -mt-2">{t('ui.noCommitment')}</p>
+        <p className="text-xs text-gray-500 text-center -mt-2">{t('ui.noCommitment')}</p>
       </div>
     </div>
   )

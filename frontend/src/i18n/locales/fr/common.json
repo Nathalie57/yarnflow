@@ -46,7 +46,7 @@
   },
   "pwa": {
     "installTitle": "Installer YarnFlow",
-    "installDesc": "Ajoutez YarnFlow à votre écran d'accueil pour un accès rapide et une expérience optimale !",
+    "installDesc": "Ajoute YarnFlow à ton écran d'accueil pour un accès rapide et une expérience optimale !",
     "install": "Installer",
     "later": "Plus tard",
     "updateTitle": "Mise à jour disponible",
@@ -56,7 +56,7 @@
   },
   "errorBoundary": {
     "title": "⚠️ Une erreur s'est produite",
-    "description": "Désolé, quelque chose s'est mal passé. Essayez de rafraîchir la page.",
+    "description": "Désolé, quelque chose s'est mal passé. Essaie de rafraîchir la page.",
     "technicalDetails": "Détails techniques (pour le debug)",
     "refresh": "🔄 Rafraîchir la page",
     "backToProjects": "← Retour aux projets"

@@ -42,7 +42,8 @@
     "newProject": "New project",
     "filterSort": "Filter and sort",
     "changePhoto": "Change photo",
-    "open": "Open"
+    "open": "Open",
+    "demoBadge": "⚡ Fastest way"
   },
   "status": {
     "in_progress": "In progress",

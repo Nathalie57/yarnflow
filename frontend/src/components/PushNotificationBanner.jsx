@@ -5,9 +5,14 @@ import { useTranslation } from 'react-i18next'
 const STORAGE_KEY = 'push_prompt_dismissed_at'
 const COOLDOWN_DAYS = 21
 
+const HAS_PROJECTS_KEY = 'yf_has_projects'
+
 const shouldShowBanner = () => {
   if (!('Notification' in window)) return false
   if (Notification.permission !== 'default') return false
+  // [AI:Claude] Pas avant le premier projet : demander la permission a quelqu'un
+  // qui vient d'arriver et n'a rien cree fait chuter le taux d'acceptation.
+  if (!localStorage.getItem(HAS_PROJECTS_KEY)) return false
 
   const dismissedAt = localStorage.getItem(STORAGE_KEY)
   if (!dismissedAt) return true

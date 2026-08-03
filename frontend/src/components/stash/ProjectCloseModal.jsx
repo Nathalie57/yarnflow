@@ -51,7 +51,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">{t('ui.closeProject')}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{t('ui.indicateBallsUsed')}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{t('ui.indicateBallsUsed')}</p>
         </div>
 
         <div className="p-5 space-y-4">
@@ -75,7 +75,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
                         <p className="text-sm font-medium text-gray-800">{a.brand} — {a.yarn_name}</p>
                         {a.color_name && <p className="text-xs text-gray-400">{a.color_name}</p>}
                       </div>
-                      <span className="text-xs text-gray-400">{t('ui.reservedCount', { count: a.quantity_reserved })}</span>
+                      <span className="text-xs text-gray-500">{t('ui.reservedCount', { count: a.quantity_reserved })}</span>
                     </div>
 
                     <div className="flex items-center gap-3">

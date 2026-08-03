@@ -130,7 +130,7 @@ const Register = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2">{t('register.firstName')} <span className="text-gray-400 text-sm">{t('register.optional')}</span></label>
+            <label className="block text-gray-700 mb-2">{t('register.firstName')} <span className="text-gray-500 text-sm">{t('register.optional')}</span></label>
             <input
               type="text"
               name="first_name"

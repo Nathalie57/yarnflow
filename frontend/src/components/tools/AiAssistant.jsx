@@ -125,7 +125,7 @@ export default function AiAssistant() {
         >
           {t('ui.goProPrice')}
         </Link>
-        <p className="text-xs text-gray-400">{t('ui.quotaResets')}</p>
+        <p className="text-xs text-gray-500">{t('ui.quotaResets')}</p>
       </div>
     )
   }

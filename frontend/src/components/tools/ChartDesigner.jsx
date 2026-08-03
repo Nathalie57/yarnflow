@@ -286,7 +286,7 @@ export default function ChartDesigner() {
         <div className="bg-white rounded-2xl shadow-sm p-4">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('ui.myCharts')}</p>
           {loadingMyCharts ? (
-            <p className="text-sm text-gray-400">{t('ui.loading')}</p>
+            <p className="text-sm text-gray-500">{t('ui.loading')}</p>
           ) : myCharts.length === 0 ? (
             <p className="text-sm text-gray-500">{t('ui.noChartsYet')}</p>
           ) : (
@@ -314,7 +314,7 @@ export default function ChartDesigner() {
                   >
                     <div>
                       <p className="text-sm font-medium text-gray-900">{c.name}</p>
-                      <p className="text-xs text-gray-400">{t('ui.noProjectSize', { w: c.width, h: c.height })}</p>
+                      <p className="text-xs text-gray-500">{t('ui.noProjectSize', { w: c.width, h: c.height })}</p>
                     </div>
                     <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </button>
@@ -574,7 +574,7 @@ export default function ChartDesigner() {
             title={t('ui.addColor')}
           >＋</button>
         </div>
-        <p className="text-xs text-gray-400 mt-2">{t('ui.colorMergeHint')}</p>
+        <p className="text-xs text-gray-500 mt-2">{t('ui.colorMergeHint')}</p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">

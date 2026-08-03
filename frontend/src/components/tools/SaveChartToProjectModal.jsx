@@ -105,7 +105,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
         </div>
 
         {loadingProjects ? (
-          <p className="text-sm text-gray-400">{t('ui.loadingProjects')}</p>
+          <p className="text-sm text-gray-500">{t('ui.loadingProjects')}</p>
         ) : projects.length === 0 ? (
           <p className="text-sm text-gray-500">{t('ui.noProjectFound')}</p>
         ) : (
@@ -132,7 +132,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.sectionOptional')}</label>
                 {loadingSections ? (
-                  <p className="text-xs text-gray-400">{t('ui.loadingSections')}</p>
+                  <p className="text-xs text-gray-500">{t('ui.loadingSections')}</p>
                 ) : sections.length === 0 ? (
                   <p className="text-xs text-gray-500">{t('ui.noSectionChart')}</p>
                 ) : (

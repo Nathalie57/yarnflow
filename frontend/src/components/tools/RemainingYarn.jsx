@@ -61,7 +61,7 @@ export default function RemainingYarn() {
           placeholder={t('ui.phEx43')}
           className="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-400"
         />
-        <p className="text-xs text-gray-400 mt-1">{t('ui.weighPartialBall')}</p>
+        <p className="text-xs text-gray-500 mt-1">{t('ui.weighPartialBall')}</p>
       </div>
 
       {/* Résultats */}

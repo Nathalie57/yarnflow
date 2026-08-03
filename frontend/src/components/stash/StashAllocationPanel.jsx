@@ -83,7 +83,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <div>
           <h2 className="font-semibold text-gray-900">{t('ui.pickFromStash')}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{t('ui.reserveBalls')}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{t('ui.reserveBalls')}</p>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -183,7 +183,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{e.brand} — {e.yarn_name}</p>
-                        <p className="text-xs text-gray-400">{t('ui.availableCount', { count: e.quantity_available })}</p>
+                        <p className="text-xs text-gray-500">{t('ui.availableCount', { count: e.quantity_available })}</p>
                       </div>
                     </button>
                   ))}

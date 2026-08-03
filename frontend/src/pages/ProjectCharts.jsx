@@ -153,7 +153,7 @@ const ProjectCharts = () => {
         )}
 
         {loading ? (
-          <p className="text-center text-gray-400 py-8">{t('ui.loading')}</p>
+          <p className="text-center text-gray-500 py-8">{t('ui.loading')}</p>
         ) : (
           <div className="space-y-2">
             {charts.map(c => (

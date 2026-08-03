@@ -501,7 +501,7 @@ const Gallery = () => {
                     <Link to="/subscription#credits" className="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition">
                       {t('ui.buyCredits')}
                     </Link>
-                    <span className="text-xs text-gray-400">{user?.subscription_expires_at ? t('ui.refillOnDay', { day: new Date(user.subscription_expires_at).getDate() }) : t('ui.refillNextRenewal')}</span>
+                    <span className="text-xs text-gray-500">{user?.subscription_expires_at ? t('ui.refillOnDay', { day: new Date(user.subscription_expires_at).getDate() }) : t('ui.refillNextRenewal')}</span>
                   </div>
                 )
               })()}
@@ -1053,7 +1053,7 @@ const Gallery = () => {
               {/* Projet (optionnel) - PLACÉ EN PREMIER */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <span className="text-gray-400">{t('ui.optional')}</span>
+                  <span className="text-gray-500">{t('ui.optional')}</span>
                 </label>
                 <select
                   value={selectedProjectId}
@@ -1179,7 +1179,7 @@ const Gallery = () => {
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className={`font-medium ${style.locked ? 'text-gray-400' : 'text-gray-900'}`}>{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</p>
+                          <p className={`font-medium ${style.locked ? 'text-gray-500' : 'text-gray-900'}`}>{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</p>
                           {style.locked && style.tier === 'pro' && (
                             <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-600 rounded font-semibold">{t('ui.planPro')}</span>
                           )}
@@ -1187,7 +1187,7 @@ const Gallery = () => {
                             <span className="text-xs px-2 py-0.5 bg-violet-100 text-violet-600 rounded font-semibold">{t('ui.planPlus')}</span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-400">{t(`photoStyles.${style.key}.desc`, { ns: 'common' })}</p>
+                        <p className="text-sm text-gray-500">{t(`photoStyles.${style.key}.desc`, { ns: 'common' })}</p>
                       </div>
                     </label>
                   ))}
@@ -1219,7 +1219,7 @@ const Gallery = () => {
               {selectedContext && seasonStyles.includes(selectedContext.key) && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    {t('ui.seasonalMoodOptional')} <span className="text-gray-400 font-normal">{t('ui.optionalParen')}</span> :
+                    {t('ui.seasonalMoodOptional')} <span className="text-gray-500 font-normal">{t('ui.optionalParen')}</span> :
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {/* Option "Aucune" */}

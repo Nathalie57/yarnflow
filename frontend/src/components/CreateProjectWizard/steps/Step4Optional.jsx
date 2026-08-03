@@ -104,7 +104,7 @@ const Step4Optional = ({
         <div className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
           <div>
             <span className="text-sm font-medium text-gray-700">Tags</span>
-            <p className="text-xs text-gray-400 mt-0.5">{t('ui.tagsHint')}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{t('ui.tagsHint')}</p>
           </div>
           <button
             type="button"
@@ -151,7 +151,7 @@ const Step4Optional = ({
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
             </svg>
             <span className="text-xs font-medium text-gray-700">Fichier</span>
-            <span className="text-xs text-gray-400">{t('ui.pdfOrImageHint')}</span>
+            <span className="text-xs text-gray-500">{t('ui.pdfOrImageHint')}</span>
             {patternFile && (
               <span className="text-xs text-primary-600 truncate max-w-full">
                 {patternFile.name.length > 15 ? patternFile.name.substring(0, 15) + '…' : patternFile.name}

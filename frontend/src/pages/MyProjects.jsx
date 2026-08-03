@@ -261,6 +261,10 @@ const MyProjects = () => {
 
       setProjects(response.data.projects || [])
 
+      // [AI:Claude] Sert a n'afficher la demande de notifications qu'apres le premier
+      // projet. Pose ici et pas a la creation : couvre aussi les comptes existants.
+      if ((response.data.projects || []).length > 0) localStorage.setItem('yf_has_projects', '1')
+
       // [AI:Claude] Extraire tous les tags disponibles pour le filtrage
       if (response.data.projects) {
         const allTags = {}
@@ -921,20 +925,45 @@ const MyProjects = () => {
                 <p className="text-gray-500 text-sm">{t('myProjects.whereToStart')}</p>
               </div>
 
-              {/* Création Intelligente — CTA principal */}
+              {/* Explorer avec un exemple — CTA principal : aucun prerequis */}
               <button
-                onClick={() => navigate('/smart-project-creator')}
-                className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-left transition shadow-md hover:shadow-lg group"
+                onClick={handleCreateDemoProject}
+                disabled={isCreatingDemo}
+                className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-left transition shadow-md hover:shadow-lg group disabled:opacity-60"
               >
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white text-base mb-1">{t('myProjects.startSmart')}</p>
-                    <p className="text-primary-100 text-sm leading-relaxed">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-bold text-white text-base">{isCreatingDemo ? t('myProjects.exploreDemoCreating') : t('myProjects.exploreDemo')}</p>
+                      <span className="bg-white bg-opacity-25 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                        {t('myProjects.demoBadge')}
+                      </span>
+                    </div>
+                    <p className="text-primary-100 text-sm leading-relaxed">{t('myProjects.exploreDemoDesc')}</p>
+                  </div>
+                </div>
+              </button>
+
+              {/* Import PDF / lien — secondaire */}
+              <button
+                onClick={() => navigate('/smart-project-creator')}
+                className="w-full mb-3 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
+                    <svg className="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition">{t('myProjects.startSmart')}</p>
+                    <p className="text-gray-500 text-xs mt-0.5">
                       {t('myProjects.startSmartDesc')}
                     </p>
                   </div>
@@ -954,36 +983,14 @@ const MyProjects = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition">{t('myProjects.createManually')}</p>
-                    <p className="text-gray-400 text-xs mt-0.5">{t('myProjects.createManuallyDesc')}</p>
-                  </div>
-                </div>
-              </button>
-
-              {/* Explorer avec un exemple */}
-              <button
-                onClick={handleCreateDemoProject}
-                disabled={isCreatingDemo}
-                className="w-full mb-6 p-4 bg-white border border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-left rounded-2xl transition group disabled:opacity-60"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-100 group-hover:bg-gray-200 rounded-xl flex items-center justify-center flex-shrink-0 transition">
-                    <svg className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-600 text-sm group-hover:text-gray-800 transition">
-                      {isCreatingDemo ? t('myProjects.exploreDemoCreating') : t('myProjects.exploreDemo')}
-                    </p>
-                    <p className="text-gray-400 text-xs mt-0.5">{t('myProjects.exploreDemoDesc')}</p>
+                    <p className="text-gray-500 text-xs mt-0.5">{t('myProjects.createManuallyDesc')}</p>
                   </div>
                 </div>
               </button>
 
               {/* Ce que ça fait concrètement — informatif, non cliquable */}
               <div className="rounded-2xl bg-gray-50 px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{t('myProjects.howItWorks')}</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('myProjects.howItWorks')}</p>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -993,7 +1000,7 @@ const MyProjects = () => {
                     </div>
                     <div>
                       <p className="font-medium text-gray-700 text-sm">{t('myProjects.howResume')}</p>
-                      <p className="text-gray-400 text-xs mt-0.5">{t('myProjects.howResumeDesc')}</p>
+                      <p className="text-gray-500 text-xs mt-0.5">{t('myProjects.howResumeDesc')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -1004,7 +1011,7 @@ const MyProjects = () => {
                     </div>
                     <div>
                       <p className="font-medium text-gray-700 text-sm">{t('myProjects.howPattern')}</p>
-                      <p className="text-gray-400 text-xs mt-0.5">{t('myProjects.howPatternDesc')}</p>
+                      <p className="text-gray-500 text-xs mt-0.5">{t('myProjects.howPatternDesc')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -1180,7 +1187,7 @@ const MyProjects = () => {
                       // Projet avec pourcentage calculable : afficher barre de progression
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-gray-400">{t('myProjects.progress')}</span>
+                          <span className="text-xs text-gray-500">{t('myProjects.progress')}</span>
                           {project.status === 'completed' ? (
                             <span className="text-xs font-semibold text-green-600">100%</span>
                           ) : (
@@ -1321,7 +1328,7 @@ const MyProjects = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                   </svg>
                   <p className="text-gray-600 mb-1 font-medium">{t('patternLibraryModal.emptyTitle')}</p>
-                  <p className="text-sm text-gray-400">{t('patternLibraryModal.emptyDesc')}</p>
+                  <p className="text-sm text-gray-500">{t('patternLibraryModal.emptyDesc')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1397,7 +1404,7 @@ const MyProjects = () => {
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mb-2"
               autoFocus
             />
-            <p className="text-xs text-gray-400 mb-5">{t('patternUrlModal.pdfHint')}</p>
+            <p className="text-xs text-gray-500 mb-5">{t('patternUrlModal.pdfHint')}</p>
 
             {/* Séparateur */}
             <div className="relative mb-5">
@@ -1405,7 +1412,7 @@ const MyProjects = () => {
                 <div className="w-full border-t border-gray-100"></div>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="px-2 bg-white text-gray-400">{t('patternUrlModal.searchLabel')}</span>
+                <span className="px-2 bg-white text-gray-500">{t('patternUrlModal.searchLabel')}</span>
               </div>
             </div>
 
@@ -1506,7 +1513,7 @@ const MyProjects = () => {
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                 autoFocus
               />
-              <p className="text-xs text-gray-400 mt-2">{t('patternTextModal.hint')}</p>
+              <p className="text-xs text-gray-500 mt-2">{t('patternTextModal.hint')}</p>
             </div>
 
             <div className="px-6 py-4 border-t border-gray-100">

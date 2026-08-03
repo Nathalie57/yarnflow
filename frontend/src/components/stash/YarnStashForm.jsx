@@ -280,7 +280,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           {!photoPreview && (
             <div className="flex items-center gap-3 my-3">
               <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-xs text-gray-400">{t('ui.orFillManually')}</span>
+              <span className="text-xs text-gray-500">{t('ui.orFillManually')}</span>
               <div className="flex-1 h-px bg-gray-200" />
             </div>
           )}

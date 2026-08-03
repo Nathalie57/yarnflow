@@ -65,7 +65,7 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-400">{t('ui.loadingProjects')}</p>
+          <p className="text-sm text-gray-500">{t('ui.loadingProjects')}</p>
         ) : projects.length === 0 ? (
           <p className="text-sm text-gray-500">{t('ui.noProjectFound')}</p>
         ) : (
