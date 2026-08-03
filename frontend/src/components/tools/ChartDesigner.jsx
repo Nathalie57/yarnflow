@@ -314,7 +314,7 @@ export default function ChartDesigner() {
                   >
                     <div>
                       <p className="text-sm font-medium text-gray-900">{c.name}</p>
-                      <p className="text-xs text-gray-400">Sans projet · {c.width} × {c.height}</p>
+                      <p className="text-xs text-gray-400">{t('ui.noProjectSize', { w: c.width, h: c.height })}</p>
                     </div>
                     <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                   </button>
@@ -339,7 +339,7 @@ export default function ChartDesigner() {
             onClick={() => setShowAllCharts(true)}
             className="text-xs px-3 py-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 text-gray-600 font-medium"
           >
-            Voir mes grilles ({myCharts.length})
+            {t('ui.seeMyCharts', { count: myCharts.length })}
           </button>
         )}
 

@@ -39,7 +39,7 @@ const TWAMessage = () => {
 }
 
 const Subscription = () => {
-  const { t } = useTranslation('tools')
+  const { t, i18n } = useTranslation('tools')
   const { user, isTWA } = useAuth()
   const { trackSubscriptionClick, trackBeginCheckout, trackCreditsClick, trackEvent } = useAnalytics()
   const [subscription, setSubscription] = useState(null)
@@ -242,7 +242,7 @@ const Subscription = () => {
             <div>
               <p className="font-semibold text-primary-900 text-sm">{t('ui.plusActive')}</p>
               {subscription?.expires_at && (
-                <p className="text-xs text-primary-600">Renouvellement le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}</p>
+                <p className="text-xs text-primary-600">{t('ui.renewsOn', { date: new Date(subscription.expires_at).toLocaleDateString(i18n.language) })}</p>
               )}
               <p className="text-xs text-gray-400 mt-0.5">{t('ui.proUpgradeNote')}</p>
             </div>
@@ -269,7 +269,7 @@ const Subscription = () => {
             <div>
               <p className="font-semibold text-primary-900 text-sm">{t('ui.proActive')}</p>
               {subscription?.expires_at && (
-                <p className="text-xs text-primary-600">Renouvellement le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}</p>
+                <p className="text-xs text-primary-600">{t('ui.renewsOn', { date: new Date(subscription.expires_at).toLocaleDateString(i18n.language) })}</p>
               )}
             </div>
           </div>
@@ -327,7 +327,7 @@ const Subscription = () => {
               <span className="text-3xl font-bold text-gray-900">{plusMonthlyEquiv}</span>
               <span className="text-sm text-gray-500">/mois</span>
             </div>
-            <p className="text-xs text-green-600 font-medium mb-1">Facturé {plusAnnualPrice}/an — économisez 17,89€</p>
+            <p className="text-xs text-green-600 font-medium mb-1">{t('ui.billedYearlySave2', { price: plusAnnualPrice })}</p>
             <p className="text-sm text-gray-500">{t('ui.plusDesc')}</p>
           </div>
 

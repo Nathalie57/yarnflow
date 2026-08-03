@@ -3,7 +3,7 @@
  * @brief Carte pelote dans la liste du stock
  */
 
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 const WEIGHT_LABELS = {
   lace:     'Lace',
@@ -107,10 +107,10 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>
               <span>
-                <strong>{entry.quantity_reserved}</strong> réservée{entry.quantity_reserved > 1 ? 's' : ''}
+                <strong>{entry.quantity_reserved}</strong> {t('ui.reservedQty', { count: entry.quantity_reserved })}
                 {entry.reserved_by && <span className="text-amber-600"> · {entry.reserved_by}</span>}
                 {entry.quantity_available !== undefined && (
-                  <span className="text-amber-500"> ({entry.quantity_available} disponible{entry.quantity_available > 1 ? 's' : ''})</span>
+                  <span className="text-amber-500"> {t('ui.availableParen', { count: entry.quantity_available })}</span>
                 )}
               </span>
             </div>

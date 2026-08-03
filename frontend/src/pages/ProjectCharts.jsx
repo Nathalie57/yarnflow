@@ -234,10 +234,10 @@ const ProjectCharts = () => {
                   className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Combien de rangs de la section sont déjà faits quand ce motif commence (0 si le motif démarre au tout premier rang de la section).
+                  {t('ui.chartStartRowHelp')}
                   {selectedSection?.total_rows > 0 && mode === 'draw' && (
                     <>
-                      {' '}La grille couvrira les rangs {Number(startRow) + 1} à {Number(startRow) + Number(height)} sur {selectedSection.total_rows}.
+                      {' '}{t('ui.chartWillCover', { from: Number(startRow) + 1, to: Number(startRow) + Number(height), total: selectedSection.total_rows })}
                       {Number(startRow) + Number(height) > selectedSection.total_rows && (
                         <span className="text-amber-600 font-medium">{t('ui.exceedsSectionRows')}</span>
                       )}

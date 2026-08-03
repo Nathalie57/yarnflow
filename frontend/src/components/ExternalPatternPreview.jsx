@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
 
 const ExternalPatternPreview = ({ url, savedImage }) => {
@@ -129,19 +129,19 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
           {isMobile ? (
             <>
               <p className="text-sm text-blue-800 mb-2">
-                💡 <strong>Astuce :</strong> Sur mobile, vous pouvez basculer entre les onglets pour garder le compteur et le patron accessibles.
+                <Trans t={t} i18nKey="ui.tipMobileTabs"><strong /></Trans>
               </p>
               <p className="text-xs text-blue-700">
-                Encore mieux : téléchargez le PDF du patron et uploadez-le dans l'app pour le consulter directement ici !
+                {t('ui.tipDownloadPdf1')}
               </p>
             </>
           ) : (
             <>
               <p className="text-sm text-blue-800 mb-2">
-                💡 <strong>Astuce :</strong> Le bouton "📱 Ouvrir en fenêtre à côté" positionne automatiquement le patron à droite de l'écran pour garder le compteur visible.
+                <Trans t={t} i18nKey="ui.tipSideWindow"><strong /></Trans>
               </p>
               <p className="text-xs text-blue-700">
-                Encore mieux : téléchargez le PDF du patron et uploadez-le dans l'app pour pouvoir le consulter sans changer de fenêtre !
+                {t('ui.tipDownloadPdf2')}
               </p>
             </>
           )}

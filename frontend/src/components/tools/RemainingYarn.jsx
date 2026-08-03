@@ -74,7 +74,7 @@ export default function RemainingYarn() {
               style={{ width: `${usedPercent.toFixed(1)}%` }}
             />
           </div>
-          <p className="text-xs text-center text-gray-500">{usedPercent.toFixed(1)}% utilisée</p>
+          <p className="text-xs text-center text-gray-500">{t('ui.percentUsed', { percent: usedPercent.toFixed(1) })}</p>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-green-50 rounded-xl px-4 py-3 text-center">

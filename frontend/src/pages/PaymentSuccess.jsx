@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { paymentsAPI, authAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 export default function PaymentSuccess() {
   const { t } = useTranslation('tools')
@@ -130,13 +130,13 @@ export default function PaymentSuccess() {
 
         {paymentInfo?.type === 'credits' && (
           <p className="text-gray-600 mb-6">
-            Vos <strong>{paymentInfo.credits_amount || '?'} crédits photos</strong> ont été ajoutés à votre compte.
+            <Trans t={t} i18nKey="ui.creditsAddedToAccount" values={{ count: paymentInfo.credits_amount || '?' }}><strong /></Trans>
           </p>
         )}
 
         {paymentInfo?.type === 'subscription' && (
           <p className="text-gray-600 mb-6">
-            Votre abonnement <strong>{paymentInfo.plan || '?'}</strong> est maintenant actif !
+            <Trans t={t} i18nKey="ui.subscriptionNowActive" values={{ plan: paymentInfo.plan || '?' }}><strong /></Trans>
           </p>
         )}
 
@@ -153,7 +153,7 @@ export default function PaymentSuccess() {
         </div>
 
         <p className="text-gray-500 text-sm mb-4">
-          Redirection automatique dans {countdown} seconde{countdown > 1 ? 's' : ''}...
+          {t('ui.autoRedirectIn', { count: countdown })}
         </p>
 
         <button

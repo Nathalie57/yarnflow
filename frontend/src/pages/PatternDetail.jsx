@@ -5,7 +5,7 @@ import { patternsAPI } from '../services/api'
 import api from '../services/api'
 
 const PatternDetail = () => {
-  const { t } = useTranslation('library')
+  const { t, i18n } = useTranslation('library')
   const { id } = useParams()
   const navigate = useNavigate()
   const [pattern, setPattern] = useState(null)
@@ -119,7 +119,7 @@ const PatternDetail = () => {
           <div>
             <h1 className="text-3xl font-bold">{pattern.title}</h1>
             <p className="text-gray-600">
-              {pattern.level} • {pattern.size} • Créé le {new Date(pattern.created_at).toLocaleDateString('fr-FR')}
+              {t('ui.createdOnLine', { level: pattern.level, size: pattern.size, date: new Date(pattern.created_at).toLocaleDateString(i18n.language) })}
             </p>
           </div>
         </div>
@@ -251,7 +251,7 @@ const PatternDetail = () => {
           <div className="space-y-1">
             <div>Provider IA : {pattern.ai_provider}</div>
             {pattern.tokens_used && <div>{t('ui.tokensUsedVal', { n: pattern.tokens_used })}</div>}
-            {pattern.price_paid > 0 && <div>Prix payé : {pattern.price_paid.toFixed(2)} €</div>}
+            {pattern.price_paid > 0 && <div>{t('ui.pricePaidVal2', { price: pattern.price_paid.toFixed(2) })}</div>}
           </div>
         </div>
       )}

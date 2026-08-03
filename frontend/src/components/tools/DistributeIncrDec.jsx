@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import SaveDistributeToProjectModal from './SaveDistributeToProjectModal'
 import SaveSequenceToSectionModal from './SaveSequenceToSectionModal'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 // Algorithme de répartition de Bresenham adapté au tricot
 // Retourne un tableau de N intervalles distribués aussi uniformément que possible
@@ -153,7 +153,7 @@ export default function DistributeIncrDec() {
       {/* Résultat */}
       {hasError && (
         <div className="bg-red-50 text-red-700 rounded-lg p-4 text-sm">
-          Le nombre de {type === 'aug' ? "d'augmentations" : 'de diminutions'} ne peut pas dépasser le total.
+          {type === 'aug' ? t('ui.tooManyIncreases') : t('ui.tooManyDecreases')}
         </div>
       )}
 
@@ -164,12 +164,12 @@ export default function DistributeIncrDec() {
           <div className="flex gap-4 pt-1 text-sm text-primary-700">
             {result.longCount > 0 && (
               <span className="bg-white rounded-lg px-3 py-1 border border-primary-200">
-                Tous les <strong>{result.longInterval}</strong> → {result.longCount}×
+                <Trans t={t} i18nKey="ui.everyNth" values={{ n: result.longInterval, count: result.longCount }}><strong /></Trans>
               </span>
             )}
             {result.shortCount > 0 && (
               <span className="bg-white rounded-lg px-3 py-1 border border-primary-200">
-                Tous les <strong>{result.shortInterval}</strong> → {result.shortCount}×
+                <Trans t={t} i18nKey="ui.everyNth" values={{ n: result.shortInterval, count: result.shortCount }}><strong /></Trans>
               </span>
             )}
           </div>

@@ -720,7 +720,7 @@ const PatternLibraryDetail = () => {
                 </div>
               ) : (
                 <p className="text-xs text-gray-500">
-                  Utilisé dans {pattern.times_used} projet{pattern.times_used > 1 ? 's' : ''}.
+                  {t('ui.usedInProjects', { count: pattern.times_used })}
                 </p>
               )}
             </div>
@@ -910,7 +910,7 @@ const PatternLibraryDetail = () => {
 
           {/* Date discrète */}
           <p className="text-xs text-gray-400 text-center">
-            Ajouté le {new Date(pattern.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {t('ui.addedOnLong', { date: new Date(pattern.created_at).toLocaleDateString(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' }) })}
           </p>
         </div>
       </div>
@@ -1080,7 +1080,7 @@ const PatternLibraryDetail = () => {
               {pendingFiles.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    {pendingFiles.length} fichier{pendingFiles.length > 1 ? 's' : ''} sélectionné{pendingFiles.length > 1 ? 's' : ''}
+                    {t('ui.filesSelected', { count: pendingFiles.length })}
                   </p>
                   {pendingFiles.map((f, i) => (
                     <div key={i} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-lg">

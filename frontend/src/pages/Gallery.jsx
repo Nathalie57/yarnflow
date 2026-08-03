@@ -13,7 +13,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import api from '../services/api'
@@ -628,7 +628,7 @@ const Gallery = () => {
                 {t('ui.emptyGallery')}
               </h3>
               <p className="text-gray-500 text-sm">
-                Prenez une photo de votre ouvrage et laissez l'IA le mettre en scène —<br />fond, éclairage, ambiance. Votre tricot reste identique.
+                <Trans t={t} i18nKey="ui.photoStudioPitch"><br /></Trans>
               </p>
             </div>
           ) : getFilteredPhotos().length === 0 ? (
@@ -1288,7 +1288,7 @@ const Gallery = () => {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-primary-900">{t('ui.freeTrialAvailable')}</p>
-                        <p className="text-xs text-primary-700 mt-0.5">{credits.total_available} essai{credits.total_available > 1 ? 's' : ''} gratuit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}</p>
+                        <p className="text-xs text-primary-700 mt-0.5">{t('ui.freeTrialsAvailable', { count: credits.total_available })}</p>
                       </div>
                     </div>
                   )
@@ -1312,12 +1312,12 @@ const Gallery = () => {
                       <div>
                         <p className="text-sm font-medium text-gray-900">{t('ui.generationOneCredit')}</p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
+                          {t('ui.youWillHaveLeft', { count: credits.total_available - 1 })}
                         </p>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-primary-600">{credits.total_available}</div>
-                        <div className="text-xs text-gray-600">disponible{credits.total_available > 1 ? 's' : ''}</div>
+                        <div className="text-xs text-gray-600">{t('ui.availableWord', { count: credits.total_available })}</div>
                       </div>
                     </div>
                   </div>

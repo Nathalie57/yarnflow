@@ -295,7 +295,7 @@ const ChartEditor = () => {
 
         {isLocked && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800 text-center">
-            Grille verrouillée — vous pouvez suivre votre progression sans risque de la modifier par erreur. Cliquez sur "Modifier" pour la déverrouiller et dessiner.
+            {t('ui.chartLockedLong')}
           </div>
         )}
 

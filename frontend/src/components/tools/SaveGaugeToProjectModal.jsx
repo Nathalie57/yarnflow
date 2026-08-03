@@ -60,7 +60,7 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
             {gauge.stitches && <span>{gauge.stitches} m</span>}
             {gauge.stitches && gauge.rows && <span> × </span>}
             {gauge.rows && <span>{gauge.rows} rgs</span>}
-            {' '}pour 10 × 10 cm
+            {' '}{t('ui.gaugeFor10')}
           </p>
         </div>
 

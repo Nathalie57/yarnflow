@@ -304,6 +304,11 @@
     "selected": "Sélectionné",
     "previous": "← Précédent",
     "createProjectPlus": "➕ Créer un projet",
-    "addPhotoCamera": "📷 Ajouter une photo"
+    "addPhotoCamera": "📷 Ajouter une photo",
+    "photoCredits_one": "{{count}} crédit photo",
+    "photoCredits_other": "{{count}} crédits photo",
+    "savePatternsIn": "Sauvegardez vos patrons dans la",
+    "orManageYarnIn": "ou gérez vos pelotes dans le",
+    "stashWord": "stock"
   }
 }

@@ -788,7 +788,7 @@ const MyProjects = () => {
 
                 {/* Crédits photos */}
                 <span>
-                  {credits?.total_available || 0} crédit{(credits?.total_available || 0) !== 1 ? 's' : ''} photo
+                  {t('ui.photoCredits', { count: credits?.total_available || 0 })}
                 </span>
                 <Link to="/subscription#credits" className="text-primary-600 hover:underline text-xs">
                   + Acheter
@@ -1016,10 +1016,10 @@ const MyProjects = () => {
                     <div>
                       <p className="font-medium text-gray-700 text-sm">{t('myProjects.howLibrary')}</p>
                       <p className="text-gray-400 text-xs mt-0.5">
-                        Sauvegardez vos patrons dans la{' '}
+                        {t('ui.savePatternsIn')}{' '}
                         <Link to="/pattern-library" className="text-primary-600 hover:underline">{t('ui.libraryWord')}</Link>
-                        {' '}ou gérez vos pelotes dans le{' '}
-                        <Link to="/stash" className="text-primary-600 hover:underline">stock</Link>.
+                        {' '}{t('ui.orManageYarnIn')}{' '}
+                        <Link to="/stash" className="text-primary-600 hover:underline">{t('ui.stashWord')}</Link>.
                       </p>
                     </div>
                   </div>

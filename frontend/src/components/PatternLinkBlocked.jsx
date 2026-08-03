@@ -5,7 +5,7 @@
  * @created 2025-12-10
  */
 
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 const PatternLinkBlocked = ({ url, onUploadClick }) => {
   const { t } = useTranslation('tools')
@@ -31,7 +31,7 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
         </h3>
 
         <p className="text-gray-600 mb-6">
-          Pour des raisons de sécurité, <strong>{domain}</strong> ne peut pas être affiché directement dans l'application.
+          <Trans t={t} i18nKey="ui.blockedForSecurity" values={{ domain }}><strong /></Trans>
         </p>
 
         {/* Box conseil */}
@@ -43,7 +43,7 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
                 {t('ui.keepCounterVisible')}
               </h4>
               <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
-                <li>Téléchargez le PDF du patron depuis {domain}</li>
+                <li>{t('ui.downloadPdfFrom', { domain })}</li>
                 <li>{t('ui.uploadWithButton')}</li>
                 <li>{t('ui.sideBySide')}</li>
               </ol>
@@ -70,7 +70,7 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
             rel="noopener noreferrer"
             className="block w-full px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
           >
-            🔗 Ouvrir {domain} dans un nouvel onglet
+            {t('ui.openDomainNewTab', { domain })}
           </a>
         </div>
 

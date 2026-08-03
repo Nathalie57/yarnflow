@@ -304,6 +304,11 @@
     "selected": "Selected",
     "previous": "← Previous",
     "createProjectPlus": "➕ Create a project",
-    "addPhotoCamera": "📷 Add a photo"
+    "addPhotoCamera": "📷 Add a photo",
+    "photoCredits_one": "{{count}} photo credit",
+    "photoCredits_other": "{{count}} photo credits",
+    "savePatternsIn": "Save your patterns in the",
+    "orManageYarnIn": "or manage your yarn in your",
+    "stashWord": "stash"
   }
 }

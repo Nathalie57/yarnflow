@@ -117,7 +117,7 @@ export default function AiAssistant() {
         </div>
         <h2 className="text-lg font-bold text-gray-900">{t('ui.monthlyQuotaReached')}</h2>
         <p className="text-sm text-gray-500 max-w-xs mx-auto">
-          Vous avez utilisé vos 5 questions gratuites ce mois-ci. Passez à PLUS pour 10 questions par mois, ou PRO pour 30.
+          {t('ui.aiQuotaExhausted')}
         </p>
         <Link
           to="/subscription"

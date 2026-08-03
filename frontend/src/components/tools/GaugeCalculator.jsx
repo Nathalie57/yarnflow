@@ -137,14 +137,14 @@ export default function GaugeCalculator() {
                   <div>
                     <div className="text-3xl font-bold text-primary-700">{simpleResult.sts}</div>
                     <div className="text-sm text-primary-600 mt-1">mailles</div>
-                    <div className="text-xs text-gray-500">pour {wantedWidthCm} cm</div>
+                    <div className="text-xs text-gray-500">{t('ui.forCm', { n: wantedWidthCm })}</div>
                   </div>
                 )}
                 {simpleResult.rows && (
                   <div>
                     <div className="text-3xl font-bold text-primary-700">{simpleResult.rows}</div>
                     <div className="text-sm text-primary-600 mt-1">rangs</div>
-                    <div className="text-xs text-gray-500">pour {wantedHeightCm} cm</div>
+                    <div className="text-xs text-gray-500">{t('ui.forCm', { n: wantedHeightCm })}</div>
                   </div>
                 )}
               </div>

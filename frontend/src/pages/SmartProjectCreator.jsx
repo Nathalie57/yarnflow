@@ -328,7 +328,7 @@ export default function SmartProjectCreator() {
         <div className="mb-8 sm:hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-primary-600">
-              Étape {step} / 4 — {[, 'Mode', 'Analyse', 'Validation', t('ui.stepCreation')][step]}
+              {t('ui.stepXof4', { step, label: [, t('ui.stepMode'), t('ui.stepAnalysis'), t('ui.stepValidation'), t('ui.stepCreation')][step] })}
             </span>
           </div>
           <div className="w-full h-1.5 bg-gray-200 rounded-full">
@@ -519,7 +519,7 @@ export default function SmartProjectCreator() {
             {/* Taille (optionnel, pour patrons multi-tailles) */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ma taille <span className="text-gray-400 font-normal">{t('ui.sizeOptionalHint')}</span>
+                {t('ui.mySize')} <span className="text-gray-400 font-normal">{t('ui.sizeOptionalHint')}</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(s => (
@@ -872,7 +872,7 @@ export default function SmartProjectCreator() {
               {t('ui.projectCreated')}
             </h2>
             <p className="text-gray-600 mb-6">
-              Votre projet "{createdProject.name}" a été créé et est prêt à être utilisé.
+              {t('ui.projectCreatedReady', { name: createdProject.name })}
             </p>
 
             <div className="flex gap-4 justify-center">

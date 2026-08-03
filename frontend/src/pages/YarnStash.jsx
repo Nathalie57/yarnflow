@@ -209,7 +209,7 @@ const YarnStash = () => {
         {!isPro && stashLimit !== null && stats && (
           <div className="mb-4 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
             <span className="text-sm text-amber-800">
-              <span className="font-semibold">{stats.total_references}/{stashLimit}</span> références utilisées
+              <span className="font-semibold">{stats.total_references}/{stashLimit}</span> {t('ui.refsUsed')}
             </span>
             {atLimit ? (
               <Link
@@ -241,7 +241,7 @@ const YarnStash = () => {
             <p className="font-semibold text-gray-800 mb-1">{t('ui.stashOverflowing')}</p>
             <p className="text-sm text-gray-600 mb-4">
               {t('ui.stashProUpsell')}
-              et la liaison automatique avec vos projets.
+              {t('ui.andAutoLinking')}
             </p>
             <div className="flex gap-2 justify-center">
               <button
@@ -424,7 +424,7 @@ const YarnStash = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Quantité à réserver (disponible : {assigningEntry.quantity_available ?? assigningEntry.quantity})
+                  {t('ui.qtyToReserve', { count: assigningEntry.quantity_available ?? assigningEntry.quantity })}
                 </label>
                 <input
                   type="number"
@@ -465,7 +465,7 @@ const YarnStash = () => {
             <p className="text-sm text-gray-500 mb-5">
               <strong>{deletingEntry.brand} — {deletingEntry.yarn_name}</strong>
               {deletingEntry.color_name ? ` (${deletingEntry.color_name})` : ''}
-              {' '}sera définitivement supprimée.
+              {' '}{t('ui.willBeDeleted')}
             </p>
             <div className="flex gap-3">
               <button

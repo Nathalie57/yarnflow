@@ -183,7 +183,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{e.brand} — {e.yarn_name}</p>
-                        <p className="text-xs text-gray-400">{e.quantity_available} disponible{e.quantity_available > 1 ? 's' : ''}</p>
+                        <p className="text-xs text-gray-400">{t('ui.availableCount', { count: e.quantity_available })}</p>
                       </div>
                     </button>
                   ))}

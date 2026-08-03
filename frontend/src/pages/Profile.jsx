@@ -4,10 +4,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { userAPI } from '../services/api'
 import PasswordInput from '../components/PasswordInput'
 import { usePushNotifications } from '../hooks/usePushNotifications'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 const Profile = () => {
-  const { t } = useTranslation('tools')
+  const { t, i18n } = useTranslation('tools')
   const { user, updateUser } = useAuth()
   const [loading, setLoading] = useState(true)
   const [profileData, setProfileData] = useState(null)
@@ -268,7 +268,7 @@ const Profile = () => {
             {!isPro && (
               <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <p className="text-sm text-gray-700 mb-3">
-                  Passez à <strong>PRO</strong> pour des projets illimités, 20 crédits photos/mois et tous les styles IA.
+                  <Trans t={t} i18nKey="ui.goProForUnlimited"><strong /></Trans>
                 </p>
                 <Link to="/subscription" className="inline-block px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">
                   {t('ui.discoverPro')}
@@ -278,8 +278,8 @@ const Profile = () => {
 
             {isPro && stats.has_active_subscription && userData.subscription_expires_at && (
               <p className="text-sm text-gray-600">
-                Accès actif jusqu'au{' '}
-                <strong>{new Date(userData.subscription_expires_at).toLocaleDateString('fr-FR')}</strong>
+                
+                <Trans t={t} i18nKey="ui.accessActiveUntil" values={{ date: new Date(userData.subscription_expires_at).toLocaleDateString(i18n.language) }}><strong /></Trans>
               </p>
             )}
           </div>

@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import {
@@ -350,7 +350,7 @@ const Stats = () => {
               <div className="text-2xl font-bold text-gray-900 tabular-nums">{stats.total_projects || 0}</div>
               <div className="text-xs text-gray-500 mt-0.5">{t('ui.projects')}</div>
               <div className="mt-2 pt-2 border-t border-gray-100 flex gap-3 text-xs">
-                <span className="text-green-600 font-medium">{stats.completed_projects || 0} terminés</span>
+                <span className="text-green-600 font-medium">{t('ui.completedCount', { count: stats.completed_projects || 0 })}</span>
                 <span className="text-orange-500 font-medium">{stats.active_projects || 0} en cours</span>
               </div>
             </div>
@@ -516,7 +516,7 @@ const Stats = () => {
                   <div className="flex justify-center gap-5 text-xs mt-1">
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-primary-600" />
-                      <span className="text-gray-600">Terminés ({stats.completed_projects || 0})</span>
+                      <span className="text-gray-600">{t('ui.completedParen', { count: stats.completed_projects || 0 })}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
@@ -627,7 +627,7 @@ const Stats = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                       </svg>
-                      {lockedBadges.length} badges avec PRO
+                      {t('ui.badgesWithProCount', { count: lockedBadges.length })}
                     </span>
                     <div className="flex-1 border-t border-dashed border-gray-200" />
                   </div>
@@ -642,7 +642,7 @@ const Stats = () => {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-primary-800">
-                          {earnedButLockedCount} objectif{earnedButLockedCount > 1 ? 's' : ''} déjà atteint{earnedButLockedCount > 1 ? 's' : ''} !
+                          {t('ui.goalsAlreadyReached', { count: earnedButLockedCount })}
                         </p>
                         <p className="text-xs text-primary-600 mt-0.5">
                           {t('ui.upgradeForBadges')}
@@ -677,7 +677,7 @@ const Stats = () => {
                     {lockedBadges.length > LOCKED_PREVIEW && (
                       <div className="rounded-xl border border-dashed border-gray-200 p-3 flex items-center justify-center">
                         <span className="text-xs text-gray-400 text-center leading-relaxed">
-                          +{lockedBadges.length - LOCKED_PREVIEW} autres<br />badges à découvrir
+                          <Trans t={t} i18nKey="ui.moreBadgesToDiscover" values={{ count: lockedBadges.length - LOCKED_PREVIEW }}><br /></Trans>
                         </span>
                       </div>
                     )}
@@ -698,7 +698,7 @@ const Stats = () => {
                   <div className="mt-5 mb-3 flex items-center gap-2">
                     <div className="flex-1 border-t border-dashed border-gray-200" />
                     <span className="text-xs font-medium text-gray-400 px-2">
-                      {notEarnedBadges.length} à débloquer
+                      {t('ui.toUnlockCount', { count: notEarnedBadges.length })}
                     </span>
                     <div className="flex-1 border-t border-dashed border-gray-200" />
                   </div>

@@ -75,7 +75,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
                         <p className="text-sm font-medium text-gray-800">{a.brand} — {a.yarn_name}</p>
                         {a.color_name && <p className="text-xs text-gray-400">{a.color_name}</p>}
                       </div>
-                      <span className="text-xs text-gray-400">{a.quantity_reserved} réservée{a.quantity_reserved > 1 ? 's' : ''}</span>
+                      <span className="text-xs text-gray-400">{t('ui.reservedCount', { count: a.quantity_reserved })}</span>
                     </div>
 
                     <div className="flex items-center gap-3">

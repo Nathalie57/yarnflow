@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 export default function SaveSequenceToSectionModal({ sequence, onClose }) {
   const { t } = useTranslation('tools')
@@ -72,11 +72,11 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 max-h-[calc(100vh-6rem)] sm:max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
         <div>
           <h2 className="text-lg font-bold text-gray-900">{t('ui.createSectionCounter')}</h2>
-          <p className="text-sm text-gray-500 mt-1">{sequence.label} — {sequence.steps.length} étape{sequence.steps.length > 1 ? 's' : ''}</p>
+          <p className="text-sm text-gray-500 mt-1">{t('ui.sequenceSteps', { label: sequence.label, count: sequence.steps.length })}</p>
           <div className="mt-2 space-y-1">
             {sequence.steps.map((step, i) => (
               <p key={i} className="text-xs text-gray-600 italic">
-                Tous les <strong>{step.target}</strong> → {step.repeat} fois
+                <Trans t={t} i18nKey="ui.everyNthTimes" values={{ n: step.target, count: step.repeat }}><strong /></Trans>
               </p>
             ))}
           </div>

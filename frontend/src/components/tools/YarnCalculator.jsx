@@ -10,7 +10,7 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { yarnStashAPI } from '../../services/api'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 // Matrice de métrages estimés (en mètres) par [projet][épaisseur][taille]
 const MATRIX = {
@@ -217,7 +217,7 @@ export default function YarnCalculator() {
           {/* Métrage estimé */}
           <div>
             <p className="text-sm text-primary-700 leading-relaxed">
-              Pour un <strong>{project.labelKey ? t(`ui.${project.labelKey}`) : project.label}</strong> taille <strong>{size}</strong> en <strong>{t(`ui.${WEIGHT_LABEL_KEYS[weight]}`)}</strong>
+              <Trans t={t} i18nKey="ui.forAProject" values={{ item: project.labelKey ? t(`ui.${project.labelKey}`) : project.label, size, weight: t(`ui.${WEIGHT_LABEL_KEYS[weight]}`) }}><strong /><strong /><strong /></Trans>
             </p>
             <p className="text-4xl font-bold text-primary-700 mt-2">
               {estimatedMeters.toLocaleString('fr-FR')} m
@@ -299,7 +299,7 @@ export default function YarnCalculator() {
                 {stockCheck.entries.length > 0 ? (
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      {stockCheck.entries.length} référence{stockCheck.entries.length > 1 ? 's' : ''} dans votre stock
+                      {t('ui.stockRefs', { count: stockCheck.entries.length })}
                     </p>
                     {stockCheck.entries.map(e => (
                       <div key={e.id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 border border-gray-200">
@@ -327,11 +327,11 @@ export default function YarnCalculator() {
 
                 {!isPro && (
                   <p className="text-xs text-gray-400 text-center pt-1">
-                    Stock limité à 10 références en FREE —{' '}
+                    {t('ui.stockLimitFree')}{' '}
                     <Link to="/subscription" className="text-primary-600 hover:underline font-medium">
                       {t('ui.upgradePro')}
                     </Link>{' '}
-                    pour un stock illimité.
+                    {t('ui.forUnlimitedStock')}
                   </p>
                 )}
               </div>

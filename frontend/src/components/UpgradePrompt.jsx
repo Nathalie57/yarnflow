@@ -6,7 +6,7 @@
 import { useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import { useAuth } from '../contexts/AuthContext'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 const FEATURES = {
   tags: {
@@ -67,7 +67,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
         </button>
         <h3 className="text-lg font-bold text-gray-900 pr-6">{t('ui.unlockFeature')}</h3>
         <p className="text-sm text-gray-600 leading-relaxed">
-          Pour vous offrir YarnFlow au prix le plus juste sans intermédiaire, la gestion des abonnements se fait exclusivement sur notre site internet. Pour débloquer vos fonctionnalités, connectez-vous simplement à votre compte sur <span className="font-semibold text-primary-700">yarnflow.fr</span> depuis le navigateur de votre téléphone ou de votre ordinateur. Votre application se mettra à jour instantanément !
+          <Trans t={t} i18nKey="ui.twaLongExplain"><span className="font-semibold text-primary-700">yarnflow.fr</span></Trans>
         </p>
         <button onClick={onClose} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700">
           {t('ui.close')}

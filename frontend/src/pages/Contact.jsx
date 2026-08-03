@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 const Contact = () => {
   const { t } = useTranslation('tools')
@@ -114,7 +114,7 @@ const Contact = () => {
           </div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">{t('ui.messageSent')}</h1>
           <p className="text-gray-600 mb-1">
-            Merci ! Nous vous répondrons à <strong>{formData.email || user?.email}</strong>.
+            <Trans t={t} i18nKey="ui.thanksWeWillReply" values={{ email: formData.email || user?.email }}><strong /></Trans>
           </p>
           <p className="text-sm text-gray-400 mb-6">
             {user ? t('ui.redirectProjects') : t('ui.redirectHome')}
@@ -254,7 +254,7 @@ const Contact = () => {
 
         <div className="mt-6 pt-6 border-t border-gray-100 text-center">
           <p className="text-xs text-gray-400">
-            Ou directement à{' '}
+            {t('ui.orDirectlyAt')}{' '}
             <a href="mailto:contact@yarnflow.fr" className="text-primary-600 hover:underline font-medium">
               contact@yarnflow.fr
             </a>

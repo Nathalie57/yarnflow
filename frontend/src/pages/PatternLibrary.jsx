@@ -845,7 +845,7 @@ const PatternLibrary = () => {
                     {/* Stats usage */}
                     {pattern.times_used > 0 && (
                       <p className="text-xs text-gray-500 mb-3">
-                        Utilisé {pattern.times_used} fois
+                        {t('ui.usedTimes', { count: pattern.times_used })}
                       </p>
                     )}
 
