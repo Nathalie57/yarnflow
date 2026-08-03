@@ -5718,7 +5718,7 @@ const ProjectCounter = () => {
                                 <div className="bg-gradient-to-br from-primary-50 to-primary-200 rounded-lg p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="12"/><line x1="15" y1="10" x2="15" y2="14"/><line x1="19" y1="10" x2="19" y2="12"/></svg>
-                                    <span className="font-semibold text-primary-700 text-sm">Échantillon</span>
+                                    <span className="font-semibold text-primary-700 text-sm">{t('ui.gaugeLabel')}</span>
                                   </div>
                                   <div className="bg-white/70 rounded px-3 py-2">
                                     <div className="text-sm text-gray-900 font-medium">
@@ -6849,7 +6849,7 @@ const ProjectCounter = () => {
               {/* ÉCHANTILLON / GAUGE */}
               <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  Échantillon
+                  {t('ui.gaugeLabel')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                   <div>

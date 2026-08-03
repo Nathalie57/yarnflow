@@ -173,7 +173,7 @@ const CreateProjectWizard = ({
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
         <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900">Nouveau projet</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('wizard.title')}</h2>
             <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -277,7 +277,7 @@ const CreateProjectWizard = ({
 
           {/* Technique */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Technique</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.technique')}</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -435,7 +435,7 @@ const CreateProjectWizard = ({
 
                 {/* Unité de comptage */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Unité de comptage</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.counterUnit')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { value: 'rows', label: 'Rangs', icon: '📏' },
@@ -460,7 +460,7 @@ const CreateProjectWizard = ({
 
                 {/* Patron */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Patron</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.pattern')}</label>
                   <div className="grid grid-cols-2 gap-2">
 
                     <button
@@ -471,7 +471,7 @@ const CreateProjectWizard = ({
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 mb-1 ${patternType === 'library' ? 'text-primary-600' : 'text-gray-400'}`}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                       </svg>
-                      <span className="text-xs font-medium text-gray-700">Bibliothèque</span>
+                      <span className="text-xs font-medium text-gray-700">{t('wizard.library')}</span>
                       {selectedLibraryPattern && (
                         <span className="text-xs text-primary-600 mt-0.5 truncate max-w-full">✓ {selectedLibraryPattern.name}</span>
                       )}
@@ -489,7 +489,7 @@ const CreateProjectWizard = ({
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                       </svg>
-                      <span className="text-xs font-medium text-gray-700">Fichier</span>
+                      <span className="text-xs font-medium text-gray-700">{t('wizard.file')}</span>
                       <span className="text-xs text-gray-400">PDF ou image</span>
                       {patternFile && (
                         <span className="text-xs text-primary-600 mt-0.5 truncate max-w-full">
@@ -513,7 +513,7 @@ const CreateProjectWizard = ({
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                       </svg>
-                      <span className="text-xs font-medium text-gray-700">Lien web</span>
+                      <span className="text-xs font-medium text-gray-700">{t('wizard.webLink')}</span>
                       {patternUrl && <span className="text-xs text-primary-600 mt-0.5">✓ Lien ajouté</span>}
                     </button>
 
@@ -543,7 +543,7 @@ const CreateProjectWizard = ({
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.description')}</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -561,7 +561,7 @@ const CreateProjectWizard = ({
                     onChange={(e) => setIsFavorite(e.target.checked)}
                     className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
                   />
-                  <span className="text-sm font-medium text-gray-700">Marquer comme favori</span>
+                  <span className="text-sm font-medium text-gray-700">{t('wizard.markFavorite')}</span>
                 </label>
 
                 {/* Tags */}
@@ -719,7 +719,7 @@ const CreateProjectWizard = ({
 
                       {/* Échantillon */}
                       <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">Échantillon</h4>
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3">{t('wizard.gauge')}</h4>
                         <div className="grid grid-cols-3 gap-2">
                           <input
                             type="text"

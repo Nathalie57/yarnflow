@@ -69,5 +69,11 @@
     "errorTitle": "Error",
     "doneTitle": "Done",
     "confirmTitle": "⚠️ Confirmation"
+  },
+  "cookie": {
+    "accept": "Accept",
+    "decline": "Decline",
+    "message": "We use analytics cookies to improve the app.",
+    "privacyPolicy": "Privacy policy"
   }
 }

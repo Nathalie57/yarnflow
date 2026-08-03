@@ -1210,7 +1210,7 @@ const PatternLibraryDetail = () => {
               {/* Texte */}
               {editType === 'text' && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Texte du patron <span className="text-red-600">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.patternText')} <span className="text-red-600">*</span></label>
                   <textarea value={formData.pattern_text}
                     onChange={(e) => { setFormData({ ...formData, pattern_text: e.target.value }); setValidationErrors({ ...validationErrors, pattern_text: '' }) }}
                     rows={12}

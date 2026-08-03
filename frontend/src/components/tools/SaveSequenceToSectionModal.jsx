@@ -104,7 +104,7 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
 
             {selectedProjectId && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Section <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.section')} <span className="text-red-500">*</span></label>
                 {loadingSections ? (
                   <p className="text-xs text-gray-400">{t('ui.loadingSections')}</p>
                 ) : sections.length === 0 ? (

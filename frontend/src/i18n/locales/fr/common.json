@@ -69,5 +69,11 @@
     "errorTitle": "Erreur",
     "doneTitle": "Terminé",
     "confirmTitle": "⚠️ Confirmation"
+  },
+  "cookie": {
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "message": "Nous utilisons des cookies d'analyse pour améliorer l'application.",
+    "privacyPolicy": "Politique de confidentialité"
   }
 }

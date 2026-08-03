@@ -170,7 +170,7 @@ const Contact = () => {
                 {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('ui.email')} <span className="text-red-500">*</span></label>
                 <input
                   type="email" name="email" value={formData.email} onChange={handleChange}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm ${errors.email ? 'border-red-400' : 'border-gray-300'}`}
@@ -183,7 +183,7 @@ const Contact = () => {
 
           {/* Catégorie */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Catégorie <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.categoryLabel')} <span className="text-red-500">*</span></label>
             <div className="grid grid-cols-2 gap-2">
               {categories.map((cat) => (
                 <label

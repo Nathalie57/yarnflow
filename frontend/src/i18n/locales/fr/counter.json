@@ -299,6 +299,7 @@
     "phPatternUrl": "https://example.com/mon-patron",
     "phPatternTextArea": "Collez ici le texte de votre patron...\n\nExemple :\nRang 1 : 6 mailles serrées dans un cercle magique\nRang 2 : 2ms dans chaque maille (12)\nRang 3 : *1ms, aug* x6 (18)\n...",
     "phProjectNotes": "Ajoutez vos notes personnelles sur ce projet :\n\n• Modifications apportées au patron\n• Difficultés rencontrées\n• Astuces et conseils\n• Idées pour la suite\n• Points d'attention...",
-    "phProductUrl": "https://www.drops-design.com/..."
+    "phProductUrl": "https://www.drops-design.com/...",
+    "gaugeLabel": "Échantillon"
   }
 }

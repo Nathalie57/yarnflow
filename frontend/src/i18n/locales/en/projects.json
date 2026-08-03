@@ -246,6 +246,7 @@
     "cancel": "Cancel",
     "creating": "Creating...",
     "create": "Create the project",
-    "defaultSectionName": "Part {{n}}"
+    "defaultSectionName": "Part {{n}}",
+    "gauge": "Gauge"
   }
 }

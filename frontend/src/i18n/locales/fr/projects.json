@@ -246,6 +246,7 @@
     "cancel": "Annuler",
     "creating": "Création en cours...",
     "create": "Créer le projet",
-    "defaultSectionName": "Partie {{n}}"
+    "defaultSectionName": "Partie {{n}}",
+    "gauge": "Échantillon"
   }
 }

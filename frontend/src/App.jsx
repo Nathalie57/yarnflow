@@ -130,6 +130,7 @@ function AnalyticsTracker() {
 }
 
 function App() {
+  const { t } = useTranslation('common')
   // [AI:Claude] Routes de l'application
   return (
     <BrowserRouter>
@@ -206,8 +207,8 @@ function App() {
 
         <CookieConsent
           location="bottom"
-          buttonText="Accepter"
-          declineButtonText="Refuser"
+          buttonText={t('cookie.accept')}
+          declineButtonText={t('cookie.decline')}
           enableDeclineButton
           cookieName="yarnflow_cookie_consent"
           expires={365}
@@ -253,9 +254,9 @@ function App() {
             margin: '0'
           }}
         >
-          Nous utilisons des cookies d'analyse pour améliorer l'application.{' '}
+          {t('cookie.message')}{' '}
           <a href="/privacy" style={{ color: '#557055', textDecoration: 'underline' }}>
-            Politique de confidentialité
+            {t('cookie.privacyPolicy')}
           </a>
         </CookieConsent>
         </HintsProvider>

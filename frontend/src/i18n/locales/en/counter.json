@@ -299,6 +299,7 @@
     "phPatternUrl": "https://example.com/my-pattern",
     "phPatternTextArea": "Paste your pattern text here...\n\nExample:\nRow 1: 6 single crochet in a magic ring\nRow 2: 2 sc in each stitch (12)\nRow 3: *1 sc, inc* x6 (18)\n...",
     "phProjectNotes": "Add your personal notes about this project:\n\n• Changes made to the pattern\n• Difficulties encountered\n• Tips and advice\n• Ideas for next time\n• Things to watch out for...",
-    "phProductUrl": "https://www.drops-design.com/..."
+    "phProductUrl": "https://www.drops-design.com/...",
+    "gaugeLabel": "Gauge"
   }
 }

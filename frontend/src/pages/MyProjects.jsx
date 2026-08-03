@@ -1594,7 +1594,7 @@ const MyProjects = () => {
                     className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
                   >
                     <span className="text-xl">🖼️</span>
-                    <span className="font-medium">Choisir une photo</span>
+                    <span className="font-medium">{t('photoModal.choosePhoto')}</span>
                   </button>
                 </div>
 
