@@ -25,6 +25,8 @@ import frLibrary from './locales/fr/library.json'
 import enLibrary from './locales/en/library.json'
 import frTools from './locales/fr/tools.json'
 import enTools from './locales/en/tools.json'
+import frLegal from './locales/fr/legal.json'
+import enLegal from './locales/en/legal.json'
 
 export const LANGUAGE_STORAGE_KEY = 'yarnflow_lang'
 export const SUPPORTED_LANGUAGES = ['fr', 'en']
@@ -33,8 +35,8 @@ export const SUPPORTED_LANGUAGES = ['fr', 'en']
 // petit à l'échelle d'un bundle Vite, pas besoin du backend HTTP d'i18next
 // (qui ajouterait un chargement asynchrone et un risque de flash sans texte).
 const resources = {
-  fr: { common: frCommon, auth: frAuth, landing: frLanding, pageTitles: frPageTitles, projects: frProjects, counter: frCounter, library: frLibrary, tools: frTools },
-  en: { common: enCommon, auth: enAuth, landing: enLanding, pageTitles: enPageTitles, projects: enProjects, counter: enCounter, library: enLibrary, tools: enTools },
+  fr: { common: frCommon, auth: frAuth, landing: frLanding, pageTitles: frPageTitles, projects: frProjects, counter: frCounter, library: frLibrary, tools: frTools, legal: frLegal },
+  en: { common: enCommon, auth: enAuth, landing: enLanding, pageTitles: enPageTitles, projects: enProjects, counter: enCounter, library: enLibrary, tools: enTools, legal: enLegal },
 }
 
 i18n
@@ -45,7 +47,7 @@ i18n
     supportedLngs: SUPPORTED_LANGUAGES,
     fallbackLng: 'fr',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'landing', 'pageTitles', 'projects', 'counter', 'library', 'tools'],
+    ns: ['common', 'auth', 'landing', 'pageTitles', 'projects', 'counter', 'library', 'tools', 'legal'],
 
     detection: {
       // [AI:Claude] localStorage en premier : un choix explicite via le sélecteur
