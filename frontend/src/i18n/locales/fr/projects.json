@@ -111,7 +111,7 @@
   "patternTextModal": {
     "label": "Texte du patron",
     "subtitle": "Copiez-collez le texte de votre patron ici",
-    "placeholder": "Collez ici le texte de votre patron...\n\nExemple :\nRang 1 : 6 mailles serrées dans un cercle magique\nRang 2 : 2ms dans chaque maille (12)\nRang 3 : *1ms, aug* x6 (18)\nRang 4 : *2ms, aug* x6 (24)\n...",
+    "placeholder": "Collez ici le texte de votre patron...\n\nExemple :\nRang 1 : 6 mailles serrées dans un cercle magique\nRang 2 : 2ms dans chaque maille (12)\nRang 3 : *1ms, aug* x6 (18)\n...",
     "hint": "Vous pouvez copier-coller le texte depuis n'importe quelle source"
   },
   "photoModal": {
@@ -218,7 +218,6 @@
     "rows": "Rangs",
     "centimeters": "Centimètres",
     "rowsPlaceholder": "Rangs",
-    "sectionNamePlaceholder": "Nom de la partie",
     "addSection": "Ajouter une partie",
     "deletePart": "Supprimer",
     "pattern": "Patron",

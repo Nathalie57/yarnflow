@@ -111,7 +111,7 @@
   "patternTextModal": {
     "label": "Pattern text",
     "subtitle": "Copy and paste your pattern text here",
-    "placeholder": "Paste your pattern text here...\n\nExample:\nRow 1: 6 single crochet in a magic ring\nRow 2: 2 sc in each stitch (12)\nRow 3: *1 sc, inc* x6 (18)\nRow 4: *2 sc, inc* x6 (24)\n...",
+    "placeholder": "Paste your pattern text here...\n\nExample:\nRow 1: 6 single crochet in a magic ring\nRow 2: 2 sc in each stitch (12)\nRow 3: *1 sc, inc* x6 (18)\n...",
     "hint": "You can copy and paste the text from any source"
   },
   "photoModal": {
@@ -218,7 +218,6 @@
     "rows": "Rows",
     "centimeters": "Centimetres",
     "rowsPlaceholder": "Rows",
-    "sectionNamePlaceholder": "Part name",
     "addSection": "Add a part",
     "deletePart": "Delete",
     "pattern": "Pattern",
