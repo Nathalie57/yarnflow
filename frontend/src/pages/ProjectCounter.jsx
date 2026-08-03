@@ -31,6 +31,7 @@ import UpgradePrompt from '../components/UpgradePrompt'
 import StashAllocationPanel from '../components/stash/StashAllocationPanel'
 import ProjectCloseModal from '../components/stash/ProjectCloseModal'
 import { PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
+import { PROJECT_TYPE_VALUES, projectTypeKey } from '../data/projectTypes'
 
 const ProjectCounter = () => {
   const { t } = useTranslation('counter')
@@ -1074,8 +1075,14 @@ const ProjectCounter = () => {
   }
 
   // [AI:Claude] Liste des types (identique à la création de projet)
+  // Libelle affichable : la valeur stockee en base reste en francais.
+  const projectTypeLabel = (value) => {
+    const key = projectTypeKey(value)
+    return key ? t(`projectTypes.${key}`, { ns: 'common' }) : value
+  }
+
   const getProjectTypes = () => {
-    return ['Vêtements', 'Accessoires', 'Jouets/Peluches', 'Vêtements bébé', 'Accessoires bébé', 'Vêtements enfant', 'Maison/Déco', 'Autre']
+    return PROJECT_TYPE_VALUES
   }
 
   // [AI:Claude] Upload patron (PDF ou Image)
@@ -1290,7 +1297,7 @@ const ProjectCounter = () => {
       showAlert({ message: t('alerts.patternAddedToLibrary'), type: 'success' })
     } catch (err) {
       console.error('Erreur ajout bibliothèque:', err)
-      const errorMsg = err.response?.data?.error || 'Erreur lors de l\'ajout à la bibliothèque'
+      const errorMsg = err.response?.data?.error || t('ui.libraryAddFailed')
       showAlert({ message: errorMsg, type: 'error' })
     } finally {
       setSavingToLibrary(false)
@@ -1437,7 +1444,7 @@ const ProjectCounter = () => {
       }
     } catch (err) {
       console.error('Erreur embellissement photo:', err)
-      const errorMsg = err.response?.data?.error || 'Erreur lors de l\'embellissement'
+      const errorMsg = err.response?.data?.error || t('ui.enhanceFailed')
       showAlert({ message: errorMsg, type: 'error' })
     } finally {
       setEnhancing(false)
@@ -2906,7 +2913,7 @@ const ProjectCounter = () => {
 
       await fetchSections()
       await fetchProject()
-      let alertMessage = newState ? 'Section marquée comme terminée' : 'Section réouverte'
+      let alertMessage = newState ? t('ui.sectionMarkedDone') : t('ui.sectionReopened')
 
       // [AI:Claude] Recharger les sections pour avoir les données à jour
       const response = await api.get(`/projects/${projectId}/sections`)
@@ -2925,7 +2932,7 @@ const ProjectCounter = () => {
         // [AI:Claude] Si une section a été réouverte et que le projet était terminé, réouvrir le projet
         await api.put(`/projects/${projectId}`, { status: 'in_progress' })
         await fetchProject()
-        alertMessage = 'Section réouverte. Projet marqué comme en cours.'
+        alertMessage = t('ui.sectionReopenedProjectResumed')
       }
 
       showAlert({ message: alertMessage, type: 'success' })
@@ -3251,7 +3258,7 @@ const ProjectCounter = () => {
               </svg>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-amber-800 text-sm mb-2">
-                  {isDemoProject ? 'Mode démo — Découvrez YarnFlow en 1 minute' : 'Découvrez YarnFlow en 1 minute'}
+                  {isDemoProject ? t('ui.demoModeBanner') : t('ui.discoverIn1Min')}
                 </p>
                 <ul className="space-y-1.5 text-sm">
                   <li className="flex items-center gap-2 text-amber-700">
@@ -3324,8 +3331,8 @@ const ProjectCounter = () => {
             }
           </svg>
           {!isOnline
-            ? 'Hors ligne — vos rangs sont sauvegardés localement'
-            : 'Synchronisation en cours…'
+            ? t('ui.offlineSaved')
+            : t('ui.syncing')
           }
         </div>
       )}
@@ -3370,7 +3377,7 @@ const ProjectCounter = () => {
                   onClick={() => setShowTypeMenu(!showTypeMenu)}
                   className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold hover:bg-gray-200 transition cursor-pointer flex items-center gap-1"
                 >
-                  {project.type || 'Catégorie'}
+                  {project.type ? projectTypeLabel(project.type) : t('ui.categoryFallback')}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -3386,7 +3393,7 @@ const ProjectCounter = () => {
                           project.type === type ? 'bg-gray-50 font-bold text-gray-900' : 'text-gray-700'
                         }`}
                       >
-                        {type}
+                        {projectTypeLabel(type)}
                       </button>
                     ))}
                   </div>
@@ -3547,14 +3554,14 @@ const ProjectCounter = () => {
                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
-            title={project.status === 'completed' ? 'Réouvrir le projet' : 'Marquer le projet comme terminé'}
+            title={project.status === 'completed' ? t('ui.reopenProject') : t('ui.markProjectDone')}
           >
             {project.status === 'completed' ? (
               <span className="flex items-center gap-1.5">
                 <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                 {t('ui.done')}
               </span>
-            ) : 'Marquer terminé'}
+            ) : t('ui.markDone')}
           </button>
         </div>
 
@@ -3589,7 +3596,7 @@ const ProjectCounter = () => {
                   : 'bg-gray-100 text-gray-700'
               }`}
             >
-              {project.status === 'completed' ? '✓ Terminé' : 'Marquer terminé'}
+              {project.status === 'completed' ? t('ui.doneCheck') : t('ui.markDone')}
             </button>
           </div>
         </div>
@@ -4265,7 +4272,7 @@ const ProjectCounter = () => {
                                 }}
                                 className="text-xs text-primary-600 hover:text-primary-800 font-medium mt-1"
                               >
-                                {expandedDescriptions.has(section.id) ? 'Réduire' : 'Lire'}
+                                {expandedDescriptions.has(section.id) ? t('ui.collapse') : t('ui.readMore')}
                               </button>
                             )}
                           </div>
@@ -4382,7 +4389,7 @@ const ProjectCounter = () => {
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                             }`}
-                            title={isCompleted ? 'Marquer comme non terminée' : 'Marquer comme terminée'}
+                            title={isCompleted ? t('ui.markSectionNotDone') : t('ui.markSectionDone')}
                           >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                           </button>
@@ -4420,7 +4427,7 @@ const ProjectCounter = () => {
                                     ? 'bg-primary-600 text-white shadow-primary-200'
                                     : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
                               }`}
-                              title={expandedNotesSection === section.id ? 'Fermer les notes' : section.notes ? 'Voir/modifier les notes' : 'Ajouter des notes'}
+                              title={expandedNotesSection === section.id ? t('ui.closeNotes') : section.notes ? t('ui.viewEditNotes') : t('ui.addNotes')}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -4563,7 +4570,7 @@ const ProjectCounter = () => {
                                 onClick={() => toggleDescriptionExpansion(section.id)}
                                 className="text-sm text-primary-600 hover:text-primary-800 font-medium mt-1"
                               >
-                                {expandedDescriptions.has(section.id) ? 'Réduire' : 'Lire'}
+                                {expandedDescriptions.has(section.id) ? t('ui.collapse') : t('ui.readMore')}
                               </button>
                             )}
                           </div>
@@ -4624,7 +4631,7 @@ const ProjectCounter = () => {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                           >
-                            {isCompleted ? 'Terminée' : '✓ Marquer terminée'}
+                            {isCompleted ? t('ui.sectionDone') : t('ui.markSectionDoneCheck')}
                           </button>
                           {/* Menu "..." pour modifier/supprimer */}
                           <div className="relative">
@@ -4927,12 +4934,12 @@ const ProjectCounter = () => {
                                                 e.stopPropagation()
                                                 try {
                                                   await api.put(`/projects/${project.id}/set-cover-photo`, { photo_id: variation.id })
-                                                  alert('Photo de couverture mise à jour !')
+                                                  alert(t('ui.coverUpdated'))
                                                   fetchProject()
                                                   setOpenMenuId(null)
                                                 } catch (err) {
                                                   console.error('Erreur:', err)
-                                                  alert('Erreur lors de la mise à jour')
+                                                  alert(t('ui.updateFailed'))
                                                 }
                                               }}
                                               className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
@@ -4959,7 +4966,7 @@ const ProjectCounter = () => {
                                                       const file = new File([blob], `${variation.item_name || 'photo'}.jpg`, { type: 'image/jpeg' })
                                                       await navigator.share({
                                                         files: [file],
-                                                        title: variation.item_name || 'Ma photo tricot/crochet',
+                                                        title: variation.item_name || t('ui.myKnitPhoto'),
                                                         text: `Découvrez mon ${variation.item_name || 'ouvrage'} ! 🧶✨`
                                                       })
                                                       setOpenMenuId(null)
@@ -5003,7 +5010,7 @@ const ProjectCounter = () => {
                                                       setShowInstagramModal(true)
                                                     } catch (err) {
                                                       console.error('Erreur téléchargement Instagram:', err)
-                                                      alert('Erreur lors du téléchargement de l\'image')
+                                                      alert(t('ui.imageDownloadFailed'))
                                                     }
                                                     setOpenMenuId(null)
                                                   }}
@@ -5083,7 +5090,7 @@ const ProjectCounter = () => {
                                                     const url = `${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`
                                                     try {
                                                       await navigator.clipboard.writeText(url)
-                                                      alert('Lien copié !')
+                                                      alert(t('ui.linkCopied'))
                                                       setOpenMenuId(null)
                                                     } catch (err) {
                                                       console.error('Erreur copie:', err)
@@ -5170,7 +5177,7 @@ const ProjectCounter = () => {
                                         }
                                       })
 
-                                      if (!response.ok) throw new Error('Erreur téléchargement')
+                                      if (!response.ok) throw new Error(t('ui.downloadError'))
 
                                       const blob = await response.blob()
                                       const url = window.URL.createObjectURL(blob)
@@ -5183,7 +5190,7 @@ const ProjectCounter = () => {
                                       window.URL.revokeObjectURL(url)
                                     } catch (err) {
                                       console.error('Erreur:', err)
-                                      alert('Erreur lors du téléchargement')
+                                      alert(t('ui.downloadFailed'))
                                     }
                                   }}
                                   className="flex-1 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
@@ -5955,7 +5962,7 @@ const ProjectCounter = () => {
           <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 flex-shrink-0">
               <h2 className="text-lg font-bold text-gray-900">
-                {project.pattern_text ? 'Modifier le patron texte' : 'Créer un patron texte'}
+                {project.pattern_text ? t('ui.editPatternText') : t('ui.createPatternText')}
               </h2>
               <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3 mt-3">
                 <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -6117,8 +6124,8 @@ const ProjectCounter = () => {
                     className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm text-center"
                   >
                     {(!user?.subscription_type || user?.subscription_type === 'free')
-                      ? 'Débloquer le Studio photo'
-                      : 'Acheter des crédits'}
+                      ? t('ui.unlockPhotoStudio')
+                      : t('ui.buyCredits')}
                   </a>
                 ) : (
                   <button
@@ -6238,10 +6245,10 @@ const ProjectCounter = () => {
                   </button>
                 ) : (
                   <button type="submit" disabled={enhancing || !credits} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition disabled:opacity-50 text-sm">
-                    {enhancing ? 'Génération...' : (
+                    {enhancing ? t('ui.generating') : (
                       (!user?.subscription_type || user?.subscription_type === 'free')
-                        ? 'Utiliser mon essai gratuit'
-                        : 'Embellir'
+                        ? t('ui.useFreeTrial')
+                        : t('ui.enhance')
                     )}
                   </button>
                 )}
@@ -7069,7 +7076,7 @@ const ProjectCounter = () => {
                   disabled={savingSection}
                   className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingSection ? 'Enregistrement...' : (editingSection ? 'Modifier' : 'Créer')}
+                  {savingSection ? t('ui.saving') : (editingSection ? t('ui.edit') : t('ui.create'))}
                 </button>
               </div>
             </form>
@@ -7182,7 +7189,7 @@ const ProjectCounter = () => {
                 disabled={savingToLibrary || !libraryForm.name.trim()}
                 className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {savingToLibrary ? 'Enregistrement...' : '📚 Enregistrer dans la bibliothèque'}
+                {savingToLibrary ? t('ui.saving') : t('ui.saveToLibrary')}
               </button>
             </div>
           </div>

@@ -17,9 +17,6 @@ const FEATURES = {
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
       </svg>
     ),
-    title: 'Tags personnalisés',
-    description: 'Organisez vos projets avec des étiquettes personnalisées et retrouvez-les en un clin d\'œil.',
-    items: ['Tags illimités (cadeau, bébé, Noël...)', 'Filtrage multi-tags', 'Retrouvez vos projets en 1 clic'],
   },
   secondary_counter: {
     plan: 'plus',
@@ -28,9 +25,6 @@ const FEATURES = {
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
       </svg>
     ),
-    title: 'Compteurs secondaires',
-    description: 'Ajoutez jusqu\'à 10 compteurs secondaires par section, pour suivre vos augmentations, diminutions et répétitions en parallèle de votre compteur principal.',
-    items: ['Jusqu\'à 10 compteurs par section', 'Label personnalisable (ex: "Dim.")', 'Idéal pour pulls, châles, chaussettes'],
   },
   section_notes: {
     svg: (
@@ -38,9 +32,6 @@ const FEATURES = {
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
     ),
-    title: 'Notes par section',
-    description: 'Ajoutez des notes spécifiques à chaque section de votre projet — pas juste une note globale.',
-    items: ['Notes indépendantes par section', 'Sauvegarde automatique', 'Retrouvez vos instructions section par section'],
   },
   photo_credits: {
     svg: (
@@ -49,9 +40,6 @@ const FEATURES = {
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
-    title: 'Plus de crédits photo IA',
-    description: 'Vous avez utilisé vos 2 crédits photo gratuits ce mois-ci. Passez à PRO pour 20 crédits par mois.',
-    items: ['20 crédits photo IA / mois', 'Tous les styles disponibles', 'Crédits supplémentaires à la carte'],
   },
   pattern_library: {
     svg: (
@@ -59,9 +47,6 @@ const FEATURES = {
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
       </svg>
     ),
-    title: 'Bibliothèque illimitée',
-    description: 'Passez à PLUS ou PRO pour un stockage de fichiers illimité et 200 photos.',
-    items: ['Patrons illimités (PDF, URL, texte)', 'Tous vos patrons Ravelry, Etsy...', 'Accessible hors-ligne'],
   },
 }
 
@@ -125,17 +110,17 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
           </div>
           <div>
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-0.5">
-              Fonctionnalité {content.plan === 'plus' ? 'PLUS' : 'PRO'}
+              {t('ui.featureBadge', { plan: content.plan === 'plus' ? 'PLUS' : 'PRO' })}
             </p>
-            <h3 className="text-lg font-bold text-gray-900">{content.title}</h3>
+            <h3 className="text-lg font-bold text-gray-900">{t(`upgrade.${feature}.title`)}</h3>
           </div>
         </div>
 
         {/* Description */}
-        <p className="text-sm text-gray-600 leading-relaxed">{content.description}</p>
+        <p className="text-sm text-gray-600 leading-relaxed">{t(`upgrade.${feature}.description`)}</p>
 
         <ul className="space-y-2">
-          {content.items.map((item, i) => (
+          {t(`upgrade.${feature}.items`, { returnObjects: true }).map((item, i) => (
             <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -193,7 +178,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             onClick={handleUpgrade}
             className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition text-sm font-semibold shadow-sm"
           >
-            {content.plan === 'plus' ? 'Voir les plans' : 'Passer à PRO'}
+            {content.plan === 'plus' ? t('ui.seePlans') : t('ui.goPro')}
           </button>
         </div>
         <p className="text-xs text-gray-400 text-center -mt-2">{t('ui.noCommitment')}</p>

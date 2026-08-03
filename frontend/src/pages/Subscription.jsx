@@ -75,7 +75,7 @@ const Subscription = () => {
     } catch (error) {
       if (win) win.close()
       console.error('Erreur portail:', error)
-      alert('Impossible d\'ouvrir le portail de gestion. Réessayez.')
+      alert(t('ui.portalFailed'))
       setProcessing(false)
     }
   }
@@ -119,7 +119,7 @@ const Subscription = () => {
     } catch (error) {
       if (win) win.close()
       console.error('Erreur checkout plus:', error)
-      alert(error.response?.data?.message || 'Erreur lors de la création du paiement')
+      alert(error.response?.data?.message || t('ui.paymentCreateFailed'))
       setProcessing(false)
     }
   }
@@ -141,7 +141,7 @@ const Subscription = () => {
     } catch (error) {
       if (win) win.close()
       console.error('Erreur checkout:', error)
-      alert(error.response?.data?.message || 'Erreur lors de la création du paiement')
+      alert(error.response?.data?.message || t('ui.paymentCreateFailed'))
       setProcessing(false)
     }
   }
@@ -161,7 +161,7 @@ const Subscription = () => {
     } catch (error) {
       if (win) win.close()
       console.error('Erreur checkout crédits:', error)
-      alert(error.response?.data?.message || 'Erreur lors de la création du paiement')
+      alert(error.response?.data?.message || t('ui.paymentCreateFailed'))
       setProcessing(false)
     }
   }
@@ -247,7 +247,7 @@ const Subscription = () => {
             disabled={processing}
             className="text-xs font-semibold text-primary-700 border border-primary-300 bg-white hover:bg-primary-50 rounded-lg px-3 py-1.5 transition disabled:opacity-60"
           >
-            {processing ? 'Chargement…' : 'Gérer'}
+            {processing ? t('ui.loadingEllipsis') : t('ui.manage')}
           </button>
         </div>
       )}
@@ -273,7 +273,7 @@ const Subscription = () => {
             disabled={processing}
             className="text-xs font-semibold text-primary-700 border border-primary-300 bg-white hover:bg-primary-50 rounded-lg px-3 py-1.5 transition disabled:opacity-60"
           >
-            {processing ? 'Chargement…' : 'Gérer'}
+            {processing ? t('ui.loadingEllipsis') : t('ui.manage')}
           </button>
         </div>
       )}
@@ -415,14 +415,14 @@ const Subscription = () => {
                 disabled={processing}
                 className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {processing ? 'Chargement…' : 'Passer à PRO (Annuel)'}
+                {processing ? t('ui.loadingEllipsis') : t('ui.goProYearly')}
               </button>
               <button
                 onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro')}
                 disabled={processing}
                 className="w-full py-2.5 border-2 border-primary-600 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {processing ? 'Chargement…' : 'Choisir le Mensuel (6,99€/mois)'}
+                {processing ? t('ui.loadingEllipsis') : t('ui.chooseMonthly')}
               </button>
             </div>
           )}
@@ -455,7 +455,7 @@ const Subscription = () => {
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.stackableCredits')}</span></li>
             </ul>
             <button onClick={() => handleBuyCredits(50)} disabled={processing} className="w-full py-2.5 border-2 border-primary-600 text-primary-600 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60">
-              {processing ? 'Chargement…' : 'Acheter 50 crédits'}
+              {processing ? t('ui.loadingEllipsis') : t('ui.buyPack50')}
             </button>
           </div>
 
@@ -480,7 +480,7 @@ const Subscription = () => {
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.stackableCredits')}</span></li>
             </ul>
             <button onClick={() => handleBuyCredits(150)} disabled={processing} className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition disabled:opacity-60">
-              {processing ? 'Chargement…' : 'Acheter 150 crédits'}
+              {processing ? t('ui.loadingEllipsis') : t('ui.buyPack150')}
             </button>
           </div>
         </div>
@@ -493,23 +493,23 @@ const Subscription = () => {
         {[
           {
             icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />,
-            q: 'Paiement sécurisé',
-            a: "Le paiement est géré par Stripe, leader mondial des paiements en ligne. Aucune donnée bancaire n'est stockée sur nos serveurs."
+            q: t('ui.securePayment'),
+            a: t('ui.faqSecurePaymentA')
           },
           {
             icon: <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />,
-            q: 'Annulation flexible',
-            a: "Vous pouvez annuler à tout moment. Votre abonnement reste actif jusqu'à la fin de la période payée, puis vous repassez en FREE automatiquement."
+            q: t('ui.faqFlexibleCancelQ'),
+            a: t('ui.faqFlexibleCancelA')
           },
           {
             icon: <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />,
-            q: 'Crédits photos IA',
-            a: "Les crédits mensuels se réinitialisent chaque mois à votre date d'abonnement. Les crédits achetés à la carte sont cumulables et n'expirent jamais."
+            q: t('ui.aiPhotoCredits'),
+            a: t('ui.faqCreditsA')
           },
           {
             icon: <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
-            q: 'Pas de frais cachés',
-            a: 'Le prix affiché est le prix total TTC. Vous pouvez changer de plan à tout moment avec proratisation automatique.'
+            q: t('ui.noHiddenFees'),
+            a: t('ui.faqNoHiddenFeesA')
           }
         ].map((item, i) => (
           <div key={i} className="flex items-start gap-3">

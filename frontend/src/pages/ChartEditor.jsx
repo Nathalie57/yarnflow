@@ -282,7 +282,7 @@ const ChartEditor = () => {
             className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               isLocked ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-primary-600 text-white hover:bg-primary-700'
             }`}
-            title={isLocked ? 'Grille verrouillée — cliquez pour la modifier' : 'Verrouiller la grille pour suivre votre progression sans risque'}
+            title={isLocked ? t('ui.chartLocked') : t('ui.chartLockHint')}
           >
             {isLocked ? (
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-8 4h8m-8 0a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2v-6a2 2 0 00-2-2" /></svg>
@@ -305,7 +305,7 @@ const ChartEditor = () => {
           onClick={() => setShowAssignModal(true)}
           className="w-full text-xs px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition text-gray-600 flex items-center justify-center gap-1.5"
         >
-          🔗 {chart.section_id ? 'Changer de projet/section' : 'Associer à un projet/section'}
+          🔗 {chart.section_id ? t('ui.changeProjectSection') : t('ui.linkToProjectSection')}
         </button>
 
         {/* Zoom */}

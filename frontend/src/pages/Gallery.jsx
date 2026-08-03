@@ -242,7 +242,7 @@ const Gallery = () => {
     } catch (err) {
       console.error('Erreur upload:', err)
       setUploading(false)
-      alert(err.response?.data?.error || 'Erreur lors de l\'upload')
+      alert(err.response?.data?.error || t('ui.uploadFailed'))
     } finally {
       setUploading(false)
     }
@@ -277,7 +277,7 @@ const Gallery = () => {
       // si ce garde-fou venait à manquer sur un autre chemin de réponse.
       if (!response.data.success_count) {
         const firstError = response.data.generated_photos?.[0]?.error
-        throw new Error(firstError || 'La génération IA a échoué')
+        throw new Error(firstError || t('ui.aiGenFailed2'))
       }
 
       await fetchPhotos()
@@ -297,13 +297,13 @@ const Gallery = () => {
       console.error('Erreur génération IA:', err)
       trackPhotoEnhanced(selectedContext?.key, false)
       setEnhancing(false)
-      alert(err.response?.data?.error || err.message || 'Erreur lors de la génération IA')
+      alert(err.response?.data?.error || err.message || t('ui.aiGenerationFailed'))
     }
   }
 
   // [AI:Claude] Supprimer une photo
   const handleDelete = async (photoId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette photo ?'))
+    if (!window.confirm(t('ui.confirmDeletePhoto')))
       return
 
     try {
@@ -448,8 +448,8 @@ const Gallery = () => {
                     {(() => {
                       const subType = user?.subscription_type;
                       if (!subType || subType === 'free') return 'Plan FREE · 3 essais IA offerts';
-                      if (subType === 'plus' || subType === 'plus_annual') return 'Plan PLUS : 5 crédits/mois';
-                      return 'Plan PRO : 20 crédits/mois';
+                      if (subType === 'plus' || subType === 'plus_annual') return t('ui.planPlusCredits');
+                      return t('ui.planProCredits');
                     })()}
                   </p>
                 </div>
@@ -690,9 +690,9 @@ const Gallery = () => {
                       <button
                         onClick={(e) => toggleOriginal(photo.id, e)}
                         className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-800 text-xs font-semibold px-2 py-1 rounded-full transition shadow"
-                        title={viewingOriginalIds.has(photo.id) ? 'Voir le résultat IA' : 'Voir l\'original'}
+                        title={viewingOriginalIds.has(photo.id) ? t('ui.viewAiResult') : t('ui.viewOriginal')}
                       >
-                        {viewingOriginalIds.has(photo.id) ? 'Après →' : '← Avant'}
+                        {viewingOriginalIds.has(photo.id) ? t('ui.afterArrow') : t('ui.beforeArrow')}
                       </button>
                     )}
 
@@ -761,11 +761,11 @@ const Gallery = () => {
                                     await api.put(`/projects/${photo.project_id}/set-cover-photo`, {
                                       photo_id: photo.id
                                     })
-                                    alert('Photo de couverture mise à jour !')
+                                    alert(t('ui.coverUpdated'))
                                     setOpenMenuId(null)
                                   } catch (err) {
                                     console.error('Erreur:', err)
-                                    alert('Erreur lors de la mise à jour')
+                                    alert(t('ui.updateFailed'))
                                   }
                                 }}
                                 className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
@@ -798,7 +798,7 @@ const Gallery = () => {
                                     const file = new File([blob], `${photo.item_name || 'photo'}.jpg`, { type: 'image/jpeg' })
                                     await navigator.share({
                                       files: [file],
-                                      title: photo.item_name || 'Ma photo tricot/crochet',
+                                      title: photo.item_name || t('ui.myKnitPhoto'),
                                       text: `Découvrez mon ${photo.item_name || 'ouvrage'} ! 🧶✨`
                                     })
                                     setOpenMenuId(null)
@@ -832,7 +832,7 @@ const Gallery = () => {
                                     setShowInstagramModal(true)
                                   } catch (err) {
                                     console.error('Erreur téléchargement Instagram:', err)
-                                    alert('Erreur lors du téléchargement de l\'image')
+                                    alert(t('ui.imageDownloadFailed'))
                                   }
                                   setOpenMenuId(null)
                                 }
@@ -913,7 +913,7 @@ const Gallery = () => {
                                 const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path || photo.original_path}`
                                 try {
                                   await navigator.clipboard.writeText(url)
-                                  alert('Lien copié !')
+                                  alert(t('ui.linkCopied'))
                                   setOpenMenuId(null)
                                 } catch (err) {
                                   console.error('Erreur copie:', err)
@@ -1068,7 +1068,7 @@ const Gallery = () => {
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {selectedProjectId ? '✓ Les infos du projet seront utilisées automatiquement' : 'Optionnel — vous pourrez choisir le type lors de l\'embellissement'}
+                  {selectedProjectId ? t('ui.projectInfoUsed') : t('ui.typeOptional')}
                 </p>
               </div>
 
@@ -1197,16 +1197,16 @@ const Gallery = () => {
                 {selectedContext && selectedContext.worn && (
                   <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                     <p className="text-sm font-semibold text-gray-700 mb-2">
-                      {selectedContext.key?.startsWith('child_garment_') ? 'Genre de l\'enfant :' : 'Genre du modèle :'}
+                      {selectedContext.key?.startsWith('child_garment_') ? t('ui.childGenderLabel') : t('ui.modelGenderLabel')}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'male' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
                         <input type="radio" name="modelGender" value="male" checked={modelGender === 'male'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
-                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Garçon' : 'Homme'}</span>
+                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? t('ui.boy') : t('ui.man')}</span>
                       </label>
                       <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'female' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
                         <input type="radio" name="modelGender" value="female" checked={modelGender === 'female'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
-                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Fille' : 'Femme'}</span>
+                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? t('ui.girl') : t('ui.woman')}</span>
                       </label>
                     </div>
                   </div>
@@ -1342,7 +1342,7 @@ const Gallery = () => {
                   disabled={enhancing || !selectedContext || !credits || credits.total_available < 1}
                   className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
-                  {enhancing ? 'Génération...' : ((!user?.subscription_type || user?.subscription_type === 'free') ? 'Utiliser mon essai gratuit' : `Générer (${credits?.total_available ?? 0} crédit${(credits?.total_available ?? 0) > 1 ? 's' : ''})`)}
+                  {enhancing ? t('ui.generating') : ((!user?.subscription_type || user?.subscription_type === 'free') ? t('ui.useFreeTrial') : t('ui.generateWithCredits', { count: credits?.total_available ?? 0 }))}
 
                 </button>
               </div>

@@ -57,7 +57,7 @@ const FirstRowCelebration = ({ onClose, counterUnit = 'rows' }) => {
           {t('ui.yarnflowFollowsYou')}
         </p>
         <p className="text-lg text-gray-700 leading-relaxed">
-          {counterUnit === 'cm' ? 'centimètre après centimètre' : 'rang après rang'} 💜
+          {counterUnit === 'cm' ? t('ui.cmByCm') : t('ui.rowByRow')} 💜
         </p>
 
         {/* Bouton de fermeture (optionnel, l'auto-fermeture suffit) */}

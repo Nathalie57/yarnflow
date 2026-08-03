@@ -30,7 +30,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       setAllocations(allocRes.data.allocations || [])
       setStashEntries(stashRes.data.entries || [])
     } catch {
-      setError('Impossible de charger les données.')
+      setError(t('ui.dataLoadFailed'))
     } finally {
       setLoading(false)
     }
@@ -52,7 +52,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       setQuantity(1)
       await loadData()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la réservation.')
+      setError(err.response?.data?.error || t('ui.reserveFailed'))
     } finally {
       setSaving(false)
     }
@@ -63,7 +63,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       await stashAllocationAPI.remove(projectId, stashEntryId)
       await loadData()
     } catch {
-      setError('Impossible de supprimer la réservation.')
+      setError(t('ui.reserveDeleteFailed'))
     }
   }
 
@@ -73,7 +73,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       await stashAllocationAPI.update(projectId, stashEntryId, newQty)
       await loadData()
     } catch {
-      setError('Impossible de mettre à jour la quantité.')
+      setError(t('ui.quantityUpdateFailed'))
     }
   }
 
@@ -210,7 +210,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
                     onClick={handleAdd}
                     disabled={!selectedEntry || saving}
                     className="flex-1 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 disabled:opacity-50"
-                  >{saving ? 'Réservation…' : 'Réserver'}</button>
+                  >{saving ? t('ui.reservingEllipsis') : t('ui.reserve')}</button>
                 </div>
               </div>
             )}

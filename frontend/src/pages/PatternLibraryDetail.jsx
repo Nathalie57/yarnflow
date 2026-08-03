@@ -14,6 +14,7 @@ import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import ProxyViewer from '../components/ProxyViewer'
+import { projectTypeKey } from '../data/projectTypes'
 
 const PatternLibraryDetail = () => {
   const { t } = useTranslation('library')
@@ -71,13 +72,10 @@ const PatternLibraryDetail = () => {
 
   const isPro = user?.subscription_type && user.subscription_type !== 'free'
 
+  // Libelle affichable d'une valeur stockee : la valeur elle-meme reste en base.
   const getCategoryLabel = (category) => {
-    const translations = {
-      'other': 'Autre', 'Vêtements': 'Vêtements', 'Accessoires': 'Accessoires',
-      'Maison/Déco': 'Maison/Déco', 'Jouets/Peluches': 'Jouets/Peluches',
-      'Accessoires bébé': 'Accessoires bébé'
-    }
-    return translations[category] || category
+    const key = projectTypeKey(category)
+    return key ? t(`projectTypes.${key}`, { ns: 'common' }) : category
   }
 
   useEffect(() => {
@@ -155,7 +153,7 @@ const PatternLibraryDetail = () => {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce patron ?')) return
+    if (!confirm(t('ui.confirmDeletePattern'))) return
     try {
       await api.delete(`/pattern-library/${id}`)
       navigate('/pattern-library')
@@ -232,7 +230,7 @@ const PatternLibraryDetail = () => {
   const addPendingFiles = (newFiles) => {
     const valid = Array.from(newFiles).filter(f => ALLOWED_TYPES.includes(f.type))
     if (valid.length < newFiles.length) {
-      alert('Certains fichiers ont été ignorés (formats acceptés : PDF, JPG, PNG, WEBP)')
+      alert(t('ui.someFilesIgnored'))
     }
     setPendingFiles(prev => {
       const existing = new Set(prev.map(f => f.name + f.size))
@@ -265,14 +263,14 @@ const PatternLibraryDetail = () => {
       setPendingFiles([])
     } catch (err) {
       console.error('Erreur ajout fichier:', err)
-      alert(err.response?.data?.error || "Erreur lors de l'ajout du fichier")
+      alert(err.response?.data?.error || t('ui.fileAddFailed'))
     } finally {
       setUploadingFile(false)
     }
   }
 
   const handleDeleteAdditionalFile = async (fileId) => {
-    if (!confirm('Supprimer ce fichier ?')) return
+    if (!confirm(t('ui.confirmDeleteFile'))) return
     try {
       await api.delete(`/pattern-library/${id}/files/${fileId}`)
       // Révoquer le blob
@@ -303,7 +301,7 @@ const PatternLibraryDetail = () => {
       setShowAddNote(false)
     } catch (err) {
       console.error('Erreur création note:', err)
-      alert('Erreur lors de la création de la note')
+      alert(t('ui.noteCreateFailed'))
     } finally {
       setSavingNote(false)
     }
@@ -319,14 +317,14 @@ const PatternLibraryDetail = () => {
       setEditingNoteText('')
     } catch (err) {
       console.error('Erreur mise à jour note:', err)
-      alert('Erreur lors de la mise à jour')
+      alert(t('ui.updateFailed2'))
     } finally {
       setSavingNote(false)
     }
   }
 
   const handleDeleteNote = async (noteId) => {
-    if (!confirm('Supprimer cette note ?')) return
+    if (!confirm(t('ui.confirmDeleteNote'))) return
     try {
       await api.delete(`/pattern-library/${id}/notes/${noteId}`)
       setUsageNotes(prev => prev.filter(n => n.id !== noteId))
@@ -348,15 +346,15 @@ const PatternLibraryDetail = () => {
       else {
         try {
           new URL(formData.url)
-          if (!formData.url.startsWith('http')) errors.url = "L'URL doit commencer par http:// ou https://"
+          if (!formData.url.startsWith('http')) errors.url = t('ui.urlMustStartHttpPlain')
         } catch { errors.url = "URL invalide" }
       }
     } else if (editType === 'text') {
       if (!formData.pattern_text?.trim()) errors.pattern_text = 'Texte obligatoire'
-      else if (formData.pattern_text.trim().length < 10) errors.pattern_text = 'Au moins 10 caractères'
+      else if (formData.pattern_text.trim().length < 10) errors.pattern_text = t('ui.min10Chars')
     }
     if (!formData.name?.trim()) errors.name = 'Nom obligatoire'
-    else if (formData.name.trim().length < 2) errors.name = 'Au moins 2 caractères'
+    else if (formData.name.trim().length < 2) errors.name = t('ui.min2Chars')
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -423,7 +421,7 @@ const PatternLibraryDetail = () => {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
           </svg>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('ui.patternNotFound')}</h2>
-          <p className="text-gray-600 mb-6">{error || "Ce patron n'existe pas ou a été supprimé"}</p>
+          <p className="text-gray-600 mb-6">{error || t('ui.patternNotFound')}</p>
           <Link to="/pattern-library" className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition inline-block">
             ← Retour à la bibliothèque
           </Link>

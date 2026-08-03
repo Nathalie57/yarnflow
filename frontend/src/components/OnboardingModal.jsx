@@ -15,7 +15,7 @@ const SLIDES = [
       </svg>
     ),
     title: 'Bienvenue sur YarnFlow',
-    description: 'Votre compagnon de tricot et crochet. Suivez vos projets, organisez vos patrons et sublimez vos créations avec l\'IA.',
+    descKey: 'onbAppDesc',
   },
   {
     icon: (
@@ -27,7 +27,7 @@ const SLIDES = [
       </svg>
     ),
     title: 'Compteur de rangs',
-    description: 'Créez un projet, découpez-le en sections et comptez vos rangs en un tap. Votre progression est sauvegardée automatiquement, même entre appareils.',
+    descKey: 'onbCounterDesc',
   },
   {
     icon: (
@@ -36,8 +36,8 @@ const SLIDES = [
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
       </svg>
     ),
-    title: 'Bibliothèque de patrons',
-    description: 'Centralisez tous vos patrons PDF, images ou URLs en un seul endroit. Plus besoin de chercher dans vos téléchargements.',
+    titleKey: 'onbLibraryTitle',
+    descKey: 'onbLibraryDesc',
   },
   {
     icon: (
@@ -47,8 +47,8 @@ const SLIDES = [
         <path d="M17.5 7.5l1.5 1.5"/>
       </svg>
     ),
-    title: 'Photos sublimées par l\'IA',
-    description: 'Prenez une photo de votre ouvrage et laissez l\'IA la transformer en photo de studio. Partagez vos créations sous leur meilleur jour.',
+    titleKey: 'onbPhotoTitle',
+    descKey: 'onbPhotoDesc',
   },
   {
     icon: (
@@ -62,7 +62,7 @@ const SLIDES = [
       </svg>
     ),
     title: 'Des outils pour tricoter mieux',
-    description: 'Calculateur d\'échantillon, répartition d\'augmentations, convertisseur d\'aiguilles, glossaire… Tout ce qu\'il vous faut, sans quitter l\'app.',
+    descKey: 'onbToolsDesc',
   },
 ]
 
@@ -88,10 +88,10 @@ export default function OnboardingModal({ onClose }) {
 
         {/* Texte */}
         <h2 className="text-xl font-bold text-gray-900 text-center mb-3">
-          {slide.title}
+          {slide.titleKey ? t(`ui.${slide.titleKey}`) : slide.title}
         </h2>
         <p className="text-sm text-gray-500 text-center leading-relaxed">
-          {slide.description}
+          {t(`ui.${slide.descKey}`)}
         </p>
 
         {/* Indicateurs */}

@@ -62,7 +62,7 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
       setTimeout(onClose, 1200)
     } catch (err) {
       console.error('Erreur sauvegarde séquence:', err)
-      setError(err.response?.data?.error || 'Erreur lors de la sauvegarde.')
+      setError(err.response?.data?.error || t('ui.saveFailed'))
       setSaving(false)
     }
   }

@@ -70,7 +70,17 @@
     "selectPhoto": "Veuillez sélectionner une photo",
     "photoUploadFailed": "Erreur lors de l'ajout de la photo",
     "libraryLoadFailed": "Impossible de charger votre bibliothèque de patrons",
-    "deleteFailed": "Erreur lors de la suppression du projet"
+    "deleteFailed": "Erreur lors de la suppression du projet",
+    "steps": {
+      "project": "création du projet",
+      "sections": "création des sections",
+      "patternFile": "upload du fichier patron",
+      "patternLink": "enregistrement du lien patron",
+      "patternText": "enregistrement du texte patron",
+      "patternLibrary": "liaison du patron depuis la bibliothèque",
+      "tags": "sauvegarde des tags",
+      "favorite": "marquage favori"
+    }
   },
   "confirmDelete": {
     "title": "Supprimer le projet",
@@ -262,6 +272,14 @@
     "pdfOrImageHint": "PDF ou image",
     "sectionNameRequired": "Nom de la section *",
     "deleteThisSection": "Supprimer cette section",
-    "gaugeHeading": "Échantillon"
+    "gaugeHeading": "Échantillon",
+    "totalLengthCm": "Longueur totale (cm)",
+    "rowCountOptional": "Nombre de rangs (optionnel)",
+    "createProjectSparkle": "✨ Créer le projet",
+    "stepCategory": "Catégorie",
+    "stepInfo": "Infos",
+    "stepSections": "Sections",
+    "stepOptions": "Options",
+    "stepCreation": "Création"
   }
 }

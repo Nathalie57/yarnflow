@@ -515,7 +515,7 @@ const MyProjects = () => {
 
     try {
       // [AI:Claude] ÉTAPE 1 : Création du projet
-      currentStep = 'création du projet'
+      currentStep = 'project'
 
       const projectData = {
         name: formData.name,
@@ -553,7 +553,7 @@ const MyProjects = () => {
 
       // [AI:Claude] ÉTAPE 2 : Créer les sections si définies
       if (sections.length > 0) {
-        currentStep = 'création des sections'
+        currentStep = 'sections'
         setCreatingStep(`Création de ${sections.length} section(s)...`)
 
         for (let i = 0; i < sections.length; i++) {
@@ -569,7 +569,7 @@ const MyProjects = () => {
 
       // [AI:Claude] ÉTAPE 3 : Upload du patron si fourni
       if (patternType === 'file' && patternFile) {
-        currentStep = 'upload du fichier patron'
+        currentStep = 'patternFile'
         setCreatingStep(t('creating.uploadPattern'))
 
         const formDataPattern = new FormData()
@@ -580,21 +580,21 @@ const MyProjects = () => {
           headers: { 'Content-Type': 'multipart/form-data' }
         })
       } else if (patternType === 'url' && patternUrl.trim()) {
-        currentStep = 'enregistrement du lien patron'
+        currentStep = 'patternLink'
         setCreatingStep(t('creating.savingPatternUrl'))
 
         await api.post(`/projects/${newProject.id}/pattern-url`, {
           pattern_url: patternUrl
         })
       } else if (patternType === 'text' && patternText.trim()) {
-        currentStep = 'enregistrement du texte patron'
+        currentStep = 'patternText'
         setCreatingStep(t('creating.savingPatternText'))
 
         await api.post(`/projects/${newProject.id}/pattern-text`, {
           pattern_text: patternText
         })
       } else if (patternType === 'library' && selectedLibraryPattern) {
-        currentStep = 'liaison du patron depuis la bibliothèque'
+        currentStep = 'patternLibrary'
         setCreatingStep(t('creating.linkingPattern'))
 
         await api.post(`/projects/${newProject.id}/pattern-from-library`, {
@@ -604,14 +604,14 @@ const MyProjects = () => {
 
       // [AI:Claude] ÉTAPE 4 : Sauvegarder les tags
       if (projectTags.length > 0) {
-        currentStep = 'sauvegarde des tags'
+        currentStep = 'tags'
         setCreatingStep(t('creating.addingTags'))
         await saveProjectTags(newProject.id, projectTags)
       }
 
       // [AI:Claude] ÉTAPE 5 : Marquer comme favori
       if (isFavorite) {
-        currentStep = 'marquage favori'
+        currentStep = 'favorite'
         setCreatingStep(t('creating.markingFavorite'))
         await api.put(`/projects/${newProject.id}/favorite`)
       }
@@ -652,12 +652,12 @@ const MyProjects = () => {
       let errorMessage = ''
       const apiError = err.response?.data?.error || err.response?.data?.message
 
-      if (currentStep === 'création du projet') {
+      if (currentStep === 'project') {
         errorMessage = apiError || t('errors.createFailed')
-      } else if (currentStep === 'création des sections') {
-        errorMessage = t('errors.createdButStepFailed', { step: currentStep, detail: apiError || t('errors.addSectionsManually') })
-      } else if (currentStep.includes('patron')) {
-        errorMessage = t('errors.createdButStepFailedAlt', { step: currentStep, detail: apiError || t('errors.addPatternManually') })
+      } else if (currentStep === 'sections') {
+        errorMessage = t('errors.createdButStepFailed', { step: t(`errors.steps.${currentStep}`), detail: apiError || t('errors.addSectionsManually') })
+      } else if (currentStep.startsWith('pattern')) {
+        errorMessage = t('errors.createdButStepFailedAlt', { step: t(`errors.steps.${currentStep}`), detail: apiError || t('errors.addPatternManually') })
       } else {
         errorMessage = apiError || t('errors.createGeneric')
       }

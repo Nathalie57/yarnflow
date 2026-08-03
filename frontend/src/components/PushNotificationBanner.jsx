@@ -37,7 +37,7 @@ const PushNotificationBanner = () => {
     setLoading(true)
     const result = await subscribe()
     setLoading(false)
-    if (result.success || result.error === 'Permission refusée') {
+    if (result.success || result.code === 'permission_denied') {
       localStorage.setItem(STORAGE_KEY, Date.now().toString())
       setVisible(false)
     }

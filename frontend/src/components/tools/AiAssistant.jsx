@@ -43,12 +43,12 @@ const MarkdownText = ({ text }) => {
 }
 
 const SUGGESTIONS = [
-  'Comment faire une diminution SSK ?',
-  'Quelle différence entre k2tog et SSK ?',
-  'Comment calculer les mailles pour une encolure ronde ?',
-  'Mon tricot tire vers la droite, pourquoi ?',
-  'Comment joindre deux pelotes sans nœud visible ?',
-  'C\'est quoi le blocage et comment le faire ?',
+  t('ui.aiQ1'),
+  t('ui.aiQ2'),
+  t('ui.aiQ3'),
+  t('ui.aiQ4'),
+  t('ui.aiQ5'),
+  t('ui.aiQ6'),
 ]
 
 export default function AiAssistant() {
@@ -104,7 +104,7 @@ export default function AiAssistant() {
         setUsage({ used: data.used, limit: data.limit, remaining: 0 })
         setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${data.error}`, isError: true }])
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${data?.error || 'Une erreur est survenue.'}`, isError: true }])
+        setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${data?.error || t('ui.genericErrorShort')}`, isError: true }])
       }
     } finally {
       setLoading(false)

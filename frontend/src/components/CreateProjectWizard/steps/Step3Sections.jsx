@@ -110,7 +110,7 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
                   />
                   <input
                     type="number"
-                    placeholder={counterUnit === 'cm' ? 'Longueur totale (cm)' : 'Nombre de rangs (optionnel)'}
+                    placeholder={counterUnit === 'cm' ? t('ui.totalLengthCm') : t('ui.rowCountOptional')}
                     value={section.total_rows || ''}
                     onChange={(e) => handleUpdateSection(index, 'total_rows', e.target.value ? parseFloat(e.target.value) : null)}
                     step={counterUnit === 'cm' ? '0.5' : '1'}

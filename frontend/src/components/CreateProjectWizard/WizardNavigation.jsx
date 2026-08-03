@@ -4,6 +4,8 @@
  * @created 2026-01-27 by [AI:Claude]
  */
 
+import { useTranslation } from 'react-i18next'
+
 const WizardNavigation = ({
   currentStep,
   totalSteps,
@@ -15,6 +17,7 @@ const WizardNavigation = ({
   isSubmitting,
   submitLabel
 }) => {
+  const { t } = useTranslation('projects')
   const isLastStep = currentStep === totalSteps
   const isFirstStep = currentStep === 1
 
@@ -55,7 +58,7 @@ const WizardNavigation = ({
             disabled={isSubmitting || !canGoNext}
             className="px-6 py-2.5 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-primary-300"
           >
-            {isSubmitting ? submitLabel : '✨ Créer le projet'}
+            {isSubmitting ? submitLabel : t('ui.createProjectSparkle')}
           </button>
         ) : (
           <button

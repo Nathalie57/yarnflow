@@ -22,7 +22,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      alert('Veuillez sélectionner une note')
+      alert(t('ui.pickRating'))
       return
     }
 
@@ -41,7 +41,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
       onClose()
     } catch (err) {
       console.error('Erreur feedback:', err)
-      alert(err.response?.data?.error || 'Erreur lors de l\'envoi du feedback')
+      alert(err.response?.data?.error || t('ui.feedbackSendFailed'))
     } finally {
       setSubmitting(false)
       setRating(0)
@@ -52,11 +52,11 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
 
   const getRatingLabel = (stars) => {
     const labels = {
-      1: 'Très insatisfait',
-      2: 'Insatisfait',
-      3: 'Correct',
-      4: 'Satisfait',
-      5: 'Excellent !'
+      1: t('ui.rating1'),
+      2: t('ui.rating2'),
+      3: t('ui.rating3'),
+      4: t('ui.rating4'),
+      5: t('ui.rating5')
     }
     return labels[stars] || ''
   }
@@ -147,7 +147,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
             disabled={submitting || rating === 0}
             className="w-full px-6 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? '⏳ Envoi...' : '✨ Envoyer ma note'}
+            {submitting ? t('ui.sendingRating') : t('ui.sendRating')}
           </button>
 
           <button

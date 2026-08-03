@@ -70,7 +70,7 @@ const YarnStash = () => {
       setStats(res.data.stats || null)
       setBrands(res.data.brands || [])
     } catch (err) {
-      setError('Impossible de charger le stock. Réessaie.')
+      setError(t('ui.stashLoadFailed'))
     } finally {
       setLoading(false)
     }
@@ -96,7 +96,7 @@ const YarnStash = () => {
         setShowAddModal(false)
         setError('upgrade_required')
       } else {
-        setError(err.response?.data?.error || 'Erreur lors de l\'ajout.')
+        setError(err.response?.data?.error || t('ui.stashAddFailed'))
       }
     } finally {
       setSaving(false)
@@ -113,7 +113,7 @@ const YarnStash = () => {
       setEditingEntry(null)
       loadStash()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la modification.')
+      setError(err.response?.data?.error || t('ui.stashEditFailed'))
     } finally {
       setSaving(false)
     }
@@ -126,7 +126,7 @@ const YarnStash = () => {
       setDeletingEntry(null)
       loadStash()
     } catch (err) {
-      setError('Impossible de supprimer cette entrée.')
+      setError(t('ui.stashDeleteFailed'))
     }
   }
 
@@ -150,7 +150,7 @@ const YarnStash = () => {
   }
 
   const handleAssignConfirm = async () => {
-    if (!assignProjectId) { setAssignError('Sélectionnez un projet.'); return }
+    if (!assignProjectId) { setAssignError(t('ui.selectProject')); return }
     setAssignSaving(true)
     setAssignError(null)
     try {
@@ -158,7 +158,7 @@ const YarnStash = () => {
       setAssigningEntry(null)
       loadStash()
     } catch (err) {
-      setAssignError(err.response?.data?.error || 'Erreur lors de la réservation.')
+      setAssignError(err.response?.data?.error || t('ui.reserveFailed2'))
     } finally {
       setAssignSaving(false)
     }
@@ -216,7 +216,7 @@ const YarnStash = () => {
                 to="/subscription"
                 className="text-xs font-semibold text-primary-600 hover:text-primary-700"
               >
-                {isPlus ? 'Passer à Pro →' : 'Passer à Plus ou Pro →'}
+                {isPlus ? t('ui.goProArrow') : t('ui.goPlusOrProArrow')}
               </Link>
             ) : (
               <span className="text-xs text-amber-600">{isPlus ? 'Plan Plus' : 'Plan Free'}</span>
@@ -451,7 +451,7 @@ const YarnStash = () => {
                 disabled={assignSaving}
                 className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
               >
-                {assignSaving ? 'Réservation…' : 'Réserver'}
+                {assignSaving ? t('ui.reservingEllipsis') : t('ui.reserve')}
               </button>
             </div>
           </div>

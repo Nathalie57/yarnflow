@@ -100,7 +100,7 @@ const ContextualHint = () => {
             {/* Contenu */}
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-700 leading-relaxed">
-                {currentHint.text}
+                {t(`ui.${currentHint.textKey}`)}
               </p>
             </div>
 

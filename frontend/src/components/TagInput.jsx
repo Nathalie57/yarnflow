@@ -11,7 +11,7 @@ import PropTypes from 'prop-types'
 import TagBadge from './TagBadge'
 import { useTranslation } from 'react-i18next'
 
-const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder = 'Ajouter un tag...' }) => {
+const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder = t('ui.addTagPlaceholder') }) => {
   const { t } = useTranslation('tools')
   const [inputValue, setInputValue] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)

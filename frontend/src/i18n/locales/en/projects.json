@@ -70,7 +70,17 @@
     "selectPhoto": "Please select a photo",
     "photoUploadFailed": "Error while adding the photo",
     "libraryLoadFailed": "Unable to load your pattern library",
-    "deleteFailed": "Error while deleting the project"
+    "deleteFailed": "Error while deleting the project",
+    "steps": {
+      "project": "creating the project",
+      "sections": "creating the sections",
+      "patternFile": "uploading the pattern file",
+      "patternLink": "saving the pattern link",
+      "patternText": "saving the pattern text",
+      "patternLibrary": "linking the pattern from your library",
+      "tags": "saving the tags",
+      "favorite": "marking as favourite"
+    }
   },
   "confirmDelete": {
     "title": "Delete the project",
@@ -262,6 +272,14 @@
     "pdfOrImageHint": "PDF or image",
     "sectionNameRequired": "Section name *",
     "deleteThisSection": "Delete this section",
-    "gaugeHeading": "Gauge"
+    "gaugeHeading": "Gauge",
+    "totalLengthCm": "Total length (cm)",
+    "rowCountOptional": "Number of rows (optional)",
+    "createProjectSparkle": "✨ Create project",
+    "stepCategory": "Category",
+    "stepInfo": "Details",
+    "stepSections": "Sections",
+    "stepOptions": "Options",
+    "stepCreation": "Creation"
   }
 }

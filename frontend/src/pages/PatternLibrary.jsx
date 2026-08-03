@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import UpgradePrompt from '../components/UpgradePrompt'
+import { projectTypeKey } from '../data/projectTypes'
 
 const PatternLibrary = () => {
   const { t } = useTranslation('library')
@@ -69,17 +70,10 @@ const PatternLibrary = () => {
   const [uploading, setUploading] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
 
-  // Traduction des catégories
+  // Libelle affichable d'une valeur stockee : la valeur elle-meme reste en base.
   const getCategoryLabel = (category) => {
-    const translations = {
-      'other': 'Autre',
-      'Vêtements': 'Vêtements',
-      'Accessoires': 'Accessoires',
-      'Maison/Déco': 'Maison/Déco',
-      'Jouets/Peluches': 'Jouets/Peluches',
-      'Accessoires bébé': 'Accessoires bébé'
-    }
-    return translations[category] || category
+    const key = projectTypeKey(category)
+    return key ? t(`projectTypes.${key}`, { ns: 'common' }) : category
   }
 
   useEffect(() => {
@@ -172,7 +166,7 @@ const PatternLibrary = () => {
 
         if (isChangingToFile && !file) {
           // Si on change vers 'file', un fichier est obligatoire
-          errors.file = '⚠️ Veuillez sélectionner un fichier (PDF, JPG, PNG ou WEBP)'
+          errors.file = t('ui.pickFile')
         } else if (file) {
           // Si un fichier est fourni, le valider
           const maxSize = 10 * 1024 * 1024 // 10MB
@@ -187,30 +181,30 @@ const PatternLibrary = () => {
       } else if (sourceType === 'url') {
         // URL obligatoire en édition
         if (!formData.url || !formData.url.trim()) {
-          errors.url = '⚠️ Veuillez entrer une URL'
+          errors.url = t('ui.enterUrl2')
         } else {
           try {
             new URL(formData.url)
             if (!formData.url.startsWith('http://') && !formData.url.startsWith('https://')) {
-              errors.url = '⚠️ L\'URL doit commencer par http:// ou https://'
+              errors.url = t('ui.urlMustStartHttp')
             }
           } catch {
-            errors.url = '⚠️ L\'URL n\'est pas valide. Exemple: https://www.exemple.com'
+            errors.url = t('ui.urlInvalid')
           }
         }
       } else if (sourceType === 'text') {
         // Texte obligatoire en édition
         if (!formData.pattern_text || !formData.pattern_text.trim()) {
-          errors.pattern_text = '⚠️ Veuillez entrer le texte du patron'
+          errors.pattern_text = t('ui.enterPatternText2')
         } else if (formData.pattern_text.trim().length < 10) {
-          errors.pattern_text = '⚠️ Le texte du patron doit contenir au moins 10 caractères'
+          errors.pattern_text = t('ui.patternTextMin10')
         }
       }
     } else {
       // Mode ajout
       if (addType === 'file') {
         if (!file) {
-          errors.file = '⚠️ Veuillez sélectionner un fichier (PDF, JPG, PNG ou WEBP)'
+          errors.file = t('ui.pickFile')
         } else {
           const maxSize = 10 * 1024 * 1024 // 10MB
           if (file.size > maxSize) {
@@ -223,33 +217,33 @@ const PatternLibrary = () => {
         }
       } else if (addType === 'url') {
         if (!formData.url || !formData.url.trim()) {
-          errors.url = '⚠️ Veuillez entrer une URL'
+          errors.url = t('ui.enterUrl2')
         } else {
           try {
             new URL(formData.url)
             if (!formData.url.startsWith('http://') && !formData.url.startsWith('https://')) {
-              errors.url = '⚠️ L\'URL doit commencer par http:// ou https://'
+              errors.url = t('ui.urlMustStartHttp')
             }
           } catch {
-            errors.url = '⚠️ L\'URL n\'est pas valide. Exemple: https://www.exemple.com'
+            errors.url = t('ui.urlInvalid')
           }
         }
       } else if (addType === 'text') {
         if (!formData.pattern_text || !formData.pattern_text.trim()) {
-          errors.pattern_text = '⚠️ Veuillez entrer le texte du patron'
+          errors.pattern_text = t('ui.enterPatternText2')
         } else if (formData.pattern_text.trim().length < 10) {
-          errors.pattern_text = '⚠️ Le texte du patron doit contenir au moins 10 caractères'
+          errors.pattern_text = t('ui.patternTextMin10')
         }
       }
     }
 
     // Validation du nom (obligatoire pour tous les types)
     if (!formData.name || !formData.name.trim()) {
-      errors.name = '⚠️ Le nom du patron est obligatoire'
+      errors.name = t('ui.patternNameRequired')
     } else if (formData.name.trim().length < 2) {
-      errors.name = '⚠️ Le nom doit contenir au moins 2 caractères'
+      errors.name = t('ui.patternNameMin2')
     } else if (formData.name.length > 200) {
-      errors.name = '⚠️ Le nom ne peut pas dépasser 200 caractères'
+      errors.name = t('ui.patternNameMax200')
     }
 
     setValidationErrors(errors)
@@ -314,7 +308,7 @@ const PatternLibrary = () => {
         setShowAddModal(false)
         setShowUpgradeLibrary(true)
       } else {
-        const errorMessage = err.response?.data?.message || err.response?.data?.error || "Erreur lors de l'ajout du patron"
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || t('ui.patternAddFailed')
         alert(errorMessage)
       }
     } finally {
@@ -337,7 +331,7 @@ const PatternLibrary = () => {
   }
 
   const handleDelete = async (patternId) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce patron ?'))
+    if (!confirm(t('ui.confirmDeletePattern')))
       return
 
     try {
@@ -473,7 +467,7 @@ const PatternLibrary = () => {
       setTimeout(() => window.URL.revokeObjectURL(url), 600000)
     } catch (err) {
       console.error('Erreur ouverture fichier:', err)
-      alert('Erreur lors de l\'ouverture du fichier')
+      alert(t('ui.fileOpenFailed'))
     }
   }
 
@@ -534,9 +528,9 @@ const PatternLibrary = () => {
                       isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-primary-600'
                     }`}
                   >
-                    {isAtLimit ? 'Limite atteinte — Passer à PRO' :
+                    {isAtLimit ? t('ui.limitReachedGoPro') :
                      isNearLimit ? `Plus que ${remaining} — Passer à PRO` :
-                     'Passer à PRO pour plus'}
+                     t('ui.goProForMore')}
                   </button>
                 </div>
               )
@@ -1312,7 +1306,7 @@ const PatternLibrary = () => {
               {editType === 'file' && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {editingPattern.source_type === 'file' ? 'Remplacer le fichier (optionnel)' : 'Fichier '}
+                    {editingPattern.source_type === 'file' ? t('ui.replaceFileOptional') : t('ui.fileLabel')}
                     {editingPattern.source_type !== 'file' && <span className="text-red-600">*</span>}
                   </label>
                   {editingPattern.source_type === 'file' && (

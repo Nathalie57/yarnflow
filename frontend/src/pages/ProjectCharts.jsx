@@ -69,7 +69,7 @@ const ProjectCharts = () => {
       })
       navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la création')
+      setError(err.response?.data?.error || t('ui.chartCreateFailed'))
       setSaving(false)
     }
   }
@@ -93,8 +93,8 @@ const ProjectCharts = () => {
       navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
       setError(err?.message === NO_GRID_DETECTED
-        ? "Cette image ne ressemble pas à une grille de motif (aucune ligne régulière détectée). Essayez une image avec des lignes de grille visibles, ou dessinez votre motif à la main."
-        : (err.response?.data?.error || 'Impossible de traiter cette image. Essayez avec un autre fichier.'))
+        ? t('ui.notAChart')
+        : (err.response?.data?.error || t('ui.imageProcessFailed')))
       setSaving(false)
     } finally {
       setIsProcessingImage(false)
@@ -119,7 +119,7 @@ const ProjectCharts = () => {
       })
       navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
-      setError(err.response?.data?.error || 'Impossible de traiter cette image. Essayez avec un autre fichier.')
+      setError(err.response?.data?.error || t('ui.imageProcessFailed'))
       setSaving(false)
     } finally {
       setIsProcessingPhoto(false)
@@ -127,7 +127,7 @@ const ProjectCharts = () => {
   }
 
   const handleDelete = async (chartId) => {
-    if (!window.confirm('Supprimer cette grille ?')) return
+    if (!window.confirm(t('ui.confirmDeleteChart'))) return
     try {
       await api.delete(`/projects/${projectId}/charts/${chartId}`)
       setCharts(prev => prev.filter(c => c.id !== chartId))
@@ -258,7 +258,7 @@ const ProjectCharts = () => {
                 <div className="flex gap-2">
                   <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
                   <button onClick={handleCreate} disabled={saving || !name.trim()} className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">
-                    {saving ? 'Création...' : 'Créer'}
+                    {saving ? t('ui.creatingEllipsis') : t('ui.create')}
                   </button>
                 </div>
               </>
@@ -284,7 +284,7 @@ const ProjectCharts = () => {
                     disabled={saving || isProcessingImage || !name.trim() || !imageFile}
                     className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
                   >
-                    {isProcessingImage ? 'Traitement...' : saving ? 'Création...' : "Générer depuis l'image"}
+                    {isProcessingImage ? t('ui.processing') : saving ? t('ui.creatingEllipsis') : t('ui.generateFromImage')}
                   </button>
                 </div>
               </>
@@ -320,7 +320,7 @@ const ProjectCharts = () => {
                     disabled={saving || isProcessingPhoto || !name.trim() || !photoFile}
                     className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
                   >
-                    {isProcessingPhoto ? 'Traitement...' : saving ? 'Création...' : "Générer depuis la photo"}
+                    {isProcessingPhoto ? t('ui.processing') : saving ? t('ui.creatingEllipsis') : t('ui.generateFromPhoto')}
                   </button>
                 </div>
               </>

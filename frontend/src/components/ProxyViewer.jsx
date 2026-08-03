@@ -138,7 +138,7 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
             maxHeight: youtubeEmbedUrl ? '500px' : '1200px',
             display: loading ? 'none' : 'block'
           }}
-          title={youtubeEmbedUrl ? 'Vidéo YouTube' : 'Patron'}
+          title={youtubeEmbedUrl ? t('ui.youtubeVideo') : t('ui.patternTitle')}
           onLoad={handleLoad}
           onError={handleError}
           allow={youtubeEmbedUrl ? 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' : undefined}

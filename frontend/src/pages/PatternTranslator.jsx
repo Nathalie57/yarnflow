@@ -45,13 +45,13 @@ export default function PatternTranslator() {
     try {
       const formData = new FormData()
       if (mode === 'url') {
-        if (!url.trim()) { setError('Entrez une URL.'); setLoading(false); return }
+        if (!url.trim()) { setError(t('ui.enterUrl')); setLoading(false); return }
         formData.append('url', url.trim())
       } else if (mode === 'text') {
-        if (!text.trim()) { setError('Entrez le texte du patron.'); setLoading(false); return }
+        if (!text.trim()) { setError(t('ui.enterPatternText')); setLoading(false); return }
         formData.append('text', text.trim())
       } else if (mode === 'pdf') {
-        if (!file) { setError('Sélectionnez un fichier PDF.'); setLoading(false); return }
+        if (!file) { setError(t('ui.selectPdfFile')); setLoading(false); return }
         formData.append('file', file)
       }
 
@@ -103,7 +103,7 @@ export default function PatternTranslator() {
       setResult(translation)
       setSaveError(null)
       if (res.data.quota) setQuota(res.data.quota)
-      if (res.data.truncated) setError('Le patron était très long — seule la première partie a été traduite.')
+      if (res.data.truncated) setError(t('ui.patternTruncated'))
 
     } catch (err) {
       const data = err.response?.data
@@ -111,7 +111,7 @@ export default function PatternTranslator() {
         setError(data.error)
         if (data.quota) setQuota(data.quota)
       } else {
-        setError(data?.detail || data?.error || 'Une erreur est survenue. Réessayez.')
+        setError(data?.detail || data?.error || t('ui.genericError'))
       }
     } finally {
       setLoading(false)
@@ -139,7 +139,7 @@ export default function PatternTranslator() {
       })
       navigate(`/pattern-library/${res.data.pattern.id}`)
     } catch (err) {
-      setSaveError('Impossible d\'enregistrer dans la bibliothèque.')
+      setSaveError(t('ui.saveToLibraryFailed'))
       setSaving(false)
     }
   }
@@ -155,7 +155,7 @@ export default function PatternTranslator() {
         <div className="flex items-center justify-between">
           <button
             onClick={() => {
-              if (!window.confirm('Quitter sans enregistrer ? La traduction sera définitivement perdue.')) return
+              if (!window.confirm(t('ui.confirmLeaveUnsaved'))) return
               setResult(null)
             }}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
@@ -222,7 +222,7 @@ export default function PatternTranslator() {
             disabled={saving || !saveName.trim()}
             className="w-full py-3 bg-primary-600 text-white rounded-xl font-semibold text-sm hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? 'Enregistrement…' : 'Enregistrer dans la bibliothèque'}
+            {saving ? t('ui.savingEllipsis') : t('ui.saveToLibrary')}
           </button>
         </div>
 
@@ -257,11 +257,11 @@ export default function PatternTranslator() {
           <span className={quota.remaining === 0 ? 'text-red-700' : 'text-primary-700'}>
             {quota.remaining === 0
               ? quota.is_lifetime
-                ? '3 traductions gratuites utilisées'
-                : `Limite mensuelle atteinte (${quota.limit}/mois)`
+                ? t('ui.freeTranslationsUsed')
+                : t('ui.monthlyLimitReached', { limit: quota.limit })
               : quota.is_lifetime
-                ? `${quota.remaining} traduction${quota.remaining > 1 ? 's' : ''} gratuite${quota.remaining > 1 ? 's' : ''} restante${quota.remaining > 1 ? 's' : ''}`
-                : `${quota.used} / ${quota.limit} traductions ce mois`
+                ? t('ui.freeTranslationsLeft', { count: quota.remaining })
+                : t('ui.translationsThisMonth', { used: quota.used, limit: quota.limit })
             }
           </span>
           {quota.remaining === 0 && (

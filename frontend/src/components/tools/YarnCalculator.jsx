@@ -63,7 +63,7 @@ const MATRIX = {
     },
   },
   echarpe: {
-    label: 'Écharpe',
+    labelKey: 'itemScarf',
     sizes: ['Courte (~120 cm)', 'Standard (~160 cm)', 'Longue (~200 cm)'],
     weights: {
       lace:      [400, 600, 900],
@@ -77,12 +77,12 @@ const MATRIX = {
 }
 
 const WEIGHT_LABELS = {
-  lace:      'Lace (très fin)',
+  lace:      t('ui.weightLaceThin'),
   fingering: 'Fingering (fin)',
   sport:     'Sport',
   dk:        'DK (mi-fin)',
   worsted:   'Worsted / Aran (moyen)',
-  bulky:     'Bulky (épais)',
+  bulky:     t('ui.weightBulkyThick'),
 }
 
 // Catégories du stash correspondant à chaque épaisseur du calculateur
@@ -150,7 +150,7 @@ export default function YarnCalculator() {
       setStockCheck({ loading: false, entries: matching, total: Math.round(total), enough: total >= estimatedMeters })
     } catch {
       setStockCheck(null)
-      setStockError('Impossible de récupérer le stock. Vérifiez votre connexion.')
+      setStockError(t('ui.stashFetchFailed'))
     }
   }
 
@@ -169,7 +169,7 @@ export default function YarnCalculator() {
         >
           <option value="">{t('ui.chooseType')}</option>
           {Object.entries(MATRIX).map(([key, p]) => (
-            <option key={key} value={key}>{p.label}</option>
+            <option key={key} value={key}>{p.labelKey ? t(`ui.${p.labelKey}`) : p.label}</option>
           ))}
         </select>
       </div>
@@ -217,7 +217,7 @@ export default function YarnCalculator() {
           {/* Métrage estimé */}
           <div>
             <p className="text-sm text-primary-700 leading-relaxed">
-              Pour un <strong>{project.label}</strong> taille <strong>{size}</strong> en <strong>{WEIGHT_LABELS[weight]}</strong>
+              Pour un <strong>{project.labelKey ? t(`ui.${project.labelKey}`) : project.label}</strong> taille <strong>{size}</strong> en <strong>{WEIGHT_LABELS[weight]}</strong>
             </p>
             <p className="text-4xl font-bold text-primary-700 mt-2">
               {estimatedMeters.toLocaleString('fr-FR')} m

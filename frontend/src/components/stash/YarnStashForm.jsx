@@ -8,7 +8,7 @@ import { yarnStashAPI } from '../../services/api'
 import { useTranslation } from 'react-i18next'
 
 const YARN_WEIGHT_OPTIONS = [
-  { value: '',            label: 'Épaisseur (optionnel)' },
+  { value: '',            labelKey: 'weightOptional' },
   { value: 'lace',        label: 'Lace' },
   { value: 'fingering',   label: 'Fingering' },
   { value: 'sport',       label: 'Sport' },
@@ -127,8 +127,8 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
         }))
       } catch (err) {
         const msg = err?.message === 'timeout'
-          ? 'Lecture trop longue. Remplis le formulaire manuellement.'
-          : (err?.response?.data?.error || 'Lecture automatique impossible. Remplis le formulaire manuellement.')
+          ? t('ui.scanTooLong')
+          : (err?.response?.data?.error || t('ui.scanImpossible'))
         setScanError(msg)
       } finally {
         setScanning(false)
@@ -424,7 +424,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
             onChange={set('yarn_weight_category')}
           >
             {YARN_WEIGHT_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>{o.labelKey ? t(`ui.${o.labelKey}`) : o.label}</option>
             ))}
           </select>
         </div>

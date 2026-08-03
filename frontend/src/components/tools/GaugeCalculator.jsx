@@ -221,7 +221,7 @@ export default function GaugeCalculator() {
               </div>
               <p className="text-sm text-primary-800 text-center pt-1">
                 {adaptResult.diff === 0
-                  ? 'Votre échantillon est identique au patron.'
+                  ? t('ui.gaugeMatchesPattern')
                   : adaptResult.diff > 0
                     ? `Ajoutez ${adaptResult.diff} maille${adaptResult.diff > 1 ? 's' : ''} par rapport au patron.`
                     : `Retirez ${Math.abs(adaptResult.diff)} maille${Math.abs(adaptResult.diff) > 1 ? 's' : ''} par rapport au patron.`

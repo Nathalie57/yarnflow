@@ -319,5 +319,15 @@
     "toy": "Amigurumi",
     "home_decor": "Home",
     "accessory": "Accessories"
+  },
+  "projectTypes": {
+    "garments": "Garments",
+    "accessories": "Accessories",
+    "toys": "Toys/Plushies",
+    "babyGarments": "Baby garments",
+    "babyAccessories": "Baby accessories",
+    "childGarments": "Kids garments",
+    "home": "Home/Decor",
+    "other": "Other"
   }
 }

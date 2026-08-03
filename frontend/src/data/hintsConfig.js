@@ -11,7 +11,7 @@
 export const HINTS = {
   TIMER_WAKE_LOCK: {
     id: 'timer_wake_lock',
-    text: 'Le timer garde votre écran allumé pendant que vous tricotez !',
+    textKey: 'hintTimerWakeLock',
     icon: '💡',
     position: 'bottom',
     priority: 1,

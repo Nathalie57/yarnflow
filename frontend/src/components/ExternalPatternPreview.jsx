@@ -36,7 +36,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
         }
       } catch (err) {
         console.error('Erreur chargement métadonnées:', err)
-        setError('Impossible de charger l\'aperçu')
+        setError(t('ui.previewLoadFailed'))
       } finally {
         setLoading(false)
       }
@@ -95,7 +95,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
         <div className="relative h-64 bg-gray-100">
           <img
             src={metadata.image}
-            alt={metadata.title || 'Aperçu du patron'}
+            alt={metadata.title || t('ui.patternPreviewAlt')}
             className="w-full h-full object-cover"
             onError={(e) => {
               e.target.style.display = 'none'
@@ -161,7 +161,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
             onClick={handleOpenPattern}
             className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
           >
-            {isMobile ? '🔗 Ouvrir le patron' : '📱 Ouvrir en fenêtre à côté'}
+            {isMobile ? t('ui.openPattern') : t('ui.openSideWindow')}
           </button>
 
           {!isMobile && (

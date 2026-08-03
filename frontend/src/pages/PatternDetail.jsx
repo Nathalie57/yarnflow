@@ -46,7 +46,7 @@ const PatternDetail = () => {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Erreur téléchargement PDF:', error)
-      alert('Erreur lors du téléchargement du PDF')
+      alert(t('ui.pdfDownloadFailed'))
     } finally {
       setDownloading(false)
     }
@@ -71,7 +71,7 @@ const PatternDetail = () => {
       navigate(`/projects/${project.id}/counter`)
     } catch (error) {
       console.error('Erreur création projet:', error)
-      alert(error.response?.data?.error || 'Erreur lors de la création du projet')
+      alert(error.response?.data?.error || t('ui.projectCreateFailed'))
     } finally {
       setCreatingProject(false)
     }
@@ -133,14 +133,14 @@ const PatternDetail = () => {
             disabled={creatingProject}
             className="btn-primary bg-green-600 hover:bg-green-700 border-green-600"
           >
-            {creatingProject ? 'Création...' : '🧶 Commencer à crocheter'}
+            {creatingProject ? t('ui.creatingEllipsis') : t('ui.startCrocheting')}
           </button>
           <button
             onClick={downloadPDF}
             disabled={downloading}
             className="btn-primary"
           >
-            {downloading ? 'Téléchargement...' : '📥 Télécharger en PDF'}
+            {downloading ? t('ui.downloadingEllipsis') : t('ui.downloadPdf')}
           </button>
           <button
             onClick={() => window.print()}

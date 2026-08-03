@@ -116,8 +116,8 @@ export default function ChartDesigner() {
       setImportNote(`Grille détectée automatiquement depuis l'image : ${result.width} × ${result.height} cases, ${colorCount} couleur${colorCount > 1 ? 's' : ''} identifiée${colorCount > 1 ? 's' : ''}. Si un gris parasite s'est glissé dans la palette ci-dessous, un × apparaîtra dessus pour le fusionner avec la bonne couleur.`)
     } catch (e) {
       setImageError(e.message === NO_GRID_DETECTED
-        ? "Cette image ne ressemble pas à une grille de motif (aucune ligne régulière détectée). Essayez une image avec des lignes de grille visibles, ou dessinez votre motif à la main."
-        : "Impossible de traiter cette image. Essayez avec un autre fichier.")
+        ? t('ui.notAChart')
+        : t('ui.imageProcessFailed'))
     } finally {
       setIsProcessingImage(false)
     }
@@ -133,7 +133,7 @@ export default function ChartDesigner() {
       setChart({ name: name.trim(), width: result.width, height: result.height, palette: result.palette, cells: result.cells })
       setImportNote(`Grille générée depuis la photo : ${result.width} × ${result.height} cases, ${result.palette.length} couleurs. Vous pouvez retoucher les cases et fusionner des couleurs ci-dessous si besoin.`)
     } catch (e) {
-      setPhotoError("Impossible de traiter cette image. Essayez avec un autre fichier.")
+      setPhotoError(t('ui.imageProcessFailed'))
     } finally {
       setIsProcessingPhoto(false)
     }
@@ -417,7 +417,7 @@ export default function ChartDesigner() {
               disabled={!name.trim() || !imageFile || isProcessingImage}
               className="w-full py-2.5 rounded-lg text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
             >
-              {isProcessingImage ? 'Traitement en cours…' : "Générer la grille depuis l'image"}
+              {isProcessingImage ? t('ui.processingEllipsis') : t('ui.chartFromImage')}
             </button>
           </div>
         )}
@@ -452,7 +452,7 @@ export default function ChartDesigner() {
               disabled={!name.trim() || !photoFile || isProcessingPhoto}
               className="w-full py-2.5 rounded-lg text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
             >
-              {isProcessingPhoto ? 'Traitement en cours…' : "Générer la grille depuis la photo"}
+              {isProcessingPhoto ? t('ui.processingEllipsis') : t('ui.chartFromPhoto')}
             </button>
           </div>
         )}

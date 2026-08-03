@@ -34,7 +34,7 @@ const WEIGHTS = [
     wraps: '22 – 26',
   },
   {
-    eu: 'Légère / DK',
+    eu: t('ui.weightLightDk'),
     us: 'DK / Light Worsted',
     uk: 'DK / 8 ply',
     needlesMm: '3,5 – 4,5',
@@ -61,7 +61,7 @@ const WEIGHTS = [
     wraps: '10 – 14',
   },
   {
-    eu: 'Très grosse / Super Bulky',
+    eu: t('ui.weightSuperBulky'),
     us: 'Super Bulky / Roving',
     uk: 'Super Chunky',
     needlesMm: '8 – 15',

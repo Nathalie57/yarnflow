@@ -92,7 +92,7 @@ export default function SmartProjectCreator() {
         const patterns = (response.data.patterns || []).filter(p => p.file_path)
         setLibraryPatterns(patterns)
       } catch (err) {
-        setError('Impossible de charger la bibliothèque')
+        setError(t('ui.libraryLoadFailed'))
       } finally {
         setLoadingLibrary(false)
       }
@@ -107,7 +107,7 @@ export default function SmartProjectCreator() {
         return
       }
       if (selectedFile.type !== 'application/pdf') {
-        setError('Seuls les fichiers PDF sont acceptés')
+        setError(t('ui.pdfOnly'))
         return
       }
       setFile(selectedFile)
@@ -117,7 +117,7 @@ export default function SmartProjectCreator() {
 
   const handleAnalyze = async () => {
     if (mode === 'pdf' && !file) {
-      setError('Veuillez sélectionner un fichier PDF')
+      setError(t('ui.selectPdf'))
       return
     }
     if (mode === 'url' && !url) {
@@ -125,7 +125,7 @@ export default function SmartProjectCreator() {
       return
     }
     if (mode === 'library' && !selectedLibraryPattern) {
-      setError('Veuillez sélectionner un patron dans votre bibliothèque')
+      setError(t('ui.selectFromLibrary'))
       return
     }
 
@@ -192,7 +192,7 @@ export default function SmartProjectCreator() {
         fetchQuota()
       } else {
         trackSmartAnalysis(mode, false)
-        setError(response.data.error || 'Erreur lors de l\'analyse')
+        setError(response.data.error || t('ui.analysisFailed'))
         setAiStatus(response.data.ai_status)
       }
     } catch (err) {
@@ -201,11 +201,11 @@ export default function SmartProjectCreator() {
       if (err.response?.status === 403) {
         fetchQuota() // recharge pour afficher l'écran d'upgrade
         setError(err.response.data?.free_trial_used
-          ? 'Essai gratuit déjà utilisé — passez à PRO pour continuer.'
-          : 'La création intelligente est réservée aux abonnés PRO.'
+          ? t('ui.trialUsedGoPro')
+          : t('ui.smartCreationProOnly')
         )
       } else {
-        setError(err.response?.data?.error || 'Erreur lors de l\'analyse du patron')
+        setError(err.response?.data?.error || t('ui.patternAnalysisFailed'))
       }
     } finally {
       stepTimers.forEach(clearTimeout)
@@ -243,11 +243,11 @@ export default function SmartProjectCreator() {
         setStep(4)
         trackProjectCreated('smart', project.craft_type)
       } else {
-        setError(response.data.error || 'Erreur lors de la création du projet')
+        setError(response.data.error || t('ui.projectCreationFailed'))
       }
     } catch (err) {
       console.error('Erreur confirm:', err)
-      setError(err.response?.data?.error || 'Erreur lors de la création du projet')
+      setError(err.response?.data?.error || t('ui.projectCreationFailed'))
     } finally {
       setCreating(false)
     }
@@ -328,7 +328,7 @@ export default function SmartProjectCreator() {
         <div className="mb-8 sm:hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-primary-600">
-              Étape {step} / 4 — {[, 'Mode', 'Analyse', 'Validation', 'Création'][step]}
+              Étape {step} / 4 — {[, 'Mode', 'Analyse', 'Validation', t('ui.stepCreation')][step]}
             </span>
           </div>
           <div className="w-full h-1.5 bg-gray-200 rounded-full">
@@ -341,10 +341,10 @@ export default function SmartProjectCreator() {
         {/* Desktop : stepper complet */}
         <div className="mb-8 hidden sm:flex items-center justify-center gap-4">
           {[
-            { num: 1, label: 'Mode' },
-            { num: 2, label: 'Analyse' },
-            { num: 3, label: 'Validation' },
-            { num: 4, label: 'Création' }
+            { num: 1, labelKey: 'stepMode' },
+            { num: 2, labelKey: 'stepAnalysis' },
+            { num: 3, labelKey: 'stepValidation' },
+            { num: 4, labelKey: 'stepCreation' }
           ].map((s) => (
             <div key={s.num} className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -353,7 +353,7 @@ export default function SmartProjectCreator() {
                 {s.num}
               </div>
               <span className={`text-sm ${step >= s.num ? 'text-primary-600 font-medium' : 'text-gray-400'}`}>
-                {s.label}
+                {t(`ui.${s.labelKey}`)}
               </span>
               {s.num < 4 && <span className="text-gray-300">→</span>}
             </div>
@@ -423,7 +423,7 @@ export default function SmartProjectCreator() {
         {step === 2 && !analyzing && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              {mode === 'pdf' ? 'Importer un PDF' : mode === 'library' ? 'Choisir dans ma bibliothèque' : 'Importer depuis une URL'}
+              {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.chooseFromLibrary') : t('ui.importFromUrl')}
             </h2>
 
             {mode === 'library' && (
@@ -576,7 +576,7 @@ export default function SmartProjectCreator() {
                       {t('ui.analyzing')}
                     </>
                   ) : (
-                    'Analyser avec l\'IA'
+                    t('ui.analyseWithAi')
                   )}
                 </button>
               )}
@@ -599,10 +599,10 @@ export default function SmartProjectCreator() {
             <p className="text-gray-500 text-sm mb-8">{t('ui.aiReadingPattern')}</p>
             <div className="max-w-xs mx-auto space-y-3 text-left">
               {[
-                { label: 'Envoi du patron', delay: 0 },
-                { label: 'Lecture du contenu', delay: 1 },
-                { label: 'Extraction des informations', delay: 2 },
-                { label: 'Mise en forme du résultat', delay: 3 },
+                { labelKey: 'progSending', delay: 0 },
+                { labelKey: 'progReading', delay: 1 },
+                { labelKey: 'progExtracting', delay: 2 },
+                { labelKey: 'progFormatting', delay: 3 },
               ].map((s, i) => (
                 <div key={i} className="flex items-center gap-3">
                   {analyzingStep > i ? (
@@ -618,7 +618,7 @@ export default function SmartProjectCreator() {
                     <div className="w-5 h-5 rounded-full border-2 border-gray-200 shrink-0"/>
                   )}
                   <span className={`text-sm ${analyzingStep >= i ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
-                    {s.label}
+                    {t(`ui.${s.labelKey}`)}
                   </span>
                 </div>
               ))}
@@ -856,7 +856,7 @@ export default function SmartProjectCreator() {
                 disabled={creating || !project.title}
                 className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {creating ? 'Création...' : '✓ Créer le projet'}
+                {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
               </button>
             </div>
           </div>

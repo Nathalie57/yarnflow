@@ -89,7 +89,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
       setTimeout(onClose, 1200)
     } catch (err) {
       console.error('Erreur sauvegarde grille:', err)
-      setError(err.response?.data?.error || 'Erreur lors de la sauvegarde.')
+      setError(err.response?.data?.error || t('ui.saveFailed'))
       setSaving(false)
     }
   }
@@ -98,7 +98,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 max-h-[calc(100vh-6rem)] sm:max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">{isReassign ? 'Associer à un projet/section' : 'Enregistrer la grille'}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{isReassign ? t('ui.linkToProjectSection') : t('ui.saveChart')}</h2>
           <p className="text-sm text-gray-500 mt-1">
             {isReassign ? existingChart.name : chart.name} — {isReassign ? existingChart.width : chart.width} × {chartHeight}
           </p>
@@ -120,7 +120,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">
-                  {isReassign ? '-- Choisir un projet --' : '-- Aucun projet, juste dans "Mes grilles" --'}
+                  {isReassign ? t('ui.chooseProject') : t('ui.noProjectJustCharts')}
                 </option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -180,7 +180,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
 
         {saved && (
           <p className="text-sm text-green-600 font-medium text-center">
-            {isReassign ? 'Grille réassignée !' : (selectedProjectId ? 'Grille enregistrée !' : 'Grille enregistrée dans "Mes grilles" !')}
+            {isReassign ? t('ui.chartReassigned') : (selectedProjectId ? t('ui.chartSaved') : t('ui.chartSavedInMyCharts'))}
           </p>
         )}
         {error && (

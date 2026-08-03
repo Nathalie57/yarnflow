@@ -34,7 +34,7 @@ const ImportPartnerPattern = () => {
         const res = await partnerImportAPI.getTemplate(code)
         setTemplate(res.data.template)
       } catch {
-        setError('Ce lien est invalide ou expiré.')
+        setError(t('ui.linkInvalid'))
       } finally {
         setLoading(false)
       }
@@ -59,7 +59,7 @@ const ImportPartnerPattern = () => {
       const res = await partnerImportAPI.importProject(code)
       navigate(`/projects/${res.data.project.id}`, { replace: true })
     } catch {
-      setError('Impossible de créer le projet. Réessaie.')
+      setError(t('ui.projectCreateFailed'))
       setImporting(false)
     }
   }
@@ -167,7 +167,7 @@ const ImportPartnerPattern = () => {
           onClick={handleImportClick}
           className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-colors"
         >
-          {user ? 'Ajouter à mes projets' : 'Créer un compte pour utiliser ce patron'}
+          {user ? t('ui.addToMyProjects') : t('ui.signUpToUse')}
         </button>
 
         {!user && (

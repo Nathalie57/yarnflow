@@ -59,9 +59,9 @@ const Profile = () => {
       setProfileData(prev => ({ ...prev, user: updatedUser }))
       updateUser(updatedUser)
       setEditMode(false)
-      setSuccessMessage('Profil mis à jour avec succès')
+      setSuccessMessage(t('ui.profileUpdated'))
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || 'Erreur lors de la mise à jour')
+      setErrorMessage(error.response?.data?.message || t('ui.profileUpdateFailed'))
     }
   }
 
@@ -79,7 +79,7 @@ const Profile = () => {
         new_password: passwordData.new_password
       })
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' })
-      setSuccessMessage('Mot de passe modifié avec succès')
+      setSuccessMessage(t('ui.passwordChanged'))
     } catch (error) {
       setErrorMessage(error.response?.data?.message || 'Erreur lors du changement de mot de passe')
     }
@@ -348,8 +348,8 @@ const Profile = () => {
                     <p className="text-sm font-medium text-gray-900">{t('ui.pushNotifications')}</p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {permission === 'denied'
-                        ? 'Bloquées dans votre navigateur — modifiez les permissions du site pour les activer'
-                        : 'Reçois des rappels directement sur ton téléphone'}
+                        ? t('ui.pushBlocked')
+                        : t('ui.pushReminders')}
                     </p>
                   </div>
                   {permission === 'denied' ? (

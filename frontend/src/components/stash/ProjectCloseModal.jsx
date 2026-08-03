@@ -24,7 +24,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
         allocs.forEach(a => { initialUsage[a.stash_entry_id] = a.quantity_reserved })
         setUsage(initialUsage)
       })
-      .catch(() => setError('Impossible de charger les allocations.'))
+      .catch(() => setError(t('ui.allocationsLoadFailed')))
       .finally(() => setLoading(false))
   }, [projectId])
 
@@ -40,7 +40,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
       const remainders = res.data.remainders || []
       onConfirmed(remainders)
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la clôture.')
+      setError(err.response?.data?.error || t('ui.closeFailed'))
     } finally {
       setSaving(false)
     }
@@ -123,7 +123,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
             onClick={handleClose}
             disabled={saving || loading}
             className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
-          >{saving ? 'Clôture…' : 'Clôturer le projet'}</button>
+          >{saving ? t('ui.closingEllipsis') : t('ui.closeProject')}</button>
         </div>
       </div>
     </div>

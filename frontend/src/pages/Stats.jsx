@@ -144,7 +144,7 @@ const Stats = () => {
       setStats(response.data.stats || {})
     } catch (err) {
       console.error('Erreur stats projets:', err)
-      setError('Impossible de charger les statistiques.')
+      setError(t('ui.statsLoadFailed'))
     } finally {
       setLoading(false)
     }
@@ -295,10 +295,10 @@ const Stats = () => {
         {isPro && (
           <div className="flex gap-1">
             {[
-              { key: 'week', label: 'Semaine' },
-              { key: 'month', label: 'Mois' },
-              { key: 'year', label: 'Année' },
-              { key: 'all', label: 'Tout' },
+              { key: 'week', labelKey: 'periodWeek' },
+              { key: 'month', labelKey: 'periodMonth' },
+              { key: 'year', labelKey: 'periodYear' },
+              { key: 'all', labelKey: 'periodAll' },
             ].map(p => (
               <button
                 key={p.key}
@@ -309,7 +309,7 @@ const Stats = () => {
                     : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                {p.label}
+                {t(`ui.${p.labelKey}`)}
               </button>
             ))}
           </div>
@@ -495,7 +495,7 @@ const Stats = () => {
                     <PieChart>
                       <Pie
                         data={[
-                          { name: 'Terminés', value: stats.completed_projects || 0 },
+                          { name: t('ui.chartCompleted'), value: stats.completed_projects || 0 },
                           { name: 'En cours', value: stats.active_projects || 0 },
                           { name: 'Autres', value: Math.max(0, (stats.total_projects || 0) - (stats.completed_projects || 0) - (stats.active_projects || 0)) }
                         ].filter(i => i.value > 0)}
