@@ -15,6 +15,8 @@ import frAuth from './locales/fr/auth.json'
 import enAuth from './locales/en/auth.json'
 import frLanding from './locales/fr/landing.json'
 import enLanding from './locales/en/landing.json'
+import frPageTitles from './locales/fr/pageTitles.json'
+import enPageTitles from './locales/en/pageTitles.json'
 
 export const LANGUAGE_STORAGE_KEY = 'yarnflow_lang'
 export const SUPPORTED_LANGUAGES = ['fr', 'en']
@@ -23,8 +25,8 @@ export const SUPPORTED_LANGUAGES = ['fr', 'en']
 // petit à l'échelle d'un bundle Vite, pas besoin du backend HTTP d'i18next
 // (qui ajouterait un chargement asynchrone et un risque de flash sans texte).
 const resources = {
-  fr: { common: frCommon, auth: frAuth, landing: frLanding },
-  en: { common: enCommon, auth: enAuth, landing: enLanding },
+  fr: { common: frCommon, auth: frAuth, landing: frLanding, pageTitles: frPageTitles },
+  en: { common: enCommon, auth: enAuth, landing: enLanding, pageTitles: enPageTitles },
 }
 
 i18n
@@ -35,7 +37,7 @@ i18n
     supportedLngs: SUPPORTED_LANGUAGES,
     fallbackLng: 'fr',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'landing'],
+    ns: ['common', 'auth', 'landing', 'pageTitles'],
 
     detection: {
       // [AI:Claude] localStorage en premier : un choix explicite via le sélecteur

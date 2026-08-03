@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AuthProvider } from './contexts/AuthContext'
 import { HintsProvider } from './contexts/HintsContext'
 import PrivateRoute from './components/PrivateRoute'
@@ -56,53 +57,60 @@ import AdminPartnerPatterns from './pages/admin/AdminPartnerPatterns'
 // pour toute l'appli (constaté : 4k vues sous ce même titre générique).
 // Correspondance exacte d'abord, puis préfixe pour les routes dynamiques
 // (/projects/:id, /pattern-library/:id...).
-const PAGE_TITLES = {
-  '/': 'Landing',
-  '/home': 'Accueil',
-  '/login': 'Connexion',
-  '/register': 'Inscription',
-  '/forgot-password': 'Mot de passe oublié',
-  '/reset-password': 'Réinitialiser le mot de passe',
-  '/payment/success': 'Paiement réussi',
-  '/cgu': 'CGU',
-  '/privacy': 'Confidentialité',
-  '/mentions': 'Mentions légales',
-  '/contact': 'Contact',
-  '/subscription': 'Abonnement',
-  '/profile': 'Mon profil',
-  '/my-projects': 'Mes projets',
-  '/smart-project-creator': 'Création intelligente',
-  '/stats': 'Statistiques',
-  '/tools': 'Outils',
-  '/pattern-translator': 'Traducteur de patron',
-  '/gallery': 'Galerie',
-  '/bibliotheque': 'Ressources',
-  '/pattern-library': 'Bibliothèque de patrons',
-  '/stash': 'Stock de pelotes',
-  '/admin': 'Admin',
+//
+// Ces tables ne stockent que des CLÉS de traduction, jamais le libellé final :
+// résolu au rendu via t(), sinon le titre resterait figé dans la langue
+// active au premier chargement du module.
+const PAGE_TITLE_KEYS = {
+  '/': 'landing',
+  '/home': 'home',
+  '/login': 'login',
+  '/register': 'register',
+  '/forgot-password': 'forgotPassword',
+  '/reset-password': 'resetPassword',
+  '/payment/success': 'paymentSuccess',
+  '/cgu': 'cgu',
+  '/privacy': 'privacy',
+  '/mentions': 'legalNotice',
+  '/contact': 'contact',
+  '/subscription': 'subscription',
+  '/profile': 'profile',
+  '/my-projects': 'myProjects',
+  '/smart-project-creator': 'smartProjectCreator',
+  '/stats': 'stats',
+  '/tools': 'tools',
+  '/pattern-translator': 'patternTranslator',
+  '/gallery': 'gallery',
+  '/bibliotheque': 'resources',
+  '/pattern-library': 'patternLibrary',
+  '/stash': 'stash',
+  '/admin': 'admin',
 }
-const PAGE_TITLE_PREFIXES = [
-  [/^\/projects\/[^/]+\/charts\/[^/]+/, 'Éditeur de graphique'],
-  [/^\/projects\/[^/]+\/charts/, 'Graphique du projet'],
-  [/^\/projects\/[^/]+/, 'Compteur de projet'],
-  [/^\/pattern-library\/[^/]+/, 'Détail du patron'],
-  [/^\/admin\//, 'Admin'],
+const PAGE_TITLE_KEY_PREFIXES = [
+  [/^\/projects\/[^/]+\/charts\/[^/]+/, 'chartEditor'],
+  [/^\/projects\/[^/]+\/charts/, 'projectCharts'],
+  [/^\/projects\/[^/]+/, 'projectCounter'],
+  [/^\/pattern-library\/[^/]+/, 'patternDetail'],
+  [/^\/admin\//, 'admin'],
 ]
 
-const getPageTitle = (pathname) => {
-  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname]
-  const match = PAGE_TITLE_PREFIXES.find(([re]) => re.test(pathname))
-  return match ? match[1] : document.title
+const getPageTitleKey = (pathname) => {
+  if (PAGE_TITLE_KEYS[pathname]) return PAGE_TITLE_KEYS[pathname]
+  const match = PAGE_TITLE_KEY_PREFIXES.find(([re]) => re.test(pathname))
+  return match ? match[1] : null
 }
 
 // [AI:Claude] Composant pour tracker automatiquement les changements de route
 function AnalyticsTracker() {
   const location = useLocation()
+  const { t, i18n } = useTranslation('pageTitles')
 
   useEffect(() => {
     // [AI:Claude] Tracker chaque changement de page dans GA4
     if (typeof window !== 'undefined' && window.gtag) {
-      const pageTitle = `${getPageTitle(location.pathname)} — YarnFlow`
+      const key = getPageTitleKey(location.pathname)
+      // Route inconnue : on garde le titre courant plutôt que d'afficher une clé brute
+      const pageTitle = key ? `${t(key)} — YarnFlow` : document.title
       document.title = pageTitle
       const pagePath = location.pathname + location.search
 
@@ -114,7 +122,9 @@ function AnalyticsTracker() {
 
       console.log('[Analytics] Page view tracked:', pagePath, pageTitle)
     }
-  }, [location])
+    // i18n.language dans les deps : au changement de langue, le titre de la
+    // page courante doit se retraduire sans attendre une navigation
+  }, [location, i18n.language, t])
 
   return null
 }
