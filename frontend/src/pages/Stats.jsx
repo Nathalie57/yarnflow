@@ -24,59 +24,59 @@ const withProgress = (def) => ({ ...def, condition: (s, p) => def.metric(s, p) >
 
 const BADGE_DEFINITIONS = [
   // — Projets créés —
-  { id: 'proj-1',  title: 'Premiers pas',           desc: 'Votre premier projet lancé !',          tier: 'free', color: 'primary', metric: (s) => s.total_projects, threshold: 1 },
-  { id: 'proj-3',  title: 'En route',               desc: '3 projets, le rythme est là.',          tier: 'free', color: 'primary', metric: (s) => s.total_projects, threshold: 3 },
-  { id: 'proj-5',  title: 'Bien lancée',            desc: '5 projets, vous êtes accro !',          tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 5 },
-  { id: 'proj-10', title: 'Collection',             desc: 'Une belle collection de 10 projets.',   tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 10 },
-  { id: 'proj-25', title: 'Projeteuse passionnée',  desc: '25 projets — inarrêtable !',            tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 25 },
-  { id: 'proj-50', title: 'Inépuisable',            desc: '50 projets. Chapeau.',                  tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 50 },
+  { id: 'proj-1',          tier: 'free', color: 'primary', metric: (s) => s.total_projects, threshold: 1 },
+  { id: 'proj-3',          tier: 'free', color: 'primary', metric: (s) => s.total_projects, threshold: 3 },
+  { id: 'proj-5',          tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 5 },
+  { id: 'proj-10',   tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 10 },
+  { id: 'proj-25',            tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 25 },
+  { id: 'proj-50',                  tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 50 },
   // — Projets terminés —
-  { id: 'done-1',  title: 'Premier achevé',         desc: "Bravo, jusqu'au bout !",                tier: 'free', color: 'green',   metric: (s) => s.completed_projects, threshold: 1 },
-  { id: 'done-3',  title: 'Persévérante',           desc: '3 projets bouclés.',                    tier: 'free', color: 'green',   metric: (s) => s.completed_projects, threshold: 3 },
-  { id: 'done-5',  title: 'Finisseuse',             desc: 'Vous ne laissez rien en plan.',         tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 5 },
-  { id: 'done-10', title: 'Maîtresse des finitions',desc: '10 projets terminés, impeccable.',      tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 10 },
-  { id: 'done-20', title: 'Productrice en série',   desc: '20 projets terminés !',                 tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 20 },
+  { id: 'done-1',                tier: 'free', color: 'green',   metric: (s) => s.completed_projects, threshold: 1 },
+  { id: 'done-3',                    tier: 'free', color: 'green',   metric: (s) => s.completed_projects, threshold: 3 },
+  { id: 'done-5',         tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 5 },
+  { id: 'done-10',      tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 10 },
+  { id: 'done-20',                 tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 20 },
   // — Taux de finition —
-  { id: 'rate-75', title: 'Finisseuse sérieuse',    desc: '75 % de projets achevés.',              tier: 'pro',  color: 'green',   metric: (s) => s.total_projects >= 4 ? s.completion_rate : 0, threshold: 75 },
-  { id: 'rate-100',title: 'Sans laisser-aller',     desc: 'Tous vos projets sont terminés !',      tier: 'pro',  color: 'green',   metric: (s) => s.total_projects >= 3 ? s.completion_rate : 0, threshold: 100 },
+  { id: 'rate-75',              tier: 'pro',  color: 'green',   metric: (s) => s.total_projects >= 4 ? s.completion_rate : 0, threshold: 75 },
+  { id: 'rate-100',      tier: 'pro',  color: 'green',   metric: (s) => s.total_projects >= 3 ? s.completion_rate : 0, threshold: 100 },
   // — Rangs comptés —
-  { id: 'row-100', title: "Les aiguilles s'échauffent", desc: '100 rangs au compteur.',            tier: 'free', color: 'warm',    metric: (s) => s.total_rows, threshold: 100 },
-  { id: 'row-500', title: '500 rangs',              desc: 'La régularité paye.',                   tier: 'free', color: 'warm',    metric: (s) => s.total_rows, threshold: 500 },
-  { id: 'row-1k',  title: 'Millième rang',          desc: 'Un cap symbolique franchi.',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 1000 },
-  { id: 'row-5k',  title: '5 000 rangs',            desc: 'Vos doigts connaissent le chemin.',     tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 5000 },
-  { id: 'row-10k', title: '10 000 rangs',           desc: 'Monumentale !',                         tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 10000 },
-  { id: 'row-50k', title: 'Sans fin',               desc: '50 000 rangs — la légende.',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 50000 },
+  { id: 'row-100',            tier: 'free', color: 'warm',    metric: (s) => s.total_rows, threshold: 100 },
+  { id: 'row-500',                   tier: 'free', color: 'warm',    metric: (s) => s.total_rows, threshold: 500 },
+  { id: 'row-1k',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 1000 },
+  { id: 'row-5k',     tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 5000 },
+  { id: 'row-10k',                         tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 10000 },
+  { id: 'row-50k',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 50000 },
   // — Mailles —
-  { id: 'stitch-1k',  title: '1 000 mailles',       desc: 'Maille après maille.',                  tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 1000 },
-  { id: 'stitch-10k', title: '10 000 mailles',      desc: 'Un vrai tissu de patience.',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 10000 },
-  { id: 'stitch-100k',title: '100 000 mailles',     desc: 'Virtuose confirmée.',                   tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 100000 },
+  { id: 'stitch-1k',                  tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 1000 },
+  { id: 'stitch-10k',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 10000 },
+  { id: 'stitch-100k',                   tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 100000 },
   // — Temps de tricot —
-  { id: 'time-1h',  title: 'Première heure',        desc: 'Le chrono est lancé.',                  tier: 'free', color: 'primary', metric: (s) => s.total_crochet_time, threshold: 3600 },
-  { id: 'time-5h',  title: '5 heures',              desc: 'Bien investi.',                         tier: 'free', color: 'primary', metric: (s) => s.total_crochet_time, threshold: 18000 },
-  { id: 'time-10h', title: '10 heures',             desc: 'Une vraie pratique régulière.',         tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 36000 },
-  { id: 'time-24h', title: 'Une journée entière',   desc: '24h de tricot au total.',               tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 86400 },
-  { id: 'time-50h', title: '50 heures',             desc: 'Dévouement impressionnant.',            tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 180000 },
-  { id: 'time-100h',title: 'Centenaire',            desc: "100h — vous êtes une pro.",             tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 360000 },
-  { id: 'time-500h',title: 'Sans compter ses heures',desc: '500h de pure passion.',                tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 1800000 },
+  { id: 'time-1h',                  tier: 'free', color: 'primary', metric: (s) => s.total_crochet_time, threshold: 3600 },
+  { id: 'time-5h',                         tier: 'free', color: 'primary', metric: (s) => s.total_crochet_time, threshold: 18000 },
+  { id: 'time-10h',         tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 36000 },
+  { id: 'time-24h',               tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 86400 },
+  { id: 'time-50h',            tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 180000 },
+  { id: 'time-100h',             tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 360000 },
+  { id: 'time-500h',                tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 1800000 },
   // — Série en cours —
-  { id: 'streak-3',  title: '3 jours de suite',     desc: "La routine s'installe.",                tier: 'free', color: 'orange',  metric: (s) => s.current_streak, threshold: 3 },
-  { id: 'streak-7',  title: 'Semaine complète',     desc: '7 jours sans pause !',                  tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 7 },
-  { id: 'streak-14', title: 'Deux semaines',        desc: "L'habitude est bien ancrée.",           tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 14 },
-  { id: 'streak-30', title: 'Un mois de fil',       desc: '30 jours consécutifs, bravo !',         tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 30 },
-  { id: 'streak-100',title: 'Discipline de fer',    desc: '100 jours — engagement total.',         tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 100 },
+  { id: 'streak-3',                tier: 'free', color: 'orange',  metric: (s) => s.current_streak, threshold: 3 },
+  { id: 'streak-7',                  tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 7 },
+  { id: 'streak-14',           tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 14 },
+  { id: 'streak-30',         tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 30 },
+  { id: 'streak-100',         tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 100 },
   // — Record de série —
-  { id: 'longest-30',title: 'Record : 30 jours',   desc: 'Votre meilleure série mérite un badge.', tier: 'pro',  color: 'orange',  metric: (s) => s.longest_streak || 0, threshold: 30 },
-  { id: 'longest-60',title: 'Record : 2 mois',     desc: 'Une série historique.',                  tier: 'pro',  color: 'orange',  metric: (s) => s.longest_streak || 0, threshold: 60 },
+  { id: 'longest-30', tier: 'pro',  color: 'orange',  metric: (s) => s.longest_streak || 0, threshold: 30 },
+  { id: 'longest-60',                  tier: 'pro',  color: 'orange',  metric: (s) => s.longest_streak || 0, threshold: 60 },
   // — Vitesse (nécessite timer) —
-  { id: 'speed-5',  title: 'Bonne cadence',         desc: '5 rangs/h en moyenne.',                 tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 5 },
-  { id: 'speed-10', title: 'Aiguilles rapides',     desc: '10 rangs/h — vous maîtrisez.',          tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 10 },
-  { id: 'speed-20', title: 'Vitesse de croisière',  desc: '20 rangs/h, impressionnant !',          tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 20 },
-  { id: 'speed-30', title: 'Supersonique',          desc: '30 rangs/h — mains en or.',             tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 30 },
+  { id: 'speed-5',                 tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 5 },
+  { id: 'speed-10',          tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 10 },
+  { id: 'speed-20',          tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 20 },
+  { id: 'speed-30',             tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 30 },
   // — Photos IA —
-  { id: 'photo-1',  title: 'Première vision',       desc: 'Première photo générée par IA.',        tier: 'free', color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 1 },
-  { id: 'photo-5',  title: 'Artiste numérique',     desc: '5 photos IA créées.',                   tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 5 },
-  { id: 'photo-10', title: 'Studio photo',          desc: '10 créations — vraie photographe !',    tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 10 },
-  { id: 'photo-25', title: 'Galerie complète',      desc: '25 photos IA, une collection.',         tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 25 },
+  { id: 'photo-1',        tier: 'free', color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 1 },
+  { id: 'photo-5',                   tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 5 },
+  { id: 'photo-10',    tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 10 },
+  { id: 'photo-25',         tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 25 },
 ].map(withProgress)
 
 const LOCKED_PREVIEW = 6
@@ -275,8 +275,8 @@ const Stats = () => {
               </>
             ) : (
               <>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Badge débloqué : {celebration.badge.title}</h2>
-                <p className="text-gray-500 text-sm leading-relaxed">{celebration.badge.desc}</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Badge débloqué : {t(`badges.${celebration.badge.id}.title`)}</h2>
+                <p className="text-gray-500 text-sm leading-relaxed">{t(`badges.${celebration.badge.id}.desc`)}</p>
               </>
             )}
             <button
@@ -609,8 +609,8 @@ const Stats = () => {
                       key={badge.id}
                       className={`rounded-xl border p-3 ${badgeColorClasses[badge.color] || badgeColorClasses.primary}`}
                     >
-                      <div className="font-semibold text-sm mb-0.5">{badge.title}</div>
-                      <div className="text-xs opacity-70">{badge.desc}</div>
+                      <div className="font-semibold text-sm mb-0.5">{t(`badges.${badge.id}.title`)}</div>
+                      <div className="text-xs opacity-70">{t(`badges.${badge.id}.desc`)}</div>
                     </div>
                   ))}
                 </div>
@@ -667,10 +667,10 @@ const Stats = () => {
                           </svg>
                         </div>
                         <div className={`font-semibold text-sm mb-0.5 pr-5 ${badge.earnedButLocked ? 'text-primary-700' : 'text-gray-400'}`}>
-                          {badge.title}
+                          {t(`badges.${badge.id}.title`)}
                         </div>
                         <div className={`text-xs ${badge.earnedButLocked ? 'text-primary-500 font-medium' : 'text-gray-300'}`}>
-                          {badge.earnedButLocked ? 'Objectif atteint !' : badge.desc}
+                          {badge.earnedButLocked ? t('ui.objectiveReached') : t(`badges.${badge.id}.desc`)}
                         </div>
                       </div>
                     ))}
@@ -706,8 +706,8 @@ const Stats = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {notEarnedBadges.map((badge) => (
                       <div key={badge.id} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                        <div className="font-semibold text-sm mb-0.5 text-gray-600">{badge.title}</div>
-                        <div className="text-xs text-gray-400 mb-2">{badge.desc}</div>
+                        <div className="font-semibold text-sm mb-0.5 text-gray-600">{t(`badges.${badge.id}.title`)}</div>
+                        <div className="text-xs text-gray-400 mb-2">{t(`badges.${badge.id}.desc`)}</div>
                         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary-400 rounded-full transition-all"

@@ -216,6 +216,185 @@
     "addColor": "Add a colour",
     "deleteThisColor": "Delete this colour",
     "doubleClickColor": "Double-click a colour to change it.",
-    "phPatternTextArea": "Paste your pattern text here...\n\nExample:\nRow 1: 6 single crochet in a magic ring\nRow 2: 2 sc in each stitch (12)\nRow 3: *1 sc, inc* x6 (18)\n..."
+    "phPatternTextArea": "Paste your pattern text here...\n\nExample:\nRow 1: 6 single crochet in a magic ring\nRow 2: 2 sc in each stitch (12)\nRow 3: *1 sc, inc* x6 (18)\n...",
+    "objectiveReached": "Objective reached!"
+  },
+  "badges": {
+    "proj-1": {
+      "title": "First steps",
+      "desc": "Your first project started!"
+    },
+    "proj-3": {
+      "title": "Getting going",
+      "desc": "3 projects, you have found your rhythm."
+    },
+    "proj-5": {
+      "title": "Well underway",
+      "desc": "5 projects, you are hooked!"
+    },
+    "proj-10": {
+      "title": "Collection",
+      "desc": "A fine collection of 10 projects."
+    },
+    "proj-25": {
+      "title": "Passionate maker",
+      "desc": "25 projects — unstoppable!"
+    },
+    "proj-50": {
+      "title": "Tireless",
+      "desc": "50 projects. Hats off."
+    },
+    "done-1": {
+      "title": "First finish",
+      "desc": "Well done, all the way through!"
+    },
+    "done-3": {
+      "title": "Persistent",
+      "desc": "3 projects wrapped up."
+    },
+    "done-5": {
+      "title": "Finisher",
+      "desc": "You do not leave things half-done."
+    },
+    "done-10": {
+      "title": "Master of finishing",
+      "desc": "10 projects completed, flawless."
+    },
+    "done-20": {
+      "title": "Serial producer",
+      "desc": "20 projects completed!"
+    },
+    "rate-75": {
+      "title": "Serious finisher",
+      "desc": "75% of projects completed."
+    },
+    "rate-100": {
+      "title": "No loose ends",
+      "desc": "All your projects are finished!"
+    },
+    "row-100": {
+      "title": "Needles warming up",
+      "desc": "100 rows on the counter."
+    },
+    "row-500": {
+      "title": "500 rows",
+      "desc": "Consistency pays off."
+    },
+    "row-1k": {
+      "title": "Thousandth row",
+      "desc": "A symbolic milestone reached."
+    },
+    "row-5k": {
+      "title": "5,000 rows",
+      "desc": "Your fingers know the way."
+    },
+    "row-10k": {
+      "title": "10,000 rows",
+      "desc": "Monumental!"
+    },
+    "row-50k": {
+      "title": "Never-ending",
+      "desc": "50,000 rows — the legend."
+    },
+    "stitch-1k": {
+      "title": "1,000 stitches",
+      "desc": "Stitch after stitch."
+    },
+    "stitch-10k": {
+      "title": "10,000 stitches",
+      "desc": "A real fabric of patience."
+    },
+    "stitch-100k": {
+      "title": "100,000 stitches",
+      "desc": "Confirmed virtuoso."
+    },
+    "time-1h": {
+      "title": "First hour",
+      "desc": "The clock is running."
+    },
+    "time-5h": {
+      "title": "5 hours",
+      "desc": "Time well spent."
+    },
+    "time-10h": {
+      "title": "10 hours",
+      "desc": "A truly regular practice."
+    },
+    "time-24h": {
+      "title": "A whole day",
+      "desc": "24h of knitting in total."
+    },
+    "time-50h": {
+      "title": "50 hours",
+      "desc": "Impressive dedication."
+    },
+    "time-100h": {
+      "title": "Centenarian",
+      "desc": "100h — you are a pro."
+    },
+    "time-500h": {
+      "title": "Not counting the hours",
+      "desc": "500h of pure passion."
+    },
+    "streak-3": {
+      "title": "3 days in a row",
+      "desc": "The routine is settling in."
+    },
+    "streak-7": {
+      "title": "Full week",
+      "desc": "7 days without a break!"
+    },
+    "streak-14": {
+      "title": "Two weeks",
+      "desc": "The habit is well established."
+    },
+    "streak-30": {
+      "title": "A month of yarn",
+      "desc": "30 consecutive days, bravo!"
+    },
+    "streak-100": {
+      "title": "Iron discipline",
+      "desc": "100 days — total commitment."
+    },
+    "longest-30": {
+      "title": "Record: 30 days",
+      "desc": "Your best streak deserves a badge."
+    },
+    "longest-60": {
+      "title": "Record: 2 months",
+      "desc": "A historic streak."
+    },
+    "speed-5": {
+      "title": "Good pace",
+      "desc": "5 rows/h on average."
+    },
+    "speed-10": {
+      "title": "Fast needles",
+      "desc": "10 rows/h — you have got this."
+    },
+    "speed-20": {
+      "title": "Cruising speed",
+      "desc": "20 rows/h, impressive!"
+    },
+    "speed-30": {
+      "title": "Supersonic",
+      "desc": "30 rows/h — golden hands."
+    },
+    "photo-1": {
+      "title": "First vision",
+      "desc": "First AI-generated photo."
+    },
+    "photo-5": {
+      "title": "Digital artist",
+      "desc": "5 AI photos created."
+    },
+    "photo-10": {
+      "title": "Photo studio",
+      "desc": "10 creations — a real photographer!"
+    },
+    "photo-25": {
+      "title": "Full gallery",
+      "desc": "25 AI photos, a collection."
+    }
   }
 }
