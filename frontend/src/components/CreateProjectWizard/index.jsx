@@ -262,7 +262,7 @@ const CreateProjectWizard = ({
           {/* Nom */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Nom du projet <span className="text-red-500">*</span>
+              {t('ui.projectName')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -404,7 +404,7 @@ const CreateProjectWizard = ({
                       onClick={() => setSectionDetails([...sectionDetails, { name: '', total_rows: '' }])}
                       className="text-xs text-primary-600 hover:text-primary-700 mt-1"
                     >
-                      + Ajouter une partie
+                      {t('ui.addPart')}
                     </button>
                   </div>
                 )}
@@ -536,7 +536,7 @@ const CreateProjectWizard = ({
                       onClick={() => { setPatternType(''); setPatternFile(null) }}
                       className="mt-1.5 text-xs text-red-500 hover:text-red-700"
                     >
-                      ✕ Effacer le patron
+                      {t('ui.clearPattern')}
                     </button>
                   )}
                 </div>
@@ -596,7 +596,7 @@ const CreateProjectWizard = ({
                     className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition flex items-center justify-between text-left"
                   >
                     <span className="text-sm font-medium text-gray-600">
-                      Détails techniques — laine, aiguilles, échantillon
+                      {t('ui.technicalDetails')}
                     </span>
                     <svg
                       className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${showTechnicalDetails ? 'rotate-180' : ''}`}
@@ -656,7 +656,7 @@ const CreateProjectWizard = ({
                           onClick={() => setTechnicalForm({ ...technicalForm, yarn: [...technicalForm.yarn, { brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }] })}
                           className="text-xs text-primary-600 hover:text-primary-700"
                         >
-                          + Ajouter
+                          {t('ui.addPlus')}
                         </button>
                       </div>
 
@@ -713,7 +713,7 @@ const CreateProjectWizard = ({
                           onClick={() => setTechnicalForm({ ...technicalForm, needles: [...technicalForm.needles, { type: '', size: '', length: '' }] })}
                           className="text-xs text-blue-600 hover:text-blue-700"
                         >
-                          + Ajouter
+                          {t('ui.addPlus')}
                         </button>
                       </div>
 

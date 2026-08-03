@@ -42,14 +42,9 @@ const MarkdownText = ({ text }) => {
   )
 }
 
-const SUGGESTIONS = [
-  t('ui.aiQ1'),
-  t('ui.aiQ2'),
-  t('ui.aiQ3'),
-  t('ui.aiQ4'),
-  t('ui.aiQ5'),
-  t('ui.aiQ6'),
-]
+// cles seulement : les libelles sont resolus au rendu, sinon ils se figeraient
+// dans la langue du premier chargement (et t n'existe pas ici)
+const SUGGESTION_KEYS = ['aiQ1', 'aiQ2', 'aiQ3', 'aiQ4', 'aiQ5', 'aiQ6']
 
 export default function AiAssistant() {
   const { t } = useTranslation('tools')
@@ -145,7 +140,7 @@ export default function AiAssistant() {
               Posez votre question sur le tricot ou le crochet 🧶
             </p>
             <div className="grid grid-cols-1 gap-2">
-              {SUGGESTIONS.map(s => (
+              {SUGGESTION_KEYS.map(k => t(`ui.${k}`)).map(s => (
                 <button
                   key={s}
                   onClick={() => send(s)}

@@ -34,7 +34,7 @@ import { PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 import { PROJECT_TYPE_VALUES, projectTypeKey } from '../data/projectTypes'
 
 const ProjectCounter = () => {
-  const { t } = useTranslation('counter')
+  const { t, i18n } = useTranslation('counter')
   const { projectId } = useParams()
   const navigate = useNavigate()
   const { user, hasActiveSubscription, isAdmin } = useAuth()
@@ -3227,7 +3227,7 @@ const ProjectCounter = () => {
                 {isDemoProject ? (
                   <>
                     <p className="text-amber-700 text-sm leading-relaxed mb-3">
-                      Compteur, sections, photo — vous savez déjà utiliser YarnFlow. Prêt·e à créer votre vrai projet ?
+                      {t('ui.demoReadyReal')}
                     </p>
                     <button
                       onClick={() => navigate('/my-projects')}
@@ -3239,7 +3239,7 @@ const ProjectCounter = () => {
                 ) : (
                   <>
                     <p className="text-amber-700 text-sm leading-relaxed mb-3">
-                      Compteur, sections, photo — vous maîtrisez déjà l'essentiel de YarnFlow !
+                      {t('ui.demoMastered')}
                     </p>
                     <button
                       onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
@@ -3309,7 +3309,7 @@ const ProjectCounter = () => {
             <div>
               <p className="font-semibold text-amber-800 mb-1 text-sm">{t('ui.multiplePartsQuestion')}</p>
               <p className="text-amber-700 text-sm leading-relaxed">
-                Créez des <strong>sections</strong> pour suivre chaque partie séparément — dos, devant, manches…
+                <Trans t={t} i18nKey="ui.createSectionsHint"><strong>sections</strong></Trans>{' '}
                 {t('ui.counterResetsPerSection')}
               </p>
             </div>
@@ -3488,7 +3488,7 @@ const ProjectCounter = () => {
                       onClick={() => setShowTagSection(true)}
                       className="text-xs text-gray-400 hover:text-primary-600 font-medium"
                     >
-                      + Ajouter des tags
+                      {t('ui.addTags')}
                     </button>
                   )}
                   {showTagSection && (
@@ -3976,7 +3976,7 @@ const ProjectCounter = () => {
                     {counter.sequence && counter.sequence.steps && counter.sequence.current_step < counter.sequence.steps.length && (
                       <div className="pt-2 border-t border-primary-200/50 space-y-1.5">
                         <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>Étape {counter.sequence.current_step + 1}/{counter.sequence.steps.length} — tous les <strong className="text-gray-700">{counter.sequence.steps[counter.sequence.current_step]?.target}</strong> ({counter.sequence.steps[counter.sequence.current_step]?.repeat}×)</span>
+                          <span><Trans t={t} i18nKey="ui.sequenceStep" values={{ current: counter.sequence.current_step + 1, total: counter.sequence.steps.length, target: counter.sequence.steps[counter.sequence.current_step]?.target, repeat: counter.sequence.steps[counter.sequence.current_step]?.repeat }}><strong className="text-gray-700" /></Trans></span>
                         </div>
                         {(() => {
                           const totalReps = counter.sequence.steps.reduce((sum, s) => sum + s.repeat, 0)
@@ -4048,7 +4048,7 @@ const ProjectCounter = () => {
                   onClick={() => { setSecondaryLabelInput(''); setSecondaryTargetInput(''); setIsAddingCounter(true); setEditingCounterId(null); setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
                   className="text-xs text-primary-700 flex items-center gap-1 hover:text-primary-900 transition font-medium"
                 >
-                  ＋ Ajouter un compteur secondaire
+                  {t('ui.addSecondaryCounter')}
                 </button>
                 {showSecondaryTip && (
                   <div className="absolute left-0 top-7 z-20 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 w-56 shadow-lg">
@@ -4063,7 +4063,7 @@ const ProjectCounter = () => {
                 )}
               </div>
             ) : (
-              <p className="text-xs text-gray-400">Limite de {MAX_SECONDARY_COUNTERS} compteurs atteinte pour cette section</p>
+              <p className="text-xs text-gray-400">{t('ui.secondaryLimitReached', { max: MAX_SECONDARY_COUNTERS })}</p>
             )}
           </div>
         )}
@@ -5160,7 +5160,7 @@ const ProjectCounter = () => {
                               {/* Overlay "Voir en grand" au survol */}
                               <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                 <span className="text-white font-bold text-xs">
-                                  🔍 Voir
+                                  {t('ui.viewMagnifier')}
                                 </span>
                               </div>
                               {/* Boutons actions */}
@@ -5224,7 +5224,7 @@ const ProjectCounter = () => {
                                 <p className="text-sm text-gray-600 mb-2">{originalPhoto.description}</p>
                               )}
                               <p className="text-xs text-gray-500 mb-3">
-                                Ajoutée le {new Date(originalPhoto.created_at).toLocaleDateString('fr-FR')}
+                                {t('ui.addedOn', { date: new Date(originalPhoto.created_at).toLocaleDateString(i18n.language) })}
                               </p>
 
                               {photoVariations.length === 0 ? (
@@ -5240,7 +5240,7 @@ const ProjectCounter = () => {
                                   </button>
                                   {credits && credits.total_available > 0 && (
                                     <span className="text-xs text-primary-600 font-medium">
-                                      {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}
+                                      {t('ui.creditsAvailable', { count: credits.total_available })}
                                     </span>
                                   )}
                                 </div>
@@ -5718,7 +5718,7 @@ const ProjectCounter = () => {
                     }}
                     className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                   >
-                    Aller à la bibliothèque →
+                    {t('ui.goToLibraryArrow')}
                   </button>
                 </div>
               ) : (
@@ -6373,7 +6373,7 @@ const ProjectCounter = () => {
             {/* Catégorie */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Catégorie <span className="text-red-600">*</span>
+                {t('ui.categoryRequired')} <span className="text-red-600">*</span>
               </label>
               <select
                 value={editForm.type}
@@ -6483,7 +6483,7 @@ const ProjectCounter = () => {
                     })}
                     className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700"
                   >
-                    + Ajouter
+                    {t('ui.addPlus')}
                   </button>
                 </div>
                 {technicalForm.yarn.map((y, yIdx) => (
@@ -6501,7 +6501,7 @@ const ProjectCounter = () => {
                           })}
                           className="text-red-600 hover:text-red-700 text-sm"
                         >
-                          ✕ Supprimer
+                          {t('ui.removeX')}
                         </button>
                       )}
                     </div>
@@ -6577,7 +6577,7 @@ const ProjectCounter = () => {
                           }}
                           className="text-primary-600 hover:text-primary-700 text-xs"
                         >
-                          + Ajouter coloris
+                          {t('ui.addColourway')}
                         </button>
                       </div>
                       {y.quantities.map((q, qIdx) => (
@@ -6686,7 +6686,7 @@ const ProjectCounter = () => {
                     })}
                     className="px-3 py-1 bg-sage-600 text-white rounded text-sm hover:bg-sage-700"
                   >
-                    + Ajouter
+                    {t('ui.addPlus')}
                   </button>
                 </div>
                 {technicalForm.needles.map((n, nIdx) => (
@@ -6919,7 +6919,7 @@ const ProjectCounter = () => {
                 {t('ui.allSectionsDone')}
               </h3>
               <p className="text-gray-500 text-sm mt-1">
-                Félicitations pour votre {project?.name || 'projet'} !
+                {t('ui.congratsOn', { name: project?.name || t('ui.projectFallback') })}
               </p>
             </div>
 
@@ -6935,7 +6935,7 @@ const ProjectCounter = () => {
                 </svg>
                 <span>
                   {t('ui.showcaseMyWork')}
-                  <span className="block text-xs font-normal text-primary-200">{credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} photo disponible{credits.total_available > 1 ? 's' : ''}</span>
+                  <span className="block text-xs font-normal text-primary-200">{t('ui.photoCreditsAvailable', { count: credits.total_available })}</span>
                 </span>
               </button>
             ) : (
@@ -7001,7 +7001,7 @@ const ProjectCounter = () => {
               {/* Nom */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom de la section <span className="text-red-600">*</span>
+                  {t('ui.sectionNameLabel')} <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -7089,7 +7089,7 @@ const ProjectCounter = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
             <h3 className="text-2xl font-bold mb-2 text-gray-900">
-              📚 Enregistrer dans la bibliothèque ?
+              {t('ui.saveToLibraryQuestion')}
             </h3>
             <p className="text-sm text-gray-600 mb-6">
               {t('ui.saveToLibraryHint')}
@@ -7098,7 +7098,7 @@ const ProjectCounter = () => {
             {/* Nom du patron */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nom du patron <span className="text-red-600">*</span>
+                {t('ui.patternNameLabel')} <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
@@ -7291,7 +7291,7 @@ const ProjectCounter = () => {
                 {t('ui.existingRowsQuestion')}
               </h2>
               <p className="text-gray-600">
-                Vous avez déjà <span className="font-bold text-primary-600">{project.current_row} rang{project.current_row > 1 ? 's' : ''}</span> au compteur.
+                <Trans t={t} i18nKey="ui.alreadyCounted" count={project.current_row} values={{ count: project.current_row }}><span className="font-bold text-primary-600" /></Trans>
               </p>
             </div>
 
@@ -7307,7 +7307,7 @@ const ProjectCounter = () => {
                 <div>
                   <div className="font-bold">{t('ui.assignToSection')}</div>
                   <div className="text-sm text-primary-100">
-                    La section "{sectionForm.name}" démarrera à {project.current_row} rangs
+                    {t('ui.sectionWillStartAt', { name: sectionForm.name, count: project.current_row })}
                   </div>
                 </div>
               </button>
@@ -7323,7 +7323,7 @@ const ProjectCounter = () => {
                 <div>
                   <div className="font-bold">{t('ui.resetToZero')}</div>
                   <div className="text-sm text-gray-500">
-                    La section commencera à 0 (les rangs précédents étaient du test)
+                    {t('ui.sectionWillStartAtZero')}
                   </div>
                 </div>
               </button>
@@ -7514,6 +7514,7 @@ const ProjectCounter = () => {
 }
 
 function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
+  const { t } = useTranslation('counter')
   const [draft, setDraft] = useState(currentDeadline || '')
   const today = new Date().toISOString().substring(0, 10)
   return (

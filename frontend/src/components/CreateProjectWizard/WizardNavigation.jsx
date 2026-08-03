@@ -31,7 +31,7 @@ const WizardNavigation = ({
             onClick={onPrevious}
             className="px-4 py-2.5 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition font-medium"
           >
-            ← Précédent
+            {t('ui.previous')}
           </button>
         )}
       </div>

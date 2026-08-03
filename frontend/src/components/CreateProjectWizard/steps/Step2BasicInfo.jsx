@@ -17,7 +17,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
       {/* Nom du projet */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Nom du projet <span className="text-red-600">*</span>
+          {t('ui.projectName')} <span className="text-red-600">*</span>
         </label>
         <input
           type="text"
@@ -74,7 +74,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
       {/* Unité de comptage */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Unité de comptage
+          {t('ui.countUnit')}
         </label>
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -109,7 +109,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
           </button>
         </div>
         <p className="mt-2 text-xs text-gray-500">
-          Choisissez comment vous voulez compter votre progression
+          {t('ui.howToCount')}
         </p>
       </div>
     </div>

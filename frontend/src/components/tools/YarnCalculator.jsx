@@ -76,13 +76,13 @@ const MATRIX = {
   },
 }
 
-const WEIGHT_LABELS = {
-  lace:      t('ui.weightLaceThin'),
-  fingering: 'Fingering (fin)',
-  sport:     'Sport',
-  dk:        'DK (mi-fin)',
-  worsted:   'Worsted / Aran (moyen)',
-  bulky:     t('ui.weightBulkyThick'),
+const WEIGHT_LABEL_KEYS = {
+  lace:      'wLace',
+  fingering: 'wFingering',
+  sport:     'wSport',
+  dk:        'wDk',
+  worsted:   'wWorsted',
+  bulky:     'wBulky',
 }
 
 // Catégories du stash correspondant à chaque épaisseur du calculateur
@@ -204,8 +204,8 @@ export default function YarnCalculator() {
           className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
         >
           <option value="">{t('ui.chooseWeight')}</option>
-          {Object.entries(WEIGHT_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
+          {Object.entries(WEIGHT_LABEL_KEYS).map(([key, labelKey]) => (
+            <option key={key} value={key}>{t(`ui.${labelKey}`)}</option>
           ))}
         </select>
       </div>
@@ -217,7 +217,7 @@ export default function YarnCalculator() {
           {/* Métrage estimé */}
           <div>
             <p className="text-sm text-primary-700 leading-relaxed">
-              Pour un <strong>{project.labelKey ? t(`ui.${project.labelKey}`) : project.label}</strong> taille <strong>{size}</strong> en <strong>{WEIGHT_LABELS[weight]}</strong>
+              Pour un <strong>{project.labelKey ? t(`ui.${project.labelKey}`) : project.label}</strong> taille <strong>{size}</strong> en <strong>{t(`ui.${WEIGHT_LABEL_KEYS[weight]}`)}</strong>
             </p>
             <p className="text-4xl font-bold text-primary-700 mt-2">
               {estimatedMeters.toLocaleString('fr-FR')} m

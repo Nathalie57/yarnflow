@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next'
 
 const WEIGHTS = [
   {
-    eu: 'Dentelle',
+    euKey: 'wcLace',
     us: 'Lace',
     uk: 'Lace / 1 ply',
     needlesMm: '1,5 – 2,5',
@@ -16,7 +16,7 @@ const WEIGHTS = [
     wraps: '> 30',
   },
   {
-    eu: 'Super fine / Fingering',
+    euKey: 'wcSuperFine',
     us: 'Sock / Fingering / Baby',
     uk: '2 ply / 3 ply',
     needlesMm: '2 – 3,5',
@@ -25,7 +25,7 @@ const WEIGHTS = [
     wraps: '26 – 32',
   },
   {
-    eu: 'Fine / Sport',
+    euKey: 'wcFine',
     us: 'Sport / Baby',
     uk: '4 ply',
     needlesMm: '3 – 4',
@@ -34,7 +34,7 @@ const WEIGHTS = [
     wraps: '22 – 26',
   },
   {
-    eu: t('ui.weightLightDk'),
+    euKey: 'wcLight',
     us: 'DK / Light Worsted',
     uk: 'DK / 8 ply',
     needlesMm: '3,5 – 4,5',
@@ -43,7 +43,7 @@ const WEIGHTS = [
     wraps: '18 – 22',
   },
   {
-    eu: 'Moyenne / Worsted',
+    euKey: 'wcMedium',
     us: 'Worsted / Afghan / Aran',
     uk: 'Aran / 10 ply',
     needlesMm: '4,5 – 5,5',
@@ -52,7 +52,7 @@ const WEIGHTS = [
     wraps: '14 – 18',
   },
   {
-    eu: 'Grosse / Bulky',
+    euKey: 'wcBulky',
     us: 'Chunky / Craft / Rug',
     uk: 'Chunky / 12 ply',
     needlesMm: '5,5 – 8',
@@ -61,7 +61,7 @@ const WEIGHTS = [
     wraps: '10 – 14',
   },
   {
-    eu: t('ui.weightSuperBulky'),
+    euKey: 'wcSuperBulky',
     us: 'Super Bulky / Roving',
     uk: 'Super Chunky',
     needlesMm: '8 – 15',
@@ -83,7 +83,7 @@ export default function YarnWeightConverter() {
         <div key={i} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
           {/* Noms */}
           <div className="flex flex-wrap gap-2 mb-3">
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary-100 text-primary-700">FR · {w.eu}</span>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary-100 text-primary-700">FR · {t(`ui.${w.euKey}`)}</span>
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-600">US · {w.us}</span>
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-600">UK · {w.uk}</span>
           </div>

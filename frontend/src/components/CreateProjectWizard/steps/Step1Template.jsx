@@ -6,16 +6,18 @@
 
 import { PROJECT_CATEGORIES } from '../../../data/projectTemplates'
 import TemplateCard from '../TemplateCard'
+import { useTranslation } from 'react-i18next'
 
 const Step1Template = ({ selectedCategory, onSelectCategory }) => {
+  const { t } = useTranslation('projects')
   return (
     <div className="p-6">
       <div className="text-center mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Quel type de projet créez-vous ?
+          {t('ui.whatProjectType')}
         </h3>
         <p className="text-sm text-gray-600">
-          Choisissez une catégorie pour votre projet
+          {t('ui.pickCategory')}
         </p>
       </div>
 

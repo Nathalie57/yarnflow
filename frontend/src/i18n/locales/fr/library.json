@@ -303,7 +303,13 @@
     "urlMustStartHttpPlain": "L'URL doit commencer par http:// ou https://",
     "min10Chars": "Au moins 10 caractères",
     "min2Chars": "Au moins 2 caractères",
-    "confirmDeleteChart": "Supprimer cette grille ?"
+    "confirmDeleteChart": "Supprimer cette grille ?",
+    "creditsAvailable_one": "crédit disponible",
+    "creditsAvailable_other": "crédits disponibles",
+    "usedThisMonth": "{{count}} utilisés ce mois-ci",
+    "quotaReached": "Quota atteint",
+    "refillOnDay": "Rechargement le {{day}} de chaque mois",
+    "refillNextRenewal": "Rechargement au prochain renouvellement"
   },
   "badges": {
     "proj-1": {

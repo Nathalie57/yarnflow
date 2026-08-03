@@ -54,10 +54,10 @@ const Step4Optional = ({
     <div className="p-6 space-y-6">
       <div className="text-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Options supplémentaires
+          {t('ui.extraOptions')}
         </h3>
         <p className="text-sm text-gray-600">
-          Ces informations sont facultatives et peuvent être ajoutées plus tard
+          {t('ui.extraOptionsHint')}
         </p>
       </div>
 
@@ -112,7 +112,7 @@ const Step4Optional = ({
             className="flex items-center gap-1.5 text-xs font-semibold text-primary-600 hover:text-primary-700 transition"
           >
             <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
-            Voir les plans
+            {t('ui.seePlans')}
           </button>
         </div>
       )}
@@ -206,7 +206,7 @@ const Step4Optional = ({
             }}
             className="mt-2 text-xs text-red-500 hover:text-red-700"
           >
-            ✕ Effacer le patron
+            {t('ui.clearPattern')}
           </button>
         )}
       </div>
@@ -219,7 +219,7 @@ const Step4Optional = ({
           className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition flex items-center justify-between"
         >
           <span className="text-sm font-medium text-gray-700">
-            Détails techniques — laine, aiguilles, échantillon
+            {t('ui.technicalDetails')}
           </span>
           <svg
             className={`w-5 h-5 text-gray-500 transition-transform ${showTechnicalDetails ? 'rotate-180' : ''}`}
@@ -273,7 +273,7 @@ const Step4Optional = ({
                       })}
                       className="text-xs text-red-500 hover:text-red-700"
                     >
-                      ✕ Supprimer
+                      {t('ui.removeX')}
                     </button>
                   )}
                 </div>
@@ -286,7 +286,7 @@ const Step4Optional = ({
                 })}
                 className="text-xs text-purple-600 hover:text-purple-700"
               >
-                + Ajouter
+                {t('ui.addPlus')}
               </button>
             </div>
 
@@ -346,7 +346,7 @@ const Step4Optional = ({
                 })}
                 className="text-xs text-blue-600 hover:text-blue-700"
               >
-                + Ajouter
+                {t('ui.addPlus')}
               </button>
             </div>
 

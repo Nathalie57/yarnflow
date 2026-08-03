@@ -32,10 +32,10 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
     <div className="p-6">
       <div className="text-center mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Sections du projet
+          {t('ui.projectSections')}
         </h3>
         <p className="text-sm text-gray-600">
-          Divisez votre projet en parties pour suivre chacune séparément
+          {t('ui.splitProject')}
         </p>
       </div>
 
@@ -64,10 +64,10 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
       {sections.length === 0 && presets.length === 0 && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
           <p className="text-gray-600 mb-2">
-            Aucune section nécessaire pour ce type de projet.
+            {t('ui.noSectionNeeded')}
           </p>
           <p className="text-xs text-gray-500">
-            Ajoutez-en si votre projet comporte plusieurs parties distinctes.
+            {t('ui.addIfSeveralParts')}
           </p>
         </div>
       )}
@@ -80,7 +80,7 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
             onClick={() => onSectionsChange([])}
             className="text-xs text-gray-500 hover:text-gray-700 hover:underline"
           >
-            Tout effacer
+            {t('ui.clearAll')}
           </button>
         </div>
       )}
@@ -158,12 +158,12 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
-        Ajouter une section
+        {t('ui.addSectionBtn')}
       </button>
 
       {/* Conseil */}
       <p className="mt-4 text-xs text-gray-500 text-center">
-        Les sections sont optionnelles. Vous pourrez en ajouter à tout moment depuis le projet.
+        {t('ui.sectionsOptional')}
       </p>
     </div>
   )

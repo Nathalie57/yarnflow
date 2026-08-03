@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { userAPI, paymentsAPI } from '../services/api'
 import { useAnalytics } from '../hooks/useAnalytics'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 const Check = ({ className = 'text-primary-500' }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 flex-shrink-0 mt-0.5 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -16,7 +16,9 @@ const Dash = () => (
   </svg>
 )
 
-const TWAMessage = () => (
+const TWAMessage = () => {
+  const { t } = useTranslation('tools')
+  return (
   <div className="max-w-md mx-auto px-6 py-16 text-center space-y-6">
     <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto">
       <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -25,13 +27,16 @@ const TWAMessage = () => (
     </div>
     <h1 className="text-2xl font-bold text-gray-900">{t('ui.unlockYarnFlow')}</h1>
     <p className="text-gray-600 leading-relaxed">
-      Les abonnements se gèrent sur <span className="font-semibold text-primary-700">yarnflow.fr</span>. Connectez-vous depuis votre navigateur pour débloquer vos fonctionnalités — l'app se met à jour instantanément.
+      <Trans t={t} i18nKey="ui.twaSubsManaged">
+        <span className="font-semibold text-primary-700">yarnflow.fr</span>
+      </Trans>
     </p>
     <button onClick={() => window.history.back()} className="text-sm text-gray-400 hover:text-gray-600 transition">
       {t('ui.back')}
     </button>
   </div>
-)
+  )
+}
 
 const Subscription = () => {
   const { t } = useTranslation('tools')
