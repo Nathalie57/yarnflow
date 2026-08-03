@@ -130,7 +130,7 @@ export default function AiAssistant() {
         >
           Passer à PRO — 6,99€/mois
         </Link>
-        <p className="text-xs text-gray-400">Quota réinitialisé le 1er du mois prochain</p>
+        <p className="text-xs text-gray-400">{t('ui.quotaResets')}</p>
       </div>
     )
   }

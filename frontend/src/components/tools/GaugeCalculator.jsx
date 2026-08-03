@@ -75,7 +75,7 @@ export default function GaugeCalculator() {
       {mode === 'simple' && (
         <>
           <div>
-            <p className="text-xs text-gray-500 mb-3">Entrez votre échantillon (pour 10 cm)</p>
+            <p className="text-xs text-gray-500 mb-3">{t('ui.enterGauge')}</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mailles / 10 cm</label>
@@ -217,7 +217,7 @@ export default function GaugeCalculator() {
             <div className="bg-primary-50 border border-primary-200 rounded-xl p-5 space-y-2">
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary-700">{adaptResult.adjusted}</div>
-                <div className="text-sm text-primary-600 mt-1">mailles à monter</div>
+                <div className="text-sm text-primary-600 mt-1">{t('ui.stitchesToCastOn')}</div>
               </div>
               <p className="text-sm text-primary-800 text-center pt-1">
                 {adaptResult.diff === 0

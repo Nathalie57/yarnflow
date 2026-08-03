@@ -215,7 +215,7 @@ const ProjectCharts = () => {
                   onChange={e => setSectionId(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
-                  <option value="">-- Aucune section (projet entier) --</option>
+                  <option value="">{t('ui.noSectionOption')}</option>
                   {sections.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
@@ -239,7 +239,7 @@ const ProjectCharts = () => {
                     <>
                       {' '}La grille couvrira les rangs {Number(startRow) + 1} à {Number(startRow) + Number(height)} sur {selectedSection.total_rows}.
                       {Number(startRow) + Number(height) > selectedSection.total_rows && (
-                        <span className="text-amber-600 font-medium"> ⚠️ Ça dépasse le total de rangs de la section.</span>
+                        <span className="text-amber-600 font-medium">{t('ui.exceedsSectionRows')}</span>
                       )}
                     </>
                   )}

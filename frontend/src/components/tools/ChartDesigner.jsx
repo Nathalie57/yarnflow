@@ -520,7 +520,7 @@ export default function ChartDesigner() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-4">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Palette — cliquez pour peindre</p>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('ui.paletteHint')}</p>
         <div className="flex flex-wrap gap-2">
           {chart.palette.map((hex, i) => (
             <div key={i} className="relative">
@@ -574,7 +574,7 @@ export default function ChartDesigner() {
             title={t('ui.addColor')}
           >＋</button>
         </div>
-        <p className="text-xs text-gray-400 mt-2">Double-cliquez une couleur pour la modifier. Si une couleur ressemble à un artefact (très peu utilisée ou quasi identique à une autre), un × apparaît pour la fusionner avec la bonne couleur.</p>
+        <p className="text-xs text-gray-400 mt-2">{t('ui.colorMergeHint')}</p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">

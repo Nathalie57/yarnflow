@@ -248,5 +248,21 @@
     "create": "Create the project",
     "defaultSectionName": "Part {{n}}",
     "gauge": "Gauge"
+  },
+  "ui": {
+    "linkAddedCheck": "✓ Link added",
+    "textAddedCheck": "✓ Text added",
+    "linkAdded": "Link added",
+    "textAdded": "Text added",
+    "nameMinLength": "Name must be at least 2 characters",
+    "centimetersUnit": "Centimeters (0.5)",
+    "descriptionPlaceholder": "E.g. Casual winter beanie",
+    "tagsPlaceholder": "E.g. gift, baby, urgent...",
+    "tagsHint": "Organize your projects with tags",
+    "libraryWord": "library",
+    "pdfOrImageHint": "PDF or image",
+    "sectionNameRequired": "Section name *",
+    "deleteThisSection": "Delete this section",
+    "gaugeHeading": "Gauge"
   }
 }

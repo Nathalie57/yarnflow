@@ -4,7 +4,10 @@
  * @created 2026-01-27 by [AI:Claude]
  */
 
+import { useTranslation } from 'react-i18next'
+
 const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUnit }) => {
+  const { t } = useTranslation('projects')
   const handleAddSection = () => {
     onSectionsChange([...sections, { name: '', description: '', total_rows: null, notes: '' }])
   }
@@ -100,7 +103,7 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <input
                     type="text"
-                    placeholder="Nom de la section *"
+                    placeholder={t('ui.sectionNameRequired')}
                     value={section.name}
                     onChange={(e) => handleUpdateSection(index, 'name', e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
@@ -135,7 +138,7 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
                 type="button"
                 onClick={() => handleRemoveSection(index)}
                 className="flex-shrink-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-                title="Supprimer cette section"
+                title={t('ui.deleteThisSection')}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

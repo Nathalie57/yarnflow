@@ -6,9 +6,11 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 
 const ExternalPatternPreview = ({ url, savedImage }) => {
+  const { t } = useTranslation('tools')
   const [metadata, setMetadata] = useState(null)
   const [loading, setLoading] = useState(!savedImage)
   const [error, setError] = useState(null)
@@ -80,7 +82,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
       <div className="border-2 border-gray-200 rounded-lg p-8 text-center bg-gray-50">
         <div className="animate-pulse">
           <div className="text-4xl mb-3">🔗</div>
-          <p className="text-gray-500">Chargement de l'aperçu...</p>
+          <p className="text-gray-500">{t('ui.loadingPreview')}</p>
         </div>
       </div>
     )

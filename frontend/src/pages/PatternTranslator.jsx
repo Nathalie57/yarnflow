@@ -340,7 +340,7 @@ export default function PatternTranslator() {
             rows={12}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary-400 resize-y"
           />
-          <p className="text-xs text-gray-400 -mt-4">Usage personnel uniquement. La traduction automatique peut contenir des erreurs — vérifiez les abréviations avant de tricoter.</p>
+          <p className="text-xs text-gray-400 -mt-4">{t('ui.translatorDisclaimer')}</p>
         </>
       )}
 

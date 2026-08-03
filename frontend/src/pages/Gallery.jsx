@@ -516,7 +516,7 @@ const Gallery = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-lg text-gray-900">{t('ui.photoCredits')}</h3>
-                    <span className="text-xs text-gray-500 font-normal">1 crédit = 1 photo embellie</span>
+                    <span className="text-xs text-gray-500 font-normal">{t('ui.oneCreditOnePhoto')}</span>
                   </div>
                   <p className="text-sm text-gray-600">
                     {(() => {
@@ -1384,7 +1384,7 @@ const Gallery = () => {
                   <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Génération = 1 crédit</p>
+                        <p className="text-sm font-medium text-gray-900">{t('ui.generationOneCredit')}</p>
                         <p className="text-xs text-gray-600 mt-1">
                           Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
                         </p>
@@ -1475,7 +1475,7 @@ const Gallery = () => {
               </p>
               <div className="bg-gradient-to-br from-primary-50 to-primary-50 border-2 border-primary-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700 font-medium">
-                  <span className="font-semibold">{t('ui.howTo')}</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
+                  <span className="font-semibold">{t('ui.howTo')}</span> {t('ui.instagramStep1')}<span className="font-bold text-primary-600">+</span>{t('ui.instagramStep2')}
                 </p>
               </div>
             </div>

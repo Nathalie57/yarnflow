@@ -248,5 +248,21 @@
     "create": "Créer le projet",
     "defaultSectionName": "Partie {{n}}",
     "gauge": "Échantillon"
+  },
+  "ui": {
+    "linkAddedCheck": "✓ Lien ajouté",
+    "textAddedCheck": "✓ Texte ajouté",
+    "linkAdded": "Lien ajouté",
+    "textAdded": "Texte ajouté",
+    "nameMinLength": "Le nom doit contenir au moins 2 caractères",
+    "centimetersUnit": "Centimètres (0.5)",
+    "descriptionPlaceholder": "Ex: Bonnet décontracté pour l'hiver",
+    "tagsPlaceholder": "Ex: cadeau, bébé, urgent...",
+    "tagsHint": "Organisez vos projets avec des étiquettes",
+    "libraryWord": "bibliothèque",
+    "pdfOrImageHint": "PDF ou image",
+    "sectionNameRequired": "Nom de la section *",
+    "deleteThisSection": "Supprimer cette section",
+    "gaugeHeading": "Échantillon"
   }
 }

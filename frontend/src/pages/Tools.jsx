@@ -241,7 +241,7 @@ export default function Tools() {
               <div className="font-semibold text-gray-900 text-sm leading-tight">{t('ui.translatePattern')}</div>
               <span className="bg-primary-100 text-primary-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">IA</span>
             </div>
-            <div className="text-xs text-gray-500 mt-1 leading-snug">Traduit un patron anglais en français, avec les abréviations tricot & crochet.</div>
+            <div className="text-xs text-gray-500 mt-1 leading-snug">{t('ui.translatorDesc')}</div>
           </div>
         </Link>
 

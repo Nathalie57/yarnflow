@@ -167,7 +167,7 @@ export default function YarnCalculator() {
           onChange={e => handleProjectChange(e.target.value)}
           className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
         >
-          <option value="">— Choisir un type —</option>
+          <option value="">{t('ui.chooseType')}</option>
           {Object.entries(MATRIX).map(([key, p]) => (
             <option key={key} value={key}>{p.label}</option>
           ))}
@@ -185,7 +185,7 @@ export default function YarnCalculator() {
           disabled={!project}
           className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
         >
-          <option value="">— Choisir une taille —</option>
+          <option value="">{t('ui.chooseSize')}</option>
           {project?.sizes.map(s => (
             <option key={s} value={s}>{s}</option>
           ))}
@@ -203,7 +203,7 @@ export default function YarnCalculator() {
           disabled={!project}
           className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
         >
-          <option value="">— Choisir une épaisseur —</option>
+          <option value="">{t('ui.chooseWeight')}</option>
           {Object.entries(WEIGHT_LABELS).map(([key, label]) => (
             <option key={key} value={key}>{label}</option>
           ))}
@@ -248,7 +248,7 @@ export default function YarnCalculator() {
                 </div>
                 <div className="bg-white rounded-lg p-3 border border-emerald-200">
                   <div className="text-3xl font-bold text-emerald-600">{skeinResult.safe}</div>
-                  <div className="text-xs text-emerald-600 mt-1">avec +15 % de marge</div>
+                  <div className="text-xs text-emerald-600 mt-1">{t('ui.withMargin15')}</div>
                 </div>
               </div>
             )}

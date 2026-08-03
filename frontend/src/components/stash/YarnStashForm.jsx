@@ -178,7 +178,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
             <div className="relative">
               <img
                 src={photoPreview}
-                alt="Étiquette"
+                alt={t('ui.labelAlt')}
                 className={`w-full h-40 object-cover rounded-xl border border-gray-200 transition-opacity ${scanning ? 'opacity-50' : ''}`}
               />
               {scanning && (
@@ -227,7 +227,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               <div className="relative inline-block mt-2">
                 <img
                   src={extraPhotoPreview}
-                  alt="Étiquette (autre angle)"
+                  alt={t('ui.labelAltOther')}
                   className="h-16 w-16 object-cover rounded-lg border border-gray-200"
                 />
                 <button
@@ -280,7 +280,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           {!photoPreview && (
             <div className="flex items-center gap-3 my-3">
               <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-xs text-gray-400">ou remplis manuellement</span>
+              <span className="text-xs text-gray-400">{t('ui.orFillManually')}</span>
               <div className="flex-1 h-px bg-gray-200" />
             </div>
           )}
@@ -386,7 +386,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           />
         </div>
         <div>
-          <label className={labelCls}>Métrage/pelote (m) *</label>
+          <label className={labelCls}>{t('ui.yardagePerBall')}</label>
           <input
             type="number" required min="1" step="0.1"
             className={inputCls}
@@ -396,7 +396,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           />
         </div>
         <div>
-          <label className={labelCls}>Quantité *</label>
+          <label className={labelCls}>{t('ui.quantityRequired')}</label>
           <input
             type="number" required min="1" step="1"
             className={inputCls}
@@ -477,7 +477,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
             <div className="relative">
               <img
                 src={photoPreview || (import.meta.env.VITE_API_URL + entry.photo_url)}
-                alt="Étiquette"
+                alt={t('ui.labelAlt')}
                 className="w-full h-40 object-cover rounded-xl border border-gray-200"
               />
               <button
@@ -538,7 +538,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               <div className="relative inline-block mt-2">
                 <img
                   src={extraPhotoPreview}
-                  alt="Étiquette (autre angle)"
+                  alt={t('ui.labelAltOther')}
                   className="h-16 w-16 object-cover rounded-lg border border-gray-200"
                 />
                 <button

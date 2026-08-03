@@ -319,7 +319,7 @@ const ChartEditor = () => {
         {/* Palette — masquée grille verrouillée : la peinture y est désactivée */}
         {!isLocked && (
           <div className="bg-white rounded-2xl shadow-sm p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Palette — cliquez pour peindre</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('ui.paletteHint')}</p>
             <div className="flex flex-wrap gap-2">
               {chart.palette.map((hex, i) => (
                 <div key={i} className="relative">

@@ -239,7 +239,7 @@ const Subscription = () => {
               {subscription?.expires_at && (
                 <p className="text-xs text-primary-600">Renouvellement le {new Date(subscription.expires_at).toLocaleDateString('fr-FR')}</p>
               )}
-              <p className="text-xs text-gray-400 mt-0.5">Pour passer au PRO, cliquez sur Gérer — les jours restants PLUS seront déduits automatiquement.</p>
+              <p className="text-xs text-gray-400 mt-0.5">{t('ui.proUpgradeNote')}</p>
             </div>
           </div>
           <button
@@ -295,13 +295,13 @@ const Subscription = () => {
           </div>
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
-            <li className="flex items-start gap-2"><Check /><span>Projets &amp; patrons illimités <span className="text-gray-400 text-xs">(100 Mo de fichiers)</span></span></li>
-            <li className="flex items-start gap-2"><Check /><span>1 compteur par projet</span></li>
+            <li className="flex items-start gap-2"><Check /><span>{t('ui.unlimitedProjectsPatterns')} <span className="text-gray-400 text-xs">{t('ui.filesQuota')}</span></span></li>
+            <li className="flex items-start gap-2"><Check /><span>{t('ui.oneCounterPerProject')}</span></li>
             <li className="flex items-start gap-2"><Check /><span>{t('ui.notesPerSection')}</span></li>
-            <li className="flex items-start gap-2"><Check /><span>3 Créations IA offertes</span></li>
+            <li className="flex items-start gap-2"><Check /><span>{t('ui.aiCreations3Free')}</span></li>
             <li className="flex items-start gap-2"><Check /><span>5 questions IA / mois</span></li>
-            <li className="flex items-start gap-2"><Check /><span>Studio Photo : 2 crédits offerts</span></li>
-            <li className="flex items-start gap-2"><Check /><span>3 traductions de patron offertes</span></li>
+            <li className="flex items-start gap-2"><Check /><span>{t('ui.photoStudio2Free')}</span></li>
+            <li className="flex items-start gap-2"><Check /><span>{t('ui.translations3Free')}</span></li>
           </ul>
 
           <button disabled className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed">
@@ -329,12 +329,12 @@ const Subscription = () => {
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>{t('ui.allOfFree')}</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.unlimitedStorage')}</span> · 200 photos</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Jusqu'à 10 compteurs secondaires</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">Stock — 15 références</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 Créations IA / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.upTo10Counters')}</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.stash15Refs')}</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.aiCreations3Month')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>Studio Photo : 5 crédits / mois</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">3 traductions de patron / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>{t('ui.photoStudio5Month')}</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.translations3Month')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>{t('ui.advancedStats')}</span></li>
           </ul>
 
@@ -390,17 +390,17 @@ const Subscription = () => {
               <span className="text-3xl font-bold text-gray-900">4,99€</span>
               <span className="text-sm text-gray-500">/mois</span>
             </div>
-            <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
+            <p className="text-xs text-green-600 font-medium mb-1">{t('ui.billedYearlySave')}</p>
             <p className="text-sm text-gray-500">{t('ui.proDesc')}</p>
           </div>
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>{t('ui.allOfPlus')}</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.unlimitedStash')}</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">15 Créations IA / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.aiCreations15Month')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">30 questions IA / mois</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">Studio Photo : 20 crédits / mois</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">15 traductions de patron / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.photoStudio20Month')}</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.translations15Month')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>{t('ui.advancedStats')}</span></li>
           </ul>
 
@@ -441,8 +441,8 @@ const Subscription = () => {
           <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="font-bold text-gray-900">Pack 50 crédits</p>
-                <p className="text-xs text-gray-500 mt-0.5">0,10€ par crédit</p>
+                <p className="font-bold text-gray-900">{t('ui.pack50')}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{t('ui.pack50Price')}</p>
               </div>
               <div className="text-right">
                 <span className="text-3xl font-bold text-gray-900">4,99€</span>
@@ -466,8 +466,8 @@ const Subscription = () => {
             </div>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="font-bold text-gray-900">Pack 150 crédits</p>
-                <p className="text-xs text-green-600 font-medium mt-0.5">0,07€ par crédit — économisez 4,50€</p>
+                <p className="font-bold text-gray-900">{t('ui.pack150')}</p>
+                <p className="text-xs text-green-600 font-medium mt-0.5">{t('ui.pack150Price')}</p>
               </div>
               <div className="text-right">
                 <span className="text-3xl font-bold text-gray-900">9,99€</span>

@@ -134,14 +134,14 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
                 {loadingSections ? (
                   <p className="text-xs text-gray-400">{t('ui.loadingSections')}</p>
                 ) : sections.length === 0 ? (
-                  <p className="text-xs text-gray-500">Ce projet n'a pas de section — la grille sera rattachée directement au projet.</p>
+                  <p className="text-xs text-gray-500">{t('ui.noSectionChart')}</p>
                 ) : (
                   <select
                     value={selectedSectionId}
                     onChange={e => setSelectedSectionId(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="">-- Aucune section (projet entier) --</option>
+                    <option value="">{t('ui.noSectionOption')}</option>
                     {sections.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
@@ -168,7 +168,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
                     <>
                       {' '}La grille couvrira les rangs {Number(startRow) + 1} à {Number(startRow) + chartHeight} sur {selectedSection.total_rows}.
                       {Number(startRow) + chartHeight > selectedSection.total_rows && (
-                        <span className="text-amber-600 font-medium"> ⚠️ Ça dépasse le total de rangs de la section.</span>
+                        <span className="text-amber-600 font-medium">{t('ui.exceedsSectionRows')}</span>
                       )}
                     </>
                   )}

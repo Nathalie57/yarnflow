@@ -300,6 +300,22 @@
     "phPatternTextArea": "Paste your pattern text here...\n\nExample:\nRow 1: 6 single crochet in a magic ring\nRow 2: 2 sc in each stitch (12)\nRow 3: *1 sc, inc* x6 (18)\n...",
     "phProjectNotes": "Add your personal notes about this project:\n\n• Changes made to the pattern\n• Difficulties encountered\n• Tips and advice\n• Ideas for next time\n• Things to watch out for...",
     "phProductUrl": "https://www.drops-design.com/...",
-    "gaugeLabel": "Gauge"
+    "gaugeLabel": "Gauge",
+    "screenAwake": "Screen kept awake",
+    "sequenceDone": "✓ Sequence complete",
+    "secondaryCountersDesc": "Track increases, decreases or any other count alongside your rows — as many as you need.",
+    "chartsTab": "Charts",
+    "betaTag": "(beta)",
+    "photoEnhanceNote": "Background and lighting reworked — your work stays untouched.",
+    "freeTrialUsedPrefix": "Free trial used — ",
+    "upgradeToPlus": "upgrade to PLUS",
+    "nineStyles": "All 9 styles applied to the same photo",
+    "selectCategory": "-- Select a category --",
+    "instagramStep1": "Tap the button below to open Instagram, then tap ",
+    "instagramStep2": " to create a new post and upload the downloaded image.",
+    "allCaughtUp": "You've seen it all! 🎉",
+    "watchProgress": "✨ Watch your progress move along!",
+    "orSearchPattern": "or search for a pattern",
+    "pastePatternTip": "You can paste your pattern text here"
   }
 }

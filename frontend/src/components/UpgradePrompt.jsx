@@ -155,7 +155,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
                 <span className="text-xl font-bold text-primary-600">2,49€</span>
                 <span className="text-xs text-gray-500">/mois</span>
               </div>
-              <p className="text-[11px] text-green-600 font-medium mt-0.5">Facturé 29,99€/an</p>
+              <p className="text-[11px] text-green-600 font-medium mt-0.5">{t('ui.billedYearlyPlus')}</p>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex flex-col">
               <p className="font-bold text-gray-900 text-sm">PRO</p>
@@ -164,7 +164,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
                 <span className="text-xl font-bold text-gray-700">4,99€</span>
                 <span className="text-xs text-gray-500">/mois</span>
               </div>
-              <p className="text-[11px] text-green-600 font-medium mt-0.5">Facturé 59,99€/an</p>
+              <p className="text-[11px] text-green-600 font-medium mt-0.5">{t('ui.billedYearlyPro')}</p>
             </div>
           </div>
         ) : (
@@ -172,7 +172,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             <div>
               <p className="font-bold text-gray-900 text-sm">{t('ui.proPlan')}</p>
               <p className="text-xs text-gray-500 mt-0.5">{t('ui.forSeriousProjects')}</p>
-              <p className="text-[11px] text-green-600 font-medium mt-1">Facturé 59,99€/an</p>
+              <p className="text-[11px] text-green-600 font-medium mt-1">{t('ui.billedYearlyPro')}</p>
             </div>
             <div className="text-right">
               <span className="text-2xl font-bold text-primary-600">4,99€</span>
@@ -196,7 +196,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             {content.plan === 'plus' ? 'Voir les plans' : 'Passer à PRO'}
           </button>
         </div>
-        <p className="text-xs text-gray-400 text-center -mt-2">Sans engagement · Résiliable à tout moment</p>
+        <p className="text-xs text-gray-400 text-center -mt-2">{t('ui.noCommitment')}</p>
       </div>
     </div>
   )

@@ -46,7 +46,14 @@
     "eyebrow": "Pour les projets complexes",
     "title": "Enfin un suivi adapté aux vrais projets",
     "desc": "Un pull n'est pas un simple compteur. Il a un dos, un devant, deux manches, un col — chacun avec son propre rythme d'augmentations et de diminutions. YarnFlow suit chaque partie séparément, pas juste un chiffre global qui mélange tout.",
-    "parts": ["Dos", "Devant", "Manches", "Augmentations", "Diminutions", "Col"]
+    "parts": [
+      "Dos",
+      "Devant",
+      "Manches",
+      "Augmentations",
+      "Diminutions",
+      "Col"
+    ]
   },
   "photoStudio": {
     "eyebrow": "Studio Photo",
@@ -208,5 +215,8 @@
     "login": "Connexion",
     "pricing": "Tarifs",
     "copyright": "© 2026 YarnFlow — Tous droits réservés"
+  },
+  "ui": {
+    "unlimitedStash": "Stock illimité"
   }
 }

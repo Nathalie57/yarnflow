@@ -1244,7 +1244,7 @@ const PatternLibraryDetail = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.category')}</label>
                   <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">-- Sélectionner --</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
                     <option value="Vêtements">{t('ui.catClothing')}</option>
                     <option value="Accessoires">{t('ui.catAccessories')}</option>
                     <option value="Jouets/Peluches">{t('ui.catToys')}</option>
@@ -1257,7 +1257,7 @@ const PatternLibraryDetail = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.technique')}</label>
                   <select value={formData.technique} onChange={(e) => setFormData({ ...formData, technique: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">-- Sélectionner --</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
                     <option value="tricot">{t('ui.knitting')}</option>
                     <option value="crochet">{t('ui.crochet')}</option>
                   </select>
@@ -1265,7 +1265,7 @@ const PatternLibraryDetail = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.difficulty')}</label>
                   <select value={formData.difficulty} onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">-- Sélectionner --</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
                     <option value="facile">{t('ui.diffEasy')}</option>
                     <option value="moyen">{t('ui.diffMedium')}</option>
                     <option value="difficile">{t('ui.diffHard')}</option>

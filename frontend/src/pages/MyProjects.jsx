@@ -1017,7 +1017,7 @@ const MyProjects = () => {
                       <p className="font-medium text-gray-700 text-sm">{t('myProjects.howLibrary')}</p>
                       <p className="text-gray-400 text-xs mt-0.5">
                         Sauvegardez vos patrons dans la{' '}
-                        <Link to="/pattern-library" className="text-primary-600 hover:underline">bibliothèque</Link>
+                        <Link to="/pattern-library" className="text-primary-600 hover:underline">{t('ui.libraryWord')}</Link>
                         {' '}ou gérez vos pelotes dans le{' '}
                         <Link to="/stash" className="text-primary-600 hover:underline">stock</Link>.
                       </p>

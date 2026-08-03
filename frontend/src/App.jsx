@@ -12,7 +12,6 @@ import CookieConsent from 'react-cookie-consent'
 
 // Pages
 import Landing from './pages/Landing'
-import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
@@ -63,7 +62,6 @@ import AdminPartnerPatterns from './pages/admin/AdminPartnerPatterns'
 // active au premier chargement du module.
 const PAGE_TITLE_KEYS = {
   '/': 'landing',
-  '/home': 'home',
   '/login': 'login',
   '/register': 'register',
   '/forgot-password': 'forgotPassword',
@@ -141,7 +139,6 @@ function App() {
         <Routes>
           {/* Routes publiques */}
           <Route path="/" element={<Landing />} />
-          <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

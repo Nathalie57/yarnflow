@@ -112,7 +112,7 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
             </svg>
           </div>
           <p className="text-gray-700 font-medium mb-1">{t('ui.siteCannotDisplay')}</p>
-          <p className="text-gray-400 text-sm mb-5">Il bloque l'affichage intégré — ouvrez-le dans un nouvel onglet.</p>
+          <p className="text-gray-400 text-sm mb-5">{t('ui.blocksEmbed')}</p>
           <a
             href={url}
             target="_blank"

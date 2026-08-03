@@ -46,7 +46,14 @@
     "eyebrow": "For complex projects",
     "title": "At last, tracking built for real projects",
     "desc": "A sweater isn't just one counter. It has a back, a front, two sleeves, a collar — each with its own rhythm of increases and decreases. YarnFlow tracks every part separately, not just one global number that blends everything together.",
-    "parts": ["Back", "Front", "Sleeves", "Increases", "Decreases", "Collar"]
+    "parts": [
+      "Back",
+      "Front",
+      "Sleeves",
+      "Increases",
+      "Decreases",
+      "Collar"
+    ]
   },
   "photoStudio": {
     "eyebrow": "Photo Studio",
@@ -208,5 +215,8 @@
     "login": "Log in",
     "pricing": "Pricing",
     "copyright": "© 2026 YarnFlow — All rights reserved"
+  },
+  "ui": {
+    "unlimitedStash": "Unlimited stash"
   }
 }

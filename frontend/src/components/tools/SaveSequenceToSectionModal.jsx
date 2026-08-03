@@ -95,7 +95,7 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
                 onChange={e => setSelectedProjectId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="">-- Choisir un projet --</option>
+                <option value="">{t('ui.chooseProject')}</option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
@@ -115,7 +115,7 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
                     onChange={e => setSelectedSectionId(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="">-- Choisir une section --</option>
+                    <option value="">{t('ui.chooseSection')}</option>
                     {sections.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}

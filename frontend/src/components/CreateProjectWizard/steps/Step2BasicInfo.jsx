@@ -4,7 +4,10 @@
  * @created 2026-01-27 by [AI:Claude]
  */
 
+import { useTranslation } from 'react-i18next'
+
 const Step2BasicInfo = ({ formData, onFormChange }) => {
+  const { t } = useTranslation('projects')
   const handleChange = (field, value) => {
     onFormChange({ ...formData, [field]: value })
   }
@@ -25,7 +28,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
           autoFocus
         />
         {formData.name && formData.name.length < 2 && (
-          <p className="mt-1 text-xs text-red-500">Le nom doit contenir au moins 2 caractères</p>
+          <p className="mt-1 text-xs text-red-500">{t('ui.nameMinLength')}</p>
         )}
       </div>
 
@@ -102,7 +105,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
             `}
           >
             <span className="text-xl">📐</span>
-            <span>Centimètres (0.5)</span>
+            <span>{t('ui.centimetersUnit')}</span>
           </button>
         </div>
         <p className="mt-2 text-xs text-gray-500">

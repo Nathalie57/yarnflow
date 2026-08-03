@@ -300,6 +300,22 @@
     "phPatternTextArea": "Collez ici le texte de votre patron...\n\nExemple :\nRang 1 : 6 mailles serrées dans un cercle magique\nRang 2 : 2ms dans chaque maille (12)\nRang 3 : *1ms, aug* x6 (18)\n...",
     "phProjectNotes": "Ajoutez vos notes personnelles sur ce projet :\n\n• Modifications apportées au patron\n• Difficultés rencontrées\n• Astuces et conseils\n• Idées pour la suite\n• Points d'attention...",
     "phProductUrl": "https://www.drops-design.com/...",
-    "gaugeLabel": "Échantillon"
+    "gaugeLabel": "Échantillon",
+    "screenAwake": "Écran maintenu allumé",
+    "sequenceDone": "✓ Séquence terminée",
+    "secondaryCountersDesc": "Suivez vos augmentations, diminutions ou tout autre comptage en parallèle — autant que nécessaire.",
+    "chartsTab": "Grilles",
+    "betaTag": "(bêta)",
+    "photoEnhanceNote": "Fond et éclairage retravaillés — votre ouvrage reste intact.",
+    "freeTrialUsedPrefix": "Essai gratuit utilisé — ",
+    "upgradeToPlus": "passer en PLUS",
+    "nineStyles": "Les 9 styles disponibles appliqués à la même photo",
+    "selectCategory": "-- Sélectionner une catégorie --",
+    "instagramStep1": "Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur ",
+    "instagramStep2": " pour créer un nouveau post et uploadez l'image téléchargée.",
+    "allCaughtUp": "Vous avez fait le tour ! 🎉",
+    "watchProgress": "✨ Regardez votre progression avancer !",
+    "orSearchPattern": "ou chercher un patron",
+    "pastePatternTip": "Vous pouvez copier-coller le texte de votre patron ici"
   }
 }

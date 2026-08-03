@@ -71,6 +71,8 @@
     "keepKnittingForBadges": "Keep knitting to unlock your first badges!",
     "upgradeForBadges": "Upgrade to PRO to unlock these badges right away.",
     "newStreakRecord": "New streak record!",
+    "streakRecordDesc": "{{count}} consecutive days — your best streak so far.",
+    "badgeUnlocked": "Badge unlocked:",
     "fullAnalytics": "Your full analytics",
     "fullAnalyticsDesc": "Day-by-day progress, project breakdown, your best knitting hour...",
     "cancelAnytime": "Cancel any time",
@@ -217,7 +219,17 @@
     "deleteThisColor": "Delete this colour",
     "doubleClickColor": "Double-click a colour to change it.",
     "phPatternTextArea": "Paste your pattern text here...\n\nExample:\nRow 1: 6 single crochet in a magic ring\nRow 2: 2 sc in each stitch (12)\nRow 3: *1 sc, inc* x6 (18)\n...",
-    "objectiveReached": "Objective reached!"
+    "objectiveReached": "Objective reached!",
+    "oneCreditOnePhoto": "1 credit = 1 enhanced photo",
+    "generationOneCredit": "Generation = 1 credit",
+    "selectPlaceholder": "-- Select --",
+    "exceedsSectionRows": " ⚠️ That exceeds the section's total rows.",
+    "fastestSlot": "When you knit fastest",
+    "paletteHint": "Palette — click to paint",
+    "noSectionOption": "-- No section (whole project) --",
+    "instagramStep1": "Tap the button below to open Instagram, then tap ",
+    "instagramStep2": " to create a new post and upload the downloaded image.",
+    "ofKnitting": "of knitting"
   },
   "badges": {
     "proj-1": {

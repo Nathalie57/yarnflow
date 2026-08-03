@@ -3,7 +3,10 @@
  * @brief Bandeau récap global du stock (références, pelotes, poids, métrages)
  */
 
+import { useTranslation } from 'react-i18next'
+
 const YarnStashStats = ({ stats }) => {
+  const { t } = useTranslation('tools')
   if (!stats) return null
 
   const formatWeight = (g) => {
@@ -34,12 +37,12 @@ const YarnStashStats = ({ stats }) => {
 
       <div className="bg-white rounded-xl border border-gray-100 p-4 text-center shadow-sm">
         <div className="text-2xl font-bold text-indigo-600">{formatWeight(stats.total_weight_g)}</div>
-        <div className="text-xs text-gray-500 mt-1">de laine</div>
+        <div className="text-xs text-gray-500 mt-1">{t('ui.ofWool')}</div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 p-4 text-center shadow-sm">
         <div className="text-2xl font-bold text-violet-600">{formatYardage(stats.total_yardage_m)}</div>
-        <div className="text-xs text-gray-500 mt-1">de fil</div>
+        <div className="text-xs text-gray-500 mt-1">{t('ui.ofYarn')}</div>
       </div>
     </div>
   )

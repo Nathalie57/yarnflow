@@ -270,12 +270,12 @@ const Stats = () => {
               <>
                 <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.newStreakRecord')}</h2>
                 <p className="text-gray-500 text-sm leading-relaxed">
-                  {celebration.value} jours consécutifs — votre meilleure série jusqu'ici.
+                  {t('ui.streakRecordDesc', { count: celebration.value })}
                 </p>
               </>
             ) : (
               <>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Badge débloqué : {t(`badges.${celebration.badge.id}.title`)}</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.badgeUnlocked')} {t(`badges.${celebration.badge.id}.title`)}</h2>
                 <p className="text-gray-500 text-sm leading-relaxed">{t(`badges.${celebration.badge.id}.desc`)}</p>
               </>
             )}
@@ -365,7 +365,7 @@ const Stats = () => {
               <div className="text-2xl font-bold text-gray-900 tabular-nums">
                 {Math.floor((stats.total_crochet_time || 0) / 3600)}h
               </div>
-              <div className="text-xs text-gray-500 mt-0.5">de tricot</div>
+              <div className="text-xs text-gray-500 mt-0.5">{t('ui.ofKnitting')}</div>
               {isPro && stats.average_session_time > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-400">
                   ~{stats.average_session_time} min / session
@@ -536,7 +536,7 @@ const Stats = () => {
                     <div>
                       <p className="text-xs text-gray-500 mb-0.5">{t('ui.bestHour')}</p>
                       <p className="text-2xl font-bold text-gray-900 tabular-nums">{stats.best_hour}h – {stats.best_hour + 1}h</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Créneau où vous tricotez le plus vite</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{t('ui.fastestSlot')}</p>
                     </div>
                   </div>
                 )}

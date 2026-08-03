@@ -278,7 +278,7 @@ export default function SmartProjectCreator() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{t('ui.smartCreation')}</h1>
-          <p className="text-gray-500">Vous avez utilisé vos 3 essais gratuits.</p>
+          <p className="text-gray-500">{t('ui.freeTrialsUsed')}</p>
           <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
             {t('ui.moreAutoCreations')}
           </Link>
@@ -384,8 +384,8 @@ export default function SmartProjectCreator() {
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">{t('ui.pdfFile')}</h3>
-                <p className="text-xs text-gray-500">Patron au format PDF (max 10 MB)</p>
-                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">Choisir →</div>
+                <p className="text-xs text-gray-500">{t('ui.pdfMaxSize')}</p>
+                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
               </button>
 
               {/* Mode URL */}
@@ -398,7 +398,7 @@ export default function SmartProjectCreator() {
                 </div>
                 <h3 className="font-bold text-gray-900 mb-1">{t('ui.webLink')}</h3>
                 <p className="text-xs text-gray-500">{t('ui.fromUrl')}</p>
-                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">Choisir →</div>
+                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
               </button>
 
               {/* Mode Bibliothèque — pleine largeur sur mobile */}
@@ -412,7 +412,7 @@ export default function SmartProjectCreator() {
                 <div>
                   <h3 className="font-bold text-gray-900 mb-1">{t('ui.myLibrary')}</h3>
                   <p className="text-xs text-gray-500">{t('ui.patternAlreadyInLibrary')}</p>
-                  <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">Choisir →</div>
+                  <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
                 </div>
               </button>
             </div>
@@ -519,7 +519,7 @@ export default function SmartProjectCreator() {
             {/* Taille (optionnel, pour patrons multi-tailles) */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ma taille <span className="text-gray-400 font-normal">(optionnel — pour les patrons multi-tailles)</span>
+                Ma taille <span className="text-gray-400 font-normal">{t('ui.sizeOptionalHint')}</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(s => (
@@ -642,7 +642,7 @@ export default function SmartProjectCreator() {
             {/* Informations de base */}
             <div className="mb-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Titre du projet *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.projectTitleRequired')}</label>
                 <input
                   type="text"
                   value={project.title}
@@ -672,7 +672,7 @@ export default function SmartProjectCreator() {
                     onChange={(e) => setProject({...project, category: e.target.value || null})}
                     className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="">-- Sélectionner --</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
                     <option value="bonnet">{t('ui.hat')}</option>
                     <option value="écharpe">{t('ui.scarf')}</option>
                     <option value="pull">{t('ui.sweater')}</option>
@@ -750,7 +750,7 @@ export default function SmartProjectCreator() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Échantillon (10 cm)</label>
+                  <label className="block text-sm text-gray-700 mb-1">{t('ui.gauge10cm')}</label>
                   <div className="grid grid-cols-2 gap-4">
                     <input
                       type="number"

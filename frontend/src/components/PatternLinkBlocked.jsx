@@ -45,7 +45,7 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
               <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
                 <li>Téléchargez le PDF du patron depuis {domain}</li>
                 <li>{t('ui.uploadWithButton')}</li>
-                <li>Profitez du compteur + patron côte-à-côte ! ✨</li>
+                <li>{t('ui.sideBySide')}</li>
               </ol>
             </div>
           </div>

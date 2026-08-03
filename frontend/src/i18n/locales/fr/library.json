@@ -71,6 +71,8 @@
     "keepKnittingForBadges": "Continuez à tricoter pour débloquer vos premiers badges !",
     "upgradeForBadges": "Passez à PRO pour débloquer ces badges immédiatement.",
     "newStreakRecord": "Nouveau record de série !",
+    "streakRecordDesc": "{{count}} jours consécutifs — votre meilleure série jusqu'ici.",
+    "badgeUnlocked": "Badge débloqué :",
     "fullAnalytics": "Vos analytics complets",
     "fullAnalyticsDesc": "Progression jour par jour, répartition de vos projets, votre meilleure heure de tricot...",
     "cancelAnytime": "Résiliable à tout moment",
@@ -217,7 +219,17 @@
     "deleteThisColor": "Supprimer cette couleur",
     "doubleClickColor": "Double-cliquez une couleur pour la modifier.",
     "phPatternTextArea": "Collez ici le texte de votre patron...\n\nExemple :\nRang 1 : 6 mailles serrées dans un cercle magique\nRang 2 : 2ms dans chaque maille (12)\nRang 3 : *1ms, aug* x6 (18)\n...",
-    "objectiveReached": "Objectif atteint !"
+    "objectiveReached": "Objectif atteint !",
+    "oneCreditOnePhoto": "1 crédit = 1 photo embellie",
+    "generationOneCredit": "Génération = 1 crédit",
+    "selectPlaceholder": "-- Sélectionner --",
+    "exceedsSectionRows": " ⚠️ Ça dépasse le total de rangs de la section.",
+    "fastestSlot": "Créneau où vous tricotez le plus vite",
+    "paletteHint": "Palette — cliquez pour peindre",
+    "noSectionOption": "-- Aucune section (projet entier) --",
+    "instagramStep1": "Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur ",
+    "instagramStep2": " pour créer un nouveau post et uploadez l'image téléchargée.",
+    "ofKnitting": "de tricot"
   },
   "badges": {
     "proj-1": {

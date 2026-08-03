@@ -330,7 +330,7 @@ const Profile = () => {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-medium text-gray-900">{t('ui.inactivityReminder')}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Reçois un email si tu n'as pas tricoté depuis 7 jours</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('ui.inactivityEmail')}</p>
                 </div>
                 <button
                   onClick={() => handleToggleInactivityReminder(!inactivityReminder)}
@@ -401,7 +401,7 @@ const Profile = () => {
               <label className="block text-sm text-gray-700 mb-1.5">{t('ui.newPassword')}</label>
               <PasswordInput className="input-field" value={passwordData.new_password}
                 onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })} required minLength={6} />
-              <p className="text-xs text-gray-500 mt-1">Minimum 6 caractères</p>
+              <p className="text-xs text-gray-500 mt-1">{t('ui.minSixChars')}</p>
             </div>
             <div className="mb-6">
               <label className="block text-sm text-gray-700 mb-1.5">{t('ui.confirmNewPassword')}</label>
