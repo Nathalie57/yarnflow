@@ -408,5 +408,15 @@
       "title": "Galerie complète",
       "desc": "25 photos IA, une collection."
     }
+  },
+  "hub": {
+    "patterns": {
+      "title": "Mes patrons",
+      "description": "Tes patrons PDF, liens et textes, organisés et liés à tes projets."
+    },
+    "stash": {
+      "title": "Mon stock",
+      "description": "Ton inventaire de pelotes — marque, coloris, métrages, quantités."
+    }
   }
 }

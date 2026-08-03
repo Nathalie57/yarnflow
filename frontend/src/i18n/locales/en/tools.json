@@ -417,6 +417,49 @@
     "oneCounterPerProject": "1 counter per project",
     "translations3Free": "3 free pattern translations",
     "translations3Month": "3 pattern translations / month",
-    "translations15Month": "15 pattern translations / month"
+    "translations15Month": "15 pattern translations / month",
+    "backToTools": "← Back to tools"
+  },
+  "toolsList": {
+    "distribute": {
+      "title": "Space increases & decreases",
+      "description": "Spread increases or decreases evenly across your stitches or rows."
+    },
+    "gauge": {
+      "title": "Gauge calculator",
+      "description": "Work out stitch and row counts from your gauge, or resize a pattern."
+    },
+    "needles": {
+      "title": "Needle converter",
+      "description": "EU / US / UK size equivalents for knitting needles and crochet hooks."
+    },
+    "yarn": {
+      "title": "Yarn calculator",
+      "description": "How many balls to buy based on your project’s yardage."
+    },
+    "glossary": {
+      "title": "Glossary",
+      "description": "66 knitting & crochet terms explained in French, with English equivalents."
+    },
+    "length": {
+      "title": "Length converter",
+      "description": "Convert cm, inches, yards and metres. Essential for US/UK patterns."
+    },
+    "remaining": {
+      "title": "Yarn left",
+      "description": "Weigh a part-used ball to find out how many metres you have left."
+    },
+    "weight": {
+      "title": "Yarn weight",
+      "description": "Lace / Fingering / DK / Worsted / Bulky equivalents in FR, US and UK, with recommended needles."
+    },
+    "ai": {
+      "title": "AI assistant",
+      "description": "Ask anything about techniques, patterns and stitches. 3/month on FREE, 10/month on PLUS, 30/month on PRO."
+    },
+    "chart-designer": {
+      "title": "Colourwork chart (beta)",
+      "description": "Draw a colourwork chart, or import one from an image, then save it to one of your projects."
+    }
   }
 }

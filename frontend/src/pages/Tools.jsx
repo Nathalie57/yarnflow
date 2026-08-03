@@ -105,75 +105,23 @@ const IconGrid = () => (
   </svg>
 )
 
+// [AI:Claude] Les libelles vivent dans les traductions (cle toolsList.<id>.title/.description) :
+// une constante figee au chargement du module resterait dans la langue initiale.
 const TOOLS = [
-  {
-    id: 'distribute',
-    Icon: IconDistribute,
-    title: 'Répartir augm. & dim.',
-    description: 'Espacer uniformément des augmentations ou diminutions sur vos mailles ou rangs.',
-    component: DistributeIncrDec,
-  },
-  {
-    id: 'gauge',
-    Icon: IconGauge,
-    title: "Calculateur d'échantillon",
-    description: 'Calculer le nombre de mailles et rangs selon votre échantillon, ou adapter un patron.',
-    component: GaugeCalculator,
-  },
-  {
-    id: 'needles',
-    Icon: IconNeedles,
-    title: 'Convertisseur aiguilles',
-    description: 'Correspondance des tailles EU / US / UK pour aiguilles à tricoter et crochets.',
-    component: NeedleConverter,
-  },
-  {
-    id: 'yarn',
-    Icon: IconYarn,
-    title: 'Calculateur de pelotes',
-    description: 'Combien de pelotes acheter selon le métrage de votre projet.',
-    component: YarnCalculator,
-  },
-  {
-    id: 'glossary',
-    Icon: IconBook,
-    title: 'Glossaire',
-    description: '66 termes tricot & crochet expliqués en français, avec équivalents anglais.',
-    component: Glossary,
-  },
-  {
-    id: 'length',
-    Icon: IconLength,
-    title: 'Convertisseur longueur',
-    description: 'Convertir cm, pouces, yards et mètres. Indispensable pour les patrons US/UK.',
-    component: LengthConverter,
-  },
-  {
-    id: 'remaining',
-    Icon: IconScale,
-    title: 'Laine restante',
-    description: 'Pesez votre pelote entamée pour savoir combien de mètres il vous reste.',
-    component: RemainingYarn,
-  },
-  {
-    id: 'weight',
-    Icon: IconLayers,
-    title: 'Épaisseur de laine',
-    description: 'Correspondance Lace / Fingering / DK / Worsted / Bulky en FR, US et UK avec aiguilles recommandées.',
-    component: YarnWeightConverter,
-  },
-  {
-    id: 'ai',
-    Icon: IconMessage,
-    title: 'Assistant IA',
-    description: 'Posez toutes vos questions sur les techniques, patrons et points. 3/mois en FREE, 10/mois en PLUS, 30/mois en PRO.',
-    component: AiAssistant,
-  },
+  { id: 'distribute', Icon: IconDistribute, component: DistributeIncrDec },
+  { id: 'gauge', Icon: IconGauge, component: GaugeCalculator },
+  { id: 'needles', Icon: IconNeedles, component: NeedleConverter },
+  { id: 'yarn', Icon: IconYarn, component: YarnCalculator },
+  // Glossaire : explique les termes FR avec leurs equivalents anglais.
+  // Sans objet pour une anglophone, donc masque hors francais.
+  { id: 'glossary', Icon: IconBook, component: Glossary, frenchOnly: true },
+  { id: 'length', Icon: IconLength, component: LengthConverter },
+  { id: 'remaining', Icon: IconScale, component: RemainingYarn },
+  { id: 'weight', Icon: IconLayers, component: YarnWeightConverter },
+  { id: 'ai', Icon: IconMessage, component: AiAssistant },
   {
     id: 'chart-designer',
     Icon: IconGrid,
-    title: 'Grille jacquard (bêta)',
-    description: 'Dessinez une grille jacquard/colorwork, ou importez-la depuis une image, puis enregistrez-la dans un de vos projets.',
     component: ChartDesigner,
     betaOnly: true,
     badge: 'PLUS/PRO',
@@ -182,14 +130,15 @@ const TOOLS = [
 ]
 
 export default function Tools() {
-  const { t } = useTranslation('tools')
+  const { t, i18n } = useTranslation('tools')
   const [activeTool, setActiveTool] = useState(null)
   const { user, isAdmin, hasActiveSubscription } = useAuth()
   // [AI:Claude] Grille jacquard réservée aux abonnés (PLUS/PRO) + admins.
   // Accès user 30 (bêta-testeuse) désactivé temporairement — Nathalie teste
   // d'abord elle-même avant d'ouvrir l'accès.
   const canAccessJacquard = isAdmin() || /* user?.id === 30 || */ hasActiveSubscription()
-  const visibleTools = TOOLS.filter(t => !t.betaOnly || canAccessJacquard)
+  const isFrench = i18n.resolvedLanguage === 'fr'
+  const visibleTools = TOOLS.filter(x => (!x.betaOnly || canAccessJacquard) && (!x.frenchOnly || isFrench))
 
   const tool = visibleTools.find(t => t.id === activeTool)
 
@@ -202,13 +151,13 @@ export default function Tools() {
           onClick={() => setActiveTool(null)}
           className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-6 transition"
         >
-          ← Retour aux outils
+          {t('ui.backToTools')}
         </button>
         <div className="flex items-center gap-3 mb-6">
           <span className="w-9 h-9 text-primary-600 flex-shrink-0">
             <Icon />
           </span>
-          <h1 className="text-xl font-bold text-gray-900">{tool.title}</h1>
+          <h1 className="text-xl font-bold text-gray-900">{t(`toolsList.${tool.id}.title`)}</h1>
         </div>
         <ToolComponent />
       </div>
@@ -245,12 +194,13 @@ export default function Tools() {
           </div>
         </Link>
 
-        {visibleTools.map(t => {
-          const { Icon } = t
+        {/* parametre nomme `item` et non `t` : sinon il masquerait la fonction de traduction */}
+        {visibleTools.map(item => {
+          const { Icon } = item
           return (
             <button
-              key={t.id}
-              onClick={() => setActiveTool(t.id)}
+              key={item.id}
+              onClick={() => setActiveTool(item.id)}
               className="bg-white border border-gray-200 rounded-2xl p-5 text-left hover:border-primary-300 hover:shadow-md transition flex flex-col gap-3"
             >
               <span className="w-10 h-10 text-primary-600">
@@ -258,12 +208,12 @@ export default function Tools() {
               </span>
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="font-semibold text-gray-900 text-sm leading-tight">{t.title}</div>
-                  {t.badge && (
-                    <span className="bg-primary-100 text-primary-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{t.badge}</span>
+                  <div className="font-semibold text-gray-900 text-sm leading-tight">{t(`toolsList.${item.id}.title`)}</div>
+                  {item.badge && (
+                    <span className="bg-primary-100 text-primary-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{item.badge}</span>
                   )}
                 </div>
-                <div className="text-xs text-gray-500 mt-1 leading-snug">{t.description}</div>
+                <div className="text-xs text-gray-500 mt-1 leading-snug">{t(`toolsList.${item.id}.description`)}</div>
               </div>
             </button>
           )

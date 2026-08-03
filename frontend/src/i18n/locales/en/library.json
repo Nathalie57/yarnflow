@@ -408,5 +408,15 @@
       "title": "Full gallery",
       "desc": "25 AI photos, a collection."
     }
+  },
+  "hub": {
+    "patterns": {
+      "title": "My patterns",
+      "description": "Your PDF patterns, links and texts, organised and linked to your projects."
+    },
+    "stash": {
+      "title": "My stash",
+      "description": "Your yarn inventory — brand, colourway, yardage, quantities."
+    }
   }
 }

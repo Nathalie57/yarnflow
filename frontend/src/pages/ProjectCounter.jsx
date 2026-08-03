@@ -30,6 +30,7 @@ import SatisfactionModal from '../components/SatisfactionModal'
 import UpgradePrompt from '../components/UpgradePrompt'
 import StashAllocationPanel from '../components/stash/StashAllocationPanel'
 import ProjectCloseModal from '../components/stash/ProjectCloseModal'
+import { PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 
 const ProjectCounter = () => {
   const { t } = useTranslation('counter')
@@ -1532,12 +1533,6 @@ const ProjectCounter = () => {
   }
 
   // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
-  const seasons = [
-    { key: 'spring', label: 'Printemps', icon: '🌸', desc: 'Fleurs, bourgeons, lumière douce' },
-    { key: 'summer', label: 'Été', icon: '☀️', desc: 'Lumière dorée, végétation luxuriante' },
-    { key: 'autumn', label: 'Automne', icon: '🍂', desc: 'Feuilles dorées, tons chauds' },
-    { key: 'winter', label: 'Hiver', icon: '❄️', desc: 'Neige, givre, ambiance cocooning' }
-  ]
 
   // [AI:Claude] Thèmes qui supportent les saisons (extérieur, nature, lumière naturelle)
   const seasonStyles = [
@@ -1556,92 +1551,7 @@ const ProjectCounter = () => {
   ]
 
   // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
-  const stylesByCategory = {
-    wearable: [
-      // FREE (3)
-      { key: 'wearable_c1', label: 'Porté, lumière naturelle', icon: '👤', desc: 'Portrait extérieur avec lumière douce', tier: 'free' },
-      { key: 'flatlay_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
-      { key: 'detail_c1', label: 'Gros plan sur les points', icon: '🔍', desc: 'Macro sur la texture et le détail du tricot', tier: 'free' },
-      // PLUS (+3)
-      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'pro' },
-      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'pro' },
-      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'pro' },
-      // PRO (+3)
-      { key: 'wearable_c4', label: 'Porté, ambiance vintage', icon: '🌼', desc: 'Portrait dans un décor rétro chaleureux', tier: 'pro' },
-      { key: 'wearable_c7', label: 'Porté, éclairage dramatique', icon: '👗', desc: 'Portrait studio avec fond texturé sombre', tier: 'pro' },
-      { key: 'wearable_c9', label: 'Porté, décor industriel', icon: '🏙️', desc: 'Portrait en loft ou espace industriel', tier: 'pro' }
-    ],
-    accessory: [
-      // FREE (3)
-      { key: 'accessory_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
-      { key: 'accessory_c2', label: 'Porté, lumière naturelle', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
-      { key: 'accessory_c3', label: 'Porté, fond neutre', icon: '👤', desc: 'Porté sur modèle avec fond sobre', tier: 'free' },
-      // PLUS (+3)
-      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'pro' },
-      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'pro' },
-      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'pro' },
-      // PRO (+3)
-      { key: 'accessory_c7', label: 'Porté, style éditorial', icon: '💃', desc: 'Portrait avec mise en scène soignée', tier: 'pro' },
-      { key: 'accessory_c8', label: 'À plat, fond sombre élégant', icon: '💎', desc: 'Mise en scène sobre sur fond sombre', tier: 'pro' },
-      { key: 'accessory_c9', label: 'Porté, décor bohème', icon: '🌸', desc: 'Porté dans un intérieur bohème avec plantes', tier: 'pro' }
-    ],
-    home_decor: [
-      // FREE (3)
-      { key: 'home_c1', label: 'Intérieur moderne', icon: '🏠', desc: 'Décor contemporain avec touches de couleur', tier: 'free' },
-      { key: 'home_c2', label: 'Ambiance naturelle', icon: '🌿', desc: 'Bois, plantes et lumière naturelle', tier: 'free' },
-      { key: 'home_c3', label: 'Décor épuré', icon: '🪟', desc: 'Style scandinave, blanc et gris doux', tier: 'free' },
-      // PLUS (+3)
-      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'pro' },
-      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'pro' },
-      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'pro' },
-      // PRO (+3)
-      { key: 'home_c7', label: 'Décor élégant', icon: '💎', desc: 'Intérieur contemporain avec matières nobles', tier: 'pro' },
-      { key: 'home_c8', label: 'Ambiance zen', icon: '🧘', desc: 'Décor minimaliste, couleurs neutres apaisantes', tier: 'pro' },
-      { key: 'home_c9', label: 'Table de créatrice', icon: '🎨', desc: 'Posé sur une table avec fils et fournitures', tier: 'pro' }
-    ],
-    toy: [
-      // FREE (3)
-      { key: 'toy_c1', label: 'Chambre enfant, lumière douce', icon: '🧸', desc: 'Décor de chambre enfantine doux et lumineux', tier: 'free' },
-      { key: 'toy_c2', label: 'Ambiance conte illustré', icon: '📖', desc: 'Décor aquarelle pastel, ambiance féerique', tier: 'free' },
-      { key: 'toy_c3', label: 'À plat, fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
-      // PLUS (+3)
-      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'pro' },
-      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'pro' },
-      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'pro' },
-      // PRO (+3)
-      { key: 'toy_c7', label: 'Décor boutique artisanale', icon: '🏪', desc: 'Étagères et fond pastel, style créatrice', tier: 'pro' },
-      { key: 'toy_c8', label: 'Décor jungle tropicale', icon: '🦁', desc: 'Plantes exotiques, ambiance aventure', tier: 'pro' },
-      { key: 'toy_c9', label: 'Ambiance fête rétro', icon: '🎪', desc: 'Décor festif vintage coloré', tier: 'pro' }
-    ],
-    baby_garment: [
-      // FREE (3)
-      { key: 'baby_garment_c1', label: 'Porté par bébé, lit pastel', icon: '🛏️', desc: 'Bébé allongé sur lit aux tons doux', tier: 'free' },
-      { key: 'baby_garment_c2', label: 'À plat, fond doux', icon: '🌸', desc: 'Posé à plat sur fond uni pastel', tier: 'free' },
-      { key: 'baby_garment_c3', label: 'À plat, table à langer', icon: '🏠', desc: 'Sur table à langer en bois clair, style scandinave', tier: 'free' },
-      // PLUS (+3)
-      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'pro' },
-      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'pro' },
-      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'pro' },
-      // PRO (+3)
-      { key: 'baby_garment_c7', label: 'Porté dans les bras', icon: '💝', desc: 'Bébé tenu par un parent, ambiance tendre', tier: 'pro' },
-      { key: 'baby_garment_c8', label: 'À plat, fleurs séchées', icon: '💎', desc: 'Mise en scène élégante avec fleurs séchées', tier: 'pro' },
-      { key: 'baby_garment_c9', label: 'Porté par bébé, tapis moelleux', icon: '🌸', desc: 'Bébé sur tapis doux et coloré', tier: 'pro' }
-    ],
-    child_garment: [
-      // FREE (3)
-      { key: 'child_garment_c1', label: 'Porté, parc ou jardin', icon: '🌿', desc: 'Enfant dans un espace vert, lumière naturelle', tier: 'free' },
-      { key: 'child_garment_c2', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
-      { key: 'child_garment_c3', label: 'À plat, chambre enfant', icon: '🛏️', desc: 'Sur lit coloré avec peluches', tier: 'free' },
-      // PLUS (+3)
-      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'pro' },
-      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'pro' },
-      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'pro' },
-      // PRO (+3)
-      { key: 'child_garment_c7', label: 'Porté, éclairage studio', icon: '📸', desc: 'Portrait soigné avec éclairage studio créatif', tier: 'pro' },
-      { key: 'child_garment_c8', label: 'À plat, mise en scène soignée', icon: '💎', desc: 'Mise en scène boutique haut de gamme', tier: 'pro' },
-      { key: 'child_garment_c9', label: 'Porté, promenade en famille', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
-    ]
-  }
+  const stylesByCategory = PHOTO_STYLES_BY_CATEGORY
 
   // [AI:Claude] v0.14.0 - Convertir le code de style en label lisible
   const getStyleLabel = (styleCode) => {
@@ -1651,7 +1561,7 @@ const ProjectCounter = () => {
     for (const category in stylesByCategory) {
       const style = stylesByCategory[category].find(s => s.key === styleCode)
       if (style) {
-        return `${style.icon} ${style.label}`
+        return `${style.icon} ${t(`photoStyles.${style.key}.label`, { ns: 'common' })}`
       }
     }
 
@@ -6272,9 +6182,9 @@ const ProjectCounter = () => {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900">{style.label}</span>
+                          <span className="text-sm font-medium text-gray-900">{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</span>
                         </div>
-                        <p className="text-xs text-gray-500 truncate">{style.desc}</p>
+                        <p className="text-xs text-gray-500 truncate">{t(`photoStyles.${style.key}.desc`, { ns: 'common' })}</p>
                       </div>
                     </label>
                   ))}
@@ -6390,7 +6300,7 @@ const ProjectCounter = () => {
                     <div className="relative bg-gray-100">
                       <img
                         src={`/style-examples/${style.key}_after.jpg`}
-                        alt={style.label}
+                        alt={t(`photoStyles.${style.key}.label`, { ns: 'common' })}
                         className="w-full h-64 object-cover"
                         onError={(e) => {
                           e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EExemple à venir%3C/text%3E%3C/svg%3E'
@@ -6411,9 +6321,9 @@ const ProjectCounter = () => {
                     {/* Nom et description du style */}
                     <div className="p-3 bg-white">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-gray-900">{style.label}</h3>
+                        <h3 className="font-bold text-gray-900">{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</h3>
                       </div>
-                      <p className="text-xs text-gray-600">{style.desc}</p>
+                      <p className="text-xs text-gray-600">{t(`photoStyles.${style.key}.desc`, { ns: 'common' })}</p>
                     </div>
                   </div>
                 ))}

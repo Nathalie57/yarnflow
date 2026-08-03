@@ -417,6 +417,49 @@
     "oneCounterPerProject": "1 compteur par projet",
     "translations3Free": "3 traductions de patron offertes",
     "translations3Month": "3 traductions de patron / mois",
-    "translations15Month": "15 traductions de patron / mois"
+    "translations15Month": "15 traductions de patron / mois",
+    "backToTools": "← Retour aux outils"
+  },
+  "toolsList": {
+    "distribute": {
+      "title": "Répartir augm. & dim.",
+      "description": "Espacer uniformément des augmentations ou diminutions sur vos mailles ou rangs."
+    },
+    "gauge": {
+      "title": "Calculateur d'échantillon",
+      "description": "Calculer le nombre de mailles et rangs selon votre échantillon, ou adapter un patron."
+    },
+    "needles": {
+      "title": "Convertisseur aiguilles",
+      "description": "Correspondance des tailles EU / US / UK pour aiguilles à tricoter et crochets."
+    },
+    "yarn": {
+      "title": "Calculateur de pelotes",
+      "description": "Combien de pelotes acheter selon le métrage de votre projet."
+    },
+    "glossary": {
+      "title": "Glossaire",
+      "description": "66 termes tricot & crochet expliqués en français, avec équivalents anglais."
+    },
+    "length": {
+      "title": "Convertisseur longueur",
+      "description": "Convertir cm, pouces, yards et mètres. Indispensable pour les patrons US/UK."
+    },
+    "remaining": {
+      "title": "Laine restante",
+      "description": "Pesez votre pelote entamée pour savoir combien de mètres il vous reste."
+    },
+    "weight": {
+      "title": "Épaisseur de laine",
+      "description": "Correspondance Lace / Fingering / DK / Worsted / Bulky en FR, US et UK avec aiguilles recommandées."
+    },
+    "ai": {
+      "title": "Assistant IA",
+      "description": "Posez toutes vos questions sur les techniques, patrons et points. 3/mois en FREE, 10/mois en PLUS, 30/mois en PRO."
+    },
+    "chart-designer": {
+      "title": "Grille jacquard (bêta)",
+      "description": "Dessinez une grille jacquard/colorwork, ou importez-la depuis une image, puis enregistrez-la dans un de vos projets."
+    }
   }
 }
