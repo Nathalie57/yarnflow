@@ -12,6 +12,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
+import { useAlert } from '../hooks/useAlert'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useImagePreview } from '../hooks/useImagePreview'
@@ -30,6 +32,7 @@ import StashAllocationPanel from '../components/stash/StashAllocationPanel'
 import ProjectCloseModal from '../components/stash/ProjectCloseModal'
 
 const ProjectCounter = () => {
+  const { t } = useTranslation('counter')
   const { projectId } = useParams()
   const navigate = useNavigate()
   const { user, hasActiveSubscription, isAdmin } = useAuth()
@@ -148,11 +151,8 @@ const ProjectCounter = () => {
   const [hideAIWarning, setHideAIWarning] = useState(false) // [AI:Claude] Cacher l'avertissement IA si l'utilisateur a coché "Ne plus afficher"
   const [showInstagramModal, setShowInstagramModal] = useState(false) // [AI:Claude] Modale Instagram pour partage
 
-  // [AI:Claude] Modales de confirmation et alertes
-  const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: null })
-  const [showAlertModal, setShowAlertModal] = useState(false)
-  const [alertData, setAlertData] = useState({ title: '', message: '', type: 'info' })
+  // [AI:Claude] Alertes/confirmations : hook partagé avec MyProjects (voir hooks/useAlert)
+  const { showAlert, showConfirm, AlertModals, isAnyAlertOpen } = useAlert()
   const [showProjectCompletionModal, setShowProjectCompletionModal] = useState(false)
 
   // [AI:Claude] v0.15.0 - Modal de satisfaction post-génération
@@ -776,7 +776,7 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur ajout tag:', err)
       setLocalTags(localTags) // Rollback
-      showAlert('Erreur', 'Impossible d\'ajouter le tag', 'error')
+      showAlert({ message: t('alerts.tagAddFailed'), type: 'error' })
     }
   }
 
@@ -790,7 +790,7 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur suppression tag:', err)
       setLocalTags(localTags) // Rollback
-      showAlert('Erreur', 'Impossible de supprimer le tag', 'error')
+      showAlert({ message: t('alerts.tagRemoveFailed'), type: 'error' })
     }
   }
 
@@ -920,21 +920,6 @@ const ProjectCounter = () => {
     }
   }
 
-  // [AI:Claude] Helper pour afficher une alerte
-  const showAlert = (message, type = 'info', title = '') => {
-    setAlertData({
-      title: title || (type === 'success' ? 'Terminé' : type === 'error' ? 'Erreur' : 'Information'),
-      message,
-      type
-    })
-    setShowAlertModal(true)
-  }
-
-  // [AI:Claude] Helper pour afficher une confirmation
-  const showConfirm = (message, onConfirm, title = '⚠️ Confirmation') => {
-    setConfirmData({ title, message, onConfirm })
-    setShowConfirmModal(true)
-  }
 
   // [AI:Claude] Ouvrir modal d'édition
   const openEditModal = () => {
@@ -954,10 +939,10 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, editForm)
       await fetchProject()
       setShowEditModal(false)
-      showAlert('Projet mis à jour avec succès !', 'success')
+      showAlert({ message: t('alerts.projectUpdated'), type: 'success' })
     } catch (err) {
       console.error('Erreur mise à jour projet:', err)
-      showAlert('Erreur lors de la mise à jour du projet', 'error')
+      showAlert({ message: t('alerts.projectUpdateFailed'), type: 'error' })
     } finally {
       setSavingProject(false)
     }
@@ -1021,10 +1006,10 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowTechnicalDetailsModal(false)
-      showAlert('Détails techniques mis à jour avec succès !', 'success')
+      showAlert({ message: t('alerts.technicalUpdated'), type: 'success' })
     } catch (err) {
       console.error('Erreur mise à jour détails techniques:', err)
-      showAlert('Erreur lors de la mise à jour des détails techniques', 'error')
+      showAlert({ message: t('alerts.technicalUpdateFailed'), type: 'error' })
     } finally {
       setSavingTechnical(false)
     }
@@ -1036,10 +1021,10 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, { technique: newTechnique })
       await fetchProject()
       setShowTechniqueMenu(false)
-      showAlert('Technique modifiée avec succès !', 'success')
+      showAlert({ message: t('alerts.techniqueChanged'), type: 'success' })
     } catch (err) {
       console.error('Erreur changement technique:', err)
-      showAlert('Erreur lors du changement de technique', 'error')
+      showAlert({ message: t('alerts.techniqueChangeFailed'), type: 'error' })
     }
   }
 
@@ -1051,10 +1036,10 @@ const ProjectCounter = () => {
       setShowTypeMenu(false)
       setShowCustomTypeInput(false)
       setCustomType('')
-      showAlert('Catégorie modifiée avec succès !', 'success')
+      showAlert({ message: t('alerts.categoryChanged'), type: 'success' })
     } catch (err) {
       console.error('Erreur changement type:', err)
-      showAlert('Erreur lors du changement de catégorie', 'error')
+      showAlert({ message: t('alerts.categoryChangeFailed'), type: 'error' })
     }
   }
 
@@ -1078,10 +1063,10 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, { notes })
       await fetchProject()
       setShowNotes(false)
-      showAlert('Notes sauvegardées avec succès !', 'success')
+      showAlert({ message: t('alerts.notesSaved'), type: 'success' })
     } catch (err) {
       console.error('Erreur sauvegarde notes:', err)
-      showAlert('Erreur lors de la sauvegarde des notes', 'error')
+      showAlert({ message: t('alerts.notesSaveFailed'), type: 'error' })
     } finally {
       setSavingNotes(false)
     }
@@ -1107,7 +1092,7 @@ const ProjectCounter = () => {
     ]
 
     if (!allowedTypes.includes(file.type)) {
-      showAlert('Veuillez sélectionner un fichier PDF ou une image (JPG, PNG, WEBP)', 'error')
+      showAlert({ message: t('alerts.selectPdfOrImage'), type: 'error' })
       return
     }
 
@@ -1155,10 +1140,10 @@ const ProjectCounter = () => {
         console.warn('⚠️ No pattern_path in project data')
       }
 
-      showAlert('Patron importé avec succès !', 'success')
+      showAlert({ message: t('alerts.patternImported'), type: 'success' })
     } catch (err) {
       console.error('Erreur upload patron:', err)
-      showAlert('Erreur lors de l\'import du patron', 'error')
+      showAlert({ message: t('alerts.patternImportFailed'), type: 'error' })
     } finally {
       setUploadingPattern(false)
     }
@@ -1167,7 +1152,7 @@ const ProjectCounter = () => {
   // [AI:Claude] Ajouter URL de patron
   const handlePatternUrlSubmit = async () => {
     if (!patternUrl.trim()) {
-      showAlert('Veuillez entrer une URL', 'error')
+      showAlert({ message: t('alerts.urlRequired'), type: 'error' })
       return
     }
 
@@ -1175,7 +1160,7 @@ const ProjectCounter = () => {
     try {
       new URL(patternUrl)
     } catch (e) {
-      showAlert('URL invalide. Exemple : https://example.com/patron', 'error')
+      showAlert({ message: t('alerts.urlInvalid'), type: 'error' })
       return
     }
 
@@ -1189,10 +1174,10 @@ const ProjectCounter = () => {
       await fetchProject()
       setShowPatternUrlModal(false)
       setPatternUrl('')
-      showAlert('Lien du patron enregistré avec succès !', 'success')
+      showAlert({ message: t('alerts.patternUrlSaved'), type: 'success' })
     } catch (err) {
       console.error('Erreur enregistrement URL:', err)
-      showAlert('Erreur lors de l\'enregistrement du lien', 'error')
+      showAlert({ message: t('alerts.patternUrlSaveFailed'), type: 'error' })
     } finally {
       setUploadingPattern(false)
     }
@@ -1206,7 +1191,7 @@ const ProjectCounter = () => {
       setLibraryPatterns(response.data.patterns || [])
     } catch (err) {
       console.error('Erreur chargement bibliothèque:', err)
-      showAlert('Erreur lors du chargement de votre bibliothèque', 'error')
+      showAlert({ message: t('alerts.libraryLoadFailed'), type: 'error' })
     } finally {
       setLoadingLibraryPatterns(false)
     }
@@ -1222,10 +1207,10 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowPatternLibraryModal(false)
-      showAlert(`Patron "${pattern.name}" ajouté au projet !`, 'success')
+      showAlert({ message: t('alerts.patternAddedToProject', { name: pattern.name }), type: 'success' })
     } catch (err) {
       console.error('Erreur ajout patron depuis bibliothèque:', err)
-      showAlert('Erreur lors de l\'ajout du patron', 'error')
+      showAlert({ message: t('alerts.patternAddFailed'), type: 'error' })
     } finally {
       setUploadingPattern(false)
     }
@@ -1240,7 +1225,7 @@ const ProjectCounter = () => {
   // [AI:Claude] Sauvegarder le patron texte
   const handleSavePatternText = async () => {
     if (!patternTextEdit.trim()) {
-      showAlert('Le texte du patron ne peut pas être vide', 'error')
+      showAlert({ message: t('alerts.patternTextEmpty'), type: 'error' })
       return
     }
 
@@ -1258,10 +1243,10 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowPatternTextModal(false)
-      showAlert('Patron texte enregistré avec succès !', 'success')
+      showAlert({ message: t('alerts.patternTextSaved'), type: 'success' })
     } catch (err) {
       console.error('Erreur sauvegarde patron texte:', err)
-      showAlert('Erreur lors de la sauvegarde du patron', 'error')
+      showAlert({ message: t('alerts.patternSaveFailed'), type: 'error' })
     } finally {
       setSavingPatternText(false)
     }
@@ -1270,12 +1255,12 @@ const ProjectCounter = () => {
   // [AI:Claude] Ajouter le patron uploadé à la bibliothèque
   const handleAddToLibrary = async () => {
     if (!libraryForm.name.trim()) {
-      showAlert('Le nom du patron est obligatoire', 'error')
+      showAlert({ message: t('alerts.patternNameRequired'), type: 'error' })
       return
     }
 
     if (!uploadedPatternData || !uploadedPatternData.pattern_path) {
-      showAlert('Aucun fichier à ajouter', 'error')
+      showAlert({ message: t('alerts.noFileToAdd'), type: 'error' })
       return
     }
 
@@ -1301,11 +1286,11 @@ const ProjectCounter = () => {
         difficulty: 'intermediate'
       })
 
-      showAlert('Patron ajouté à votre bibliothèque !', 'success')
+      showAlert({ message: t('alerts.patternAddedToLibrary'), type: 'success' })
     } catch (err) {
       console.error('Erreur ajout bibliothèque:', err)
       const errorMsg = err.response?.data?.error || 'Erreur lors de l\'ajout à la bibliothèque'
-      showAlert(errorMsg, 'error')
+      showAlert({ message: errorMsg, type: 'error' })
     } finally {
       setSavingToLibrary(false)
     }
@@ -1331,7 +1316,7 @@ const ProjectCounter = () => {
 
     // [AI:Claude] Vérifier que c'est une image
     if (!file.type.startsWith('image/')) {
-      showAlert('Veuillez sélectionner une image', 'error')
+      showAlert({ message: t('alerts.selectImage'), type: 'error' })
       return
     }
 
@@ -1366,7 +1351,7 @@ const ProjectCounter = () => {
       }
     } catch (err) {
       console.error('Erreur upload photo:', err)
-      showAlert('Erreur lors de l\'ajout de la photo', 'error')
+      showAlert({ message: t('alerts.photoAddFailed'), type: 'error' })
     } finally {
       setUploadingPhoto(false)
     }
@@ -1374,20 +1359,20 @@ const ProjectCounter = () => {
 
 // [AI:Claude] Supprimer une photo
   const handleDeletePhoto = (photoId) => {
-    showConfirm(
-      'Êtes-vous sûr de vouloir supprimer cette photo ? Cette action est irréversible.',
-      async () => {
+    showConfirm({
+      message: t('alerts.confirmDeletePhoto'),
+      onConfirm: async () => {
         try {
           await api.delete(`/photos/${photoId}`)
           await fetchProjectPhotos()
-          showAlert('Photo supprimée avec succès', 'success')
+          showAlert({ message: t('alerts.photoDeleted'), type: 'success' })
         } catch (err) {
           console.error('Erreur suppression photo:', err)
-          showAlert('Erreur lors de la suppression de la photo', 'error')
+          showAlert({ message: t('alerts.photoDeleteFailed'), type: 'error' })
         }
       },
-      '🗑️ Supprimer la photo'
-    )
+      title: t('alerts.confirmDeletePhotoTitle')
+    })
   }
 
   // [AI:Claude] Gérer le checkbox "Ne plus afficher l'avertissement IA"
@@ -1444,15 +1429,15 @@ const ProjectCounter = () => {
           setGeneratedPhoto(fullPhoto)
           setShowSatisfactionModal(true)
         } else {
-          showAlert(`Photo générée avec succès`, 'success')
+          showAlert({ message: t('alerts.photoGenerated'), type: 'success' })
         }
       } else {
-        showAlert(`Photo générée avec succès`, 'success')
+        showAlert({ message: t('alerts.photoGenerated'), type: 'success' })
       }
     } catch (err) {
       console.error('Erreur embellissement photo:', err)
       const errorMsg = err.response?.data?.error || 'Erreur lors de l\'embellissement'
-      showAlert(errorMsg, 'error')
+      showAlert({ message: errorMsg, type: 'error' })
     } finally {
       setEnhancing(false)
     }
@@ -1467,7 +1452,7 @@ const ProjectCounter = () => {
     const result = await generatePreview(selectedPhoto.id, selectedContext.key)
 
     if (!result.success) {
-      showAlert(result.error || 'Erreur lors de la génération de l\'aperçu', 'error')
+      showAlert({ message: result.error || t('alerts.previewFailed'), type: 'error' })
     }
   }
   */
@@ -1476,13 +1461,13 @@ const ProjectCounter = () => {
   const handleFeedbackSubmitted = (feedbackData) => {
     const rating = feedbackData.rating || 0
     if (rating >= 4) {
-      showAlert('Merci pour votre retour !', 'success')
+      showAlert({ message: t('alerts.thanksFeedback'), type: 'success' })
     } else if (rating === 3) {
-      showAlert('Merci pour votre retour ! Nous travaillons à améliorer le service.', 'success')
+      showAlert({ message: t('alerts.thanksFeedbackImproving'), type: 'success' })
     } else if (rating <= 2) {
-      showAlert('Merci pour votre retour. Nous prenons en compte vos remarques pour améliorer le service.', 'success')
+      showAlert({ message: t('alerts.thanksFeedbackNoted'), type: 'success' })
     } else {
-      showAlert('Merci pour votre retour !', 'success')
+      showAlert({ message: t('alerts.thanksFeedback'), type: 'success' })
     }
   }
 
@@ -1703,7 +1688,7 @@ const ProjectCounter = () => {
       triggerOnce('timer_wake_lock')
     } catch (err) {
       console.error('Erreur démarrage session:', err)
-      showAlert('Erreur lors du démarrage de la session', 'error')
+      showAlert({ message: t('alerts.sessionStartFailed'), type: 'error' })
     }
   }
 
@@ -1805,7 +1790,7 @@ const ProjectCounter = () => {
       isEndingSessionRef.current = false
     } catch (err) {
       console.error('Erreur fin session:', err)
-      showAlert('Erreur lors de la fin de session', 'error')
+      showAlert({ message: t('alerts.sessionEndFailed'), type: 'error' })
       isEndingSessionRef.current = false // Réinitialiser même en cas d'erreur
     }
   }
@@ -1823,7 +1808,7 @@ const ProjectCounter = () => {
       await fetchProject()
     } catch (err) {
       console.error('Erreur changement unité:', err)
-      showAlert('Erreur lors du changement d\'unité', 'error')
+      showAlert({ message: t('alerts.unitChangeFailed'), type: 'error' })
     }
   }
 
@@ -1848,7 +1833,7 @@ const ProjectCounter = () => {
 
     // Validation
     if (isNaN(parsedValue) || parsedValue < 0) {
-      showAlert('Valeur invalide', 'error')
+      showAlert({ message: t('alerts.invalidValue'), type: 'error' })
       setIsEditingCounter(false)
       return
     }
@@ -1890,7 +1875,7 @@ const ProjectCounter = () => {
       setCounterInputValue('')
     } catch (err) {
       console.error('Erreur sauvegarde compteur:', err)
-      showAlert('Erreur lors de la sauvegarde', 'error')
+      showAlert({ message: t('alerts.saveFailed'), type: 'error' })
       // Rollback
       setCurrentRow(oldRow)
       if (currentSectionId) {
@@ -1950,7 +1935,7 @@ const ProjectCounter = () => {
       const numMax = Number(maxRows)
       const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
       const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-      showAlert(`Vous avez terminé (${displayMax}/${displayMax} ${unitLabel}) !`, 'success')
+      showAlert({ message: t('alerts.allDone', { max: displayMax, unit: unitLabel }), type: 'success' })
       isSavingRowRef.current = false
       setIsSavingRow(false)
       return
@@ -2002,7 +1987,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           } else {
             await api.put(`/projects/${projectId}`, { status: 'completed' })
             if (isTimerRunning) {
@@ -2011,12 +1996,12 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.projectDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           }
         }
       } catch (err) {
         console.error('Erreur sauvegarde:', err)
-        showAlert('Erreur lors de la sauvegarde', 'error')
+        showAlert({ message: t('alerts.saveFailed'), type: 'error' })
         setCurrentRow(oldRow)
         if (currentSectionId) {
           setSections(prevSections =>
@@ -2060,7 +2045,7 @@ const ProjectCounter = () => {
       // [AI:Claude] Gamification — série de 7 jours récompensée par un code
       // promo (envoyé aussi par email), voir ProjectController::grantStreakBonusIfEligible
       if (rowResponse.data.streak_promo_code) {
-        showAlert(`🔥 7 jours de série ! Code promo envoyé par email : ${rowResponse.data.streak_promo_code}`, 'success')
+        showAlert({ message: t('alerts.streakReward', { code: rowResponse.data.streak_promo_code }), type: 'success' })
       }
 
       // [AI:Claude] FIX v0.16.2: Mettre à jour sections/project AVANT setCurrentRow
@@ -2118,7 +2103,7 @@ const ProjectCounter = () => {
               // Pas d'alert ici — la modale de complétion prend le relais
               await handleAllSectionsCompleted()
             } else {
-              showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+              showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
               await fetchProject()
             }
           } catch (err) {
@@ -2126,7 +2111,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           }
         } else {
           // Pas de sections, marquer le projet global comme terminé
@@ -2140,13 +2125,13 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.projectDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           } catch (err) {
             console.error('Erreur marquage projet terminé:', err)
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.projectDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           }
         }
       }
@@ -2193,7 +2178,7 @@ const ProjectCounter = () => {
         // Erreur serveur : rollback
         console.error('Erreur sauvegarde rang:', err.response?.data)
         const errorMsg = err.response?.data?.message || err.message || 'Erreur inconnue'
-        showAlert(`Erreur lors de la sauvegarde du rang: ${errorMsg}`, 'error')
+        showAlert({ message: t('alerts.rowSaveFailedDetail', { detail: errorMsg }), type: 'error' })
         setCurrentRow(oldRow)
         if (currentSectionId) {
           setSections(prevSections =>
@@ -2308,7 +2293,7 @@ const ProjectCounter = () => {
           setPendingSync(true)
         } else {
           console.error('Erreur sauvegarde rang:', err)
-          showAlert('Erreur lors de la sauvegarde du rang', 'error')
+          showAlert({ message: t('alerts.rowSaveFailed'), type: 'error' })
           setCurrentRow(oldRow)
           if (currentSectionId) {
             setSections(prevSections =>
@@ -2461,7 +2446,7 @@ const ProjectCounter = () => {
       setActiveReminder(null)
     } catch (err) {
       console.error('Erreur changement section:', err)
-      showAlert('Erreur lors du changement de section', 'error')
+      showAlert({ message: t('alerts.sectionChangeFailed'), type: 'error' })
     }
   }
 
@@ -2667,7 +2652,7 @@ const ProjectCounter = () => {
     e.preventDefault()
 
     if (!sectionForm.name.trim()) {
-      showAlert('Le nom de la section est obligatoire', 'error')
+      showAlert({ message: t('alerts.sectionNameRequired'), type: 'error' })
       return
     }
 
@@ -2708,7 +2693,7 @@ const ProjectCounter = () => {
       if (editingSection) {
         // Modification
         await api.put(`/projects/${projectId}/sections/${editingSection.id}`, sectionData)
-        showAlert('Section modifiée avec succès', 'success')
+        showAlert({ message: t('alerts.sectionUpdated'), type: 'success' })
       } else {
         // Création
         const response = await api.post(`/projects/${projectId}/sections`, sectionData)
@@ -2738,7 +2723,7 @@ const ProjectCounter = () => {
       setEditingSection(null)
     } catch (err) {
       console.error('Erreur sauvegarde section:', err)
-      showAlert('Erreur lors de la sauvegarde de la section', 'error')
+      showAlert({ message: t('alerts.sectionSaveFailed'), type: 'error' })
     } finally {
       setSavingSection(false)
     }
@@ -2836,7 +2821,7 @@ const ProjectCounter = () => {
       setSecondaryLabelInput('')
       setSecondaryTargetInput('')
     } catch (err) {
-      showAlert(err.response?.data?.error || 'Erreur lors de la création du compteur', 'error')
+      showAlert({ message: err.response?.data?.error || t('alerts.counterCreateFailed'), type: 'error' })
     }
   }
 
@@ -2952,10 +2937,10 @@ const ProjectCounter = () => {
         )
       )
 
-      showAlert('Notes sauvegardées', 'success')
+      showAlert({ message: t('alerts.notesSavedShort'), type: 'success' })
     } catch (err) {
       console.error('Erreur sauvegarde notes section:', err)
-      showAlert('Erreur lors de la sauvegarde des notes', 'error')
+      showAlert({ message: t('alerts.notesSaveFailed'), type: 'error' })
     } finally {
       setIsSavingSectionNotes(false)
     }
@@ -2963,9 +2948,9 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Supprimer une section
   const handleDeleteSection = (section) => {
-    showConfirm(
-      `Êtes-vous sûr de vouloir supprimer la section "${section.name}" ? Tous les rangs associés seront dissociés de cette section.`,
-      async () => {
+    showConfirm({
+      message: t('alerts.confirmDeleteSection', { name: section.name }),
+      onConfirm: async () => {
         try {
           // [AI:Claude] Supprimer la section - le backend retourne le projet mis à jour
           const response = await api.delete(`/projects/${projectId}/sections/${section.id}`)
@@ -2985,11 +2970,11 @@ const ProjectCounter = () => {
           await fetchProject()
         } catch (err) {
           console.error('Erreur suppression section:', err)
-          showAlert('Erreur lors de la suppression de la section', 'error')
+          showAlert({ message: t('alerts.sectionDeleteFailed'), type: 'error' })
         }
       },
-      '🗑️ Supprimer la section'
-    )
+      title: t('alerts.confirmDeleteSectionTitle')
+    })
   }
 
   // [AI:Claude] Marquer une section comme terminée/non terminée
@@ -3033,10 +3018,10 @@ const ProjectCounter = () => {
         alertMessage = 'Section réouverte. Projet marqué comme en cours.'
       }
 
-      showAlert(alertMessage, 'success')
+      showAlert({ message: alertMessage, type: 'success' })
     } catch (err) {
       console.error('Erreur toggle section:', err)
-      showAlert('Erreur lors de la mise à jour', 'error')
+      showAlert({ message: t('alerts.updateFailed'), type: 'error' })
     }
   }
 
@@ -3056,10 +3041,10 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, { status: 'completed' })
       await fetchProject()
       setShowProjectCompletionModal(false)
-      showAlert('Projet marqué comme terminé !', 'success')
+      showAlert({ message: t('alerts.projectCompleted'), type: 'success' })
     } catch (err) {
       console.error('Erreur terminer projet:', err)
-      showAlert('Erreur lors de la finalisation du projet', 'error')
+      showAlert({ message: t('alerts.projectFinalizeFailed'), type: 'error' })
     }
   }
 
@@ -3073,7 +3058,7 @@ const ProjectCounter = () => {
       setShowPhotoUploadModal(true)
     } catch (err) {
       console.error('Erreur terminer projet:', err)
-      showAlert('Erreur lors de la finalisation du projet', 'error')
+      showAlert({ message: t('alerts.projectFinalizeFailed'), type: 'error' })
     }
   }
 
@@ -3115,13 +3100,13 @@ const ProjectCounter = () => {
 
       await fetchProject()
 
-      showAlert(
-        isCompleted ? 'Projet réouvert' : 'Projet marqué comme terminé !',
-        'success'
-      )
+      showAlert({
+        message: isCompleted ? t('alerts.projectReopened') : t('alerts.projectCompleted'),
+        type: 'success'
+      })
     } catch (err) {
       console.error('Erreur toggle project:', err)
-      showAlert('Erreur lors de la mise à jour', 'error')
+      showAlert({ message: t('alerts.updateFailed'), type: 'error' })
     }
   }
 
@@ -7001,57 +6986,8 @@ Rang 3 : *1ms, aug* x6 (18)
         </div>
       )}
 
-      {/* [AI:Claude] Modal d'alerte personnalisée */}
-      {showAlertModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-            <h3 className={`text-xl font-bold mb-4 ${
-              alertData.type === 'error' ? 'text-red-600' : 'text-gray-900'
-            }`}>
-              {alertData.title}
-            </h3>
-            <p className="text-gray-600 mb-6 whitespace-pre-line">{alertData.message}</p>
-            <button
-              onClick={() => setShowAlertModal(false)}
-              className={`w-full px-4 py-3 rounded-lg font-medium text-white transition ${
-                alertData.type === 'error' ? 'bg-red-600 hover:bg-red-700' :
-                'bg-primary-600 hover:bg-primary-700'
-              }`}
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* [AI:Claude] Modal de confirmation personnalisée */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">
-              {confirmData.title}
-            </h3>
-            <p className="text-gray-700 mb-6 whitespace-pre-line">{confirmData.message}</p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => {
-                  confirmData.onConfirm()
-                  setShowConfirmModal(false)
-                }}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
-              >
-                Confirmer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modales d'alerte et de confirmation (hook partagé) */}
+      <AlertModals />
 
       {/* [AI:Claude] Modal de fin de projet - toutes sections terminées */}
       {showProjectCompletionModal && (
@@ -7367,9 +7303,9 @@ Rang 3 : *1ms, aug* x6 (18)
           onConfirmed={(remainders) => {
             setShowCloseModal(false)
             if (remainders.length > 0) {
-              showAlert(`Projet clôturé. ${remainders.reduce((acc, r) => acc + r.returned, 0)} pelote(s) remise(s) dans ton stock.`, 'success')
+              showAlert({ message: t('alerts.projectClosedWithYarn', { count: remainders.reduce((acc, r) => acc + r.returned, 0) }), type: 'success' })
             } else {
-              showAlert('Projet clôturé.', 'success')
+              showAlert({ message: t('alerts.projectClosed'), type: 'success' })
             }
             fetchProject()
           }}
@@ -7386,7 +7322,7 @@ Rang 3 : *1ms, aug* x6 (18)
       )}
 
       {/* [AI:Claude] Bouton flottant pour les notes - masqué quand popup ouverte */}
-      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !showAlertModal && !showConfirmModal && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && (
+      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !isAnyAlertOpen && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && (
       <button
         onClick={handleOpenNotes}
         className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-2xl px-4 py-3 flex items-center gap-3"

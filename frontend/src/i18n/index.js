@@ -19,6 +19,8 @@ import frPageTitles from './locales/fr/pageTitles.json'
 import enPageTitles from './locales/en/pageTitles.json'
 import frProjects from './locales/fr/projects.json'
 import enProjects from './locales/en/projects.json'
+import frCounter from './locales/fr/counter.json'
+import enCounter from './locales/en/counter.json'
 
 export const LANGUAGE_STORAGE_KEY = 'yarnflow_lang'
 export const SUPPORTED_LANGUAGES = ['fr', 'en']
@@ -27,8 +29,8 @@ export const SUPPORTED_LANGUAGES = ['fr', 'en']
 // petit à l'échelle d'un bundle Vite, pas besoin du backend HTTP d'i18next
 // (qui ajouterait un chargement asynchrone et un risque de flash sans texte).
 const resources = {
-  fr: { common: frCommon, auth: frAuth, landing: frLanding, pageTitles: frPageTitles, projects: frProjects },
-  en: { common: enCommon, auth: enAuth, landing: enLanding, pageTitles: enPageTitles, projects: enProjects },
+  fr: { common: frCommon, auth: frAuth, landing: frLanding, pageTitles: frPageTitles, projects: frProjects, counter: frCounter },
+  en: { common: enCommon, auth: enAuth, landing: enLanding, pageTitles: enPageTitles, projects: enProjects, counter: enCounter },
 }
 
 i18n
@@ -39,7 +41,7 @@ i18n
     supportedLngs: SUPPORTED_LANGUAGES,
     fallbackLng: 'fr',
     defaultNS: 'common',
-    ns: ['common', 'auth', 'landing', 'pageTitles', 'projects'],
+    ns: ['common', 'auth', 'landing', 'pageTitles', 'projects', 'counter'],
 
     detection: {
       // [AI:Claude] localStorage en premier : un choix explicite via le sélecteur

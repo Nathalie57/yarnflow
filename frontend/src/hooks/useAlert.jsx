@@ -95,7 +95,9 @@ export const useAlert = () => {
     </>
   )
 
-  return { showAlert, showConfirm, AlertModals }
+  // [AI:Claude] isAnyAlertOpen : certains écrans masquent leurs boutons flottants
+  // quand une modale est ouverte (ex. le bouton Notes de ProjectCounter).
+  return { showAlert, showConfirm, AlertModals, isAnyAlertOpen: alertData !== null || confirmData !== null }
 }
 
 export default useAlert
