@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { patternsAPI } from '../services/api'
 import api from '../services/api'
 
 const PatternDetail = () => {
+  const { t } = useTranslation('library')
   const { id } = useParams()
   const navigate = useNavigate()
   const [pattern, setPattern] = useState(null)
@@ -97,9 +99,9 @@ const PatternDetail = () => {
   if (!pattern) {
     return (
       <div className="card text-center">
-        <p className="text-gray-600 mb-4">Patron introuvable</p>
+        <p className="text-gray-600 mb-4">{t('ui.patternNotFound')}</p>
         <Link to="/my-patterns" className="btn-primary">
-          Retour à mes patrons
+          {t('ui.backToMyPatterns')}
         </Link>
       </div>
     )
@@ -154,7 +156,7 @@ const PatternDetail = () => {
         {/* Description */}
         {pattern.description && (
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-3">Description</h2>
+            <h2 className="text-2xl font-bold mb-3">{t('ui.description')}</h2>
             <p className="text-gray-700 whitespace-pre-line">{pattern.description}</p>
           </div>
         )}
@@ -162,7 +164,7 @@ const PatternDetail = () => {
         {/* Matériel */}
         {pattern.materials && pattern.materials.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-3">Matériel nécessaire</h2>
+            <h2 className="text-2xl font-bold mb-3">{t('ui.materialsNeeded')}</h2>
             <ul className="list-disc list-inside space-y-2">
               {pattern.materials.map((item, index) => (
                 <li key={index} className="text-gray-700">{item}</li>
@@ -174,7 +176,7 @@ const PatternDetail = () => {
         {/* Abréviations */}
         {pattern.abbreviations && Object.keys(pattern.abbreviations).length > 0 && (
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-3">Abréviations</h2>
+            <h2 className="text-2xl font-bold mb-3">{t('ui.abbreviations')}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {Object.entries(pattern.abbreviations).map(([abbr, full]) => (
                 <div key={abbr} className="text-sm">
@@ -188,7 +190,7 @@ const PatternDetail = () => {
         {/* Échantillon (gauge) */}
         {pattern.gauge && (
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-3">Échantillon</h2>
+            <h2 className="text-2xl font-bold mb-3">{t('ui.gauge')}</h2>
             <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
               <p className="text-sm text-gray-700">
                 {pattern.gauge.stitches && <span className="block">{pattern.gauge.stitches}</span>}
@@ -201,7 +203,7 @@ const PatternDetail = () => {
         {/* Instructions */}
         {pattern.instructions && (
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-3">Instructions</h2>
+            <h2 className="text-2xl font-bold mb-3">{t('ui.instructions')}</h2>
             <div className="prose max-w-none">
               <div
                 className="text-gray-700 whitespace-pre-line leading-relaxed"
@@ -214,7 +216,7 @@ const PatternDetail = () => {
         {/* Conseils */}
         {pattern.tips && pattern.tips.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-3">Conseils</h2>
+            <h2 className="text-2xl font-bold mb-3">{t('ui.tips')}</h2>
             <div className="bg-primary-100 p-4 rounded-lg border border-primary-200">
               <ul className="list-disc list-inside space-y-2">
                 {pattern.tips.map((tip, index) => (
@@ -228,7 +230,7 @@ const PatternDetail = () => {
         {/* Temps estimé */}
         {pattern.time_estimate && (
           <div className="mb-6">
-            <h2 className="text-2xl font-bold mb-3">Temps de réalisation</h2>
+            <h2 className="text-2xl font-bold mb-3">{t('ui.timeToMake')}</h2>
             <p className="text-gray-700">⏱️ {pattern.time_estimate}</p>
           </div>
         )}
@@ -237,7 +239,7 @@ const PatternDetail = () => {
         {pattern.watermark && (
           <div className="mt-8 pt-6 border-t text-center text-sm text-gray-500">
             <p>Ce patron a été généré pour : {pattern.watermark}</p>
-            <p className="text-xs mt-1">Toute reproduction ou revente est interdite</p>
+            <p className="text-xs mt-1">{t('ui.noReproduction')}</p>
           </div>
         )}
       </div>
@@ -245,7 +247,7 @@ const PatternDetail = () => {
       {/* Métadonnées (admin/debug) */}
       {pattern.ai_provider && (
         <div className="card bg-gray-50 text-sm text-gray-600">
-          <h3 className="font-bold mb-2">Informations techniques</h3>
+          <h3 className="font-bold mb-2">{t('ui.technicalInfo')}</h3>
           <div className="space-y-1">
             <div>Provider IA : {pattern.ai_provider}</div>
             {pattern.tokens_used && <div>Tokens utilisés : {pattern.tokens_used}</div>}
