@@ -15,6 +15,8 @@
 
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation, Trans } from 'react-i18next'
+import { useAlert } from '../hooks/useAlert'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import api, { authAPI } from '../services/api'
@@ -26,6 +28,7 @@ import CreateProjectWizard from '../components/CreateProjectWizard'
 import PushNotificationModal, { PUSH_MODAL_STORAGE_KEY } from '../components/PushNotificationModal'
 
 const MyProjects = () => {
+  const { t } = useTranslation('projects')
   const { user, updateUser } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -135,11 +138,8 @@ const MyProjects = () => {
   const [showPatternTextModal, setShowPatternTextModal] = useState(false)
   const [patternSearchQuery, setPatternSearchQuery] = useState('') // Pour recherche Google/Ravelry
 
-  // [AI:Claude] Modal système pour remplacer alert/confirm
-  const [showAlertModal, setShowAlertModal] = useState(false)
-  const [alertData, setAlertData] = useState({ title: '', message: '', type: 'info' })
-  const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: null })
+  // [AI:Claude] Alertes/confirmations : hook partagé avec ProjectCounter (voir hooks/useAlert)
+  const { showAlert, showConfirm, AlertModals } = useAlert()
 
   // [AI:Claude] Upload photo de projet
   const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false)
@@ -277,7 +277,7 @@ const MyProjects = () => {
       }
     } catch (err) {
       console.error('Erreur chargement projets:', err)
-      setError('Impossible de charger vos projets')
+      setError(t('myProjects.loadError'))
     } finally {
       setLoading(false)
       setHasLoadedOnce(true)
@@ -366,34 +366,23 @@ const MyProjects = () => {
     }
   }
 
-  // [AI:Claude] Helper pour afficher une alerte personnalisée
-  const showAlert = (title, message, type = 'info') => {
-    setAlertData({ title, message, type })
-    setShowAlertModal(true)
-  }
-
-  // [AI:Claude] Helper pour afficher une confirmation personnalisée
-  const showConfirm = (title, message, onConfirm) => {
-    setConfirmData({ title, message, onConfirm })
-    setShowConfirmModal(true)
-  }
 
   // [AI:Claude] Supprimer un projet
   const handleDeleteProject = async (projectId) => {
-    showConfirm(
-      'Supprimer le projet',
-      'Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible.',
-      async () => {
+    showConfirm({
+      title: t('confirmDelete.title'),
+      message: t('confirmDelete.message'),
+      onConfirm: async () => {
         try {
           await api.delete(`/projects/${projectId}`)
           setProjects(projects.filter(p => p.id !== projectId))
-          showAlert('Suppression réussie', 'Le projet a été supprimé avec succès.', 'success')
+          showAlert({ title: t('success.deletedTitle'), message: t('success.deleted'), type: 'success' })
         } catch (err) {
           console.error('Erreur suppression:', err)
-          showAlert('Erreur', 'Erreur lors de la suppression du projet', 'error')
+          showAlert({ message: t('errors.deleteFailed'), type: 'error' })
         }
       }
-    )
+    })
   }
 
   // [AI:Claude] Marquer comme favori
@@ -407,7 +396,7 @@ const MyProjects = () => {
       ))
     } catch (err) {
       console.error('Erreur favori:', err)
-      showAlert('Erreur', 'Impossible de modifier le favori')
+      showAlert({ message: t('errors.favoriteFailed'), type: 'error' })
     }
   }
 
@@ -423,7 +412,7 @@ const MyProjects = () => {
     e.preventDefault()
 
     if (!photoFile || !selectedProjectForPhoto) {
-      showAlert('Erreur', 'Veuillez sélectionner une photo')
+      showAlert({ message: t('errors.selectPhoto'), type: 'error' })
       return
     }
 
@@ -437,13 +426,13 @@ const MyProjects = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
 
-      showAlert('Succès', 'Photo ajoutée avec succès !', 'success')
+      showAlert({ title: t('success.photoAddedTitle'), message: t('success.photoAdded'), type: 'success' })
       setShowPhotoUploadModal(false)
       setPhotoFile(null)
       fetchProjects() // Recharger les projets
     } catch (err) {
       console.error('Erreur upload photo:', err)
-      showAlert('Erreur', err.response?.data?.message || 'Erreur lors de l\'ajout de la photo')
+      showAlert({ message: err.response?.data?.message || t('errors.photoUploadFailed'), type: 'error' })
     } finally {
       setUploadingPhoto(false)
     }
@@ -457,7 +446,7 @@ const MyProjects = () => {
       setLibraryPatterns(response.data.patterns || [])
     } catch (err) {
       console.error('Erreur chargement bibliothèque:', err)
-      showAlert('Erreur', 'Impossible de charger votre bibliothèque de patrons')
+      showAlert({ message: t('errors.libraryLoadFailed'), type: 'error' })
     } finally {
       setLoadingLibraryPatterns(false)
     }
@@ -469,26 +458,26 @@ const MyProjects = () => {
     let demoProjectId = null
     try {
       const response = await api.post('/projects', {
-        name: 'Cardinal Song — Bonnet (démo)',
+        name: t('demoProject.name'),
         technique: 'tricot',
         type: 'accessoires',
-        description: 'Un projet de démonstration pour découvrir YarnFlow. Modifiez-le comme vous voulez !',
+        description: t('demoProject.description'),
         status: 'in_progress',
         counter_unit: 'rows',
         counter_unit_increment: 1.0,
         technical_details: JSON.stringify({
-          description: 'Un projet de démonstration pour découvrir YarnFlow. Modifiez-le comme vous voulez !',
-          yarn: [{ brand: 'Drops', name: 'Merino Extra Fine', url: '', quantities: [{ amount: '2', unit: 'pelotes', color: 'Gris chiné' }] }],
-          needles: [{ type: 'Aiguilles circulaires', size: '3,5', length: '40 cm' }],
+          description: t('demoProject.description'),
+          yarn: [{ brand: 'Drops', name: t('demoProject.yarnName'), url: '', quantities: [{ amount: '2', unit: 'pelotes', color: t('demoProject.yarnColor') }] }],
+          needles: [{ type: t('demoProject.needleType'), size: '3,5', length: '40 cm' }],
           gauge: { stitches: '22', rows: '30', dimensions: '10 x 10 cm', notes: '' }
         })
       })
       demoProjectId = response.data.project?.id
 
       const demoSections = [
-        { name: 'Côtes 1×1', total_rows: 25 },
-        { name: 'Corps (jersey)', total_rows: 51 },
-        { name: 'Diminutions couronne', total_rows: 26 },
+        { name: t('demoProject.sectionRibbing'), total_rows: 25 },
+        { name: t('demoProject.sectionBody'), total_rows: 51 },
+        { name: t('demoProject.sectionCrown'), total_rows: 26 },
       ]
       for (let i = 0; i < demoSections.length; i++) {
         await api.post(`/projects/${demoProjectId}/sections`, {
@@ -518,7 +507,7 @@ const MyProjects = () => {
 
   const handleCreateProject = async (wizardData) => {
     setCreating(true)
-    setCreatingStep('Création du projet...')
+    setCreatingStep(t('creating.project'))
 
     const { formData, sections, technicalForm, isFavorite, projectTags } = wizardData
     let currentStep = ''
@@ -581,7 +570,7 @@ const MyProjects = () => {
       // [AI:Claude] ÉTAPE 3 : Upload du patron si fourni
       if (patternType === 'file' && patternFile) {
         currentStep = 'upload du fichier patron'
-        setCreatingStep('Upload du patron...')
+        setCreatingStep(t('creating.uploadPattern'))
 
         const formDataPattern = new FormData()
         formDataPattern.append('pattern', patternFile)
@@ -592,21 +581,21 @@ const MyProjects = () => {
         })
       } else if (patternType === 'url' && patternUrl.trim()) {
         currentStep = 'enregistrement du lien patron'
-        setCreatingStep('Enregistrement du lien patron...')
+        setCreatingStep(t('creating.savingPatternUrl'))
 
         await api.post(`/projects/${newProject.id}/pattern-url`, {
           pattern_url: patternUrl
         })
       } else if (patternType === 'text' && patternText.trim()) {
         currentStep = 'enregistrement du texte patron'
-        setCreatingStep('Enregistrement du patron texte...')
+        setCreatingStep(t('creating.savingPatternText'))
 
         await api.post(`/projects/${newProject.id}/pattern-text`, {
           pattern_text: patternText
         })
       } else if (patternType === 'library' && selectedLibraryPattern) {
         currentStep = 'liaison du patron depuis la bibliothèque'
-        setCreatingStep('Liaison du patron...')
+        setCreatingStep(t('creating.linkingPattern'))
 
         await api.post(`/projects/${newProject.id}/pattern-from-library`, {
           pattern_library_id: selectedLibraryPattern.id
@@ -616,14 +605,14 @@ const MyProjects = () => {
       // [AI:Claude] ÉTAPE 4 : Sauvegarder les tags
       if (projectTags.length > 0) {
         currentStep = 'sauvegarde des tags'
-        setCreatingStep('Ajout des tags...')
+        setCreatingStep(t('creating.addingTags'))
         await saveProjectTags(newProject.id, projectTags)
       }
 
       // [AI:Claude] ÉTAPE 5 : Marquer comme favori
       if (isFavorite) {
         currentStep = 'marquage favori'
-        setCreatingStep('Marquage comme favori...')
+        setCreatingStep(t('creating.markingFavorite'))
         await api.put(`/projects/${newProject.id}/favorite`)
       }
 
@@ -664,16 +653,16 @@ const MyProjects = () => {
       const apiError = err.response?.data?.error || err.response?.data?.message
 
       if (currentStep === 'création du projet') {
-        errorMessage = apiError || 'Impossible de créer le projet. Vérifiez votre connexion internet.'
+        errorMessage = apiError || t('errors.createFailed')
       } else if (currentStep === 'création des sections') {
-        errorMessage = `Le projet a été créé mais erreur lors de la ${currentStep}. ${apiError || 'Vous pouvez ajouter les sections manuellement depuis le projet.'}`
+        errorMessage = t('errors.createdButStepFailed', { step: currentStep, detail: apiError || t('errors.addSectionsManually') })
       } else if (currentStep.includes('patron')) {
-        errorMessage = `Le projet a été créé mais erreur lors de ${currentStep}. ${apiError || 'Vous pouvez ajouter le patron manuellement depuis le projet.'}`
+        errorMessage = t('errors.createdButStepFailedAlt', { step: currentStep, detail: apiError || t('errors.addPatternManually') })
       } else {
-        errorMessage = apiError || 'Erreur lors de la création du projet'
+        errorMessage = apiError || t('errors.createGeneric')
       }
 
-      showAlert('Erreur', errorMessage, 'error')
+      showAlert({ message: errorMessage, type: 'error' })
 
       // [AI:Claude] Si le projet a été créé, l'ajouter quand même à la liste
       if (newProject) {
@@ -689,10 +678,10 @@ const MyProjects = () => {
   // [AI:Claude] Badge de statut
   const getStatusBadge = (status) => {
     const badges = {
-      in_progress: { label: 'En cours', color: 'bg-primary-100 text-primary-800' },
-      completed: { label: 'Terminé', color: 'bg-green-100 text-green-800' },
-      paused: { label: 'En pause', color: 'bg-red-100 text-red-800' },
-      abandoned: { label: 'Abandonné', color: 'bg-gray-100 text-gray-800' }
+      in_progress: { label: t('status.in_progress'), color: 'bg-primary-100 text-primary-800' },
+      completed: { label: t('status.completed'), color: 'bg-green-100 text-green-800' },
+      paused: { label: t('status.paused'), color: 'bg-red-100 text-red-800' },
+      abandoned: { label: t('status.abandoned'), color: 'bg-gray-100 text-gray-800' }
     }
 
     const badge = badges[status] || badges.in_progress
@@ -757,8 +746,8 @@ const MyProjects = () => {
             </svg>
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-green-800">Paiement réussi !</p>
-            <p className="text-sm text-green-700 mt-0.5">Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités {pendingPlan === 'plus' ? 'PLUS' : 'PRO'}.</p>
+            <p className="font-semibold text-green-800">{t('myProjects.paymentSuccessTitle')}</p>
+            <p className="text-sm text-green-700 mt-0.5">{t('myProjects.paymentSuccessDesc', { plan: pendingPlan === 'plus' ? 'PLUS' : 'PRO' })}</p>
           </div>
           <button onClick={() => setPaymentSuccess(false)} className="flex-shrink-0 text-green-500 hover:text-green-700">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -775,7 +764,7 @@ const MyProjects = () => {
           <>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes projets</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('myProjects.title')}</h1>
               </div>
 
               <button
@@ -785,7 +774,7 @@ const MyProjects = () => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                Nouveau projet
+                {t('myProjects.newProject')}
               </button>
             </div>
 
@@ -811,7 +800,7 @@ const MyProjects = () => {
         ) : (
           /* Header minimaliste pour empty state */
           <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes Projets</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('myProjects.titleAlt')}</h1>
           </div>
         )}
       </div>
@@ -823,7 +812,7 @@ const MyProjects = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Rechercher un projet par nom, type..."
+              placeholder={t('myProjects.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full px-4 py-2.5 pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition bg-white text-sm"
@@ -891,7 +880,7 @@ const MyProjects = () => {
             <svg className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
-            Filtrer et trier
+            {t('myProjects.filterSort')}
             {(filters.status || filters.favorite !== null || filters.tags.length > 0) && (
               <span className="ml-1 w-2 h-2 rounded-full bg-primary-500 inline-block" />
             )}
@@ -927,9 +916,9 @@ const MyProjects = () => {
               {/* Accueil */}
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {user?.first_name ? `Bienvenue, ${user.first_name} !` : 'Bienvenue sur YarnFlow !'}
+                  {user?.first_name ? t('myProjects.welcomeNamed', { name: user.first_name }) : t('myProjects.welcome')}
                 </h2>
-                <p className="text-gray-500 text-sm">Par où voulez-vous commencer ?</p>
+                <p className="text-gray-500 text-sm">{t('myProjects.whereToStart')}</p>
               </div>
 
               {/* Création Intelligente — CTA principal */}
@@ -944,9 +933,9 @@ const MyProjects = () => {
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white text-base mb-1">Démarrer un nouveau projet</p>
+                    <p className="font-bold text-white text-base mb-1">{t('myProjects.startSmart')}</p>
                     <p className="text-primary-100 text-sm leading-relaxed">
-                      PDF ou lien — on remplit tout automatiquement.
+                      {t('myProjects.startSmartDesc')}
                     </p>
                   </div>
                 </div>
@@ -964,8 +953,8 @@ const MyProjects = () => {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition">Créer un projet manuellement</p>
-                    <p className="text-gray-400 text-xs mt-0.5">Remplissez les informations vous-même</p>
+                    <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition">{t('myProjects.createManually')}</p>
+                    <p className="text-gray-400 text-xs mt-0.5">{t('myProjects.createManuallyDesc')}</p>
                   </div>
                 </div>
               </button>
@@ -985,16 +974,16 @@ const MyProjects = () => {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-600 text-sm group-hover:text-gray-800 transition">
-                      {isCreatingDemo ? 'Création en cours...' : 'Explorer avec un exemple'}
+                      {isCreatingDemo ? t('myProjects.exploreDemoCreating') : t('myProjects.exploreDemo')}
                     </p>
-                    <p className="text-gray-400 text-xs mt-0.5">Un bonnet démo pré-rempli pour découvrir l'application</p>
+                    <p className="text-gray-400 text-xs mt-0.5">{t('myProjects.exploreDemoDesc')}</p>
                   </div>
                 </div>
               </button>
 
               {/* Ce que ça fait concrètement — informatif, non cliquable */}
               <div className="rounded-2xl bg-gray-50 px-4 py-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Comment ça marche</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{t('myProjects.howItWorks')}</p>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <div className="w-7 h-7 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -1003,8 +992,8 @@ const MyProjects = () => {
                       </svg>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 text-sm">Reprenez là où vous étiez</p>
-                      <p className="text-gray-400 text-xs mt-0.5">Un clic pour mémoriser votre rang, même des semaines plus tard.</p>
+                      <p className="font-medium text-gray-700 text-sm">{t('myProjects.howResume')}</p>
+                      <p className="text-gray-400 text-xs mt-0.5">{t('myProjects.howResumeDesc')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -1014,8 +1003,8 @@ const MyProjects = () => {
                       </svg>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 text-sm">Votre patron toujours à portée</p>
-                      <p className="text-gray-400 text-xs mt-0.5">PDF ou lien attaché au projet — fini les onglets perdus.</p>
+                      <p className="font-medium text-gray-700 text-sm">{t('myProjects.howPattern')}</p>
+                      <p className="text-gray-400 text-xs mt-0.5">{t('myProjects.howPatternDesc')}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -1025,7 +1014,7 @@ const MyProjects = () => {
                       </svg>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 text-sm">Bibliothèque et stock de pelotes</p>
+                      <p className="font-medium text-gray-700 text-sm">{t('myProjects.howLibrary')}</p>
                       <p className="text-gray-400 text-xs mt-0.5">
                         Sauvegardez vos patrons dans la{' '}
                         <Link to="/pattern-library" className="text-primary-600 hover:underline">bibliothèque</Link>
@@ -1043,17 +1032,17 @@ const MyProjects = () => {
             <div className="max-w-xl mx-auto text-center py-12 px-6 bg-white rounded-xl border-2 border-gray-200">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                Aucun projet trouvé
+                {t('myProjects.noResultsTitle')}
               </h3>
               <p className="text-gray-600 mb-6 leading-relaxed">
-                Aucun projet ne correspond à <strong>"{searchQuery}"</strong>
+                <Trans i18nKey="myProjects.noResultsDesc" ns="projects" values={{ query: searchQuery }} components={[<strong key="0" />]} />
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={() => setSearchQuery('')}
                   className="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition focus:outline-none focus:ring-4 focus:ring-gray-300"
                 >
-                  ✕ Effacer la recherche
+                  {t('myProjects.clearSearch')}
                 </button>
                 {canCreateProject && (
                   <button
@@ -1090,7 +1079,7 @@ const MyProjects = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                           </svg>
-                          Changer la photo
+                          {t('myProjects.changePhoto')}
                         </span>
                       </button>
                     </div>
@@ -1109,7 +1098,7 @@ const MyProjects = () => {
                           <button
                             onClick={() => openPhotoUploadModal(project)}
                             className="p-1.5 text-gray-300 hover:text-gray-500 transition-colors rounded-lg hover:bg-gray-50"
-                            title="Ajouter une photo"
+                            title={t('myProjects.addPhoto')}
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -1120,7 +1109,7 @@ const MyProjects = () => {
                         <button
                         onClick={() => handleToggleFavorite(project.id, project.is_favorite)}
                         className="transition-transform hover:scale-110 active:scale-95"
-                        title={project.is_favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                        title={project.is_favorite ? t('myProjects.removeFromFavorites') : t('myProjects.addToFavorites')}
                       >
                         {project.is_favorite ? (
                           <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
@@ -1139,7 +1128,7 @@ const MyProjects = () => {
                     <div className="flex items-center flex-wrap gap-1.5 mb-3">
                       {getStatusBadge(project.status)}
                       <span className="px-2 py-0.5 bg-primary-50 text-primary-600 rounded-full text-xs font-medium">
-                        {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
+                        {project.technique === 'tricot' ? t('myProjects.knitting') : t('myProjects.crochet')}
                       </span>
                       {project.type && (
                         <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
@@ -1191,7 +1180,7 @@ const MyProjects = () => {
                       // Projet avec pourcentage calculable : afficher barre de progression
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-gray-400">Progression</span>
+                          <span className="text-xs text-gray-400">{t('myProjects.progress')}</span>
                           {project.status === 'completed' ? (
                             <span className="text-xs font-semibold text-green-600">100%</span>
                           ) : (
@@ -1218,7 +1207,7 @@ const MyProjects = () => {
                       <div className="mb-4">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-600">
-                            {project.counter_unit === 'cm' ? 'Progression totale (cm)' : 'Total rangs tricotés'}
+                            {project.counter_unit === 'cm' ? t('myProjects.totalProgressCm') : t('myProjects.totalRows')}
                           </span>
                           <span className="text-xs font-bold text-gray-700">
                             {project.counter_unit === 'cm'
@@ -1233,7 +1222,7 @@ const MyProjects = () => {
                       <div className="mb-4">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-gray-600">
-                            {project.counter_unit === 'cm' ? 'Progression (cm)' : 'Rangs tricotés'}
+                            {project.counter_unit === 'cm' ? t('myProjects.progressCm') : t('myProjects.rowsKnitted')}
                           </span>
                           <span className="text-xs font-bold text-gray-700">
                             {project.counter_unit === 'cm'
@@ -1244,7 +1233,7 @@ const MyProjects = () => {
                         </div>
                         {project.current_row === 0 && (
                           <p className="text-xs text-gray-400 mt-1 text-center">
-                            {project.counter_unit === 'cm' ? 'Commencez à compter' : 'Commencez à compter vos rangs'}
+                            {project.counter_unit === 'cm' ? t('myProjects.startCountingCm') : t('myProjects.startCounting')}
                           </p>
                         )}
                       </div>
@@ -1256,13 +1245,13 @@ const MyProjects = () => {
                         to={`/projects/${project.id}`}
                         className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-center font-semibold text-sm hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-300"
                       >
-                        Ouvrir
+                        {t('myProjects.open')}
                       </Link>
 
                       <button
                         onClick={() => handleDeleteProject(project.id)}
                         className="px-3 py-2.5 border border-gray-200 text-gray-400 rounded-xl hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"
-                        title="Supprimer"
+                        title={t('myProjects.delete')}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -1284,7 +1273,7 @@ const MyProjects = () => {
         onClose={handleCancelModal}
         onSubmit={handleCreateProject}
         isSubmitting={creating}
-        submitLabel={creatingStep || 'Créer le projet'}
+        submitLabel={creatingStep || t('myProjects.createProject')}
         canUseTags={canUseTags}
         popularTags={popularTags}
         smartQuota={smartQuota}
@@ -1304,60 +1293,8 @@ const MyProjects = () => {
         selectedLibraryPattern={selectedLibraryPattern}
       />
 
-      {/* Modal d'alerte personnalisée */}
-      {showAlertModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 sticky top-0 bg-white pb-3 border-b">
-              {alertData.title}
-            </h3>
-            <div className="text-gray-600 mb-6">
-              {alertData.message}
-            </div>
-            <div className="flex justify-end sticky bottom-0 bg-white pt-3 border-t">
-              <button
-                onClick={() => setShowAlertModal(false)}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de confirmation personnalisée */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              {confirmData.title}
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {confirmData.message}
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => {
-                  setShowConfirmModal(false)
-                  if (confirmData.onConfirm) {
-                    confirmData.onConfirm()
-                  }
-                }}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
-              >
-                Confirmer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modales d'alerte et de confirmation (hook partagé) */}
+      <AlertModals />
 
       {/* Modal sélection patron depuis bibliothèque */}
       {showPatternLibraryModal && (
@@ -1365,8 +1302,8 @@ const MyProjects = () => {
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-xl">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Bibliothèque de patrons</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Sélectionnez un patron que vous avez déjà sauvegardé</p>
+                <h2 className="text-lg font-bold text-gray-900">{t('patternLibraryModal.title')}</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{t('patternLibraryModal.subtitle')}</p>
               </div>
               <button onClick={() => setShowPatternLibraryModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1383,8 +1320,8 @@ const MyProjects = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-12 h-12 text-gray-300 mx-auto mb-3">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                   </svg>
-                  <p className="text-gray-600 mb-1 font-medium">Bibliothèque vide</p>
-                  <p className="text-sm text-gray-400">Ajoutez des patrons à votre bibliothèque depuis vos projets</p>
+                  <p className="text-gray-600 mb-1 font-medium">{t('patternLibraryModal.emptyTitle')}</p>
+                  <p className="text-sm text-gray-400">{t('patternLibraryModal.emptyDesc')}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1437,7 +1374,7 @@ const MyProjects = () => {
                 onClick={() => setShowPatternLibraryModal(false)}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition text-sm font-medium"
               >
-                Annuler
+                {t('actions.cancel')}
               </button>
             </div>
           </div>
@@ -1448,19 +1385,19 @@ const MyProjects = () => {
       {showPatternUrlModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
-            <h2 className="text-lg font-bold text-gray-900 mb-1">Lien vers le patron</h2>
-            <p className="text-sm text-gray-500 mb-5">Collez l'adresse d'une page web (Drops, blog, Ravelry...)</p>
+            <h2 className="text-lg font-bold text-gray-900 mb-1">{t('patternUrlModal.label')}</h2>
+            <p className="text-sm text-gray-500 mb-5">{t('patternUrlModal.hint')}</p>
 
             {/* Champ URL */}
             <input
               type="url"
               value={patternUrl}
               onChange={(e) => setPatternUrl(e.target.value)}
-              placeholder="https://example.com/mon-patron"
+              placeholder={t('patternUrlModal.placeholder')}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mb-2"
               autoFocus
             />
-            <p className="text-xs text-gray-400 mb-5">Pour un PDF, utilisez plutôt le bouton Fichier.</p>
+            <p className="text-xs text-gray-400 mb-5">{t('patternUrlModal.pdfHint')}</p>
 
             {/* Séparateur */}
             <div className="relative mb-5">
@@ -1468,7 +1405,7 @@ const MyProjects = () => {
                 <div className="w-full border-t border-gray-100"></div>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="px-2 bg-white text-gray-400">Ou chercher un patron</span>
+                <span className="px-2 bg-white text-gray-400">{t('patternUrlModal.searchLabel')}</span>
               </div>
             </div>
 
@@ -1478,7 +1415,7 @@ const MyProjects = () => {
                 type="text"
                 value={patternSearchQuery}
                 onChange={(e) => setPatternSearchQuery(e.target.value)}
-                placeholder="pull irlandais, bonnet simple..."
+                placeholder={t('patternUrlModal.searchPlaceholder')}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl mb-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
               />
               <div className="grid grid-cols-2 gap-2">
@@ -1493,7 +1430,7 @@ const MyProjects = () => {
                   className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
-                  Google
+                  {t('patternUrlModal.google')}
                 </button>
                 <button
                   type="button"
@@ -1506,7 +1443,7 @@ const MyProjects = () => {
                   className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
                 >
                   <svg className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm-1 5v2H9v2h2v6h2v-6h2V9h-2V7h-2z"/></svg>
-                  Ravelry
+                  {t('patternUrlModal.ravelry')}
                 </button>
               </div>
             </div>
@@ -1522,7 +1459,7 @@ const MyProjects = () => {
                 }}
                 className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition font-medium"
               >
-                Annuler
+                {t('actions.cancel')}
               </button>
               <button
                 type="button"
@@ -1539,7 +1476,7 @@ const MyProjects = () => {
                 disabled={!patternUrl.trim()}
                 className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Enregistrer
+                {t('actions.save')}
               </button>
             </div>
           </div>
@@ -1552,8 +1489,8 @@ const MyProjects = () => {
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Texte du patron</h2>
-                <p className="text-sm text-gray-500 mt-0.5">Copiez-collez le texte de votre patron ici</p>
+                <h2 className="text-lg font-bold text-gray-900">{t('patternTextModal.label')}</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{t('patternTextModal.subtitle')}</p>
               </div>
               <button onClick={() => setShowPatternTextModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1565,11 +1502,11 @@ const MyProjects = () => {
                 value={patternText}
                 onChange={(e) => setPatternText(e.target.value)}
                 rows={18}
-                placeholder={"Collez ici le texte de votre patron...\n\nExemple :\nRang 1 : 6 mailles serrées dans un cercle magique\nRang 2 : 2ms dans chaque maille (12)\nRang 3 : *1ms, aug* x6 (18)\nRang 4 : *2ms, aug* x6 (24)\n..."}
+                placeholder={t('patternTextModal.placeholder')}
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                 autoFocus
               />
-              <p className="text-xs text-gray-400 mt-2">Vous pouvez copier-coller le texte depuis n'importe quelle source</p>
+              <p className="text-xs text-gray-400 mt-2">{t('patternTextModal.hint')}</p>
             </div>
 
             <div className="px-6 py-4 border-t border-gray-100">
@@ -1579,7 +1516,7 @@ const MyProjects = () => {
                   onClick={() => setShowPatternTextModal(false)}
                   className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition text-sm font-medium"
                 >
-                  Annuler
+                  {t('actions.cancel')}
                 </button>
                 <button
                   type="button"
@@ -1595,7 +1532,7 @@ const MyProjects = () => {
                   disabled={!patternText.trim()}
                   className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Valider
+                  {t('actions.validate')}
                 </button>
               </div>
             </div>
@@ -1619,7 +1556,7 @@ const MyProjects = () => {
             <form onSubmit={handleUploadProjectPhoto} className="p-6">
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Choisir une photo
+                  {t('photoModal.choosePhoto')}
                 </label>
 
                 {/* Inputs cachés */}
@@ -1648,7 +1585,7 @@ const MyProjects = () => {
                       className="flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
                     >
                       <span className="text-xl">📷</span>
-                      <span className="font-medium">Prendre une photo</span>
+                      <span className="font-medium">{t('photoModal.takePhoto')}</span>
                     </button>
                   )}
                   <button
@@ -1662,14 +1599,14 @@ const MyProjects = () => {
                 </div>
 
                 <p className="text-xs text-gray-500">
-                  Formats acceptés : JPG, PNG, WEBP (max 10MB)
+                  {t('photoModal.formats')}
                 </p>
               </div>
 
               {photoFile && (
                 <div className="mb-4 p-3 bg-primary-50 rounded-lg">
                   <p className="text-sm text-primary-700">
-                    ✓ Fichier sélectionné : {photoFile.name}
+                    {t('photoModal.selectedFile', { name: photoFile.name })}
                   </p>
                 </div>
               )}
@@ -1684,14 +1621,14 @@ const MyProjects = () => {
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                   disabled={uploadingPhoto}
                 >
-                  Annuler
+                  {t('actions.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={uploadingPhoto}
                 >
-                  {uploadingPhoto ? 'Upload...' : 'Ajouter'}
+                  {uploadingPhoto ? t('photoModal.uploading') : t('photoModal.add')}
                 </button>
               </div>
             </form>

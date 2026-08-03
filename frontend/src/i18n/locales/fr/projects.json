@@ -1,0 +1,130 @@
+{
+  "myProjects": {
+    "title": "Mes projets",
+    "titleAlt": "Mes Projets",
+    "searchPlaceholder": "Rechercher un projet par nom, type...",
+    "loadError": "Impossible de charger vos projets",
+    "paymentSuccessTitle": "Paiement réussi !",
+    "paymentSuccessDesc": "Votre abonnement est maintenant actif. Profitez de toutes les fonctionnalités {{plan}}.",
+    "welcomeNamed": "Bienvenue, {{name}} !",
+    "welcome": "Bienvenue sur YarnFlow !",
+    "whereToStart": "Par où voulez-vous commencer ?",
+    "startSmart": "Démarrer un nouveau projet",
+    "startSmartDesc": "PDF ou lien — on remplit tout automatiquement.",
+    "createManually": "Créer un projet manuellement",
+    "createManuallyDesc": "Remplissez les informations vous-même",
+    "exploreDemo": "Explorer avec un exemple",
+    "exploreDemoCreating": "Création en cours...",
+    "exploreDemoDesc": "Un bonnet démo pré-rempli pour découvrir l'application",
+    "howItWorks": "Comment ça marche",
+    "howResume": "Reprenez là où vous étiez",
+    "howResumeDesc": "Un clic pour mémoriser votre rang, même des semaines plus tard.",
+    "howPattern": "Votre patron toujours à portée",
+    "howPatternDesc": "PDF ou lien attaché au projet — fini les onglets perdus.",
+    "howLibrary": "Bibliothèque et stock de pelotes",
+    "noResultsTitle": "Aucun projet trouvé",
+    "noResultsDesc": "Aucun projet ne correspond à <0>{{query}}</0>",
+    "clearSearch": "✕ Effacer la recherche",
+    "addPhoto": "Ajouter une photo",
+    "addToFavorites": "Ajouter aux favoris",
+    "removeFromFavorites": "Retirer des favoris",
+    "knitting": "Tricot",
+    "crochet": "Crochet",
+    "progress": "Progression",
+    "totalProgressCm": "Progression totale (cm)",
+    "totalRows": "Total rangs tricotés",
+    "progressCm": "Progression (cm)",
+    "rowsKnitted": "Rangs tricotés",
+    "startCountingCm": "Commencez à compter",
+    "startCounting": "Commencez à compter vos rangs",
+    "delete": "Supprimer",
+    "createProject": "Créer le projet",
+    "newProject": "Nouveau projet",
+    "filterSort": "Filtrer et trier",
+    "changePhoto": "Changer la photo",
+    "open": "Ouvrir"
+  },
+  "status": {
+    "in_progress": "En cours",
+    "completed": "Terminé",
+    "paused": "En pause",
+    "abandoned": "Abandonné"
+  },
+  "creating": {
+    "project": "Création du projet...",
+    "uploadPattern": "Upload du patron...",
+    "savingPatternUrl": "Enregistrement du lien patron...",
+    "savingPatternText": "Enregistrement du patron texte...",
+    "linkingPattern": "Liaison du patron...",
+    "addingTags": "Ajout des tags...",
+    "markingFavorite": "Marquage comme favori..."
+  },
+  "errors": {
+    "createFailed": "Impossible de créer le projet. Vérifiez votre connexion internet.",
+    "createdButStepFailed": "Le projet a été créé mais erreur lors de la {{step}}. {{detail}}",
+    "createdButStepFailedAlt": "Le projet a été créé mais erreur lors de {{step}}. {{detail}}",
+    "addSectionsManually": "Vous pouvez ajouter les sections manuellement depuis le projet.",
+    "addPatternManually": "Vous pouvez ajouter le patron manuellement depuis le projet.",
+    "createGeneric": "Erreur lors de la création du projet",
+    "favoriteFailed": "Impossible de modifier le favori",
+    "selectPhoto": "Veuillez sélectionner une photo",
+    "photoUploadFailed": "Erreur lors de l'ajout de la photo",
+    "libraryLoadFailed": "Impossible de charger votre bibliothèque de patrons",
+    "deleteFailed": "Erreur lors de la suppression du projet"
+  },
+  "confirmDelete": {
+    "title": "Supprimer le projet",
+    "message": "Êtes-vous sûr de vouloir supprimer ce projet ? Cette action est irréversible."
+  },
+  "success": {
+    "deletedTitle": "Suppression réussie",
+    "deleted": "Le projet a été supprimé avec succès.",
+    "photoAddedTitle": "Succès",
+    "photoAdded": "Photo ajoutée avec succès !"
+  },
+  "demoProject": {
+    "name": "Cardinal Song — Bonnet (démo)",
+    "description": "Un projet de démonstration pour découvrir YarnFlow. Modifiez-le comme vous voulez !",
+    "yarnName": "Merino Extra Fine",
+    "yarnColor": "Gris chiné",
+    "needleType": "Aiguilles circulaires",
+    "sectionRibbing": "Côtes 1×1",
+    "sectionBody": "Corps (jersey)",
+    "sectionCrown": "Diminutions couronne"
+  },
+  "patternLibraryModal": {
+    "title": "Bibliothèque de patrons",
+    "subtitle": "Sélectionnez un patron que vous avez déjà sauvegardé",
+    "emptyTitle": "Bibliothèque vide",
+    "emptyDesc": "Ajoutez des patrons à votre bibliothèque depuis vos projets"
+  },
+  "patternUrlModal": {
+    "label": "Lien vers le patron",
+    "placeholder": "https://example.com/mon-patron",
+    "hint": "Collez l'adresse d'une page web (Drops, blog, Ravelry...)",
+    "pdfHint": "Pour un PDF, utilisez plutôt le bouton Fichier.",
+    "searchLabel": "Ou chercher un patron",
+    "searchPlaceholder": "pull irlandais, bonnet simple...",
+    "google": "Google",
+    "ravelry": "Ravelry"
+  },
+  "patternTextModal": {
+    "label": "Texte du patron",
+    "subtitle": "Copiez-collez le texte de votre patron ici",
+    "placeholder": "Collez ici le texte de votre patron...\n\nExemple :\nRang 1 : 6 mailles serrées dans un cercle magique\nRang 2 : 2ms dans chaque maille (12)\nRang 3 : *1ms, aug* x6 (18)\nRang 4 : *2ms, aug* x6 (24)\n...",
+    "hint": "Vous pouvez copier-coller le texte depuis n'importe quelle source"
+  },
+  "photoModal": {
+    "takePhoto": "Prendre une photo",
+    "choosePhoto": "Choisir une photo",
+    "formats": "Formats acceptés : JPG, PNG, WEBP (max 10MB)",
+    "selectedFile": "✓ Fichier sélectionné : {{name}}",
+    "uploading": "Upload...",
+    "add": "Ajouter"
+  },
+  "actions": {
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "validate": "Valider"
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "myProjects": {
+    "title": "My projects",
+    "titleAlt": "My Projects",
+    "searchPlaceholder": "Search a project by name, type...",
+    "loadError": "Unable to load your projects",
+    "paymentSuccessTitle": "Payment successful!",
+    "paymentSuccessDesc": "Your subscription is now active. Enjoy all the {{plan}} features.",
+    "welcomeNamed": "Welcome, {{name}}!",
+    "welcome": "Welcome to YarnFlow!",
+    "whereToStart": "Where would you like to start?",
+    "startSmart": "Start a new project",
+    "startSmartDesc": "PDF or link — we fill everything in automatically.",
+    "createManually": "Create a project manually",
+    "createManuallyDesc": "Fill in the details yourself",
+    "exploreDemo": "Explore with an example",
+    "exploreDemoCreating": "Creating...",
+    "exploreDemoDesc": "A pre-filled demo hat to discover the app",
+    "howItWorks": "How it works",
+    "howResume": "Pick up where you left off",
+    "howResumeDesc": "One tap to save your row, even weeks later.",
+    "howPattern": "Your pattern always at hand",
+    "howPatternDesc": "PDF or link attached to the project — no more lost tabs.",
+    "howLibrary": "Library and yarn stash",
+    "noResultsTitle": "No project found",
+    "noResultsDesc": "No project matches <0>{{query}}</0>",
+    "clearSearch": "✕ Clear search",
+    "addPhoto": "Add a photo",
+    "addToFavorites": "Add to favourites",
+    "removeFromFavorites": "Remove from favourites",
+    "knitting": "Knitting",
+    "crochet": "Crochet",
+    "progress": "Progress",
+    "totalProgressCm": "Total progress (cm)",
+    "totalRows": "Total rows knitted",
+    "progressCm": "Progress (cm)",
+    "rowsKnitted": "Rows knitted",
+    "startCountingCm": "Start counting",
+    "startCounting": "Start counting your rows",
+    "delete": "Delete",
+    "createProject": "Create the project",
+    "newProject": "New project",
+    "filterSort": "Filter and sort",
+    "changePhoto": "Change photo",
+    "open": "Open"
+  },
+  "status": {
+    "in_progress": "In progress",
+    "completed": "Completed",
+    "paused": "Paused",
+    "abandoned": "Abandoned"
+  },
+  "creating": {
+    "project": "Creating the project...",
+    "uploadPattern": "Uploading the pattern...",
+    "savingPatternUrl": "Saving the pattern link...",
+    "savingPatternText": "Saving the pattern text...",
+    "linkingPattern": "Linking the pattern...",
+    "addingTags": "Adding tags...",
+    "markingFavorite": "Marking as favourite..."
+  },
+  "errors": {
+    "createFailed": "Unable to create the project. Check your internet connection.",
+    "createdButStepFailed": "The project was created but an error occurred during {{step}}. {{detail}}",
+    "createdButStepFailedAlt": "The project was created but an error occurred during {{step}}. {{detail}}",
+    "addSectionsManually": "You can add the sections manually from the project.",
+    "addPatternManually": "You can add the pattern manually from the project.",
+    "createGeneric": "Error while creating the project",
+    "favoriteFailed": "Unable to update the favourite",
+    "selectPhoto": "Please select a photo",
+    "photoUploadFailed": "Error while adding the photo",
+    "libraryLoadFailed": "Unable to load your pattern library",
+    "deleteFailed": "Error while deleting the project"
+  },
+  "confirmDelete": {
+    "title": "Delete the project",
+    "message": "Are you sure you want to delete this project? This action cannot be undone."
+  },
+  "success": {
+    "deletedTitle": "Successfully deleted",
+    "deleted": "The project was deleted successfully.",
+    "photoAddedTitle": "Success",
+    "photoAdded": "Photo added successfully!"
+  },
+  "demoProject": {
+    "name": "Cardinal Song — Hat (demo)",
+    "description": "A demo project to discover YarnFlow. Change it however you like!",
+    "yarnName": "Merino Extra Fine",
+    "yarnColor": "Heather grey",
+    "needleType": "Circular needles",
+    "sectionRibbing": "1×1 ribbing",
+    "sectionBody": "Body (stockinette)",
+    "sectionCrown": "Crown decreases"
+  },
+  "patternLibraryModal": {
+    "title": "Pattern library",
+    "subtitle": "Select a pattern you've already saved",
+    "emptyTitle": "Empty library",
+    "emptyDesc": "Add patterns to your library from your projects"
+  },
+  "patternUrlModal": {
+    "label": "Link to the pattern",
+    "placeholder": "https://example.com/my-pattern",
+    "hint": "Paste the address of a web page (Drops, blog, Ravelry...)",
+    "pdfHint": "For a PDF, use the File button instead.",
+    "searchLabel": "Or search for a pattern",
+    "searchPlaceholder": "aran sweater, simple hat...",
+    "google": "Google",
+    "ravelry": "Ravelry"
+  },
+  "patternTextModal": {
+    "label": "Pattern text",
+    "subtitle": "Copy and paste your pattern text here",
+    "placeholder": "Paste your pattern text here...\n\nExample:\nRow 1: 6 single crochet in a magic ring\nRow 2: 2 sc in each stitch (12)\nRow 3: *1 sc, inc* x6 (18)\nRow 4: *2 sc, inc* x6 (24)\n...",
+    "hint": "You can copy and paste the text from any source"
+  },
+  "photoModal": {
+    "takePhoto": "Take a photo",
+    "choosePhoto": "Choose a photo",
+    "formats": "Accepted formats: JPG, PNG, WEBP (max 10MB)",
+    "selectedFile": "✓ Selected file: {{name}}",
+    "uploading": "Uploading...",
+    "add": "Add"
+  },
+  "actions": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "validate": "Confirm"
+  }
+}

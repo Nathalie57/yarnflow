@@ -60,5 +60,14 @@
     "technicalDetails": "Détails techniques (pour le debug)",
     "refresh": "🔄 Rafraîchir la page",
     "backToProjects": "← Retour aux projets"
+  },
+  "alert": {
+    "ok": "OK",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "infoTitle": "Information",
+    "errorTitle": "Erreur",
+    "doneTitle": "Terminé",
+    "confirmTitle": "⚠️ Confirmation"
   }
 }
