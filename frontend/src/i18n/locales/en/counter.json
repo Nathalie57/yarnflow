@@ -381,6 +381,10 @@
     "alreadyCounted": "You already have <1>{{count}} rows</1> on the counter.",
     "alreadyCounted_one": "You already have <1>{{count}} row</1> on the counter.",
     "sectionWillStartAt": "The \"{{name}}\" section will start at {{count}} rows",
-    "sectionWillStartAtZero": "The section will start at 0 (the earlier rows were a swatch)"
+    "sectionWillStartAtZero": "The section will start at 0 (the earlier rows were a swatch)",
+    "morePlus": "⬆️ More",
+    "rowLabelShort": "Row",
+    "ofRowsTotal": "/ {{total}} rows",
+    "nameLabel": "Name"
   }
 }

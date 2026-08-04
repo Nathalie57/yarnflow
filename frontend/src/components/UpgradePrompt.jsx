@@ -138,7 +138,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
               <p className="text-xs text-gray-500 mt-0.5">{t('ui.forActive')}</p>
               <div className="mt-2">
                 <span className="text-xl font-bold text-primary-600">2,49€</span>
-                <span className="text-xs text-gray-500">/mois</span>
+                <span className="text-xs text-gray-500">{t('ui.perMonth')}</span>
               </div>
               <p className="text-[11px] text-green-600 font-medium mt-0.5">{t('ui.billedYearlyPlus')}</p>
             </div>
@@ -147,7 +147,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
               <p className="text-xs text-gray-500 mt-0.5">{t('ui.allFeatures')}</p>
               <div className="mt-2">
                 <span className="text-xl font-bold text-gray-700">4,99€</span>
-                <span className="text-xs text-gray-500">/mois</span>
+                <span className="text-xs text-gray-500">{t('ui.perMonth')}</span>
               </div>
               <p className="text-[11px] text-green-600 font-medium mt-0.5">{t('ui.billedYearlyPro')}</p>
             </div>
@@ -161,7 +161,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             </div>
             <div className="text-right">
               <span className="text-2xl font-bold text-primary-600">4,99€</span>
-              <span className="text-xs text-gray-500">/mois</span>
+              <span className="text-xs text-gray-500">{t('ui.perMonth')}</span>
             </div>
           </div>
         )}

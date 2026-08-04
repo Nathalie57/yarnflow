@@ -78,7 +78,7 @@ export default function GaugeCalculator() {
             <p className="text-xs text-gray-500 mb-3">{t('ui.enterGauge')}</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mailles / 10 cm</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.stitchesPer10')}</label>
                 <input
                   type="number"
                   min="1"
@@ -89,7 +89,7 @@ export default function GaugeCalculator() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rangs / 10 cm</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.rowsPer10')}</label>
                 <input
                   type="number"
                   min="1"
@@ -136,14 +136,14 @@ export default function GaugeCalculator() {
                 {simpleResult.sts && (
                   <div>
                     <div className="text-3xl font-bold text-primary-700">{simpleResult.sts}</div>
-                    <div className="text-sm text-primary-600 mt-1">mailles</div>
+                    <div className="text-sm text-primary-600 mt-1">{t('ui.stitchesWord')}</div>
                     <div className="text-xs text-gray-500">{t('ui.forCm', { n: wantedWidthCm })}</div>
                   </div>
                 )}
                 {simpleResult.rows && (
                   <div>
                     <div className="text-3xl font-bold text-primary-700">{simpleResult.rows}</div>
-                    <div className="text-sm text-primary-600 mt-1">rangs</div>
+                    <div className="text-sm text-primary-600 mt-1">{t('ui.rowsWord')}</div>
                     <div className="text-xs text-gray-500">{t('ui.forCm', { n: wantedHeightCm })}</div>
                   </div>
                 )}
@@ -174,7 +174,7 @@ export default function GaugeCalculator() {
             <p className="text-xs text-gray-500 mb-3">{t('ui.gaugeInPattern')}</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mailles / 10 cm (patron)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.stitchesPer10Pattern')}</label>
                 <input
                   type="number"
                   min="1"

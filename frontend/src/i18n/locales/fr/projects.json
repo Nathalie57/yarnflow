@@ -310,6 +310,24 @@
     "photoCredits_other": "{{count}} crédits photo",
     "savePatternsIn": "Sauvegarde tes patrons dans la",
     "orManageYarnIn": "ou gère tes pelotes dans le",
-    "stashWord": "stock"
+    "stashWord": "stock",
+    "projectCount_one": "{{count}} projet",
+    "projectCount_other": "{{count}} projets",
+    "buyCreditsShort": "+ Acheter",
+    "optionsSummary": "Options — patron, tags, description...",
+    "textLabel": "Texte",
+    "tagsLabel": "Tags",
+    "techniqueLabel": "Technique",
+    "crochetLabel": "Crochet",
+    "knittingLabel": "Tricot",
+    "rowsWhole": "Rangs (entiers)",
+    "quickExamples": "Exemples rapides :",
+    "descriptionLabel": "Description",
+    "markFavorite": "Marquer comme favori",
+    "patternOptional": "Patron (optionnel)",
+    "fileLabel": "Fichier",
+    "webLinkLabel": "Lien web",
+    "skipArrow": "Passer →",
+    "nextArrow": "Suivant →"
   }
 }

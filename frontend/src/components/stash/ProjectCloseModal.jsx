@@ -104,7 +104,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
 
                     {remainder > 0 && (
                       <p className="mt-2 text-xs text-primary-600 bg-primary-50 rounded-lg px-2.5 py-1.5">
-                        {Math.floor(remainder)} pelote{Math.floor(remainder) > 1 ? 's' : ''} remise{Math.floor(remainder) > 1 ? 's' : ''} en stock
+                        {t('ui.ballsBack', { count: Math.floor(remainder) })}
                       </p>
                     )}
                   </div>

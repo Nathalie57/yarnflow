@@ -101,7 +101,7 @@ export default function SaveDistributeToProjectModal({ text, onClose }) {
                   >
                     <option value="">{t('ui.projectNotesGlobal')}</option>
                     {sections.map(s => (
-                      <option key={s.id} value={s.id}>Section : {s.name}</option>
+                      <option key={s.id} value={s.id}>{t('ui.sectionColon', { name: s.name })}</option>
                     ))}
                   </select>
                 )}

@@ -361,7 +361,21 @@
     "filesSelected_one": "{{count}} file selected",
     "filesSelected_other": "{{count}} files selected",
     "chartStartRowHelp": "How many rows of the section are already done when this motif starts (0 if it starts on the very first row of the section).",
-    "chartWillCover": "The chart will cover rows {{from}} to {{to}} out of {{total}}."
+    "chartWillCover": "The chart will cover rows {{from}} to {{to}} out of {{total}}.",
+    "rotate": "↻ Rotate",
+    "printBtn": "🖨️ Print",
+    "aiProvider": "AI provider:",
+    "nameLabel": "Name",
+    "patternsWord": "patterns",
+    "sortAZ": "A → Z",
+    "sortZA": "Z → A",
+    "filesLabel": "File(s)",
+    "currentFile": "Current file:",
+    "acceptedFormats": "PDF, JPG, PNG, WEBP (max 10 MB)",
+    "backArrow": "← Back",
+    "photoWord": "Photo",
+    "photosWord": "photos",
+    "photoFormats": "Formats: JPG, PNG, WEBP • Max 10 MB"
   },
   "badges": {
     "proj-1": {

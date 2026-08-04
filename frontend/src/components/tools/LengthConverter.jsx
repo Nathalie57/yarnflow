@@ -69,8 +69,8 @@ export default function LengthConverter() {
 
       {/* Rappel utile */}
       <div className="bg-primary-50 rounded-xl px-4 py-3 text-xs text-primary-700 space-y-1">
-        <p>1 pouce = 2,54 cm</p>
-        <p>1 yard = 91,44 cm = 3 pieds</p>
+        <p>{t('ui.inchEquals')}</p>
+        <p>{t('ui.yardEquals')}</p>
         <p>{t('ui.usYardsEuMeters')}</p>
       </div>
     </div>

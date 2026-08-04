@@ -51,7 +51,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
             `}
           >
             <span className="text-xl">🪡</span>
-            <span>Crochet</span>
+            <span>{t('ui.crochetLabel')}</span>
           </button>
           <button
             type="button"
@@ -66,7 +66,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
             `}
           >
             <span className="text-xl">🧶</span>
-            <span>Tricot</span>
+            <span>{t('ui.knittingLabel')}</span>
           </button>
         </div>
       </div>
@@ -90,7 +90,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
             `}
           >
             <span className="text-xl">📏</span>
-            <span>Rangs (entiers)</span>
+            <span>{t('ui.rowsWhole')}</span>
           </button>
           <button
             type="button"

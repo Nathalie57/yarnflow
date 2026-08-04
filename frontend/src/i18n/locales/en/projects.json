@@ -310,6 +310,24 @@
     "photoCredits_other": "{{count}} photo credits",
     "savePatternsIn": "Save your patterns in the",
     "orManageYarnIn": "or manage your yarn in your",
-    "stashWord": "stash"
+    "stashWord": "stash",
+    "projectCount_one": "{{count}} project",
+    "projectCount_other": "{{count}} projects",
+    "buyCreditsShort": "+ Buy",
+    "optionsSummary": "Options — pattern, tags, description...",
+    "textLabel": "Text",
+    "tagsLabel": "Tags",
+    "techniqueLabel": "Technique",
+    "crochetLabel": "Crochet",
+    "knittingLabel": "Knitting",
+    "rowsWhole": "Rows (whole)",
+    "quickExamples": "Quick examples:",
+    "descriptionLabel": "Description",
+    "markFavorite": "Mark as favourite",
+    "patternOptional": "Pattern (optional)",
+    "fileLabel": "File",
+    "webLinkLabel": "Web link",
+    "skipArrow": "Skip →",
+    "nextArrow": "Next →"
   }
 }

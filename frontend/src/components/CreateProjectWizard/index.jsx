@@ -525,7 +525,7 @@ const CreateProjectWizard = ({
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                       </svg>
-                      <span className="text-xs font-medium text-gray-700">Texte</span>
+                      <span className="text-xs font-medium text-gray-700">{t('ui.textLabel')}</span>
                       {patternText && <span className="text-xs text-primary-600 mt-0.5">{t('ui.textAddedCheck')}</span>}
                     </button>
                   </div>
@@ -567,7 +567,7 @@ const CreateProjectWizard = ({
                 {/* Tags */}
                 {canUseTags ? (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tags</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('ui.tagsLabel')}</label>
                     <TagInput
                       tags={projectTags}
                       onAddTag={handleAddTag}
@@ -578,7 +578,7 @@ const CreateProjectWizard = ({
                   </div>
                 ) : (
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="text-sm text-gray-600">Tags</span>
+                    <span className="text-sm text-gray-600">{t('ui.tagsLabel')}</span>
                     <div className="flex items-center gap-2">
                       <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
                       <button type="button" onClick={() => { onClose(); navigate('/subscription') }} className="text-xs text-primary-600 hover:underline font-medium">

@@ -245,7 +245,7 @@ const FloatingCounter = ({
               </div>
               {totalRows > 0 && (
                 <div className="text-xs opacity-75">
-                  / {totalRows} rangs
+                  {t('ui.ofRowsTotal', { total: totalRows })}
                 </div>
               )}
             </div>

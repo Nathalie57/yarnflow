@@ -290,7 +290,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       {/* Marque + Gamme */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className={labelCls}>Marque *</label>
+          <label className={labelCls}>{t('ui.brandRequired')}</label>
           <input
             type="text" required
             className={inputCls}
@@ -301,7 +301,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           />
         </div>
         <div>
-          <label className={labelCls}>Gamme *</label>
+          <label className={labelCls}>{t('ui.rangeRequired')}</label>
           <input
             type="text" required
             className={inputCls}
@@ -376,7 +376,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       {/* Poids + Métrage + Quantité */}
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className={labelCls}>Poids/pelote (g) *</label>
+          <label className={labelCls}>{t('ui.weightPerBall')}</label>
           <input
             type="number" required min="0.1" step="0.1"
             className={inputCls}

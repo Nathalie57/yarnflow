@@ -361,7 +361,21 @@
     "filesSelected_one": "{{count}} fichier sélectionné",
     "filesSelected_other": "{{count}} fichiers sélectionnés",
     "chartStartRowHelp": "Combien de rangs de la section sont déjà faits quand ce motif commence (0 si le motif démarre au tout premier rang de la section).",
-    "chartWillCover": "La grille couvrira les rangs {{from}} à {{to}} sur {{total}}."
+    "chartWillCover": "La grille couvrira les rangs {{from}} à {{to}} sur {{total}}.",
+    "rotate": "↻ Pivoter",
+    "printBtn": "🖨️ Imprimer",
+    "aiProvider": "Provider IA :",
+    "nameLabel": "Nom",
+    "patternsWord": "patrons",
+    "sortAZ": "A → Z",
+    "sortZA": "Z → A",
+    "filesLabel": "Fichier(s)",
+    "currentFile": "Fichier actuel :",
+    "acceptedFormats": "PDF, JPG, PNG, WEBP (max 10 Mo)",
+    "backArrow": "← Retour",
+    "photoWord": "Photo",
+    "photosWord": "photos",
+    "photoFormats": "Formats : JPG, PNG, WEBP • Max 10 Mo"
   },
   "badges": {
     "proj-1": {

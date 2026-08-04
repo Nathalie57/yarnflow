@@ -91,7 +91,7 @@ const Step4Optional = ({
       {/* Tags */}
       {canUseTags ? (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.tagsLabel')}</label>
           <TagInput
             tags={projectTags}
             onAddTag={onAddTag}
@@ -103,7 +103,7 @@ const Step4Optional = ({
       ) : (
         <div className="flex items-center justify-between p-3 border border-gray-200 rounded-xl bg-gray-50">
           <div>
-            <span className="text-sm font-medium text-gray-700">Tags</span>
+            <span className="text-sm font-medium text-gray-700">{t('ui.tagsLabel')}</span>
             <p className="text-xs text-gray-500 mt-0.5">{t('ui.tagsHint')}</p>
           </div>
           <button
@@ -150,7 +150,7 @@ const Step4Optional = ({
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${patternType === 'file' ? 'text-primary-600' : 'text-gray-400'}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
             </svg>
-            <span className="text-xs font-medium text-gray-700">Fichier</span>
+            <span className="text-xs font-medium text-gray-700">{t('ui.fileLabel')}</span>
             <span className="text-xs text-gray-500">{t('ui.pdfOrImageHint')}</span>
             {patternFile && (
               <span className="text-xs text-primary-600 truncate max-w-full">
@@ -178,7 +178,7 @@ const Step4Optional = ({
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${patternType === 'url' ? 'text-primary-600' : 'text-gray-400'}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
             </svg>
-            <span className="text-xs font-medium text-gray-700">Lien web</span>
+            <span className="text-xs font-medium text-gray-700">{t('ui.webLinkLabel')}</span>
             {patternUrl && <span className="text-xs text-primary-600">{t('ui.linkAdded')}</span>}
           </button>
 
@@ -191,7 +191,7 @@ const Step4Optional = ({
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 ${patternType === 'text' ? 'text-primary-600' : 'text-gray-400'}`}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
             </svg>
-            <span className="text-xs font-medium text-gray-700">Texte</span>
+            <span className="text-xs font-medium text-gray-700">{t('ui.textLabel')}</span>
             {patternText && <span className="text-xs text-primary-600">{t('ui.textAdded')}</span>}
           </button>
         </div>

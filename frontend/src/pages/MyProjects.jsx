@@ -786,7 +786,7 @@ const MyProjects = () => {
             {!loadingStats && dashboardStats && (
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
                 {/* Projets */}
-                <span>{projects.length} projet{projects.length !== 1 ? 's' : ''}</span>
+                <span>{t('ui.projectCount', { count: projects.length })}</span>
 
                 <span className="text-gray-300">·</span>
 
@@ -795,7 +795,7 @@ const MyProjects = () => {
                   {t('ui.photoCredits', { count: credits?.total_available || 0 })}
                 </span>
                 <Link to="/subscription#credits" className="text-primary-600 hover:underline text-xs">
-                  + Acheter
+                  {t('ui.buyCreditsShort')}
                 </Link>
 
               </div>

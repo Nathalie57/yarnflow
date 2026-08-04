@@ -197,7 +197,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
                       <span className="w-8 text-center font-semibold text-gray-800">{quantity}</span>
                       <button onClick={() => setQuantity(q => Math.min(selectedEntry.quantity_available, q + 1))} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50">+</button>
                     </div>
-                    <span className="text-xs text-gray-400">/ {selectedEntry.quantity_available} dispo</span>
+                    <span className="text-xs text-gray-400">{t('ui.availShort', { count: selectedEntry.quantity_available })}</span>
                   </div>
                 )}
 

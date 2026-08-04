@@ -244,7 +244,7 @@ export default function YarnCalculator() {
               <div className="grid grid-cols-2 gap-3 mt-3 text-center">
                 <div className="bg-white rounded-lg p-3 border border-primary-200">
                   <div className="text-3xl font-bold text-primary-700">{skeinResult.min}</div>
-                  <div className="text-xs text-primary-600 mt-1">pelotes minimum</div>
+                  <div className="text-xs text-primary-600 mt-1">{t('ui.ballsMinimum')}</div>
                 </div>
                 <div className="bg-white rounded-lg p-3 border border-emerald-200">
                   <div className="text-3xl font-bold text-emerald-600">{skeinResult.safe}</div>
@@ -311,7 +311,7 @@ export default function YarnCalculator() {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-800 truncate">{e.brand} — {e.yarn_name}</p>
-                          <p className="text-xs text-gray-500">{e.quantity} pelote{e.quantity > 1 ? 's' : ''} × {e.yardage_per_skein_m} m</p>
+                          <p className="text-xs text-gray-500">{t('ui.ballsTimes', { count: e.quantity, m: e.yardage_per_skein_m })}</p>
                         </div>
                         <span className="text-sm font-semibold text-primary-700 flex-shrink-0">
                           {e.total_yardage_m.toLocaleString('fr-FR')} m

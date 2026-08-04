@@ -381,6 +381,10 @@
     "alreadyCounted": "Tu as déjà <1>{{count}} rangs</1> au compteur.",
     "alreadyCounted_one": "Tu as déjà <1>{{count}} rang</1> au compteur.",
     "sectionWillStartAt": "La section \"{{name}}\" démarrera à {{count}} rangs",
-    "sectionWillStartAtZero": "La section commencera à 0 (les rangs précédents étaient du test)"
+    "sectionWillStartAtZero": "La section commencera à 0 (les rangs précédents étaient du test)",
+    "morePlus": "⬆️ Plus",
+    "rowLabelShort": "Rang",
+    "ofRowsTotal": "/ {{total}} rangs",
+    "nameLabel": "Nom"
   }
 }
