@@ -1,0 +1,31 @@
+# Fins de ligne — [AI:Claude] 2026-08-04
+#
+# Le dépôt est édité depuis Windows (WAMP, éditeur) et depuis Ubuntu/WSL sur le
+# même dossier partagé. Sans règle explicite, les deux environnements écrivaient
+# des fins de ligne différentes et certains fichiers avaient fini avec un
+# mélange des deux. Conséquence : une modification de trois lignes apparaissait
+# comme une réécriture complète du fichier, ce qui rendait les diffs illisibles
+# et `git blame` inexploitable.
+#
+# Règle : le dépôt stocke du LF, et livre du LF dans les deux environnements.
+* text=auto eol=lf
+
+# Fichiers binaires : jamais convertis.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.pdf  binary
+*.woff  binary
+*.woff2 binary
+*.ttf  binary
+*.eot  binary
+*.zip  binary
+*.gz   binary
+*.mp4  binary
+*.webm binary
+
+# Scripts destinés au serveur : LF obligatoire, sinon le shebang casse.
+*.sh text eol=lf
