@@ -779,7 +779,25 @@
     "maxSize30b": "Max 30 MB",
     "helpAndContact2": "Help & Contact",
     "gramsAndMeters": "{{g}} g · {{m}} m",
-    "nameRequired2": "Name"
+    "nameRequired2": "Name",
+    "filterByTags": "Filter by tags",
+    "tagsPlus": "Tags (PLUS)",
+    "turningOn": "Turning on...",
+    "enableNotifs": "Turn on notifications",
+    "savingEllipsisAlt": "Saving…",
+    "addToStash": "Add to stash",
+    "monthlyLimitHit": "⚠️ Monthly limit reached",
+    "stitchCount": "Number of stitches",
+    "rowCount": "Number of rows",
+    "savingDots": "Saving...",
+    "link": "Link",
+    "sending": "Sending...",
+    "send": "Send",
+    "currentPlanBtn": "Current plan",
+    "freeWord": "Free",
+    "loadingEllipsis2": "Loading…",
+    "planPlusName": "Plus plan",
+    "planFreeName": "Free plan"
   },
   "toolsList": {
     "distribute": {

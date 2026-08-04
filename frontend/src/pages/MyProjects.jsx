@@ -1161,7 +1161,7 @@ const MyProjects = () => {
                     {/* Stats inline */}
                     <div className="flex items-center gap-2 mb-3 text-xs text-gray-400">
                       {project.status === 'completed' ? (
-                        <span>{project.time_formatted || '0h 0min'}</span>
+                        <span>{project.time_formatted || t('ui.zeroTimeShort')}</span>
                       ) : (
                         <>
                           <span>

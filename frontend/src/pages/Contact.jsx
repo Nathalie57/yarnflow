@@ -247,7 +247,7 @@ const Contact = () => {
               type="submit" disabled={loading}
               className="flex-1 px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
             >
-              {loading ? 'Envoi...' : 'Envoyer'}
+              {loading ? t('ui.sending') : t('ui.send')}
             </button>
           </div>
         </form>

@@ -405,6 +405,24 @@
     "originalPhotoTitle": "📷 Photo originale",
     "nameLabelShort": "Nom",
     "reminderRow": "Rappel — rang {{row}}",
-    "sourcesHint3": "YouTube, Pinterest, blog..."
+    "sourcesHint3": "YouTube, Pinterest, blog...",
+    "projectNotFound": "Projet introuvable",
+    "todayExcl": "Aujourd'hui !",
+    "wholeProject": "Projet global",
+    "zeroTimeLong": "0h 0min 0s",
+    "counterWord": "Compteur",
+    "saveAlt": "Sauvegarder",
+    "editPatternTextBtn": "Modifier le texte du patron",
+    "addPatternTextBtn": "Ajouter le texte du patron",
+    "edit2": "Modifier",
+    "add2": "Ajouter",
+    "wool": "Laine",
+    "yarn": "Fil",
+    "needles": "Aiguilles",
+    "hooks": "Crochets",
+    "savingDots": "Enregistrement...",
+    "savingAlt": "Sauvegarde...",
+    "editSection": "Modifier la section",
+    "addSection2": "Ajouter une section"
   }
 }

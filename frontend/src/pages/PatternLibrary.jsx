@@ -827,7 +827,7 @@ const PatternLibrary = () => {
                     <div className="flex flex-wrap gap-2 mb-4">
                       {pattern.technique && (
                         <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded text-xs font-medium">
-                          {pattern.technique === 'tricot' ? 'Tricot' : 'Crochet'}
+                          {pattern.technique === 'tricot' ? t('ui.knitting') : 'Crochet'}
                         </span>
                       )}
                       {pattern.category && (
@@ -1217,7 +1217,7 @@ const PatternLibrary = () => {
                   disabled={uploading}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {uploading ? 'Ajout en cours...' : 'Ajouter'}
+                  {uploading ? t('ui.adding') : t('ui.add2')}
                 </button>
               </div>
             </form>
@@ -1544,7 +1544,7 @@ const PatternLibrary = () => {
                   disabled={uploading}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {uploading ? 'Enregistrement...' : 'Enregistrer'}
+                  {uploading ? t('ui.savingDots') : t('ui.save')}
                 </button>
               </div>
             </form>

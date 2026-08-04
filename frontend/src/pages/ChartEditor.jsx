@@ -253,7 +253,7 @@ const ChartEditor = () => {
   if (error || !chart) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
-        <p className="text-gray-500">{error || 'Grille introuvable'}</p>
+        <p className="text-gray-500">{error || t('ui.chartNotFound')}</p>
         <Link to={`/projects/${projectId}`} className="text-primary-600 hover:text-primary-700 font-medium">
           {t('ui.backToProject')}
         </Link>
@@ -289,7 +289,7 @@ const ChartEditor = () => {
             ) : (
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
             )}
-            <span className="hidden sm:inline">{isLocked ? 'Modifier' : 'Enregistrer'}</span>
+            <span className="hidden sm:inline">{isLocked ? t('ui.edit2') : t('ui.save')}</span>
           </button>
         </div>
 

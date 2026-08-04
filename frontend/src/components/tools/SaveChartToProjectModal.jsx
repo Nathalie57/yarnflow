@@ -199,7 +199,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
             disabled={(isReassign && !selectedProjectId) || saving || saved}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
           >
-            {saving ? 'Enregistrement...' : (isReassign ? 'Associer' : 'Enregistrer')}
+            {saving ? t('ui.savingDots') : (isReassign ? t('ui.link') : t('ui.save'))}
           </button>
         </div>
       </div>

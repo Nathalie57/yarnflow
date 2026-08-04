@@ -219,7 +219,7 @@ const YarnStash = () => {
                 {isPlus ? t('ui.goProArrow') : t('ui.goPlusOrProArrow')}
               </Link>
             ) : (
-              <span className="text-xs text-amber-600">{isPlus ? 'Plan Plus' : 'Plan Free'}</span>
+              <span className="text-xs text-amber-600">{isPlus ? t('ui.planPlusName') : t('ui.planFreeName')}</span>
             )}
           </div>
         )}

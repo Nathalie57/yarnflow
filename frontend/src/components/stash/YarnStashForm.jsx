@@ -605,7 +605,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           disabled={loading}
           className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
         >
-          {loading ? 'Enregistrement…' : (entry ? 'Enregistrer' : 'Ajouter au stock')}
+          {loading ? t('ui.savingEllipsisAlt') : (entry ? t('ui.save') : t('ui.addToStash'))}
         </button>
       </div>
     </form>

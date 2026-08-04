@@ -405,6 +405,24 @@
     "originalPhotoTitle": "📷 Original photo",
     "nameLabelShort": "Name",
     "reminderRow": "Reminder — row {{row}}",
-    "sourcesHint3": "YouTube, Pinterest, blog..."
+    "sourcesHint3": "YouTube, Pinterest, blog...",
+    "projectNotFound": "Project not found",
+    "todayExcl": "Today!",
+    "wholeProject": "Whole project",
+    "zeroTimeLong": "0h 0min 0s",
+    "counterWord": "Counter",
+    "saveAlt": "Save",
+    "editPatternTextBtn": "Edit the pattern text",
+    "addPatternTextBtn": "Add the pattern text",
+    "edit2": "Edit",
+    "add2": "Add",
+    "wool": "Wool",
+    "yarn": "Yarn",
+    "needles": "Needles",
+    "hooks": "Hooks",
+    "savingDots": "Saving...",
+    "savingAlt": "Saving...",
+    "editSection": "Edit the section",
+    "addSection2": "Add a section"
   }
 }

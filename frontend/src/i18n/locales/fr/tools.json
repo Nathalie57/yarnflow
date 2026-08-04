@@ -779,7 +779,25 @@
     "maxSize30b": "Max 30 Mo",
     "helpAndContact2": "Aide & Contact",
     "gramsAndMeters": "{{g}} g · {{m}} m",
-    "nameRequired2": "Nom"
+    "nameRequired2": "Nom",
+    "filterByTags": "Filtrer par tags",
+    "tagsPlus": "Tags (PLUS)",
+    "turningOn": "Activation...",
+    "enableNotifs": "Activer les notifications",
+    "savingEllipsisAlt": "Enregistrement…",
+    "addToStash": "Ajouter au stock",
+    "monthlyLimitHit": "⚠️ Limite mensuelle atteinte",
+    "stitchCount": "Nombre de mailles",
+    "rowCount": "Nombre de rangs",
+    "savingDots": "Enregistrement...",
+    "link": "Associer",
+    "sending": "Envoi...",
+    "send": "Envoyer",
+    "currentPlanBtn": "Plan actuel",
+    "freeWord": "Gratuit",
+    "loadingEllipsis2": "Chargement…",
+    "planPlusName": "Plan Plus",
+    "planFreeName": "Plan Free"
   },
   "toolsList": {
     "distribute": {

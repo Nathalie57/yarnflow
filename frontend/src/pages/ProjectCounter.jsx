@@ -3093,7 +3093,7 @@ const ProjectCounter = () => {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-800 mb-4">{error || 'Projet introuvable'}</p>
+          <p className="text-red-800 mb-4">{error || t('ui.projectNotFound')}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => { setError(null); setLoading(true); fetchProject().then(pd => pd && fetchSections(pd.current_section_id)) }}
@@ -3360,7 +3360,7 @@ const ProjectCounter = () => {
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                   {daysUntilDeadline < 0 ? `${Math.abs(daysUntilDeadline)}j de retard` :
-                   daysUntilDeadline === 0 ? "Aujourd'hui !" :
+                   daysUntilDeadline === 0 ? t('ui.todayExcl') :
                    `${daysUntilDeadline}j restants`}
                 </button>
               ) : (
@@ -3404,7 +3404,7 @@ const ProjectCounter = () => {
                   onClick={() => setShowTechniqueMenu(!showTechniqueMenu)}
                   className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold hover:bg-primary-100 transition cursor-pointer flex items-center gap-1"
                 >
-                  {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
+                  {project.technique === 'tricot' ? t('ui.knitting') : 'Crochet'}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -3613,9 +3613,9 @@ const ProjectCounter = () => {
               <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
               <div className="font-semibold text-gray-900 text-sm line-clamp-2 max-w-[180px]">
                 {currentSectionId ? (
-                  sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
+                  sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                 ) : (
-                  'Projet global'
+                  t('ui.wholeProject')
                 )}
               </div>
               <button
@@ -3687,9 +3687,9 @@ const ProjectCounter = () => {
               <div className="flex items-center gap-1.5">
                 <div className="font-semibold text-gray-900 text-base">
                   {currentSectionId ? (
-                    sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
+                    sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                   ) : (
-                    'Projet global'
+                    t('ui.wholeProject')
                   )}
                 </div>
                 <button
@@ -3771,7 +3771,7 @@ const ProjectCounter = () => {
                 return (
                   <div className="text-center border-l border-gray-300 pl-2 sm:pl-3">
                     <div className="text-sm sm:text-lg font-semibold text-primary-700">
-                      {currentSection.time_formatted || '0h 0min 0s'}
+                      {currentSection.time_formatted || t('ui.zeroTimeLong')}
                     </div>
                     <div className="text-[10px] text-gray-500">{t('ui.total')}</div>
                   </div>
@@ -3901,7 +3901,7 @@ const ProjectCounter = () => {
                     {/* Ligne 1 : label + menu ⋮ */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                        {counter.label || 'Compteur'}
+                        {counter.label || t('ui.counterWord')}
                       </span>
                       <div className="relative">
                         {showSecondaryMenuFor === counter.id && (
@@ -4293,7 +4293,7 @@ const ProjectCounter = () => {
                                 disabled={isSavingSectionNotes}
                                 className="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50 transition"
                               >
-                                {isSavingSectionNotes ? '...' : 'Sauvegarder'}
+                                {isSavingSectionNotes ? '...' : t('ui.saveAlt')}
                               </button>
                             </div>
                           </div>
@@ -4330,7 +4330,7 @@ const ProjectCounter = () => {
                             </span>
                             <span className="text-xs text-gray-500 ml-2 flex items-center gap-1">
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                              {section.time_formatted || '0h 0min 0s'}
+                              {section.time_formatted || t('ui.zeroTimeLong')}
                             </span>
                           </div>
                         ) : (
@@ -4615,7 +4615,7 @@ const ProjectCounter = () => {
 
                         {/* Temps */}
                         <div className="text-sm text-gray-600">
-                          ⏱️ {section.time_formatted || '0h 0min 0s'}
+                          ⏱️ {section.time_formatted || t('ui.zeroTimeLong')}
                         </div>
 
                         {/* Actions */}
@@ -4705,7 +4705,7 @@ const ProjectCounter = () => {
                             disabled={isSavingSectionNotes}
                             className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
                           >
-                            {isSavingSectionNotes ? '...' : 'Sauvegarder'}
+                            {isSavingSectionNotes ? '...' : t('ui.saveAlt')}
                           </button>
                         </div>
                       </div>
@@ -5417,7 +5417,7 @@ const ProjectCounter = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                   </div>
                   <p className="text-gray-700 font-medium mb-1">
-                    {project?.pattern_text ? 'Modifier le texte du patron' : 'Ajouter le texte du patron'}
+                    {project?.pattern_text ? t('ui.editPatternTextBtn') : t('ui.addPatternTextBtn')}
                   </p>
                   <p className="text-xs text-gray-500">
                     {t('ui.pasteOrTypePattern')}
@@ -5510,7 +5510,7 @@ const ProjectCounter = () => {
                           className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          {hasDetails ? 'Modifier' : 'Ajouter'}
+                          {hasDetails ? t('ui.edit2') : t('ui.add2')}
                         </button>
                       </div>
                     </div>
@@ -5571,7 +5571,7 @@ const ProjectCounter = () => {
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M2 9h20M2 15h20" opacity="0.4"/></svg>
                                     <span className="font-semibold text-primary-700 text-sm">
-                                      {project.technique === 'tricot' ? 'Laine' : 'Fil'}
+                                      {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
                                     </span>
                                   </div>
                                   <div className="grid gap-2">
@@ -5605,7 +5605,7 @@ const ProjectCounter = () => {
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-sage-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
                                     <span className="font-semibold text-sage-700 text-sm">
-                                      {project.technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
+                                      {project.technique === 'tricot' ? t('ui.needles') : t('ui.hooks')}
                                     </span>
                                   </div>
                                   <div className="space-y-1.5">
@@ -5869,7 +5869,7 @@ const ProjectCounter = () => {
                 disabled={uploadingPattern || !patternUrl.trim()}
                 className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition disabled:opacity-50 text-sm"
               >
-                {uploadingPattern ? 'Enregistrement...' : 'Enregistrer'}
+                {uploadingPattern ? t('ui.savingDots') : t('ui.save')}
               </button>
             </div>
           </div>
@@ -5998,7 +5998,7 @@ const ProjectCounter = () => {
                   disabled={savingPatternText || !patternTextEdit.trim()}
                   className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingPatternText ? 'Enregistrement...' : 'Enregistrer'}
+                  {savingPatternText ? t('ui.savingDots') : t('ui.save')}
                 </button>
               </div>
             </div>
@@ -6435,7 +6435,7 @@ const ProjectCounter = () => {
                 disabled={savingProject}
                 className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
               >
-                {savingProject ? 'Enregistrement...' : 'Enregistrer'}
+                {savingProject ? t('ui.savingDots') : t('ui.save')}
               </button>
             </div>
           </div>
@@ -6473,7 +6473,7 @@ const ProjectCounter = () => {
               <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {project.technique === 'tricot' ? 'Laine' : 'Fil'}
+                    {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
                   </h4>
                   <button
                     type="button"
@@ -6490,7 +6490,7 @@ const ProjectCounter = () => {
                   <div key={yIdx} className="mb-4 p-4 bg-white rounded-lg shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-medium text-gray-700">
-                        {project.technique === 'tricot' ? 'Laine' : 'Fil'} #{yIdx + 1}
+                        {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')} #{yIdx + 1}
                       </span>
                       {technicalForm.yarn.length > 1 && (
                         <button
@@ -6676,7 +6676,7 @@ const ProjectCounter = () => {
               <div className="mb-6 p-4 bg-sage-50 rounded-lg border border-sage-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    {project.technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
+                    {project.technique === 'tricot' ? t('ui.needles') : t('ui.hooks')}
                   </h4>
                   <button
                     type="button"
@@ -6840,7 +6840,7 @@ const ProjectCounter = () => {
                   disabled={savingTechnical}
                   className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingTechnical ? 'Enregistrement...' : 'Enregistrer'}
+                  {savingTechnical ? t('ui.savingDots') : t('ui.save')}
                 </button>
               </div>
             </div>
@@ -6894,7 +6894,7 @@ const ProjectCounter = () => {
                   disabled={savingNotes}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingNotes ? 'Sauvegarde...' : 'Sauvegarder'}
+                  {savingNotes ? t('ui.savingAlt') : t('ui.saveAlt')}
                 </button>
               </div>
             </div>
@@ -6994,7 +6994,7 @@ const ProjectCounter = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-2xl font-bold mb-4">
-              {editingSection ? 'Modifier la section' : 'Ajouter une section'}
+              {editingSection ? t('ui.editSection') : t('ui.addSection2')}
             </h2>
 
             <form onSubmit={handleSaveSection}>

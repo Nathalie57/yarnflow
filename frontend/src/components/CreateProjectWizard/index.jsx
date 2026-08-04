@@ -612,7 +612,7 @@ const CreateProjectWizard = ({
                       {/* Laine / Fil */}
                       <div className="p-3 bg-primary-50 rounded-lg border border-primary-200">
                         <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                          {technique === 'tricot' ? 'Laine' : 'Fil'}
+                          {technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
                         </h4>
                         {technicalForm.yarn.map((y, yIdx) => (
                           <div key={yIdx} className="mb-2 p-2 bg-white rounded border border-primary-100">

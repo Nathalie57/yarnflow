@@ -492,7 +492,7 @@ const PatternLibraryDetail = () => {
             <div className="flex flex-wrap gap-2">
               {pattern.technique && (
                 <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm font-medium">
-                  {pattern.technique === 'tricot' ? 'Tricot' : 'Crochet'}
+                  {pattern.technique === 'tricot' ? t('ui.knitting') : 'Crochet'}
                 </span>
               )}
               {pattern.category && (
@@ -523,7 +523,7 @@ const PatternLibraryDetail = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  {pattern.file_type === 'pdf' ? 'PDF principal' : 'Image principale'}
+                  {pattern.file_type === 'pdf' ? t('ui.mainPdf') : t('ui.mainImage')}
                 </button>
 
                 {/* Fichiers additionnels */}
@@ -537,7 +537,7 @@ const PatternLibraryDetail = () => {
                           : 'border-transparent text-gray-500 hover:text-gray-700'
                       }`}
                     >
-                      {f.file_type === 'pdf' ? 'PDF' : 'Image'} {index + 2}
+                      {f.file_type === 'pdf' ? 'PDF' : t('ui.imageWord')} {index + 2}
                     </button>
                     <button
                       onClick={() => handleDeleteAdditionalFile(f.id)}
@@ -800,7 +800,7 @@ const PatternLibraryDetail = () => {
                         disabled={savingNote || !newNoteText.trim()}
                         className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
                       >
-                        {savingNote ? 'Enregistrement…' : 'Enregistrer'}
+                        {savingNote ? t('ui.savingEllipsisAlt') : t('ui.save')}
                       </button>
                     </div>
                   </div>
@@ -1012,7 +1012,7 @@ const PatternLibraryDetail = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{project.name}</p>
                         {project.status && (
-                          <p className="text-xs text-gray-500">{project.status === 'in_progress' ? 'En cours' : project.status}</p>
+                          <p className="text-xs text-gray-500">{project.status === 'in_progress' ? t('ui.inProgress2') : project.status}</p>
                         )}
                       </div>
                       {linkingProject === project.id && (
@@ -1287,7 +1287,7 @@ const PatternLibraryDetail = () => {
                 </button>
                 <button type="submit" disabled={uploading}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50">
-                  {uploading ? 'Enregistrement...' : 'Enregistrer'}
+                  {uploading ? t('ui.savingDots') : t('ui.save')}
                 </button>
               </div>
             </form>

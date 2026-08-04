@@ -419,7 +419,18 @@
     "aiProvider2": "Provider IA : {{name}}",
     "chartSize": "{{w}} × {{h}} — rang {{row}}/{{h}}",
     "newChartBtn": "＋ Nouvelle grille",
-    "proCalendar": "Calendrier PRO →"
+    "proCalendar": "Calendrier PRO →",
+    "chartNotFound": "Grille introuvable",
+    "edit2": "Modifier",
+    "loadingDots": "Chargement...",
+    "add2": "Ajouter",
+    "adding": "Ajout en cours...",
+    "savingDots": "Enregistrement...",
+    "mainPdf": "PDF principal",
+    "mainImage": "Image principale",
+    "imageWord": "Image",
+    "savingEllipsisAlt": "Enregistrement…",
+    "inProgress2": "En cours"
   },
   "badges": {
     "proj-1": {

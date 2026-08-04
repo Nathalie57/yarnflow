@@ -419,7 +419,18 @@
     "aiProvider2": "AI provider: {{name}}",
     "chartSize": "{{w}} × {{h}} — row {{row}}/{{h}}",
     "newChartBtn": "＋ New chart",
-    "proCalendar": "PRO calendar →"
+    "proCalendar": "PRO calendar →",
+    "chartNotFound": "Chart not found",
+    "edit2": "Edit",
+    "loadingDots": "Loading...",
+    "add2": "Add",
+    "adding": "Adding...",
+    "savingDots": "Saving...",
+    "mainPdf": "Main PDF",
+    "mainImage": "Main image",
+    "imageWord": "Image",
+    "savingEllipsisAlt": "Saving…",
+    "inProgress2": "In progress"
   },
   "badges": {
     "proj-1": {

@@ -346,6 +346,11 @@
     "markFavorite2": "Marquer comme favori",
     "patternOptional2": "Patron (optionnel)",
     "skipArrow2": "Passer →",
-    "nextArrow2": "Suivant →"
+    "nextArrow2": "Suivant →",
+    "wool": "Laine",
+    "yarn": "Fil",
+    "needles": "Aiguilles",
+    "hooks": "Crochets",
+    "zeroTimeShort": "0h 0min"
   }
 }

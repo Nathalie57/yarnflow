@@ -124,7 +124,7 @@ export default function DistributeIncrDec() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {axis === 'mailles' ? 'Nombre de mailles' : 'Nombre de rangs'}
+            {axis === 'mailles' ? t('ui.stitchCount') : t('ui.rowCount')}
           </label>
           <input
             type="number"

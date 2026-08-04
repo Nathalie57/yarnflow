@@ -204,7 +204,7 @@ export default function AiAssistant() {
         <div className={`text-xs text-center py-1 ${usage.remaining <= 5 ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
           {usage.remaining > 0
             ? `${usage.used} / ${usage.limit} messages utilisés ce mois`
-            : '⚠️ Limite mensuelle atteinte'}
+            : t('ui.monthlyLimitHit')}
         </div>
       )}
 

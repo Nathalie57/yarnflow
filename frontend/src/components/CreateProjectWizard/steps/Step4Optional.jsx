@@ -236,7 +236,7 @@ const Step4Optional = ({
             {/* Laine */}
             <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                {technique === 'tricot' ? 'Laine' : 'Fil'}
+                {technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
               </h4>
               {technicalForm.yarn.map((y, yIdx) => (
                 <div key={yIdx} className="mb-2 p-2 bg-white rounded border border-purple-100">
@@ -293,7 +293,7 @@ const Step4Optional = ({
             {/* Aiguilles/Crochets */}
             <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
               <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                {technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
+                {technique === 'tricot' ? t('ui.needles') : t('ui.hooks')}
               </h4>
               {technicalForm.needles.map((n, nIdx) => (
                 <div key={nIdx} className="mb-2 p-2 bg-white rounded border border-blue-100">

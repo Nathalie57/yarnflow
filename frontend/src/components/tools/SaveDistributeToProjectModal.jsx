@@ -126,7 +126,7 @@ export default function SaveDistributeToProjectModal({ text, onClose }) {
             disabled={!selectedProjectId || saving || saved}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
           >
-            {saving ? 'Enregistrement...' : 'Enregistrer'}
+            {saving ? t('ui.savingDots') : t('ui.save')}
           </button>
         </div>
       </div>

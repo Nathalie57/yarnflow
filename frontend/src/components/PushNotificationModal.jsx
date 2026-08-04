@@ -55,7 +55,7 @@ const PushNotificationModal = ({ onClose }) => {
               disabled={loading}
               className="w-full py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition disabled:opacity-60 text-sm"
             >
-              {loading ? 'Activation...' : 'Activer les notifications'}
+              {loading ? t('ui.turningOn') : t('ui.enableNotifs')}
             </button>
             <button
               onClick={dismiss}

@@ -183,7 +183,7 @@ const ProjectFilters = ({
           }`}
         >
           <span>🏷️</span>
-          <span className="text-xs md:text-sm">{canUseTags ? 'Filtrer par tags' : 'Tags (PLUS)'}</span>
+          <span className="text-xs md:text-sm">{canUseTags ? t('ui.filterByTags') : t('ui.tagsPlus')}</span>
           {!canUseTags && <span className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full">PLUS</span>}
           {canUseTags && availableTags.length > 0 && (
             <svg
