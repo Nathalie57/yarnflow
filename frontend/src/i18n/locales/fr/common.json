@@ -329,5 +329,8 @@
     "childGarments": "Vêtements enfant",
     "home": "Maison/Déco",
     "other": "Autre"
+  },
+  "errors": {
+    "generic": "Une erreur est survenue. Réessaie dans un instant."
   }
 }

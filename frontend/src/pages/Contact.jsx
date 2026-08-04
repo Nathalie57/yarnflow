@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useTranslation, Trans } from 'react-i18next'
 
+import { apiErrorMessage } from '../utils/apiError'
 const Contact = () => {
   const { t } = useTranslation('tools')
   const navigate = useNavigate();
@@ -77,7 +78,7 @@ const Contact = () => {
       if (error.response?.status === 429) {
         setErrors({ general: t('ui.tooManyMessages') });
       } else {
-        setErrors({ general: error.response?.data?.error || t('ui.messageSendFailed') });
+        setErrors({ general: apiErrorMessage(error, t('ui.messageSendFailed')) });
       }
     } finally {
       setLoading(false);

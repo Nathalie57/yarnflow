@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import api from '../../services/api'
 import { useTranslation, Trans } from 'react-i18next'
 
+import { apiErrorMessage } from '../../utils/apiError'
 export default function SaveSequenceToSectionModal({ sequence, onClose }) {
   const { t } = useTranslation('tools')
   const [projects, setProjects] = useState([])
@@ -62,7 +63,7 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
       setTimeout(onClose, 1200)
     } catch (err) {
       console.error('Erreur sauvegarde séquence:', err)
-      setError(err.response?.data?.error || t('ui.saveFailed'))
+      setError(apiErrorMessage(err, t('ui.saveFailed')))
       setSaving(false)
     }
   }

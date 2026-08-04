@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import api from '../services/api'
 
+import { apiErrorMessage } from '../utils/apiError'
 /**
  * Hook pour gérer la preview IA gratuite
  */
@@ -28,7 +29,7 @@ export function useImagePreview() {
         throw new Error(response.data.error || 'preview_generation_failed')
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.error || err.message || 'generation_failed'
+      const errorMsg = apiErrorMessage(err, 'generation_failed')
       setPreviewError(errorMsg)
       return { success: false, error: errorMsg }
     } finally {

@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react'
 import { yarnStashAPI } from '../../services/api'
 import { useTranslation, Trans } from 'react-i18next'
 
+import { apiErrorMessage } from '../../utils/apiError'
 const YARN_WEIGHT_OPTIONS = [
   { value: '',            labelKey: 'weightOptional' },
   { value: 'lace',        label: 'Lace' },
@@ -128,7 +129,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       } catch (err) {
         const msg = err?.message === 'timeout'
           ? t('ui.scanTooLong')
-          : (err?.response?.data?.error || t('ui.scanImpossible'))
+          : (apiErrorMessage(err, t('ui.scanImpossible')))
         setScanError(msg)
       } finally {
         setScanning(false)

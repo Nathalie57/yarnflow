@@ -16,6 +16,7 @@ import YarnStashForm from '../components/stash/YarnStashForm'
 import { useTranslation } from 'react-i18next'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
+import { apiErrorMessage } from '../utils/apiError'
 const YarnStash = () => {
   const { t } = useTranslation('tools')
   const { getSubscriptionPlan } = useAuth()
@@ -97,7 +98,7 @@ const YarnStash = () => {
         setShowAddModal(false)
         setError('upgrade_required')
       } else {
-        setError(err.response?.data?.error || t('ui.stashAddFailed'))
+        setError(apiErrorMessage(err, t('ui.stashAddFailed')))
       }
     } finally {
       setSaving(false)
@@ -114,7 +115,7 @@ const YarnStash = () => {
       setEditingEntry(null)
       loadStash()
     } catch (err) {
-      setError(err.response?.data?.error || t('ui.stashEditFailed'))
+      setError(apiErrorMessage(err, t('ui.stashEditFailed')))
     } finally {
       setSaving(false)
     }
@@ -159,7 +160,7 @@ const YarnStash = () => {
       setAssigningEntry(null)
       loadStash()
     } catch (err) {
-      setAssignError(err.response?.data?.error || t('ui.reserveFailed2'))
+      setAssignError(apiErrorMessage(err, t('ui.reserveFailed2')))
     } finally {
       setAssignSaving(false)
     }

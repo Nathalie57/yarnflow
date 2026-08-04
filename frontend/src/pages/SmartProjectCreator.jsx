@@ -6,6 +6,7 @@ import axios from 'axios'
 import api from '../services/api'
 import { useTranslation } from 'react-i18next'
 
+import { apiErrorMessage } from '../utils/apiError'
 /**
  * SmartProjectCreator - Création intelligente de projets via IA
  * Version 0.17.0 - 2026-01-07
@@ -205,7 +206,7 @@ export default function SmartProjectCreator() {
           : t('ui.smartCreationProOnly')
         )
       } else {
-        setError(err.response?.data?.error || t('ui.patternAnalysisFailed'))
+        setError(apiErrorMessage(err, t('ui.patternAnalysisFailed')))
       }
     } finally {
       stepTimers.forEach(clearTimeout)
@@ -247,7 +248,7 @@ export default function SmartProjectCreator() {
       }
     } catch (err) {
       console.error('Erreur confirm:', err)
-      setError(err.response?.data?.error || t('ui.projectCreationFailed'))
+      setError(apiErrorMessage(err, t('ui.projectCreationFailed')))
     } finally {
       setCreating(false)
     }

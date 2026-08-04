@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { patternsAPI } from '../services/api'
 import api from '../services/api'
 
+import { apiErrorMessage } from '../utils/apiError'
 const PatternDetail = () => {
   const { t, i18n } = useTranslation('library')
   const { id } = useParams()
@@ -71,7 +72,7 @@ const PatternDetail = () => {
       navigate(`/projects/${project.id}/counter`)
     } catch (error) {
       console.error('Erreur création projet:', error)
-      alert(error.response?.data?.error || t('ui.projectCreateFailed'))
+      alert(apiErrorMessage(error, t('ui.projectCreateFailed')))
     } finally {
       setCreatingProject(false)
     }

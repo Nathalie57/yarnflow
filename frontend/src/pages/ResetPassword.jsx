@@ -12,6 +12,7 @@ import LanguageSwitcher from '../components/LanguageSwitcher'
 import api from '../services/api'
 import PasswordInput from '../components/PasswordInput'
 
+import { apiErrorMessage } from '../utils/apiError'
 const ResetPassword = () => {
   const { t } = useTranslation('auth')
   const [searchParams] = useSearchParams()
@@ -97,7 +98,7 @@ const ResetPassword = () => {
       }
     } catch (err) {
       console.error('Erreur reset password:', err)
-      setError(err.response?.data?.error || t('resetPassword.resetError'))
+      setError(apiErrorMessage(err, t('resetPassword.resetError')))
     } finally {
       setLoading(false)
     }

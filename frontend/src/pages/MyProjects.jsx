@@ -27,6 +27,7 @@ import UpgradePrompt from '../components/UpgradePrompt'
 import CreateProjectWizard from '../components/CreateProjectWizard'
 import PushNotificationModal, { PUSH_MODAL_STORAGE_KEY } from '../components/PushNotificationModal'
 
+import { apiErrorMessage } from '../utils/apiError'
 const MyProjects = () => {
   const { t } = useTranslation('projects')
   const { user, updateUser } = useAuth()
@@ -654,7 +655,7 @@ const MyProjects = () => {
     } catch (err) {
       // [AI:Claude] Message d'erreur détaillé basé sur l'étape qui a échoué
       let errorMessage = ''
-      const apiError = err.response?.data?.error || err.response?.data?.message
+      const apiError = apiErrorMessage(err)
 
       if (currentStep === 'project') {
         errorMessage = apiError || t('errors.createFailed')

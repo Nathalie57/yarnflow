@@ -11,6 +11,7 @@ import PropTypes from 'prop-types'
 import api from '../services/api'
 import { useTranslation } from 'react-i18next'
 
+import { apiErrorMessage } from '../utils/apiError'
 const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
   const { t } = useTranslation('tools')
   const [submitting, setSubmitting] = useState(false)
@@ -41,7 +42,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
       onClose()
     } catch (err) {
       console.error('Erreur feedback:', err)
-      alert(err.response?.data?.error || t('ui.feedbackSendFailed'))
+      alert(apiErrorMessage(err, t('ui.feedbackSendFailed')))
     } finally {
       setSubmitting(false)
       setRating(0)

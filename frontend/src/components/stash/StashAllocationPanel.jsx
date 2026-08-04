@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { yarnStashAPI, stashAllocationAPI } from '../../services/api'
 import { useTranslation } from 'react-i18next'
 
+import { apiErrorMessage } from '../../utils/apiError'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const StashAllocationPanel = ({ projectId, onClose }) => {
@@ -52,7 +53,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       setQuantity(1)
       await loadData()
     } catch (err) {
-      setError(err.response?.data?.error || t('ui.reserveFailed'))
+      setError(apiErrorMessage(err, t('ui.reserveFailed')))
     } finally {
       setSaving(false)
     }

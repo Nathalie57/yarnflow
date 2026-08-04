@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 
+import { apiErrorMessage } from '../utils/apiError'
 /**
  * [AI:Claude] Page de callback OAuth pour Google et Facebook
  * Cette page gère le retour après l'autorisation OAuth
@@ -71,7 +72,7 @@ const OAuthCallback = () => {
       } catch (err) {
         console.error('❌ OAuth callback error:', err)
         console.error('❌ Error response:', err.response?.data)
-        setError(err.response?.data?.error || err.response?.data?.message || t('oauthCallback.authError'))
+        setError(apiErrorMessage(err, t('oauthCallback.authError')))
         setProcessing(false)
       }
     }

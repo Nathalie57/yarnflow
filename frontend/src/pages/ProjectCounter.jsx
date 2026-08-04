@@ -33,6 +33,7 @@ import ProjectCloseModal from '../components/stash/ProjectCloseModal'
 import { PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 import { PROJECT_TYPE_VALUES, projectTypeKey } from '../data/projectTypes'
 
+import { apiErrorMessage } from '../utils/apiError'
 const ProjectCounter = () => {
   const { t, i18n } = useTranslation('counter')
   const { projectId } = useParams()
@@ -1297,7 +1298,7 @@ const ProjectCounter = () => {
       showAlert({ message: t('alerts.patternAddedToLibrary'), type: 'success' })
     } catch (err) {
       console.error('Erreur ajout bibliothèque:', err)
-      const errorMsg = err.response?.data?.error || t('ui.libraryAddFailed')
+      const errorMsg = apiErrorMessage(err, t('ui.libraryAddFailed'))
       showAlert({ message: errorMsg, type: 'error' })
     } finally {
       setSavingToLibrary(false)
@@ -1444,7 +1445,7 @@ const ProjectCounter = () => {
       }
     } catch (err) {
       console.error('Erreur embellissement photo:', err)
-      const errorMsg = err.response?.data?.error || t('ui.enhanceFailed')
+      const errorMsg = apiErrorMessage(err, t('ui.enhanceFailed'))
       showAlert({ message: errorMsg, type: 'error' })
     } finally {
       setEnhancing(false)
@@ -2738,7 +2739,7 @@ const ProjectCounter = () => {
       setSecondaryLabelInput('')
       setSecondaryTargetInput('')
     } catch (err) {
-      showAlert({ message: err.response?.data?.error || t('alerts.counterCreateFailed'), type: 'error' })
+      showAlert({ message: apiErrorMessage(err, t('alerts.counterCreateFailed')), type: 'error' })
     }
   }
 

@@ -329,5 +329,8 @@
     "childGarments": "Kids garments",
     "home": "Home/Decor",
     "other": "Other"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again in a moment."
   }
 }

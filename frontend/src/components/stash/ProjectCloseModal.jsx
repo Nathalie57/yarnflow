@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { stashAllocationAPI } from '../../services/api'
 import { useTranslation } from 'react-i18next'
 
+import { apiErrorMessage } from '../../utils/apiError'
 const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
   const { t } = useTranslation('tools')
   const [allocations, setAllocations] = useState([])
@@ -40,7 +41,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
       const remainders = res.data.remainders || []
       onConfirmed(remainders)
     } catch (err) {
-      setError(err.response?.data?.error || t('ui.closeFailed'))
+      setError(apiErrorMessage(err, t('ui.closeFailed')))
     } finally {
       setSaving(false)
     }

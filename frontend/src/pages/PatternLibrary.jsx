@@ -20,6 +20,7 @@ import UpgradePrompt from '../components/UpgradePrompt'
 import { projectTypeKey } from '../data/projectTypes'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
+import { apiErrorMessage } from '../utils/apiError'
 const PatternLibrary = () => {
   const { t } = useTranslation('library')
   const { user } = useAuth()
@@ -309,7 +310,7 @@ const PatternLibrary = () => {
         setShowAddModal(false)
         setShowUpgradeLibrary(true)
       } else {
-        const errorMessage = err.response?.data?.message || err.response?.data?.error || t('ui.patternAddFailed')
+        const errorMessage = apiErrorMessage(err, t('ui.patternAddFailed'))
         alert(errorMessage)
       }
     } finally {
@@ -404,7 +405,7 @@ const PatternLibrary = () => {
       setEditingPattern(null)
     } catch (err) {
       console.error('Erreur modification patron:', err)
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'Erreur lors de la modification du patron'
+      const errorMessage = apiErrorMessage(err, t('ui.patternEditFailed'))
       alert(errorMessage)
     } finally {
       setUploading(false)

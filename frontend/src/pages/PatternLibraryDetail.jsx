@@ -17,6 +17,7 @@ import ProxyViewer from '../components/ProxyViewer'
 import { projectTypeKey } from '../data/projectTypes'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
+import { apiErrorMessage } from '../utils/apiError'
 const PatternLibraryDetail = () => {
   const { t } = useTranslation('library')
   const { id } = useParams()
@@ -273,7 +274,7 @@ const PatternLibraryDetail = () => {
       setPendingFiles([])
     } catch (err) {
       console.error('Erreur ajout fichier:', err)
-      alert(err.response?.data?.error || t('ui.fileAddFailed'))
+      alert(apiErrorMessage(err, t('ui.fileAddFailed')))
     } finally {
       setUploadingFile(false)
     }

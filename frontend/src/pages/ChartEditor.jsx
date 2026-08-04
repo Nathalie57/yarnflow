@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import SaveChartToProjectModal from '../components/tools/SaveChartToProjectModal'
 
+import { apiErrorMessage } from '../utils/apiError'
 const MAX_GRID_SIZE = 200
 const MIN_GRID_SIZE = 1
 const DEFAULT_CELL_PX = 24
@@ -80,7 +81,7 @@ const ChartEditor = () => {
 
         setChart(loadedChart)
       } catch (err) {
-        setError(err.response?.data?.error || t('ui.chartLoadFailed'))
+        setError(apiErrorMessage(err, t('ui.chartLoadFailed')))
       } finally {
         setLoading(false)
       }

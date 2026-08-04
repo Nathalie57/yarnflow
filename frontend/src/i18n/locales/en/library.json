@@ -434,7 +434,10 @@
     "onlyNLeftGoPro": "Only {{count}} left — upgrade to PRO",
     "goToPlan": "Upgrade to {{plan}} — from {{price}}/month",
     "billedAnnually": "Billed {{annual}}/year · cancel any time",
-    "seeAllPlans": "See all plans"
+    "seeAllPlans": "See all plans",
+    "patternEditFailed": "Failed to update the pattern",
+    "notEnoughCredits": "You don't have enough credits. You need 1.",
+    "photoGeneratedSuccess": "✨ Photo generated!"
   },
   "badges": {
     "proj-1": {

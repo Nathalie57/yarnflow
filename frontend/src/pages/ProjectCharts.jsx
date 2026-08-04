@@ -10,6 +10,7 @@ import api from '../services/api'
 import { imageFileToChart, NO_GRID_DETECTED } from '../utils/chartImageImport'
 import { photoFileToChart } from '../utils/photoToChart'
 
+import { apiErrorMessage } from '../utils/apiError'
 const ProjectCharts = () => {
   const { t } = useTranslation('library')
   const { projectId } = useParams()
@@ -69,7 +70,7 @@ const ProjectCharts = () => {
       })
       navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
-      setError(err.response?.data?.error || t('ui.chartCreateFailed'))
+      setError(apiErrorMessage(err, t('ui.chartCreateFailed')))
       setSaving(false)
     }
   }
@@ -94,7 +95,7 @@ const ProjectCharts = () => {
     } catch (err) {
       setError(err?.message === NO_GRID_DETECTED
         ? t('ui.notAChart')
-        : (err.response?.data?.error || t('ui.imageProcessFailed')))
+        : (apiErrorMessage(err, t('ui.imageProcessFailed'))))
       setSaving(false)
     } finally {
       setIsProcessingImage(false)
@@ -119,7 +120,7 @@ const ProjectCharts = () => {
       })
       navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
-      setError(err.response?.data?.error || t('ui.imageProcessFailed'))
+      setError(apiErrorMessage(err, t('ui.imageProcessFailed')))
       setSaving(false)
     } finally {
       setIsProcessingPhoto(false)

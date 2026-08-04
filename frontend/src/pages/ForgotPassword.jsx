@@ -11,6 +11,7 @@ import { useTranslation, Trans } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import api from '../services/api'
 
+import { apiErrorMessage } from '../utils/apiError'
 const ForgotPassword = () => {
   const { t } = useTranslation('auth')
   const [email, setEmail] = useState('')
@@ -37,7 +38,7 @@ const ForgotPassword = () => {
     } catch (err) {
       console.error('[FORGOT PASSWORD] Erreur:', err)
       console.error('[FORGOT PASSWORD] Response:', err.response?.data)
-      setError(err.response?.data?.error || err.response?.data?.message || t('forgotPassword.requestError'))
+      setError(apiErrorMessage(err, t('forgotPassword.requestError')))
     } finally {
       setLoading(false)
     }

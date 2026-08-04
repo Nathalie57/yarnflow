@@ -19,6 +19,7 @@ import { useAnalytics } from '../hooks/useAnalytics'
 import api from '../services/api'
 import { PHOTO_SEASONS, PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 
+import { apiErrorMessage } from '../utils/apiError'
 const Gallery = () => {
   const { t } = useTranslation('library')
   const { user } = useAuth()
@@ -242,7 +243,7 @@ const Gallery = () => {
     } catch (err) {
       console.error('Erreur upload:', err)
       setUploading(false)
-      alert(err.response?.data?.error || t('ui.uploadFailed'))
+      alert(apiErrorMessage(err, t('ui.uploadFailed')))
     } finally {
       setUploading(false)
     }
@@ -256,7 +257,7 @@ const Gallery = () => {
 
     // [AI:Claude] Vérifier les crédits (1 photo = 1 crédit)
     if (!credits || credits.total_available < 1) {
-      alert(`Vous n'avez pas assez de crédits. Il vous faut 1 crédit.`)
+      alert(t('ui.notEnoughCredits'))
       return
     }
 
@@ -292,12 +293,12 @@ const Gallery = () => {
       // finally (exécuté après l'alert) donnait l'impression d'un blocage infini.
       setEnhancing(false)
 
-      alert(`✨ Photo générée avec succès !`)
+      alert(t('ui.photoGeneratedSuccess'))
     } catch (err) {
       console.error('Erreur génération IA:', err)
       trackPhotoEnhanced(selectedContext?.key, false)
       setEnhancing(false)
-      alert(err.response?.data?.error || err.message || t('ui.aiGenerationFailed'))
+      alert(apiErrorMessage(err, t('ui.aiGenerationFailed')))
     }
   }
 

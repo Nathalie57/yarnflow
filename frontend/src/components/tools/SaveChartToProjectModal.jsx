@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react'
 import api from '../../services/api'
 import { useTranslation } from 'react-i18next'
 
+import { apiErrorMessage } from '../../utils/apiError'
 export default function SaveChartToProjectModal({ chart, existingChart, onClose, onSaved }) {
   const { t } = useTranslation('tools')
   const isReassign = !!existingChart
@@ -89,7 +90,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
       setTimeout(onClose, 1200)
     } catch (err) {
       console.error('Erreur sauvegarde grille:', err)
-      setError(err.response?.data?.error || t('ui.saveFailed'))
+      setError(apiErrorMessage(err, t('ui.saveFailed')))
       setSaving(false)
     }
   }

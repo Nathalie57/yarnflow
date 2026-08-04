@@ -434,7 +434,10 @@
     "onlyNLeftGoPro": "Plus que {{count}} — Passer à PRO",
     "goToPlan": "Passer à {{plan}} — dès {{price}}/mois",
     "billedAnnually": "Facturé {{annual}}/an · résiliable à tout moment",
-    "seeAllPlans": "Voir tous les plans"
+    "seeAllPlans": "Voir tous les plans",
+    "patternEditFailed": "Erreur lors de la modification du patron",
+    "notEnoughCredits": "Tu n'as pas assez de crédits. Il t'en faut 1.",
+    "photoGeneratedSuccess": "✨ Photo générée avec succès !"
   },
   "badges": {
     "proj-1": {
