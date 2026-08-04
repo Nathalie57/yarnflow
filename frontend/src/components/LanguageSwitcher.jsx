@@ -11,9 +11,13 @@
  */
 
 import { useTranslation } from 'react-i18next'
+import { LANGUAGE_SWITCHER_ENABLED } from '../config/features'
 
 const LanguageSwitcher = ({ className = '' }) => {
   const { t, i18n } = useTranslation()
+
+  if (!LANGUAGE_SWITCHER_ENABLED) return null
+
   const current = i18n.resolvedLanguage
 
   return (

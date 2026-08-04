@@ -8,6 +8,7 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
+import { LANGUAGE_SWITCHER_ENABLED } from '../config/features'
 
 import frCommon from './locales/fr/common.json'
 import enCommon from './locales/en/common.json'
@@ -39,11 +40,16 @@ const resources = {
   en: { common: enCommon, auth: enAuth, landing: enLanding, pageTitles: enPageTitles, projects: enProjects, counter: enCounter, library: enLibrary, tools: enTools, legal: enLegal },
 }
 
-i18n
-  .use(LanguageDetector)
+// [AI:Claude] Tant que l’anglais n’est pas ouvert, on n’enregistre pas le
+// detecteur : la langue du navigateur ne doit pas pouvoir basculer l’app
+// dans une version que personne ne peut quitter, faute de selecteur.
+const chain = LANGUAGE_SWITCHER_ENABLED ? i18n.use(LanguageDetector) : i18n
+
+chain
   .use(initReactI18next)
   .init({
     resources,
+    ...(LANGUAGE_SWITCHER_ENABLED ? {} : { lng: 'fr' }),
     supportedLngs: SUPPORTED_LANGUAGES,
     fallbackLng: 'fr',
     defaultNS: 'common',
