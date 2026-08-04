@@ -3,9 +3,11 @@
  * @brief Drawer slide-up pour l'assistant IA (PLUS/PRO) — bouton dans BottomNav
  */
 
+import { useTranslation } from 'react-i18next'
 import AiAssistant from './tools/AiAssistant'
 
 export default function AiAssistantDrawer({ open, onClose }) {
+  const { t } = useTranslation('tools')
   return (
     <>
       {/* Overlay */}

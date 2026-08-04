@@ -731,7 +731,10 @@
     "paymentOnce": "one-off payment",
     "aiQuestionsPerMonth": "{{count}} AI questions / month",
     "andPhotos": "· {{count}} photos",
-    "aiPhotos": "{{count}} AI photos"
+    "aiPhotos": "{{count}} AI photos",
+    "ofRowsTotal": "/ {{total}} rows",
+    "morePlus": "⬆️ More",
+    "rowLabelShort": "Row"
   },
   "toolsList": {
     "distribute": {

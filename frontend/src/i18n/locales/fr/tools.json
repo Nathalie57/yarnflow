@@ -731,7 +731,10 @@
     "paymentOnce": "paiement unique",
     "aiQuestionsPerMonth": "{{count}} questions IA / mois",
     "andPhotos": "· {{count}} photos",
-    "aiPhotos": "{{count}} photos IA"
+    "aiPhotos": "{{count}} photos IA",
+    "ofRowsTotal": "/ {{total}} rangs",
+    "morePlus": "⬆️ Plus",
+    "rowLabelShort": "Rang"
   },
   "toolsList": {
     "distribute": {
