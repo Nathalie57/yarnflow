@@ -10,13 +10,25 @@
  * n'a aucun moyen de changer de langue.
  */
 
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LANGUAGE_SWITCHER_ENABLED } from '../config/features'
+import { useAuth } from '../contexts/AuthContext'
+import { canSwitchLanguage } from '../config/features'
 
 const LanguageSwitcher = ({ className = '' }) => {
   const { t, i18n } = useTranslation()
+  const { user } = useAuth()
+  const allowed = canSwitchLanguage(user)
 
-  if (!LANGUAGE_SWITCHER_ENABLED) return null
+  // [AI:Claude] Filet de sécurité : si un choix anglais traîne en localStorage
+  // alors que la personne n'y a plus droit (test terminé, autre compte sur le
+  // même navigateur), on la ramène en français. Sans ça elle resterait bloquée
+  // en anglais, puisque le sélecteur ne s'affiche pas pour elle.
+  useEffect(() => {
+    if (!allowed && i18n.resolvedLanguage !== 'fr') i18n.changeLanguage('fr')
+  }, [allowed, i18n])
+
+  if (!allowed) return null
 
   const current = i18n.resolvedLanguage
 

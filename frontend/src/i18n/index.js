@@ -40,16 +40,11 @@ const resources = {
   en: { common: enCommon, auth: enAuth, landing: enLanding, pageTitles: enPageTitles, projects: enProjects, counter: enCounter, library: enLibrary, tools: enTools, legal: enLegal },
 }
 
-// [AI:Claude] Tant que l’anglais n’est pas ouvert, on n’enregistre pas le
-// detecteur : la langue du navigateur ne doit pas pouvoir basculer l’app
-// dans une version que personne ne peut quitter, faute de selecteur.
-const chain = LANGUAGE_SWITCHER_ENABLED ? i18n.use(LanguageDetector) : i18n
-
-chain
+i18n
+  .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    ...(LANGUAGE_SWITCHER_ENABLED ? {} : { lng: 'fr' }),
     supportedLngs: SUPPORTED_LANGUAGES,
     fallbackLng: 'fr',
     defaultNS: 'common',
@@ -59,7 +54,11 @@ chain
       // [AI:Claude] localStorage en premier : un choix explicite via le sélecteur
       // du Navbar doit toujours l'emporter sur la langue du navigateur aux
       // visites suivantes. La détection navigator ne sert qu'au tout premier accès.
-      order: ['localStorage', 'navigator'],
+      // [AI:Claude] Tant que l’anglais n’est pas ouvert a tous, on retire
+      // 'navigator' : la langue du navigateur ne doit pas basculer l’app dans
+      // une version que personne ne peut quitter, faute de selecteur visible.
+      // Seul un choix explicite, memorise en localStorage, est respecte.
+      order: LANGUAGE_SWITCHER_ENABLED ? ['localStorage', 'navigator'] : ['localStorage'],
       lookupLocalStorage: LANGUAGE_STORAGE_KEY,
       caches: ['localStorage'],
     },
