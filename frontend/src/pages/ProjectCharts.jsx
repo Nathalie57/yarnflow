@@ -5,11 +5,13 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import { imageFileToChart, NO_GRID_DETECTED } from '../utils/chartImageImport'
 import { photoFileToChart } from '../utils/photoToChart'
 
 const ProjectCharts = () => {
+  const { t } = useTranslation('library')
   const { projectId } = useParams()
   const navigate = useNavigate()
 
@@ -37,7 +39,7 @@ const ProjectCharts = () => {
       const res = await api.get(`/projects/${projectId}/charts`)
       setCharts(res.data.charts || [])
     } catch {
-      setError('Impossible de charger les grilles')
+      setError(t('ui.chartsLoadFailed'))
     } finally {
       setLoading(false)
     }
@@ -67,7 +69,7 @@ const ProjectCharts = () => {
       })
       navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la création')
+      setError(err.response?.data?.error || t('ui.chartCreateFailed'))
       setSaving(false)
     }
   }
@@ -91,8 +93,8 @@ const ProjectCharts = () => {
       navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
       setError(err?.message === NO_GRID_DETECTED
-        ? "Cette image ne ressemble pas à une grille de motif (aucune ligne régulière détectée). Essayez une image avec des lignes de grille visibles, ou dessinez votre motif à la main."
-        : (err.response?.data?.error || 'Impossible de traiter cette image. Essayez avec un autre fichier.'))
+        ? t('ui.notAChart')
+        : (err.response?.data?.error || t('ui.imageProcessFailed')))
       setSaving(false)
     } finally {
       setIsProcessingImage(false)
@@ -117,7 +119,7 @@ const ProjectCharts = () => {
       })
       navigate(`/projects/${projectId}/charts/${res.data.chart.id}`, { state: { justCreated: true } })
     } catch (err) {
-      setError(err.response?.data?.error || 'Impossible de traiter cette image. Essayez avec un autre fichier.')
+      setError(err.response?.data?.error || t('ui.imageProcessFailed'))
       setSaving(false)
     } finally {
       setIsProcessingPhoto(false)
@@ -125,12 +127,12 @@ const ProjectCharts = () => {
   }
 
   const handleDelete = async (chartId) => {
-    if (!window.confirm('Supprimer cette grille ?')) return
+    if (!window.confirm(t('ui.confirmDeleteChart'))) return
     try {
       await api.delete(`/projects/${projectId}/charts/${chartId}`)
       setCharts(prev => prev.filter(c => c.id !== chartId))
     } catch {
-      setError('Erreur lors de la suppression')
+      setError(t('ui.deleteFailed'))
     }
   }
 
@@ -140,9 +142,9 @@ const ProjectCharts = () => {
         <div className="flex items-center justify-between">
           <Link to={`/projects/${projectId}`} className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            Retour au projet
+            {t('ui.backToProject')}
           </Link>
-          <h1 className="text-lg font-bold text-gray-900">Grilles jacquard</h1>
+          <h1 className="text-lg font-bold text-gray-900">{t('ui.jacquardCharts')}</h1>
           <div className="w-24" />
         </div>
 
@@ -151,19 +153,19 @@ const ProjectCharts = () => {
         )}
 
         {loading ? (
-          <p className="text-center text-gray-400 py-8">Chargement...</p>
+          <p className="text-center text-gray-500 py-8">{t('ui.loading')}</p>
         ) : (
           <div className="space-y-2">
             {charts.map(c => (
               <div key={c.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
                 <Link to={`/projects/${projectId}/charts/${c.id}`} className="flex-1">
                   <p className="font-semibold text-gray-900">{c.name}</p>
-                  <p className="text-xs text-gray-400">{c.width} × {c.height} — rang {c.current_row}/{c.height}</p>
+                  <p className="text-xs text-gray-400">{t('ui.chartSize', { w: c.width, h: c.height, row: c.current_row })}</p>
                 </Link>
                 <button
                   onClick={() => handleDelete(c.id)}
                   className="text-red-400 hover:text-red-600 p-2"
-                  title="Supprimer"
+                  title={t('ui.delete')}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
@@ -179,19 +181,19 @@ const ProjectCharts = () => {
                 onClick={() => setMode('draw')}
                 className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'draw' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
               >
-                Dessiner à la main
+                {t('ui.drawByHand')}
               </button>
               <button
                 onClick={() => setMode('image')}
                 className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'image' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
               >
-                Importer un diagramme
+                {t('ui.importChart')}
               </button>
               <button
                 onClick={() => setMode('photo')}
                 className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'photo' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
               >
-                Créer depuis une photo
+                {t('ui.createFromPhoto')}
               </button>
             </div>
 
@@ -199,7 +201,7 @@ const ProjectCharts = () => {
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Nom de la grille (ex: Motif manche)"
+              placeholder={t('ui.phChartName')}
               maxLength={100}
               autoFocus
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -207,13 +209,13 @@ const ProjectCharts = () => {
 
             {sections.length > 0 && (
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Section (optionnel)</label>
+                <label className="block text-sm text-gray-600 mb-1">{t('ui.sectionOptional')}</label>
                 <select
                   value={sectionId}
                   onChange={e => setSectionId(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
-                  <option value="">-- Aucune section (projet entier) --</option>
+                  <option value="">{t('ui.noSectionOption')}</option>
                   {sections.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
@@ -223,7 +225,7 @@ const ProjectCharts = () => {
 
             {sectionId && (
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Rang de départ dans la section</label>
+                <label className="block text-sm text-gray-600 mb-1">{t('ui.startRowInSection')}</label>
                 <input
                   type="number"
                   min="0"
@@ -232,12 +234,12 @@ const ProjectCharts = () => {
                   className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Combien de rangs de la section sont déjà faits quand ce motif commence (0 si le motif démarre au tout premier rang de la section).
+                  {t('ui.chartStartRowHelp')}
                   {selectedSection?.total_rows > 0 && mode === 'draw' && (
                     <>
-                      {' '}La grille couvrira les rangs {Number(startRow) + 1} à {Number(startRow) + Number(height)} sur {selectedSection.total_rows}.
+                      {' '}{t('ui.chartWillCover', { from: Number(startRow) + 1, to: Number(startRow) + Number(height), total: selectedSection.total_rows })}
                       {Number(startRow) + Number(height) > selectedSection.total_rows && (
-                        <span className="text-amber-600 font-medium"> ⚠️ Ça dépasse le total de rangs de la section.</span>
+                        <span className="text-amber-600 font-medium">{t('ui.exceedsSectionRows')}</span>
                       )}
                     </>
                   )}
@@ -248,15 +250,15 @@ const ProjectCharts = () => {
             {mode === 'draw' && (
               <>
                 <div className="flex items-center gap-3">
-                  <label className="text-sm text-gray-600">Largeur (mailles)</label>
+                  <label className="text-sm text-gray-600">{t('ui.widthStitches')}</label>
                   <input type="number" min="1" max="200" value={width} onChange={e => setWidth(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
-                  <label className="text-sm text-gray-600">Hauteur (rangs)</label>
+                  <label className="text-sm text-gray-600">{t('ui.heightRows')}</label>
                   <input type="number" min="1" max="200" value={height} onChange={e => setHeight(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">Annuler</button>
+                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
                   <button onClick={handleCreate} disabled={saving || !name.trim()} className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">
-                    {saving ? 'Création...' : 'Créer'}
+                    {saving ? t('ui.creatingEllipsis') : t('ui.create')}
                   </button>
                 </div>
               </>
@@ -272,17 +274,17 @@ const ProjectCharts = () => {
                     className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                   />
                   <p className="text-xs text-gray-400 mt-1">
-                    La taille de la grille et le nombre de couleurs sont détectés automatiquement depuis l'image. Le résultat peut nécessiter quelques ajustements à la main (retoucher des cases, fusionner des couleurs).
+                    {t('ui.chartAutoDetectHint')}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">Annuler</button>
+                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
                   <button
                     onClick={handleCreateFromImage}
                     disabled={saving || isProcessingImage || !name.trim() || !imageFile}
                     className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
                   >
-                    {isProcessingImage ? 'Traitement...' : saving ? 'Création...' : "Générer depuis l'image"}
+                    {isProcessingImage ? t('ui.processing') : saving ? t('ui.creatingEllipsis') : t('ui.generateFromImage')}
                   </button>
                 </div>
               </>
@@ -298,27 +300,27 @@ const ProjectCharts = () => {
                     className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                   />
                   <p className="text-xs text-gray-400 mt-1">
-                    Convertit n'importe quelle image (photo, logo, dessin) en motif jacquard façon pixelart. Ce n'est pas un diagramme existant qui est détecté — c'est une nouvelle grille créée à partir de l'image. Le résultat peut nécessiter quelques ajustements à la main (retoucher des cases, fusionner des couleurs).
+                    {t('ui.convertsAnyImage')}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Largeur de grille (mailles)</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('ui.chartWidth')}</label>
                     <input type="number" min="10" max="200" value={photoGridWidth} onChange={e => setPhotoGridWidth(e.target.value)} className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm" />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Couleurs max</label>
+                    <label className="block text-sm text-gray-600 mb-1">{t('ui.maxColors')}</label>
                     <input type="number" min="2" max="20" value={photoMaxColors} onChange={e => setPhotoMaxColors(e.target.value)} className="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm" />
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">Annuler</button>
+                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
                   <button
                     onClick={handleCreateFromPhoto}
                     disabled={saving || isProcessingPhoto || !name.trim() || !photoFile}
                     className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
                   >
-                    {isProcessingPhoto ? 'Traitement...' : saving ? 'Création...' : "Générer depuis la photo"}
+                    {isProcessingPhoto ? t('ui.processing') : saving ? t('ui.creatingEllipsis') : t('ui.generateFromPhoto')}
                   </button>
                 </div>
               </>
@@ -329,7 +331,7 @@ const ProjectCharts = () => {
             onClick={() => setIsCreating(true)}
             className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-primary-400 hover:text-primary-600 text-sm font-medium"
           >
-            ＋ Nouvelle grille
+            {t('ui.newChartBtn')}
           </button>
         )}
       </div>

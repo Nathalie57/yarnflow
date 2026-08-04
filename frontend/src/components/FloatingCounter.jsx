@@ -5,6 +5,8 @@
  * @created 2025-12-10
  */
 
+import { useTranslation } from 'react-i18next'
+
 const FloatingCounter = ({
   currentRow,
   totalRows,
@@ -22,6 +24,7 @@ const FloatingCounter = ({
   onResumeTimer,
   onStopTimer
 }) => {
+  const { t } = useTranslation('tools')
   // Formater le temps (secondes → HH:MM:SS ou MM:SS)
   const formatTime = (seconds) => {
     const h = Math.floor(seconds / 3600)
@@ -53,7 +56,7 @@ const FloatingCounter = ({
               onClick={onExpand}
               className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded text-[10px] font-medium"
             >
-              ⬆️ Plus
+              {t('ui.morePlus2')}
             </button>
           </div>
 
@@ -97,7 +100,7 @@ const FloatingCounter = ({
                   <button
                     onClick={onStartTimer}
                     className="w-6 h-6 rounded-full bg-green-500 hover:bg-green-600 transition flex items-center justify-center"
-                    title="Démarrer"
+                    title={t('ui.start')}
                   >
                     <span className="text-white text-[10px]">▶</span>
                   </button>
@@ -105,7 +108,7 @@ const FloatingCounter = ({
                     <button
                       onClick={onStopTimer}
                       className="w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 transition flex items-center justify-center"
-                      title="Arrêter"
+                      title={t('ui.stop')}
                     >
                       <span className="text-white text-[10px]">⏹</span>
                     </button>
@@ -116,14 +119,14 @@ const FloatingCounter = ({
                   <button
                     onClick={onResumeTimer}
                     className="w-6 h-6 rounded-full bg-green-500 hover:bg-green-600 transition flex items-center justify-center"
-                    title="Reprendre"
+                    title={t('ui.resumeBtn')}
                   >
                     <span className="text-white text-[10px]">▶</span>
                   </button>
                   <button
                     onClick={onStopTimer}
                     className="w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 transition flex items-center justify-center"
-                    title="Arrêter"
+                    title={t('ui.stop')}
                   >
                     <span className="text-white text-[10px]">⏹</span>
                   </button>
@@ -133,14 +136,14 @@ const FloatingCounter = ({
                   <button
                     onClick={onPauseTimer}
                     className="w-6 h-6 rounded-full bg-orange-500 hover:bg-orange-600 transition flex items-center justify-center"
-                    title="Pause"
+                    title={t('ui.pauseBtn')}
                   >
                     <span className="text-white text-xs font-bold">||</span>
                   </button>
                   <button
                     onClick={onStopTimer}
                     className="w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 transition flex items-center justify-center"
-                    title="Arrêter"
+                    title={t('ui.stop')}
                   >
                     <span className="text-white text-[10px]">■</span>
                   </button>
@@ -171,7 +174,7 @@ const FloatingCounter = ({
               {sectionName || projectName}
             </div>
             <div className="text-[10px] opacity-70">
-              Rang {currentRow}{totalRows > 0 ? `/${totalRows}` : ''}
+              {t('ui.rowOfTotal', { row: currentRow, suffix: totalRows > 0 ? `/${totalRows}` : '' })}
             </div>
           </button>
 
@@ -185,7 +188,7 @@ const FloatingCounter = ({
               <button
                 onClick={onStartTimer}
                 className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 transition flex items-center justify-center shadow-md"
-                title="Démarrer le timer"
+                title={t('ui.startTimer')}
               >
                 <span className="text-white text-sm">▶</span>
               </button>
@@ -194,14 +197,14 @@ const FloatingCounter = ({
                 <button
                   onClick={onResumeTimer}
                   className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 transition flex items-center justify-center shadow-md"
-                  title="Reprendre"
+                  title={t('ui.resumeBtn')}
                 >
                   <span className="text-white text-sm">▶</span>
                 </button>
                 <button
                   onClick={onStopTimer}
                   className="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 transition flex items-center justify-center shadow-md"
-                  title="Arrêter"
+                  title={t('ui.stop')}
                 >
                   <span className="text-white text-xs">⏹</span>
                 </button>
@@ -211,14 +214,14 @@ const FloatingCounter = ({
                 <button
                   onClick={onPauseTimer}
                   className="w-8 h-8 rounded-full bg-orange-500 hover:bg-orange-600 transition flex items-center justify-center shadow-md"
-                  title="Pause"
+                  title={t('ui.pauseBtn')}
                 >
                   <span className="text-white text-sm font-bold">||</span>
                 </button>
                 <button
                   onClick={onStopTimer}
                   className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 transition flex items-center justify-center shadow-md"
-                  title="Arrêter"
+                  title={t('ui.stop')}
                 >
                   <span className="text-white text-xs">■</span>
                 </button>
@@ -242,7 +245,7 @@ const FloatingCounter = ({
               </div>
               {totalRows > 0 && (
                 <div className="text-xs opacity-75">
-                  / {totalRows} rangs
+                  {t('ui.ofRowsTotal', { total: totalRows })}
                 </div>
               )}
             </div>
@@ -260,7 +263,7 @@ const FloatingCounter = ({
             onClick={onExpand}
             className="flex-shrink-0 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition text-sm font-medium whitespace-nowrap"
           >
-            ⬆️ Voir plus
+            {t('ui.seeMore')}
           </button>
         </div>
 

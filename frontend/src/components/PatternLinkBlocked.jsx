@@ -5,7 +5,10 @@
  * @created 2025-12-10
  */
 
+import { useTranslation, Trans } from 'react-i18next'
+
 const PatternLinkBlocked = ({ url, onUploadClick }) => {
+  const { t } = useTranslation('tools')
   const extractDomain = (url) => {
     try {
       return new URL(url).hostname.replace('www.', '')
@@ -24,11 +27,11 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
 
         {/* Message principal */}
         <h3 className="text-xl font-semibold text-gray-900 mb-3">
-          Patron sauvegardé sous forme de lien
+          {t('ui.patternSavedAsLink')}
         </h3>
 
         <p className="text-gray-600 mb-6">
-          Pour des raisons de sécurité, <strong>{domain}</strong> ne peut pas être affiché directement dans l'application.
+          <Trans t={t} i18nKey="ui.blockedForSecurity" values={{ domain }}><strong /></Trans>
         </p>
 
         {/* Box conseil */}
@@ -37,12 +40,12 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
             <span className="text-2xl">💡</span>
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900 mb-2">
-                Pour garder le compteur visible pendant votre tricot :
+                {t('ui.keepCounterVisible')}
               </h4>
               <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
-                <li>Téléchargez le PDF du patron depuis {domain}</li>
-                <li>Uploadez-le dans l'app avec le bouton ci-dessous</li>
-                <li>Profitez du compteur + patron côte-à-côte ! ✨</li>
+                <li>{t('ui.downloadPdfFrom', { domain })}</li>
+                <li>{t('ui.uploadWithButton')}</li>
+                <li>{t('ui.sideBySide')}</li>
               </ol>
             </div>
           </div>
@@ -56,7 +59,7 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
               onClick={onUploadClick}
               className="w-full px-6 py-4 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-lg shadow-md"
             >
-              📤 Uploader le PDF du patron
+              {t('ui.uploadPatternPdf')}
             </button>
           )}
 
@@ -67,7 +70,7 @@ const PatternLinkBlocked = ({ url, onUploadClick }) => {
             rel="noopener noreferrer"
             className="block w-full px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
           >
-            🔗 Ouvrir {domain} dans un nouvel onglet
+            {t('ui.openDomainNewTab', { domain })}
           </a>
         </div>
 

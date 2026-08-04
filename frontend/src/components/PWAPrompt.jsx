@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { useTranslation } from 'react-i18next';
 
 export default function PWAPrompt() {
+  const { t } = useTranslation();
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
@@ -88,23 +90,23 @@ export default function PWAPrompt() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900 mb-1">
-                Installer YarnFlow
+                {t('pwa.installTitle')}
               </h3>
               <p className="text-sm text-gray-600 mb-3">
-                Ajoutez YarnFlow à votre écran d'accueil pour un accès rapide et une expérience optimale !
+                {t('pwa.installDesc')}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={handleInstall}
                   className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
                 >
-                  Installer
+                  {t('pwa.install')}
                 </button>
                 <button
                   onClick={handleDismissInstall}
                   className="px-4 py-2 text-gray-600 text-sm hover:text-gray-900 transition-colors"
                 >
-                  Plus tard
+                  {t('pwa.later')}
                 </button>
               </div>
             </div>
@@ -123,23 +125,23 @@ export default function PWAPrompt() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold mb-1">
-                Mise à jour disponible
+                {t('pwa.updateTitle')}
               </h3>
               <p className="text-sm text-primary-100 mb-3">
-                Une nouvelle version de YarnFlow est disponible !
+                {t('pwa.updateDesc')}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={handleUpdate}
                   className="flex-1 bg-white text-primary-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-50 transition-colors"
                 >
-                  Mettre à jour
+                  {t('pwa.update')}
                 </button>
                 <button
                   onClick={handleDismissUpdate}
                   className="px-4 py-2 text-primary-100 text-sm hover:text-white transition-colors"
                 >
-                  Fermer
+                  {t('pwa.close')}
                 </button>
               </div>
             </div>

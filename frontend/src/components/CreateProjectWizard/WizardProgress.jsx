@@ -4,14 +4,17 @@
  * @created 2026-01-27 by [AI:Claude]
  */
 
+import { useTranslation } from 'react-i18next'
+
 const STEPS = [
-  { id: 1, label: 'Catégorie' },
-  { id: 2, label: 'Infos' },
-  { id: 3, label: 'Sections' },
-  { id: 4, label: 'Options' }
+  { id: 1, labelKey: 'stepCategory' },
+  { id: 2, labelKey: 'stepInfo' },
+  { id: 3, labelKey: 'stepSections' },
+  { id: 4, labelKey: 'stepOptions' }
 ]
 
 const WizardProgress = ({ currentStep, onStepClick, canNavigate }) => {
+  const { t } = useTranslation('projects')
   return (
     <div className="flex items-center justify-center gap-2 py-4">
       {STEPS.map((step, index) => {
@@ -36,7 +39,7 @@ const WizardProgress = ({ currentStep, onStepClick, canNavigate }) => {
                     : 'bg-gray-200 text-gray-500'
                 }
               `}
-              title={step.label}
+              title={t(`ui.${step.labelKey}`)}
             >
               {isCompleted ? (
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

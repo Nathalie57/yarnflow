@@ -25,10 +25,10 @@ export function useImagePreview() {
         setPreviewContext(context) // Sauvegarder le context pour la génération HD
         return { success: true }
       } else {
-        throw new Error(response.data.error || 'Erreur génération preview')
+        throw new Error(response.data.error || 'preview_generation_failed')
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.error || err.message || 'Erreur lors de la génération'
+      const errorMsg = err.response?.data?.error || err.message || 'generation_failed'
       setPreviewError(errorMsg)
       return { success: false, error: errorMsg }
     } finally {

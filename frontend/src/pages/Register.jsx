@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import api from '../services/api'
 import PasswordInput from '../components/PasswordInput'
 
 const Register = () => {
+  const { t } = useTranslation('auth')
   const [searchParams] = useSearchParams()
   const betaCode = searchParams.get('beta')
 
@@ -85,7 +88,7 @@ const Register = () => {
       }
     } catch (err) {
       console.error('[Register] Exception:', err)
-      setError('Erreur inattendue')
+      setError(t('register.unexpectedError'))
       setLoading(false)
     }
   }
@@ -105,16 +108,19 @@ const Register = () => {
 
     } catch (err) {
       console.error('Erreur Google Register:', err)
-      setError('Erreur lors de l\'inscription avec Google')
+      setError(t('register.googleError'))
       setOauthLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
+      {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
+      <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
+
       <div className="card max-w-md w-full">
         <h1 className="text-3xl font-bold text-center mb-2">🧶 YarnFlow</h1>
-        <p className="text-gray-600 text-center mb-6">Créer votre compte</p>
+        <p className="text-gray-600 text-center mb-6">{t('register.subtitle')}</p>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -124,7 +130,7 @@ const Register = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Prénom <span className="text-gray-400 text-sm">(optionnel)</span></label>
+            <label className="block text-gray-700 mb-2">{t('register.firstName')} <span className="text-gray-500 text-sm">{t('register.optional')}</span></label>
             <input
               type="text"
               name="first_name"
@@ -135,7 +141,7 @@ const Register = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Email</label>
+            <label className="block text-gray-700 mb-2">{t('shared.email')}</label>
             <input
               type="email"
               name="email"
@@ -147,7 +153,7 @@ const Register = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Mot de passe</label>
+            <label className="block text-gray-700 mb-2">{t('shared.password')}</label>
             <PasswordInput
               name="password"
               className="input-field"
@@ -156,7 +162,7 @@ const Register = () => {
               required
               minLength={6}
             />
-            <p className="text-sm text-gray-500 mt-1">Minimum 6 caractères</p>
+            <p className="text-sm text-gray-500 mt-1">{t('register.passwordHint')}</p>
           </div>
 
           {/* Code Beta */}
@@ -164,10 +170,10 @@ const Register = () => {
             <div className="mb-6 p-4 bg-gradient-to-br from-primary-50 to-orange-50 border-2 border-primary-300 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">🎉</span>
-                <span className="font-bold text-primary-800">Accès Beta Activé</span>
+                <span className="font-bold text-primary-800">{t('register.betaTitle')}</span>
               </div>
               <p className="text-sm text-primary-700 mb-2">
-                Votre code beta sera appliqué automatiquement lors de l'inscription
+                {t('register.betaDesc')}
               </p>
               <div className="bg-white rounded px-3 py-2 font-mono text-sm font-bold text-primary-600 border border-primary-200">
                 {betaCode}
@@ -180,7 +186,7 @@ const Register = () => {
             className="btn-primary w-full"
             disabled={loading || oauthLoading}
           >
-            {loading ? 'Inscription...' : 'S\'inscrire'}
+            {loading ? t('register.submitting') : t('register.submit')}
           </button>
         </form>
 
@@ -189,7 +195,7 @@ const Register = () => {
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-gray-500">Ou s'inscrire avec</span>
+            <span className="px-4 bg-white text-gray-500">{t('shared.orSignUpWith')}</span>
           </div>
         </div>
 
@@ -204,20 +210,20 @@ const Register = () => {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          {oauthLoading ? 'Inscription...' : 'Continuer avec Google'}
+          {oauthLoading ? t('register.submitting') : t('shared.continueWithGoogle')}
         </button>
 
         <p className="text-center mt-6 text-gray-600">
-          Déjà un compte ?{' '}
+          {t('register.haveAccount')}{' '}
           <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-            Se connecter
+            {t('register.login')}
           </Link>
         </p>
 
         <p className="text-center mt-4 text-sm text-gray-500">
-          Besoin d'aide ?{' '}
+          {t('shared.needHelp')}{' '}
           <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
-            Contactez-nous
+            {t('shared.contactUs')}
           </Link>
         </p>
       </div>

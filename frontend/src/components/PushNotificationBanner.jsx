@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { useTranslation } from 'react-i18next'
 
 const STORAGE_KEY = 'push_prompt_dismissed_at'
 const COOLDOWN_DAYS = 21
 
+const HAS_PROJECTS_KEY = 'yf_has_projects'
+
 const shouldShowBanner = () => {
   if (!('Notification' in window)) return false
   if (Notification.permission !== 'default') return false
+  // [AI:Claude] Pas avant le premier projet : demander la permission a quelqu'un
+  // qui vient d'arriver et n'a rien cree fait chuter le taux d'acceptation.
+  if (!localStorage.getItem(HAS_PROJECTS_KEY)) return false
 
   const dismissedAt = localStorage.getItem(STORAGE_KEY)
   if (!dismissedAt) return true
@@ -16,6 +22,7 @@ const shouldShowBanner = () => {
 }
 
 const PushNotificationBanner = () => {
+  const { t } = useTranslation('tools')
   const { isSupported, isSubscribed, subscribe } = usePushNotifications()
   const [visible, setVisible] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -35,7 +42,7 @@ const PushNotificationBanner = () => {
     setLoading(true)
     const result = await subscribe()
     setLoading(false)
-    if (result.success || result.error === 'Permission refusée') {
+    if (result.success || result.code === 'permission_denied') {
       localStorage.setItem(STORAGE_KEY, Date.now().toString())
       setVisible(false)
     }
@@ -52,7 +59,7 @@ const PushNotificationBanner = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             <p className="text-sm text-white font-medium">
-              Activez les notifications pour ne pas oublier vos projets en cours
+              {t('ui.enableNotifications')}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -61,13 +68,13 @@ const PushNotificationBanner = () => {
               disabled={loading}
               className="px-4 py-1.5 bg-white text-primary-700 text-sm font-semibold rounded-lg hover:bg-primary-50 transition disabled:opacity-60"
             >
-              {loading ? 'Activation...' : 'Activer'}
+              {loading ? t('ui.activating') : t('ui.enable')}
             </button>
             <button
               onClick={handleDismiss}
               className="px-3 py-1.5 text-primary-100 text-sm hover:text-white transition"
             >
-              Plus tard
+              {t('ui.later')}
             </button>
           </div>
         </div>

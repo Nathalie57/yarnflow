@@ -5,8 +5,10 @@
 
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { useTranslation, Trans } from 'react-i18next'
 
 export default function SaveSequenceToSectionModal({ sequence, onClose }) {
+  const { t } = useTranslation('tools')
   const [projects, setProjects] = useState([])
   const [sections, setSections] = useState([])
   const [selectedProjectId, setSelectedProjectId] = useState('')
@@ -60,7 +62,7 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
       setTimeout(onClose, 1200)
     } catch (err) {
       console.error('Erreur sauvegarde séquence:', err)
-      setError(err.response?.data?.error || 'Erreur lors de la sauvegarde.')
+      setError(err.response?.data?.error || t('ui.saveFailed'))
       setSaving(false)
     }
   }
@@ -69,31 +71,31 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 max-h-[calc(100vh-6rem)] sm:max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Créer un compteur de section</h2>
-          <p className="text-sm text-gray-500 mt-1">{sequence.label} — {sequence.steps.length} étape{sequence.steps.length > 1 ? 's' : ''}</p>
+          <h2 className="text-lg font-bold text-gray-900">{t('ui.createSectionCounter')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('ui.sequenceSteps', { label: sequence.label, count: sequence.steps.length })}</p>
           <div className="mt-2 space-y-1">
             {sequence.steps.map((step, i) => (
               <p key={i} className="text-xs text-gray-600 italic">
-                Tous les <strong>{step.target}</strong> → {step.repeat} fois
+                <Trans t={t} i18nKey="ui.everyNthTimes" values={{ n: step.target, count: step.repeat }}><strong /></Trans>
               </p>
             ))}
           </div>
         </div>
 
         {loadingProjects ? (
-          <p className="text-sm text-gray-400">Chargement des projets...</p>
+          <p className="text-sm text-gray-500">{t('ui.loadingProjects')}</p>
         ) : projects.length === 0 ? (
-          <p className="text-sm text-gray-500">Aucun projet trouvé.</p>
+          <p className="text-sm text-gray-500">{t('ui.noProjectFound')}</p>
         ) : (
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Projet</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.project')}</label>
               <select
                 value={selectedProjectId}
                 onChange={e => setSelectedProjectId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
-                <option value="">-- Choisir un projet --</option>
+                <option value="">{t('ui.chooseProject')}</option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
@@ -102,18 +104,18 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
 
             {selectedProjectId && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Section <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.section')} <span className="text-red-500">*</span></label>
                 {loadingSections ? (
-                  <p className="text-xs text-gray-400">Chargement des sections...</p>
+                  <p className="text-xs text-gray-500">{t('ui.loadingSections')}</p>
                 ) : sections.length === 0 ? (
-                  <p className="text-xs text-gray-500">Ce projet n'a pas de section.</p>
+                  <p className="text-xs text-gray-500">{t('ui.projectHasNoSection')}</p>
                 ) : (
                   <select
                     value={selectedSectionId}
                     onChange={e => setSelectedSectionId(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="">-- Choisir une section --</option>
+                    <option value="">{t('ui.chooseSection')}</option>
                     {sections.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
@@ -125,7 +127,7 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
         )}
 
         {saved && (
-          <p className="text-sm text-green-600 font-medium text-center">Compteur créé !</p>
+          <p className="text-sm text-green-600 font-medium text-center">{t('ui.counterCreated')}</p>
         )}
         {error && (
           <p className="text-sm text-red-600 text-center">{error}</p>
@@ -136,14 +138,14 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
             onClick={onClose}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
           >
-            Annuler
+            {t('ui.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={!selectedProjectId || !selectedSectionId || saving || saved}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
           >
-            {saving ? 'Enregistrement...' : 'Enregistrer'}
+            {saving ? t('ui.savingDots') : t('ui.save')}
           </button>
         </div>
       </div>

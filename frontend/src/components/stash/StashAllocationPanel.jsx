@@ -5,10 +5,12 @@
 
 import { useState, useEffect } from 'react'
 import { yarnStashAPI, stashAllocationAPI } from '../../services/api'
+import { useTranslation } from 'react-i18next'
 
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 const StashAllocationPanel = ({ projectId, onClose }) => {
+  const { t } = useTranslation('tools')
   const [allocations, setAllocations]   = useState([])
   const [stashEntries, setStashEntries] = useState([])
   const [loading, setLoading]           = useState(true)
@@ -28,7 +30,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       setAllocations(allocRes.data.allocations || [])
       setStashEntries(stashRes.data.entries || [])
     } catch {
-      setError('Impossible de charger les données.')
+      setError(t('ui.dataLoadFailed'))
     } finally {
       setLoading(false)
     }
@@ -50,7 +52,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       setQuantity(1)
       await loadData()
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la réservation.')
+      setError(err.response?.data?.error || t('ui.reserveFailed'))
     } finally {
       setSaving(false)
     }
@@ -61,7 +63,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       await stashAllocationAPI.remove(projectId, stashEntryId)
       await loadData()
     } catch {
-      setError('Impossible de supprimer la réservation.')
+      setError(t('ui.reserveDeleteFailed'))
     }
   }
 
@@ -71,7 +73,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       await stashAllocationAPI.update(projectId, stashEntryId, newQty)
       await loadData()
     } catch {
-      setError('Impossible de mettre à jour la quantité.')
+      setError(t('ui.quantityUpdateFailed'))
     }
   }
 
@@ -80,8 +82,8 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <div>
-          <h2 className="font-semibold text-gray-900">Piocher dans mon stock</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Réserve des pelotes pour ce projet</p>
+          <h2 className="font-semibold text-gray-900">{t('ui.pickFromStash')}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">{t('ui.reserveBalls')}</p>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -98,7 +100,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
         {loading ? (
           <div className="text-center py-10 text-gray-400">
             <div className="w-6 h-6 border-2 border-primary-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            Chargement…
+            {t('ui.loadingAlt')}
           </div>
         ) : (
           <>
@@ -116,7 +118,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
                       <p className="text-sm font-medium text-gray-800 truncate">{a.brand} — {a.yarn_name}</p>
                       {a.color_name && <p className="text-xs text-gray-500 truncate">{a.color_name}</p>}
                       <p className="text-xs text-primary-600 mt-0.5">
-                        {Math.round(a.total_reserved_g)} g · {Math.round(a.total_reserved_m)} m
+                        {t('ui.gramsAndMeters', { g: Math.round(a.total_reserved_g), m: Math.round(a.total_reserved_m) })}
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -154,14 +156,14 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                Ajouter une laine
+                {t('ui.addYarn')}
               </button>
             )}
 
             {/* Formulaire d'ajout */}
             {adding && (
               <div className="border border-gray-200 rounded-xl p-4 space-y-3">
-                <p className="text-sm font-medium text-gray-700">Choisir une laine du stock</p>
+                <p className="text-sm font-medium text-gray-700">{t('ui.chooseYarnFromStash')}</p>
 
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {availableEntries.map(e => (
@@ -181,7 +183,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{e.brand} — {e.yarn_name}</p>
-                        <p className="text-xs text-gray-400">{e.quantity_available} disponible{e.quantity_available > 1 ? 's' : ''}</p>
+                        <p className="text-xs text-gray-500">{t('ui.availableCount', { count: e.quantity_available })}</p>
                       </div>
                     </button>
                   ))}
@@ -189,13 +191,13 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
 
                 {selectedEntry && (
                   <div className="flex items-center gap-3 pt-1">
-                    <label className="text-sm text-gray-600 flex-shrink-0">Quantité :</label>
+                    <label className="text-sm text-gray-600 flex-shrink-0">{t('ui.quantityLabel')}</label>
                     <div className="flex items-center gap-2">
                       <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50">−</button>
                       <span className="w-8 text-center font-semibold text-gray-800">{quantity}</span>
                       <button onClick={() => setQuantity(q => Math.min(selectedEntry.quantity_available, q + 1))} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50">+</button>
                     </div>
-                    <span className="text-xs text-gray-400">/ {selectedEntry.quantity_available} dispo</span>
+                    <span className="text-xs text-gray-400">{t('ui.availShort', { count: selectedEntry.quantity_available })}</span>
                   </div>
                 )}
 
@@ -203,19 +205,19 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
                   <button
                     onClick={() => { setAdding(false); setSelectedEntry(null) }}
                     className="flex-1 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
-                  >Annuler</button>
+                  >{t('ui.cancel')}</button>
                   <button
                     onClick={handleAdd}
                     disabled={!selectedEntry || saving}
                     className="flex-1 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 disabled:opacity-50"
-                  >{saving ? 'Réservation…' : 'Réserver'}</button>
+                  >{saving ? t('ui.reservingEllipsis') : t('ui.reserve')}</button>
                 </div>
               </div>
             )}
 
             {allocations.length === 0 && !adding && availableEntries.length === 0 && (
               <div className="text-center py-8 text-gray-400">
-                <p className="text-sm">Ton stock est vide ou toutes les pelotes sont déjà réservées.</p>
+                <p className="text-sm">{t('ui.stashEmptyOrReserved')}</p>
               </div>
             )}
           </>

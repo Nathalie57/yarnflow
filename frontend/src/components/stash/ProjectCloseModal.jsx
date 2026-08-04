@@ -5,8 +5,10 @@
 
 import { useState, useEffect } from 'react'
 import { stashAllocationAPI } from '../../services/api'
+import { useTranslation } from 'react-i18next'
 
 const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
+  const { t } = useTranslation('tools')
   const [allocations, setAllocations] = useState([])
   const [usage, setUsage]             = useState({})
   const [loading, setLoading]         = useState(true)
@@ -22,7 +24,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
         allocs.forEach(a => { initialUsage[a.stash_entry_id] = a.quantity_reserved })
         setUsage(initialUsage)
       })
-      .catch(() => setError('Impossible de charger les allocations.'))
+      .catch(() => setError(t('ui.allocationsLoadFailed')))
       .finally(() => setLoading(false))
   }, [projectId])
 
@@ -38,7 +40,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
       const remainders = res.data.remainders || []
       onConfirmed(remainders)
     } catch (err) {
-      setError(err.response?.data?.error || 'Erreur lors de la clôture.')
+      setError(err.response?.data?.error || t('ui.closeFailed'))
     } finally {
       setSaving(false)
     }
@@ -48,8 +50,8 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Clôturer le projet</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Indique combien de pelotes tu as réellement utilisées</p>
+          <h2 className="font-semibold text-gray-900">{t('ui.closeProject')}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">{t('ui.indicateBallsUsed')}</p>
         </div>
 
         <div className="p-5 space-y-4">
@@ -60,7 +62,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
               <div className="w-6 h-6 border-2 border-primary-400 border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
           ) : allocations.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-4">Aucune laine réservée pour ce projet.</p>
+            <p className="text-sm text-gray-500 text-center py-4">{t('ui.noYarnReserved')}</p>
           ) : (
             <div className="space-y-3">
               {allocations.map(a => {
@@ -73,11 +75,11 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
                         <p className="text-sm font-medium text-gray-800">{a.brand} — {a.yarn_name}</p>
                         {a.color_name && <p className="text-xs text-gray-400">{a.color_name}</p>}
                       </div>
-                      <span className="text-xs text-gray-400">{a.quantity_reserved} réservée{a.quantity_reserved > 1 ? 's' : ''}</span>
+                      <span className="text-xs text-gray-500">{t('ui.reservedCount', { count: a.quantity_reserved })}</span>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <label className="text-xs text-gray-500 flex-shrink-0">Utilisées :</label>
+                      <label className="text-xs text-gray-500 flex-shrink-0">{t('ui.usedLabel')}</label>
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setUsage(u => ({ ...u, [a.stash_entry_id]: Math.max(0, (parseFloat(u[a.stash_entry_id]) || 0) - 0.5) }))}
@@ -102,7 +104,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
 
                     {remainder > 0 && (
                       <p className="mt-2 text-xs text-primary-600 bg-primary-50 rounded-lg px-2.5 py-1.5">
-                        {Math.floor(remainder)} pelote{Math.floor(remainder) > 1 ? 's' : ''} remise{Math.floor(remainder) > 1 ? 's' : ''} en stock
+                        {t('ui.ballsBack', { count: Math.floor(remainder) })}
                       </p>
                     )}
                   </div>
@@ -116,12 +118,12 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
           <button
             onClick={onClose}
             className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
-          >Annuler</button>
+          >{t('ui.cancel')}</button>
           <button
             onClick={handleClose}
             disabled={saving || loading}
             className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
-          >{saving ? 'Clôture…' : 'Clôturer le projet'}</button>
+          >{saving ? t('ui.closingEllipsis') : t('ui.closeProject')}</button>
         </div>
       </div>
     </div>

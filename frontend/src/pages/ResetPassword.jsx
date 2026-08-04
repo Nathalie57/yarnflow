@@ -7,10 +7,13 @@
 
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation, Trans } from 'react-i18next'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import api from '../services/api'
 import PasswordInput from '../components/PasswordInput'
 
 const ResetPassword = () => {
+  const { t } = useTranslation('auth')
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const token = searchParams.get('token')
@@ -27,7 +30,7 @@ const ResetPassword = () => {
   // Vérifier le token au chargement
   useEffect(() => {
     if (!token) {
-      setError('Token manquant')
+      setError(t('resetPassword.missingToken'))
       setVerifying(false)
       return
     }
@@ -47,12 +50,12 @@ const ResetPassword = () => {
           console.log('[RESET PASSWORD] Token valide pour:', response.data.email)
         } else {
           console.error('[RESET PASSWORD] Token invalide:', response.data.error)
-          setError(response.data.error || 'Lien invalide ou expiré')
+          setError(response.data.error || t('resetPassword.invalidOrExpired'))
         }
       } catch (err) {
         console.error('[RESET PASSWORD] Erreur vérification token:', err)
         console.error('[RESET PASSWORD] Réponse erreur:', err.response?.data)
-        setError('Lien invalide ou expiré')
+        setError(t('resetPassword.invalidOrExpired'))
       } finally {
         setVerifying(false)
       }
@@ -67,12 +70,12 @@ const ResetPassword = () => {
 
     // Validation
     if (password.length < 8) {
-      setError('Le mot de passe doit contenir au moins 8 caractères')
+      setError(t('resetPassword.tooShort'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Les mots de passe ne correspondent pas')
+      setError(t('resetPassword.mismatch'))
       return
     }
 
@@ -90,11 +93,11 @@ const ResetPassword = () => {
           navigate('/login')
         }, 3000)
       } else {
-        setError(response.data.error || 'Erreur lors de la réinitialisation')
+        setError(response.data.error || t('resetPassword.resetError'))
       }
     } catch (err) {
       console.error('Erreur reset password:', err)
-      setError(err.response?.data?.error || 'Erreur lors de la réinitialisation')
+      setError(err.response?.data?.error || t('resetPassword.resetError'))
     } finally {
       setLoading(false)
     }
@@ -104,9 +107,12 @@ const ResetPassword = () => {
   if (verifying) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
+      {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
+      <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
+
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Vérification du lien...</p>
+          <p className="text-gray-600">{t('resetPassword.verifying')}</p>
         </div>
       </div>
     )
@@ -116,6 +122,9 @@ const ResetPassword = () => {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
+      {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
+      <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
+
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,19 +133,18 @@ const ResetPassword = () => {
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            Mot de passe réinitialisé !
+            {t('resetPassword.successTitle')}
           </h1>
 
           <p className="text-gray-600 mb-6">
-            Votre mot de passe a été modifié avec succès.<br />
-            Redirection vers la page de connexion...
+            <Trans i18nKey="resetPassword.successDesc" ns="auth" components={[<br key="0" />]} />
           </p>
 
           <Link
             to="/login"
             className="block w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 transition"
           >
-            Se connecter maintenant
+            {t('resetPassword.loginNow')}
           </Link>
         </div>
       </div>
@@ -147,6 +155,9 @@ const ResetPassword = () => {
   if (!tokenValid) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
+      {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
+      <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
+
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,7 +166,7 @@ const ResetPassword = () => {
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            ⚠️ Lien invalide
+            {t('resetPassword.invalidTitle')}
           </h1>
 
           <p className="text-gray-600 mb-6">
@@ -167,20 +178,20 @@ const ResetPassword = () => {
               to="/forgot-password"
               className="block w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 transition"
             >
-              Demander un nouveau lien
+              {t('resetPassword.requestNewLink')}
             </Link>
 
             <Link
               to="/login"
               className="block w-full text-primary-600 hover:text-primary-700 font-medium"
             >
-              ← Retour à la connexion
+              {t('shared.backToLogin')}
             </Link>
 
             <p className="text-sm text-gray-500 pt-4">
-              Besoin d'aide ?{' '}
+              {t('shared.needHelp')}{' '}
               <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
-                Contactez-nous
+                {t('shared.contactUs')}
               </Link>
             </p>
           </div>
@@ -192,6 +203,9 @@ const ResetPassword = () => {
   // Formulaire de nouveau mot de passe
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
+      {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
+      <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
+
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
@@ -199,10 +213,10 @@ const ResetPassword = () => {
             <span className="text-4xl">🔐</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Nouveau mot de passe
+            {t('resetPassword.title')}
           </h1>
           <p className="text-gray-600">
-            Pour <strong>{email}</strong>
+            <Trans i18nKey="resetPassword.forEmail" ns="auth" values={{ email }} components={[<strong key="0" />]} />
           </p>
         </div>
 
@@ -216,7 +230,7 @@ const ResetPassword = () => {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Nouveau mot de passe
+              {t('resetPassword.newPassword')}
             </label>
             <PasswordInput
               id="password"
@@ -224,18 +238,18 @@ const ResetPassword = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              placeholder="Au moins 8 caractères"
+              placeholder={t('resetPassword.newPasswordPlaceholder')}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               disabled={loading}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Minimum 8 caractères
+              {t('resetPassword.passwordHint')}
             </p>
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmer le mot de passe
+              {t('resetPassword.confirmPassword')}
             </label>
             <PasswordInput
               id="confirmPassword"
@@ -243,7 +257,7 @@ const ResetPassword = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={8}
-              placeholder="Retapez le mot de passe"
+              placeholder={t('resetPassword.confirmPasswordPlaceholder')}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               disabled={loading}
             />
@@ -254,7 +268,7 @@ const ResetPassword = () => {
             disabled={loading || !password || !confirmPassword}
             className="w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Réinitialisation...' : '🔐 Réinitialiser le mot de passe'}
+            {loading ? t('resetPassword.submitting') : t('resetPassword.submit')}
           </button>
         </form>
 
@@ -264,12 +278,12 @@ const ResetPassword = () => {
             to="/login"
             className="text-primary-600 hover:text-primary-700 font-medium text-sm block"
           >
-            ← Retour à la connexion
+            {t('shared.backToLogin')}
           </Link>
           <p className="text-sm text-gray-500">
-            Besoin d'aide ?{' '}
+            {t('shared.needHelp')}{' '}
             <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
-              Contactez-nous
+              {t('shared.contactUs')}
             </Link>
           </p>
         </div>

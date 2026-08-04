@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import axios from 'axios'
 import api from '../services/api'
+import { useTranslation } from 'react-i18next'
 
 /**
  * SmartProjectCreator - Création intelligente de projets via IA
@@ -17,6 +18,7 @@ import api from '../services/api'
  */
 
 export default function SmartProjectCreator() {
+  const { t } = useTranslation('tools')
   const navigate = useNavigate()
   const { user } = useAuth()
   const { trackSmartAnalysis, trackProjectCreated } = useAnalytics()
@@ -90,7 +92,7 @@ export default function SmartProjectCreator() {
         const patterns = (response.data.patterns || []).filter(p => p.file_path)
         setLibraryPatterns(patterns)
       } catch (err) {
-        setError('Impossible de charger la bibliothèque')
+        setError(t('ui.libraryLoadFailed'))
       } finally {
         setLoadingLibrary(false)
       }
@@ -101,11 +103,11 @@ export default function SmartProjectCreator() {
     const selectedFile = e.target.files[0]
     if (selectedFile) {
       if (selectedFile.size > 10 * 1024 * 1024) {
-        setError('Fichier trop volumineux (max 10 MB)')
+        setError(t('ui.fileTooLarge'))
         return
       }
       if (selectedFile.type !== 'application/pdf') {
-        setError('Seuls les fichiers PDF sont acceptés')
+        setError(t('ui.pdfOnly'))
         return
       }
       setFile(selectedFile)
@@ -115,15 +117,15 @@ export default function SmartProjectCreator() {
 
   const handleAnalyze = async () => {
     if (mode === 'pdf' && !file) {
-      setError('Veuillez sélectionner un fichier PDF')
+      setError(t('ui.selectPdf'))
       return
     }
     if (mode === 'url' && !url) {
-      setError('Veuillez saisir une URL')
+      setError(t('ui.enterUrlPlease'))
       return
     }
     if (mode === 'library' && !selectedLibraryPattern) {
-      setError('Veuillez sélectionner un patron dans votre bibliothèque')
+      setError(t('ui.selectFromLibrary'))
       return
     }
 
@@ -190,7 +192,7 @@ export default function SmartProjectCreator() {
         fetchQuota()
       } else {
         trackSmartAnalysis(mode, false)
-        setError(response.data.error || 'Erreur lors de l\'analyse')
+        setError(response.data.error || t('ui.analysisFailed'))
         setAiStatus(response.data.ai_status)
       }
     } catch (err) {
@@ -199,11 +201,11 @@ export default function SmartProjectCreator() {
       if (err.response?.status === 403) {
         fetchQuota() // recharge pour afficher l'écran d'upgrade
         setError(err.response.data?.free_trial_used
-          ? 'Essai gratuit déjà utilisé — passez à PRO pour continuer.'
-          : 'La création intelligente est réservée aux abonnés PRO.'
+          ? t('ui.trialUsedGoPro')
+          : t('ui.smartCreationProOnly')
         )
       } else {
-        setError(err.response?.data?.error || 'Erreur lors de l\'analyse du patron')
+        setError(err.response?.data?.error || t('ui.patternAnalysisFailed'))
       }
     } finally {
       stepTimers.forEach(clearTimeout)
@@ -214,7 +216,7 @@ export default function SmartProjectCreator() {
 
   const handleConfirm = async () => {
     if (!project.title) {
-      setError('Le titre du projet est requis')
+      setError(t('ui.titleRequired'))
       return
     }
 
@@ -241,11 +243,11 @@ export default function SmartProjectCreator() {
         setStep(4)
         trackProjectCreated('smart', project.craft_type)
       } else {
-        setError(response.data.error || 'Erreur lors de la création du projet')
+        setError(response.data.error || t('ui.projectCreationFailed'))
       }
     } catch (err) {
       console.error('Erreur confirm:', err)
-      setError(err.response?.data?.error || 'Erreur lors de la création du projet')
+      setError(err.response?.data?.error || t('ui.projectCreationFailed'))
     } finally {
       setCreating(false)
     }
@@ -275,13 +277,13 @@ export default function SmartProjectCreator() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Création Intelligente</h1>
-          <p className="text-gray-500">Vous avez utilisé vos 3 essais gratuits.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('ui.smartCreation')}</h1>
+          <p className="text-gray-500">{t('ui.freeTrialsUsed')}</p>
           <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
-            Plus de créations automatiques
+            {t('ui.moreAutoCreations')}
           </Link>
           <button onClick={() => navigate(-1)} className="block w-full text-sm text-gray-400 hover:text-gray-600">
-            Retour
+            {t('ui.back')}
           </button>
         </div>
       </div>
@@ -298,14 +300,14 @@ export default function SmartProjectCreator() {
             onClick={() => navigate('/my-projects')}
             className="text-primary-600 hover:text-primary-700 mb-4 flex items-center gap-2"
           >
-            ← Retour aux projets
+            {t('ui.backToProjectsArrow')}
           </button>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Création Intelligente
+            {t('ui.smartCreation')}
           </h1>
           <p className="text-gray-600">
-            Importez un patron PDF ou un lien et votre projet est créé en quelques secondes.
+            {t('ui.smartCreationDesc')}
           </p>
 
           {/* Badge quota */}
@@ -313,8 +315,8 @@ export default function SmartProjectCreator() {
             <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-primary-50 border-primary-200">
               <span className="text-sm font-medium text-primary-700">
                 {quota.is_pro
-                  ? `${quota.remaining} import${quota.remaining !== 1 ? 's' : ''} restant${quota.remaining !== 1 ? 's' : ''} ce mois`
-                  : `${quota.remaining} essai${quota.remaining !== 1 ? 's' : ''} gratuit${quota.remaining !== 1 ? 's' : ''} restant${quota.remaining !== 1 ? 's' : ''}`
+                  ? t('ui.importsLeft', { count: quota.remaining })
+                  : t('ui.trialsLeft', { count: quota.remaining })
                 }
               </span>
             </div>
@@ -326,7 +328,7 @@ export default function SmartProjectCreator() {
         <div className="mb-8 sm:hidden">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-primary-600">
-              Étape {step} / 4 — {[, 'Mode', 'Analyse', 'Validation', 'Création'][step]}
+              {t('ui.stepXof4', { step, label: [, t('ui.stepMode'), t('ui.stepAnalysis'), t('ui.stepValidation'), t('ui.stepCreation')][step] })}
             </span>
           </div>
           <div className="w-full h-1.5 bg-gray-200 rounded-full">
@@ -339,10 +341,10 @@ export default function SmartProjectCreator() {
         {/* Desktop : stepper complet */}
         <div className="mb-8 hidden sm:flex items-center justify-center gap-4">
           {[
-            { num: 1, label: 'Mode' },
-            { num: 2, label: 'Analyse' },
-            { num: 3, label: 'Validation' },
-            { num: 4, label: 'Création' }
+            { num: 1, labelKey: 'stepMode' },
+            { num: 2, labelKey: 'stepAnalysis' },
+            { num: 3, labelKey: 'stepValidation' },
+            { num: 4, labelKey: 'stepCreation' }
           ].map((s) => (
             <div key={s.num} className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -351,7 +353,7 @@ export default function SmartProjectCreator() {
                 {s.num}
               </div>
               <span className={`text-sm ${step >= s.num ? 'text-primary-600 font-medium' : 'text-gray-400'}`}>
-                {s.label}
+                {t(`ui.${s.labelKey}`)}
               </span>
               {s.num < 4 && <span className="text-gray-300">→</span>}
             </div>
@@ -369,7 +371,7 @@ export default function SmartProjectCreator() {
         {step === 1 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
-              Comment souhaitez-vous importer votre patron ?
+              {t('ui.howToImport')}
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -381,9 +383,9 @@ export default function SmartProjectCreator() {
                 <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center mb-3">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">Fichier PDF</h3>
-                <p className="text-xs text-gray-500">Patron au format PDF (max 10 MB)</p>
-                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">Choisir →</div>
+                <h3 className="font-bold text-gray-900 mb-1">{t('ui.pdfFile')}</h3>
+                <p className="text-xs text-gray-500">{t('ui.pdfMaxSize')}</p>
+                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
               </button>
 
               {/* Mode URL */}
@@ -394,9 +396,9 @@ export default function SmartProjectCreator() {
                 <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center mb-3">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">Lien Web</h3>
-                <p className="text-xs text-gray-500">Depuis une URL (blog, site web)</p>
-                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">Choisir →</div>
+                <h3 className="font-bold text-gray-900 mb-1">{t('ui.webLink')}</h3>
+                <p className="text-xs text-gray-500">{t('ui.fromUrl')}</p>
+                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
               </button>
 
               {/* Mode Bibliothèque — pleine largeur sur mobile */}
@@ -408,9 +410,9 @@ export default function SmartProjectCreator() {
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-1">Ma bibliothèque</h3>
-                  <p className="text-xs text-gray-500">Patron déjà dans votre bibliothèque</p>
-                  <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">Choisir →</div>
+                  <h3 className="font-bold text-gray-900 mb-1">{t('ui.myLibrary')}</h3>
+                  <p className="text-xs text-gray-500">{t('ui.patternAlreadyInLibrary')}</p>
+                  <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
                 </div>
               </button>
             </div>
@@ -421,18 +423,18 @@ export default function SmartProjectCreator() {
         {step === 2 && !analyzing && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              {mode === 'pdf' ? 'Importer un PDF' : mode === 'library' ? 'Choisir dans ma bibliothèque' : 'Importer depuis une URL'}
+              {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.chooseFromLibrary') : t('ui.importFromUrl')}
             </h2>
 
             {mode === 'library' && (
               <div className="mb-6">
                 {loadingLibrary ? (
-                  <div className="text-center py-8 text-gray-500">Chargement de la bibliothèque…</div>
+                  <div className="text-center py-8 text-gray-500">{t('ui.loadingLibrary')}</div>
                 ) : libraryPatterns.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-500 mb-4">Aucun patron avec PDF dans votre bibliothèque.</p>
+                    <p className="text-gray-500 mb-4">{t('ui.noPdfPattern')}</p>
                     <Link to="/pattern-library" className="text-primary-600 hover:text-primary-700 font-medium">
-                      Aller à la bibliothèque →
+                      {t('ui.goToLibraryArrow')}
                     </Link>
                   </div>
                 ) : (
@@ -441,7 +443,7 @@ export default function SmartProjectCreator() {
                       type="text"
                       value={librarySearch}
                       onChange={(e) => setLibrarySearch(e.target.value)}
-                      placeholder="Rechercher un patron…"
+                      placeholder={t('ui.searchPattern')}
                       className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 mb-4"
                     />
                     <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -478,7 +480,7 @@ export default function SmartProjectCreator() {
             {mode === 'pdf' && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fichier PDF (max 10 MB)
+                  {t('ui.pdfFileLabel')}
                 </label>
                 <input
                   type="file"
@@ -493,7 +495,7 @@ export default function SmartProjectCreator() {
                 />
                 {file && (
                   <p className="mt-2 text-sm text-green-600">
-                    ✓ {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                    {t('ui.fileChosen', { name: file.name, size: (file.size / 1024 / 1024).toFixed(2) })}
                   </p>
                 )}
               </div>
@@ -502,13 +504,13 @@ export default function SmartProjectCreator() {
             {mode === 'url' && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL du patron
+                  {t('ui.patternUrl')}
                 </label>
                 <input
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://exemple.com/mon-patron"
+                  placeholder={t('ui.phExampleUrl')}
                   className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
@@ -517,7 +519,7 @@ export default function SmartProjectCreator() {
             {/* Taille (optionnel, pour patrons multi-tailles) */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ma taille <span className="text-gray-400 font-normal">(optionnel — pour les patrons multi-tailles)</span>
+                {t('ui.mySize')} <span className="text-gray-500 font-normal">{t('ui.sizeOptionalHint')}</span>
               </label>
               <div className="flex flex-wrap gap-2">
                 {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(s => (
@@ -538,7 +540,7 @@ export default function SmartProjectCreator() {
                   type="text"
                   value={['XS','S','M','L','XL','XXL','XXXL'].includes(patternSize) ? '' : patternSize}
                   onChange={e => setPatternSize(e.target.value)}
-                  placeholder="Autre (ex: 38, 6 ans…)"
+                  placeholder={t('ui.otherSize')}
                   className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 w-36"
                 />
               </div>
@@ -549,7 +551,7 @@ export default function SmartProjectCreator() {
                 onClick={() => setStep(1)}
                 className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
               >
-                ← Retour
+                {t('ui.backArrow4')}
               </button>
 
               {extractedData ? (
@@ -557,7 +559,7 @@ export default function SmartProjectCreator() {
                   onClick={() => setStep(3)}
                   className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 flex items-center justify-center gap-2"
                 >
-                  Continuer avec l'analyse précédente →
+                  {t('ui.continuePrevAnalysis')}
                 </button>
               ) : (
                 <button
@@ -571,10 +573,10 @@ export default function SmartProjectCreator() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                       </svg>
-                      Analyse en cours...
+                      {t('ui.analyzing')}
                     </>
                   ) : (
-                    'Analyser avec l\'IA'
+                    t('ui.analyseWithAi')
                   )}
                 </button>
               )}
@@ -593,14 +595,14 @@ export default function SmartProjectCreator() {
                 <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Analyse en cours…</h2>
-            <p className="text-gray-500 text-sm mb-8">L'IA lit votre patron et en extrait toutes les informations. Cela peut prendre une minute.</p>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.analyzingAlt')}</h2>
+            <p className="text-gray-500 text-sm mb-8">{t('ui.aiReadingPattern')}</p>
             <div className="max-w-xs mx-auto space-y-3 text-left">
               {[
-                { label: 'Envoi du patron', delay: 0 },
-                { label: 'Lecture du contenu', delay: 1 },
-                { label: 'Extraction des informations', delay: 2 },
-                { label: 'Mise en forme du résultat', delay: 3 },
+                { labelKey: 'progSending', delay: 0 },
+                { labelKey: 'progReading', delay: 1 },
+                { labelKey: 'progExtracting', delay: 2 },
+                { labelKey: 'progFormatting', delay: 3 },
               ].map((s, i) => (
                 <div key={i} className="flex items-center gap-3">
                   {analyzingStep > i ? (
@@ -616,7 +618,7 @@ export default function SmartProjectCreator() {
                     <div className="w-5 h-5 rounded-full border-2 border-gray-200 shrink-0"/>
                   )}
                   <span className={`text-sm ${analyzingStep >= i ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
-                    {s.label}
+                    {t(`ui.${s.labelKey}`)}
                   </span>
                 </div>
               ))}
@@ -628,19 +630,19 @@ export default function SmartProjectCreator() {
         {step === 3 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              Vérifiez et modifiez les informations
+              {t('ui.checkAndEdit')}
             </h2>
 
             {aiStatus === 'partial' && (
               <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 text-sm">
-                Certaines informations n'ont pas pu être détectées automatiquement. Complétez les champs manquants.
+                {t('ui.someInfoMissing')}
               </div>
             )}
 
             {/* Informations de base */}
             <div className="mb-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Titre du projet *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.projectTitleRequired')}</label>
                 <input
                   type="text"
                   value={project.title}
@@ -651,44 +653,44 @@ export default function SmartProjectCreator() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type de projet</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.projectType')}</label>
                   <select
                     value={project.craft_type}
                     onChange={(e) => setProject({...project, craft_type: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="crochet">Crochet</option>
-                    <option value="tricot">Tricot</option>
-                    <option value="autre">Autre</option>
+                    <option value="crochet">{t('ui.crochetOpt')}</option>
+                    <option value="tricot">{t('ui.knit')}</option>
+                    <option value="autre">{t('ui.other')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.category')}</label>
                   <select
                     value={project.category || ''}
                     onChange={(e) => setProject({...project, category: e.target.value || null})}
                     className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="">-- Sélectionner --</option>
-                    <option value="bonnet">Bonnet</option>
-                    <option value="écharpe">Écharpe</option>
-                    <option value="pull">Pull</option>
-                    <option value="amigurumi">Amigurumi</option>
-                    <option value="couverture">Couverture</option>
-                    <option value="sac">Sac</option>
-                    <option value="vêtements">Vêtements</option>
-                    <option value="vêtements bébé">Vêtements bébé</option>
-                    <option value="accessoires bébé">Accessoires bébé</option>
-                    <option value="jouets/peluches">Jouets/Peluches</option>
-                    <option value="maison/déco">Maison/Déco</option>
-                    <option value="autre">Autre</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="bonnet">{t('ui.hat')}</option>
+                    <option value="écharpe">{t('ui.scarf')}</option>
+                    <option value="pull">{t('ui.sweater')}</option>
+                    <option value="amigurumi">{t('ui.amigurumi')}</option>
+                    <option value="couverture">{t('ui.blanket')}</option>
+                    <option value="sac">{t('ui.bag')}</option>
+                    <option value="vêtements">{t('ui.catClothing')}</option>
+                    <option value="vêtements bébé">{t('ui.catBabyClothing')}</option>
+                    <option value="accessoires bébé">{t('ui.catBabyAccessories')}</option>
+                    <option value="jouets/peluches">{t('ui.catToys')}</option>
+                    <option value="maison/déco">{t('ui.catHome')}</option>
+                    <option value="autre">{t('ui.other')}</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.descriptionLabel')}</label>
                 <textarea
                   value={project.description}
                   onChange={(e) => setProject({...project, description: e.target.value})}
@@ -700,12 +702,12 @@ export default function SmartProjectCreator() {
 
             {/* Détails techniques */}
             <details className="mb-6 border border-gray-200 rounded-2xl p-4" open>
-              <summary className="font-medium text-gray-900 cursor-pointer">Détails techniques</summary>
+              <summary className="font-medium text-gray-900 cursor-pointer">{t('ui.technicalDetails')}</summary>
 
               <div className="mt-4 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Marque laine</label>
+                    <label className="block text-sm text-gray-700 mb-1">{t('ui.yarnBrand')}</label>
                     <input
                       type="text"
                       value={project.yarn.brand}
@@ -714,7 +716,7 @@ export default function SmartProjectCreator() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Couleur</label>
+                    <label className="block text-sm text-gray-700 mb-1">{t('ui.color')}</label>
                     <input
                       type="text"
                       value={project.yarn.color}
@@ -726,17 +728,17 @@ export default function SmartProjectCreator() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Épaisseur</label>
+                    <label className="block text-sm text-gray-700 mb-1">{t('ui.weight')}</label>
                     <input
                       type="text"
                       value={project.yarn.weight}
                       onChange={(e) => setProject({...project, yarn: {...project.yarn, weight: e.target.value}})}
-                      placeholder="DK, Worsted, Fingering..."
+                      placeholder={t('ui.phWeightExamples')}
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Crochet/Aiguilles (mm)</label>
+                    <label className="block text-sm text-gray-700 mb-1">{t('ui.hookNeedlesMm')}</label>
                     <input
                       type="text"
                       value={project.hook_or_needles.size}
@@ -748,20 +750,20 @@ export default function SmartProjectCreator() {
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Échantillon (10 cm)</label>
+                  <label className="block text-sm text-gray-700 mb-1">{t('ui.gauge10cm')}</label>
                   <div className="grid grid-cols-2 gap-4">
                     <input
                       type="number"
                       value={project.gauge.stitches || ''}
                       onChange={(e) => setProject({...project, gauge: {...project.gauge, stitches: e.target.value ? parseInt(e.target.value) : null}})}
-                      placeholder="Mailles"
+                      placeholder={t('ui.stitches')}
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                     <input
                       type="number"
                       value={project.gauge.rows || ''}
                       onChange={(e) => setProject({...project, gauge: {...project.gauge, rows: e.target.value ? parseInt(e.target.value) : null}})}
-                      placeholder="Rangs"
+                      placeholder={t('ui.rowsLabel')}
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                   </div>
@@ -772,12 +774,12 @@ export default function SmartProjectCreator() {
             {/* Sections */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-gray-900">Sections du projet</h3>
+                <h3 className="font-medium text-gray-900">{t('ui.projectSections')}</h3>
                 <button
                   onClick={addSection}
                   className="px-3 py-1 text-sm bg-primary-600 text-white rounded-xl hover:bg-primary-700"
                 >
-                  + Ajouter
+                  {t('ui.addPlus')}
                 </button>
               </div>
 
@@ -790,7 +792,7 @@ export default function SmartProjectCreator() {
                           type="text"
                           value={section.name}
                           onChange={(e) => updateSection(index, 'name', e.target.value)}
-                          placeholder="Nom section (ex: Corps)"
+                          placeholder={t('ui.phSectionName')}
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
                         />
                         <select
@@ -798,14 +800,14 @@ export default function SmartProjectCreator() {
                           onChange={(e) => updateSection(index, 'unit', e.target.value)}
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
                         >
-                          <option value="rangs">Rangs</option>
-                          <option value="cm">Centimètres</option>
+                          <option value="rangs">{t('ui.rowsLabel')}</option>
+                          <option value="cm">{t('ui.centimeters')}</option>
                         </select>
                         <input
                           type="number"
                           value={section.target || ''}
                           onChange={(e) => updateSection(index, 'target', e.target.value ? parseInt(e.target.value) : null)}
-                          placeholder="Objectif"
+                          placeholder={t('ui.objective')}
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
                         />
                       </div>
@@ -819,7 +821,7 @@ export default function SmartProjectCreator() {
                     <textarea
                       value={section.description || ''}
                       onChange={(e) => updateSection(index, 'description', e.target.value)}
-                      placeholder="Instructions complètes de cette section (tous les rangs/tours, étapes détaillées...)"
+                      placeholder={t('ui.phSectionInstructions')}
                       rows="4"
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm font-mono"
                     />
@@ -830,13 +832,13 @@ export default function SmartProjectCreator() {
 
             {/* Notes patron */}
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes du patron</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.patternNotes')}</label>
               <textarea
                 value={project.pattern_notes}
                 onChange={(e) => setProject({...project, pattern_notes: e.target.value})}
                 rows="3"
                 className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm"
-                placeholder="Notes importantes, conseils, modifications..."
+                placeholder={t('ui.phImportantNotes')}
               />
             </div>
 
@@ -846,7 +848,7 @@ export default function SmartProjectCreator() {
                 onClick={() => setStep(2)}
                 className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
               >
-                ← Retour
+                {t('ui.backArrow4')}
               </button>
 
               <button
@@ -854,7 +856,7 @@ export default function SmartProjectCreator() {
                 disabled={creating || !project.title}
                 className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {creating ? 'Création...' : '✓ Créer le projet'}
+                {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
               </button>
             </div>
           </div>
@@ -867,10 +869,10 @@ export default function SmartProjectCreator() {
               <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Projet créé avec succès !
+              {t('ui.projectCreated')}
             </h2>
             <p className="text-gray-600 mb-6">
-              Votre projet "{createdProject.name}" a été créé et est prêt à être utilisé.
+              {t('ui.projectCreatedReady', { name: createdProject.name })}
             </p>
 
             <div className="flex gap-4 justify-center">
@@ -878,14 +880,14 @@ export default function SmartProjectCreator() {
                 onClick={() => navigate(`/projects/${createdProject.id}`)}
                 className="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700"
               >
-                Ouvrir le projet →
+                {t('ui.openProjectArrow')}
               </button>
 
               <button
                 onClick={() => navigate('/my-projects')}
                 className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
               >
-                Voir tous mes projets
+                {t('ui.viewAllProjects')}
               </button>
             </div>
           </div>

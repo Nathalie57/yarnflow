@@ -7,8 +7,10 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const ImageLightbox = ({ src, alt, onClose }) => {
+  const { t } = useTranslation('tools')
   const [scale, setScale] = useState(1.0)
   const [rotation, setRotation] = useState(0)
 
@@ -79,7 +81,7 @@ const ImageLightbox = ({ src, alt, onClose }) => {
               onClick={resetZoom}
               className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 text-xs transition"
             >
-              Réinitialiser
+              {t('ui.reset')}
             </button>
           )}
 
@@ -88,16 +90,16 @@ const ImageLightbox = ({ src, alt, onClose }) => {
           <button
             onClick={rotate}
             className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 text-sm font-medium transition"
-            title="Rotation 90°"
+            title={t('ui.rotate90')}
           >
-            ↻ Pivoter
+            {t('ui.rotate2')}
           </button>
 
           <button
             onClick={downloadImage}
             className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 text-sm font-medium transition"
           >
-            📥 Télécharger
+            {t('ui.downloadEmoji')}
           </button>
         </div>
 
@@ -105,7 +107,7 @@ const ImageLightbox = ({ src, alt, onClose }) => {
           onClick={onClose}
           className="px-4 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 text-sm font-medium transition"
         >
-          ✕ Fermer
+          {t('ui.closeX')}
         </button>
       </div>
 
@@ -131,7 +133,7 @@ const ImageLightbox = ({ src, alt, onClose }) => {
 
       {/* Aide */}
       <div className="bg-gray-900 border-t border-gray-700 p-2 text-xs text-gray-400 text-center">
-        💡 Cliquez en dehors de l'image ou appuyez sur Echap pour fermer
+        {t('ui.clickOutsideToClose')}
       </div>
     </div>
   )

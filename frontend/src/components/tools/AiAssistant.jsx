@@ -7,6 +7,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
+import { useTranslation } from 'react-i18next'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../../data/upgradePlans'
 
 const MarkdownText = ({ text }) => {
   const lines = text.split('\n')
@@ -41,18 +43,20 @@ const MarkdownText = ({ text }) => {
   )
 }
 
-const SUGGESTIONS = [
-  'Comment faire une diminution SSK ?',
-  'Quelle différence entre k2tog et SSK ?',
-  'Comment calculer les mailles pour une encolure ronde ?',
-  'Mon tricot tire vers la droite, pourquoi ?',
-  'Comment joindre deux pelotes sans nœud visible ?',
-  'C\'est quoi le blocage et comment le faire ?',
-]
+// cles seulement : les libelles sont resolus au rendu, sinon ils se figeraient
+// dans la langue du premier chargement (et t n'existe pas ici)
+const SUGGESTION_KEYS = ['aiQ1', 'aiQ2', 'aiQ3', 'aiQ4', 'aiQ5', 'aiQ6']
 
 export default function AiAssistant() {
-  const { hasActiveSubscription } = useAuth()
+  const { t } = useTranslation('tools')
+  const { hasActiveSubscription , getSubscriptionPlan } = useAuth()
   const isPro = hasActiveSubscription()
+
+  // [AI:Claude] isPro vaut hasActiveSubscription() : vrai pour PLUS aussi.
+
+  // Le plan reel decide quel palier proposer, ou aucun.
+
+  const currentPlan = getSubscriptionPlan ? getSubscriptionPlan() : (isPro ? 'pro' : 'free')
 
   const STORAGE_KEY = 'ai_assistant_messages'
 
@@ -102,7 +106,7 @@ export default function AiAssistant() {
         setUsage({ used: data.used, limit: data.limit, remaining: 0 })
         setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${data.error}`, isError: true }])
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${data?.error || 'Une erreur est survenue.'}`, isError: true }])
+        setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${data?.error || t('ui.genericErrorShort')}`, isError: true }])
       }
     } finally {
       setLoading(false)
@@ -118,17 +122,17 @@ export default function AiAssistant() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
           </svg>
         </div>
-        <h2 className="text-lg font-bold text-gray-900">Quota mensuel atteint</h2>
+        <h2 className="text-lg font-bold text-gray-900">{t('ui.monthlyQuotaReached')}</h2>
         <p className="text-sm text-gray-500 max-w-xs mx-auto">
-          Vous avez utilisé vos 5 questions gratuites ce mois-ci. Passez à PLUS pour 10 questions par mois, ou PRO pour 30.
+          {t('ui.aiQuotaExhausted')}
         </p>
         <Link
           to="/subscription"
           className="inline-block bg-primary-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
         >
-          Passer à PRO — 6,99€/mois
+          {(() => { const p = upgradeTarget('ai_questions', currentPlan); return p && t('ui.goToPlan', { plan: planLabel(p), price: PLAN_PRICES[p].monthlyEquiv }) })()}
         </Link>
-        <p className="text-xs text-gray-400">Quota réinitialisé le 1er du mois prochain</p>
+        <p className="text-xs text-gray-500">{t('ui.quotaResets')}</p>
       </div>
     )
   }
@@ -140,10 +144,10 @@ export default function AiAssistant() {
         {messages.length === 0 ? (
           <div className="space-y-4 py-2">
             <p className="text-sm text-gray-500 text-center">
-              Posez votre question sur le tricot ou le crochet 🧶
+              {t('ui.askYourQuestion')}
             </p>
             <div className="grid grid-cols-1 gap-2">
-              {SUGGESTIONS.map(s => (
+              {SUGGESTION_KEYS.map(k => t(`ui.${k}`)).map(s => (
                 <button
                   key={s}
                   onClick={() => send(s)}
@@ -197,7 +201,7 @@ export default function AiAssistant() {
             onClick={() => { setMessages([]); localStorage.removeItem(STORAGE_KEY) }}
             className="text-xs text-gray-400 hover:text-red-400 transition"
           >
-            Effacer la conversation
+            {t('ui.clearConversation')}
           </button>
         </div>
       )}
@@ -206,8 +210,8 @@ export default function AiAssistant() {
       {usage && (
         <div className={`text-xs text-center py-1 ${usage.remaining <= 5 ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
           {usage.remaining > 0
-            ? `${usage.used} / ${usage.limit} messages utilisés ce mois`
-            : '⚠️ Limite mensuelle atteinte'}
+            ? t('ui.messagesUsedMonth', { used: usage.used, limit: usage.limit })
+            : t('ui.monthlyLimitHit')}
         </div>
       )}
 
@@ -218,7 +222,7 @@ export default function AiAssistant() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-          placeholder="Posez votre question…"
+          placeholder={t('ui.phAskQuestion')}
           disabled={loading}
           className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
         />

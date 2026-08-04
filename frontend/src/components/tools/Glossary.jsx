@@ -9,6 +9,7 @@
  */
 
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 // ---------------------------------------------------------------------------
 // Données
@@ -534,6 +535,7 @@ const DIFFICULTY_STYLES = {
 // ---------------------------------------------------------------------------
 
 export default function Glossary() {
+  const { t } = useTranslation('tools')
   const [search, setSearch]           = useState('')
   const [category, setCategory]       = useState('all')
   const [difficulty, setDifficulty]   = useState(null) // null = tous
@@ -573,14 +575,14 @@ export default function Glossary() {
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Rechercher un terme, une définition…"
+          placeholder={t('ui.phSearchTerm')}
           className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
         {search && (
           <button
             onClick={() => setSearch('')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label="Effacer la recherche"
+            aria-label={t('ui.clearSearch')}
           >
             ×
           </button>
@@ -606,7 +608,7 @@ export default function Glossary() {
 
       {/* ── Filtres difficulté (pills) ── */}
       <div className="flex gap-2 flex-wrap items-center">
-        <span className="text-xs text-gray-500 font-medium">Niveau :</span>
+        <span className="text-xs text-gray-500 font-medium">{t('ui.levelLabel')}</span>
         <button
           onClick={() => setDifficulty(null)}
           className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
@@ -615,7 +617,7 @@ export default function Glossary() {
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
           }`}
         >
-          Tous
+          {t('ui.allFilter')}
         </button>
         {DIFFICULTIES.map(d => (
           <button
@@ -645,7 +647,7 @@ export default function Glossary() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-sm">Aucun terme ne correspond à votre recherche.</p>
+          <p className="text-sm">{t('ui.noTermMatches')}</p>
         </div>
       ) : (
         <div className="space-y-2">

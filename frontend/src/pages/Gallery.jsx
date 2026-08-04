@@ -13,11 +13,14 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation, Trans } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import api from '../services/api'
+import { PHOTO_SEASONS, PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 
 const Gallery = () => {
+  const { t } = useTranslation('library')
   const { user } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
@@ -139,7 +142,7 @@ const Gallery = () => {
       if (err.response?.status === 404 || err.response?.data?.photos === null) {
         setPhotos([])
       } else {
-        setError('Impossible de charger vos photos')
+        setError(t('ui.photosLoadFailed'))
       }
     } finally {
       setLoading(false)
@@ -173,13 +176,10 @@ const Gallery = () => {
     }
   }
 
+  // libelles resolus a l'affichage via t('photoCategories.<cle>')
   const CATEGORY_LABELS = {
-    wearable:      { label: 'Vêtements'   },
-    baby_garment:  { label: 'Bébé'        },
-    child_garment: { label: 'Enfant'      },
-    toy:           { label: 'Amigurumis'  },
-    home_decor:    { label: 'Déco'        },
-    accessory:     { label: 'Accessoires' },
+    wearable: {}, baby_garment: {}, child_garment: {},
+    toy: {}, home_decor: {}, accessory: {},
   }
 
   // [AI:Claude] Catégories présentes dans la galerie (pour les pills de filtre)
@@ -242,7 +242,7 @@ const Gallery = () => {
     } catch (err) {
       console.error('Erreur upload:', err)
       setUploading(false)
-      alert(err.response?.data?.error || 'Erreur lors de l\'upload')
+      alert(err.response?.data?.error || t('ui.uploadFailed'))
     } finally {
       setUploading(false)
     }
@@ -277,7 +277,7 @@ const Gallery = () => {
       // si ce garde-fou venait à manquer sur un autre chemin de réponse.
       if (!response.data.success_count) {
         const firstError = response.data.generated_photos?.[0]?.error
-        throw new Error(firstError || 'La génération IA a échoué')
+        throw new Error(firstError || t('ui.aiGenFailed2'))
       }
 
       await fetchPhotos()
@@ -297,13 +297,13 @@ const Gallery = () => {
       console.error('Erreur génération IA:', err)
       trackPhotoEnhanced(selectedContext?.key, false)
       setEnhancing(false)
-      alert(err.response?.data?.error || err.message || 'Erreur lors de la génération IA')
+      alert(err.response?.data?.error || err.message || t('ui.aiGenerationFailed'))
     }
   }
 
   // [AI:Claude] Supprimer une photo
   const handleDelete = async (photoId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette photo ?'))
+    if (!window.confirm(t('ui.confirmDeletePhoto')))
       return
 
     try {
@@ -311,7 +311,7 @@ const Gallery = () => {
       setPhotos(photos.filter(p => p.id !== photoId))
     } catch (err) {
       console.error('Erreur suppression:', err)
-      alert('Erreur lors de la suppression')
+      alert(t('ui.deleteFailed'))
     }
   }
 
@@ -379,12 +379,7 @@ const Gallery = () => {
   }
 
   // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
-  const seasons = [
-    { key: 'spring', label: 'Printemps', icon: '🌸', desc: 'Fleurs, bourgeons, lumière douce' },
-    { key: 'summer', label: 'Été', icon: '☀️', desc: 'Lumière dorée, végétation luxuriante' },
-    { key: 'autumn', label: 'Automne', icon: '🍂', desc: 'Feuilles dorées, tons chauds' },
-    { key: 'winter', label: 'Hiver', icon: '❄️', desc: 'Neige, givre, ambiance cocooning' }
-  ]
+  const seasons = PHOTO_SEASONS
 
   // [AI:Claude] Thèmes qui supportent les saisons (extérieur, nature, lumière naturelle)
   const seasonStyles = [
@@ -403,74 +398,7 @@ const Gallery = () => {
   ]
 
   // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
-  const stylesByCategory = {
-    wearable: [
-      { key: 'wearable_c1', label: 'Porté, lumière naturelle', icon: '👤', desc: 'Portrait extérieur avec lumière douce', tier: 'free' },
-      { key: 'flatlay_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
-      { key: 'detail_c1', label: 'Gros plan sur les points', icon: '🔍', desc: 'Macro sur la texture et le détail du tricot', tier: 'free' },
-      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'plus' },
-      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'plus' },
-      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'plus' },
-      { key: 'wearable_c4', label: 'Porté, ambiance vintage', icon: '🌼', desc: 'Portrait dans un décor rétro chaleureux', tier: 'pro' },
-      { key: 'wearable_c7', label: 'Porté, éclairage dramatique', icon: '👗', desc: 'Portrait studio avec fond texturé sombre', tier: 'pro' },
-      { key: 'wearable_c9', label: 'Porté, décor industriel', icon: '🏙️', desc: 'Portrait en loft ou espace industriel', tier: 'pro' }
-    ],
-    accessory: [
-      { key: 'accessory_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
-      { key: 'accessory_c2', label: 'Porté, lumière naturelle', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
-      { key: 'accessory_c3', label: 'Porté, fond neutre', icon: '👤', desc: 'Porté sur modèle avec fond sobre', tier: 'free' },
-      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'plus' },
-      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'plus' },
-      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'plus' },
-      { key: 'accessory_c7', label: 'Porté, style éditorial', icon: '💃', desc: 'Portrait avec mise en scène soignée', tier: 'pro' },
-      { key: 'accessory_c8', label: 'À plat, fond sombre élégant', icon: '💎', desc: 'Mise en scène sobre sur fond sombre', tier: 'pro' },
-      { key: 'accessory_c9', label: 'Porté, décor bohème', icon: '🌸', desc: 'Porté dans un intérieur bohème avec plantes', tier: 'pro' }
-    ],
-    home_decor: [
-      { key: 'home_c1', label: 'Intérieur moderne', icon: '🏠', desc: 'Décor contemporain avec touches de couleur', tier: 'free' },
-      { key: 'home_c2', label: 'Ambiance naturelle', icon: '🌿', desc: 'Bois, plantes et lumière naturelle', tier: 'free' },
-      { key: 'home_c3', label: 'Décor épuré', icon: '🪟', desc: 'Style scandinave, blanc et gris doux', tier: 'free' },
-      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'plus' },
-      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'plus' },
-      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'plus' },
-      { key: 'home_c7', label: 'Décor élégant', icon: '💎', desc: 'Intérieur contemporain avec matières nobles', tier: 'pro' },
-      { key: 'home_c8', label: 'Ambiance zen', icon: '🧘', desc: 'Décor minimaliste, couleurs neutres apaisantes', tier: 'pro' },
-      { key: 'home_c9', label: 'Table de créatrice', icon: '🎨', desc: 'Posé sur une table avec fils et fournitures', tier: 'pro' }
-    ],
-    toy: [
-      { key: 'toy_c1', label: 'Chambre enfant, lumière douce', icon: '🧸', desc: 'Décor de chambre enfantine doux et lumineux', tier: 'free' },
-      { key: 'toy_c2', label: 'Ambiance conte illustré', icon: '📖', desc: 'Décor aquarelle pastel, ambiance féerique', tier: 'free' },
-      { key: 'toy_c3', label: 'À plat, fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
-      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'plus' },
-      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'plus' },
-      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'plus' },
-      { key: 'toy_c7', label: 'Décor boutique artisanale', icon: '🏪', desc: 'Étagères et fond pastel, style créatrice', tier: 'pro' },
-      { key: 'toy_c8', label: 'Décor jungle tropicale', icon: '🦁', desc: 'Plantes exotiques, ambiance aventure', tier: 'pro' },
-      { key: 'toy_c9', label: 'Ambiance fête rétro', icon: '🎪', desc: 'Décor festif vintage coloré', tier: 'pro' }
-    ],
-    baby_garment: [
-      { key: 'baby_garment_c1', label: 'Porté par bébé, lit pastel', icon: '🛏️', desc: 'Bébé allongé sur lit aux tons doux', tier: 'free' },
-      { key: 'baby_garment_c2', label: 'À plat, fond doux', icon: '🌸', desc: 'Posé à plat sur fond uni pastel', tier: 'free' },
-      { key: 'baby_garment_c3', label: 'À plat, table à langer', icon: '🏠', desc: 'Sur table à langer en bois clair, style scandinave', tier: 'free' },
-      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'plus' },
-      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'plus' },
-      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'plus' },
-      { key: 'baby_garment_c7', label: 'Porté dans les bras', icon: '💝', desc: 'Bébé tenu par un parent, ambiance tendre', tier: 'pro' },
-      { key: 'baby_garment_c8', label: 'À plat, fleurs séchées', icon: '💎', desc: 'Mise en scène élégante avec fleurs séchées', tier: 'pro' },
-      { key: 'baby_garment_c9', label: 'Porté par bébé, tapis moelleux', icon: '🌸', desc: 'Bébé sur tapis doux et coloré', tier: 'pro' }
-    ],
-    child_garment: [
-      { key: 'child_garment_c1', label: 'Porté, parc ou jardin', icon: '🌿', desc: 'Enfant dans un espace vert, lumière naturelle', tier: 'free' },
-      { key: 'child_garment_c2', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
-      { key: 'child_garment_c3', label: 'À plat, chambre enfant', icon: '🛏️', desc: 'Sur lit coloré avec peluches', tier: 'free' },
-      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'plus' },
-      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'plus' },
-      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'plus' },
-      { key: 'child_garment_c7', label: 'Porté, éclairage studio', icon: '📸', desc: 'Portrait soigné avec éclairage studio créatif', tier: 'pro' },
-      { key: 'child_garment_c8', label: 'À plat, mise en scène soignée', icon: '💎', desc: 'Mise en scène boutique haut de gamme', tier: 'pro' },
-      { key: 'child_garment_c9', label: 'Porté, promenade en famille', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
-    ]
-  }
+  const stylesByCategory = PHOTO_STYLES_BY_CATEGORY
 
   // Tous les styles disponibles pour tous les plans
   const getAvailableStyles = (category) => {
@@ -482,7 +410,7 @@ const Gallery = () => {
 
       {creditsPurchased && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between">
-          <p className="text-sm font-medium text-green-800">Crédits ajoutés à votre compte !</p>
+          <p className="text-sm font-medium text-green-800">{t('ui.creditsAdded')}</p>
           <button onClick={() => setCreditsPurchased(false)} className="text-green-600 hover:text-green-800 text-lg font-bold">×</button>
         </div>
       )}
@@ -491,9 +419,9 @@ const Gallery = () => {
       <div className="mb-6 sm:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Ma galerie</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('ui.myGallery')}</h1>
             <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
-              Toutes mes créations en photo
+              {t('ui.myGalleryTagline')}
             </p>
           </div>
         </div>
@@ -513,26 +441,26 @@ const Gallery = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg text-gray-900">Crédits photos</h3>
-                    <span className="text-xs text-gray-500 font-normal">1 crédit = 1 photo embellie</span>
+                    <h3 className="font-bold text-lg text-gray-900">{t('ui.photoCredits')}</h3>
+                    <span className="text-xs text-gray-500 font-normal">{t('ui.oneCreditOnePhoto')}</span>
                   </div>
                   <p className="text-sm text-gray-600">
                     {(() => {
                       const subType = user?.subscription_type;
                       if (!subType || subType === 'free') return 'Plan FREE · 3 essais IA offerts';
-                      if (subType === 'plus' || subType === 'plus_annual') return 'Plan PLUS : 5 crédits/mois';
-                      return 'Plan PRO : 20 crédits/mois';
+                      if (subType === 'plus' || subType === 'plus_annual') return t('ui.planPlusCredits');
+                      return t('ui.planProCredits');
                     })()}
                   </p>
                 </div>
               </div>
               <div className="flex items-baseline gap-2 ml-11">
                 <span className="text-4xl font-bold text-primary-600">{credits.total_available}</span>
-                <span className="text-gray-600">crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}</span>
+                <span className="text-gray-600">{t('ui.creditsAvailable', { count: credits.total_available })}</span>
               </div>
               {credits.credits_used_this_month > 0 && (
                 <p className="text-xs text-gray-500 mt-2 ml-11">
-                  {credits.credits_used_this_month} utilisés ce mois-ci
+                  {t('ui.usedThisMonth', { count: credits.credits_used_this_month })}
                 </p>
               )}
             </div>
@@ -544,11 +472,11 @@ const Gallery = () => {
                   return (
                     <>
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
-                        <p className="text-sm text-amber-800 font-medium">Essai gratuit utilisé</p>
-                        <p className="text-xs text-amber-700 mt-0.5">Abonnez-vous pour continuer à embellir vos photos</p>
+                        <p className="text-sm text-amber-800 font-medium">{t('ui.freeTrialUsed')}</p>
+                        <p className="text-xs text-amber-700 mt-0.5">{t('ui.subscribeToKeepEnhancing')}</p>
                       </div>
                       <Link to="/subscription" className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition">
-                        Voir les abonnements
+                        {t('ui.viewPlans')}
                       </Link>
                     </>
                   )
@@ -556,7 +484,7 @@ const Gallery = () => {
                 if (isFree) {
                   return (
                     <Link to="/subscription" className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition">
-                      Obtenir plus de crédits
+                      {t('ui.getMoreCredits')}
                     </Link>
                   )
                 }
@@ -564,16 +492,16 @@ const Gallery = () => {
                   <div className="flex flex-col gap-2 items-center sm:items-end">
                     {credits.total_available === 0 && (
                       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2 w-full">
-                        <p className="text-sm text-amber-800 font-medium">Plus de crédits ce mois-ci</p>
+                        <p className="text-sm text-amber-800 font-medium">{t('ui.noCreditsThisMonth')}</p>
                         <p className="text-xs text-amber-700 mt-0.5">
-                          Rechargement {user?.subscription_expires_at ? `le ${new Date(user.subscription_expires_at).getDate()} de chaque mois` : 'au prochain renouvellement'}
+                          {user?.subscription_expires_at ? t('ui.refillOnDay', { day: new Date(user.subscription_expires_at).getDate() }) : t('ui.refillNextRenewal')}
                         </p>
                       </div>
                     )}
                     <Link to="/subscription#credits" className="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition">
-                      Acheter des crédits
+                      {t('ui.buyCredits')}
                     </Link>
-                    <span className="text-xs text-gray-400">Rechargement {user?.subscription_expires_at ? `le ${new Date(user.subscription_expires_at).getDate()} de chaque mois` : 'au prochain renouvellement'}</span>
+                    <span className="text-xs text-gray-500">{user?.subscription_expires_at ? t('ui.refillOnDay', { day: new Date(user.subscription_expires_at).getDate() }) : t('ui.refillNextRenewal')}</span>
                   </div>
                 )
               })()}
@@ -586,9 +514,9 @@ const Gallery = () => {
       <div className="mb-6 flex flex-col items-center gap-2">
         {photoQuota && !photoQuota.unlimited && (
           <p className="text-xs text-gray-500">
-            {photoQuota.used} / {photoQuota.limit} photos
+            {t('ui.photoQuota', { used: photoQuota.used, limit: photoQuota.limit })}
             {photoQuota.used >= photoQuota.limit && (
-              <a href="/subscription" className="ml-2 text-primary-600 font-semibold hover:underline">Passer en PLUS</a>
+              <a href="/subscription" className="ml-2 text-primary-600 font-semibold hover:underline">{t('ui.upgradeToPlus')}</a>
             )}
           </p>
         )}
@@ -604,7 +532,7 @@ const Gallery = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          <span>{photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit ? 'Quota atteint' : 'Ajouter une photo'}</span>
+          <span>{photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit ? t('ui.quotaReached') : t('ui.addPhoto')}</span>
         </button>
       </div>
 
@@ -612,7 +540,7 @@ const Gallery = () => {
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          <p className="mt-4 text-gray-600">Chargement de vos photos...</p>
+          <p className="mt-4 text-gray-600">{t('ui.loadingPhotos')}</p>
         </div>
       )}
 
@@ -636,14 +564,14 @@ const Gallery = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher par projet, type..."
+              placeholder={t('ui.searchPhotos')}
               className="w-full pl-11 pr-12 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
-                title="Effacer la recherche"
+                title={t('ui.clearSearch')}
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -663,7 +591,7 @@ const Gallery = () => {
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                Tous
+                {t('ui.all')}
               </button>
               {getAvailableCategoryFilters().map(cat => {
                 const meta = CATEGORY_LABELS[cat]
@@ -677,7 +605,7 @@ const Gallery = () => {
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    {meta.label}
+                    {t(`photoCategories.${cat}`, { ns: 'common' })}
                   </button>
                 )
               })}
@@ -697,10 +625,10 @@ const Gallery = () => {
                 </svg>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">
-                Votre galerie est vide
+                {t('ui.emptyGallery')}
               </h3>
               <p className="text-gray-500 text-sm">
-                Prenez une photo de votre ouvrage et laissez l'IA le mettre en scène —<br />fond, éclairage, ambiance. Votre tricot reste identique.
+                <Trans t={t} i18nKey="ui.photoStudioPitch"><br /></Trans>
               </p>
             </div>
           ) : getFilteredPhotos().length === 0 ? (
@@ -709,16 +637,16 @@ const Gallery = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Aucun résultat
+                {t('ui.noResults')}
               </h3>
               <p className="text-gray-600 mb-4">
-                Aucune photo ne correspond à vos filtres actifs
+                {t('ui.noPhotosMatchFilters')}
               </p>
               <button
                 onClick={() => { setSearchQuery(''); setStyleFilter(null) }}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
               >
-                Effacer les filtres
+                {t('ui.clearFilters')}
               </button>
             </div>
           ) : (
@@ -742,7 +670,7 @@ const Gallery = () => {
                   {/* Badge avant/après visible en permanence quand on voit l'original */}
                   {viewingOriginalIds.has(photo.id) && (
                     <div className="absolute top-2 left-2 bg-black/70 text-white text-xs font-semibold px-2 py-1 rounded-full pointer-events-none">
-                      Avant
+                      {t('ui.before')}
                     </div>
                   )}
 
@@ -762,9 +690,9 @@ const Gallery = () => {
                       <button
                         onClick={(e) => toggleOriginal(photo.id, e)}
                         className="absolute top-2 right-2 bg-white/90 hover:bg-white text-gray-800 text-xs font-semibold px-2 py-1 rounded-full transition shadow"
-                        title={viewingOriginalIds.has(photo.id) ? 'Voir le résultat IA' : 'Voir l\'original'}
+                        title={viewingOriginalIds.has(photo.id) ? t('ui.viewAiResult') : t('ui.viewOriginal')}
                       >
-                        {viewingOriginalIds.has(photo.id) ? 'Après →' : '← Avant'}
+                        {viewingOriginalIds.has(photo.id) ? t('ui.afterArrow') : t('ui.beforeArrow')}
                       </button>
                     )}
 
@@ -779,7 +707,7 @@ const Gallery = () => {
                           window.open(`${import.meta.env.VITE_BACKEND_URL}${src}`, '_blank')
                         }}
                         className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
-                        title="Voir en grand"
+                        title={t('ui.viewLarge')}
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -799,7 +727,7 @@ const Gallery = () => {
                           trackPhotoDownloaded()
                         }}
                         className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
-                        title="Télécharger"
+                        title={t('ui.download')}
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -814,7 +742,7 @@ const Gallery = () => {
                             setOpenMenuId(openMenuId === photo.id ? null : photo.id)
                           }}
                           className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
-                          title="Plus d'actions"
+                          title={t('ui.moreActions')}
                         >
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -833,17 +761,17 @@ const Gallery = () => {
                                     await api.put(`/projects/${photo.project_id}/set-cover-photo`, {
                                       photo_id: photo.id
                                     })
-                                    alert('Photo de couverture mise à jour !')
+                                    alert(t('ui.coverUpdated'))
                                     setOpenMenuId(null)
                                   } catch (err) {
                                     console.error('Erreur:', err)
-                                    alert('Erreur lors de la mise à jour')
+                                    alert(t('ui.updateFailed'))
                                   }
                                 }}
                                 className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                                <span>Définir comme couverture</span>
+                                <span>{t('ui.setAsCover')}</span>
                               </button>
                             )}
 
@@ -852,7 +780,7 @@ const Gallery = () => {
 
                             {/* Section Partage */}
                             <div className="px-4 py-1.5">
-                              <p className="text-xs font-semibold text-primary-700 uppercase tracking-wider">Partager</p>
+                              <p className="text-xs font-semibold text-primary-700 uppercase tracking-wider">{t('ui.share')}</p>
                             </div>
 
                             {/* Instagram */}
@@ -870,7 +798,7 @@ const Gallery = () => {
                                     const file = new File([blob], `${photo.item_name || 'photo'}.jpg`, { type: 'image/jpeg' })
                                     await navigator.share({
                                       files: [file],
-                                      title: photo.item_name || 'Ma photo tricot/crochet',
+                                      title: photo.item_name || t('ui.myKnitPhoto'),
                                       text: `Découvrez mon ${photo.item_name || 'ouvrage'} ! 🧶✨`
                                     })
                                     setOpenMenuId(null)
@@ -904,7 +832,7 @@ const Gallery = () => {
                                     setShowInstagramModal(true)
                                   } catch (err) {
                                     console.error('Erreur téléchargement Instagram:', err)
-                                    alert('Erreur lors du téléchargement de l\'image')
+                                    alert(t('ui.imageDownloadFailed'))
                                   }
                                   setOpenMenuId(null)
                                 }
@@ -924,7 +852,7 @@ const Gallery = () => {
                                 <rect width="24" height="24" rx="5.4" fill="url(#instagram-gradient)"/>
                                 <path d="M12 8.75a3.25 3.25 0 100 6.5 3.25 3.25 0 000-6.5zm0 5.36a2.11 2.11 0 110-4.22 2.11 2.11 0 010 4.22zM16.5 8.58a.76.76 0 11-1.52 0 .76.76 0 011.52 0zm2.16.76c-.05-1.06-.3-2-1.1-2.8-.8-.8-1.74-1.05-2.8-1.1C13.68 5.4 10.32 5.4 9.24 5.44c-1.06.05-2 .3-2.8 1.1-.8.8-1.05 1.74-1.1 2.8C5.4 10.32 5.4 13.68 5.44 14.76c.05 1.06.3 2 1.1 2.8.8.8 1.74 1.05 2.8 1.1 1.08.04 4.44.04 5.52 0 1.06-.05 2-.3 2.8-1.1.8-.8 1.05-1.74 1.1-2.8.04-1.08.04-4.44 0-5.52zM17.23 15.9c-.24.6-.7 1.06-1.3 1.3-1.02.4-3.44.31-4.57.31-1.13 0-3.55.09-4.57-.31a2.3 2.3 0 01-1.3-1.3c-.4-1.02-.31-3.44-.31-4.57 0-1.13-.09-3.55.31-4.57.24-.6.7-1.06 1.3-1.3C7.81 5.06 10.23 5.15 11.36 5.15c1.13 0 3.55-.09 4.57.31.6.24 1.06.7 1.3 1.3.4 1.02.31 3.44.31 4.57 0 1.13.09 3.55-.31 4.57z" fill="white"/>
                               </svg>
-                              <span>Instagram</span>
+                              <span>{t('ui.instagram')}</span>
                             </button>
 
                             {/* Pinterest */}
@@ -942,7 +870,7 @@ const Gallery = () => {
                                 <circle cx="12" cy="12" r="12" fill="#E60023"/>
                                 <path d="M12.7 7.2c-2.5 0-3.8 1.8-3.8 3.3 0 .9.3 1.6.9 1.9.1 0 .2.1.3 0 0-.1.1-.4.1-.5 0-.1 0-.2 0-.3-.2-.3-.4-.7-.4-1.3 0-1.6 1.2-3.1 3.1-3.1 1.7 0 2.6 1 2.6 2.4 0 1.8-.8 3.3-2 3.3-.6 0-1.1-.5-1-1.1.2-.7.5-1.5.5-2 0-1.2-1.8-1-1.8.5 0 .4.1.7.1.7s-.5 2-.6 2.4c-.2.7 0 1.7.1 2.3 0 .1.1.1.2.1h.1c.1-.2 1-1.2 1.2-2 .1-.3.3-1.2.3-1.2.2.3.7.6 1.2.6 1.6 0 2.8-1.5 2.8-3.4 0-1.5-1.2-2.8-3-2.8z" fill="white"/>
                               </svg>
-                              <span>Pinterest</span>
+                              <span>{t('ui.pinterest')}</span>
                             </button>
 
                             {/* Facebook */}
@@ -958,7 +886,7 @@ const Gallery = () => {
                                 <circle cx="12" cy="12" r="12" fill="#1877F2"/>
                                 <path d="M16.671 15.469l.575-3.75h-3.602V9.406c0-1.026.503-2.027 2.116-2.027h1.636V4.203S15.924 4 14.5 4c-2.973 0-4.917 1.801-4.917 5.062v2.857H6.188v3.75h3.395v9.066c.682.107 1.379.165 2.089.165.71 0 1.407-.058 2.089-.165v-9.066h3.027z" fill="white"/>
                               </svg>
-                              <span>Facebook</span>
+                              <span>{t('ui.facebook')}</span>
                             </button>
 
                             {/* Twitter/X */}
@@ -975,7 +903,7 @@ const Gallery = () => {
                                 <circle cx="12" cy="12" r="12" fill="#000000"/>
                                 <path d="M13.355 10.874L17.866 5.5h-1.069l-3.915 4.494L9.933 5.5H6.5l4.731 6.888L6.5 18.5h1.069l4.135-4.748L14.567 18.5H18l-4.645-7.626zm-1.464 1.68l-.479-.685L7.665 6.319h1.64l3.073 4.393.479.685 3.997 5.715h-1.64l-3.262-4.658z" fill="white"/>
                               </svg>
-                              <span>Twitter / X</span>
+                              <span>{t('ui.twitterX')}</span>
                             </button>
 
                             {/* Copier lien */}
@@ -985,11 +913,11 @@ const Gallery = () => {
                                 const url = `${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path || photo.original_path}`
                                 try {
                                   await navigator.clipboard.writeText(url)
-                                  alert('Lien copié !')
+                                  alert(t('ui.linkCopied'))
                                   setOpenMenuId(null)
                                 } catch (err) {
                                   console.error('Erreur copie:', err)
-                                  alert('Impossible de copier le lien')
+                                  alert(t('ui.copyLinkFailed'))
                                 }
                               }}
                               className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
@@ -998,7 +926,7 @@ const Gallery = () => {
                                 <circle cx="12" cy="12" r="12" fill="#6B7280"/>
                                 <path d="M13.544 10.456a4.368 4.368 0 00-6.176 0l-1.5 1.5a4.368 4.368 0 006.176 6.176l.834-.834m2.666-10.842a4.368 4.368 0 016.176 0l1.5 1.5a4.368 4.368 0 01-6.176 6.176l-.834-.834" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
-                              <span>Copier le lien</span>
+                              <span>{t('ui.copyLink')}</span>
                             </button>
 
                             {/* Divider */}
@@ -1014,7 +942,7 @@ const Gallery = () => {
                               className="w-full px-4 py-2.5 text-left text-sm text-red-700 hover:bg-red-100 flex items-center gap-3 font-medium transition-colors"
                             >
                               <span className="text-lg">🗑️</span>
-                              <span>Supprimer</span>
+                              <span>{t('ui.delete')}</span>
                             </button>
                           </div>
                         )}
@@ -1041,7 +969,7 @@ const Gallery = () => {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
                       </svg>
-                      Embellir
+                      {t('ui.enhance')}
                     </button>
                   )}
                 </div>
@@ -1056,9 +984,9 @@ const Gallery = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <h2 className="text-2xl font-bold text-gray-900">Ajouter une photo</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('ui.addPhoto')}</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Prenez ou choisissez une photo de votre ouvrage
+                {t('ui.takeOrChoosePhoto')}
               </p>
             </div>
 
@@ -1098,7 +1026,7 @@ const Gallery = () => {
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                         <circle cx="12" cy="13" r="4"/>
                       </svg>
-                      <span className="font-medium">Prendre une photo</span>
+                      <span className="font-medium">{t('ui.takePhoto')}</span>
                     </button>
                   )}
                   <button
@@ -1107,7 +1035,7 @@ const Gallery = () => {
                     className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                    <span className="font-medium">Choisir une photo</span>
+                    <span className="font-medium">{t('ui.choosePhoto')}</span>
                   </button>
                 </div>
 
@@ -1118,21 +1046,21 @@ const Gallery = () => {
                 )}
 
                 <p className="text-xs text-gray-500">
-                  Formats: JPG, PNG, WEBP • Max 10 MB
+                  {t('ui.photoFormats2')}
                 </p>
               </div>
 
               {/* Projet (optionnel) - PLACÉ EN PREMIER */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <span className="text-gray-400">Optionnel</span>
+                  <span className="text-gray-500">{t('ui.optional')}</span>
                 </label>
                 <select
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
-                  <option value="">Aucun projet</option>
+                  <option value="">{t('ui.noProject')}</option>
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.name} {project.type ? `(${project.type})` : ''}
@@ -1140,7 +1068,7 @@ const Gallery = () => {
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {selectedProjectId ? '✓ Les infos du projet seront utilisées automatiquement' : 'Optionnel — vous pourrez choisir le type lors de l\'embellissement'}
+                  {selectedProjectId ? t('ui.projectInfoUsed') : t('ui.typeOptional')}
                 </p>
               </div>
 
@@ -1151,14 +1079,14 @@ const Gallery = () => {
                   onClick={() => setShowUploadModal(false)}
                   className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || !uploadData.photo}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
-                  {uploading ? 'Chargement...' : 'Ajouter'}
+                  {uploading ? t('ui.loadingDots') : t('ui.add2')}
                 </button>
               </div>
             </form>
@@ -1171,7 +1099,7 @@ const Gallery = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
           <div className="bg-white rounded-lg max-w-lg w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg">
-              <h2 className="text-2xl font-bold text-gray-900">Embellir ma photo</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('ui.enhanceMyPhoto')}</h2>
               <p className="text-sm text-gray-600 mt-1">
                 {selectedPhoto.item_name}
               </p>
@@ -1194,7 +1122,7 @@ const Gallery = () => {
               {!detectProjectCategory(selectedPhoto?.item_type || '') && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Type d'ouvrage :
+                    {t('ui.itemType')}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(CATEGORY_LABELS).map(([key, { label }]) => (
@@ -1217,7 +1145,7 @@ const Gallery = () => {
                     ))}
                   </div>
                   {!manualCategory && (
-                    <p className="text-xs text-amber-600 mt-2">Sélectionnez un type pour continuer</p>
+                    <p className="text-xs text-amber-600 mt-2">{t('ui.selectTypeToContinue')}</p>
                   )}
                 </div>
               )}
@@ -1226,7 +1154,7 @@ const Gallery = () => {
               {(detectProjectCategory(selectedPhoto?.item_type || '') || manualCategory) && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Choisissez un style :
+                  {t('ui.chooseStyle')}
                 </label>
                 <div className="space-y-2">
                   {getAvailableStyles(manualCategory || detectProjectCategory(selectedPhoto.item_type || '')).map(style => (
@@ -1251,34 +1179,34 @@ const Gallery = () => {
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className={`font-medium ${style.locked ? 'text-gray-400' : 'text-gray-900'}`}>{style.label}</p>
+                          <p className={`font-medium ${style.locked ? 'text-gray-500' : 'text-gray-900'}`}>{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</p>
                           {style.locked && style.tier === 'pro' && (
-                            <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-600 rounded font-semibold">PRO</span>
+                            <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-600 rounded font-semibold">{t('ui.planPro')}</span>
                           )}
                           {style.locked && style.tier === 'plus' && (
-                            <span className="text-xs px-2 py-0.5 bg-violet-100 text-violet-600 rounded font-semibold">PLUS</span>
+                            <span className="text-xs px-2 py-0.5 bg-violet-100 text-violet-600 rounded font-semibold">{t('ui.planPlus')}</span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-400">{style.desc}</p>
+                        <p className="text-sm text-gray-500">{t(`photoStyles.${style.key}.desc`, { ns: 'common' })}</p>
                       </div>
                     </label>
                   ))}
                 </div>
 
                 {/* Sélecteur de genre pour styles portés (adultes et enfants) */}
-                {selectedContext && (selectedContext.label?.includes('Porté') || ['child_garment_c1', 'child_garment_c4', 'child_garment_c6', 'child_garment_c7', 'child_garment_c9'].includes(selectedContext.key)) && (
+                {selectedContext && selectedContext.worn && (
                   <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                     <p className="text-sm font-semibold text-gray-700 mb-2">
-                      {selectedContext.key?.startsWith('child_garment_') ? 'Genre de l\'enfant :' : 'Genre du modèle :'}
+                      {selectedContext.key?.startsWith('child_garment_') ? t('ui.childGenderLabel') : t('ui.modelGenderLabel')}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'male' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
                         <input type="radio" name="modelGender" value="male" checked={modelGender === 'male'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
-                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Garçon' : 'Homme'}</span>
+                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? t('ui.boy') : t('ui.man')}</span>
                       </label>
                       <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'female' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
                         <input type="radio" name="modelGender" value="female" checked={modelGender === 'female'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
-                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? 'Fille' : 'Femme'}</span>
+                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? t('ui.girl') : t('ui.woman')}</span>
                       </label>
                     </div>
                   </div>
@@ -1291,7 +1219,7 @@ const Gallery = () => {
               {selectedContext && seasonStyles.includes(selectedContext.key) && (
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Ambiance saisonnière <span className="text-gray-400 font-normal">(optionnel)</span> :
+                    {t('ui.seasonalMoodOptional')} <span className="text-gray-500 font-normal">{t('ui.optionalParen')}</span> :
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {/* Option "Aucune" */}
@@ -1305,7 +1233,7 @@ const Gallery = () => {
                       }`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                      <span className="text-xs font-medium text-gray-700">Aucune</span>
+                      <span className="text-xs font-medium text-gray-700">{t('ui.none')}</span>
                     </button>
 
                     {/* Options de saisons */}
@@ -1319,15 +1247,15 @@ const Gallery = () => {
                             ? 'border-primary-600 bg-primary-50'
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
-                        title={season.desc}
+                        title={t(`photoSeasons.${season.key}.desc`, { ns: 'common' })}
                       >
-                        <span className="text-xs font-medium text-gray-700">{season.label}</span>
+                        <span className="text-xs font-medium text-gray-700">{t(`photoSeasons.${season.key}.label`, { ns: 'common' })}</span>
                       </button>
                     ))}
                   </div>
                   {selectedSeason && (
                     <p className="text-xs text-primary-600 mt-2">
-                      {seasons.find(s => s.key === selectedSeason)?.desc}
+                      {t(`photoSeasons.${selectedSeason}.desc`, { ns: 'common' })}
                     </p>
                   )}
                 </div>
@@ -1339,8 +1267,8 @@ const Gallery = () => {
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                     <div>
-                      <h4 className="font-semibold text-primary-900">Génération en cours...</h4>
-                      <p className="text-sm text-gray-600">Cela peut prendre quelques secondes</p>
+                      <h4 className="font-semibold text-primary-900">{t('ui.generating')}</h4>
+                      <p className="text-sm text-gray-600">{t('ui.mayTakeSeconds')}</p>
                     </div>
                   </div>
                 </div>
@@ -1359,8 +1287,8 @@ const Gallery = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-primary-900">Essai gratuit disponible</p>
-                        <p className="text-xs text-primary-700 mt-0.5">{credits.total_available} essai{credits.total_available > 1 ? 's' : ''} gratuit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}</p>
+                        <p className="text-sm font-semibold text-primary-900">{t('ui.freeTrialAvailable')}</p>
+                        <p className="text-xs text-primary-700 mt-0.5">{t('ui.freeTrialsAvailable', { count: credits.total_available })}</p>
                       </div>
                     </div>
                   )
@@ -1369,10 +1297,10 @@ const Gallery = () => {
                 if (isFree && credits.total_available === 0) {
                   return (
                     <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-sm font-semibold text-amber-900 mb-1">Essai gratuit utilisé</p>
-                      <p className="text-xs text-amber-800 mb-3">Abonnez-vous pour continuer à embellir vos photos</p>
+                      <p className="text-sm font-semibold text-amber-900 mb-1">{t('ui.freeTrialUsed')}</p>
+                      <p className="text-xs text-amber-800 mb-3">{t('ui.subscribeToKeepEnhancing')}</p>
                       <Link to="/subscription" className="inline-flex items-center justify-center w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition">
-                        Voir les abonnements
+                        {t('ui.viewPlans')}
                       </Link>
                     </div>
                   )
@@ -1382,14 +1310,14 @@ const Gallery = () => {
                   <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Génération = 1 crédit</p>
+                        <p className="text-sm font-medium text-gray-900">{t('ui.generationOneCredit')}</p>
                         <p className="text-xs text-gray-600 mt-1">
-                          Il vous restera {credits.total_available - 1} crédit{credits.total_available - 1 > 1 ? 's' : ''}
+                          {t('ui.youWillHaveLeft', { count: credits.total_available - 1 })}
                         </p>
                       </div>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-primary-600">{credits.total_available}</div>
-                        <div className="text-xs text-gray-600">disponible{credits.total_available > 1 ? 's' : ''}</div>
+                        <div className="text-xs text-gray-600">{t('ui.availableWord', { count: credits.total_available })}</div>
                       </div>
                     </div>
                   </div>
@@ -1407,14 +1335,14 @@ const Gallery = () => {
                   disabled={enhancing}
                   className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
                 >
-                  Pas maintenant
+                  {t('ui.notNow')}
                 </button>
                 <button
                   type="submit"
                   disabled={enhancing || !selectedContext || !credits || credits.total_available < 1}
                   className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
-                  {enhancing ? 'Génération...' : ((!user?.subscription_type || user?.subscription_type === 'free') ? 'Utiliser mon essai gratuit' : `Générer (${credits?.total_available ?? 0} crédit${(credits?.total_available ?? 0) > 1 ? 's' : ''})`)}
+                  {enhancing ? t('ui.generating') : ((!user?.subscription_type || user?.subscription_type === 'free') ? t('ui.useFreeTrial') : t('ui.generateWithCredits', { count: credits?.total_available ?? 0 }))}
 
                 </button>
               </div>
@@ -1463,17 +1391,17 @@ const Gallery = () => {
 
             {/* Titre */}
             <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
-              Image téléchargée !
+              {t('ui.imageDownloaded')}
             </h3>
 
             {/* Message */}
             <div className="text-center mb-8 space-y-3">
               <p className="text-gray-600 leading-relaxed">
-                Votre image est prête à être partagée !
+                {t('ui.imageReadyToShare')}
               </p>
               <div className="bg-gradient-to-br from-primary-50 to-primary-50 border-2 border-primary-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700 font-medium">
-                  <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
+                  <span className="font-semibold">{t('ui.howTo')}</span> {t('ui.instagramStep1')}<span className="font-bold text-primary-600">+</span>{t('ui.instagramStep2')}
                 </p>
               </div>
             </div>
@@ -1486,7 +1414,7 @@ const Gallery = () => {
               }}
               className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-primary-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
             >
-              Ouvrir Instagram
+              {t('ui.openInstagram')}
             </button>
           </div>
         </div>

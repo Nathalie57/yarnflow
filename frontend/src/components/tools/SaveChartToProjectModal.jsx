@@ -7,8 +7,10 @@
 
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { useTranslation } from 'react-i18next'
 
 export default function SaveChartToProjectModal({ chart, existingChart, onClose, onSaved }) {
+  const { t } = useTranslation('tools')
   const isReassign = !!existingChart
   const [projects, setProjects] = useState([])
   const [sections, setSections] = useState([])
@@ -87,7 +89,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
       setTimeout(onClose, 1200)
     } catch (err) {
       console.error('Erreur sauvegarde grille:', err)
-      setError(err.response?.data?.error || 'Erreur lors de la sauvegarde.')
+      setError(err.response?.data?.error || t('ui.saveFailed'))
       setSaving(false)
     }
   }
@@ -96,21 +98,21 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 max-h-[calc(100vh-6rem)] sm:max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">{isReassign ? 'Associer à un projet/section' : 'Enregistrer la grille'}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{isReassign ? t('ui.linkToProjectSection') : t('ui.saveChart')}</h2>
           <p className="text-sm text-gray-500 mt-1">
             {isReassign ? existingChart.name : chart.name} — {isReassign ? existingChart.width : chart.width} × {chartHeight}
           </p>
         </div>
 
         {loadingProjects ? (
-          <p className="text-sm text-gray-400">Chargement des projets...</p>
+          <p className="text-sm text-gray-500">{t('ui.loadingProjects')}</p>
         ) : projects.length === 0 ? (
-          <p className="text-sm text-gray-500">Aucun projet trouvé.</p>
+          <p className="text-sm text-gray-500">{t('ui.noProjectFound')}</p>
         ) : (
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Projet {isReassign && <span className="text-red-500">*</span>}
+                {t('ui.projectRequired')} {isReassign && <span className="text-red-500">*</span>}
               </label>
               <select
                 value={selectedProjectId}
@@ -118,7 +120,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">
-                  {isReassign ? '-- Choisir un projet --' : '-- Aucun projet, juste dans "Mes grilles" --'}
+                  {isReassign ? t('ui.chooseProject') : t('ui.noProjectJustCharts')}
                 </option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -128,18 +130,18 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
 
             {selectedProjectId && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Section (optionnel)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.sectionOptional')}</label>
                 {loadingSections ? (
-                  <p className="text-xs text-gray-400">Chargement des sections...</p>
+                  <p className="text-xs text-gray-500">{t('ui.loadingSections')}</p>
                 ) : sections.length === 0 ? (
-                  <p className="text-xs text-gray-500">Ce projet n'a pas de section — la grille sera rattachée directement au projet.</p>
+                  <p className="text-xs text-gray-500">{t('ui.noSectionChart')}</p>
                 ) : (
                   <select
                     value={selectedSectionId}
                     onChange={e => setSelectedSectionId(e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="">-- Aucune section (projet entier) --</option>
+                    <option value="">{t('ui.noSectionOption')}</option>
                     {sections.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
@@ -151,7 +153,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
             {selectedSectionId && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rang de départ dans la section
+                  {t('ui.startRow')}
                 </label>
                 <input
                   type="number"
@@ -161,12 +163,12 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
                   className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Combien de rangs de la section sont déjà faits quand ce motif commence (0 si le motif démarre au tout premier rang de la section).
+                  {t('ui.chartStartRowHelp')}
                   {selectedSection?.total_rows > 0 && (
                     <>
-                      {' '}La grille couvrira les rangs {Number(startRow) + 1} à {Number(startRow) + chartHeight} sur {selectedSection.total_rows}.
+                      {' '}{t('ui.chartWillCover', { from: Number(startRow) + 1, to: Number(startRow) + chartHeight, total: selectedSection.total_rows })}
                       {Number(startRow) + chartHeight > selectedSection.total_rows && (
-                        <span className="text-amber-600 font-medium"> ⚠️ Ça dépasse le total de rangs de la section.</span>
+                        <span className="text-amber-600 font-medium">{t('ui.exceedsSectionRows')}</span>
                       )}
                     </>
                   )}
@@ -178,7 +180,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
 
         {saved && (
           <p className="text-sm text-green-600 font-medium text-center">
-            {isReassign ? 'Grille réassignée !' : (selectedProjectId ? 'Grille enregistrée !' : 'Grille enregistrée dans "Mes grilles" !')}
+            {isReassign ? t('ui.chartReassigned') : (selectedProjectId ? t('ui.chartSaved') : t('ui.chartSavedInMyCharts'))}
           </p>
         )}
         {error && (
@@ -190,14 +192,14 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
             onClick={onClose}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
           >
-            Annuler
+            {t('ui.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={(isReassign && !selectedProjectId) || saving || saved}
             className="flex-1 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
           >
-            {saving ? 'Enregistrement...' : (isReassign ? 'Associer' : 'Enregistrer')}
+            {saving ? t('ui.savingDots') : (isReassign ? t('ui.link') : t('ui.save'))}
           </button>
         </div>
       </div>

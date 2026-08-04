@@ -4,7 +4,10 @@
  * @created 2026-01-27 by [AI:Claude]
  */
 
+import { useTranslation } from 'react-i18next'
+
 const Step2BasicInfo = ({ formData, onFormChange }) => {
+  const { t } = useTranslation('projects')
   const handleChange = (field, value) => {
     onFormChange({ ...formData, [field]: value })
   }
@@ -14,18 +17,18 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
       {/* Nom du projet */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Nom du projet <span className="text-red-600">*</span>
+          {t('ui.projectName')} <span className="text-red-600">*</span>
         </label>
         <input
           type="text"
           value={formData.name}
           onChange={(e) => handleChange('name', e.target.value)}
           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
-          placeholder="Ex: Bonnet slouchy rouge"
+          placeholder={t('ui.phProjectName')}
           autoFocus
         />
         {formData.name && formData.name.length < 2 && (
-          <p className="mt-1 text-xs text-red-500">Le nom doit contenir au moins 2 caractères</p>
+          <p className="mt-1 text-xs text-red-500">{t('ui.nameMinLength')}</p>
         )}
       </div>
 
@@ -48,7 +51,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
             `}
           >
             <span className="text-xl">🪡</span>
-            <span>Crochet</span>
+            <span>{t('ui.crochetLabel')}</span>
           </button>
           <button
             type="button"
@@ -63,7 +66,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
             `}
           >
             <span className="text-xl">🧶</span>
-            <span>Tricot</span>
+            <span>{t('ui.knittingLabel')}</span>
           </button>
         </div>
       </div>
@@ -71,7 +74,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
       {/* Unité de comptage */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Unité de comptage
+          {t('ui.countUnit')}
         </label>
         <div className="grid grid-cols-2 gap-3">
           <button
@@ -87,7 +90,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
             `}
           >
             <span className="text-xl">📏</span>
-            <span>Rangs (entiers)</span>
+            <span>{t('ui.rowsWhole')}</span>
           </button>
           <button
             type="button"
@@ -102,11 +105,11 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
             `}
           >
             <span className="text-xl">📐</span>
-            <span>Centimètres (0.5)</span>
+            <span>{t('ui.centimetersUnit')}</span>
           </button>
         </div>
         <p className="mt-2 text-xs text-gray-500">
-          Choisissez comment vous voulez compter votre progression
+          {t('ui.howToCount')}
         </p>
       </div>
     </div>

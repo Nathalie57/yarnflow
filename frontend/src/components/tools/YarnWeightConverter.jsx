@@ -3,9 +3,11 @@
  * @brief Correspondance des épaisseurs de laine EU / US / UK + aiguilles recommandées
  */
 
+import { useTranslation } from 'react-i18next'
+
 const WEIGHTS = [
   {
-    eu: 'Dentelle',
+    euKey: 'wcLace',
     us: 'Lace',
     uk: 'Lace / 1 ply',
     needlesMm: '1,5 – 2,5',
@@ -14,7 +16,7 @@ const WEIGHTS = [
     wraps: '> 30',
   },
   {
-    eu: 'Super fine / Fingering',
+    euKey: 'wcSuperFine',
     us: 'Sock / Fingering / Baby',
     uk: '2 ply / 3 ply',
     needlesMm: '2 – 3,5',
@@ -23,7 +25,7 @@ const WEIGHTS = [
     wraps: '26 – 32',
   },
   {
-    eu: 'Fine / Sport',
+    euKey: 'wcFine',
     us: 'Sport / Baby',
     uk: '4 ply',
     needlesMm: '3 – 4',
@@ -32,7 +34,7 @@ const WEIGHTS = [
     wraps: '22 – 26',
   },
   {
-    eu: 'Légère / DK',
+    euKey: 'wcLight',
     us: 'DK / Light Worsted',
     uk: 'DK / 8 ply',
     needlesMm: '3,5 – 4,5',
@@ -41,7 +43,7 @@ const WEIGHTS = [
     wraps: '18 – 22',
   },
   {
-    eu: 'Moyenne / Worsted',
+    euKey: 'wcMedium',
     us: 'Worsted / Afghan / Aran',
     uk: 'Aran / 10 ply',
     needlesMm: '4,5 – 5,5',
@@ -50,7 +52,7 @@ const WEIGHTS = [
     wraps: '14 – 18',
   },
   {
-    eu: 'Grosse / Bulky',
+    euKey: 'wcBulky',
     us: 'Chunky / Craft / Rug',
     uk: 'Chunky / 12 ply',
     needlesMm: '5,5 – 8',
@@ -59,7 +61,7 @@ const WEIGHTS = [
     wraps: '10 – 14',
   },
   {
-    eu: 'Très grosse / Super Bulky',
+    euKey: 'wcSuperBulky',
     us: 'Super Bulky / Roving',
     uk: 'Super Chunky',
     needlesMm: '8 – 15',
@@ -70,17 +72,18 @@ const WEIGHTS = [
 ]
 
 export default function YarnWeightConverter() {
+  const { t } = useTranslation('tools')
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-500">
-        Les noms varient selon les marques — utilisez les aiguilles recommandées comme référence principale.
+        {t('ui.namesVaryByBrand')}
       </p>
 
       {WEIGHTS.map((w, i) => (
         <div key={i} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
           {/* Noms */}
           <div className="flex flex-wrap gap-2 mb-3">
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary-100 text-primary-700">FR · {w.eu}</span>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary-100 text-primary-700">FR · {t(`ui.${w.euKey}`)}</span>
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-600">US · {w.us}</span>
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-600">UK · {w.uk}</span>
           </div>
@@ -88,15 +91,15 @@ export default function YarnWeightConverter() {
           {/* Aiguilles */}
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-[10px] text-gray-500">Aiguilles (mm)</p>
+              <p className="text-[10px] text-gray-500">{t('ui.needlesMm')}</p>
               <p className="text-sm font-semibold text-gray-800">{w.needlesMm}</p>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">Aiguilles (US)</p>
+              <p className="text-[10px] text-gray-500">{t('ui.needlesUs')}</p>
               <p className="text-sm font-semibold text-gray-800">{w.needlesUs}</p>
             </div>
             <div>
-              <p className="text-[10px] text-gray-500">Crochet (mm)</p>
+              <p className="text-[10px] text-gray-500">{t('ui.hookMm')}</p>
               <p className="text-sm font-semibold text-gray-800">{w.crochetMm}</p>
             </div>
           </div>

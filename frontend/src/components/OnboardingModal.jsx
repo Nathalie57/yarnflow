@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const SLIDES = [
   {
@@ -13,8 +14,8 @@ const SLIDES = [
         <path d="M8 12l2.5 2.5L16 9"/>
       </svg>
     ),
-    title: 'Bienvenue sur YarnFlow',
-    description: 'Votre compagnon de tricot et crochet. Suivez vos projets, organisez vos patrons et sublimez vos créations avec l\'IA.',
+    titleKey: 'onbWelcomeTitle',
+    descKey: 'onbAppDesc',
   },
   {
     icon: (
@@ -25,8 +26,8 @@ const SLIDES = [
         <path d="M12 14l2 2 4-4"/>
       </svg>
     ),
-    title: 'Compteur de rangs',
-    description: 'Créez un projet, découpez-le en sections et comptez vos rangs en un tap. Votre progression est sauvegardée automatiquement, même entre appareils.',
+    titleKey: 'onbCounterTitle',
+    descKey: 'onbCounterDesc',
   },
   {
     icon: (
@@ -35,8 +36,8 @@ const SLIDES = [
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
       </svg>
     ),
-    title: 'Bibliothèque de patrons',
-    description: 'Centralisez tous vos patrons PDF, images ou URLs en un seul endroit. Plus besoin de chercher dans vos téléchargements.',
+    titleKey: 'onbLibraryTitle',
+    descKey: 'onbLibraryDesc',
   },
   {
     icon: (
@@ -46,8 +47,8 @@ const SLIDES = [
         <path d="M17.5 7.5l1.5 1.5"/>
       </svg>
     ),
-    title: 'Photos sublimées par l\'IA',
-    description: 'Prenez une photo de votre ouvrage et laissez l\'IA la transformer en photo de studio. Partagez vos créations sous leur meilleur jour.',
+    titleKey: 'onbPhotoTitle',
+    descKey: 'onbPhotoDesc',
   },
   {
     icon: (
@@ -60,12 +61,13 @@ const SLIDES = [
         <line x1="12" y1="15" x2="12" y2="21"/>
       </svg>
     ),
-    title: 'Des outils pour tricoter mieux',
-    description: 'Calculateur d\'échantillon, répartition d\'augmentations, convertisseur d\'aiguilles, glossaire… Tout ce qu\'il vous faut, sans quitter l\'app.',
+    titleKey: 'onbToolsTitle',
+    descKey: 'onbToolsDesc',
   },
 ]
 
 export default function OnboardingModal({ onClose }) {
+  const { t } = useTranslation('tools')
   const [current, setCurrent] = useState(0)
   const isLast = current === SLIDES.length - 1
   const slide = SLIDES[current]
@@ -86,10 +88,10 @@ export default function OnboardingModal({ onClose }) {
 
         {/* Texte */}
         <h2 className="text-xl font-bold text-gray-900 text-center mb-3">
-          {slide.title}
+          {slide.titleKey ? t(`ui.${slide.titleKey}`) : slide.title}
         </h2>
         <p className="text-sm text-gray-500 text-center leading-relaxed">
-          {slide.description}
+          {t(`ui.${slide.descKey}`)}
         </p>
 
         {/* Indicateurs */}
@@ -115,13 +117,13 @@ export default function OnboardingModal({ onClose }) {
                 onClick={handleClose}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-gray-700 transition"
               >
-                Ignorer
+                {t('ui.skip')}
               </button>
               <button
                 onClick={() => setCurrent(c => c + 1)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
               >
-                Suivant
+                {t('ui.next')}
               </button>
             </>
           ) : (
@@ -129,7 +131,7 @@ export default function OnboardingModal({ onClose }) {
               onClick={handleClose}
               className="w-full py-2.5 rounded-xl text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
             >
-              C'est parti !
+              {t('ui.letsGo')}
             </button>
           )}
         </div>

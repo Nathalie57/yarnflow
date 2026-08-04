@@ -8,16 +8,20 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import ProxyViewer from '../components/ProxyViewer'
+import { projectTypeKey } from '../data/projectTypes'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 const PatternLibraryDetail = () => {
+  const { t } = useTranslation('library')
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, getSubscriptionPlan } = useAuth()
 
   const [pattern, setPattern] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -69,13 +73,19 @@ const PatternLibraryDetail = () => {
 
   const isPro = user?.subscription_type && user.subscription_type !== 'free'
 
+
+  // [AI:Claude] isPro vaut hasActiveSubscription() : vrai pour PLUS aussi.
+
+
+  // Le plan reel decide quel palier proposer, ou aucun.
+
+
+  const currentPlan = getSubscriptionPlan ? getSubscriptionPlan() : (isPro ? 'pro' : 'free')
+
+  // Libelle affichable d'une valeur stockee : la valeur elle-meme reste en base.
   const getCategoryLabel = (category) => {
-    const translations = {
-      'other': 'Autre', 'Vêtements': 'Vêtements', 'Accessoires': 'Accessoires',
-      'Maison/Déco': 'Maison/Déco', 'Jouets/Peluches': 'Jouets/Peluches',
-      'Accessoires bébé': 'Accessoires bébé'
-    }
-    return translations[category] || category
+    const key = projectTypeKey(category)
+    return key ? t(`projectTypes.${key}`, { ns: 'common' }) : category
   }
 
   useEffect(() => {
@@ -120,7 +130,7 @@ const PatternLibraryDetail = () => {
       }
     } catch (err) {
       console.error('Erreur chargement patron:', err)
-      setError('Impossible de charger le patron')
+      setError(t('ui.patternLoadFailed'))
     } finally {
       setLoading(false)
     }
@@ -153,13 +163,13 @@ const PatternLibraryDetail = () => {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce patron ?')) return
+    if (!confirm(t('ui.confirmDeletePattern'))) return
     try {
       await api.delete(`/pattern-library/${id}`)
       navigate('/pattern-library')
     } catch (err) {
       console.error('Erreur suppression:', err)
-      alert('Erreur lors de la suppression')
+      alert(t('ui.deleteFailed'))
     }
   }
 
@@ -200,7 +210,7 @@ const PatternLibraryDetail = () => {
       fetchPattern()
     } catch (err) {
       console.error('Erreur liaison projet:', err)
-      alert('Erreur lors de la liaison du projet')
+      alert(t('ui.linkProjectFailed'))
     } finally {
       setLinkingProject(false)
     }
@@ -230,7 +240,7 @@ const PatternLibraryDetail = () => {
   const addPendingFiles = (newFiles) => {
     const valid = Array.from(newFiles).filter(f => ALLOWED_TYPES.includes(f.type))
     if (valid.length < newFiles.length) {
-      alert('Certains fichiers ont été ignorés (formats acceptés : PDF, JPG, PNG, WEBP)')
+      alert(t('ui.someFilesIgnored'))
     }
     setPendingFiles(prev => {
       const existing = new Set(prev.map(f => f.name + f.size))
@@ -263,14 +273,14 @@ const PatternLibraryDetail = () => {
       setPendingFiles([])
     } catch (err) {
       console.error('Erreur ajout fichier:', err)
-      alert(err.response?.data?.error || "Erreur lors de l'ajout du fichier")
+      alert(err.response?.data?.error || t('ui.fileAddFailed'))
     } finally {
       setUploadingFile(false)
     }
   }
 
   const handleDeleteAdditionalFile = async (fileId) => {
-    if (!confirm('Supprimer ce fichier ?')) return
+    if (!confirm(t('ui.confirmDeleteFile'))) return
     try {
       await api.delete(`/pattern-library/${id}/files/${fileId}`)
       // Révoquer le blob
@@ -283,7 +293,7 @@ const PatternLibraryDetail = () => {
       if (selectedFileId === fileId) setSelectedFileId(null)
     } catch (err) {
       console.error('Erreur suppression fichier:', err)
-      alert('Erreur lors de la suppression')
+      alert(t('ui.deleteFailed'))
     }
   }
 
@@ -301,7 +311,7 @@ const PatternLibraryDetail = () => {
       setShowAddNote(false)
     } catch (err) {
       console.error('Erreur création note:', err)
-      alert('Erreur lors de la création de la note')
+      alert(t('ui.noteCreateFailed'))
     } finally {
       setSavingNote(false)
     }
@@ -317,20 +327,20 @@ const PatternLibraryDetail = () => {
       setEditingNoteText('')
     } catch (err) {
       console.error('Erreur mise à jour note:', err)
-      alert('Erreur lors de la mise à jour')
+      alert(t('ui.updateFailed2'))
     } finally {
       setSavingNote(false)
     }
   }
 
   const handleDeleteNote = async (noteId) => {
-    if (!confirm('Supprimer cette note ?')) return
+    if (!confirm(t('ui.confirmDeleteNote'))) return
     try {
       await api.delete(`/pattern-library/${id}/notes/${noteId}`)
       setUsageNotes(prev => prev.filter(n => n.id !== noteId))
     } catch (err) {
       console.error('Erreur suppression note:', err)
-      alert('Erreur lors de la suppression')
+      alert(t('ui.deleteFailed'))
     }
   }
 
@@ -346,15 +356,15 @@ const PatternLibraryDetail = () => {
       else {
         try {
           new URL(formData.url)
-          if (!formData.url.startsWith('http')) errors.url = "L'URL doit commencer par http:// ou https://"
+          if (!formData.url.startsWith('http')) errors.url = t('ui.urlMustStartHttpPlain')
         } catch { errors.url = "URL invalide" }
       }
     } else if (editType === 'text') {
       if (!formData.pattern_text?.trim()) errors.pattern_text = 'Texte obligatoire'
-      else if (formData.pattern_text.trim().length < 10) errors.pattern_text = 'Au moins 10 caractères'
+      else if (formData.pattern_text.trim().length < 10) errors.pattern_text = t('ui.min10Chars')
     }
     if (!formData.name?.trim()) errors.name = 'Nom obligatoire'
-    else if (formData.name.trim().length < 2) errors.name = 'Au moins 2 caractères'
+    else if (formData.name.trim().length < 2) errors.name = t('ui.min2Chars')
     setValidationErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -388,7 +398,7 @@ const PatternLibraryDetail = () => {
       setFile(null)
     } catch (err) {
       console.error('Erreur modification:', err)
-      alert(err.response?.data?.message || 'Erreur lors de la modification')
+      alert(err.response?.data?.message || t('ui.editFailed'))
     } finally {
       setUploading(false)
     }
@@ -407,7 +417,7 @@ const PatternLibraryDetail = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          <p className="mt-4 text-gray-600">Chargement du patron...</p>
+          <p className="mt-4 text-gray-600">{t('ui.loadingPattern')}</p>
         </div>
       </div>
     )
@@ -420,10 +430,10 @@ const PatternLibraryDetail = () => {
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-gray-400 mx-auto mb-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
           </svg>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Patron introuvable</h2>
-          <p className="text-gray-600 mb-6">{error || "Ce patron n'existe pas ou a été supprimé"}</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('ui.patternNotFound')}</h2>
+          <p className="text-gray-600 mb-6">{error || t('ui.patternNotFound')}</p>
           <Link to="/pattern-library" className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition inline-block">
-            ← Retour à la bibliothèque
+            {t('ui.backToLibrary')}
           </Link>
         </div>
       </div>
@@ -438,7 +448,7 @@ const PatternLibraryDetail = () => {
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
         </svg>
-        Bibliothèque de patrons
+        {t('ui.patternLibraryTitle')}
       </Link>
 
       {/* Layout 2 colonnes */}
@@ -483,7 +493,7 @@ const PatternLibraryDetail = () => {
                 <path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/>
                 <path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>
               </svg>
-              Traduire ce patron
+              {t('ui.translateThisPattern')}
             </Link>
           </div>
 
@@ -492,7 +502,7 @@ const PatternLibraryDetail = () => {
             <div className="flex flex-wrap gap-2">
               {pattern.technique && (
                 <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm font-medium">
-                  {pattern.technique === 'tricot' ? 'Tricot' : 'Crochet'}
+                  {pattern.technique === 'tricot' ? t('ui.knitting') : 'Crochet'}
                 </span>
               )}
               {pattern.category && (
@@ -523,7 +533,7 @@ const PatternLibraryDetail = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  {pattern.file_type === 'pdf' ? 'PDF principal' : 'Image principale'}
+                  {pattern.file_type === 'pdf' ? t('ui.mainPdf') : t('ui.mainImage')}
                 </button>
 
                 {/* Fichiers additionnels */}
@@ -537,12 +547,12 @@ const PatternLibraryDetail = () => {
                           : 'border-transparent text-gray-500 hover:text-gray-700'
                       }`}
                     >
-                      {f.file_type === 'pdf' ? 'PDF' : 'Image'} {index + 2}
+                      {f.file_type === 'pdf' ? 'PDF' : t('ui.imageWord')} {index + 2}
                     </button>
                     <button
                       onClick={() => handleDeleteAdditionalFile(f.id)}
                       className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition hidden group-hover:flex items-center justify-center text-xs leading-none"
-                      title="Supprimer ce fichier"
+                      title={t('ui.deleteThisFile')}
                     >
                       ×
                     </button>
@@ -558,7 +568,7 @@ const PatternLibraryDetail = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
-                    Ajouter des fichiers
+                    {t('ui.addFiles')}
                   </button>
                 </div>
               </div>
@@ -575,7 +585,7 @@ const PatternLibraryDetail = () => {
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
                           </svg>
-                          Plein écran
+                          {t('ui.fullscreen')}
                         </button>
                       </div>
                     )}
@@ -586,7 +596,7 @@ const PatternLibraryDetail = () => {
                     ) : fileUrl ? (
                       <PDFViewer url={fileUrl} fileName={pattern.name} />
                     ) : (
-                      <div className="text-center py-12 text-gray-500">Impossible de charger le PDF</div>
+                      <div className="text-center py-12 text-gray-500">{t('ui.cannotLoadPdf')}</div>
                     )}
                   </div>
                 )}
@@ -602,7 +612,7 @@ const PatternLibraryDetail = () => {
                         <img src={fileUrl} alt={pattern.name} className="max-w-full max-h-[700px] object-contain shadow-md rounded-lg hover:opacity-90 transition" />
                       </div>
                     ) : (
-                      <div className="text-center py-12 text-gray-500">Impossible de charger l'image</div>
+                      <div className="text-center py-12 text-gray-500">{t('ui.cannotLoadImage')}</div>
                     )}
                   </div>
                 )}
@@ -653,7 +663,7 @@ const PatternLibraryDetail = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
                     </svg>
-                    Plein écran
+                    {t('ui.fullscreen')}
                   </button>
                 </div>
                 <div className="p-6">
@@ -671,15 +681,15 @@ const PatternLibraryDetail = () => {
 
           {/* CTA principal : utiliser dans un projet */}
           <div className="bg-primary-50 border border-primary-200 rounded-xl p-4">
-            <p className="text-sm font-semibold text-primary-800 mb-1">Utiliser ce patron</p>
+            <p className="text-sm font-semibold text-primary-800 mb-1">{t('ui.useThisPattern')}</p>
             <p className="text-xs text-primary-600 mb-3">
-              Liez ce patron à un de vos projets pour le retrouver facilement.
+              {t('ui.linkToProjectDesc')}
             </p>
             <button
               onClick={openLinkProjectModal}
               className="w-full py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
             >
-              Lier à un projet
+              {t('ui.linkToProject')}
             </button>
           </div>
 
@@ -690,9 +700,9 @@ const PatternLibraryDetail = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-primary-600">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                 </svg>
-                Projets liés
+                {t('ui.linkedProjects')}
                 <span className="ml-auto text-xs text-gray-500 font-normal">
-                  {pattern.times_used || linkedProjects.length} projet{(pattern.times_used || linkedProjects.length) > 1 ? 's' : ''}
+                  {t('ui.usedInCount', { count: pattern.times_used || linkedProjects.length })}
                 </span>
               </h3>
 
@@ -720,7 +730,7 @@ const PatternLibraryDetail = () => {
                 </div>
               ) : (
                 <p className="text-xs text-gray-500">
-                  Utilisé dans {pattern.times_used} projet{pattern.times_used > 1 ? 's' : ''}.
+                  {t('ui.usedInProjects', { count: pattern.times_used })}
                 </p>
               )}
             </div>
@@ -729,7 +739,7 @@ const PatternLibraryDetail = () => {
           {/* Notes personnelles */}
           {pattern.notes && (
             <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">Notes personnelles</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('ui.personalNotes')}</h3>
               <p className="text-sm text-gray-600 whitespace-pre-wrap">{pattern.notes}</p>
             </div>
           )}
@@ -738,9 +748,9 @@ const PatternLibraryDetail = () => {
           <div className="bg-white border border-gray-200 rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-gray-900">Notes d'utilisation</h3>
+                <h3 className="text-sm font-semibold text-gray-900">{t('ui.usageNotes')}</h3>
                 {!isPro && (
-                  <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 text-xs font-semibold rounded">PRO</span>
+                  <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 text-xs font-semibold rounded">{t('ui.planPro')}</span>
                 )}
               </div>
               {isPro && !showAddNote && (
@@ -748,7 +758,7 @@ const PatternLibraryDetail = () => {
                   onClick={() => setShowAddNote(true)}
                   className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  + Ajouter
+                  {t('ui.addPlus')}
                 </button>
               )}
             </div>
@@ -756,10 +766,10 @@ const PatternLibraryDetail = () => {
             {!isPro ? (
               <div>
                 <p className="text-xs text-gray-500 mb-2">
-                  Notez vos adaptations pour chaque utilisation — aiguilles, modifications du patron, fil substitué…
+                  {t('ui.noteAdaptations')}
                 </p>
                 <Link to="/subscription" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
-                  Passer à PRO — 6,99€/mois
+                  {(() => { const p = upgradeTarget('pattern_library', currentPlan); return p && t('ui.goToPlan', { plan: planLabel(p), price: PLAN_PRICES[p].monthlyEquiv }) })()}
                 </Link>
               </div>
             ) : (
@@ -770,7 +780,7 @@ const PatternLibraryDetail = () => {
                     <textarea
                       value={newNoteText}
                       onChange={(e) => setNewNoteText(e.target.value)}
-                      placeholder="Aiguilles 4mm, modification rang 12, laine Drops Merino..."
+                      placeholder={t('ui.phUsageNotes')}
                       rows={3}
                       autoFocus
                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 resize-none"
@@ -782,7 +792,7 @@ const PatternLibraryDetail = () => {
                         onChange={(e) => setNewNoteProjectId(e.target.value)}
                         className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white"
                       >
-                        <option value="">Projet (optionnel)</option>
+                        <option value="">{t('ui.projectOptional')}</option>
                         {userProjects.map(p => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
@@ -793,14 +803,14 @@ const PatternLibraryDetail = () => {
                         onClick={() => { setShowAddNote(false); setNewNoteText(''); setNewNoteProjectId('') }}
                         className="px-3 py-1.5 text-xs text-gray-600 hover:text-gray-800"
                       >
-                        Annuler
+                        {t('ui.cancel')}
                       </button>
                       <button
                         onClick={handleCreateNote}
                         disabled={savingNote || !newNoteText.trim()}
                         className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
                       >
-                        {savingNote ? 'Enregistrement…' : 'Enregistrer'}
+                        {savingNote ? t('ui.savingEllipsisAlt') : t('ui.save')}
                       </button>
                     </div>
                   </div>
@@ -809,7 +819,7 @@ const PatternLibraryDetail = () => {
                 {/* Liste des notes */}
                 {usageNotes.length === 0 && !showAddNote && (
                   <p className="text-xs text-gray-400 italic">
-                    Aucune note pour l'instant. Ajoutez vos adaptations, substitutions de laine, modifications…
+                    {t('ui.noNotesYet')}
                   </p>
                 )}
 
@@ -830,14 +840,14 @@ const PatternLibraryDetail = () => {
                             onClick={() => { setEditingNoteId(null); setEditingNoteText('') }}
                             className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700"
                           >
-                            Annuler
+                            {t('ui.cancel')}
                           </button>
                           <button
                             onClick={() => handleUpdateNote(note.id)}
                             disabled={savingNote}
                             className="px-3 py-1 text-xs bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50"
                           >
-                            Enregistrer
+                            {t('ui.save')}
                           </button>
                         </div>
                       </div>
@@ -855,13 +865,13 @@ const PatternLibraryDetail = () => {
                             onClick={() => { setEditingNoteId(note.id); setEditingNoteText(note.note) }}
                             className="text-xs text-gray-400 hover:text-primary-600 transition"
                           >
-                            Modifier
+                            {t('ui.edit')}
                           </button>
                           <button
                             onClick={() => handleDeleteNote(note.id)}
                             className="text-xs text-gray-400 hover:text-red-500 transition"
                           >
-                            Supprimer
+                            {t('ui.delete')}
                           </button>
                         </div>
                       </>
@@ -881,7 +891,7 @@ const PatternLibraryDetail = () => {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-gray-500">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
               </svg>
-              Modifier le patron
+              {t('ui.editPattern')}
             </button>
 
             {pattern.source_type === 'file' && fileUrl && (
@@ -893,7 +903,7 @@ const PatternLibraryDetail = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-gray-500">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
-                Télécharger le fichier
+                {t('ui.downloadFile')}
               </a>
             )}
 
@@ -904,13 +914,13 @@ const PatternLibraryDetail = () => {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
               </svg>
-              Supprimer
+              {t('ui.delete')}
             </button>
           </div>
 
           {/* Date discrète */}
           <p className="text-xs text-gray-400 text-center">
-            Ajouté le {new Date(pattern.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {t('ui.addedOnLong', { date: new Date(pattern.created_at).toLocaleDateString(i18n.language, { day: 'numeric', month: 'long', year: 'numeric' }) })}
           </p>
         </div>
       </div>
@@ -924,7 +934,7 @@ const PatternLibraryDetail = () => {
               onClick={() => setShowFullscreen(false)}
               className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium hover:bg-gray-100 transition"
             >
-              Fermer
+              {t('ui.close')}
             </button>
           </div>
           <div className="flex-1 overflow-auto">
@@ -947,7 +957,7 @@ const PatternLibraryDetail = () => {
               onClick={() => setShowTextFullscreen(false)}
               className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium hover:bg-gray-100 transition"
             >
-              Fermer
+              {t('ui.close')}
             </button>
           </div>
           <div className="flex-1 overflow-auto p-8 bg-gray-50">
@@ -965,16 +975,16 @@ const PatternLibraryDetail = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl max-w-lg w-full max-h-[80vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <h2 className="text-xl font-bold text-gray-900">Lier à un projet</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('ui.linkToProject')}</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Choisissez le projet dans lequel vous utilisez ce patron.
+                {t('ui.chooseProjectDesc')}
               </p>
             </div>
 
             <div className="p-6">
               <input
                 type="text"
-                placeholder="Rechercher un projet..."
+                placeholder={t('ui.searchProject')}
                 value={projectSearch}
                 onChange={(e) => setProjectSearch(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-primary-500"
@@ -987,12 +997,12 @@ const PatternLibraryDetail = () => {
                 </div>
               ) : filteredProjects.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <p className="mb-3">Aucun projet trouvé.</p>
+                  <p className="mb-3">{t('ui.noProjectFound')}</p>
                   <Link
                     to="/projects/new"
                     className="text-primary-600 hover:text-primary-700 font-medium text-sm"
                   >
-                    Créer un nouveau projet
+                    {t('ui.createNewProject')}
                   </Link>
                 </div>
               ) : (
@@ -1012,7 +1022,7 @@ const PatternLibraryDetail = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{project.name}</p>
                         {project.status && (
-                          <p className="text-xs text-gray-500">{project.status === 'in_progress' ? 'En cours' : project.status}</p>
+                          <p className="text-xs text-gray-500">{project.status === 'in_progress' ? t('ui.inProgress2') : project.status}</p>
                         )}
                       </div>
                       {linkingProject === project.id && (
@@ -1029,7 +1039,7 @@ const PatternLibraryDetail = () => {
                 onClick={() => setShowLinkProjectModal(false)}
                 className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
               >
-                Annuler
+                {t('ui.cancel')}
               </button>
             </div>
           </div>
@@ -1041,7 +1051,7 @@ const PatternLibraryDetail = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl max-w-lg w-full">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Ajouter des fichiers</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('ui.addFiles')}</h2>
               <button onClick={() => setShowAddFilesModal(false)} className="text-gray-400 hover:text-gray-600 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -1062,8 +1072,8 @@ const PatternLibraryDetail = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-400 mx-auto mb-3">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                 </svg>
-                <p className="text-sm text-gray-600 mb-1">Glissez vos fichiers ici</p>
-                <p className="text-xs text-gray-400 mb-3">PDF, JPG, PNG, WEBP</p>
+                <p className="text-sm text-gray-600 mb-1">{t('ui.dragFilesHere')}</p>
+                <p className="text-xs text-gray-500 mb-3">{t('ui.pdfJpgPngWebp')}</p>
                 <label className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 cursor-pointer transition">
                   <input
                     type="file"
@@ -1072,7 +1082,7 @@ const PatternLibraryDetail = () => {
                     onChange={(e) => addPendingFiles(e.target.files)}
                     className="hidden"
                   />
-                  Parcourir
+                  {t('ui.browse')}
                 </label>
               </div>
 
@@ -1080,7 +1090,7 @@ const PatternLibraryDetail = () => {
               {pendingFiles.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                    {pendingFiles.length} fichier{pendingFiles.length > 1 ? 's' : ''} sélectionné{pendingFiles.length > 1 ? 's' : ''}
+                    {t('ui.filesSelected', { count: pendingFiles.length })}
                   </p>
                   {pendingFiles.map((f, i) => (
                     <div key={i} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-lg">
@@ -1118,7 +1128,7 @@ const PatternLibraryDetail = () => {
                 onClick={() => setShowAddFilesModal(false)}
                 className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
               >
-                Annuler
+                {t('ui.cancel')}
               </button>
               <button
                 onClick={handleUploadPendingFiles}
@@ -1128,7 +1138,7 @@ const PatternLibraryDetail = () => {
                 {uploadingFile ? (
                   <>
                     <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>
-                    Upload en cours…
+                    {t('ui.uploading')}
                   </>
                 ) : (
                   `Uploader${pendingFiles.length > 0 ? ` (${pendingFiles.length})` : ''}`
@@ -1144,7 +1154,7 @@ const PatternLibraryDetail = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
-              <h2 className="text-2xl font-bold text-gray-900">Modifier le patron</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('ui.editPattern')}</h2>
             </div>
 
             <form onSubmit={handleUpdatePattern} className="p-6">
@@ -1152,10 +1162,10 @@ const PatternLibraryDetail = () => {
               {pattern.source_type === 'file' && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Remplacer le fichier (optionnel)
+                    {t('ui.replaceFileOptional')}
                   </label>
                   <p className="text-xs text-gray-500 mb-3">
-                    Fichier actuel : <strong>{pattern.file_name || 'Non disponible'}</strong>
+                    <Trans t={t} i18nKey="ui.currentFileNamed" values={{ name: pattern.file_name || t('ui.notAvailable') }}><strong /></Trans>
                   </p>
                   <input
                     type="file"
@@ -1175,15 +1185,15 @@ const PatternLibraryDetail = () => {
                             <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
                           </svg>
                           <p className="font-medium text-sm text-gray-900">{file.name}</p>
-                          <p className="text-xs text-gray-500 mt-1">Cliquer pour changer</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('ui.clickToChange')}</p>
                         </>
                       ) : (
                         <>
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-gray-400 mx-auto mb-2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                           </svg>
-                          <p className="font-medium text-sm text-gray-900">Choisir un nouveau fichier</p>
-                          <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG, WEBP (max 10MB)</p>
+                          <p className="font-medium text-sm text-gray-900">{t('ui.chooseNewFile')}</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('ui.formatsMax10')}</p>
                         </>
                       )}
                     </div>
@@ -1198,7 +1208,7 @@ const PatternLibraryDetail = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">URL <span className="text-red-600">*</span></label>
                   <input type="url" value={formData.url}
                     onChange={(e) => { setFormData({ ...formData, url: e.target.value }); setValidationErrors({ ...validationErrors, url: '' }) }}
-                    placeholder="https://..."
+                    placeholder={t('ui.phHttps')}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${validationErrors.url ? 'border-red-400' : 'border-gray-300'}`}
                   />
                   {validationErrors.url && <p className="mt-1 text-sm text-red-600">{validationErrors.url}</p>}
@@ -1208,7 +1218,7 @@ const PatternLibraryDetail = () => {
               {/* Texte */}
               {editType === 'text' && (
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Texte du patron <span className="text-red-600">*</span></label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.patternText')} <span className="text-red-600">*</span></label>
                   <textarea value={formData.pattern_text}
                     onChange={(e) => { setFormData({ ...formData, pattern_text: e.target.value }); setValidationErrors({ ...validationErrors, pattern_text: '' }) }}
                     rows={12}
@@ -1220,7 +1230,7 @@ const PatternLibraryDetail = () => {
 
               {/* Nom */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nom <span className="text-red-600">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.nameRequired')} <span className="text-red-600">*</span></label>
                 <input type="text" value={formData.name}
                   onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setValidationErrors({ ...validationErrors, name: '' }) }}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${validationErrors.name ? 'border-red-400' : 'border-gray-300'}`}
@@ -1230,7 +1240,7 @@ const PatternLibraryDetail = () => {
 
               {/* Description */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.description')}</label>
                 <textarea value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -1240,40 +1250,40 @@ const PatternLibraryDetail = () => {
               {/* Métadonnées */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Catégorie</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.category')}</label>
                   <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">-- Sélectionner --</option>
-                    <option value="Vêtements">Vêtements</option>
-                    <option value="Accessoires">Accessoires</option>
-                    <option value="Jouets/Peluches">Jouets/Peluches</option>
-                    <option value="Vêtements bébé">Vêtements bébé</option>
-                    <option value="Accessoires bébé">Accessoires bébé</option>
-                    <option value="Vêtements enfant">Vêtements enfant</option>
-                    <option value="Maison/Déco">Maison/Déco</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="Vêtements">{t('ui.catClothing')}</option>
+                    <option value="Accessoires">{t('ui.catAccessories')}</option>
+                    <option value="Jouets/Peluches">{t('ui.catToys')}</option>
+                    <option value="Vêtements bébé">{t('ui.catBabyClothing')}</option>
+                    <option value="Accessoires bébé">{t('ui.catBabyAccessories')}</option>
+                    <option value="Vêtements enfant">{t('ui.catKidsClothing')}</option>
+                    <option value="Maison/Déco">{t('ui.catHome')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Technique</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.technique')}</label>
                   <select value={formData.technique} onChange={(e) => setFormData({ ...formData, technique: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">-- Sélectionner --</option>
-                    <option value="tricot">Tricot</option>
-                    <option value="crochet">Crochet</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="tricot">{t('ui.knitting')}</option>
+                    <option value="crochet">{t('ui.crochet')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Difficulté</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.difficulty')}</label>
                   <select value={formData.difficulty} onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                    <option value="">-- Sélectionner --</option>
-                    <option value="facile">Facile</option>
-                    <option value="moyen">Moyen</option>
-                    <option value="difficile">Difficile</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="facile">{t('ui.diffEasy')}</option>
+                    <option value="moyen">{t('ui.diffMedium')}</option>
+                    <option value="difficile">{t('ui.diffHard')}</option>
                   </select>
                 </div>
               </div>
 
               {/* Notes */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Notes personnelles</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.personalNotes')}</label>
                 <textarea value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -1283,11 +1293,11 @@ const PatternLibraryDetail = () => {
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button type="button" onClick={() => setShowEditModal(false)}
                   className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                  Annuler
+                  {t('ui.cancel')}
                 </button>
                 <button type="submit" disabled={uploading}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50">
-                  {uploading ? 'Enregistrement...' : 'Enregistrer'}
+                  {uploading ? t('ui.savingDots') : t('ui.save')}
                 </button>
               </div>
             </form>

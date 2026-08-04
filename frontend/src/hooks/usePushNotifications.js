@@ -33,7 +33,7 @@ export function usePushNotifications() {
 
   const subscribe = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      return { success: false, error: 'Push non supporté sur ce navigateur' }
+      return { success: false, code: 'unsupported' }
     }
 
     setIsLoading(true)
@@ -43,7 +43,7 @@ export function usePushNotifications() {
       const vapidPublicKey = data.public_key
 
       if (!vapidPublicKey) {
-        return { success: false, error: 'Clé VAPID manquante' }
+        return { success: false, code: 'vapid_missing' }
       }
 
       // Demander la permission
@@ -51,7 +51,7 @@ export function usePushNotifications() {
       setPermission(result)
 
       if (result !== 'granted') {
-        return { success: false, error: 'Permission refusée' }
+        return { success: false, code: 'permission_denied' }
       }
 
       // S'abonner via le service worker

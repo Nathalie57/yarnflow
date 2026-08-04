@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import api from '../services/api'
 import PasswordInput from '../components/PasswordInput'
 
 const Login = () => {
+  const { t } = useTranslation('auth')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -62,16 +65,19 @@ const Login = () => {
 
     } catch (err) {
       console.error('Erreur Google Login:', err)
-      setError('Erreur lors de la connexion avec Google')
+      setError(t('login.googleError'))
       setOauthLoading(false)
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
+      {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
+      <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
+
       <div className="card max-w-md w-full">
         <h1 className="text-3xl font-bold text-center mb-2">YarnFlow</h1>
-        <p className="text-gray-600 text-center mb-6">Connexion à votre compte</p>
+        <p className="text-gray-600 text-center mb-6">{t('login.subtitle')}</p>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -81,7 +87,7 @@ const Login = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Email</label>
+            <label className="block text-gray-700 mb-2">{t('shared.email')}</label>
             <input
               type="email"
               className="input-field"
@@ -92,7 +98,7 @@ const Login = () => {
           </div>
 
           <div className="mb-6">
-            <label className="block text-gray-700 mb-2">Mot de passe</label>
+            <label className="block text-gray-700 mb-2">{t('shared.password')}</label>
             <PasswordInput
               className="input-field"
               value={password}
@@ -106,7 +112,7 @@ const Login = () => {
             className="btn-primary w-full"
             disabled={loading || oauthLoading}
           >
-            {loading ? 'Connexion...' : 'Se connecter'}
+            {loading ? t('login.submitting') : t('login.submit')}
           </button>
 
           {/* [AI:Claude] Lien mot de passe oublié */}
@@ -115,7 +121,7 @@ const Login = () => {
               to="/forgot-password"
               className="text-sm text-primary-600 hover:text-primary-700 font-medium"
             >
-              Mot de passe oublié ?
+              {t('login.forgotPassword')}
             </Link>
           </div>
         </form>
@@ -126,7 +132,7 @@ const Login = () => {
             <div className="w-full border-t border-gray-300"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-gray-500">Ou continuer avec</span>
+            <span className="px-4 bg-white text-gray-500">{t('shared.orContinueWith')}</span>
           </div>
         </div>
 
@@ -141,19 +147,19 @@ const Login = () => {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          {oauthLoading ? 'Connexion...' : 'Continuer avec Google'}
+          {oauthLoading ? t('login.submitting') : t('shared.continueWithGoogle')}
         </button>
 
         <p className="text-center mt-4 text-sm text-gray-500">
-          Pas encore de compte ?{' '}
+          {t('login.noAccount')}{' '}
           <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
-            Créer un compte
+            {t('login.createAccount')}
           </Link>
         </p>
         <p className="text-center mt-2 text-sm text-gray-500">
-          Besoin d'aide ?{' '}
+          {t('shared.needHelp')}{' '}
           <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
-            Contactez-nous
+            {t('shared.contactUs')}
           </Link>
         </p>
       </div>

@@ -5,9 +5,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { yarnStashAPI } from '../../services/api'
+import { useTranslation, Trans } from 'react-i18next'
 
 const YARN_WEIGHT_OPTIONS = [
-  { value: '',            label: 'Épaisseur (optionnel)' },
+  { value: '',            labelKey: 'weightOptional' },
   { value: 'lace',        label: 'Lace' },
   { value: 'fingering',   label: 'Fingering' },
   { value: 'sport',       label: 'Sport' },
@@ -35,6 +36,7 @@ const EMPTY_FORM = {
 }
 
 const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
+  const { t } = useTranslation('tools')
   const [form, setForm] = useState(EMPTY_FORM)
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
@@ -125,8 +127,8 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
         }))
       } catch (err) {
         const msg = err?.message === 'timeout'
-          ? 'Lecture trop longue. Remplis le formulaire manuellement.'
-          : (err?.response?.data?.error || 'Lecture automatique impossible. Remplis le formulaire manuellement.')
+          ? t('ui.scanTooLong')
+          : (err?.response?.data?.error || t('ui.scanImpossible'))
         setScanError(msg)
       } finally {
         setScanning(false)
@@ -176,20 +178,20 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
             <div className="relative">
               <img
                 src={photoPreview}
-                alt="Étiquette"
+                alt={t('ui.labelAlt')}
                 className={`w-full h-40 object-cover rounded-xl border border-gray-200 transition-opacity ${scanning ? 'opacity-50' : ''}`}
               />
               {scanning && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 rounded-xl">
                   <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-medium text-primary-700">Lecture de l'étiquette…</span>
+                  <span className="text-xs font-medium text-primary-700">{t('ui.readingLabel')}</span>
                 </div>
               )}
               <button
                 type="button"
                 onClick={removePhoto}
                 className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
-                title="Supprimer la photo"
+                title={t('ui.deletePhoto')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -206,7 +208,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
               </svg>
-              <span className="text-xs font-medium">Prendre en photo l'étiquette pour remplir automatiquement</span>
+              <span className="text-xs font-medium">{t('ui.labelPhotoHint')}</span>
             </button>
           )}
           {!photoPreview && (
@@ -215,7 +217,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               onClick={() => openPhotoInput('main', galleryInputRef)}
               className="w-full mt-2 text-xs text-gray-400 hover:text-primary-600 transition-colors"
             >
-              ou importer une photo existante
+              {t('ui.orImportExisting')}
             </button>
           )}
 
@@ -225,14 +227,14 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               <div className="relative inline-block mt-2">
                 <img
                   src={extraPhotoPreview}
-                  alt="Étiquette (autre angle)"
+                  alt={t('ui.labelAltOther')}
                   className="h-16 w-16 object-cover rounded-lg border border-gray-200"
                 />
                 <button
                   type="button"
                   onClick={removeExtraPhoto}
                   className="absolute -top-1.5 -right-1.5 bg-white p-0.5 rounded-full shadow text-gray-500 hover:text-red-500 transition-colors"
-                  title="Supprimer cette photo"
+                  title={t('ui.deleteThisPhoto')}
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -246,7 +248,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   onClick={() => openPhotoInput('extra', fileInputRef)}
                   className="text-primary-500 hover:text-primary-700 font-medium"
                 >
-                  + Ajouter une 2e photo (si l'étiquette ne tenait pas entièrement dans le cadre)
+                  {t('ui.addSecondPhoto')}
                 </button>
                 <span className="text-gray-300">·</span>
                 <button
@@ -254,7 +256,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   onClick={() => openPhotoInput('extra', galleryInputRef)}
                   className="text-gray-400 hover:text-primary-600"
                 >
-                  importer
+                  {t('ui.importWord2')}
                 </button>
               </div>
             )
@@ -278,7 +280,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           {!photoPreview && (
             <div className="flex items-center gap-3 my-3">
               <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-xs text-gray-400">ou remplis manuellement</span>
+              <span className="text-xs text-gray-500">{t('ui.orFillManually')}</span>
               <div className="flex-1 h-px bg-gray-200" />
             </div>
           )}
@@ -288,22 +290,22 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       {/* Marque + Gamme */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className={labelCls}>Marque *</label>
+          <label className={labelCls}>{t('ui.brandRequired')}</label>
           <input
             type="text" required
             className={inputCls}
-            placeholder="Ex: Drops, Phildar, Fonty…"
+            placeholder={t('ui.phYarnBrand')}
             value={form.brand}
             onChange={set('brand')}
             maxLength={100}
           />
         </div>
         <div>
-          <label className={labelCls}>Gamme *</label>
+          <label className={labelCls}>{t('ui.rangeRequired')}</label>
           <input
             type="text" required
             className={inputCls}
-            placeholder="Ex: Merino Extra Fine"
+            placeholder={t('ui.phYarnName')}
             value={form.yarn_name}
             onChange={set('yarn_name')}
             maxLength={150}
@@ -314,22 +316,22 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       {/* Coloris + Numéro de bain */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className={labelCls}>Nom du coloris</label>
+          <label className={labelCls}>{t('ui.colorwayName')}</label>
           <input
             type="text"
             className={inputCls}
-            placeholder="Ex: Turquoise"
+            placeholder={t('ui.phColorway')}
             value={form.color_name}
             onChange={set('color_name')}
             maxLength={100}
           />
         </div>
         <div>
-          <label className={labelCls}>Numéro de bain</label>
+          <label className={labelCls}>{t('ui.dyeLot')}</label>
           <input
             type="text"
             className={inputCls}
-            placeholder="Ex: 2024-A"
+            placeholder={t('ui.phDyeLot')}
             value={form.dye_lot}
             onChange={set('dye_lot')}
             maxLength={50}
@@ -340,18 +342,18 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       {/* Composition + Couleur hex */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className={labelCls}>Composition</label>
+          <label className={labelCls}>{t('ui.composition')}</label>
           <input
             type="text"
             className={inputCls}
-            placeholder="Ex: 100% Mérinos"
+            placeholder={t('ui.phComposition')}
             value={form.composition}
             onChange={set('composition')}
             maxLength={200}
           />
         </div>
         <div>
-          <label className={labelCls}>Couleur</label>
+          <label className={labelCls}>{t('ui.color')}</label>
           <div className="flex gap-2">
             <input
               type="color"
@@ -374,7 +376,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       {/* Poids + Métrage + Quantité */}
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className={labelCls}>Poids/pelote (g) *</label>
+          <label className={labelCls}>{t('ui.weightPerBall')}</label>
           <input
             type="number" required min="0.1" step="0.1"
             className={inputCls}
@@ -384,7 +386,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           />
         </div>
         <div>
-          <label className={labelCls}>Métrage/pelote (m) *</label>
+          <label className={labelCls}>{t('ui.yardagePerBall')}</label>
           <input
             type="number" required min="1" step="0.1"
             className={inputCls}
@@ -394,7 +396,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           />
         </div>
         <div>
-          <label className={labelCls}>Quantité *</label>
+          <label className={labelCls}>{t('ui.quantityRequired')}</label>
           <input
             type="number" required min="1" step="1"
             className={inputCls}
@@ -408,26 +410,26 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       {/* Calcul automatique */}
       {(totalWeight > 0 || totalYardage > 0) && (
         <div className="bg-primary-50 rounded-xl p-3 text-sm text-primary-700 text-center font-medium">
-          Total : <strong>{totalWeight} g</strong> · <strong>{totalYardage} m</strong>
+          <Trans t={t} i18nKey="ui.totalWeightYardage" values={{ g: totalWeight, m: totalYardage }}><strong /><strong /></Trans>
         </div>
       )}
 
       {/* Épaisseur + Aiguille */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label className={labelCls}>Épaisseur</label>
+          <label className={labelCls}>{t('ui.weight')}</label>
           <select
             className={inputCls}
             value={form.yarn_weight_category}
             onChange={set('yarn_weight_category')}
           >
             {YARN_WEIGHT_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>{o.labelKey ? t(`ui.${o.labelKey}`) : o.label}</option>
             ))}
           </select>
         </div>
         <div>
-          <label className={labelCls}>Aiguille recommandée (mm)</label>
+          <label className={labelCls}>{t('ui.recommendedNeedle')}</label>
           <input
             type="number" min="1" max="30" step="0.5"
             className={inputCls}
@@ -440,11 +442,11 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
 
       {/* Lien d'achat */}
       <div>
-        <label className={labelCls}>Lien d'achat</label>
+        <label className={labelCls}>{t('ui.purchaseLink')}</label>
         <input
           type="url"
           className={inputCls}
-          placeholder="Ex: https://www.laines-et-cie.fr/..."
+          placeholder={t('ui.phPurchaseUrl')}
           value={form.purchase_url}
           onChange={set('purchase_url')}
           maxLength={500}
@@ -453,11 +455,11 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
 
       {/* Notes */}
       <div>
-        <label className={labelCls}>Notes libres</label>
+        <label className={labelCls}>{t('ui.freeNotes')}</label>
         <textarea
           rows={3}
           className={inputCls + ' resize-none'}
-          placeholder="Impressions, projets envisagés, où ça a été acheté…"
+          placeholder={t('ui.phStashNotes')}
           value={form.notes}
           onChange={set('notes')}
           maxLength={2000}
@@ -467,7 +469,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       {/* Photo d'étiquette — mode édition uniquement (en création elle est en haut) */}
       {entry && (
         <div>
-          <label className={labelCls}>Photo de l'étiquette</label>
+          <label className={labelCls}>{t('ui.labelPhoto')}</label>
           {scanError && (
             <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scanError}</p>
           )}
@@ -475,14 +477,14 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
             <div className="relative">
               <img
                 src={photoPreview || (import.meta.env.VITE_API_URL + entry.photo_url)}
-                alt="Étiquette"
+                alt={t('ui.labelAlt')}
                 className="w-full h-40 object-cover rounded-xl border border-gray-200"
               />
               <button
                 type="button"
                 onClick={removePhoto}
                 className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
-                title="Supprimer la photo"
+                title={t('ui.deletePhoto')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -495,14 +497,14 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                     onClick={() => openPhotoInput('main', galleryInputRef)}
                     className="bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
                   >
-                    Galerie
+                    {t('ui.gallery')}
                   </button>
                   <button
                     type="button"
                     onClick={() => openPhotoInput('main', fileInputRef)}
                     className="bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
                   >
-                    Changer
+                    {t('ui.change')}
                   </button>
                 </div>
               )}
@@ -518,14 +520,14 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                 </svg>
-                <span className="text-xs">Ajouter une photo</span>
+                <span className="text-xs">{t('ui.addPhoto')}</span>
               </button>
               <button
                 type="button"
                 onClick={() => openPhotoInput('main', galleryInputRef)}
                 className="w-full mt-2 text-xs text-gray-400 hover:text-primary-600 transition-colors"
               >
-                ou importer une photo existante
+                {t('ui.orImportExisting')}
               </button>
             </>
           )}
@@ -536,14 +538,14 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               <div className="relative inline-block mt-2">
                 <img
                   src={extraPhotoPreview}
-                  alt="Étiquette (autre angle)"
+                  alt={t('ui.labelAltOther')}
                   className="h-16 w-16 object-cover rounded-lg border border-gray-200"
                 />
                 <button
                   type="button"
                   onClick={removeExtraPhoto}
                   className="absolute -top-1.5 -right-1.5 bg-white p-0.5 rounded-full shadow text-gray-500 hover:text-red-500 transition-colors"
-                  title="Supprimer cette photo"
+                  title={t('ui.deleteThisPhoto')}
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -557,7 +559,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   onClick={() => openPhotoInput('extra', fileInputRef)}
                   className="text-primary-500 hover:text-primary-700 font-medium"
                 >
-                  + Ajouter une 2e photo (si l'étiquette ne tenait pas entièrement dans le cadre)
+                  {t('ui.addSecondPhoto')}
                 </button>
                 <span className="text-gray-300">·</span>
                 <button
@@ -565,7 +567,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   onClick={() => openPhotoInput('extra', galleryInputRef)}
                   className="text-gray-400 hover:text-primary-600"
                 >
-                  importer
+                  {t('ui.importWord2')}
                 </button>
               </div>
             )
@@ -596,14 +598,14 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           onClick={onCancel}
           className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
         >
-          Annuler
+          {t('ui.cancel')}
         </button>
         <button
           type="submit"
           disabled={loading}
           className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
         >
-          {loading ? 'Enregistrement…' : (entry ? 'Enregistrer' : 'Ajouter au stock')}
+          {loading ? t('ui.savingEllipsisAlt') : (entry ? t('ui.save') : t('ui.addToStash'))}
         </button>
       </div>
     </form>

@@ -8,11 +8,13 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
+import { useTranslation } from 'react-i18next'
 
 // Configuration du worker PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
 const PDFViewer = ({ url, fileName = 'patron.pdf' }) => {
+  const { t } = useTranslation('tools')
   const [numPages, setNumPages] = useState(null)
   const [containerWidth, setContainerWidth] = useState(0)
   const [scale, setScale] = useState(1)
@@ -84,12 +86,12 @@ const PDFViewer = ({ url, fileName = 'patron.pdf' }) => {
           onLoadSuccess={onDocumentLoadSuccess}
           loading={
             <div className="flex items-center justify-center py-20">
-              <div className="text-gray-500">Chargement du PDF...</div>
+              <div className="text-gray-500">{t('ui.loadingPdf')}</div>
             </div>
           }
           error={
             <div className="flex items-center justify-center py-20">
-              <div className="text-red-500">Erreur lors du chargement du PDF</div>
+              <div className="text-red-500">{t('ui.pdfLoadError')}</div>
             </div>
           }
         >

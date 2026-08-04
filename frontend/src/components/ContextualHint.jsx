@@ -9,8 +9,10 @@
 
 import { useEffect, useState } from 'react'
 import { useHintsContext } from '../contexts/HintsContext'
+import { useTranslation } from 'react-i18next'
 
 const ContextualHint = () => {
+  const { t } = useTranslation('tools')
   const { currentHint, dismissHint } = useHintsContext()
   const [isVisible, setIsVisible] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
@@ -98,7 +100,7 @@ const ContextualHint = () => {
             {/* Contenu */}
             <div className="flex-1 min-w-0">
               <p className="text-sm text-gray-700 leading-relaxed">
-                {currentHint.text}
+                {t(`ui.${currentHint.textKey}`)}
               </p>
             </div>
 
@@ -106,7 +108,7 @@ const ContextualHint = () => {
             <button
               onClick={handleClose}
               className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1"
-              aria-label="Fermer"
+              aria-label={t('ui.close')}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -120,7 +122,7 @@ const ContextualHint = () => {
               onClick={handleClose}
               className="px-4 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-medium rounded-lg transition-colors"
             >
-              Compris !
+              {t('ui.gotIt')}
             </button>
           </div>
         </div>

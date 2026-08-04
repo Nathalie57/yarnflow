@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import api from '../services/api'
 import SaveChartToProjectModal from '../components/tools/SaveChartToProjectModal'
 
@@ -13,6 +14,7 @@ const MIN_GRID_SIZE = 1
 const DEFAULT_CELL_PX = 24
 
 const ChartEditor = () => {
+  const { t } = useTranslation('library')
   const { projectId, chartId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -78,7 +80,7 @@ const ChartEditor = () => {
 
         setChart(loadedChart)
       } catch (err) {
-        setError(err.response?.data?.error || 'Impossible de charger cette grille')
+        setError(err.response?.data?.error || t('ui.chartLoadFailed'))
       } finally {
         setLoading(false)
       }
@@ -245,15 +247,15 @@ const ChartEditor = () => {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-400">Chargement de la grille...</div>
+    return <div className="min-h-screen flex items-center justify-center text-gray-500">{t('ui.loadingChart')}</div>
   }
 
   if (error || !chart) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
-        <p className="text-gray-500">{error || 'Grille introuvable'}</p>
+        <p className="text-gray-500">{error || t('ui.chartNotFound')}</p>
         <Link to={`/projects/${projectId}`} className="text-primary-600 hover:text-primary-700 font-medium">
-          ← Retour au projet
+          {t('ui.backToProject')}
         </Link>
       </div>
     )
@@ -266,7 +268,7 @@ const ChartEditor = () => {
         <div className="flex items-center justify-between gap-2">
           <button onClick={() => navigate(`/projects/${projectId}`)} className="flex-shrink-0 text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-            <span className="hidden sm:inline">Retour</span>
+            <span className="hidden sm:inline">{t('ui.back')}</span>
           </button>
           <input
             type="text"
@@ -280,20 +282,20 @@ const ChartEditor = () => {
             className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
               isLocked ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-primary-600 text-white hover:bg-primary-700'
             }`}
-            title={isLocked ? 'Grille verrouillée — cliquez pour la modifier' : 'Verrouiller la grille pour suivre votre progression sans risque'}
+            title={isLocked ? t('ui.chartLocked') : t('ui.chartLockHint')}
           >
             {isLocked ? (
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 11V7a4 4 0 118 0m-8 4h8m-8 0a2 2 0 00-2 2v6a2 2 0 002 2h8a2 2 0 002-2v-6a2 2 0 00-2-2" /></svg>
             ) : (
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
             )}
-            <span className="hidden sm:inline">{isLocked ? 'Modifier' : 'Enregistrer'}</span>
+            <span className="hidden sm:inline">{isLocked ? t('ui.edit2') : t('ui.save')}</span>
           </button>
         </div>
 
         {isLocked && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800 text-center">
-            Grille verrouillée — vous pouvez suivre votre progression sans risque de la modifier par erreur. Cliquez sur "Modifier" pour la déverrouiller et dessiner.
+            {t('ui.chartLockedLong')}
           </div>
         )}
 
@@ -303,7 +305,7 @@ const ChartEditor = () => {
           onClick={() => setShowAssignModal(true)}
           className="w-full text-xs px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition text-gray-600 flex items-center justify-center gap-1.5"
         >
-          🔗 {chart.section_id ? 'Changer de projet/section' : 'Associer à un projet/section'}
+          🔗 {chart.section_id ? t('ui.changeProjectSection') : t('ui.linkToProjectSection')}
         </button>
 
         {/* Zoom */}
@@ -311,13 +313,13 @@ const ChartEditor = () => {
           <button onClick={() => setCellPx(v => Math.max(2, v - 2))} className="w-7 h-7 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-gray-100">−</button>
           <span className="text-xs text-gray-400">{chart.width} × {chart.height}</span>
           <button onClick={() => setCellPx(v => Math.min(48, v + 2))} className="w-7 h-7 rounded-full bg-white border border-gray-300 text-gray-600 hover:bg-gray-100">+</button>
-          <button onClick={fitZoomToScreen} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-600">Ajuster à l'écran</button>
+          <button onClick={fitZoomToScreen} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-600">{t('ui.fitToScreen')}</button>
         </div>
 
         {/* Palette — masquée grille verrouillée : la peinture y est désactivée */}
         {!isLocked && (
           <div className="bg-white rounded-2xl shadow-sm p-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Palette — cliquez pour peindre</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('ui.paletteHint')}</p>
             <div className="flex flex-wrap gap-2">
               {chart.palette.map((hex, i) => (
                 <div key={i} className="relative">
@@ -345,7 +347,7 @@ const ChartEditor = () => {
                         onClick={() => setEditingPaletteIndex(null)}
                         className="text-xs px-2 py-1 bg-primary-600 text-white rounded hover:bg-primary-700"
                       >
-                        Terminé
+                        {t('ui.done')}
                       </button>
                     </div>
                   )}
@@ -353,7 +355,7 @@ const ChartEditor = () => {
                     <button
                       onClick={() => removePaletteColor(i)}
                       className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full text-[10px] leading-none flex items-center justify-center hover:bg-red-600"
-                      title="Supprimer cette couleur"
+                      title={t('ui.deleteThisColor')}
                     >×</button>
                   )}
                 </div>
@@ -361,10 +363,10 @@ const ChartEditor = () => {
               <button
                 onClick={addPaletteColor}
                 className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
-                title="Ajouter une couleur"
+                title={t('ui.addColor')}
               >＋</button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">Double-cliquez une couleur pour la modifier.</p>
+            <p className="text-xs text-gray-500 mt-2">{t('ui.doubleClickColor')}</p>
           </div>
         )}
 
@@ -372,15 +374,15 @@ const ChartEditor = () => {
         <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">
           {!isLocked && (
             <div className="flex justify-center mb-1 gap-1.5">
-              <button onClick={() => addRow('top')} title="Ajouter un rang au-dessus" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
-              <button onClick={() => removeRow('top')} title="Retirer le rang du dessus" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+              <button onClick={() => addRow('top')} title={t('ui.addRowAbove')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+              <button onClick={() => removeRow('top')} title={t('ui.removeTopRow')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
             </div>
           )}
           <div ref={canvasRowRef} className="flex items-center gap-1.5 justify-center">
             {!isLocked && (
               <div className="flex flex-col gap-1.5">
-                <button onClick={() => addColumn('left')} title="Ajouter une colonne à gauche" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
-                <button onClick={() => removeColumn('left')} title="Retirer la colonne de gauche" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+                <button onClick={() => addColumn('left')} title={t('ui.addColumnLeft')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+                <button onClick={() => removeColumn('left')} title={t('ui.removeLeftColumn')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
               </div>
             )}
             <canvas
@@ -396,15 +398,15 @@ const ChartEditor = () => {
             />
             {!isLocked && (
               <div className="flex flex-col gap-1.5">
-                <button onClick={() => addColumn('right')} title="Ajouter une colonne à droite" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
-                <button onClick={() => removeColumn('right')} title="Retirer la colonne de droite" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+                <button onClick={() => addColumn('right')} title={t('ui.addColumnRight')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+                <button onClick={() => removeColumn('right')} title={t('ui.removeRightColumn')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
               </div>
             )}
           </div>
           {!isLocked && (
             <div className="flex justify-center mt-1 gap-1.5">
-              <button onClick={() => addRow('bottom')} title="Ajouter un rang en-dessous" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
-              <button onClick={() => removeRow('bottom')} title="Retirer le rang du dessous" className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
+              <button onClick={() => addRow('bottom')} title={t('ui.addRowBelow')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
+              <button onClick={() => removeRow('bottom')} title={t('ui.removeBottomRow')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>
             </div>
           )}
         </div>

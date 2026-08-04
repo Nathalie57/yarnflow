@@ -6,9 +6,21 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAnalytics, useScrollTracking } from '../hooks/useAnalytics'
+import { useTranslation, Trans } from 'react-i18next'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import { useAuth } from '../contexts/AuthContext'
 
+// [AI:Claude] Le même SVG de coche était copié à chaque <li> des listes de
+// features/tarifs — factorisé ici pendant la migration i18n (les listes passent
+// de <li> en dur à une boucle sur les tableaux de traduction).
+const CheckIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  </svg>
+)
+
 const Landing = () => {
+  const { t } = useTranslation('landing')
   const [openFAQ, setOpenFAQ] = useState(null)
   const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
@@ -41,22 +53,23 @@ const Landing = () => {
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
-            <a href="#features" className="hover:text-primary-600 transition">Fonctionnalités</a>
-            <a href="#pricing" className="hover:text-primary-600 transition">Tarifs</a>
-            <Link to="/contact" className="hover:text-primary-600 transition">Contact</Link>
+            <a href="#features" className="hover:text-primary-600 transition">{t('header.features')}</a>
+            <a href="#pricing" className="hover:text-primary-600 transition">{t('header.pricing')}</a>
+            <Link to="/contact" className="hover:text-primary-600 transition">{t('header.contact')}</Link>
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
             <Link to="/login" className="text-gray-700 hover:text-primary-600 font-medium transition text-sm">
-              Connexion
+              {t('header.login')}
             </Link>
             <Link
               to="/register"
               className="bg-primary-600 hover:bg-primary-700 text-white px-3 sm:px-4 py-2 rounded-xl font-medium transition text-xs sm:text-sm shadow-sm whitespace-nowrap"
             >
-              <span className="hidden sm:inline">Commencer — c'est gratuit</span>
-              <span className="sm:hidden">C'est gratuit</span>
+              <span className="hidden sm:inline">{t('header.ctaLong')}</span>
+              <span className="sm:hidden">{t('header.ctaShort')}</span>
             </Link>
+            <LanguageSwitcher />
           </div>
         </div>
       </header>
@@ -70,15 +83,15 @@ const Landing = () => {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.499z" />
               </svg>
-              Enfin une application pensée par une passionnée, pour les passionné·es de tricot &amp; crochet
+              {t('hero.badge')}
             </div>
 
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-              Ne perdez plus jamais le fil de vos créations
+              {t('hero.title')}
             </h1>
 
             <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-2xl mx-auto md:mx-0">
-              Suivez chaque projet du premier rang jusqu'à la photo finale : patrons, compteurs, progression et souvenirs, dans une seule application.
+              {t('hero.subtitle')}
             </p>
 
             <div className="flex justify-center md:justify-start mb-3">
@@ -86,14 +99,14 @@ const Landing = () => {
                 to="/register"
                 className="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-base px-8 py-3.5 rounded-xl font-semibold transition shadow-md hover:shadow-lg"
               >
-                Créer mon compte gratuit
+                {t('hero.cta')}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
               </Link>
             </div>
 
-            <p className="text-sm text-gray-400 mb-4">Inscription en 30 secondes · Aucune carte bancaire requise</p>
+            <p className="text-sm text-gray-500 mb-4">{t('hero.reassurance')}</p>
 
             <div className="flex items-center justify-center md:justify-start text-sm text-gray-500">
               <a
@@ -102,7 +115,7 @@ const Landing = () => {
                 rel="noopener noreferrer"
                 className="hover:text-primary-600 underline underline-offset-2 transition"
               >
-                Disponible sur Google Play
+                {t('hero.googlePlay')}
               </a>
             </div>
           </div>
@@ -110,7 +123,7 @@ const Landing = () => {
           <div className="flex justify-center md:justify-end">
             <img
               src="/screenshots/counter-mobile.jpg"
-              alt="Aperçu de l'application YarnFlow : compteur de rangs et patron affichés côte à côte"
+              alt={t('hero.screenshotAlt')}
               className="w-56 md:w-64 rounded-[2rem] shadow-2xl border border-gray-200"
             />
           </div>
@@ -130,8 +143,8 @@ const Landing = () => {
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-gray-900 mb-1">Projets complexes, enfin maîtrisés</p>
-                <p className="text-sm text-gray-600">Sections, plusieurs compteurs secondaires par section, notes par section — même un pull avec manches raglan</p>
+                <p className="font-bold text-gray-900 mb-1">{t('differentiators.complex.title')}</p>
+                <p className="text-sm text-gray-600">{t('differentiators.complex.desc')}</p>
               </div>
             </div>
 
@@ -142,8 +155,8 @@ const Landing = () => {
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-gray-900 mb-1">Un patron PDF ou URL → un projet prêt</p>
-                <p className="text-sm text-gray-600">L'IA lit votre patron, crée les sections et remplit les détails — en quelques secondes</p>
+                <p className="font-bold text-gray-900 mb-1">{t('differentiators.import.title')}</p>
+                <p className="text-sm text-gray-600">{t('differentiators.import.desc')}</p>
               </div>
             </div>
 
@@ -155,8 +168,8 @@ const Landing = () => {
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-gray-900 mb-1">Photos dignes de vos créations</p>
-                <p className="text-sm text-gray-600">L'IA sublime vos photos — éclairage, fond, couleurs — sans toucher à votre ouvrage</p>
+                <p className="font-bold text-gray-900 mb-1">{t('differentiators.photos.title')}</p>
+                <p className="text-sm text-gray-600">{t('differentiators.photos.desc')}</p>
               </div>
             </div>
 
@@ -171,23 +184,20 @@ const Landing = () => {
 
             {/* Screenshot compteur */}
             <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200">
-              <img src="/compteur.jpg" alt="Compteur de rangs YarnFlow" className="w-full object-cover" />
+              <img src="/compteur.jpg" alt={t('counter.screenshotAlt')} className="w-full object-cover" />
             </div>
 
             <div>
-              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Compteur de rangs</span>
+              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('counter.eyebrow')}</span>
               <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
-                "Où j'en étais, déjà ?"<br />Plus jamais.
+                <Trans i18nKey="counter.title" ns="landing" components={[<br key="0" />]} />
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                Un gros bouton, un rang compté. Interface pensée pour les doigts occupés, progression visible d'un coup d'œil. Et si votre projet a plusieurs sections — dos, devant, manches — chacune a son propre compteur.
+                {t('counter.desc')}
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
-                  'Timer intégré pour mesurer votre temps de travail',
-                  "Wake lock : l'écran reste allumé pendant que vous tricotez",
-                  'Sections indépendantes par partie de projet',
-                  "Comptez vos augmentations, diminutions ou répétitions sans jamais perdre le fil (PLUS & PRO)",
+                  ...t('counter.features', { returnObjects: true }),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -202,17 +212,16 @@ const Landing = () => {
 
           {/* Argument différenciant — sections + compteurs multiples */}
           <div className="bg-primary-50 border border-primary-200 rounded-3xl p-8 md:p-10 mb-20">
-            <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Pour les projets complexes</span>
+            <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('sections.eyebrow')}</span>
             <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-3">
-              Enfin un suivi adapté aux vrais projets
+              {t('sections.title')}
             </h2>
             <p className="text-gray-600 leading-relaxed mb-6 max-w-2xl">
-              Un pull n'est pas un simple compteur. Il a un dos, un devant, deux manches, un col — chacun avec son propre rythme d'augmentations et de diminutions. YarnFlow suit chaque partie séparément, pas juste un chiffre global qui mélange tout.
+              {t('sections.desc')}
             </p>
             <ul className="grid sm:grid-cols-2 md:grid-cols-3 gap-3 max-w-3xl">
               {[
-                'Dos', 'Devant', 'Manches',
-                'Augmentations', 'Diminutions', 'Col',
+                ...t('sections.parts', { returnObjects: true }),
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-2 bg-white rounded-xl border border-primary-200 px-3.5 py-2.5 text-sm font-medium text-gray-800">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -227,18 +236,16 @@ const Landing = () => {
           {/* Feature detail — Photo IA */}
           <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
             <div className="order-2 md:order-1">
-              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Studio Photo</span>
+              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('photoStudio.eyebrow')}</span>
               <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
-                Vos créations méritent<br />de belles photos
+                <Trans i18nKey="photoStudio.title" ns="landing" components={[<br key="0" />]} />
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                Transformez une photo prise à la va-vite sur le canapé en un rendu digne d'une vitrine Etsy, en un clic — éclairage sublimé, fond adouci, votre ouvrage mis en valeur sans être dénaturé.
+                {t('photoStudio.desc')}
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
-                  '9 styles disponibles — Lifestyle, Studio, Scandinavian...',
-                  'Votre ouvrage reste 100% authentique',
-                  'Parfait pour Etsy, Instagram ou vos archives',
+                  ...t('photoStudio.features', { returnObjects: true }),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -253,12 +260,12 @@ const Landing = () => {
             {/* Avant/après réels */}
             <div className="order-1 md:order-2 grid grid-cols-2 gap-3">
               <div className="relative rounded-xl overflow-hidden shadow-sm border border-gray-200 aspect-square">
-                <img src="/photo-avant.jpg" alt="Avant — photo brute" className="w-full h-full object-cover" />
-                <div className="absolute top-2 left-2 bg-gray-700/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">AVANT</div>
+                <img src="/photo-avant.jpg" alt={t('photoStudio.beforeAlt')} className="w-full h-full object-cover" />
+                <div className="absolute top-2 left-2 bg-gray-700/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{t('photoStudio.before')}</div>
               </div>
               <div className="relative rounded-xl overflow-hidden shadow-sm border border-primary-200 aspect-square">
-                <img src="/photo-apres.jpg" alt="Après — rendu IA Lifestyle" className="w-full h-full object-cover" />
-                <div className="absolute top-2 left-2 bg-primary-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">APRÈS</div>
+                <img src="/photo-apres.jpg" alt={t('photoStudio.afterAlt')} className="w-full h-full object-cover" />
+                <div className="absolute top-2 left-2 bg-primary-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{t('photoStudio.after')}</div>
               </div>
             </div>
           </div>
@@ -268,25 +275,22 @@ const Landing = () => {
 
             {/* Screenshot projets */}
             <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
-              <img src="/projets.jpg" alt="Mes projets YarnFlow" className="w-full object-cover object-top max-h-[480px]" />
+              <img src="/projets.jpg" alt={t('library.screenshotAlt')} className="w-full object-cover object-top max-h-[480px]" />
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
 
 
             <div>
-              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Bibliothèque & Organisation</span>
+              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('library.eyebrow')}</span>
               <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
-                Tous vos patrons,<br />tous vos projets — au même endroit
+                <Trans i18nKey="library.title" ns="landing" components={[<br key="0" />]} />
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                PDF Ravelry, liens Etsy, notes personnelles — tout dans une bibliothèque propre. Filtrez par catégorie, technique ou favoris et retrouvez n'importe quel patron en deux secondes.
+                {t('library.desc')}
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600">
                 {[
-                  'Patrons en PDF, URL ou texte libre',
-                  'Détails techniques : laine, aiguilles, échantillon, dimensions',
-                  'Notes globales par projet',
-                  'Filtres par catégorie, technique et favoris',
+                  ...t('library.features', { returnObjects: true }),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -308,24 +312,21 @@ const Landing = () => {
 
             {/* Screenshot étape validation */}
             <div className="rounded-2xl overflow-hidden shadow-md border border-gray-200 relative">
-              <img src="/patron.jpg" alt="Création intelligente YarnFlow — validation du patron extrait" className="w-full object-cover object-top max-h-[480px]" />
+              <img src="/patron.jpg" alt={t('smartCreation.screenshotAlt')} className="w-full object-cover object-top max-h-[480px]" />
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
 
             <div>
-              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Création Intelligente</span>
+              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('smartCreation.eyebrow')}</span>
               <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
-                Importez un patron PDF ou une URL.<br />Le projet se crée tout seul.
+                <Trans i18nKey="smartCreation.title" ns="landing" components={[<br key="0" />]} />
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
-                Téléchargez votre patron en PDF ou collez une URL — l'IA lit le document, crée les sections, remplit les détails techniques et structure votre projet en quelques secondes.
+                {t('smartCreation.desc')}
               </p>
               <ul className="space-y-2.5 text-sm text-gray-600 mb-6">
                 {[
-                  "PDF ou URL — Ravelry, Etsy, blog, peu importe la source",
-                  'Sections créées automatiquement (dos, devant, manches…)',
-                  'Laine, aiguilles, tension extraits du patron',
-                  '3 essais gratuits · 3 imports/mois en PLUS · 15 imports/mois en PRO',
+                  ...t('smartCreation.features', { returnObjects: true }),
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -336,7 +337,7 @@ const Landing = () => {
                 ))}
               </ul>
               <span className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-200">
-                Une façon unique de transformer vos patrons en projets organisés
+                {t('smartCreation.badge')}
               </span>
             </div>
 
@@ -347,16 +348,16 @@ const Landing = () => {
       {/* Assistant IA */}
       <section className="py-14 bg-white">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">Assistant tricot & crochet</span>
-          <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">Un expert tricot & crochet disponible à tout moment</h2>
+          <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('assistant.eyebrow')}</span>
+          <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">{t('assistant.title')}</h2>
           <p className="text-gray-600 leading-relaxed mb-8 max-w-xl mx-auto">
-            Comment calculer les diminutions pour ma taille ? Quel point pour remplacer celui du patron ? L'assistant connaît votre projet et répond en contexte — pas des réponses génériques.
+            {t('assistant.desc')}
           </p>
           <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 text-left max-w-lg mx-auto space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-7 h-7 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">M</div>
               <div className="bg-white rounded-xl rounded-tl-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
-                J'ai raté 3 rangs sur mon dos, comment je rattrape sans détricoter tout ?
+                {t('assistant.question')}
               </div>
             </div>
             <div className="flex items-start gap-3 flex-row-reverse">
@@ -366,30 +367,21 @@ const Landing = () => {
                 </svg>
               </div>
               <div className="bg-primary-50 rounded-xl rounded-tr-none border border-primary-100 px-4 py-2.5 text-sm text-gray-700">
-                Pour rattraper 3 rangs sans détricoter, vous pouvez utiliser une aiguille auxiliaire…
+                {t('assistant.answer')}
               </div>
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-4">5 questions / mois en FREE · 10 questions / mois en PLUS · 30 questions / mois en PRO</p>
+          <p className="text-xs text-gray-500 mt-4">{t('assistant.quota')}</p>
         </div>
       </section>
 
       {/* Témoignages */}
       <section className="bg-primary-50 border-y border-primary-100 py-14">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">Ce qu'en disent nos premières utilisatrices</h2>
-          <p className="text-center text-sm text-gray-500 mb-10">Témoignages de nos premières bêta-testeuses</p>
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">{t('testimonials.title')}</h2>
+          <p className="text-center text-sm text-gray-500 mb-10">{t('testimonials.subtitle')}</p>
           <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto">
-            {[
-              {
-                quote: "Très complet et intuitif : pouvoir créer plusieurs ouvrages en même temps et insérer chaque détail est vraiment top. Le compteur de rangs est fort utile, le minuteur aussi. Les photos générées sont formidables pour visualiser et mettre en valeur mes projets.",
-                name: "Une utilisatrice YarnFlow",
-              },
-              {
-                quote: "Super pratique quand on tricote et crochète plusieurs encours en même temps : tout y est au même endroit — explications, étapes, photos et notes. Il y a même des petits conseils et des outils pratiques pour nous faciliter à tricoter nos modèles personnels ou adapter un modèle.",
-                name: "Une utilisatrice YarnFlow",
-              },
-            ].map((t, i) => (
+            {t('testimonials.items', { returnObjects: true }).map((quote, i) => (
               <div key={i} className="bg-white rounded-2xl border border-primary-200 p-6 shadow-sm">
                 <div className="flex gap-0.5 mb-4">
                   {[...Array(5)].map((_, s) => (
@@ -398,8 +390,8 @@ const Landing = () => {
                     </svg>
                   ))}
                 </div>
-                <p className="text-gray-700 text-sm leading-relaxed mb-4 italic">"{t.quote}"</p>
-                <p className="font-semibold text-gray-900 text-sm">{t.name}</p>
+                <p className="text-gray-700 text-sm leading-relaxed mb-4 italic">"{quote}"</p>
+                <p className="font-semibold text-gray-900 text-sm">{t('testimonials.authorFallback')}</p>
               </div>
             ))}
           </div>
@@ -409,102 +401,50 @@ const Landing = () => {
       {/* Pricing */}
       <section className="py-16 bg-white" id="pricing">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">Simple et transparent</h2>
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">{t('pricing.title')}</h2>
           <p className="text-center text-gray-600 mb-10 text-lg">
-            FREE pour toujours. PLUS quand vos projets grandissent. PRO quand ils méritent tout.
+            {t('pricing.subtitle')}
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
 
             {/* FREE */}
             <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Free</p>
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{t('pricing.free.name')}</p>
               <div className="text-4xl font-bold text-gray-900 mb-1">0€</div>
-              <p className="text-sm text-gray-500 mb-6">L'essentiel pour suivre vos encours et découvrir la puissance de l'IA.</p>
+              <p className="text-sm text-gray-500 mb-6">{t('pricing.free.desc')}</p>
               <ul className="space-y-3 mb-8">
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Projets &amp; patrons illimités (100 Mo pour les fichiers)
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  1 compteur de rangs actif par projet
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Timer intégré &amp; suivi du temps
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Notes par section
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium">3 Créations Intelligentes IA offertes</span></span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  5 questions / mois à l'assistant IA
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Studio Photo : 2 crédits offerts
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  3 traductions de patron offertes
-                </li>
+                {t('pricing.free.features', { returnObjects: true }).map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                    <CheckIcon />
+                    {feature}
+                  </li>
+                ))}
               </ul>
               <Link to="/register" className="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition text-sm">
-                Créer mon compte gratuit
+                {t('pricing.free.cta')}
               </Link>
             </div>
 
             {/* PLUS */}
             <div className="bg-white border-2 border-primary-400 rounded-2xl p-7 shadow-md relative">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                <span className="bg-primary-400 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">Nouveau</span>
+                <span className="bg-primary-400 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">{t('pricing.plus.badge')}</span>
               </div>
-              <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-3 mt-2">Plus</p>
+              <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-3 mt-2">{t('pricing.plus.name')}</p>
               <div className="flex items-baseline gap-1 mb-1">
                 <span className="text-4xl font-bold text-gray-900">2,49€</span>
-                <span className="text-sm text-gray-500">/mois</span>
+                <span className="text-sm text-gray-500">{t('pricing.perMonth')}</span>
               </div>
-              <p className="text-xs text-green-600 font-medium mb-1">Facturé 29,99€/an — économisez 17,89€</p>
-              <p className="text-sm text-gray-500 mb-6">Pour celles qui terminent plusieurs projets par an.</p>
+              <p className="text-xs text-green-600 font-medium mb-1">{t('pricing.plus.billing')}</p>
+              <p className="text-sm text-gray-500 mb-6">{t('pricing.plus.desc')}</p>
               <ul className="space-y-3 mb-8">
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Tout ce qu'inclut le plan FREE
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span className="font-medium text-gray-800">Jusqu'à 10 compteurs secondaires</span>
-                </li>
-                {/* <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">50 pelotes en stock</span></span>
-                </li> */}
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Création Intelligente — 3 imports / mois</span></span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span>10 questions / mois à l'assistant IA</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span>Studio Photo : 5 crédits / mois</span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium">3 traductions de patron / mois</span></span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span>Statistiques avancées</span>
-                </li>
+                {t('pricing.plus.features', { returnObjects: true }).map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                    <CheckIcon />
+                    {feature}
+                  </li>
+                ))}
               </ul>
               <div className="space-y-2">
                 <Link
@@ -512,59 +452,59 @@ const Landing = () => {
                   onClick={() => trackSubscriptionClick('plus', 'annual', 'landing')}
                   className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
                 >
-                  Passer à PLUS (Annuel) — 29,99€/an
+                  {t('pricing.plus.ctaAnnual')}
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => trackSubscriptionClick('plus', 'monthly', 'landing')}
                   className="block w-full text-center text-gray-500 hover:text-gray-700 text-sm py-2 transition"
                 >
-                  Mensuel — 3,99€/mois
+                  {t('pricing.plus.ctaMonthly')}
                 </Link>
               </div>
-              <p className="text-xs text-gray-400 text-center mt-1">Sans engagement · Résiliable à tout moment</p>
+              <p className="text-xs text-gray-500 text-center mt-1">{t('pricing.noCommitment')}</p>
             </div>
 
             {/* PRO */}
             <div className="bg-white border-2 border-primary-600 rounded-2xl p-7 shadow-lg relative">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">Pour les passionnées</span>
+                <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">{t('pricing.pro.badge')}</span>
               </div>
-              <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3 mt-2">Pro</p>
+              <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3 mt-2">{t('pricing.pro.name')}</p>
               <div className="flex items-baseline gap-1 mb-1">
                 <span className="text-4xl font-bold text-gray-900">4,99€</span>
-                <span className="text-sm text-gray-500">/mois</span>
+                <span className="text-sm text-gray-500">{t('pricing.perMonth')}</span>
               </div>
-              <p className="text-xs text-green-600 font-medium mb-1">Facturé 59,99€/an — économisez 23,89€</p>
-              <p className="text-sm text-gray-500 mb-6">Pour les passionnées qui veulent garder l'historique complet de leurs créations.</p>
+              <p className="text-xs text-green-600 font-medium mb-1">{t('pricing.pro.billing')}</p>
+              <p className="text-sm text-gray-500 mb-6">{t('pricing.pro.desc')}</p>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Tout ce qu'inclut le plan PLUS
+                  {t('pricing.pro.includesPlus')}
                 </li>
                 {/* <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Stock illimité</span></span>
+                  <span><span className="font-medium text-gray-800">{t('ui.unlimitedStash')}</span></span>
                 </li> */}
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Création Intelligente — 15 imports / mois</span><span className="block text-gray-500 text-xs mt-0.5">Déposez un PDF ou une photo, l'IA pré-remplit tout instantanément</span></span>
+                  <span><span className="font-medium text-gray-800">{t('pricing.pro.smartCreation')}</span><span className="block text-gray-500 text-xs mt-0.5">{t('pricing.pro.smartCreationDesc')}</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Assistant IA tricot — 30 questions / mois</span></span>
+                  <span><span className="font-medium text-gray-800">{t('pricing.pro.assistant')}</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Studio Photo : 20 crédits / mois</span></span>
+                  <span><span className="font-medium text-gray-800">{t('pricing.pro.photoStudio')}</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">15 traductions de patron / mois</span></span>
+                  <span><span className="font-medium text-gray-800">{t('pricing.pro.translations')}</span></span>
                 </li>
                 <li className="flex items-start gap-2.5 text-sm text-gray-700">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">Statistiques avancées</span><span className="block text-gray-500 text-xs mt-0.5">Graphiques visuels, badges de progression et temps moyen par session</span></span>
+                  <span><span className="font-medium text-gray-800">{t('pricing.pro.stats')}</span><span className="block text-gray-500 text-xs mt-0.5">{t('pricing.pro.statsDesc')}</span></span>
                 </li>
               </ul>
               <div className="space-y-2">
@@ -573,17 +513,17 @@ const Landing = () => {
                   onClick={() => trackSubscriptionClick('pro', 'annual', 'landing')}
                   className="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
                 >
-                  Passer à PRO (Annuel)
+                  {t('pricing.pro.ctaAnnual')}
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => trackSubscriptionClick('pro', 'monthly', 'landing')}
                   className="block w-full text-center border-2 border-primary-600 text-primary-700 hover:bg-primary-50 font-semibold py-2.5 rounded-xl transition text-sm"
                 >
-                  Choisir le Mensuel (6,99€/mois)
+                  {t('pricing.pro.ctaMonthly')}
                 </Link>
               </div>
-              <p className="text-xs text-gray-400 text-center mt-2">Sans engagement · Résiliable à tout moment</p>
+              <p className="text-xs text-gray-500 text-center mt-2">{t('pricing.noCommitment')}</p>
             </div>
           </div>
         </div>
@@ -592,34 +532,9 @@ const Landing = () => {
       {/* FAQ */}
       <section className="bg-gray-50 border-t border-gray-200 py-16">
         <div className="max-w-2xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-10">Questions fréquentes</h2>
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-10">{t('faq.title')}</h2>
           <div className="space-y-3">
-            {[
-              {
-                q: "C'est vraiment gratuit pour toujours ?",
-                a: "Oui, sans limite de temps. Projets illimités, compteur de rangs, bibliothèque de patrons, détails techniques — sans jamais payer. Les fichiers uploadés (PDF, images) sont limités à 100 Mo en FREE ; patrons en URL ou en texte : illimités. PLUS et PRO se justifient quand vos projets grandissent."
-              },
-              {
-                q: "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-                a: "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 2 essais création intelligente, 5 questions IA/mois, 2 crédits photo IA à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, jusqu'à 10 compteurs secondaires par section, 3 imports IA/mois, 10 questions IA/mois, 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo/mois."
-              },
-              {
-                q: "La création intelligente, c'est quoi exactement ?",
-                a: "Vous importez un patron en PDF ou collez une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée votre projet automatiquement. 3 essais gratuits offerts pour tous, puis 3 imports/mois en PLUS ou 15 imports/mois en PRO."
-              },
-              {
-                q: "Ça marche sur quels appareils ?",
-                a: "YarnFlow est une PWA — accessible sur tous les navigateurs (mobile, tablette, ordinateur). Vous pouvez l'installer sur votre téléphone comme une vraie app, avec l'icône sur l'écran d'accueil. Aucun téléchargement sur l'App Store requis."
-              },
-              {
-                q: "Puis-je annuler à tout moment ?",
-                a: "Oui, sans engagement. Vous annulez depuis votre profil, votre abonnement reste actif jusqu'à la fin de la période payée, puis vous repassez automatiquement en FREE. Vos données sont conservées."
-              },
-              {
-                q: "Mes patrons et projets sont-ils en sécurité ?",
-                a: "Vos données sont stockées en sécurité sur nos serveurs, ne sont jamais partagées ou vendues, et vous pouvez les supprimer à tout moment."
-              },
-            ].map((item, i) => (
+            {t('faq.items', { returnObjects: true }).map((item, i) => (
               <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <button
                   onClick={() => toggleFAQ(i)}
@@ -645,17 +560,17 @@ const Landing = () => {
       <section className="py-16 bg-gradient-to-br from-primary-600 to-primary-700 text-white">
         <div className="max-w-2xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
-            Votre prochain projet mérite mieux qu'un bout de papier
+            {t('finalCta.title')}
           </h2>
           <p className="text-lg mb-8 opacity-90 leading-relaxed">
-            Rejoignez les passionné·es qui ont troqué les carnets froissés contre YarnFlow.
+            {t('finalCta.subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/register"
               className="inline-flex items-center gap-2 bg-white text-primary-600 hover:bg-gray-100 text-base px-8 py-3.5 rounded-xl font-semibold transition shadow-lg"
             >
-              Créer mon compte gratuit
+              {t('finalCta.cta')}
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
@@ -669,11 +584,11 @@ const Landing = () => {
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3.18 23.76c.3.17.65.19.97.07l11.65-6.73-2.55-2.55-10.07 9.21zM.44 1.6C.17 1.93 0 2.4 0 3.01v17.98c0 .61.17 1.08.44 1.41l.07.07 10.07-10.07v-.24L.51 1.53l-.07.07zM19.69 8.6l-2.88-1.66-2.86 2.86 2.86 2.86 2.9-1.67c.83-.48.83-1.26-.02-1.39zM3.18.24L13.25 9.45l-2.55 2.55L-.01.31C.32.19.67.21.97.07z"/>
               </svg>
-              Google Play
+              {t('finalCta.googlePlay')}
             </a>
           </div>
           <p className="mt-4 text-sm opacity-70">
-            Déjà inscrit·e ? <Link to="/login" className="underline hover:no-underline font-medium">Connexion</Link>
+{t('finalCta.alreadyMember')} <Link to="/login" className="underline hover:no-underline font-medium">{t('finalCta.login')}</Link>
           </p>
         </div>
       </section>
@@ -689,33 +604,33 @@ const Landing = () => {
                 </svg>
                 <span className="font-bold text-lg text-white">YarnFlow</span>
               </div>
-              <p className="text-sm">L'outil malin pour les passionné·es de tricot et crochet</p>
+              <p className="text-sm">{t('footer.tagline')}</p>
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-3 text-sm">Légal</h3>
+              <h3 className="font-semibold text-white mb-3 text-sm">{t('footer.legal')}</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/privacy" className="hover:text-white transition">Politique de confidentialité</Link></li>
-                <li><Link to="/cgu" className="hover:text-white transition">Conditions d'utilisation</Link></li>
-                <li><Link to="/mentions-legales" className="hover:text-white transition">Mentions légales</Link></li>
+                <li><Link to="/privacy" className="hover:text-white transition">{t('footer.privacy')}</Link></li>
+                <li><Link to="/cgu" className="hover:text-white transition">{t('footer.terms')}</Link></li>
+                <li><Link to="/mentions-legales" className="hover:text-white transition">{t('footer.legalNotice')}</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-3 text-sm">Support</h3>
+              <h3 className="font-semibold text-white mb-3 text-sm">{t('footer.support')}</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/contact" className="hover:text-white transition">Contact</Link></li>
+                <li><Link to="/contact" className="hover:text-white transition">{t('footer.contact')}</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-white mb-3 text-sm">App</h3>
+              <h3 className="font-semibold text-white mb-3 text-sm">{t('footer.app')}</h3>
               <ul className="space-y-2 text-sm">
-                <li><Link to="/register" className="hover:text-white transition">Créer un compte</Link></li>
-                <li><Link to="/login" className="hover:text-white transition">Connexion</Link></li>
-                <li><a href="#pricing" className="hover:text-white transition">Tarifs</a></li>
+                <li><Link to="/register" className="hover:text-white transition">{t('footer.register')}</Link></li>
+                <li><Link to="/login" className="hover:text-white transition">{t('footer.login')}</Link></li>
+                <li><a href="#pricing" className="hover:text-white transition">{t('footer.pricing')}</a></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-6 text-center text-xs">
-            <p>© 2026 YarnFlow — Tous droits réservés</p>
+            <p>{t('footer.copyright')}</p>
           </div>
         </div>
       </footer>

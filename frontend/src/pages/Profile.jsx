@@ -4,8 +4,10 @@ import { useAuth } from '../contexts/AuthContext'
 import { userAPI } from '../services/api'
 import PasswordInput from '../components/PasswordInput'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import { useTranslation, Trans } from 'react-i18next'
 
 const Profile = () => {
+  const { t, i18n } = useTranslation('tools')
   const { user, updateUser } = useAuth()
   const [loading, setLoading] = useState(true)
   const [profileData, setProfileData] = useState(null)
@@ -57,9 +59,9 @@ const Profile = () => {
       setProfileData(prev => ({ ...prev, user: updatedUser }))
       updateUser(updatedUser)
       setEditMode(false)
-      setSuccessMessage('Profil mis à jour avec succès')
+      setSuccessMessage(t('ui.profileUpdated'))
     } catch (error) {
-      setErrorMessage(error.response?.data?.message || 'Erreur lors de la mise à jour')
+      setErrorMessage(error.response?.data?.message || t('ui.profileUpdateFailed'))
     }
   }
 
@@ -77,7 +79,7 @@ const Profile = () => {
         new_password: passwordData.new_password
       })
       setPasswordData({ current_password: '', new_password: '', confirm_password: '' })
-      setSuccessMessage('Mot de passe modifié avec succès')
+      setSuccessMessage(t('ui.passwordChanged'))
     } catch (error) {
       setErrorMessage(error.response?.data?.message || 'Erreur lors du changement de mot de passe')
     }
@@ -95,13 +97,13 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-600">Chargement...</div>
+        <div className="text-gray-600">{t('ui.loading')}</div>
       </div>
     )
   }
 
   if (!profileData) {
-    return <div className="card"><p className="text-red-600">Erreur lors du chargement du profil</p></div>
+    return <div className="card"><p className="text-red-600">{t('ui.profileLoadError')}</p></div>
   }
 
   const { user: userData, stats } = profileData
@@ -111,11 +113,11 @@ const Profile = () => {
 
   const tabs = [
     {
-      id: 'info', label: 'Mon compte',
+      id: 'info', labelKey: 'tabMyAccount',
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     },
     {
-      id: 'password', label: 'Mot de passe',
+      id: 'password', labelKey: 'tabPassword',
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
     }
   ]
@@ -123,7 +125,7 @@ const Profile = () => {
   return (
     <>
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-gray-900">Mon profil</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-900">{t('ui.myProfile')}</h1>
 
       {successMessage && (
         <div className="bg-green-50 border border-green-300 text-green-800 px-4 py-3 rounded-lg mb-4 text-sm">
@@ -150,7 +152,7 @@ const Profile = () => {
               }`}
             >
               {tab.icon}
-              {tab.label}
+              {tab.labelKey ? t(`ui.${tab.labelKey}`) : tab.label}
             </button>
           ))}
         </nav>
@@ -163,10 +165,10 @@ const Profile = () => {
           {/* Informations personnelles */}
           <div className="card">
             <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">Informations personnelles</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('ui.personalInfo')}</h2>
               {!editMode && (
                 <button onClick={() => setEditMode(true)} className="btn-secondary text-sm">
-                  Modifier
+                  {t('ui.edit')}
                 </button>
               )}
             </div>
@@ -175,47 +177,47 @@ const Profile = () => {
               <form onSubmit={handleUpdateProfile}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1.5">Prénom</label>
+                    <label className="block text-sm text-gray-700 mb-1.5">{t('ui.firstName')}</label>
                     <input type="text" className="input-field" value={formData.first_name}
                       onChange={(e) => setFormData({ ...formData, first_name: e.target.value })} required />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1.5">Nom</label>
+                    <label className="block text-sm text-gray-700 mb-1.5">{t('ui.nameLabel')}</label>
                     <input type="text" className="input-field" value={formData.last_name}
                       onChange={(e) => setFormData({ ...formData, last_name: e.target.value })} required />
                   </div>
                 </div>
                 <div className="mb-5">
-                  <label className="block text-sm text-gray-700 mb-1.5">Email</label>
+                  <label className="block text-sm text-gray-700 mb-1.5">{t('ui.email')}</label>
                   <input type="email" className="input-field" value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
                 </div>
                 <div className="flex gap-3">
-                  <button type="submit" className="btn-primary">Enregistrer</button>
+                  <button type="submit" className="btn-primary">{t('ui.save')}</button>
                   <button type="button" onClick={() => {
                     setEditMode(false)
                     setFormData({ first_name: userData.first_name || '', last_name: userData.last_name || '', email: userData.email || '' })
-                  }} className="btn-secondary">Annuler</button>
+                  }} className="btn-secondary">{t('ui.cancel')}</button>
                 </div>
               </form>
             ) : (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Prénom</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t('ui.firstName')}</p>
                     <p className="font-medium text-gray-900">{userData.first_name || '-'}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Nom</p>
+                    <p className="text-xs text-gray-500 mb-0.5">{t('ui.nameLabel')}</p>
                     <p className="font-medium text-gray-900">{userData.last_name || '-'}</p>
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-0.5">Email</p>
+                  <p className="text-xs text-gray-500 mb-0.5">{t('ui.email')}</p>
                   <p className="font-medium text-gray-900">{userData.email}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-0.5">Membre depuis</p>
+                  <p className="text-xs text-gray-500 mb-0.5">{t('ui.memberSince')}</p>
                   <p className="font-medium text-gray-900">
                     {new Date(userData.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
@@ -227,7 +229,7 @@ const Profile = () => {
           {/* Abonnement */}
           <div className="card">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">Abonnement</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{t('ui.subscription')}</h2>
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${isPro ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600'}`}>
                 {planLabel}
               </span>
@@ -236,21 +238,21 @@ const Profile = () => {
             <div className="grid grid-cols-3 gap-4 mb-5">
               <div className="text-center p-3 bg-gray-50 rounded-lg">
                 <p className="text-2xl font-bold text-primary-600">{stats.total_projects || 0}</p>
-                <p className="text-xs text-gray-500 mt-1">Projets</p>
+                <p className="text-xs text-gray-500 mt-1">{t('ui.projectsNav')}</p>
               </div>
               <div className="text-center p-3 bg-gray-50 rounded-lg">
                 <p className="text-2xl font-bold text-green-600">{stats.completed_projects || 0}</p>
-                <p className="text-xs text-gray-500 mt-1">Terminés</p>
+                <p className="text-xs text-gray-500 mt-1">{t('ui.doneP')}</p>
               </div>
               <div className="text-center p-3 bg-gray-50 rounded-lg">
                 <p className="text-2xl font-bold text-primary-600">{stats.photo_credits_remaining || 0}</p>
-                <p className="text-xs text-gray-500 mt-1">Crédits photos</p>
+                <p className="text-xs text-gray-500 mt-1">{t('ui.photoCredits')}</p>
               </div>
             </div>
 
             {stats.total_time > 0 && (
               <div className="p-3 bg-primary-50 rounded-lg mb-5">
-                <p className="text-xs text-gray-500 mb-0.5">Temps total de tricot</p>
+                <p className="text-xs text-gray-500 mb-0.5">{t('ui.totalKnitTime')}</p>
                 <p className="text-xl font-bold text-primary-600">
                   {(() => {
                     const hours = Math.floor(stats.total_time / 3600)
@@ -266,25 +268,25 @@ const Profile = () => {
             {!isPro && (
               <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <p className="text-sm text-gray-700 mb-3">
-                  Passez à <strong>PRO</strong> pour des projets illimités, 20 crédits photos/mois et tous les styles IA.
+                  <Trans t={t} i18nKey="ui.goProForUnlimited"><strong /></Trans>
                 </p>
                 <Link to="/subscription" className="inline-block px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">
-                  Découvrir le plan PRO
+                  {t('ui.discoverPro')}
                 </Link>
               </div>
             )}
 
             {isPro && stats.has_active_subscription && userData.subscription_expires_at && (
               <p className="text-sm text-gray-600">
-                Accès actif jusqu'au{' '}
-                <strong>{new Date(userData.subscription_expires_at).toLocaleDateString('fr-FR')}</strong>
+                
+                <Trans t={t} i18nKey="ui.accessActiveUntil" values={{ date: new Date(userData.subscription_expires_at).toLocaleDateString(i18n.language) }}><strong /></Trans>
               </p>
             )}
           </div>
 
           {/* Aide */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Aide & Contact</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('ui.helpAndContact2')}</h2>
 
             <Link
               to="/contact"
@@ -294,8 +296,8 @@ const Profile = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
               <div className="flex-1">
-                <p className="font-medium text-gray-900 group-hover:text-primary-700 text-sm">Nous contacter</p>
-                <p className="text-xs text-gray-500">Une question ? Un problème ?</p>
+                <p className="font-medium text-gray-900 group-hover:text-primary-700 text-sm">{t('ui.contactUsAlt')}</p>
+                <p className="text-xs text-gray-500">{t('ui.questionOrProblem')}</p>
               </div>
               <svg className="w-4 h-4 text-gray-400 group-hover:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -312,8 +314,8 @@ const Profile = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
               </svg>
               <div className="flex-1">
-                <p className="font-medium text-gray-900 group-hover:text-primary-700 text-sm">Rejoindre la communauté</p>
-                <p className="text-xs text-gray-500">Échangez avec d'autres tricoteuses/crocheteuses YarnFlow sur Facebook</p>
+                <p className="font-medium text-gray-900 group-hover:text-primary-700 text-sm">{t('ui.joinCommunity')}</p>
+                <p className="text-xs text-gray-500">{t('ui.joinCommunityDesc')}</p>
               </div>
               <svg className="w-4 h-4 text-gray-400 group-hover:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -323,12 +325,12 @@ const Profile = () => {
 
           {/* Notifications */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Notifications</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('ui.notifications')}</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Rappel d'inactivité</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Reçois un email si tu n'as pas tricoté depuis 7 jours</p>
+                  <p className="text-sm font-medium text-gray-900">{t('ui.inactivityReminder')}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t('ui.inactivityEmail')}</p>
                 </div>
                 <button
                   onClick={() => handleToggleInactivityReminder(!inactivityReminder)}
@@ -343,15 +345,15 @@ const Profile = () => {
               {pushSupported && (
                 <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-100">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Notifications push</p>
+                    <p className="text-sm font-medium text-gray-900">{t('ui.pushNotifications')}</p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {permission === 'denied'
-                        ? 'Bloquées dans votre navigateur — modifiez les permissions du site pour les activer'
-                        : 'Reçois des rappels directement sur ton téléphone'}
+                        ? t('ui.pushBlocked')
+                        : t('ui.pushReminders')}
                     </p>
                   </div>
                   {permission === 'denied' ? (
-                    <span className="text-xs text-gray-400 flex-shrink-0">Bloquées</span>
+                    <span className="text-xs text-gray-500 flex-shrink-0">{t('ui.reserved')}</span>
                   ) : (
                     <button
                       onClick={isSubscribed ? unsubscribe : subscribe}
@@ -370,16 +372,16 @@ const Profile = () => {
 
           {/* Zone dangereuse */}
           <div className="card border border-red-200">
-            <h2 className="text-base font-semibold text-red-600 mb-3">Zone dangereuse</h2>
+            <h2 className="text-base font-semibold text-red-600 mb-3">{t('ui.dangerZone')}</h2>
             <p className="text-sm text-gray-600 mb-3">
-              La suppression de compte est irréversible. Tous vos projets, photos et données seront définitivement supprimés.
+              {t('ui.deleteAccountWarning')}
             </p>
             <a
               href={`mailto:support@yarnflow.fr?subject=Demande de suppression de compte&body=Bonjour,%0D%0A%0D%0AJe souhaite supprimer mon compte YarnFlow associé à l'email : ${userData.email}%0D%0A%0D%0AJe comprends que cette action est irréversible et que toutes mes données seront définitivement supprimées.%0D%0A%0D%0AMerci.`}
               className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              Demander la suppression par email
+              {t('ui.requestDeletionByEmail')}
             </a>
           </div>
         </div>
@@ -388,25 +390,25 @@ const Profile = () => {
       {/* Tab: Mot de passe */}
       {activeTab === 'password' && (
         <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 mb-5">Changer le mot de passe</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-5">{t('ui.changePassword')}</h2>
           <form onSubmit={handleChangePassword}>
             <div className="mb-4">
-              <label className="block text-sm text-gray-700 mb-1.5">Mot de passe actuel</label>
+              <label className="block text-sm text-gray-700 mb-1.5">{t('ui.currentPassword')}</label>
               <PasswordInput className="input-field" value={passwordData.current_password}
                 onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })} required />
             </div>
             <div className="mb-4">
-              <label className="block text-sm text-gray-700 mb-1.5">Nouveau mot de passe</label>
+              <label className="block text-sm text-gray-700 mb-1.5">{t('ui.newPassword')}</label>
               <PasswordInput className="input-field" value={passwordData.new_password}
                 onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })} required minLength={6} />
-              <p className="text-xs text-gray-500 mt-1">Minimum 6 caractères</p>
+              <p className="text-xs text-gray-500 mt-1">{t('ui.minSixChars')}</p>
             </div>
             <div className="mb-6">
-              <label className="block text-sm text-gray-700 mb-1.5">Confirmer le nouveau mot de passe</label>
+              <label className="block text-sm text-gray-700 mb-1.5">{t('ui.confirmNewPassword')}</label>
               <PasswordInput className="input-field" value={passwordData.confirm_password}
                 onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })} required minLength={6} />
             </div>
-            <button type="submit" className="btn-primary">Changer le mot de passe</button>
+            <button type="submit" className="btn-primary">{t('ui.changePassword')}</button>
           </form>
         </div>
       )}

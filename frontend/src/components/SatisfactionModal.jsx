@@ -9,8 +9,10 @@
 import { useState } from 'react'
 import PropTypes from 'prop-types'
 import api from '../services/api'
+import { useTranslation } from 'react-i18next'
 
 const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
+  const { t } = useTranslation('tools')
   const [submitting, setSubmitting] = useState(false)
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
@@ -20,7 +22,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      alert('Veuillez sélectionner une note')
+      alert(t('ui.pickRating'))
       return
     }
 
@@ -39,7 +41,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
       onClose()
     } catch (err) {
       console.error('Erreur feedback:', err)
-      alert(err.response?.data?.error || 'Erreur lors de l\'envoi du feedback')
+      alert(err.response?.data?.error || t('ui.feedbackSendFailed'))
     } finally {
       setSubmitting(false)
       setRating(0)
@@ -50,11 +52,11 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
 
   const getRatingLabel = (stars) => {
     const labels = {
-      1: 'Très insatisfait',
-      2: 'Insatisfait',
-      3: 'Correct',
-      4: 'Satisfait',
-      5: 'Excellent !'
+      1: t('ui.rating1'),
+      2: t('ui.rating2'),
+      3: t('ui.rating3'),
+      4: t('ui.rating4'),
+      5: t('ui.rating5')
     }
     return labels[stars] || ''
   }
@@ -65,8 +67,8 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="text-5xl">🎨</div>
-          <h2 className="text-2xl font-bold text-gray-900">Votre photo est prête !</h2>
-          <p className="text-gray-600">Qu'en pensez-vous ?</p>
+          <h2 className="text-2xl font-bold text-gray-900">{t('ui.photoReady')}</h2>
+          <p className="text-gray-600">{t('ui.whatDoYouThink')}</p>
         </div>
 
         {/* Photo preview */}
@@ -81,7 +83,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
         {/* Système d'étoiles */}
         <div className="space-y-3">
           <label className="block text-center text-sm font-medium text-gray-700">
-            Notez le résultat :
+            {t('ui.rateResult')}
           </label>
 
           {/* Étoiles cliquables */}
@@ -122,19 +124,19 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
         {/* Champ commentaire optionnel */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
-            Commentaire (optionnel)
+            {t('ui.commentOptional')}
           </label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Qu'en pensez-vous ? Qu'auriez-vous aimé améliorer ?"
+            placeholder={t('ui.whatWouldImprove')}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none text-sm focus:ring-2 focus:ring-primary-400 focus:border-transparent"
             rows="3"
             maxLength="500"
             disabled={submitting}
           />
           <p className="text-xs text-gray-500">
-            💡 Votre retour nous aide à améliorer le service
+            {t('ui.feedbackHelps')}
           </p>
         </div>
 
@@ -145,7 +147,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
             disabled={submitting || rating === 0}
             className="w-full px-6 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? '⏳ Envoi...' : '✨ Envoyer ma note'}
+            {submitting ? t('ui.sendingRating') : t('ui.sendRating')}
           </button>
 
           <button
@@ -153,7 +155,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
             disabled={submitting}
             className="w-full px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium transition disabled:opacity-50"
           >
-            Je déciderai plus tard
+            {t('ui.decideLater')}
           </button>
         </div>
       </div>

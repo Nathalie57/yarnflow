@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const KNITTING_NEEDLES = [
   { mm: 1.5,  us: '000',  uk: '—'  },
@@ -64,6 +65,7 @@ const CROCHET_HOOKS = [
 ]
 
 export default function NeedleConverter() {
+  const { t } = useTranslation('tools')
   const [type, setType] = useState('knitting') // knitting | crochet
   const [search, setSearch] = useState('')
 
@@ -91,7 +93,7 @@ export default function NeedleConverter() {
             type === 'knitting' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Aiguilles à tricoter
+          {t('ui.knittingNeedles')}
         </button>
         <button
           onClick={() => { setType('crochet'); setSearch('') }}
@@ -99,7 +101,7 @@ export default function NeedleConverter() {
             type === 'crochet' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Crochets
+          {t('ui.hooks')}
         </button>
       </div>
 
@@ -108,7 +110,7 @@ export default function NeedleConverter() {
         type="text"
         value={search}
         onChange={e => setSearch(e.target.value)}
-        placeholder="Chercher par taille (ex: 4 ou G/6)"
+        placeholder={t('ui.phSearchSize')}
         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
       />
 
@@ -117,7 +119,7 @@ export default function NeedleConverter() {
         <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex justify-around text-center">
           <div>
             <div className="text-2xl font-bold text-primary-700">{highlighted.mm} mm</div>
-            <div className="text-xs text-gray-500 mt-1">EU / mm</div>
+            <div className="text-xs text-gray-500 mt-1">{t('ui.euSlashMm')}</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-primary-700">{highlighted.us}</div>
@@ -137,7 +139,7 @@ export default function NeedleConverter() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
             <tr>
-              <th className="px-4 py-2 text-left">EU (mm)</th>
+              <th className="px-4 py-2 text-left">{t('ui.euMm')}</th>
               <th className="px-4 py-2 text-left">US</th>
               {type === 'knitting' && <th className="px-4 py-2 text-left">UK</th>}
             </tr>

@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import TagInput from '../TagInput'
+import { useTranslation } from 'react-i18next'
 import { PROJECT_CATEGORIES } from '../../data/projectTemplates'
 
 const DEFAULT_TECHNICAL_FORM = {
@@ -42,6 +43,7 @@ const CreateProjectWizard = ({
   patternText,
   selectedLibraryPattern
 }) => {
+  const { t, i18n } = useTranslation('projects')
   const navigate = useNavigate()
   const { user } = useAuth()
   const [mode, setMode] = useState(initialMode) // null = choix, 'manual' = formulaire
@@ -107,9 +109,10 @@ const CreateProjectWizard = ({
   const canSubmit = name.trim().length >= 2 && selectedCategory !== null
 
   const handlePresetSelect = (preset) => {
-    setSelectedPreset(preset.name)
+    setSelectedPreset(preset.presetKey)
     if (preset.sections.length > 0) {
-      setSectionDetails(preset.sections.map(s => ({ name: s.name, total_rows: '' })))
+      // [AI:Claude] sectionKey null = preset 'Personnalisé' : on laisse le champ vide
+      setSectionDetails(preset.sections.map(s => ({ name: s.sectionKey ? t(`wizard.sections.${s.sectionKey}`) : '', total_rows: '' })))
     } else {
       setSectionDetails([{ name: '', total_rows: '' }])
     }
@@ -118,7 +121,7 @@ const CreateProjectWizard = ({
   const handleSubmit = () => {
     if (!canSubmit || isSubmitting) return
     const sections = sectionDetails.map((s, i) => ({
-      name: s.name.trim() || `Partie ${i + 1}`,
+      name: s.name.trim() || t('wizard.defaultSectionName', { n: i + 1 }),
       total_rows: s.total_rows ? parseInt(s.total_rows, 10) : null,
       description: null,
       notes: null
@@ -170,7 +173,7 @@ const CreateProjectWizard = ({
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
         <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900">Nouveau projet</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('wizard.title')}</h2>
             <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -189,35 +192,35 @@ const CreateProjectWizard = ({
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-white text-base">Création Intelligente</p>
-                <p className="text-xs text-white/80 mt-0.5">Importez votre patron (PDF, URL, photo) — on remplit tout automatiquement</p>
+                <p className="font-bold text-white text-base">{t('wizard.smartTitle')}</p>
+                <p className="text-xs text-white/80 mt-0.5">{t('wizard.smartDesc')}</p>
                 {isPaidWithImports && (
                   <p className="text-xs text-white/90 mt-2 font-medium">
-                    {smartQuota.remaining} création{smartQuota.remaining !== 1 ? 's' : ''} disponible{smartQuota.remaining !== 1 ? 's' : ''} ce mois
+                    {t('wizard.smartRemaining', { count: smartQuota.remaining })}
                     {smartQuota.next_reset_date && (
-                      <span className="text-white/60"> — recharge le {new Date(smartQuota.next_reset_date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</span>
+                      <span className="text-white/60">{t('wizard.smartRecharge', { date: new Date(smartQuota.next_reset_date + 'T00:00:00').toLocaleDateString(i18n.language, { day: 'numeric', month: 'long' }) })}</span>
                     )}
                   </p>
                 )}
                 {isFreeTrialAvailable && (
                   <p className="text-xs text-white/90 mt-2 font-medium">
-                    {smartQuota?.remaining ?? 2} essai{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''} gratuit{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''} disponible{(smartQuota?.remaining ?? 2) !== 1 ? 's' : ''}
+                    {t('wizard.freeTrials', { count: smartQuota?.remaining ?? 2 })}
                   </p>
                 )}
                 {isTrialUsed && (
                   <p className="text-xs mt-2 flex items-center gap-1.5">
-                    <span className="text-white/70">Essai utilisé</span>
-                    <span className="bg-white text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Débloquer</span>
+                    <span className="text-white/70">{t('wizard.trialUsed')}</span>
+                    <span className="bg-white text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">{t('wizard.unlock')}</span>
                   </p>
                 )}
                 {isPlusExhausted && (
                   <p className="text-xs mt-2 flex items-center gap-1.5">
-                    <span className="text-white/70">3/3 utilisées ce mois</span>
-                    <span className="bg-white text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">Passer à PRO</span>
+                    <span className="text-white/70">{t('wizard.plusExhausted')}</span>
+                    <span className="bg-white text-primary-700 text-xs font-semibold px-1.5 py-0.5 rounded-full">{t('wizard.upgradePro')}</span>
                   </p>
                 )}
                 {isProExhausted && (
-                  <p className="text-xs text-white/70 mt-2">15/15 utilisées — renouvellement le 1er du mois</p>
+                  <p className="text-xs text-white/70 mt-2">{t('wizard.proExhausted')}</p>
                 )}
               </div>
             </button>
@@ -227,7 +230,7 @@ const CreateProjectWizard = ({
               onClick={() => setMode('manual')}
               className="w-full text-center mt-3 py-2 text-sm text-gray-500 hover:text-gray-700 underline underline-offset-2 transition"
             >
-              ou remplir moi-même les informations
+              {t('wizard.fillManually')}
             </button>
           </div>
         </div>
@@ -241,7 +244,7 @@ const CreateProjectWizard = ({
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
-          <h2 className="text-xl font-bold text-gray-900">Nouveau projet</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t('wizard.title')}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -259,7 +262,7 @@ const CreateProjectWizard = ({
           {/* Nom */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Nom du projet <span className="text-red-500">*</span>
+              {t('ui.projectName')} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -267,14 +270,14 @@ const CreateProjectWizard = ({
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && canSubmit) handleSubmit() }}
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition text-base"
-              placeholder="Ex: Pull blanc pour maman"
+              placeholder={t('wizard.projectNamePlaceholder')}
               autoFocus
             />
           </div>
 
           {/* Technique */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Technique</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.technique')}</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -288,7 +291,7 @@ const CreateProjectWizard = ({
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
                 </svg>
-                Crochet
+                {t('wizard.crochet')}
               </button>
               <button
                 type="button"
@@ -302,7 +305,7 @@ const CreateProjectWizard = ({
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5 3 12m0 0 3.75 4.5M3 12h18" />
                 </svg>
-                Tricot
+                {t('wizard.knitting')}
               </button>
             </div>
           </div>
@@ -310,7 +313,7 @@ const CreateProjectWizard = ({
           {/* Catégorie */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Type de projet <span className="text-red-500">*</span>
+              {t('wizard.projectType')} <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {PROJECT_CATEGORIES.map(cat => (
@@ -324,7 +327,7 @@ const CreateProjectWizard = ({
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  {cat.value}
+                  {t(`wizard.categories.${cat.id}`)}
                 </button>
               ))}
             </div>
@@ -336,22 +339,22 @@ const CreateProjectWizard = ({
             return (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type d'ouvrage
+                  {t('wizard.workType')}
                 </label>
                 {presets.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
                     {presets.map(preset => (
                       <button
-                        key={preset.name}
+                        key={preset.presetKey}
                         type="button"
                         onClick={() => handlePresetSelect(preset)}
                         className={`px-3 py-1.5 rounded-full border text-sm font-medium transition ${
-                          selectedPreset === preset.name
+                          selectedPreset === preset.presetKey
                             ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
                             : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                         }`}
                       >
-                        {preset.name}
+                        {t(`wizard.presets.${preset.presetKey}`)}
                       </button>
                     ))}
                   </div>
@@ -379,7 +382,7 @@ const CreateProjectWizard = ({
                             next[i] = { ...next[i], total_rows: e.target.value }
                             setSectionDetails(next)
                           }}
-                          placeholder="Rangs"
+                          placeholder={t('wizard.rowsPlaceholder')}
                           min="0"
                           className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         />
@@ -401,7 +404,7 @@ const CreateProjectWizard = ({
                       onClick={() => setSectionDetails([...sectionDetails, { name: '', total_rows: '' }])}
                       className="text-xs text-primary-600 hover:text-primary-700 mt-1"
                     >
-                      + Ajouter une partie
+                      {t('ui.addPart')}
                     </button>
                   </div>
                 )}
@@ -417,7 +420,7 @@ const CreateProjectWizard = ({
               className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition flex items-center justify-between"
             >
               <span className="text-sm font-medium text-gray-600">
-                Options — patron, tags, description...
+                {t('ui.optionsSummary2')}
               </span>
               <svg
                 className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${showOptions ? 'rotate-180' : ''}`}
@@ -432,11 +435,11 @@ const CreateProjectWizard = ({
 
                 {/* Unité de comptage */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Unité de comptage</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.counterUnit')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: 'rows', label: 'Rangs', icon: '📏' },
-                      { value: 'cm', label: 'Centimètres', icon: '📐' }
+                      { value: 'rows', labelKey: 'rowsLabel', icon: '📏' },
+                      { value: 'cm', label: t('wizard.centimeters'), icon: '📐' }
                     ].map(opt => (
                       <button
                         key={opt.value}
@@ -449,7 +452,7 @@ const CreateProjectWizard = ({
                         }`}
                       >
                         <span>{opt.icon}</span>
-                        <span>{opt.label}</span>
+                        <span>{opt.labelKey ? t(`ui.${opt.labelKey}`) : opt.label}</span>
                       </button>
                     ))}
                   </div>
@@ -457,7 +460,7 @@ const CreateProjectWizard = ({
 
                 {/* Patron */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Patron</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.pattern')}</label>
                   <div className="grid grid-cols-2 gap-2">
 
                     <button
@@ -468,7 +471,7 @@ const CreateProjectWizard = ({
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 mb-1 ${patternType === 'library' ? 'text-primary-600' : 'text-gray-400'}`}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                       </svg>
-                      <span className="text-xs font-medium text-gray-700">Bibliothèque</span>
+                      <span className="text-xs font-medium text-gray-700">{t('wizard.library')}</span>
                       {selectedLibraryPattern && (
                         <span className="text-xs text-primary-600 mt-0.5 truncate max-w-full">✓ {selectedLibraryPattern.name}</span>
                       )}
@@ -486,8 +489,8 @@ const CreateProjectWizard = ({
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                       </svg>
-                      <span className="text-xs font-medium text-gray-700">Fichier</span>
-                      <span className="text-xs text-gray-400">PDF ou image</span>
+                      <span className="text-xs font-medium text-gray-700">{t('wizard.file')}</span>
+                      <span className="text-xs text-gray-500">{t('ui.pdfOrImageHint')}</span>
                       {patternFile && (
                         <span className="text-xs text-primary-600 mt-0.5 truncate max-w-full">
                           ✓ {patternFile.name.length > 15 ? patternFile.name.substring(0, 15) + '…' : patternFile.name}
@@ -510,8 +513,8 @@ const CreateProjectWizard = ({
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                       </svg>
-                      <span className="text-xs font-medium text-gray-700">Lien web</span>
-                      {patternUrl && <span className="text-xs text-primary-600 mt-0.5">✓ Lien ajouté</span>}
+                      <span className="text-xs font-medium text-gray-700">{t('wizard.webLink')}</span>
+                      {patternUrl && <span className="text-xs text-primary-600 mt-0.5">{t('ui.linkAddedCheck')}</span>}
                     </button>
 
                     <button
@@ -522,8 +525,8 @@ const CreateProjectWizard = ({
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                       </svg>
-                      <span className="text-xs font-medium text-gray-700">Texte</span>
-                      {patternText && <span className="text-xs text-primary-600 mt-0.5">✓ Texte ajouté</span>}
+                      <span className="text-xs font-medium text-gray-700">{t('ui.textLabel')}</span>
+                      {patternText && <span className="text-xs text-primary-600 mt-0.5">{t('ui.textAddedCheck')}</span>}
                     </button>
                   </div>
 
@@ -533,20 +536,20 @@ const CreateProjectWizard = ({
                       onClick={() => { setPatternType(''); setPatternFile(null) }}
                       className="mt-1.5 text-xs text-red-500 hover:text-red-700"
                     >
-                      ✕ Effacer le patron
+                      {t('ui.clearPattern')}
                     </button>
                   )}
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.description')}</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm resize-none"
-                    placeholder="Ex: Bonnet décontracté pour l'hiver..."
+                    placeholder={t('wizard.descriptionPlaceholder')}
                   />
                 </div>
 
@@ -558,28 +561,28 @@ const CreateProjectWizard = ({
                     onChange={(e) => setIsFavorite(e.target.checked)}
                     className="w-4 h-4 text-primary rounded border-gray-300 focus:ring-primary"
                   />
-                  <span className="text-sm font-medium text-gray-700">Marquer comme favori</span>
+                  <span className="text-sm font-medium text-gray-700">{t('wizard.markFavorite')}</span>
                 </label>
 
                 {/* Tags */}
                 {canUseTags ? (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Tags</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('ui.tagsLabel')}</label>
                     <TagInput
                       tags={projectTags}
                       onAddTag={handleAddTag}
                       onRemoveTag={handleRemoveTag}
                       suggestions={popularTags?.map(t => t.tag_name) ?? []}
-                      placeholder="Ex: cadeau, bébé, urgent..."
+                      placeholder={t('wizard.tagsPlaceholder')}
                     />
                   </div>
                 ) : (
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <span className="text-sm text-gray-600">Tags</span>
+                    <span className="text-sm text-gray-600">{t('ui.tagsLabel')}</span>
                     <div className="flex items-center gap-2">
                       <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
                       <button type="button" onClick={() => { onClose(); navigate('/subscription') }} className="text-xs text-primary-600 hover:underline font-medium">
-                        Voir les plans
+                        {t('wizard.seePlans')}
                       </button>
                     </div>
                   </div>
@@ -593,7 +596,7 @@ const CreateProjectWizard = ({
                     className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition flex items-center justify-between text-left"
                   >
                     <span className="text-sm font-medium text-gray-600">
-                      Détails techniques — laine, aiguilles, échantillon
+                      {t('ui.technicalDetails')}
                     </span>
                     <svg
                       className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${showTechnicalDetails ? 'rotate-180' : ''}`}
@@ -609,7 +612,7 @@ const CreateProjectWizard = ({
                       {/* Laine / Fil */}
                       <div className="p-3 bg-primary-50 rounded-lg border border-primary-200">
                         <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                          {technique === 'tricot' ? 'Laine' : 'Fil'}
+                          {technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
                         </h4>
                         {technicalForm.yarn.map((y, yIdx) => (
                           <div key={yIdx} className="mb-2 p-2 bg-white rounded border border-primary-100">
@@ -623,7 +626,7 @@ const CreateProjectWizard = ({
                                   setTechnicalForm({ ...technicalForm, yarn: n })
                                 }}
                                 className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="Marque"
+                                placeholder={t('wizard.brand')}
                               />
                               <input
                                 type="text"
@@ -634,7 +637,7 @@ const CreateProjectWizard = ({
                                   setTechnicalForm({ ...technicalForm, yarn: n })
                                 }}
                                 className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="Nom"
+                                placeholder={t('wizard.yarnName')}
                               />
                             </div>
                             {technicalForm.yarn.length > 1 && (
@@ -643,7 +646,7 @@ const CreateProjectWizard = ({
                                 onClick={() => setTechnicalForm({ ...technicalForm, yarn: technicalForm.yarn.filter((_, i) => i !== yIdx) })}
                                 className="text-xs text-red-500 hover:text-red-700"
                               >
-                                Supprimer
+                                {t('wizard.deletePart')}
                               </button>
                             )}
                           </div>
@@ -653,14 +656,14 @@ const CreateProjectWizard = ({
                           onClick={() => setTechnicalForm({ ...technicalForm, yarn: [...technicalForm.yarn, { brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }] })}
                           className="text-xs text-primary-600 hover:text-primary-700"
                         >
-                          + Ajouter
+                          {t('ui.addPlus')}
                         </button>
                       </div>
 
                       {/* Aiguilles / Crochets */}
                       <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                          {technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
+                          {technique === 'tricot' ? t('wizard.needles') : t('wizard.hooks')}
                         </h4>
                         {technicalForm.needles.map((n, nIdx) => (
                           <div key={nIdx} className="mb-2 p-2 bg-white rounded border border-gray-200">
@@ -675,7 +678,7 @@ const CreateProjectWizard = ({
                                     setTechnicalForm({ ...technicalForm, needles: nn })
                                   }}
                                   className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                  placeholder="Type"
+                                  placeholder={t('wizard.needleType')}
                                 />
                               )}
                               <input
@@ -687,7 +690,7 @@ const CreateProjectWizard = ({
                                   setTechnicalForm({ ...technicalForm, needles: nn })
                                 }}
                                 className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                placeholder="Taille (mm)"
+                                placeholder={t('wizard.needleSize')}
                               />
                               {technique === 'tricot' && (
                                 <input
@@ -699,7 +702,7 @@ const CreateProjectWizard = ({
                                     setTechnicalForm({ ...technicalForm, needles: nn })
                                   }}
                                   className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                                  placeholder="Longueur"
+                                  placeholder={t('wizard.needleLength')}
                                 />
                               )}
                             </div>
@@ -710,34 +713,34 @@ const CreateProjectWizard = ({
                           onClick={() => setTechnicalForm({ ...technicalForm, needles: [...technicalForm.needles, { type: '', size: '', length: '' }] })}
                           className="text-xs text-blue-600 hover:text-blue-700"
                         >
-                          + Ajouter
+                          {t('ui.addPlus')}
                         </button>
                       </div>
 
                       {/* Échantillon */}
                       <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">Échantillon</h4>
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3">{t('wizard.gauge')}</h4>
                         <div className="grid grid-cols-3 gap-2">
                           <input
                             type="text"
                             value={technicalForm.gauge.stitches}
                             onChange={(e) => setTechnicalForm({ ...technicalForm, gauge: { ...technicalForm.gauge, stitches: e.target.value } })}
                             className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                            placeholder="Mailles"
+                            placeholder={t('wizard.gaugeStitches')}
                           />
                           <input
                             type="text"
                             value={technicalForm.gauge.rows}
                             onChange={(e) => setTechnicalForm({ ...technicalForm, gauge: { ...technicalForm.gauge, rows: e.target.value } })}
                             className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                            placeholder="Rangs"
+                            placeholder={t('wizard.rowsPlaceholder')}
                           />
                           <input
                             type="text"
                             value={technicalForm.gauge.dimensions}
                             onChange={(e) => setTechnicalForm({ ...technicalForm, gauge: { ...technicalForm.gauge, dimensions: e.target.value } })}
                             className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                            placeholder="10x10 cm"
+                            placeholder={t('wizard.gaugeDimensions')}
                           />
                         </div>
                       </div>
@@ -758,7 +761,7 @@ const CreateProjectWizard = ({
             onClick={onClose}
             className="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
           >
-            Annuler
+            {t('wizard.cancel')}
           </button>
           <button
             type="button"
@@ -770,7 +773,7 @@ const CreateProjectWizard = ({
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
             }`}
           >
-            {isSubmitting ? 'Création en cours...' : (submitLabel || 'Créer le projet')}
+            {isSubmitting ? t('wizard.creating') : (submitLabel || t('wizard.create'))}
           </button>
         </div>
 

@@ -6,9 +6,11 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
 
 const ExternalPatternPreview = ({ url, savedImage }) => {
+  const { t } = useTranslation('tools')
   const [metadata, setMetadata] = useState(null)
   const [loading, setLoading] = useState(!savedImage)
   const [error, setError] = useState(null)
@@ -34,7 +36,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
         }
       } catch (err) {
         console.error('Erreur chargement métadonnées:', err)
-        setError('Impossible de charger l\'aperçu')
+        setError(t('ui.previewLoadFailed'))
       } finally {
         setLoading(false)
       }
@@ -80,7 +82,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
       <div className="border-2 border-gray-200 rounded-lg p-8 text-center bg-gray-50">
         <div className="animate-pulse">
           <div className="text-4xl mb-3">🔗</div>
-          <p className="text-gray-500">Chargement de l'aperçu...</p>
+          <p className="text-gray-500">{t('ui.loadingPreview')}</p>
         </div>
       </div>
     )
@@ -93,7 +95,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
         <div className="relative h-64 bg-gray-100">
           <img
             src={metadata.image}
-            alt={metadata.title || 'Aperçu du patron'}
+            alt={metadata.title || t('ui.patternPreviewAlt')}
             className="w-full h-full object-cover"
             onError={(e) => {
               e.target.style.display = 'none'
@@ -127,19 +129,19 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
           {isMobile ? (
             <>
               <p className="text-sm text-blue-800 mb-2">
-                💡 <strong>Astuce :</strong> Sur mobile, vous pouvez basculer entre les onglets pour garder le compteur et le patron accessibles.
+                <Trans t={t} i18nKey="ui.tipMobileTabs"><strong /></Trans>
               </p>
               <p className="text-xs text-blue-700">
-                Encore mieux : téléchargez le PDF du patron et uploadez-le dans l'app pour le consulter directement ici !
+                {t('ui.tipDownloadPdf1')}
               </p>
             </>
           ) : (
             <>
               <p className="text-sm text-blue-800 mb-2">
-                💡 <strong>Astuce :</strong> Le bouton "📱 Ouvrir en fenêtre à côté" positionne automatiquement le patron à droite de l'écran pour garder le compteur visible.
+                <Trans t={t} i18nKey="ui.tipSideWindow"><strong /></Trans>
               </p>
               <p className="text-xs text-blue-700">
-                Encore mieux : téléchargez le PDF du patron et uploadez-le dans l'app pour pouvoir le consulter sans changer de fenêtre !
+                {t('ui.tipDownloadPdf2')}
               </p>
             </>
           )}
@@ -148,7 +150,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
         {error && !metadata && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
             <p className="text-xs text-yellow-800">
-              ⚠️ Impossible de charger l'aperçu de ce site
+              {t('ui.cantLoadSitePreview')}
             </p>
           </div>
         )}
@@ -159,7 +161,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
             onClick={handleOpenPattern}
             className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
           >
-            {isMobile ? '🔗 Ouvrir le patron' : '📱 Ouvrir en fenêtre à côté'}
+            {isMobile ? t('ui.openPattern') : t('ui.openSideWindow')}
           </button>
 
           {!isMobile && (
@@ -169,7 +171,7 @@ const ExternalPatternPreview = ({ url, savedImage }) => {
               rel="noopener noreferrer"
               className="block w-full text-center px-6 py-2 border-2 border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition font-medium text-sm"
             >
-              🔗 Ou ouvrir dans un nouvel onglet
+              {t('ui.orOpenNewTab')}
             </a>
           )}
         </div>

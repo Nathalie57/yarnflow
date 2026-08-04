@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef } from 'react'
 import PropTypes from 'prop-types'
 import TagBadge from './TagBadge'
+import { useTranslation } from 'react-i18next'
 
 const ProjectFilters = ({
   onFilterChange,
@@ -17,6 +18,7 @@ const ProjectFilters = ({
   onUpgradeClick,
   userPlan = 'free' // free, plus, pro
 }) => {
+  const { t } = useTranslation('tools')
   const [activeFilter, setActiveFilter] = useState('all')
   const [sortBy, setSortBy] = useState('updated_desc')
   const [selectedTags, setSelectedTags] = useState([])
@@ -49,19 +51,19 @@ const ProjectFilters = ({
   }, [activeFilter, sortBy, selectedTags])
 
   const filters = [
-    { id: 'all', label: 'Tous' },
-    { id: 'in_progress', label: 'En cours' },
-    { id: 'completed', label: 'Terminés' },
-    { id: 'favorite', label: 'Favoris' }
+    { id: 'all', labelKey: 'filterAll' },
+    { id: 'in_progress', labelKey: 'filterInProgress' },
+    { id: 'completed', labelKey: 'filterCompleted' },
+    { id: 'favorite', labelKey: 'filterFavorite' }
   ]
 
   const sortOptions = [
-    { value: 'updated_desc', label: 'Dernière modification' },
-    { value: 'updated_asc', label: 'Plus anciennes modifications' },
-    { value: 'date_desc', label: 'Plus récents' },
-    { value: 'date_asc', label: 'Plus anciens' },
-    { value: 'name_asc', label: 'Nom (A-Z)' },
-    { value: 'name_desc', label: 'Nom (Z-A)' }
+    { value: 'updated_desc', labelKey: 'sortLastModified' },
+    { value: 'updated_asc', labelKey: 'sortOldestModified' },
+    { value: 'date_desc', labelKey: 'sortNewest' },
+    { value: 'date_asc', labelKey: 'sortOldest' },
+    { value: 'name_asc', labelKey: 'sortNameAsc' },
+    { value: 'name_desc', labelKey: 'sortNameDesc' }
   ]
 
   const handleTagClick = (tag) => {
@@ -99,12 +101,12 @@ const ProjectFilters = ({
                 ? 'text-white bg-primary-600 hover:bg-primary-700 shadow-md cursor-pointer'
                 : 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
             }`}
-            title={hasActiveFilters ? "Réinitialiser tous les filtres" : "Aucun filtre actif"}
+            title={hasActiveFilters ? t('ui.resetFilters') : t('ui.noActiveFilter')}
           >
             <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span className="hidden sm:inline">Réinitialiser</span>
+            <span className="hidden sm:inline">{t('ui.reset')}</span>
           </button>
         </div>
       )}
@@ -121,7 +123,7 @@ const ProjectFilters = ({
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            <span className="font-medium text-xs md:text-sm">{filter.label}</span>
+            <span className="font-medium text-xs md:text-sm">{t(`ui.${filter.labelKey}`)}</span>
           </button>
         ))}
       </div>
@@ -133,9 +135,9 @@ const ProjectFilters = ({
           className="text-sm font-medium text-gray-700 flex items-center gap-2 w-full md:cursor-default"
         >
           <span>📊</span>
-          <span>Trier par :</span>
+          <span>{t('ui.sortBy')}</span>
           <span className="text-xs text-gray-500">
-            {sortOptions.find(opt => opt.value === sortBy)?.label}
+            {t(`ui.${sortOptions.find(opt => opt.value === sortBy)?.labelKey}`)}
           </span>
           <svg
             className={`w-4 h-4 ml-auto transition-transform md:hidden ${showSortOptions ? 'rotate-180' : ''}`}
@@ -160,7 +162,7 @@ const ProjectFilters = ({
                   : 'bg-white border border-gray-300 text-gray-700 hover:border-primary-400 hover:bg-primary-50'
               }`}
             >
-              {option.label}
+              {t(`ui.${option.labelKey}`)}
             </button>
           ))}
         </div>
@@ -181,7 +183,7 @@ const ProjectFilters = ({
           }`}
         >
           <span>🏷️</span>
-          <span className="text-xs md:text-sm">{canUseTags ? 'Filtrer par tags' : 'Tags (PLUS)'}</span>
+          <span className="text-xs md:text-sm">{canUseTags ? t('ui.filterByTags') : t('ui.tagsPlus')}</span>
           {!canUseTags && <span className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full">PLUS</span>}
           {canUseTags && availableTags.length > 0 && (
             <svg
@@ -210,7 +212,7 @@ const ProjectFilters = ({
 
         {selectedTags.length > 0 && (
           <div className="flex items-start md:items-center gap-2 flex-col md:flex-row">
-            <span className="text-xs text-gray-500 whitespace-nowrap">Tags actifs:</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">{t('ui.activeTags')}</span>
             <div className="flex flex-wrap gap-1">
               {selectedTags.map((tag) => (
                 <TagBadge

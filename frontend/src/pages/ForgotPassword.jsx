@@ -7,9 +7,12 @@
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation, Trans } from 'react-i18next'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import api from '../services/api'
 
 const ForgotPassword = () => {
+  const { t } = useTranslation('auth')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -29,12 +32,12 @@ const ForgotPassword = () => {
         console.log('[FORGOT PASSWORD] Succès, affichage message')
         setSuccess(true)
       } else {
-        setError(response.data.error || 'Erreur inconnue')
+        setError(response.data.error || t('forgotPassword.unknownError'))
       }
     } catch (err) {
       console.error('[FORGOT PASSWORD] Erreur:', err)
       console.error('[FORGOT PASSWORD] Response:', err.response?.data)
-      setError(err.response?.data?.error || err.response?.data?.message || 'Erreur lors de la demande. Réessayez.')
+      setError(err.response?.data?.error || err.response?.data?.message || t('forgotPassword.requestError'))
     } finally {
       setLoading(false)
     }
@@ -43,6 +46,9 @@ const ForgotPassword = () => {
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
+      {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
+      <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
+
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,17 +57,16 @@ const ForgotPassword = () => {
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            📧 Email envoyé !
+            {t('forgotPassword.sentTitle')}
           </h1>
 
           <p className="text-gray-600 mb-6">
-            Si un compte existe avec l'adresse <strong>{email}</strong>, vous recevrez un email avec un lien de réinitialisation.
+            <Trans i18nKey="forgotPassword.sentDesc" ns="auth" values={{ email }} components={[<strong key="0" />]} />
           </p>
 
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 text-left">
             <p className="text-sm text-yellow-800">
-              ⏱️ Le lien est valide pendant <strong>1 heure</strong>.<br />
-              Vérifiez aussi vos spams si vous ne le voyez pas.
+              <Trans i18nKey="forgotPassword.validityNotice" ns="auth" components={[<strong key="0" />, <br key="1" />]} />
             </p>
           </div>
 
@@ -69,7 +74,7 @@ const ForgotPassword = () => {
             to="/login"
             className="block w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 transition"
           >
-            ← Retour à la connexion
+            {t('shared.backToLogin')}
           </Link>
         </div>
       </div>
@@ -78,6 +83,9 @@ const ForgotPassword = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-primary-100 flex items-center justify-center p-4">
+      {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
+      <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
+
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
@@ -85,10 +93,10 @@ const ForgotPassword = () => {
             <span className="text-4xl">🔑</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Mot de passe oublié ?
+            {t('forgotPassword.title')}
           </h1>
           <p className="text-gray-600">
-            Pas de souci ! Entrez votre email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+            {t('forgotPassword.description')}
           </p>
         </div>
 
@@ -102,7 +110,7 @@ const ForgotPassword = () => {
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Adresse email
+              {t('shared.emailLabel')}
             </label>
             <input
               id="email"
@@ -110,7 +118,7 @@ const ForgotPassword = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="votre@email.com"
+              placeholder={t('shared.emailPlaceholder')}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               disabled={loading}
             />
@@ -127,10 +135,10 @@ const ForgotPassword = () => {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Envoi en cours...
+                {t('forgotPassword.submitting')}
               </>
             ) : (
-              '📧 Envoyer le lien'
+              t('forgotPassword.submit')
             )}
           </button>
         </form>
@@ -141,12 +149,12 @@ const ForgotPassword = () => {
             to="/login"
             className="text-primary-600 hover:text-primary-700 font-medium text-sm block"
           >
-            ← Retour à la connexion
+            {t('shared.backToLogin')}
           </Link>
           <p className="text-sm text-gray-500">
-            Besoin d'aide ?{' '}
+            {t('shared.needHelp')}{' '}
             <Link to="/contact" className="text-primary-600 hover:text-primary-700 font-medium">
-              Contactez-nous
+              {t('shared.contactUs')}
             </Link>
           </p>
         </div>

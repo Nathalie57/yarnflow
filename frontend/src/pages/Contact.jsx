@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useTranslation, Trans } from 'react-i18next'
 
 const Contact = () => {
+  const { t } = useTranslation('tools')
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -48,13 +50,13 @@ const Contact = () => {
     const newErrors = {};
     if (!user) {
       if (!formData.name.trim()) newErrors.name = 'Le nom est requis';
-      if (!formData.email.trim()) newErrors.email = "L'email est requis";
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "L'email est invalide";
+      if (!formData.email.trim()) newErrors.email = t('ui.emailRequired');
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = t('ui.emailInvalid');
     }
     if (!formData.subject.trim()) newErrors.subject = 'Le sujet est requis';
-    else if (formData.subject.length > 200) newErrors.subject = 'Le sujet ne peut pas dépasser 200 caractères';
+    else if (formData.subject.length > 200) newErrors.subject = t('ui.subjectTooLong');
     if (!formData.message.trim()) newErrors.message = 'Le message est requis';
-    else if (formData.message.length > 5000) newErrors.message = 'Le message ne peut pas dépasser 5000 caractères';
+    else if (formData.message.length > 5000) newErrors.message = t('ui.messageTooLong');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -73,9 +75,9 @@ const Contact = () => {
       }, 7000);
     } catch (error) {
       if (error.response?.status === 429) {
-        setErrors({ general: 'Trop de messages envoyés. Veuillez réessayer dans 1 heure.' });
+        setErrors({ general: t('ui.tooManyMessages') });
       } else {
-        setErrors({ general: error.response?.data?.error || "Erreur lors de l'envoi du message. Veuillez réessayer." });
+        setErrors({ general: error.response?.data?.error || t('ui.messageSendFailed') });
       }
     } finally {
       setLoading(false);
@@ -84,19 +86,19 @@ const Contact = () => {
 
   const categories = [
     {
-      value: 'bug', label: 'Signaler un bug', description: 'Un problème technique ou une erreur',
+      value: 'bug', labelKey: 'contactBugLabel', descKey: 'contactBugDesc',
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6l4-4 4 4"/><path d="M2 11h20"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
     },
     {
-      value: 'question', label: 'Poser une question', description: "Besoin d'aide ou d'informations",
+      value: 'question', labelKey: 'contactQuestionLabel', descKey: 'contactQuestionDesc',
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     },
     {
-      value: 'suggestion', label: 'Suggérer une amélioration', description: 'Une idée pour améliorer YarnFlow',
+      value: 'suggestion', labelKey: 'contactIdeaLabel', descKey: 'contactIdeaDesc',
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
     },
     {
-      value: 'other', label: 'Autre', description: 'Toute autre demande',
+      value: 'other', labelKey: 'contactOtherLabel', descKey: 'contactOtherDesc',
       icon: <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
     }
   ];
@@ -110,12 +112,12 @@ const Contact = () => {
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
           </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Message envoyé</h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">{t('ui.messageSent')}</h1>
           <p className="text-gray-600 mb-1">
-            Merci ! Nous vous répondrons à <strong>{formData.email || user?.email}</strong>.
+            <Trans t={t} i18nKey="ui.thanksWeWillReply" values={{ email: formData.email || user?.email }}><strong /></Trans>
           </p>
           <p className="text-sm text-gray-400 mb-6">
-            {user ? "Redirection vers vos projets dans quelques secondes..." : "Redirection vers l'accueil dans quelques secondes..."}
+            {user ? t('ui.redirectProjects') : t('ui.redirectHome')}
           </p>
           <div className="flex gap-3 justify-center">
             <button
@@ -126,13 +128,13 @@ const Contact = () => {
               }}
               className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm"
             >
-              Envoyer un autre message
+              {t('ui.sendAnother')}
             </button>
             <button
               onClick={() => { if (redirectTimeoutRef.current) clearTimeout(redirectTimeoutRef.current); navigate(user ? '/my-projects' : '/'); }}
               className="px-5 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm"
             >
-              {user ? 'Retour à mes projets' : "Retour à l'accueil"}
+              {user ? t('ui.backToProjects') : t('ui.backHome')}
             </button>
           </div>
         </div>
@@ -144,8 +146,8 @@ const Contact = () => {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="bg-white rounded-lg border border-gray-200 p-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Contactez-nous</h1>
-          <p className="text-gray-500 text-sm">Une question, un bug, une suggestion ? Nous lisons tous les messages.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">{t('ui.contactUs')}</h1>
+          <p className="text-gray-500 text-sm">{t('ui.contactIntro')}</p>
         </div>
 
         {errors.general && (
@@ -159,20 +161,20 @@ const Contact = () => {
           {!user && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nom <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('ui.nameRequired2')} <span className="text-red-500">*</span></label>
                 <input
                   type="text" name="name" value={formData.name} onChange={handleChange}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm ${errors.name ? 'border-red-400' : 'border-gray-300'}`}
-                  placeholder="Votre nom"
+                  placeholder={t('ui.yourName')}
                 />
                 {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Email <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('ui.email')} <span className="text-red-500">*</span></label>
                 <input
                   type="email" name="email" value={formData.email} onChange={handleChange}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm ${errors.email ? 'border-red-400' : 'border-gray-300'}`}
-                  placeholder="votre@email.com"
+                  placeholder={t('ui.phEmail')}
                 />
                 {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
               </div>
@@ -181,7 +183,7 @@ const Contact = () => {
 
           {/* Catégorie */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Catégorie <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.categoryLabel')} <span className="text-red-500">*</span></label>
             <div className="grid grid-cols-2 gap-2">
               {categories.map((cat) => (
                 <label
@@ -197,8 +199,8 @@ const Contact = () => {
                     {cat.icon}
                   </span>
                   <div>
-                    <div className="text-sm font-medium text-gray-900">{cat.label}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{cat.description}</div>
+                    <div className="text-sm font-medium text-gray-900">{t(`ui.${cat.labelKey}`)}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{t(`ui.${cat.descKey}`)}</div>
                   </div>
                 </label>
               ))}
@@ -208,13 +210,13 @@ const Contact = () => {
           {/* Sujet */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Sujet <span className="text-red-500">*</span>
+              {t('ui.subjectRequired')} <span className="text-red-500">*</span>
               <span className="text-xs text-gray-400 font-normal ml-2">{formData.subject.length}/200</span>
             </label>
             <input
               type="text" name="subject" value={formData.subject} onChange={handleChange} maxLength={200}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm ${errors.subject ? 'border-red-400' : 'border-gray-300'}`}
-              placeholder="Résumé en quelques mots"
+              placeholder={t('ui.phSubject')}
             />
             {errors.subject && <p className="mt-1 text-xs text-red-600">{errors.subject}</p>}
           </div>
@@ -228,7 +230,7 @@ const Contact = () => {
             <textarea
               name="message" value={formData.message} onChange={handleChange} rows={6} maxLength={5000}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none text-sm ${errors.message ? 'border-red-400' : 'border-gray-300'}`}
-              placeholder="Décrivez votre demande en détail..."
+              placeholder={t('ui.phDescribeRequest')}
             />
             {errors.message && <p className="mt-1 text-xs text-red-600">{errors.message}</p>}
           </div>
@@ -239,20 +241,20 @@ const Contact = () => {
               type="button" onClick={() => navigate(-1)} disabled={loading}
               className="flex-1 px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-medium"
             >
-              Annuler
+              {t('ui.cancel')}
             </button>
             <button
               type="submit" disabled={loading}
               className="flex-1 px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
             >
-              {loading ? 'Envoi...' : 'Envoyer'}
+              {loading ? t('ui.sending') : t('ui.send')}
             </button>
           </div>
         </form>
 
         <div className="mt-6 pt-6 border-t border-gray-100 text-center">
           <p className="text-xs text-gray-400">
-            Ou directement à{' '}
+            {t('ui.orDirectlyAt')}{' '}
             <a href="mailto:contact@yarnflow.fr" className="text-primary-600 hover:underline font-medium">
               contact@yarnflow.fr
             </a>

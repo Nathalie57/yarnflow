@@ -1,0 +1,222 @@
+{
+  "header": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "contact": "Contact",
+    "login": "Log in",
+    "ctaLong": "Get started — it's free",
+    "ctaShort": "It's free"
+  },
+  "hero": {
+    "badge": "At last, an app built by a maker, for knitting & crochet lovers",
+    "title": "Never lose track of your projects again",
+    "subtitle": "Follow every project from the first row to the final photo: patterns, counters, progress and memories, all in one app.",
+    "cta": "Create my free account",
+    "reassurance": "Sign up in 30 seconds · No credit card required",
+    "googlePlay": "Get it on Google Play",
+    "screenshotAlt": "YarnFlow app preview: row counter and pattern side by side"
+  },
+  "differentiators": {
+    "complex": {
+      "title": "Complex projects, finally under control",
+      "desc": "Sections, several secondary counters per section, notes per section — even a sweater with raglan sleeves"
+    },
+    "import": {
+      "title": "A PDF or URL pattern → a ready project",
+      "desc": "AI reads your pattern, creates the sections and fills in the details — in seconds"
+    },
+    "photos": {
+      "title": "Photos worthy of your makes",
+      "desc": "AI enhances your photos — lighting, background, colours — without altering your work"
+    }
+  },
+  "counter": {
+    "eyebrow": "Row counter",
+    "title": "\"Where was I again?\"<0></0>Never again.",
+    "desc": "One big button, one row counted. An interface designed for busy hands, with progress visible at a glance. And if your project has several sections — back, front, sleeves — each one has its own counter.",
+    "screenshotAlt": "YarnFlow row counter",
+    "features": [
+      "Built-in timer to track your working time",
+      "Wake lock: the screen stays on while you knit",
+      "Independent sections for each part of a project",
+      "Count your increases, decreases or repeats without ever losing track (PLUS & PRO)"
+    ]
+  },
+  "sections": {
+    "eyebrow": "For complex projects",
+    "title": "At last, tracking built for real projects",
+    "desc": "A sweater isn't just one counter. It has a back, a front, two sleeves, a collar — each with its own rhythm of increases and decreases. YarnFlow tracks every part separately, not just one global number that blends everything together.",
+    "parts": [
+      "Back",
+      "Front",
+      "Sleeves",
+      "Increases",
+      "Decreases",
+      "Collar"
+    ]
+  },
+  "photoStudio": {
+    "eyebrow": "Photo Studio",
+    "title": "Your makes deserve<0></0>beautiful photos",
+    "desc": "Turn a photo snapped quickly on the sofa into a shot worthy of an Etsy shop, in one click — enhanced lighting, softened background, your work showcased without being distorted.",
+    "features": [
+      "9 styles available — Lifestyle, Studio, Scandinavian...",
+      "Your work stays 100% authentic",
+      "Perfect for Etsy, Instagram or your own archive"
+    ],
+    "beforeAlt": "Before — raw photo",
+    "afterAlt": "After — AI Lifestyle render",
+    "before": "BEFORE",
+    "after": "AFTER"
+  },
+  "library": {
+    "eyebrow": "Library & Organisation",
+    "title": "All your patterns,<0></0>all your projects — in one place",
+    "desc": "Ravelry PDFs, Etsy links, personal notes — all in one tidy library. Filter by category, technique or favourites and find any pattern in two seconds.",
+    "screenshotAlt": "My YarnFlow projects",
+    "features": [
+      "Patterns as PDF, URL or free text",
+      "Technical details: yarn, needles, gauge, measurements",
+      "Global notes per project",
+      "Filters by category, technique and favourites"
+    ]
+  },
+  "smartCreation": {
+    "eyebrow": "Smart Creation",
+    "title": "Import a PDF pattern or a URL.<0></0>The project builds itself.",
+    "desc": "Upload your pattern as a PDF or paste a URL — AI reads the document, creates the sections, fills in the technical details and structures your project in seconds.",
+    "screenshotAlt": "YarnFlow Smart Creation — reviewing the extracted pattern",
+    "features": [
+      "PDF or URL — Ravelry, Etsy, a blog, any source works",
+      "Sections created automatically (back, front, sleeves…)",
+      "Yarn, needles and gauge extracted from the pattern",
+      "3 free trials · 3 imports/month on PLUS · 15 imports/month on PRO"
+    ],
+    "badge": "A unique way to turn your patterns into organised projects"
+  },
+  "assistant": {
+    "eyebrow": "Knitting & crochet assistant",
+    "title": "A knitting & crochet expert available any time",
+    "desc": "How do I work out the decreases for my size? Which stitch can replace the one in the pattern? The assistant knows your project and answers in context — not generic replies.",
+    "question": "I missed 3 rows on the back, how do I fix it without frogging everything?",
+    "answer": "To fix 3 rows without frogging, you can use a spare needle…",
+    "quota": "5 questions / month on FREE · 10 questions / month on PLUS · 30 questions / month on PRO"
+  },
+  "testimonials": {
+    "title": "What our first users say",
+    "subtitle": "Feedback from our first beta testers",
+    "authorFallback": "A YarnFlow user",
+    "items": [
+      "Very complete and intuitive: being able to create several projects at once and record every detail is really great. The row counter is very useful, and so is the timer. The generated photos are wonderful for visualising and showcasing my projects.",
+      "Really handy when you're knitting and crocheting several works in progress at once: everything is in one place — instructions, steps, photos and notes. There are even little tips and handy tools to make it easier to knit your own designs or adapt a pattern."
+    ]
+  },
+  "pricing": {
+    "title": "Simple and transparent",
+    "subtitle": "FREE forever. PLUS when your projects grow. PRO when they deserve everything.",
+    "perMonth": "/month",
+    "noCommitment": "No commitment · Cancel any time",
+    "free": {
+      "name": "Free",
+      "desc": "The essentials to track your works in progress and discover the power of AI.",
+      "features": [
+        "Unlimited projects & patterns (100 MB for files)",
+        "1 active row counter per project",
+        "Built-in timer & time tracking",
+        "Notes per section",
+        "3 free AI Smart Creations",
+        "5 questions / month to the AI assistant",
+        "Photo Studio: 2 free credits",
+        "3 free pattern translations"
+      ],
+      "cta": "Create my free account"
+    },
+    "plus": {
+      "badge": "New",
+      "name": "Plus",
+      "billing": "Billed €29.99/year — save €17.89",
+      "desc": "For those who finish several projects a year.",
+      "features": [
+        "Everything in the FREE plan",
+        "Up to 10 secondary counters",
+        "Smart Creation — 3 imports / month",
+        "10 questions / month to the AI assistant",
+        "Photo Studio: 5 credits / month",
+        "3 pattern translations / month",
+        "Advanced statistics"
+      ],
+      "ctaAnnual": "Go PLUS (Yearly) — €29.99/year",
+      "ctaMonthly": "Monthly — €3.99/month"
+    },
+    "pro": {
+      "badge": "For enthusiasts",
+      "name": "Pro",
+      "billing": "Billed €59.99/year — save €23.89",
+      "desc": "For enthusiasts who want to keep the full history of their makes.",
+      "includesPlus": "Everything in the PLUS plan",
+      "smartCreation": "Smart Creation — 15 imports / month",
+      "smartCreationDesc": "Drop in a PDF or a photo, AI fills everything in instantly",
+      "assistant": "AI knitting assistant — 30 questions / month",
+      "photoStudio": "Photo Studio: 20 credits / month",
+      "translations": "15 pattern translations / month",
+      "stats": "Advanced statistics",
+      "statsDesc": "Visual charts, progress badges and average time per session",
+      "ctaAnnual": "Go PRO (Yearly)",
+      "ctaMonthly": "Choose Monthly (€6.99/month)"
+    }
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "items": [
+      {
+        "q": "Is it really free forever?",
+        "a": "Yes, with no time limit. Unlimited projects, row counter, pattern library, technical details — without ever paying. Uploaded files (PDFs, images) are limited to 100 MB on FREE; patterns as URLs or text are unlimited. PLUS and PRO make sense once your projects grow."
+      },
+      {
+        "q": "What's the actual difference between FREE, PLUS and PRO?",
+        "a": "FREE covers everyday use: counting rows, recording your details, notes per section, an unlimited library (100 MB of files), 20 photos, 2 Smart Creation trials, 5 AI questions/month, 2 lifetime AI photo credits. PLUS (€3.99/month) adds: unlimited file storage, 200 photos, up to 10 secondary counters per section, 3 AI imports/month, 10 AI questions/month, 5 photo credits/month, advanced statistics. PRO (€6.99/month) unlocks everything: 15 AI imports/month, 30 AI questions/month, 20 photo credits/month."
+      },
+      {
+        "q": "What exactly is Smart Creation?",
+        "a": "You import a pattern as a PDF or paste a URL — AI analyses the document, detects the sections (back, front, sleeves...), extracts the technical details (yarn, needles, gauge) and creates your project automatically. 3 free trials for everyone, then 3 imports/month on PLUS or 15 imports/month on PRO."
+      },
+      {
+        "q": "Which devices does it work on?",
+        "a": "YarnFlow is a PWA — available in every browser (mobile, tablet, computer). You can install it on your phone like a real app, with an icon on your home screen. No App Store download required."
+      },
+      {
+        "q": "Can I cancel any time?",
+        "a": "Yes, with no commitment. You cancel from your profile, your subscription stays active until the end of the paid period, then you automatically return to FREE. Your data is kept."
+      },
+      {
+        "q": "Are my patterns and projects safe?",
+        "a": "Your data is stored securely on our servers, is never shared or sold, and you can delete it at any time."
+      }
+    ]
+  },
+  "finalCta": {
+    "title": "Your next project deserves better than a scrap of paper",
+    "subtitle": "Join the makers who swapped crumpled notebooks for YarnFlow.",
+    "cta": "Create my free account",
+    "googlePlay": "Google Play",
+    "alreadyMember": "Already signed up?",
+    "login": "Log in"
+  },
+  "footer": {
+    "tagline": "The clever tool for knitting and crochet lovers",
+    "legal": "Legal",
+    "privacy": "Privacy policy",
+    "terms": "Terms of use",
+    "legalNotice": "Legal notice",
+    "support": "Support",
+    "contact": "Contact",
+    "app": "App",
+    "register": "Create an account",
+    "login": "Log in",
+    "pricing": "Pricing",
+    "copyright": "© 2026 YarnFlow — All rights reserved"
+  },
+  "ui": {
+    "unlimitedStash": "Unlimited stash"
+  }
+}

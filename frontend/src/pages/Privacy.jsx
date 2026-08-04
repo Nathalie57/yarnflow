@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import useDocumentMeta from '../hooks/useDocumentMeta';
+import { useTranslation } from 'react-i18next'
 
 /**
  * @file Privacy.jsx
@@ -8,6 +9,7 @@ import useDocumentMeta from '../hooks/useDocumentMeta';
  * @created 2025-11-20
  */
 export default function Privacy() {
+  const { t, i18n } = useTranslation('legal')
   useDocumentMeta(
     'Politique de confidentialité — YarnFlow',
     'Comment YarnFlow collecte, utilise et protège vos données personnelles, conformément au RGPD.'
@@ -15,10 +17,19 @@ export default function Privacy() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+        {/* [AI:Claude] Document juridique volontairement non traduit : une
+            traduction non relue par un juriste creerait une ambiguite sur un
+            texte qui fait foi. Bandeau affiche uniquement hors francais. */}
+        {i18n.resolvedLanguage !== 'fr' && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {t('frenchOnly')}
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8">
           <Link to="/" className="text-primary-600 hover:text-primary-700 font-semibold mb-4 inline-block">
-            ← Retour à l'accueil
+            {t('backHome')}
           </Link>
           <h1 className="text-4xl font-black text-gray-900 mb-2">
             Politique de Confidentialité

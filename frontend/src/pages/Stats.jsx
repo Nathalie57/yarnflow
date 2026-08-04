@@ -7,6 +7,7 @@
 
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation, Trans } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import {
@@ -15,6 +16,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
 } from 'recharts'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 // [AI:Claude] `metric`/`threshold` alimentent à la fois `condition` (dérivée
 // automatiquement) et la barre de progression des badges pas encore obtenus —
@@ -23,66 +25,73 @@ const withProgress = (def) => ({ ...def, condition: (s, p) => def.metric(s, p) >
 
 const BADGE_DEFINITIONS = [
   // — Projets créés —
-  { id: 'proj-1',  title: 'Premiers pas',           desc: 'Votre premier projet lancé !',          tier: 'free', color: 'primary', metric: (s) => s.total_projects, threshold: 1 },
-  { id: 'proj-3',  title: 'En route',               desc: '3 projets, le rythme est là.',          tier: 'free', color: 'primary', metric: (s) => s.total_projects, threshold: 3 },
-  { id: 'proj-5',  title: 'Bien lancée',            desc: '5 projets, vous êtes accro !',          tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 5 },
-  { id: 'proj-10', title: 'Collection',             desc: 'Une belle collection de 10 projets.',   tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 10 },
-  { id: 'proj-25', title: 'Projeteuse passionnée',  desc: '25 projets — inarrêtable !',            tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 25 },
-  { id: 'proj-50', title: 'Inépuisable',            desc: '50 projets. Chapeau.',                  tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 50 },
+  { id: 'proj-1',          tier: 'free', color: 'primary', metric: (s) => s.total_projects, threshold: 1 },
+  { id: 'proj-3',          tier: 'free', color: 'primary', metric: (s) => s.total_projects, threshold: 3 },
+  { id: 'proj-5',          tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 5 },
+  { id: 'proj-10',   tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 10 },
+  { id: 'proj-25',            tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 25 },
+  { id: 'proj-50',                  tier: 'pro',  color: 'primary', metric: (s) => s.total_projects, threshold: 50 },
   // — Projets terminés —
-  { id: 'done-1',  title: 'Premier achevé',         desc: "Bravo, jusqu'au bout !",                tier: 'free', color: 'green',   metric: (s) => s.completed_projects, threshold: 1 },
-  { id: 'done-3',  title: 'Persévérante',           desc: '3 projets bouclés.',                    tier: 'free', color: 'green',   metric: (s) => s.completed_projects, threshold: 3 },
-  { id: 'done-5',  title: 'Finisseuse',             desc: 'Vous ne laissez rien en plan.',         tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 5 },
-  { id: 'done-10', title: 'Maîtresse des finitions',desc: '10 projets terminés, impeccable.',      tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 10 },
-  { id: 'done-20', title: 'Productrice en série',   desc: '20 projets terminés !',                 tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 20 },
+  { id: 'done-1',                tier: 'free', color: 'green',   metric: (s) => s.completed_projects, threshold: 1 },
+  { id: 'done-3',                    tier: 'free', color: 'green',   metric: (s) => s.completed_projects, threshold: 3 },
+  { id: 'done-5',         tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 5 },
+  { id: 'done-10',      tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 10 },
+  { id: 'done-20',                 tier: 'pro',  color: 'green',   metric: (s) => s.completed_projects, threshold: 20 },
   // — Taux de finition —
-  { id: 'rate-75', title: 'Finisseuse sérieuse',    desc: '75 % de projets achevés.',              tier: 'pro',  color: 'green',   metric: (s) => s.total_projects >= 4 ? s.completion_rate : 0, threshold: 75 },
-  { id: 'rate-100',title: 'Sans laisser-aller',     desc: 'Tous vos projets sont terminés !',      tier: 'pro',  color: 'green',   metric: (s) => s.total_projects >= 3 ? s.completion_rate : 0, threshold: 100 },
+  { id: 'rate-75',              tier: 'pro',  color: 'green',   metric: (s) => s.total_projects >= 4 ? s.completion_rate : 0, threshold: 75 },
+  { id: 'rate-100',      tier: 'pro',  color: 'green',   metric: (s) => s.total_projects >= 3 ? s.completion_rate : 0, threshold: 100 },
   // — Rangs comptés —
-  { id: 'row-100', title: "Les aiguilles s'échauffent", desc: '100 rangs au compteur.',            tier: 'free', color: 'warm',    metric: (s) => s.total_rows, threshold: 100 },
-  { id: 'row-500', title: '500 rangs',              desc: 'La régularité paye.',                   tier: 'free', color: 'warm',    metric: (s) => s.total_rows, threshold: 500 },
-  { id: 'row-1k',  title: 'Millième rang',          desc: 'Un cap symbolique franchi.',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 1000 },
-  { id: 'row-5k',  title: '5 000 rangs',            desc: 'Vos doigts connaissent le chemin.',     tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 5000 },
-  { id: 'row-10k', title: '10 000 rangs',           desc: 'Monumentale !',                         tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 10000 },
-  { id: 'row-50k', title: 'Sans fin',               desc: '50 000 rangs — la légende.',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 50000 },
+  { id: 'row-100',            tier: 'free', color: 'warm',    metric: (s) => s.total_rows, threshold: 100 },
+  { id: 'row-500',                   tier: 'free', color: 'warm',    metric: (s) => s.total_rows, threshold: 500 },
+  { id: 'row-1k',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 1000 },
+  { id: 'row-5k',     tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 5000 },
+  { id: 'row-10k',                         tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 10000 },
+  { id: 'row-50k',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_rows, threshold: 50000 },
   // — Mailles —
-  { id: 'stitch-1k',  title: '1 000 mailles',       desc: 'Maille après maille.',                  tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 1000 },
-  { id: 'stitch-10k', title: '10 000 mailles',      desc: 'Un vrai tissu de patience.',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 10000 },
-  { id: 'stitch-100k',title: '100 000 mailles',     desc: 'Virtuose confirmée.',                   tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 100000 },
+  { id: 'stitch-1k',                  tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 1000 },
+  { id: 'stitch-10k',            tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 10000 },
+  { id: 'stitch-100k',                   tier: 'pro',  color: 'warm',    metric: (s) => s.total_stitches || 0, threshold: 100000 },
   // — Temps de tricot —
-  { id: 'time-1h',  title: 'Première heure',        desc: 'Le chrono est lancé.',                  tier: 'free', color: 'primary', metric: (s) => s.total_crochet_time, threshold: 3600 },
-  { id: 'time-5h',  title: '5 heures',              desc: 'Bien investi.',                         tier: 'free', color: 'primary', metric: (s) => s.total_crochet_time, threshold: 18000 },
-  { id: 'time-10h', title: '10 heures',             desc: 'Une vraie pratique régulière.',         tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 36000 },
-  { id: 'time-24h', title: 'Une journée entière',   desc: '24h de tricot au total.',               tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 86400 },
-  { id: 'time-50h', title: '50 heures',             desc: 'Dévouement impressionnant.',            tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 180000 },
-  { id: 'time-100h',title: 'Centenaire',            desc: "100h — vous êtes une pro.",             tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 360000 },
-  { id: 'time-500h',title: 'Sans compter ses heures',desc: '500h de pure passion.',                tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 1800000 },
+  { id: 'time-1h',                  tier: 'free', color: 'primary', metric: (s) => s.total_crochet_time, threshold: 3600 },
+  { id: 'time-5h',                         tier: 'free', color: 'primary', metric: (s) => s.total_crochet_time, threshold: 18000 },
+  { id: 'time-10h',         tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 36000 },
+  { id: 'time-24h',               tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 86400 },
+  { id: 'time-50h',            tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 180000 },
+  { id: 'time-100h',             tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 360000 },
+  { id: 'time-500h',                tier: 'pro',  color: 'primary', metric: (s) => s.total_crochet_time, threshold: 1800000 },
   // — Série en cours —
-  { id: 'streak-3',  title: '3 jours de suite',     desc: "La routine s'installe.",                tier: 'free', color: 'orange',  metric: (s) => s.current_streak, threshold: 3 },
-  { id: 'streak-7',  title: 'Semaine complète',     desc: '7 jours sans pause !',                  tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 7 },
-  { id: 'streak-14', title: 'Deux semaines',        desc: "L'habitude est bien ancrée.",           tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 14 },
-  { id: 'streak-30', title: 'Un mois de fil',       desc: '30 jours consécutifs, bravo !',         tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 30 },
-  { id: 'streak-100',title: 'Discipline de fer',    desc: '100 jours — engagement total.',         tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 100 },
+  { id: 'streak-3',                tier: 'free', color: 'orange',  metric: (s) => s.current_streak, threshold: 3 },
+  { id: 'streak-7',                  tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 7 },
+  { id: 'streak-14',           tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 14 },
+  { id: 'streak-30',         tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 30 },
+  { id: 'streak-100',         tier: 'pro',  color: 'orange',  metric: (s) => s.current_streak, threshold: 100 },
   // — Record de série —
-  { id: 'longest-30',title: 'Record : 30 jours',   desc: 'Votre meilleure série mérite un badge.', tier: 'pro',  color: 'orange',  metric: (s) => s.longest_streak || 0, threshold: 30 },
-  { id: 'longest-60',title: 'Record : 2 mois',     desc: 'Une série historique.',                  tier: 'pro',  color: 'orange',  metric: (s) => s.longest_streak || 0, threshold: 60 },
+  { id: 'longest-30', tier: 'pro',  color: 'orange',  metric: (s) => s.longest_streak || 0, threshold: 30 },
+  { id: 'longest-60',                  tier: 'pro',  color: 'orange',  metric: (s) => s.longest_streak || 0, threshold: 60 },
   // — Vitesse (nécessite timer) —
-  { id: 'speed-5',  title: 'Bonne cadence',         desc: '5 rangs/h en moyenne.',                 tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 5 },
-  { id: 'speed-10', title: 'Aiguilles rapides',     desc: '10 rangs/h — vous maîtrisez.',          tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 10 },
-  { id: 'speed-20', title: 'Vitesse de croisière',  desc: '20 rangs/h, impressionnant !',          tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 20 },
-  { id: 'speed-30', title: 'Supersonique',          desc: '30 rangs/h — mains en or.',             tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 30 },
+  { id: 'speed-5',                 tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 5 },
+  { id: 'speed-10',          tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 10 },
+  { id: 'speed-20',          tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 20 },
+  { id: 'speed-30',             tier: 'pro',  color: 'primary', metric: (s) => s.avg_rows_per_hour || 0, threshold: 30 },
   // — Photos IA —
-  { id: 'photo-1',  title: 'Première vision',       desc: 'Première photo générée par IA.',        tier: 'free', color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 1 },
-  { id: 'photo-5',  title: 'Artiste numérique',     desc: '5 photos IA créées.',                   tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 5 },
-  { id: 'photo-10', title: 'Studio photo',          desc: '10 créations — vraie photographe !',    tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 10 },
-  { id: 'photo-25', title: 'Galerie complète',      desc: '25 photos IA, une collection.',         tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 25 },
+  { id: 'photo-1',        tier: 'free', color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 1 },
+  { id: 'photo-5',                   tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 5 },
+  { id: 'photo-10',    tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 10 },
+  { id: 'photo-25',         tier: 'pro',  color: 'primary', metric: (s, p) => p.total_ai_photos || 0, threshold: 25 },
 ].map(withProgress)
 
 const LOCKED_PREVIEW = 6
 
 const Stats = () => {
-  const { hasActiveSubscription } = useAuth()
+  const { t } = useTranslation('library')
+  const { hasActiveSubscription , getSubscriptionPlan } = useAuth()
   const isPro = hasActiveSubscription()
+
+  // [AI:Claude] isPro vaut hasActiveSubscription() : vrai pour PLUS aussi.
+
+  // Le plan reel decide quel palier proposer, ou aucun.
+
+  const currentPlan = getSubscriptionPlan ? getSubscriptionPlan() : (isPro ? 'pro' : 'free')
 
   const [stats, setStats] = useState(null)
   const [photoStats, setPhotoStats] = useState(null)
@@ -90,6 +99,16 @@ const Stats = () => {
   const [error, setError] = useState(null)
   const [period, setPeriod] = useState('all')
   const [celebration, setCelebration] = useState(null)
+  // [AI:Claude] La surcouche PRO se ferme et reste fermee : sans ca, une
+  // utilisatrice FREE retombe sur la meme publicite a chaque visite.
+  const UPSELL_KEY = 'yf_stats_upsell_dismissed'
+  const [upsellDismissed, setUpsellDismissed] = useState(() => {
+    try { return localStorage.getItem(UPSELL_KEY) === '1' } catch { return false }
+  })
+  const dismissUpsell = () => {
+    try { localStorage.setItem(UPSELL_KEY, '1') } catch { /* stockage indisponible */ }
+    setUpsellDismissed(true)
+  }
 
   useEffect(() => {
     fetchStats()
@@ -142,7 +161,7 @@ const Stats = () => {
       setStats(response.data.stats || {})
     } catch (err) {
       console.error('Erreur stats projets:', err)
-      setError('Impossible de charger les statistiques.')
+      setError(t('ui.statsLoadFailed'))
     } finally {
       setLoading(false)
     }
@@ -246,7 +265,7 @@ const Stats = () => {
             onClick={fetchStats}
             className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
           >
-            Réessayer
+            {t('ui.retry')}
           </button>
         </div>
       </div>
@@ -266,22 +285,22 @@ const Stats = () => {
             <div className="text-5xl mb-4">{celebration.type === 'streak' ? '🔥' : '🏆'}</div>
             {celebration.type === 'streak' ? (
               <>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Nouveau record de série !</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.newStreakRecord')}</h2>
                 <p className="text-gray-500 text-sm leading-relaxed">
-                  {celebration.value} jours consécutifs — votre meilleure série jusqu'ici.
+                  {t('ui.streakRecordDesc', { count: celebration.value })}
                 </p>
               </>
             ) : (
               <>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Badge débloqué : {celebration.badge.title}</h2>
-                <p className="text-gray-500 text-sm leading-relaxed">{celebration.badge.desc}</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.badgeUnlocked')} {t(`badges.${celebration.badge.id}.title`)}</h2>
+                <p className="text-gray-500 text-sm leading-relaxed">{t(`badges.${celebration.badge.id}.desc`)}</p>
               </>
             )}
             <button
               onClick={() => setCelebration(null)}
               className="w-full mt-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition"
             >
-              Continuer
+              {t('ui.continue')}
             </button>
           </div>
         </div>
@@ -289,14 +308,14 @@ const Stats = () => {
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">Mes statistiques</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('ui.statsTitle')}</h1>
         {isPro && (
           <div className="flex gap-1">
             {[
-              { key: 'week', label: 'Semaine' },
-              { key: 'month', label: 'Mois' },
-              { key: 'year', label: 'Année' },
-              { key: 'all', label: 'Tout' },
+              { key: 'week', labelKey: 'periodWeek' },
+              { key: 'month', labelKey: 'periodMonth' },
+              { key: 'year', labelKey: 'periodYear' },
+              { key: 'all', labelKey: 'periodAll' },
             ].map(p => (
               <button
                 key={p.key}
@@ -307,7 +326,7 @@ const Stats = () => {
                     : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                {p.label}
+                {t(`ui.${p.labelKey}`)}
               </button>
             ))}
           </div>
@@ -322,15 +341,15 @@ const Stats = () => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Pas encore de statistiques</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('ui.noStatsTitle')}</h3>
           <p className="text-gray-500 text-sm mb-6 max-w-xs mx-auto">
-            Créez votre premier projet et commencez à compter vos rangs.
+            {t('ui.noStatsDesc')}
           </p>
           <Link
             to="/my-projects"
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
           >
-            Créer un projet
+            {t('ui.createProject')}
           </Link>
         </div>
       ) : (
@@ -346,10 +365,10 @@ const Stats = () => {
                 </svg>
               </div>
               <div className="text-2xl font-bold text-gray-900 tabular-nums">{stats.total_projects || 0}</div>
-              <div className="text-xs text-gray-500 mt-0.5">Projets</div>
+              <div className="text-xs text-gray-500 mt-0.5">{t('ui.projects')}</div>
               <div className="mt-2 pt-2 border-t border-gray-100 flex gap-3 text-xs">
-                <span className="text-green-600 font-medium">{stats.completed_projects || 0} terminés</span>
-                <span className="text-orange-500 font-medium">{stats.active_projects || 0} en cours</span>
+                <span className="text-green-600 font-medium">{t('ui.completedCount', { count: stats.completed_projects || 0 })}</span>
+                <span className="text-orange-500 font-medium">{t('ui.activeCount', { count: stats.active_projects || 0 })}</span>
               </div>
             </div>
 
@@ -363,10 +382,10 @@ const Stats = () => {
               <div className="text-2xl font-bold text-gray-900 tabular-nums">
                 {Math.floor((stats.total_crochet_time || 0) / 3600)}h
               </div>
-              <div className="text-xs text-gray-500 mt-0.5">de tricot</div>
+              <div className="text-xs text-gray-500 mt-0.5">{t('ui.ofKnitting')}</div>
               {isPro && stats.average_session_time > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-400">
-                  ~{stats.average_session_time} min / session
+                  {t('ui.avgSession', { n: stats.average_session_time })}
                 </div>
               )}
             </div>
@@ -381,10 +400,10 @@ const Stats = () => {
               <div className="text-2xl font-bold text-gray-900 tabular-nums">
                 {(stats.total_rows || 0).toLocaleString()}
               </div>
-              <div className="text-xs text-gray-500 mt-0.5">Rangs comptés</div>
+              <div className="text-xs text-gray-500 mt-0.5">{t('ui.rowsCounted')}</div>
               {isPro && stats.avg_rows_per_hour > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-400">
-                  ~{stats.avg_rows_per_hour} rangs/h en moy.
+                  {t('ui.avgRowsPerHour', { n: stats.avg_rows_per_hour })}
                 </div>
               )}
             </div>
@@ -397,7 +416,7 @@ const Stats = () => {
                 </svg>
               </div>
               <div className="text-2xl font-bold text-gray-900 tabular-nums">{stats.completion_rate || 0}%</div>
-              <div className="text-xs text-gray-500 mt-0.5">Taux de finition</div>
+              <div className="text-xs text-gray-500 mt-0.5">{t('ui.completionRate')}</div>
               {isPro && (
                 <div className="mt-2 pt-2 border-t border-gray-100">
                   <div className="w-full bg-gray-100 rounded-full h-1.5">
@@ -421,11 +440,11 @@ const Stats = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />
                   </svg>
                 </div>
-                <span className="font-semibold text-gray-900">Série en cours</span>
+                <span className="font-semibold text-gray-900">{t('ui.currentStreak')}</span>
               </div>
               <div className="text-right">
                 <span className="text-2xl font-bold text-primary-600 tabular-nums">{stats.current_streak || 0}</span>
-                <span className="text-sm text-gray-500 ml-1">jour{stats.current_streak > 1 ? 's' : ''}</span>
+                <span className="text-sm text-gray-500 ml-1">{t('ui.dayUnit', { count: stats.current_streak })}</span>
               </div>
             </div>
 
@@ -433,22 +452,41 @@ const Stats = () => {
               <>
                 {streakCalendar()}
                 <div className="mt-3 text-center text-xs text-gray-400">
-                  Record personnel : <strong className="text-gray-600">{stats.longest_streak || 0} jour{stats.longest_streak > 1 ? 's' : ''}</strong>
+                  <Trans t={t} i18nKey="ui.personalRecord" count={stats.longest_streak || 0} values={{ count: stats.longest_streak || 0 }}><strong className="text-gray-600" /></Trans>
                 </div>
               </>
             ) : (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">
-                  Record : <strong className="text-gray-700">{stats.longest_streak || 0} jour{stats.longest_streak > 1 ? 's' : ''}</strong>
+                  <Trans t={t} i18nKey="ui.recordShort" count={stats.longest_streak || 0} values={{ count: stats.longest_streak || 0 }}><strong className="text-gray-700" /></Trans>
                 </span>
                 <Link to="/subscription" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
-                  Calendrier PRO →
+                  {t('ui.proCalendar')}
                 </Link>
               </div>
             )}
           </div>
 
-          {/* Graphiques — visibles pour tous, floutés pour FREE */}
+          {/* Graphiques — visibles pour tous, floutés pour FREE.
+              Une fois la surcouche fermee, on remplace tout le bloc par une
+              barre compacte : montrer des graphiques floutes sans pouvoir les
+              lire ni fermer la publicite ne sert personne. */}
+          {!isPro && upsellDismissed ? (
+            <Link
+              to="/subscription"
+              className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 shadow-sm hover:border-primary-300 transition"
+            >
+              <span className="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm font-medium text-gray-800">{t('ui.fullAnalytics')}</span>
+              </span>
+              <span className="text-xs font-bold px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full flex-shrink-0">PRO</span>
+            </Link>
+          ) : (
           <div className="relative">
 
             {/* Contenu — flouté si FREE */}
@@ -457,7 +495,7 @@ const Stats = () => {
 
                 {/* Progression 30 jours */}
                 <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-4">Progression — 30 derniers jours</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-4">{t('ui.progress30Days')}</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <AreaChart data={
                       stats.progression && stats.progression.length > 0
@@ -477,7 +515,7 @@ const Stats = () => {
                         content={({ active, payload, label }) => active && payload?.length ? (
                           <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-md text-xs">
                             <p className="font-semibold text-gray-700">{label}</p>
-                            <p className="text-primary-600">{payload[0].value} rangs</p>
+                            <p className="text-primary-600">{t('ui.rowsTooltip', { count: payload[0].value })}</p>
                           </div>
                         ) : null}
                       />
@@ -488,12 +526,12 @@ const Stats = () => {
 
                 {/* Répartition des projets */}
                 <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-4">Répartition des projets</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-4">{t('ui.projectBreakdown')}</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
                       <Pie
                         data={[
-                          { name: 'Terminés', value: stats.completed_projects || 0 },
+                          { name: t('ui.chartCompleted'), value: stats.completed_projects || 0 },
                           { name: 'En cours', value: stats.active_projects || 0 },
                           { name: 'Autres', value: Math.max(0, (stats.total_projects || 0) - (stats.completed_projects || 0) - (stats.active_projects || 0)) }
                         ].filter(i => i.value > 0)}
@@ -514,11 +552,11 @@ const Stats = () => {
                   <div className="flex justify-center gap-5 text-xs mt-1">
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-primary-600" />
-                      <span className="text-gray-600">Terminés ({stats.completed_projects || 0})</span>
+                      <span className="text-gray-600">{t('ui.completedParen', { count: stats.completed_projects || 0 })}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
-                      <span className="text-gray-600">En cours ({stats.active_projects || 0})</span>
+                      <span className="text-gray-600">{t('ui.inProgressParen', { count: stats.active_projects || 0 })}</span>
                     </div>
                   </div>
                 </div>
@@ -532,9 +570,9 @@ const Stats = () => {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Votre meilleure heure</p>
-                      <p className="text-2xl font-bold text-gray-900 tabular-nums">{stats.best_hour}h – {stats.best_hour + 1}h</p>
-                      <p className="text-xs text-gray-400 mt-0.5">Créneau où vous tricotez le plus vite</p>
+                      <p className="text-xs text-gray-500 mb-0.5">{t('ui.bestHour')}</p>
+                      <p className="text-2xl font-bold text-gray-900 tabular-nums">{t('ui.hourRange', { from: stats.best_hour, to: stats.best_hour + 1 })}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{t('ui.fastestSlot')}</p>
                     </div>
                   </div>
                 )}
@@ -542,20 +580,20 @@ const Stats = () => {
                 {/* Stats photos IA — PRO avec données */}
                 {isPro && photoStats && photoStats.total_ai_photos > 0 && (
                   <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                    <h3 className="font-semibold text-gray-900 text-sm mb-4">AI Photo Studio</h3>
+                    <h3 className="font-semibold text-gray-900 text-sm mb-4">{t('ui.aiPhotoStudio')}</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="text-center p-3 bg-primary-50 rounded-xl border border-primary-100">
                         <div className="text-xl font-bold text-primary-700 tabular-nums">{photoStats.total_ai_photos || 0}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">Photos générées</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{t('ui.photosGenerated')}</div>
                       </div>
                       <div className="text-center p-3 bg-primary-50 rounded-xl border border-primary-100">
                         <div className="text-xl font-bold text-primary-700 tabular-nums">{photoStats.credits_remaining || 0}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">Crédits restants</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{t('ui.creditsLeft')}</div>
                       </div>
                       {photoStats.top_style && (
                         <div className="col-span-2 text-center p-3 bg-primary-50 rounded-xl border border-primary-100">
                           <div className="text-sm font-semibold text-primary-700">{photoStats.top_style}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">Style préféré</div>
+                          <div className="text-xs text-gray-500 mt-0.5">{t('ui.favoriteStyle')}</div>
                         </div>
                       )}
                     </div>
@@ -567,35 +605,44 @@ const Stats = () => {
             {/* Overlay CTA — FREE uniquement */}
             {!isPro && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-primary-200 shadow-xl p-6 text-center mx-4 max-w-sm">
+                <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl border border-primary-200 shadow-xl p-6 text-center mx-4 max-w-sm">
+                  <button
+                    type="button"
+                    onClick={dismissUpsell}
+                    aria-label={t('ui.close')}
+                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  >
+                    ×
+                  </button>
                   <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
                     </svg>
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-1">Vos analytics complets</h3>
+                  <h3 className="font-bold text-gray-900 mb-1">{t('ui.fullAnalytics')}</h3>
                   <p className="text-sm text-gray-500 mb-4 leading-relaxed">
-                    Progression jour par jour, répartition de vos projets, votre meilleure heure de tricot...
+                    {t('ui.fullAnalyticsDesc')}
                   </p>
                   <Link
                     to="/subscription"
                     className="inline-block w-full px-5 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition shadow-sm"
                   >
-                    Débloquer avec PRO — 6,99€/mois
+                    {(() => { const p = upgradeTarget('advanced_stats', currentPlan); return p && t('ui.goToPlan', { plan: planLabel(p), price: PLAN_PRICES[p].monthlyEquiv }) })()}
                   </Link>
-                  <p className="text-xs text-gray-400 mt-2">Résiliable à tout moment</p>
+                  <p className="text-xs text-gray-500 mt-2">{t('ui.cancelAnytime')}</p>
                 </div>
               </div>
             )}
           </div>
+          )}
 
           {/* Badges */}
           {(earnedBadges.length > 0 || notEarnedBadges.length > 0 || (!isPro && lockedBadges.length > 0)) && (
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
               <h3 className="font-semibold text-gray-900 text-sm mb-4">
-                Badges
+                {t('ui.badges')}
                 <span className="ml-2 text-xs font-normal text-gray-400">
-                  {earnedBadges.length} obtenus{!isPro && lockedBadges.length > 0 ? ` · ${lockedBadges.length} à débloquer` : ''}
+                  {t('ui.badgesEarned', { count: earnedBadges.length })}{!isPro && lockedBadges.length > 0 ? t('ui.badgesToUnlockSuffix', { count: lockedBadges.length }) : ''}
                 </span>
               </h3>
 
@@ -607,13 +654,13 @@ const Stats = () => {
                       key={badge.id}
                       className={`rounded-xl border p-3 ${badgeColorClasses[badge.color] || badgeColorClasses.primary}`}
                     >
-                      <div className="font-semibold text-sm mb-0.5">{badge.title}</div>
-                      <div className="text-xs opacity-70">{badge.desc}</div>
+                      <div className="font-semibold text-sm mb-0.5">{t(`badges.${badge.id}.title`)}</div>
+                      <div className="text-xs opacity-70">{t(`badges.${badge.id}.desc`)}</div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-gray-400 mb-4">Continuez à tricoter pour débloquer vos premiers badges !</p>
+                <p className="text-sm text-gray-500 mb-4">{t('ui.keepKnittingForBadges')}</p>
               )}
 
               {/* Badges PRO verrouillés — visibles en grisé pour les FREE */}
@@ -625,7 +672,7 @@ const Stats = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                       </svg>
-                      {lockedBadges.length} badges avec PRO
+                      {t('ui.badgesWithProCount', { count: lockedBadges.length })}
                     </span>
                     <div className="flex-1 border-t border-dashed border-gray-200" />
                   </div>
@@ -640,10 +687,10 @@ const Stats = () => {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-primary-800">
-                          {earnedButLockedCount} objectif{earnedButLockedCount > 1 ? 's' : ''} déjà atteint{earnedButLockedCount > 1 ? 's' : ''} !
+                          {t('ui.goalsAlreadyReached', { count: earnedButLockedCount })}
                         </p>
                         <p className="text-xs text-primary-600 mt-0.5">
-                          Passez à PRO pour débloquer ces badges immédiatement.
+                          {t('ui.upgradeForBadges')}
                         </p>
                       </div>
                     </div>
@@ -665,17 +712,17 @@ const Stats = () => {
                           </svg>
                         </div>
                         <div className={`font-semibold text-sm mb-0.5 pr-5 ${badge.earnedButLocked ? 'text-primary-700' : 'text-gray-400'}`}>
-                          {badge.title}
+                          {t(`badges.${badge.id}.title`)}
                         </div>
                         <div className={`text-xs ${badge.earnedButLocked ? 'text-primary-500 font-medium' : 'text-gray-300'}`}>
-                          {badge.earnedButLocked ? 'Objectif atteint !' : badge.desc}
+                          {badge.earnedButLocked ? t('ui.objectiveReached') : t(`badges.${badge.id}.desc`)}
                         </div>
                       </div>
                     ))}
                     {lockedBadges.length > LOCKED_PREVIEW && (
                       <div className="rounded-xl border border-dashed border-gray-200 p-3 flex items-center justify-center">
                         <span className="text-xs text-gray-400 text-center leading-relaxed">
-                          +{lockedBadges.length - LOCKED_PREVIEW} autres<br />badges à découvrir
+                          <Trans t={t} i18nKey="ui.moreBadgesToDiscover" values={{ count: lockedBadges.length - LOCKED_PREVIEW }}><br /></Trans>
                         </span>
                       </div>
                     )}
@@ -685,7 +732,7 @@ const Stats = () => {
                     to="/subscription"
                     className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition shadow-sm"
                   >
-                    Débloquer tous les badges PRO — 6,99€/mois
+                    {t('ui.unlockAllProBadges')}
                   </Link>
                 </>
               )}
@@ -696,7 +743,7 @@ const Stats = () => {
                   <div className="mt-5 mb-3 flex items-center gap-2">
                     <div className="flex-1 border-t border-dashed border-gray-200" />
                     <span className="text-xs font-medium text-gray-400 px-2">
-                      {notEarnedBadges.length} à débloquer
+                      {t('ui.toUnlockCount', { count: notEarnedBadges.length })}
                     </span>
                     <div className="flex-1 border-t border-dashed border-gray-200" />
                   </div>
@@ -704,8 +751,8 @@ const Stats = () => {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {notEarnedBadges.map((badge) => (
                       <div key={badge.id} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
-                        <div className="font-semibold text-sm mb-0.5 text-gray-600">{badge.title}</div>
-                        <div className="text-xs text-gray-400 mb-2">{badge.desc}</div>
+                        <div className="font-semibold text-sm mb-0.5 text-gray-600">{t(`badges.${badge.id}.title`)}</div>
+                        <div className="text-xs text-gray-500 mb-2">{t(`badges.${badge.id}.desc`)}</div>
                         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-primary-400 rounded-full transition-all"

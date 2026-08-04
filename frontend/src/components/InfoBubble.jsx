@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 
 /**
  * Bulle d'info contextuelle
@@ -17,6 +18,7 @@ import { createPortal } from 'react-dom'
  * @param {boolean} portal - Si true, rend la bulle dans un portail (pour éviter overflow: hidden)
  */
 const InfoBubble = ({ text, position = 'top', size = 'sm', portal = false }) => {
+  const { t } = useTranslation('tools')
   const [isOpen, setIsOpen] = useState(false)
   const [portalPosition, setPortalPosition] = useState({ top: 0, left: 0 })
   // [AI:Claude] Alignement dynamique pour éviter le débordement hors viewport
@@ -150,7 +152,7 @@ const InfoBubble = ({ text, position = 'top', size = 'sm', portal = false }) => 
         type="button"
         onClick={handleClick}
         className={`${sizeClasses[size]} relative rounded-full bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center transition-colors font-semibold info-bubble-ping`}
-        aria-label="Plus d'informations"
+        aria-label={t('ui.moreInfo')}
       >
         ?
       </button>

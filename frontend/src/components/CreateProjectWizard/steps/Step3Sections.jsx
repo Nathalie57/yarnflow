@@ -4,7 +4,10 @@
  * @created 2026-01-27 by [AI:Claude]
  */
 
+import { useTranslation } from 'react-i18next'
+
 const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUnit }) => {
+  const { t } = useTranslation('projects')
   const handleAddSection = () => {
     onSectionsChange([...sections, { name: '', description: '', total_rows: null, notes: '' }])
   }
@@ -29,10 +32,10 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
     <div className="p-6">
       <div className="text-center mb-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Sections du projet
+          {t('ui.projectSections')}
         </h3>
         <p className="text-sm text-gray-600">
-          Divisez votre projet en parties pour suivre chacune séparément
+          {t('ui.splitProject')}
         </p>
       </div>
 
@@ -40,7 +43,7 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
       {presets.length > 0 && sections.length === 0 && (
         <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
           <p className="text-sm font-medium text-primary-800 mb-3">
-            Exemples rapides :
+            {t('ui.quickExamples2')}
           </p>
           <div className="flex flex-wrap gap-2">
             {presets.map((preset) => (
@@ -61,10 +64,10 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
       {sections.length === 0 && presets.length === 0 && (
         <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
           <p className="text-gray-600 mb-2">
-            Aucune section nécessaire pour ce type de projet.
+            {t('ui.noSectionNeeded')}
           </p>
           <p className="text-xs text-gray-500">
-            Ajoutez-en si votre projet comporte plusieurs parties distinctes.
+            {t('ui.addIfSeveralParts')}
           </p>
         </div>
       )}
@@ -77,7 +80,7 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
             onClick={() => onSectionsChange([])}
             className="text-xs text-gray-500 hover:text-gray-700 hover:underline"
           >
-            Tout effacer
+            {t('ui.clearAll')}
           </button>
         </div>
       )}
@@ -100,14 +103,14 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <input
                     type="text"
-                    placeholder="Nom de la section *"
+                    placeholder={t('ui.sectionNameRequired')}
                     value={section.name}
                     onChange={(e) => handleUpdateSection(index, 'name', e.target.value)}
                     className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                   />
                   <input
                     type="number"
-                    placeholder={counterUnit === 'cm' ? 'Longueur totale (cm)' : 'Nombre de rangs (optionnel)'}
+                    placeholder={counterUnit === 'cm' ? t('ui.totalLengthCm') : t('ui.rowCountOptional')}
                     value={section.total_rows || ''}
                     onChange={(e) => handleUpdateSection(index, 'total_rows', e.target.value ? parseFloat(e.target.value) : null)}
                     step={counterUnit === 'cm' ? '0.5' : '1'}
@@ -116,13 +119,13 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
                 </div>
                 <input
                   type="text"
-                  placeholder="Description (optionnel)"
+                  placeholder={t('ui.phSectionDesc')}
                   value={section.description || ''}
                   onChange={(e) => handleUpdateSection(index, 'description', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                 />
                 <textarea
-                  placeholder="📝 Notes (optionnel) - instructions, rappels..."
+                  placeholder={t('ui.phSectionNotes')}
                   value={section.notes || ''}
                   onChange={(e) => handleUpdateSection(index, 'notes', e.target.value)}
                   rows={2}
@@ -135,7 +138,7 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
                 type="button"
                 onClick={() => handleRemoveSection(index)}
                 className="flex-shrink-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-                title="Supprimer cette section"
+                title={t('ui.deleteThisSection')}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -155,12 +158,12 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
-        Ajouter une section
+        {t('ui.addSectionBtn')}
       </button>
 
       {/* Conseil */}
       <p className="mt-4 text-xs text-gray-500 text-center">
-        Les sections sont optionnelles. Vous pourrez en ajouter à tout moment depuis le projet.
+        {t('ui.sectionsOptional')}
       </p>
     </div>
   )

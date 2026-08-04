@@ -12,6 +12,8 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
+import { useAlert } from '../hooks/useAlert'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useImagePreview } from '../hooks/useImagePreview'
@@ -28,8 +30,11 @@ import SatisfactionModal from '../components/SatisfactionModal'
 import UpgradePrompt from '../components/UpgradePrompt'
 import StashAllocationPanel from '../components/stash/StashAllocationPanel'
 import ProjectCloseModal from '../components/stash/ProjectCloseModal'
+import { PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
+import { PROJECT_TYPE_VALUES, projectTypeKey } from '../data/projectTypes'
 
 const ProjectCounter = () => {
+  const { t, i18n } = useTranslation('counter')
   const { projectId } = useParams()
   const navigate = useNavigate()
   const { user, hasActiveSubscription, isAdmin } = useAuth()
@@ -148,11 +153,8 @@ const ProjectCounter = () => {
   const [hideAIWarning, setHideAIWarning] = useState(false) // [AI:Claude] Cacher l'avertissement IA si l'utilisateur a coché "Ne plus afficher"
   const [showInstagramModal, setShowInstagramModal] = useState(false) // [AI:Claude] Modale Instagram pour partage
 
-  // [AI:Claude] Modales de confirmation et alertes
-  const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [confirmData, setConfirmData] = useState({ title: '', message: '', onConfirm: null })
-  const [showAlertModal, setShowAlertModal] = useState(false)
-  const [alertData, setAlertData] = useState({ title: '', message: '', type: 'info' })
+  // [AI:Claude] Alertes/confirmations : hook partagé avec MyProjects (voir hooks/useAlert)
+  const { showAlert, showConfirm, AlertModals, isAnyAlertOpen } = useAlert()
   const [showProjectCompletionModal, setShowProjectCompletionModal] = useState(false)
 
   // [AI:Claude] v0.15.0 - Modal de satisfaction post-génération
@@ -755,7 +757,7 @@ const ProjectCounter = () => {
       return projectData
     } catch (err) {
       console.error('Erreur chargement projet:', err)
-      setError('Impossible de charger le projet')
+      setError(t('ui.projectLoadFailed'))
       return null
     } finally {
       setLoading(false)
@@ -776,7 +778,7 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur ajout tag:', err)
       setLocalTags(localTags) // Rollback
-      showAlert('Erreur', 'Impossible d\'ajouter le tag', 'error')
+      showAlert({ message: t('alerts.tagAddFailed'), type: 'error' })
     }
   }
 
@@ -790,7 +792,7 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur suppression tag:', err)
       setLocalTags(localTags) // Rollback
-      showAlert('Erreur', 'Impossible de supprimer le tag', 'error')
+      showAlert({ message: t('alerts.tagRemoveFailed'), type: 'error' })
     }
   }
 
@@ -920,21 +922,6 @@ const ProjectCounter = () => {
     }
   }
 
-  // [AI:Claude] Helper pour afficher une alerte
-  const showAlert = (message, type = 'info', title = '') => {
-    setAlertData({
-      title: title || (type === 'success' ? 'Terminé' : type === 'error' ? 'Erreur' : 'Information'),
-      message,
-      type
-    })
-    setShowAlertModal(true)
-  }
-
-  // [AI:Claude] Helper pour afficher une confirmation
-  const showConfirm = (message, onConfirm, title = '⚠️ Confirmation') => {
-    setConfirmData({ title, message, onConfirm })
-    setShowConfirmModal(true)
-  }
 
   // [AI:Claude] Ouvrir modal d'édition
   const openEditModal = () => {
@@ -954,10 +941,10 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, editForm)
       await fetchProject()
       setShowEditModal(false)
-      showAlert('Projet mis à jour avec succès !', 'success')
+      showAlert({ message: t('alerts.projectUpdated'), type: 'success' })
     } catch (err) {
       console.error('Erreur mise à jour projet:', err)
-      showAlert('Erreur lors de la mise à jour du projet', 'error')
+      showAlert({ message: t('alerts.projectUpdateFailed'), type: 'error' })
     } finally {
       setSavingProject(false)
     }
@@ -1021,10 +1008,10 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowTechnicalDetailsModal(false)
-      showAlert('Détails techniques mis à jour avec succès !', 'success')
+      showAlert({ message: t('alerts.technicalUpdated'), type: 'success' })
     } catch (err) {
       console.error('Erreur mise à jour détails techniques:', err)
-      showAlert('Erreur lors de la mise à jour des détails techniques', 'error')
+      showAlert({ message: t('alerts.technicalUpdateFailed'), type: 'error' })
     } finally {
       setSavingTechnical(false)
     }
@@ -1036,10 +1023,10 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, { technique: newTechnique })
       await fetchProject()
       setShowTechniqueMenu(false)
-      showAlert('Technique modifiée avec succès !', 'success')
+      showAlert({ message: t('alerts.techniqueChanged'), type: 'success' })
     } catch (err) {
       console.error('Erreur changement technique:', err)
-      showAlert('Erreur lors du changement de technique', 'error')
+      showAlert({ message: t('alerts.techniqueChangeFailed'), type: 'error' })
     }
   }
 
@@ -1051,10 +1038,10 @@ const ProjectCounter = () => {
       setShowTypeMenu(false)
       setShowCustomTypeInput(false)
       setCustomType('')
-      showAlert('Catégorie modifiée avec succès !', 'success')
+      showAlert({ message: t('alerts.categoryChanged'), type: 'success' })
     } catch (err) {
       console.error('Erreur changement type:', err)
-      showAlert('Erreur lors du changement de catégorie', 'error')
+      showAlert({ message: t('alerts.categoryChangeFailed'), type: 'error' })
     }
   }
 
@@ -1078,18 +1065,24 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, { notes })
       await fetchProject()
       setShowNotes(false)
-      showAlert('Notes sauvegardées avec succès !', 'success')
+      showAlert({ message: t('alerts.notesSaved'), type: 'success' })
     } catch (err) {
       console.error('Erreur sauvegarde notes:', err)
-      showAlert('Erreur lors de la sauvegarde des notes', 'error')
+      showAlert({ message: t('alerts.notesSaveFailed'), type: 'error' })
     } finally {
       setSavingNotes(false)
     }
   }
 
   // [AI:Claude] Liste des types (identique à la création de projet)
+  // Libelle affichable : la valeur stockee en base reste en francais.
+  const projectTypeLabel = (value) => {
+    const key = projectTypeKey(value)
+    return key ? t(`projectTypes.${key}`, { ns: 'common' }) : value
+  }
+
   const getProjectTypes = () => {
-    return ['Vêtements', 'Accessoires', 'Jouets/Peluches', 'Vêtements bébé', 'Accessoires bébé', 'Vêtements enfant', 'Maison/Déco', 'Autre']
+    return PROJECT_TYPE_VALUES
   }
 
   // [AI:Claude] Upload patron (PDF ou Image)
@@ -1107,7 +1100,7 @@ const ProjectCounter = () => {
     ]
 
     if (!allowedTypes.includes(file.type)) {
-      showAlert('Veuillez sélectionner un fichier PDF ou une image (JPG, PNG, WEBP)', 'error')
+      showAlert({ message: t('alerts.selectPdfOrImage'), type: 'error' })
       return
     }
 
@@ -1155,10 +1148,10 @@ const ProjectCounter = () => {
         console.warn('⚠️ No pattern_path in project data')
       }
 
-      showAlert('Patron importé avec succès !', 'success')
+      showAlert({ message: t('alerts.patternImported'), type: 'success' })
     } catch (err) {
       console.error('Erreur upload patron:', err)
-      showAlert('Erreur lors de l\'import du patron', 'error')
+      showAlert({ message: t('alerts.patternImportFailed'), type: 'error' })
     } finally {
       setUploadingPattern(false)
     }
@@ -1167,7 +1160,7 @@ const ProjectCounter = () => {
   // [AI:Claude] Ajouter URL de patron
   const handlePatternUrlSubmit = async () => {
     if (!patternUrl.trim()) {
-      showAlert('Veuillez entrer une URL', 'error')
+      showAlert({ message: t('alerts.urlRequired'), type: 'error' })
       return
     }
 
@@ -1175,7 +1168,7 @@ const ProjectCounter = () => {
     try {
       new URL(patternUrl)
     } catch (e) {
-      showAlert('URL invalide. Exemple : https://example.com/patron', 'error')
+      showAlert({ message: t('alerts.urlInvalid'), type: 'error' })
       return
     }
 
@@ -1189,10 +1182,10 @@ const ProjectCounter = () => {
       await fetchProject()
       setShowPatternUrlModal(false)
       setPatternUrl('')
-      showAlert('Lien du patron enregistré avec succès !', 'success')
+      showAlert({ message: t('alerts.patternUrlSaved'), type: 'success' })
     } catch (err) {
       console.error('Erreur enregistrement URL:', err)
-      showAlert('Erreur lors de l\'enregistrement du lien', 'error')
+      showAlert({ message: t('alerts.patternUrlSaveFailed'), type: 'error' })
     } finally {
       setUploadingPattern(false)
     }
@@ -1206,7 +1199,7 @@ const ProjectCounter = () => {
       setLibraryPatterns(response.data.patterns || [])
     } catch (err) {
       console.error('Erreur chargement bibliothèque:', err)
-      showAlert('Erreur lors du chargement de votre bibliothèque', 'error')
+      showAlert({ message: t('alerts.libraryLoadFailed'), type: 'error' })
     } finally {
       setLoadingLibraryPatterns(false)
     }
@@ -1222,10 +1215,10 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowPatternLibraryModal(false)
-      showAlert(`Patron "${pattern.name}" ajouté au projet !`, 'success')
+      showAlert({ message: t('alerts.patternAddedToProject', { name: pattern.name }), type: 'success' })
     } catch (err) {
       console.error('Erreur ajout patron depuis bibliothèque:', err)
-      showAlert('Erreur lors de l\'ajout du patron', 'error')
+      showAlert({ message: t('alerts.patternAddFailed'), type: 'error' })
     } finally {
       setUploadingPattern(false)
     }
@@ -1240,7 +1233,7 @@ const ProjectCounter = () => {
   // [AI:Claude] Sauvegarder le patron texte
   const handleSavePatternText = async () => {
     if (!patternTextEdit.trim()) {
-      showAlert('Le texte du patron ne peut pas être vide', 'error')
+      showAlert({ message: t('alerts.patternTextEmpty'), type: 'error' })
       return
     }
 
@@ -1258,10 +1251,10 @@ const ProjectCounter = () => {
 
       await fetchProject()
       setShowPatternTextModal(false)
-      showAlert('Patron texte enregistré avec succès !', 'success')
+      showAlert({ message: t('alerts.patternTextSaved'), type: 'success' })
     } catch (err) {
       console.error('Erreur sauvegarde patron texte:', err)
-      showAlert('Erreur lors de la sauvegarde du patron', 'error')
+      showAlert({ message: t('alerts.patternSaveFailed'), type: 'error' })
     } finally {
       setSavingPatternText(false)
     }
@@ -1270,12 +1263,12 @@ const ProjectCounter = () => {
   // [AI:Claude] Ajouter le patron uploadé à la bibliothèque
   const handleAddToLibrary = async () => {
     if (!libraryForm.name.trim()) {
-      showAlert('Le nom du patron est obligatoire', 'error')
+      showAlert({ message: t('alerts.patternNameRequired'), type: 'error' })
       return
     }
 
     if (!uploadedPatternData || !uploadedPatternData.pattern_path) {
-      showAlert('Aucun fichier à ajouter', 'error')
+      showAlert({ message: t('alerts.noFileToAdd'), type: 'error' })
       return
     }
 
@@ -1301,11 +1294,11 @@ const ProjectCounter = () => {
         difficulty: 'intermediate'
       })
 
-      showAlert('Patron ajouté à votre bibliothèque !', 'success')
+      showAlert({ message: t('alerts.patternAddedToLibrary'), type: 'success' })
     } catch (err) {
       console.error('Erreur ajout bibliothèque:', err)
-      const errorMsg = err.response?.data?.error || 'Erreur lors de l\'ajout à la bibliothèque'
-      showAlert(errorMsg, 'error')
+      const errorMsg = err.response?.data?.error || t('ui.libraryAddFailed')
+      showAlert({ message: errorMsg, type: 'error' })
     } finally {
       setSavingToLibrary(false)
     }
@@ -1331,7 +1324,7 @@ const ProjectCounter = () => {
 
     // [AI:Claude] Vérifier que c'est une image
     if (!file.type.startsWith('image/')) {
-      showAlert('Veuillez sélectionner une image', 'error')
+      showAlert({ message: t('alerts.selectImage'), type: 'error' })
       return
     }
 
@@ -1366,7 +1359,7 @@ const ProjectCounter = () => {
       }
     } catch (err) {
       console.error('Erreur upload photo:', err)
-      showAlert('Erreur lors de l\'ajout de la photo', 'error')
+      showAlert({ message: t('alerts.photoAddFailed'), type: 'error' })
     } finally {
       setUploadingPhoto(false)
     }
@@ -1374,20 +1367,20 @@ const ProjectCounter = () => {
 
 // [AI:Claude] Supprimer une photo
   const handleDeletePhoto = (photoId) => {
-    showConfirm(
-      'Êtes-vous sûr de vouloir supprimer cette photo ? Cette action est irréversible.',
-      async () => {
+    showConfirm({
+      message: t('alerts.confirmDeletePhoto'),
+      onConfirm: async () => {
         try {
           await api.delete(`/photos/${photoId}`)
           await fetchProjectPhotos()
-          showAlert('Photo supprimée avec succès', 'success')
+          showAlert({ message: t('alerts.photoDeleted'), type: 'success' })
         } catch (err) {
           console.error('Erreur suppression photo:', err)
-          showAlert('Erreur lors de la suppression de la photo', 'error')
+          showAlert({ message: t('alerts.photoDeleteFailed'), type: 'error' })
         }
       },
-      '🗑️ Supprimer la photo'
-    )
+      title: t('alerts.confirmDeletePhotoTitle')
+    })
   }
 
   // [AI:Claude] Gérer le checkbox "Ne plus afficher l'avertissement IA"
@@ -1444,15 +1437,15 @@ const ProjectCounter = () => {
           setGeneratedPhoto(fullPhoto)
           setShowSatisfactionModal(true)
         } else {
-          showAlert(`Photo générée avec succès`, 'success')
+          showAlert({ message: t('alerts.photoGenerated'), type: 'success' })
         }
       } else {
-        showAlert(`Photo générée avec succès`, 'success')
+        showAlert({ message: t('alerts.photoGenerated'), type: 'success' })
       }
     } catch (err) {
       console.error('Erreur embellissement photo:', err)
-      const errorMsg = err.response?.data?.error || 'Erreur lors de l\'embellissement'
-      showAlert(errorMsg, 'error')
+      const errorMsg = err.response?.data?.error || t('ui.enhanceFailed')
+      showAlert({ message: errorMsg, type: 'error' })
     } finally {
       setEnhancing(false)
     }
@@ -1467,7 +1460,7 @@ const ProjectCounter = () => {
     const result = await generatePreview(selectedPhoto.id, selectedContext.key)
 
     if (!result.success) {
-      showAlert(result.error || 'Erreur lors de la génération de l\'aperçu', 'error')
+      showAlert({ message: result.error || t('alerts.previewFailed'), type: 'error' })
     }
   }
   */
@@ -1476,13 +1469,13 @@ const ProjectCounter = () => {
   const handleFeedbackSubmitted = (feedbackData) => {
     const rating = feedbackData.rating || 0
     if (rating >= 4) {
-      showAlert('Merci pour votre retour !', 'success')
+      showAlert({ message: t('alerts.thanksFeedback'), type: 'success' })
     } else if (rating === 3) {
-      showAlert('Merci pour votre retour ! Nous travaillons à améliorer le service.', 'success')
+      showAlert({ message: t('alerts.thanksFeedbackImproving'), type: 'success' })
     } else if (rating <= 2) {
-      showAlert('Merci pour votre retour. Nous prenons en compte vos remarques pour améliorer le service.', 'success')
+      showAlert({ message: t('alerts.thanksFeedbackNoted'), type: 'success' })
     } else {
-      showAlert('Merci pour votre retour !', 'success')
+      showAlert({ message: t('alerts.thanksFeedback'), type: 'success' })
     }
   }
 
@@ -1547,12 +1540,6 @@ const ProjectCounter = () => {
   }
 
   // [AI:Claude] v0.17.1 - Saisons disponibles pour la génération d'images
-  const seasons = [
-    { key: 'spring', label: 'Printemps', icon: '🌸', desc: 'Fleurs, bourgeons, lumière douce' },
-    { key: 'summer', label: 'Été', icon: '☀️', desc: 'Lumière dorée, végétation luxuriante' },
-    { key: 'autumn', label: 'Automne', icon: '🍂', desc: 'Feuilles dorées, tons chauds' },
-    { key: 'winter', label: 'Hiver', icon: '❄️', desc: 'Neige, givre, ambiance cocooning' }
-  ]
 
   // [AI:Claude] Thèmes qui supportent les saisons (extérieur, nature, lumière naturelle)
   const seasonStyles = [
@@ -1571,92 +1558,7 @@ const ProjectCounter = () => {
   ]
 
   // [AI:Claude] v0.14.0 - Styles par catégorie et tier (FREE 3 / PLUS 6 / PRO 9)
-  const stylesByCategory = {
-    wearable: [
-      // FREE (3)
-      { key: 'wearable_c1', label: 'Porté, lumière naturelle', icon: '👤', desc: 'Portrait extérieur avec lumière douce', tier: 'free' },
-      { key: 'flatlay_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
-      { key: 'detail_c1', label: 'Gros plan sur les points', icon: '🔍', desc: 'Macro sur la texture et le détail du tricot', tier: 'free' },
-      // PLUS (+3)
-      { key: 'wearable_c2', label: 'Porté, fond neutre', icon: '👤', desc: 'Portrait en studio sur fond blanc doux', tier: 'pro' },
-      { key: 'wearable_c3', label: 'Porté, décor urbain', icon: '🌆', desc: 'Portrait en ville, ambiance contemporaine', tier: 'pro' },
-      { key: 'flatlay_c2', label: 'À plat, ambiance maison', icon: '🏡', desc: 'Posé à plat avec accessoires décoratifs', tier: 'pro' },
-      // PRO (+3)
-      { key: 'wearable_c4', label: 'Porté, ambiance vintage', icon: '🌼', desc: 'Portrait dans un décor rétro chaleureux', tier: 'pro' },
-      { key: 'wearable_c7', label: 'Porté, éclairage dramatique', icon: '👗', desc: 'Portrait studio avec fond texturé sombre', tier: 'pro' },
-      { key: 'wearable_c9', label: 'Porté, décor industriel', icon: '🏙️', desc: 'Portrait en loft ou espace industriel', tier: 'pro' }
-    ],
-    accessory: [
-      // FREE (3)
-      { key: 'accessory_c1', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
-      { key: 'accessory_c2', label: 'Porté, lumière naturelle', icon: '🌿', desc: 'Porté en extérieur avec lumière naturelle', tier: 'free' },
-      { key: 'accessory_c3', label: 'Porté, fond neutre', icon: '👤', desc: 'Porté sur modèle avec fond sobre', tier: 'free' },
-      // PLUS (+3)
-      { key: 'accessory_c4', label: 'À plat, accessoires déco', icon: '🏡', desc: 'Posé à plat dans une mise en scène cosy', tier: 'pro' },
-      { key: 'accessory_c5', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Porté en ville avec architecture moderne', tier: 'pro' },
-      { key: 'accessory_c6', label: 'À plat, textures douces', icon: '🏠', desc: 'Posé sur table avec linge et matières naturelles', tier: 'pro' },
-      // PRO (+3)
-      { key: 'accessory_c7', label: 'Porté, style éditorial', icon: '💃', desc: 'Portrait avec mise en scène soignée', tier: 'pro' },
-      { key: 'accessory_c8', label: 'À plat, fond sombre élégant', icon: '💎', desc: 'Mise en scène sobre sur fond sombre', tier: 'pro' },
-      { key: 'accessory_c9', label: 'Porté, décor bohème', icon: '🌸', desc: 'Porté dans un intérieur bohème avec plantes', tier: 'pro' }
-    ],
-    home_decor: [
-      // FREE (3)
-      { key: 'home_c1', label: 'Intérieur moderne', icon: '🏠', desc: 'Décor contemporain avec touches de couleur', tier: 'free' },
-      { key: 'home_c2', label: 'Ambiance naturelle', icon: '🌿', desc: 'Bois, plantes et lumière naturelle', tier: 'free' },
-      { key: 'home_c3', label: 'Décor épuré', icon: '🪟', desc: 'Style scandinave, blanc et gris doux', tier: 'free' },
-      // PLUS (+3)
-      { key: 'home_c4', label: 'Ambiance loft', icon: '🏭', desc: 'Décor industriel, métal et briques', tier: 'pro' },
-      { key: 'home_c5', label: 'Couleurs chaudes, vintage', icon: '🎨', desc: 'Tons chauds et ambiance rétro', tier: 'pro' },
-      { key: 'home_c6', label: 'Ambiance cosy', icon: '🛋️', desc: 'Intérieur chaleureux avec tissus doux', tier: 'pro' },
-      // PRO (+3)
-      { key: 'home_c7', label: 'Décor élégant', icon: '💎', desc: 'Intérieur contemporain avec matières nobles', tier: 'pro' },
-      { key: 'home_c8', label: 'Ambiance zen', icon: '🧘', desc: 'Décor minimaliste, couleurs neutres apaisantes', tier: 'pro' },
-      { key: 'home_c9', label: 'Table de créatrice', icon: '🎨', desc: 'Posé sur une table avec fils et fournitures', tier: 'pro' }
-    ],
-    toy: [
-      // FREE (3)
-      { key: 'toy_c1', label: 'Chambre enfant, lumière douce', icon: '🧸', desc: 'Décor de chambre enfantine doux et lumineux', tier: 'free' },
-      { key: 'toy_c2', label: 'Ambiance conte illustré', icon: '📖', desc: 'Décor aquarelle pastel, ambiance féerique', tier: 'free' },
-      { key: 'toy_c3', label: 'À plat, fond blanc', icon: '📸', desc: 'Fond blanc épuré, éclairage lumineux', tier: 'free' },
-      // PLUS (+3)
-      { key: 'toy_c4', label: 'Ambiance rétro tamisée', icon: '🧸', desc: 'Décor vintage avec lumière douce et chaude', tier: 'pro' },
-      { key: 'toy_c5', label: 'Matières naturelles', icon: '🌿', desc: 'Posé sur bois avec tissus naturels', tier: 'pro' },
-      { key: 'toy_c6', label: 'Couleurs vives', icon: '🎈', desc: 'Décor coloré et joyeux', tier: 'pro' },
-      // PRO (+3)
-      { key: 'toy_c7', label: 'Décor boutique artisanale', icon: '🏪', desc: 'Étagères et fond pastel, style créatrice', tier: 'pro' },
-      { key: 'toy_c8', label: 'Décor jungle tropicale', icon: '🦁', desc: 'Plantes exotiques, ambiance aventure', tier: 'pro' },
-      { key: 'toy_c9', label: 'Ambiance fête rétro', icon: '🎪', desc: 'Décor festif vintage coloré', tier: 'pro' }
-    ],
-    baby_garment: [
-      // FREE (3)
-      { key: 'baby_garment_c1', label: 'Porté par bébé, lit pastel', icon: '🛏️', desc: 'Bébé allongé sur lit aux tons doux', tier: 'free' },
-      { key: 'baby_garment_c2', label: 'À plat, fond doux', icon: '🌸', desc: 'Posé à plat sur fond uni pastel', tier: 'free' },
-      { key: 'baby_garment_c3', label: 'À plat, table à langer', icon: '🏠', desc: 'Sur table à langer en bois clair, style scandinave', tier: 'free' },
-      // PLUS (+3)
-      { key: 'baby_garment_c4', label: 'Porté par bébé, jouets bois', icon: '🧸', desc: 'Bébé avec jouets en bois naturel', tier: 'pro' },
-      { key: 'baby_garment_c5', label: 'À plat, accessoires naturels', icon: '🌿', desc: 'Posé à plat avec linge et matières naturelles', tier: 'pro' },
-      { key: 'baby_garment_c6', label: 'À plat, osier et lin', icon: '🧺', desc: 'Dans un panier en osier avec du lin', tier: 'pro' },
-      // PRO (+3)
-      { key: 'baby_garment_c7', label: 'Porté dans les bras', icon: '💝', desc: 'Bébé tenu par un parent, ambiance tendre', tier: 'pro' },
-      { key: 'baby_garment_c8', label: 'À plat, fleurs séchées', icon: '💎', desc: 'Mise en scène élégante avec fleurs séchées', tier: 'pro' },
-      { key: 'baby_garment_c9', label: 'Porté par bébé, tapis moelleux', icon: '🌸', desc: 'Bébé sur tapis doux et coloré', tier: 'pro' }
-    ],
-    child_garment: [
-      // FREE (3)
-      { key: 'child_garment_c1', label: 'Porté, parc ou jardin', icon: '🌿', desc: 'Enfant dans un espace vert, lumière naturelle', tier: 'free' },
-      { key: 'child_garment_c2', label: 'À plat, fond blanc', icon: '📸', desc: 'Posé à plat sur fond blanc épuré', tier: 'free' },
-      { key: 'child_garment_c3', label: 'À plat, chambre enfant', icon: '🛏️', desc: 'Sur lit coloré avec peluches', tier: 'free' },
-      // PLUS (+3)
-      { key: 'child_garment_c4', label: 'Porté, ambiance jeu', icon: '🧸', desc: 'Enfant jouant avec des jouets en bois', tier: 'pro' },
-      { key: 'child_garment_c5', label: 'À plat, accessoires enfant', icon: '🎨', desc: 'Posé à plat avec crayons et jouets colorés', tier: 'pro' },
-      { key: 'child_garment_c6', label: 'Porté, décor urbain', icon: '🏙️', desc: 'Enfant dans un décor de ville contemporain', tier: 'pro' },
-      // PRO (+3)
-      { key: 'child_garment_c7', label: 'Porté, éclairage studio', icon: '📸', desc: 'Portrait soigné avec éclairage studio créatif', tier: 'pro' },
-      { key: 'child_garment_c8', label: 'À plat, mise en scène soignée', icon: '💎', desc: 'Mise en scène boutique haut de gamme', tier: 'pro' },
-      { key: 'child_garment_c9', label: 'Porté, promenade en famille', icon: '💝', desc: 'Enfant tenant la main d\'un parent', tier: 'pro' }
-    ]
-  }
+  const stylesByCategory = PHOTO_STYLES_BY_CATEGORY
 
   // [AI:Claude] v0.14.0 - Convertir le code de style en label lisible
   const getStyleLabel = (styleCode) => {
@@ -1666,7 +1568,7 @@ const ProjectCounter = () => {
     for (const category in stylesByCategory) {
       const style = stylesByCategory[category].find(s => s.key === styleCode)
       if (style) {
-        return `${style.icon} ${style.label}`
+        return `${style.icon} ${t(`photoStyles.${style.key}.label`, { ns: 'common' })}`
       }
     }
 
@@ -1703,7 +1605,7 @@ const ProjectCounter = () => {
       triggerOnce('timer_wake_lock')
     } catch (err) {
       console.error('Erreur démarrage session:', err)
-      showAlert('Erreur lors du démarrage de la session', 'error')
+      showAlert({ message: t('alerts.sessionStartFailed'), type: 'error' })
     }
   }
 
@@ -1805,7 +1707,7 @@ const ProjectCounter = () => {
       isEndingSessionRef.current = false
     } catch (err) {
       console.error('Erreur fin session:', err)
-      showAlert('Erreur lors de la fin de session', 'error')
+      showAlert({ message: t('alerts.sessionEndFailed'), type: 'error' })
       isEndingSessionRef.current = false // Réinitialiser même en cas d'erreur
     }
   }
@@ -1823,7 +1725,7 @@ const ProjectCounter = () => {
       await fetchProject()
     } catch (err) {
       console.error('Erreur changement unité:', err)
-      showAlert('Erreur lors du changement d\'unité', 'error')
+      showAlert({ message: t('alerts.unitChangeFailed'), type: 'error' })
     }
   }
 
@@ -1848,7 +1750,7 @@ const ProjectCounter = () => {
 
     // Validation
     if (isNaN(parsedValue) || parsedValue < 0) {
-      showAlert('Valeur invalide', 'error')
+      showAlert({ message: t('alerts.invalidValue'), type: 'error' })
       setIsEditingCounter(false)
       return
     }
@@ -1890,7 +1792,7 @@ const ProjectCounter = () => {
       setCounterInputValue('')
     } catch (err) {
       console.error('Erreur sauvegarde compteur:', err)
-      showAlert('Erreur lors de la sauvegarde', 'error')
+      showAlert({ message: t('alerts.saveFailed'), type: 'error' })
       // Rollback
       setCurrentRow(oldRow)
       if (currentSectionId) {
@@ -1950,7 +1852,7 @@ const ProjectCounter = () => {
       const numMax = Number(maxRows)
       const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
       const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-      showAlert(`Vous avez terminé (${displayMax}/${displayMax} ${unitLabel}) !`, 'success')
+      showAlert({ message: t('alerts.allDone', { max: displayMax, unit: unitLabel }), type: 'success' })
       isSavingRowRef.current = false
       setIsSavingRow(false)
       return
@@ -2002,7 +1904,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           } else {
             await api.put(`/projects/${projectId}`, { status: 'completed' })
             if (isTimerRunning) {
@@ -2011,12 +1913,12 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.projectDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           }
         }
       } catch (err) {
         console.error('Erreur sauvegarde:', err)
-        showAlert('Erreur lors de la sauvegarde', 'error')
+        showAlert({ message: t('alerts.saveFailed'), type: 'error' })
         setCurrentRow(oldRow)
         if (currentSectionId) {
           setSections(prevSections =>
@@ -2060,7 +1962,7 @@ const ProjectCounter = () => {
       // [AI:Claude] Gamification — série de 7 jours récompensée par un code
       // promo (envoyé aussi par email), voir ProjectController::grantStreakBonusIfEligible
       if (rowResponse.data.streak_promo_code) {
-        showAlert(`🔥 7 jours de série ! Code promo envoyé par email : ${rowResponse.data.streak_promo_code}`, 'success')
+        showAlert({ message: t('alerts.streakReward', { code: rowResponse.data.streak_promo_code }), type: 'success' })
       }
 
       // [AI:Claude] FIX v0.16.2: Mettre à jour sections/project AVANT setCurrentRow
@@ -2118,7 +2020,7 @@ const ProjectCounter = () => {
               // Pas d'alert ici — la modale de complétion prend le relais
               await handleAllSectionsCompleted()
             } else {
-              showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+              showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
               await fetchProject()
             }
           } catch (err) {
@@ -2126,7 +2028,7 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Section terminée ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           }
         } else {
           // Pas de sections, marquer le projet global comme terminé
@@ -2140,13 +2042,13 @@ const ProjectCounter = () => {
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.projectDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           } catch (err) {
             console.error('Erreur marquage projet terminé:', err)
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
             const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert(`Projet terminé ! (${displayMax}/${displayMax} ${unitLabel})`, 'success')
+            showAlert({ message: t('alerts.projectDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           }
         }
       }
@@ -2193,7 +2095,7 @@ const ProjectCounter = () => {
         // Erreur serveur : rollback
         console.error('Erreur sauvegarde rang:', err.response?.data)
         const errorMsg = err.response?.data?.message || err.message || 'Erreur inconnue'
-        showAlert(`Erreur lors de la sauvegarde du rang: ${errorMsg}`, 'error')
+        showAlert({ message: t('alerts.rowSaveFailedDetail', { detail: errorMsg }), type: 'error' })
         setCurrentRow(oldRow)
         if (currentSectionId) {
           setSections(prevSections =>
@@ -2308,7 +2210,7 @@ const ProjectCounter = () => {
           setPendingSync(true)
         } else {
           console.error('Erreur sauvegarde rang:', err)
-          showAlert('Erreur lors de la sauvegarde du rang', 'error')
+          showAlert({ message: t('alerts.rowSaveFailed'), type: 'error' })
           setCurrentRow(oldRow)
           if (currentSectionId) {
             setSections(prevSections =>
@@ -2461,7 +2363,7 @@ const ProjectCounter = () => {
       setActiveReminder(null)
     } catch (err) {
       console.error('Erreur changement section:', err)
-      showAlert('Erreur lors du changement de section', 'error')
+      showAlert({ message: t('alerts.sectionChangeFailed'), type: 'error' })
     }
   }
 
@@ -2667,7 +2569,7 @@ const ProjectCounter = () => {
     e.preventDefault()
 
     if (!sectionForm.name.trim()) {
-      showAlert('Le nom de la section est obligatoire', 'error')
+      showAlert({ message: t('alerts.sectionNameRequired'), type: 'error' })
       return
     }
 
@@ -2708,7 +2610,7 @@ const ProjectCounter = () => {
       if (editingSection) {
         // Modification
         await api.put(`/projects/${projectId}/sections/${editingSection.id}`, sectionData)
-        showAlert('Section modifiée avec succès', 'success')
+        showAlert({ message: t('alerts.sectionUpdated'), type: 'success' })
       } else {
         // Création
         const response = await api.post(`/projects/${projectId}/sections`, sectionData)
@@ -2738,7 +2640,7 @@ const ProjectCounter = () => {
       setEditingSection(null)
     } catch (err) {
       console.error('Erreur sauvegarde section:', err)
-      showAlert('Erreur lors de la sauvegarde de la section', 'error')
+      showAlert({ message: t('alerts.sectionSaveFailed'), type: 'error' })
     } finally {
       setSavingSection(false)
     }
@@ -2836,7 +2738,7 @@ const ProjectCounter = () => {
       setSecondaryLabelInput('')
       setSecondaryTargetInput('')
     } catch (err) {
-      showAlert(err.response?.data?.error || 'Erreur lors de la création du compteur', 'error')
+      showAlert({ message: err.response?.data?.error || t('alerts.counterCreateFailed'), type: 'error' })
     }
   }
 
@@ -2952,10 +2854,10 @@ const ProjectCounter = () => {
         )
       )
 
-      showAlert('Notes sauvegardées', 'success')
+      showAlert({ message: t('alerts.notesSavedShort'), type: 'success' })
     } catch (err) {
       console.error('Erreur sauvegarde notes section:', err)
-      showAlert('Erreur lors de la sauvegarde des notes', 'error')
+      showAlert({ message: t('alerts.notesSaveFailed'), type: 'error' })
     } finally {
       setIsSavingSectionNotes(false)
     }
@@ -2963,9 +2865,9 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Supprimer une section
   const handleDeleteSection = (section) => {
-    showConfirm(
-      `Êtes-vous sûr de vouloir supprimer la section "${section.name}" ? Tous les rangs associés seront dissociés de cette section.`,
-      async () => {
+    showConfirm({
+      message: t('alerts.confirmDeleteSection', { name: section.name }),
+      onConfirm: async () => {
         try {
           // [AI:Claude] Supprimer la section - le backend retourne le projet mis à jour
           const response = await api.delete(`/projects/${projectId}/sections/${section.id}`)
@@ -2985,11 +2887,11 @@ const ProjectCounter = () => {
           await fetchProject()
         } catch (err) {
           console.error('Erreur suppression section:', err)
-          showAlert('Erreur lors de la suppression de la section', 'error')
+          showAlert({ message: t('alerts.sectionDeleteFailed'), type: 'error' })
         }
       },
-      '🗑️ Supprimer la section'
-    )
+      title: t('alerts.confirmDeleteSectionTitle')
+    })
   }
 
   // [AI:Claude] Marquer une section comme terminée/non terminée
@@ -3011,7 +2913,7 @@ const ProjectCounter = () => {
 
       await fetchSections()
       await fetchProject()
-      let alertMessage = newState ? 'Section marquée comme terminée' : 'Section réouverte'
+      let alertMessage = newState ? t('ui.sectionMarkedDone') : t('ui.sectionReopened')
 
       // [AI:Claude] Recharger les sections pour avoir les données à jour
       const response = await api.get(`/projects/${projectId}/sections`)
@@ -3030,13 +2932,13 @@ const ProjectCounter = () => {
         // [AI:Claude] Si une section a été réouverte et que le projet était terminé, réouvrir le projet
         await api.put(`/projects/${projectId}`, { status: 'in_progress' })
         await fetchProject()
-        alertMessage = 'Section réouverte. Projet marqué comme en cours.'
+        alertMessage = t('ui.sectionReopenedProjectResumed')
       }
 
-      showAlert(alertMessage, 'success')
+      showAlert({ message: alertMessage, type: 'success' })
     } catch (err) {
       console.error('Erreur toggle section:', err)
-      showAlert('Erreur lors de la mise à jour', 'error')
+      showAlert({ message: t('alerts.updateFailed'), type: 'error' })
     }
   }
 
@@ -3056,10 +2958,10 @@ const ProjectCounter = () => {
       await api.put(`/projects/${projectId}`, { status: 'completed' })
       await fetchProject()
       setShowProjectCompletionModal(false)
-      showAlert('Projet marqué comme terminé !', 'success')
+      showAlert({ message: t('alerts.projectCompleted'), type: 'success' })
     } catch (err) {
       console.error('Erreur terminer projet:', err)
-      showAlert('Erreur lors de la finalisation du projet', 'error')
+      showAlert({ message: t('alerts.projectFinalizeFailed'), type: 'error' })
     }
   }
 
@@ -3073,7 +2975,7 @@ const ProjectCounter = () => {
       setShowPhotoUploadModal(true)
     } catch (err) {
       console.error('Erreur terminer projet:', err)
-      showAlert('Erreur lors de la finalisation du projet', 'error')
+      showAlert({ message: t('alerts.projectFinalizeFailed'), type: 'error' })
     }
   }
 
@@ -3115,13 +3017,13 @@ const ProjectCounter = () => {
 
       await fetchProject()
 
-      showAlert(
-        isCompleted ? 'Projet réouvert' : 'Projet marqué comme terminé !',
-        'success'
-      )
+      showAlert({
+        message: isCompleted ? t('alerts.projectReopened') : t('alerts.projectCompleted'),
+        type: 'success'
+      })
     } catch (err) {
       console.error('Erreur toggle project:', err)
-      showAlert('Erreur lors de la mise à jour', 'error')
+      showAlert({ message: t('alerts.updateFailed'), type: 'error' })
     }
   }
 
@@ -3191,19 +3093,19 @@ const ProjectCounter = () => {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-800 mb-4">{error || 'Projet introuvable'}</p>
+          <p className="text-red-800 mb-4">{error || t('ui.projectNotFound')}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => { setError(null); setLoading(true); fetchProject().then(pd => pd && fetchSections(pd.current_section_id)) }}
               className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
             >
-              Réessayer
+              {t('ui.retry')}
             </button>
             <Link
               to="/my-projects"
               className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
             >
-              Retour aux projets
+              {t('ui.backToProjects')}
             </Link>
           </div>
         </div>
@@ -3310,7 +3212,7 @@ const ProjectCounter = () => {
           <button
             onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
             className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
-            aria-label="Fermer"
+            aria-label={t('ui.close')}
           >
             ×
           </button>
@@ -3321,29 +3223,29 @@ const ProjectCounter = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-amber-800 text-sm mb-1">Vous avez fait le tour ! 🎉</p>
+                <p className="font-semibold text-amber-800 text-sm mb-1">{t('ui.allCaughtUp')}</p>
                 {isDemoProject ? (
                   <>
                     <p className="text-amber-700 text-sm leading-relaxed mb-3">
-                      Compteur, sections, photo — vous savez déjà utiliser YarnFlow. Prêt·e à créer votre vrai projet ?
+                      {t('ui.demoReadyReal')}
                     </p>
                     <button
                       onClick={() => navigate('/my-projects')}
                       className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
                     >
-                      Créer mon vrai projet
+                      {t('ui.createRealProject')}
                     </button>
                   </>
                 ) : (
                   <>
                     <p className="text-amber-700 text-sm leading-relaxed mb-3">
-                      Compteur, sections, photo — vous maîtrisez déjà l'essentiel de YarnFlow !
+                      {t('ui.demoMastered')}
                     </p>
                     <button
                       onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
                       className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
                     >
-                      Continuer
+                      {t('ui.continue')}
                     </button>
                   </>
                 )}
@@ -3356,24 +3258,27 @@ const ProjectCounter = () => {
               </svg>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-amber-800 text-sm mb-2">
-                  {isDemoProject ? 'Mode démo — Découvrez YarnFlow en 1 minute' : 'Découvrez YarnFlow en 1 minute'}
+                  {isDemoProject ? t('ui.demoModeBanner') : t('ui.discoverIn1Min')}
                 </p>
                 <ul className="space-y-1.5 text-sm">
                   <li className="flex items-center gap-2 text-amber-700">
                     <span>{demoSteps.rows >= 5 ? '✅' : '⬜'}</span>
-                    <span>Ajoutez des rangs avec le <strong>+</strong> {demoSteps.rows < 5 && `(${demoSteps.rows}/5)`}</span>
+                    <span>
+                      <Trans i18nKey="ui.tutorialAddRows" ns="counter" components={[<strong key="0" />]} />
+                      {demoSteps.rows < 5 && ` (${demoSteps.rows}/5)`}
+                    </span>
                   </li>
                   <li className="flex items-center gap-2 text-amber-700">
                     <span>{demoSteps.section ? '✅' : '⬜'}</span>
-                    <span>Modifiez une section (dos, manches...)</span>
+                    <span>{t('ui.tutorialEditSection')}</span>
                   </li>
                   <li className="flex items-center gap-2 text-amber-700">
                     <span>{demoSteps.photo ? '✅' : '⬜'}</span>
-                    <span>Ajoutez une photo de l'ouvrage</span>
+                    <span>{t('ui.tutorialAddPhoto')}</span>
                   </li>
                 </ul>
                 {demoRowsCelebrate && (
-                  <p className="text-xs text-amber-600 mt-2 font-medium">✨ Regardez votre progression avancer !</p>
+                  <p className="text-xs text-amber-600 mt-2 font-medium">{t('ui.watchProgress')}</p>
                 )}
                 {isDemoProject && (
                   <div className="flex items-center gap-3 mt-3">
@@ -3381,7 +3286,7 @@ const ProjectCounter = () => {
                       onClick={() => { updateDemoSteps(prev => ({ ...prev, dismissed: true })); navigate('/my-projects') }}
                       className="text-xs text-amber-700 hover:text-amber-900 underline"
                     >
-                      Créer mon vrai projet
+                      {t('ui.createRealProject')}
                     </button>
                   </div>
                 )}
@@ -3397,15 +3302,15 @@ const ProjectCounter = () => {
           <button
             onClick={() => { setShowSectionsNudge(false); localStorage.setItem(`yf_sections_nudge_${projectId}`, '1') }}
             className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
-            aria-label="Fermer"
+            aria-label={t('ui.close')}
           >×</button>
           <div className="flex items-start gap-3">
             <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h10" /></svg>
             <div>
-              <p className="font-semibold text-amber-800 mb-1 text-sm">Votre projet a plusieurs parties ?</p>
+              <p className="font-semibold text-amber-800 mb-1 text-sm">{t('ui.multiplePartsQuestion')}</p>
               <p className="text-amber-700 text-sm leading-relaxed">
-                Créez des <strong>sections</strong> pour suivre chaque partie séparément — dos, devant, manches…
-                Le compteur repart à zéro pour chaque section.
+                <Trans t={t} i18nKey="ui.createSectionsHint"><strong>sections</strong></Trans>{' '}
+                {t('ui.counterResetsPerSection')}
               </p>
             </div>
           </div>
@@ -3426,8 +3331,8 @@ const ProjectCounter = () => {
             }
           </svg>
           {!isOnline
-            ? 'Hors ligne — vos rangs sont sauvegardés localement'
-            : 'Synchronisation en cours…'
+            ? t('ui.offlineSaved')
+            : t('ui.syncing')
           }
         </div>
       )}
@@ -3439,7 +3344,7 @@ const ProjectCounter = () => {
             to="/my-projects"
             className="inline-flex items-center text-sm text-gray-600 hover:text-primary-600 transition mb-1"
           >
-            ← Retour
+            {t('ui.backArrow3')}
           </Link>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
@@ -3454,9 +3359,9 @@ const ProjectCounter = () => {
                   }`}
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  {daysUntilDeadline < 0 ? `${Math.abs(daysUntilDeadline)}j de retard` :
-                   daysUntilDeadline === 0 ? "Aujourd'hui !" :
-                   `${daysUntilDeadline}j restants`}
+                  {daysUntilDeadline < 0 ? t('ui.daysLate', { count: Math.abs(daysUntilDeadline) }) :
+                   daysUntilDeadline === 0 ? t('ui.todayExcl') :
+                   t('ui.daysLeft', { count: daysUntilDeadline })}
                 </button>
               ) : (
                 <button
@@ -3464,7 +3369,7 @@ const ProjectCounter = () => {
                   className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  Objectif de date
+                  {t('ui.targetDate')}
                 </button>
               )}
               <div className="relative type-menu">
@@ -3472,7 +3377,7 @@ const ProjectCounter = () => {
                   onClick={() => setShowTypeMenu(!showTypeMenu)}
                   className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold hover:bg-gray-200 transition cursor-pointer flex items-center gap-1"
                 >
-                  {project.type || 'Catégorie'}
+                  {project.type ? projectTypeLabel(project.type) : t('ui.categoryFallback')}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -3488,7 +3393,7 @@ const ProjectCounter = () => {
                           project.type === type ? 'bg-gray-50 font-bold text-gray-900' : 'text-gray-700'
                         }`}
                       >
-                        {type}
+                        {projectTypeLabel(type)}
                       </button>
                     ))}
                   </div>
@@ -3499,7 +3404,7 @@ const ProjectCounter = () => {
                   onClick={() => setShowTechniqueMenu(!showTechniqueMenu)}
                   className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold hover:bg-primary-100 transition cursor-pointer flex items-center gap-1"
                 >
-                  {project.technique === 'tricot' ? 'Tricot' : 'Crochet'}
+                  {project.technique === 'tricot' ? t('ui.knitting') : 'Crochet'}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -3513,7 +3418,7 @@ const ProjectCounter = () => {
                         project.technique === 'tricot' ? 'bg-primary-50 font-bold text-primary-700' : 'text-gray-700'
                       }`}
                     >
-                      Tricot
+                      {t('ui.knitting')}
                     </button>
                     <button
                       onClick={() => handleChangeTechnique('crochet')}
@@ -3532,9 +3437,9 @@ const ProjectCounter = () => {
                 <button
                   onClick={handleToggleUnit}
                   className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs font-medium transition-colors"
-                  title="Changer l'unité de comptage"
+                  title={t('ui.changeCountingUnit')}
                 >
-                  <span className={counterUnit === 'rows' ? 'text-gray-900 font-semibold' : 'text-gray-400'}>Rangs</span>
+                  <span className={counterUnit === 'rows' ? 'text-gray-900 font-semibold' : 'text-gray-500'}>{t('ui.rows')}</span>
                   <div className="relative inline-flex items-center h-4 w-7 rounded-full transition-colors"
                        style={{ backgroundColor: counterUnit === 'cm' ? '#557055' : '#9ca3af' }}>
                     <span
@@ -3558,7 +3463,7 @@ const ProjectCounter = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                   </svg>
-                  Tags — PLUS
+                  {t('ui.tagsPlusBadge')}
                 </button>
               ) : (
                 <>
@@ -3574,7 +3479,7 @@ const ProjectCounter = () => {
                         onClick={() => setShowTagSection(true)}
                         className="text-xs text-primary-600 hover:text-primary-700 font-medium ml-2"
                       >
-                        Modifier
+                        {t('ui.edit')}
                       </button>
                     </div>
                   )}
@@ -3583,13 +3488,13 @@ const ProjectCounter = () => {
                       onClick={() => setShowTagSection(true)}
                       className="text-xs text-gray-400 hover:text-primary-600 font-medium"
                     >
-                      + Ajouter des tags
+                      {t('ui.addTags')}
                     </button>
                   )}
                   {showTagSection && (
                     <div className="bg-sage/5 rounded-lg p-3 border border-sage/20">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-700">Tags du projet</span>
+                        <span className="text-sm font-medium text-gray-700">{t('ui.projectTags')}</span>
                         <button
                           onClick={() => setShowTagSection(false)}
                           className="text-xs text-gray-500 hover:text-gray-700"
@@ -3602,7 +3507,7 @@ const ProjectCounter = () => {
                         onAddTag={handleAddTag}
                         onRemoveTag={handleRemoveTag}
                         suggestions={popularTags.map(t => t.tag_name)}
-                        placeholder="Ex: cadeau, bébé, urgent..."
+                        placeholder={t('ui.phTags')}
                       />
                     </div>
                   )}
@@ -3619,7 +3524,7 @@ const ProjectCounter = () => {
         <div className="hidden sm:flex items-center gap-4">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600">Progression totale</span>
+              <span className="text-xs font-medium text-gray-600">{t('ui.totalProgress')}</span>
               <span className="text-xs font-bold text-primary-700">{globalProgressPercentage || 0}%</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -3640,7 +3545,7 @@ const ProjectCounter = () => {
                 return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
               })()}
             </div>
-            <div className="text-[10px] text-gray-400">Temps total</div>
+            <div className="text-[10px] text-gray-500">{t('ui.totalTime')}</div>
           </div>
           <button
             onClick={handleToggleProjectComplete}
@@ -3649,21 +3554,21 @@ const ProjectCounter = () => {
                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
-            title={project.status === 'completed' ? 'Réouvrir le projet' : 'Marquer le projet comme terminé'}
+            title={project.status === 'completed' ? t('ui.reopenProject') : t('ui.markProjectDone')}
           >
             {project.status === 'completed' ? (
               <span className="flex items-center gap-1.5">
                 <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Terminé
+                {t('ui.done')}
               </span>
-            ) : 'Marquer terminé'}
+            ) : t('ui.markDone')}
           </button>
         </div>
 
         {/* Version Mobile - Design simplifié */}
         <div className="sm:hidden space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-gray-600">Progression</span>
+            <span className="font-medium text-gray-600">{t('ui.progress')}</span>
             <span className="font-bold text-primary-700">{globalProgressPercentage || 0}%</span>
           </div>
           <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
@@ -3691,7 +3596,7 @@ const ProjectCounter = () => {
                   : 'bg-gray-100 text-gray-700'
               }`}
             >
-              {project.status === 'completed' ? '✓ Terminé' : 'Marquer terminé'}
+              {project.status === 'completed' ? t('ui.doneCheck') : t('ui.markDone')}
             </button>
           </div>
         </div>
@@ -3705,12 +3610,12 @@ const ProjectCounter = () => {
           <div className="flex sm:hidden items-center justify-between gap-2">
             {/* Section active mobile */}
             <div className="text-left flex-shrink min-w-0">
-              <div className="text-xs text-gray-500">Section active</div>
+              <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
               <div className="font-semibold text-gray-900 text-sm line-clamp-2 max-w-[180px]">
                 {currentSectionId ? (
-                  sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
+                  sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                 ) : (
-                  'Projet global'
+                  t('ui.wholeProject')
                 )}
               </div>
               <button
@@ -3720,7 +3625,7 @@ const ProjectCounter = () => {
                 <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                Rappels
+                {t('ui.reminders')}
               </button>
             </div>
 
@@ -3736,7 +3641,7 @@ const ProjectCounter = () => {
               <div
                 className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
                 onClick={handleCounterClick}
-                title="Cliquer pour modifier"
+                title={t('ui.clickToEdit')}
               >
                 {isEditingCounter ? (
                   <input
@@ -3778,13 +3683,13 @@ const ProjectCounter = () => {
           <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
             {/* Section active - visible uniquement desktop */}
             <div className="hidden sm:block text-left flex-shrink-0">
-              <div className="text-xs text-gray-500">Section active</div>
+              <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
               <div className="flex items-center gap-1.5">
                 <div className="font-semibold text-gray-900 text-base">
                   {currentSectionId ? (
-                    sections.find(s => s.id === currentSectionId)?.name || 'Projet global'
+                    sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                   ) : (
-                    'Projet global'
+                    t('ui.wholeProject')
                   )}
                 </div>
                 <button
@@ -3794,7 +3699,7 @@ const ProjectCounter = () => {
                   <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
-                  Rappels
+                  {t('ui.reminders')}
                 </button>
               </div>
             </div>
@@ -3811,7 +3716,7 @@ const ProjectCounter = () => {
               <div
                 className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
                 onClick={handleCounterClick}
-                title="Cliquer pour modifier"
+                title={t('ui.clickToEdit')}
               >
                 {isEditingCounter ? (
                   <input
@@ -3849,9 +3754,9 @@ const ProjectCounter = () => {
               <div className="text-center">
                 <div className="text-base sm:text-xl font-bold text-gray-900">{formatTime(elapsedTime)}</div>
                 <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
-                  Session
+                  {t('ui.session')}
                   {isWakeLockActive && (
-                    <svg className="w-3 h-3 text-green-600" title="Écran maintenu allumé" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 text-green-600" title={t('ui.screenAwake')} fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5zm-1 13.5l-3-3 1.4-1.4 1.6 1.6 4.6-4.6L17 8.9l-6 6.1z"/>
                     </svg>
                   )}
@@ -3866,9 +3771,9 @@ const ProjectCounter = () => {
                 return (
                   <div className="text-center border-l border-gray-300 pl-2 sm:pl-3">
                     <div className="text-sm sm:text-lg font-semibold text-primary-700">
-                      {currentSection.time_formatted || '0h 0min 0s'}
+                      {currentSection.time_formatted || t('ui.zeroTimeLong')}
                     </div>
-                    <div className="text-[10px] text-gray-500">Total</div>
+                    <div className="text-[10px] text-gray-500">{t('ui.total')}</div>
                   </div>
                 )
               })()}
@@ -3884,7 +3789,7 @@ const ProjectCounter = () => {
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap shadow-sm"
                     >
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                      Démarrer
+                      {t('ui.start')}
                     </button>
                   ) : (
                     <>
@@ -3893,19 +3798,19 @@ const ProjectCounter = () => {
                         <button
                           onClick={handlePauseSession}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
-                          title="Mettre en pause"
+                          title={t('ui.pauseTitle')}
                         >
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                          Pause
+                          {t('ui.pause')}
                         </button>
                       ) : (
                         <button
                           onClick={handleResumeSession}
                           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
-                          title="Reprendre"
+                          title={t('ui.resume')}
                         >
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                          Reprendre
+                          {t('ui.resume')}
                         </button>
                       )}
 
@@ -3913,10 +3818,10 @@ const ProjectCounter = () => {
                       <button
                         onClick={handleEndSession}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs sm:text-sm font-semibold hover:bg-gray-50 transition whitespace-nowrap"
-                        title="Terminer la session"
+                        title={t('ui.endSession')}
                       >
                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
-                        Arrêter
+                        {t('ui.stop')}
                       </button>
                     </>
                   )}
@@ -3925,7 +3830,7 @@ const ProjectCounter = () => {
               {project.status === 'completed' && (
                 <div className="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-xl text-xs sm:text-sm font-medium">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Terminé
+                  {t('ui.done')}
                 </div>
               )}
             </div>
@@ -3942,7 +3847,7 @@ const ProjectCounter = () => {
               <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>
-              Compteur secondaire — PLUS
+              {t('ui.secondaryCounterPlus')}
             </button>
           </div>
         ) : (
@@ -3960,7 +3865,7 @@ const ProjectCounter = () => {
                         if (e.key === 'Enter') handleEditSecondaryCounter(counter.id)
                         if (e.key === 'Escape') setEditingCounterId(null)
                       }}
-                      placeholder="ex: Dim."
+                      placeholder={t('ui.phShortLabel')}
                       maxLength={20}
                       autoFocus
                       className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
@@ -3973,7 +3878,7 @@ const ProjectCounter = () => {
                         if (e.key === 'Enter') handleEditSecondaryCounter(counter.id)
                         if (e.key === 'Escape') setEditingCounterId(null)
                       }}
-                      placeholder="Objectif (opt.)"
+                      placeholder={t('ui.phTargetOpt')}
                       min="1"
                       className="w-28 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                     />
@@ -3987,7 +3892,7 @@ const ProjectCounter = () => {
                       onClick={() => setEditingCounterId(null)}
                       className="text-xs text-gray-400 hover:text-gray-600"
                     >
-                      Annuler
+                      {t('ui.cancel')}
                     </button>
                   </div>
                 ) : (
@@ -3996,7 +3901,7 @@ const ProjectCounter = () => {
                     {/* Ligne 1 : label + menu ⋮ */}
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                        {counter.label || 'Compteur'}
+                        {counter.label || t('ui.counterWord')}
                       </span>
                       <div className="relative">
                         {showSecondaryMenuFor === counter.id && (
@@ -4005,7 +3910,7 @@ const ProjectCounter = () => {
                         <button
                           onClick={() => setShowSecondaryMenuFor(v => v === counter.id ? null : counter.id)}
                           className="w-6 h-6 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition relative z-20"
-                          title="Options"
+                          title={t('ui.options')}
                         >
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                         </button>
@@ -4016,14 +3921,14 @@ const ProjectCounter = () => {
                               className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
                             >
                               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                              Modifier
+                              {t('ui.edit')}
                             </button>
                             <button
                               onClick={() => handleResetSecondaryCounter(counter.id)}
                               className="w-full text-left px-4 py-2.5 text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                              Réinitialiser
+                              {t('ui.reset')}
                             </button>
                             <div className="border-t border-gray-100 my-1" />
                             <button
@@ -4031,7 +3936,7 @@ const ProjectCounter = () => {
                               className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 flex items-center gap-3"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              Supprimer
+                              {t('ui.delete')}
                             </button>
                           </div>
                         )}
@@ -4071,7 +3976,7 @@ const ProjectCounter = () => {
                     {counter.sequence && counter.sequence.steps && counter.sequence.current_step < counter.sequence.steps.length && (
                       <div className="pt-2 border-t border-primary-200/50 space-y-1.5">
                         <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>Étape {counter.sequence.current_step + 1}/{counter.sequence.steps.length} — tous les <strong className="text-gray-700">{counter.sequence.steps[counter.sequence.current_step]?.target}</strong> ({counter.sequence.steps[counter.sequence.current_step]?.repeat}×)</span>
+                          <span><Trans t={t} i18nKey="ui.sequenceStep" values={{ current: counter.sequence.current_step + 1, total: counter.sequence.steps.length, target: counter.sequence.steps[counter.sequence.current_step]?.target, repeat: counter.sequence.steps[counter.sequence.current_step]?.repeat }}><strong className="text-gray-700" /></Trans></span>
                         </div>
                         {(() => {
                           const totalReps = counter.sequence.steps.reduce((sum, s) => sum + s.repeat, 0)
@@ -4088,7 +3993,7 @@ const ProjectCounter = () => {
                     )}
                     {counter.sequence && counter.sequence.steps && counter.sequence.current_step >= counter.sequence.steps.length && (
                       <div className="pt-2 border-t border-green-200">
-                        <p className="text-xs text-green-700 font-medium text-center">✓ Séquence terminée</p>
+                        <p className="text-xs text-green-700 font-medium text-center">{t('ui.sequenceDone')}</p>
                       </div>
                     )}
                   </div>
@@ -4107,7 +4012,7 @@ const ProjectCounter = () => {
                     if (e.key === 'Enter') handleAddSecondaryCounter()
                     if (e.key === 'Escape') setIsAddingCounter(false)
                   }}
-                  placeholder="ex: Dim."
+                  placeholder={t('ui.phShortLabel')}
                   maxLength={20}
                   autoFocus
                   className="w-24 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
@@ -4120,7 +4025,7 @@ const ProjectCounter = () => {
                     if (e.key === 'Enter') handleAddSecondaryCounter()
                     if (e.key === 'Escape') setIsAddingCounter(false)
                   }}
-                  placeholder="Objectif (opt.)"
+                  placeholder={t('ui.phTargetOpt')}
                   min="1"
                   className="w-28 px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                 />
@@ -4128,13 +4033,13 @@ const ProjectCounter = () => {
                   onClick={handleAddSecondaryCounter}
                   className="px-2 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 transition"
                 >
-                  Ajouter
+                  {t('ui.add')}
                 </button>
                 <button
                   onClick={() => { setIsAddingCounter(false); setSecondaryLabelInput(''); setSecondaryTargetInput('') }}
                   className="text-xs text-gray-400 hover:text-gray-600"
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </button>
               </div>
             ) : secondaryCounters.length < MAX_SECONDARY_COUNTERS ? (
@@ -4143,7 +4048,7 @@ const ProjectCounter = () => {
                   onClick={() => { setSecondaryLabelInput(''); setSecondaryTargetInput(''); setIsAddingCounter(true); setEditingCounterId(null); setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
                   className="text-xs text-primary-700 flex items-center gap-1 hover:text-primary-900 transition font-medium"
                 >
-                  ＋ Ajouter un compteur secondaire
+                  {t('ui.addSecondaryCounter')}
                 </button>
                 {showSecondaryTip && (
                   <div className="absolute left-0 top-7 z-20 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 w-56 shadow-lg">
@@ -4151,14 +4056,14 @@ const ProjectCounter = () => {
                       onClick={() => { setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
                       className="absolute top-1.5 right-2 text-gray-400 hover:text-white leading-none"
                     >×</button>
-                    <p className="font-semibold mb-1">Compteur secondaire</p>
-                    <p className="text-gray-300 leading-relaxed">Suivez vos augmentations, diminutions ou tout autre comptage en parallèle — autant que nécessaire.</p>
+                    <p className="font-semibold mb-1">{t('ui.secondaryCounter')}</p>
+                    <p className="text-gray-300 leading-relaxed">{t('ui.secondaryCountersDesc')}</p>
                     <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-xs text-gray-400">Limite de {MAX_SECONDARY_COUNTERS} compteurs atteinte pour cette section</p>
+              <p className="text-xs text-gray-500">{t('ui.secondaryLimitReached', { max: MAX_SECONDARY_COUNTERS })}</p>
             )}
           </div>
         )}
@@ -4172,7 +4077,7 @@ const ProjectCounter = () => {
           onClick={() => jumpToTab('patron')}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
         >
-          Patron
+          {t('ui.pattern')}
           {(project.pattern_path || project.pattern_url) && (
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
           )}
@@ -4181,7 +4086,7 @@ const ProjectCounter = () => {
           onClick={() => jumpToTab('photos')}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
         >
-          Photos
+          {t('ui.photos')}
           {projectPhotos.length > 0 && (
             <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
           )}
@@ -4190,7 +4095,7 @@ const ProjectCounter = () => {
           onClick={() => jumpToTab('description')}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
         >
-          Détails techniques
+          {t('ui.technicalDetails')}
           {(project.technical_details || projectAllocations.length > 0) && (
             <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
           )}
@@ -4203,7 +4108,7 @@ const ProjectCounter = () => {
             <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
             </svg>
-            Grilles <span className="text-gray-400">(bêta)</span>
+            {t('ui.chartsTab')} <span className="text-gray-500">{t('ui.betaTag')}</span>
           </Link>
         )}
       </div>
@@ -4215,8 +4120,10 @@ const ProjectCounter = () => {
         <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 flex items-start gap-3">
           <div className="w-6 h-6 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
           <div>
-            <p className="text-sm font-medium text-primary-900">Sur quelle partie travaillez-vous ?</p>
-            <p className="text-xs text-primary-700 mt-0.5">Sélectionnez une section ci-dessous, puis appuyez sur <strong>+</strong> à chaque rang terminé.</p>
+            <p className="text-sm font-medium text-primary-900">{t('ui.whichPartQuestion')}</p>
+            <p className="text-xs text-primary-700 mt-0.5">
+              <Trans i18nKey="ui.selectSectionThenPress" ns="counter" components={[<strong key="0" />]} />
+            </p>
           </div>
         </div>
       )}
@@ -4235,7 +4142,7 @@ const ProjectCounter = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
             <h2 className="text-sm font-semibold text-gray-900">
-              Sections {sections.length > 0 && <span className="text-gray-400 font-normal">({sections.length})</span>}
+              {t('ui.sectionsTitle')} {sections.length > 0 && <span className="text-gray-400 font-normal">({sections.length})</span>}
             </h2>
           </div>
           <button
@@ -4248,7 +4155,7 @@ const ProjectCounter = () => {
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span className="hidden sm:inline">Ajouter une section</span>
+            <span className="hidden sm:inline">{t('ui.addSection')}</span>
           </button>
         </div>
 
@@ -4261,9 +4168,9 @@ const ProjectCounter = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                   </svg>
                 </div>
-                <p className="text-gray-700 font-medium mb-1 text-sm">Aucune section</p>
+                <p className="text-gray-700 font-medium mb-1 text-sm">{t('ui.noSection')}</p>
                 <p className="text-xs text-gray-400 mb-4">
-                  Divisez votre projet en parties (face, dos, manches...)
+                  {t('ui.splitProjectHint')}
                 </p>
                 <button
                   onClick={openAddSectionModal}
@@ -4272,7 +4179,7 @@ const ProjectCounter = () => {
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Créer ma première section
+                  {t('ui.createFirstSection')}
                 </button>
               </div>
             ) : (
@@ -4281,17 +4188,17 @@ const ProjectCounter = () => {
                 <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="text-gray-600">Trier par :</span>
+                      <span className="text-gray-600">{t('ui.sortBy')}</span>
                       <select
                         value={sectionsSortBy}
                         onChange={(e) => setSectionsSortBy(e.target.value)}
                         className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                       >
-                        <option value="created">Ordre personnalisé</option>
-                        <option value="name-az">Nom (A-Z)</option>
-                        <option value="progress">Progression croissante</option>
-                        <option value="progress-desc">Progression décroissante</option>
-                        <option value="status">Statut (en cours d'abord)</option>
+                        <option value="created">{t('ui.sortCustom')}</option>
+                        <option value="name-az">{t('ui.sortName')}</option>
+                        <option value="progress">{t('ui.sortProgressAsc')}</option>
+                        <option value="progress-desc">{t('ui.sortProgressDesc')}</option>
+                        <option value="status">{t('ui.sortStatus')}</option>
                       </select>
                     </div>
                   </div>
@@ -4301,10 +4208,10 @@ const ProjectCounter = () => {
               <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Nom</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Progression</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">Statut</th>
-                  <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700">Actions</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('ui.nameColumn')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('ui.progress')}</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700">{t('ui.status')}</th>
+                  <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700">{t('ui.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -4365,7 +4272,7 @@ const ProjectCounter = () => {
                                 }}
                                 className="text-xs text-primary-600 hover:text-primary-800 font-medium mt-1"
                               >
-                                {expandedDescriptions.has(section.id) ? 'Réduire' : 'Lire'}
+                                {expandedDescriptions.has(section.id) ? t('ui.collapse') : t('ui.readMore')}
                               </button>
                             )}
                           </div>
@@ -4377,7 +4284,7 @@ const ProjectCounter = () => {
                             <textarea
                               value={sectionNotesText}
                               onChange={(e) => setSectionNotesText(e.target.value)}
-                              placeholder="Notes pour cette section..."
+                              placeholder={t('ui.sectionNotesPlaceholder')}
                               className="w-full h-24 p-2 text-sm border border-gray-300 rounded resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
                             />
                             <div className="flex items-center justify-end mt-2">
@@ -4386,7 +4293,7 @@ const ProjectCounter = () => {
                                 disabled={isSavingSectionNotes}
                                 className="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 disabled:opacity-50 transition"
                               >
-                                {isSavingSectionNotes ? '...' : 'Sauvegarder'}
+                                {isSavingSectionNotes ? '...' : t('ui.saveAlt')}
                               </button>
                             </div>
                           </div>
@@ -4398,14 +4305,14 @@ const ProjectCounter = () => {
                         {section.total_rows ? (
                           <span className="text-xs text-gray-500 block mb-1">
                             {counterUnit === 'cm'
-                              ? `${Number(section.current_row || 0).toFixed(1)} / ${Number(section.total_rows).toFixed(1)} cm`
-                              : `rang ${Math.floor(section.current_row || 0)} / ${Math.floor(section.total_rows)}`}
+                              ? t('ui.cmOfTotal', { done: Number(section.current_row || 0).toFixed(1), total: Number(section.total_rows).toFixed(1) })
+                              : t('ui.rowOfTotal2', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })}
                           </span>
                         ) : section.current_row > 0 ? (
                           <span className="text-xs text-gray-500 block mb-1">
                             {counterUnit === 'cm'
-                              ? `${Number(section.current_row).toFixed(1)} cm`
-                              : `rang ${Math.floor(section.current_row)}`}
+                              ? t('ui.cmValue', { n: Number(section.current_row).toFixed(1) })
+                              : t('ui.rowValue', { n: Math.floor(section.current_row) })}
                           </span>
                         ) : null}
                         {sectionProgress !== null ? (
@@ -4423,7 +4330,7 @@ const ProjectCounter = () => {
                             </span>
                             <span className="text-xs text-gray-500 ml-2 flex items-center gap-1">
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                              {section.time_formatted || '0h 0min 0s'}
+                              {section.time_formatted || t('ui.zeroTimeLong')}
                             </span>
                           </div>
                         ) : (
@@ -4436,16 +4343,16 @@ const ProjectCounter = () => {
                         {isCompleted ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                            Terminée
+                            {t('ui.doneF')}
                           </span>
                         ) : isActive ? (
                           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary-600 inline-block flex-shrink-0" />
-                            En cours
+                            {t('ui.inProgress')}
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                            En attente
+                            {t('ui.pending')}
                           </span>
                         )}
                       </td>
@@ -4458,14 +4365,14 @@ const ProjectCounter = () => {
                               <button
                                 onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up') }}
                                 className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
-                                title="Déplacer vers le haut"
+                                title={t('ui.moveUp')}
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
                               </button>
                               <button
                                 onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down') }}
                                 className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition disabled:opacity-30 disabled:cursor-not-allowed"
-                                title="Déplacer vers le bas"
+                                title={t('ui.moveDown')}
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                               </button>
@@ -4482,7 +4389,7 @@ const ProjectCounter = () => {
                                 ? 'bg-green-100 text-green-700 hover:bg-green-200'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                             }`}
-                            title={isCompleted ? 'Marquer comme non terminée' : 'Marquer comme terminée'}
+                            title={isCompleted ? t('ui.markSectionNotDone') : t('ui.markSectionDone')}
                           >
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                           </button>
@@ -4492,7 +4399,7 @@ const ProjectCounter = () => {
                               openEditSectionModal(section)
                             }}
                             className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition"
-                            title="Modifier"
+                            title={t('ui.edit')}
                           >
                             ✏️
                           </button>
@@ -4502,7 +4409,7 @@ const ProjectCounter = () => {
                               handleDeleteSection(section)
                             }}
                             className="p-1.5 bg-gray-100 text-red-600 hover:bg-red-50 rounded transition"
-                            title="Supprimer"
+                            title={t('ui.delete')}
                           >
                             🗑️
                           </button>
@@ -4520,12 +4427,12 @@ const ProjectCounter = () => {
                                     ? 'bg-primary-600 text-white shadow-primary-200'
                                     : 'bg-primary-50 text-primary-700 hover:bg-primary-100 border border-primary-200'
                               }`}
-                              title={expandedNotesSection === section.id ? 'Fermer les notes' : section.notes ? 'Voir/modifier les notes' : 'Ajouter des notes'}
+                              title={expandedNotesSection === section.id ? t('ui.closeNotes') : section.notes ? t('ui.viewEditNotes') : t('ui.addNotes')}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                               </svg>
-                              <span className="text-xs font-semibold">Notes</span>
+                              <span className="text-xs font-semibold">{t('ui.notes')}</span>
                             </button>
                           </div>
                         </div>
@@ -4596,11 +4503,11 @@ const ProjectCounter = () => {
                             <span className="text-xs text-gray-400">
                               {section.total_rows
                                 ? counterUnit === 'cm'
-                                  ? `${Number(section.current_row || 0).toFixed(1)} / ${Number(section.total_rows).toFixed(1)} cm`
-                                  : `rang ${Math.floor(section.current_row || 0)} / ${Math.floor(section.total_rows)}`
+                                  ? t('ui.cmOfTotal', { done: Number(section.current_row || 0).toFixed(1), total: Number(section.total_rows).toFixed(1) })
+                                  : t('ui.rowOfTotal2', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })
                                 : counterUnit === 'cm'
-                                  ? `${Number(section.current_row).toFixed(1)} cm`
-                                  : `rang ${Math.floor(section.current_row)}`}
+                                  ? t('ui.cmValue', { n: Number(section.current_row).toFixed(1) })
+                                  : t('ui.rowValue', { n: Math.floor(section.current_row) })}
                             </span>
                           )}
                         </div>
@@ -4610,14 +4517,14 @@ const ProjectCounter = () => {
                           <button
                             onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'up') }}
                             className="p-1.5 text-gray-500 hover:bg-gray-100 rounded transition"
-                            title="Déplacer vers le haut"
+                            title={t('ui.moveUp')}
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" /></svg>
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); moveSection(section.id, 'down') }}
                             className="p-1.5 text-gray-500 hover:bg-gray-100 rounded transition"
-                            title="Déplacer vers le bas"
+                            title={t('ui.moveDown')}
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                           </button>
@@ -4640,7 +4547,7 @@ const ProjectCounter = () => {
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span className="text-xs font-semibold">Notes</span>
+                        <span className="text-xs font-semibold">{t('ui.notes')}</span>
                       </button>
                       <span className="text-gray-400 p-1">
                         {isExpanded ? '▾' : '▸'}
@@ -4663,7 +4570,7 @@ const ProjectCounter = () => {
                                 onClick={() => toggleDescriptionExpansion(section.id)}
                                 className="text-sm text-primary-600 hover:text-primary-800 font-medium mt-1"
                               >
-                                {expandedDescriptions.has(section.id) ? 'Réduire' : 'Lire'}
+                                {expandedDescriptions.has(section.id) ? t('ui.collapse') : t('ui.readMore')}
                               </button>
                             )}
                           </div>
@@ -4674,16 +4581,16 @@ const ProjectCounter = () => {
                           {isCompleted ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                              Terminée
+                              {t('ui.doneF')}
                             </span>
                           ) : isActive ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
                               <span className="w-1.5 h-1.5 rounded-full bg-primary-600 inline-block flex-shrink-0" />
-                              En cours
+                              {t('ui.inProgress')}
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                              En attente
+                              {t('ui.pending')}
                             </span>
                           )}
                         </div>
@@ -4692,7 +4599,7 @@ const ProjectCounter = () => {
                         {sectionProgress !== null && (
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm text-gray-600">Progression</span>
+                              <span className="text-sm text-gray-600">{t('ui.progress')}</span>
                               <span className="text-sm font-medium text-gray-900">{sectionProgress}%</span>
                             </div>
                             <div className="bg-gray-200 rounded-full h-2.5 overflow-hidden">
@@ -4708,7 +4615,7 @@ const ProjectCounter = () => {
 
                         {/* Temps */}
                         <div className="text-sm text-gray-600">
-                          ⏱️ {section.time_formatted || '0h 0min 0s'}
+                          ⏱️ {section.time_formatted || t('ui.zeroTimeLong')}
                         </div>
 
                         {/* Actions */}
@@ -4724,7 +4631,7 @@ const ProjectCounter = () => {
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
                           >
-                            {isCompleted ? 'Terminée' : '✓ Marquer terminée'}
+                            {isCompleted ? t('ui.sectionDone') : t('ui.markSectionDoneCheck')}
                           </button>
                           {/* Menu "..." pour modifier/supprimer */}
                           <div className="relative">
@@ -4761,7 +4668,7 @@ const ProjectCounter = () => {
                                     className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition"
                                   >
                                     <span>✏️</span>
-                                    <span>Modifier</span>
+                                    <span>{t('ui.edit')}</span>
                                   </button>
                                   <button
                                     onClick={(e) => {
@@ -4772,7 +4679,7 @@ const ProjectCounter = () => {
                                     className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 border-t border-gray-100 transition"
                                   >
                                     <span>🗑️</span>
-                                    <span>Supprimer</span>
+                                    <span>{t('ui.delete')}</span>
                                   </button>
                                 </div>
                               </>
@@ -4789,7 +4696,7 @@ const ProjectCounter = () => {
                         <textarea
                           value={sectionNotesText}
                           onChange={(e) => setSectionNotesText(e.target.value)}
-                          placeholder="Notes pour cette section..."
+                          placeholder={t('ui.sectionNotesPlaceholder')}
                           className="w-full h-28 p-2 text-sm border border-gray-300 rounded resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
                         />
                         <div className="flex items-center justify-end mt-2">
@@ -4798,7 +4705,7 @@ const ProjectCounter = () => {
                             disabled={isSavingSectionNotes}
                             className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
                           >
-                            {isSavingSectionNotes ? '...' : 'Sauvegarder'}
+                            {isSavingSectionNotes ? '...' : t('ui.saveAlt')}
                           </button>
                         </div>
                       </div>
@@ -4826,7 +4733,7 @@ const ProjectCounter = () => {
                   : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              Patron
+              {t('ui.pattern')}
               {(project.pattern_path || project.pattern_url) && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500 align-middle" />
               )}
@@ -4839,7 +4746,7 @@ const ProjectCounter = () => {
                   : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              Photos
+              {t('ui.photos')}
               {projectPhotos.length > 0 && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
@@ -4852,7 +4759,7 @@ const ProjectCounter = () => {
                   : 'bg-gray-50 text-gray-500 hover:text-gray-800 hover:bg-white'
               }`}
             >
-              Détails techniques
+              {t('ui.technicalDetails')}
               {(project.technical_details || projectAllocations.length > 0) && (
                 <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-primary-500 align-middle" />
               )}
@@ -4872,7 +4779,7 @@ const ProjectCounter = () => {
                     <div className="mb-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h2 className="text-lg font-semibold text-gray-900">Photos</h2>
+                          <h2 className="text-lg font-semibold text-gray-900">{t('ui.photos')}</h2>
                           {photoQuota && !photoQuota.unlimited && (
                             <p className="text-xs text-gray-400">{photoQuota.used} / {photoQuota.limit}</p>
                           )}
@@ -4885,7 +4792,7 @@ const ProjectCounter = () => {
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                           </svg>
-                          Ajouter
+                          {t('ui.add')}
                         </button>
                       </div>
                     </div>
@@ -4900,16 +4807,16 @@ const ProjectCounter = () => {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-gray-700">Aucune photo pour ce projet</p>
+                  <p className="text-sm font-medium text-gray-700">{t('ui.noPhotos')}</p>
                   {credits && credits.total_available > 0 ? (
-                    <p className="text-xs text-gray-500 mt-0.5">Ajoutez une photo pour l'embellir avec le Studio IA</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t('ui.addPhotoForStudio')}</p>
                   ) : (
-                    <p className="text-xs text-gray-500 mt-0.5">Ajoutez des photos pour garder une trace de votre avancement</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t('ui.noPhotosHint')}</p>
                   )}
                 </div>
                 {photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit ? (
                   <a href="/subscription" className="mt-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm">
-                    Passer en PLUS pour plus de photos
+                    {t('ui.upgradeForMorePhotos')}
                   </a>
                 ) : (
                   <button
@@ -4919,7 +4826,7 @@ const ProjectCounter = () => {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    Ajouter une photo
+                    {t('ui.addPhoto')}
                   </button>
                 )}
               </div>
@@ -4943,7 +4850,7 @@ const ProjectCounter = () => {
                         {photoVariations.length > 0 && (
                           <div className="p-6 bg-gradient-to-br from-primary-50 to-pink-50">
                             <h4 className="text-lg font-bold text-primary-900 mb-4 flex items-center gap-2">
-                              Studio photo
+                              {t('ui.photoStudio')}
                               <span className="px-2 py-0.5 bg-primary-600 text-white text-xs rounded-full">
                                 {photoVariations.length}
                               </span>
@@ -4978,7 +4885,7 @@ const ProjectCounter = () => {
                                           setLightboxImage(`${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`)
                                         }}
                                         className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
-                                        title="Voir en grand"
+                                        title={t('ui.viewLarge')}
                                       >
                                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -4996,7 +4903,7 @@ const ProjectCounter = () => {
                                           link.click()
                                         }}
                                         className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
-                                        title="Télécharger"
+                                        title={t('ui.download')}
                                       >
                                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -5011,7 +4918,7 @@ const ProjectCounter = () => {
                                             setOpenMenuId(openMenuId === variation.id ? null : variation.id)
                                           }}
                                           className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
-                                          title="Plus d'actions"
+                                          title={t('ui.moreActions')}
                                         >
                                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
@@ -5027,18 +4934,18 @@ const ProjectCounter = () => {
                                                 e.stopPropagation()
                                                 try {
                                                   await api.put(`/projects/${project.id}/set-cover-photo`, { photo_id: variation.id })
-                                                  alert('Photo de couverture mise à jour !')
+                                                  alert(t('ui.coverUpdated'))
                                                   fetchProject()
                                                   setOpenMenuId(null)
                                                 } catch (err) {
                                                   console.error('Erreur:', err)
-                                                  alert('Erreur lors de la mise à jour')
+                                                  alert(t('ui.updateFailed'))
                                                 }
                                               }}
                                               className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
                                             >
                                               <span className="text-lg">📸</span>
-                                              <span>Définir comme couverture</span>
+                                              <span>{t('ui.setAsCover')}</span>
                                             </button>
 
                                             {/* Divider */}
@@ -5059,7 +4966,7 @@ const ProjectCounter = () => {
                                                       const file = new File([blob], `${variation.item_name || 'photo'}.jpg`, { type: 'image/jpeg' })
                                                       await navigator.share({
                                                         files: [file],
-                                                        title: variation.item_name || 'Ma photo tricot/crochet',
+                                                        title: variation.item_name || t('ui.myKnitPhoto'),
                                                         text: `Découvrez mon ${variation.item_name || 'ouvrage'} ! 🧶✨`
                                                       })
                                                       setOpenMenuId(null)
@@ -5075,7 +4982,7 @@ const ProjectCounter = () => {
                                                 <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                                                 </svg>
-                                                <span>Partager</span>
+                                                <span>{t('ui.share')}</span>
                                               </button>
                                             ) : (
                                               // Desktop : toutes les options individuelles
@@ -5103,7 +5010,7 @@ const ProjectCounter = () => {
                                                       setShowInstagramModal(true)
                                                     } catch (err) {
                                                       console.error('Erreur téléchargement Instagram:', err)
-                                                      alert('Erreur lors du téléchargement de l\'image')
+                                                      alert(t('ui.imageDownloadFailed'))
                                                     }
                                                     setOpenMenuId(null)
                                                   }}
@@ -5122,7 +5029,7 @@ const ProjectCounter = () => {
                                                     <rect width="24" height="24" rx="5.4" fill="url(#instagram-gradient)"/>
                                                     <path d="M12 8.75a3.25 3.25 0 100 6.5 3.25 3.25 0 000-6.5zm0 5.36a2.11 2.11 0 110-4.22 2.11 2.11 0 010 4.22zM16.5 8.58a.76.76 0 11-1.52 0 .76.76 0 011.52 0zm2.16.76c-.05-1.06-.3-2-1.1-2.8-.8-.8-1.74-1.05-2.8-1.1C13.68 5.4 10.32 5.4 9.24 5.44c-1.06.05-2 .3-2.8 1.1-.8.8-1.05 1.74-1.1 2.8C5.4 10.32 5.4 13.68 5.44 14.76c.05 1.06.3 2 1.1 2.8.8.8 1.74 1.05 2.8 1.1 1.08.04 4.44.04 5.52 0 1.06-.05 2-.3 2.8-1.1.8-.8 1.05-1.74 1.1-2.8.04-1.08.04-4.44 0-5.52zM17.23 15.9c-.24.6-.7 1.06-1.3 1.3-1.02.4-3.44.31-4.57.31-1.13 0-3.55.09-4.57-.31a2.3 2.3 0 01-1.3-1.3c-.4-1.02-.31-3.44-.31-4.57 0-1.13-.09-3.55.31-4.57.24-.6.7-1.06 1.3-1.3C7.81 5.06 10.23 5.15 11.36 5.15c1.13 0 3.55-.09 4.57.31.6.24 1.06.7 1.3 1.3.4 1.02.31 3.44.31 4.57 0 1.13.09 3.55-.31 4.57z" fill="white"/>
                                                   </svg>
-                                                  <span>Instagram</span>
+                                                  <span>{t('ui.instagram')}</span>
                                                 </button>
 
                                                 {/* Pinterest */}
@@ -5140,7 +5047,7 @@ const ProjectCounter = () => {
                                                     <circle cx="12" cy="12" r="12" fill="#E60023"/>
                                                     <path d="M12.7 7.2c-2.5 0-3.8 1.8-3.8 3.3 0 .9.3 1.6.9 1.9.1 0 .2.1.3 0 0-.1.1-.4.1-.5 0-.1 0-.2 0-.3-.2-.3-.4-.7-.4-1.3 0-1.6 1.2-3.1 3.1-3.1 1.7 0 2.6 1 2.6 2.4 0 1.8-.8 3.3-2 3.3-.6 0-1.1-.5-1-1.1.2-.7.5-1.5.5-2 0-1.2-1.8-1-1.8.5 0 .4.1.7.1.7s-.5 2-.6 2.4c-.2.7 0 1.7.1 2.3 0 .1.1.1.2.1h.1c.1-.2 1-1.2 1.2-2 .1-.3.3-1.2.3-1.2.2.3.7.6 1.2.6 1.6 0 2.8-1.5 2.8-3.4 0-1.5-1.2-2.8-3-2.8z" fill="white"/>
                                                   </svg>
-                                                  <span>Pinterest</span>
+                                                  <span>{t('ui.pinterest')}</span>
                                                 </button>
 
                                                 {/* Facebook */}
@@ -5156,7 +5063,7 @@ const ProjectCounter = () => {
                                                     <circle cx="12" cy="12" r="12" fill="#1877F2"/>
                                                     <path d="M16.671 15.469l.575-3.75h-3.602V9.406c0-1.026.503-2.027 2.116-2.027h1.636V4.203S15.924 4 14.5 4c-2.973 0-4.917 1.801-4.917 5.062v2.857H6.188v3.75h3.395v9.066c.682.107 1.379.165 2.089.165.71 0 1.407-.058 2.089-.165v-9.066h3.027z" fill="white"/>
                                                   </svg>
-                                                  <span>Facebook</span>
+                                                  <span>{t('ui.facebook')}</span>
                                                 </button>
 
                                                 {/* Twitter/X */}
@@ -5173,7 +5080,7 @@ const ProjectCounter = () => {
                                                     <circle cx="12" cy="12" r="12" fill="#000000"/>
                                                     <path d="M13.355 10.874L17.866 5.5h-1.069l-3.915 4.494L9.933 5.5H6.5l4.731 6.888L6.5 18.5h1.069l4.135-4.748L14.567 18.5H18l-4.645-7.626zm-1.464 1.68l-.479-.685L7.665 6.319h1.64l3.073 4.393.479.685 3.997 5.715h-1.64l-3.262-4.658z" fill="white"/>
                                                   </svg>
-                                                  <span>Twitter / X</span>
+                                                  <span>{t('ui.twitterX')}</span>
                                                 </button>
 
                                                 {/* Copier lien */}
@@ -5183,11 +5090,11 @@ const ProjectCounter = () => {
                                                     const url = `${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`
                                                     try {
                                                       await navigator.clipboard.writeText(url)
-                                                      alert('Lien copié !')
+                                                      alert(t('ui.linkCopied'))
                                                       setOpenMenuId(null)
                                                     } catch (err) {
                                                       console.error('Erreur copie:', err)
-                                                      alert('Impossible de copier le lien')
+                                                      alert(t('ui.copyLinkFailed'))
                                                     }
                                                   }}
                                                   className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"
@@ -5196,7 +5103,7 @@ const ProjectCounter = () => {
                                                     <circle cx="12" cy="12" r="12" fill="#6B7280"/>
                                                     <path d="M13.544 10.456a4.368 4.368 0 00-6.176 0l-1.5 1.5a4.368 4.368 0 006.176 6.176l.834-.834m2.666-10.842a4.368 4.368 0 016.176 0l1.5 1.5a4.368 4.368 0 01-6.176 6.176l-.834-.834" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                                                   </svg>
-                                                  <span>Copier le lien</span>
+                                                  <span>{t('ui.copyLink')}</span>
                                                 </button>
                                               </>
                                             )}
@@ -5214,7 +5121,7 @@ const ProjectCounter = () => {
                                               className="w-full px-4 py-2.5 text-left text-sm text-red-700 hover:bg-red-50 flex items-center gap-3 transition-colors font-medium"
                                             >
                                               <span className="text-lg">🗑️</span>
-                                              <span>Supprimer</span>
+                                              <span>{t('ui.delete')}</span>
                                             </button>
                                           </div>
                                         )}
@@ -5247,13 +5154,13 @@ const ProjectCounter = () => {
                               />
                               {photoVariations.length > 0 && (
                                 <div className="absolute top-2 left-2 bg-gray-900 bg-opacity-90 text-white text-xs px-2 py-1 rounded font-medium">
-                                  Photo originale
+                                  {t('ui.originalPhoto')}
                                 </div>
                               )}
                               {/* Overlay "Voir en grand" au survol */}
                               <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                 <span className="text-white font-bold text-xs">
-                                  🔍 Voir
+                                  {t('ui.viewMagnifier')}
                                 </span>
                               </div>
                               {/* Boutons actions */}
@@ -5270,7 +5177,7 @@ const ProjectCounter = () => {
                                         }
                                       })
 
-                                      if (!response.ok) throw new Error('Erreur téléchargement')
+                                      if (!response.ok) throw new Error(t('ui.downloadError'))
 
                                       const blob = await response.blob()
                                       const url = window.URL.createObjectURL(blob)
@@ -5283,11 +5190,11 @@ const ProjectCounter = () => {
                                       window.URL.revokeObjectURL(url)
                                     } catch (err) {
                                       console.error('Erreur:', err)
-                                      alert('Erreur lors du téléchargement')
+                                      alert(t('ui.downloadFailed'))
                                     }
                                   }}
                                   className="flex-1 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
-                                  title="Télécharger cette photo"
+                                  title={t('ui.downloadThisPhoto')}
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -5300,7 +5207,7 @@ const ProjectCounter = () => {
                                     handleDeletePhoto(originalPhoto.id)
                                   }}
                                   className="flex-1 bg-white bg-opacity-90 hover:bg-red-50 hover:text-red-500 text-gray-500 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
-                                  title="Supprimer cette photo"
+                                  title={t('ui.deleteThisPhoto')}
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -5317,7 +5224,7 @@ const ProjectCounter = () => {
                                 <p className="text-sm text-gray-600 mb-2">{originalPhoto.description}</p>
                               )}
                               <p className="text-xs text-gray-500 mb-3">
-                                Ajoutée le {new Date(originalPhoto.created_at).toLocaleDateString('fr-FR')}
+                                {t('ui.addedOn', { date: new Date(originalPhoto.created_at).toLocaleDateString(i18n.language) })}
                               </p>
 
                               {photoVariations.length === 0 ? (
@@ -5329,11 +5236,11 @@ const ProjectCounter = () => {
                                     <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                                     </svg>
-                                    Mettre en valeur
+                                    {t('ui.enhance')}
                                   </button>
                                   {credits && credits.total_available > 0 && (
                                     <span className="text-xs text-primary-600 font-medium">
-                                      {credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} disponible{credits.total_available > 1 ? 's' : ''}
+                                      {t('ui.creditsAvailable', { count: credits.total_available })}
                                     </span>
                                   )}
                                 </div>
@@ -5345,7 +5252,7 @@ const ProjectCounter = () => {
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                   </svg>
-                                  Nouvelle variation
+                                  {t('ui.newVariation')}
                                 </button>
                               )}
                             </div>
@@ -5383,13 +5290,13 @@ const ProjectCounter = () => {
                         // Texte existant
                         <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Texte du patron</h3>
+                            <h3 className="text-lg font-semibold text-gray-900">{t('ui.patternText')}</h3>
                             <button
                               onClick={handleOpenPatternTextModal}
                               className="px-4 py-2 text-primary-600 border border-primary-600 rounded-lg font-medium hover:bg-primary-50 transition text-sm flex items-center gap-1.5"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                              Modifier le texte
+                              {t('ui.editText')}
                             </button>
                           </div>
                           <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
@@ -5405,16 +5312,16 @@ const ProjectCounter = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                           </div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            Ajouter le texte du patron
+                            {t('ui.addPatternText')}
                           </h3>
                           <p className="text-gray-600 text-sm mb-4">
-                            Le site ne s'affiche pas ? Copiez-collez le texte du patron ici pour l'avoir toujours sous les yeux.
+                            {t('ui.siteNotDisplaying')}
                           </p>
                           <button
                             onClick={handleOpenPatternTextModal}
                             className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
                           >
-                            Ajouter le texte
+                            {t('ui.addText')}
                           </button>
                         </div>
                       ) : null}
@@ -5422,7 +5329,7 @@ const ProjectCounter = () => {
                   ) : project.pattern_text ? (
                     // Patron texte seul (sans URL ni fichier)
                     <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Patron</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('ui.pattern')}</h3>
                       <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
                         <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                           {project.pattern_text}
@@ -5435,7 +5342,7 @@ const ProjectCounter = () => {
                       <img
                         key={project.pattern_path}
                         src={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`}
-                        alt="Patron"
+                        alt={t('ui.altPattern')}
                         className="w-full h-auto cursor-zoom-in hover:opacity-95 transition"
                         onClick={() => setLightboxImage({
                           src: `${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`,
@@ -5451,7 +5358,7 @@ const ProjectCounter = () => {
                           className="text-sm text-gray-600 hover:text-primary-600 transition font-medium flex items-center gap-1.5"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-                          Ouvrir en plein écran
+                          {t('ui.openFullscreen')}
                         </button>
                       </div>
                     </div>
@@ -5474,7 +5381,7 @@ const ProjectCounter = () => {
                     className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    Modifier
+                    {t('ui.edit')}
                   </button>
                 </div>
               </div>
@@ -5493,10 +5400,10 @@ const ProjectCounter = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-primary-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                   </div>
                   <p className="text-gray-700 font-medium mb-1">
-                    Choisir depuis ma bibliothèque
+                    {t('ui.chooseFromLibrary')}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Utilisez un patron déjà sauvegardé
+                    {t('ui.useSavedPattern')}
                   </p>
                 </button>
 
@@ -5510,10 +5417,10 @@ const ProjectCounter = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                   </div>
                   <p className="text-gray-700 font-medium mb-1">
-                    {project?.pattern_text ? 'Modifier le texte du patron' : 'Ajouter le texte du patron'}
+                    {project?.pattern_text ? t('ui.editPatternTextBtn') : t('ui.addPatternTextBtn')}
                   </p>
                   <p className="text-xs text-gray-500">
-                    Coller ou saisir le texte du patron
+                    {t('ui.pasteOrTypePattern')}
                   </p>
                 </button>
 
@@ -5524,10 +5431,10 @@ const ProjectCounter = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                     </div>
                     <p className="text-gray-700 font-medium text-center mb-1">
-                      Importer un nouveau fichier
+                      {t('ui.importNewFile')}
                     </p>
                     <p className="text-xs text-gray-500 text-center">
-                      PDF, JPG, PNG, WEBP
+                      {t('ui.pdfJpgPngWebp')}
                     </p>
                   </div>
                   <input
@@ -5549,17 +5456,17 @@ const ProjectCounter = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                   </div>
                   <p className="text-gray-700 font-medium mb-1">
-                    Lien vers une page web
+                    {t('ui.linkToWebPage')}
                   </p>
                   <p className="text-xs text-gray-500">
-                    YouTube, Pinterest, blog...
+                    {t('ui.sourcesHint3')}
                   </p>
                 </button>
 
                 {uploadingPattern && (
                   <p className="text-sm text-gray-500 text-center flex items-center justify-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-                    Envoi en cours...
+                    {t('ui.sending')}
                   </p>
                 )}
               </div>
@@ -5586,24 +5493,24 @@ const ProjectCounter = () => {
                 return (
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold text-gray-900">Détails techniques</h2>
+                      <h2 className="text-lg font-semibold text-gray-900">{t('ui.technicalDetails')}</h2>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setShowStashPanel(true)}
                           className="px-3 py-1.5 bg-white text-gray-600 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-300 transition text-sm flex items-center gap-1.5"
-                          title="Associer des pelotes de ton stock à ce projet"
+                          title={t('ui.linkStashHint')}
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
                           </svg>
-                          Mon stock
+                          {t('ui.myStash')}
                         </button>
                         <button
                           onClick={openTechnicalDetailsModal}
                           className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                          {hasDetails ? 'Modifier' : 'Ajouter'}
+                          {hasDetails ? t('ui.edit2') : t('ui.add2')}
                         </button>
                       </div>
                     </div>
@@ -5614,7 +5521,7 @@ const ProjectCounter = () => {
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
                           </svg>
-                          Laines de mon stock
+                          {t('ui.yarnsFromStash')}
                         </h3>
                         <div className="space-y-2">
                           {projectAllocations.map(a => (
@@ -5629,8 +5536,8 @@ const ProjectCounter = () => {
                                 {a.color_name && <p className="text-xs text-gray-500 truncate">{a.color_name}</p>}
                               </div>
                               <div className="text-right flex-shrink-0">
-                                <p className="text-sm font-semibold text-gray-700">{a.quantity_reserved} pelote{a.quantity_reserved > 1 ? 's' : ''}</p>
-                                <p className="text-xs text-gray-400">{Math.round(a.total_reserved_g)} g · {Math.round(a.total_reserved_m)} m</p>
+                                <p className="text-sm font-semibold text-gray-700">{t('ui.ballsCount', { count: a.quantity_reserved })}</p>
+                                <p className="text-xs text-gray-400">{t('ui.gramsAndMeters', { g: Math.round(a.total_reserved_g), m: Math.round(a.total_reserved_m) })}</p>
                               </div>
                             </div>
                           ))}
@@ -5664,7 +5571,7 @@ const ProjectCounter = () => {
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M2 9h20M2 15h20" opacity="0.4"/></svg>
                                     <span className="font-semibold text-primary-700 text-sm">
-                                      {project.technique === 'tricot' ? 'Laine' : 'Fil'}
+                                      {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
                                     </span>
                                   </div>
                                   <div className="grid gap-2">
@@ -5698,7 +5605,7 @@ const ProjectCounter = () => {
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-sage-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
                                     <span className="font-semibold text-sage-700 text-sm">
-                                      {project.technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
+                                      {project.technique === 'tricot' ? t('ui.needles') : t('ui.hooks')}
                                     </span>
                                   </div>
                                   <div className="space-y-1.5">
@@ -5728,13 +5635,13 @@ const ProjectCounter = () => {
                                 <div className="bg-gradient-to-br from-primary-50 to-primary-200 rounded-lg p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="12"/><line x1="15" y1="10" x2="15" y2="14"/><line x1="19" y1="10" x2="19" y2="12"/></svg>
-                                    <span className="font-semibold text-primary-700 text-sm">Échantillon</span>
+                                    <span className="font-semibold text-primary-700 text-sm">{t('ui.gaugeLabel')}</span>
                                   </div>
                                   <div className="bg-white/70 rounded px-3 py-2">
                                     <div className="text-sm text-gray-900 font-medium">
-                                      {technicalDetails.gauge.stitches && <span>{technicalDetails.gauge.stitches} mailles</span>}
+                                      {technicalDetails.gauge.stitches && <span>{t('ui.stitchesCount', { count: technicalDetails.gauge.stitches })}</span>}
                                       {technicalDetails.gauge.stitches && technicalDetails.gauge.rows && <span> × </span>}
-                                      {technicalDetails.gauge.rows && <span>{technicalDetails.gauge.rows} rangs</span>}
+                                      {technicalDetails.gauge.rows && <span>{t('ui.rowsCount', { count: technicalDetails.gauge.rows })}</span>}
                                     </div>
                                     {technicalDetails.gauge.dimensions && (
                                       <div className="text-xs text-gray-600 mt-0.5">
@@ -5759,13 +5666,13 @@ const ProjectCounter = () => {
                           <div className="flex justify-center mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                           </div>
-                          <p className="text-gray-600 mb-4">Aucun détail technique pour ce projet</p>
+                          <p className="text-gray-600 mb-4">{t('ui.noTechnicalDetails')}</p>
                           <button
                             onClick={openTechnicalDetailsModal}
                             className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition flex items-center gap-2 mx-auto"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            Ajouter les détails techniques
+                            {t('ui.addTechnicalDetails')}
                           </button>
                         </div>
                       )
@@ -5787,9 +5694,9 @@ const ProjectCounter = () => {
                 <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Ma bibliothèque de patrons</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('ui.myPatternLibrary')}</h2>
               </div>
-              <p className="text-sm text-gray-500 ml-11">Sélectionnez un patron que vous avez déjà sauvegardé</p>
+              <p className="text-sm text-gray-500 ml-11">{t('ui.selectSavedPattern')}</p>
             </div>
 
             <div className="p-6 overflow-y-auto flex-1">
@@ -5802,8 +5709,8 @@ const ProjectCounter = () => {
                   <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                   </div>
-                  <p className="text-gray-700 font-medium mb-1">Bibliothèque vide</p>
-                  <p className="text-sm text-gray-500 mb-4">Ajoutez des patrons pour les retrouver ici</p>
+                  <p className="text-gray-700 font-medium mb-1">{t('ui.emptyLibrary')}</p>
+                  <p className="text-sm text-gray-500 mb-4">{t('ui.emptyLibraryHint')}</p>
                   <button
                     onClick={() => {
                       setShowPatternLibraryModal(false)
@@ -5811,7 +5718,7 @@ const ProjectCounter = () => {
                     }}
                     className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                   >
-                    Aller à la bibliothèque →
+                    {t('ui.goToLibraryArrow')}
                   </button>
                 </div>
               ) : (
@@ -5861,7 +5768,7 @@ const ProjectCounter = () => {
                 onClick={() => setShowPatternLibraryModal(false)}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition text-sm font-medium"
               >
-                Annuler
+                {t('ui.cancel')}
               </button>
             </div>
           </div>
@@ -5876,18 +5783,18 @@ const ProjectCounter = () => {
                 <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">Lien vers le patron</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t('ui.patternLink')}</h2>
               </div>
-              <p className="text-sm text-gray-500 ml-11">Collez l'URL ou cherchez directement sur Google ou Ravelry</p>
+              <p className="text-sm text-gray-500 ml-11">{t('ui.pasteUrlOrSearch')}</p>
             </div>
 
             <div className="p-6 space-y-5">
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                <p className="text-xs font-semibold text-gray-700 mb-1.5">Workflow rapide</p>
+                <p className="text-xs font-semibold text-gray-700 mb-1.5">{t('ui.quickWorkflow')}</p>
                 <ol className="text-xs text-gray-500 ml-3 list-decimal space-y-1">
-                  <li>Cherchez votre patron via Google ou Ravelry ci-dessous</li>
-                  <li>Copiez l'URL du patron trouvé</li>
-                  <li>Revenez ici et collez dans le champ</li>
+                  <li>{t('ui.searchPatternBelow')}</li>
+                  <li>{t('ui.copyFoundUrl')}</li>
+                  <li>{t('ui.comeBackAndPaste')}</li>
                 </ol>
               </div>
 
@@ -5895,7 +5802,7 @@ const ProjectCounter = () => {
                 type="url"
                 value={patternUrl}
                 onChange={(e) => setPatternUrl(e.target.value)}
-                placeholder="https://example.com/mon-patron"
+                placeholder={t('ui.phPatternUrl')}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                 autoFocus
               />
@@ -5905,7 +5812,7 @@ const ProjectCounter = () => {
                   <div className="w-full border-t border-gray-200"></div>
                 </div>
                 <div className="relative flex justify-center text-xs">
-                  <span className="px-2 bg-white text-gray-400">ou chercher un patron</span>
+                  <span className="px-2 bg-white text-gray-500">{t('ui.orSearchPattern')}</span>
                 </div>
               </div>
 
@@ -5914,7 +5821,7 @@ const ProjectCounter = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Ex: pull irlandais, bonnet simple..."
+                  placeholder={t('ui.phSearchPattern')}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                 />
                 <div className="grid grid-cols-2 gap-2">
@@ -5928,7 +5835,7 @@ const ProjectCounter = () => {
                     className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    Google
+                    {t('ui.google')}
                   </button>
                   <button
                     onClick={() => {
@@ -5940,7 +5847,7 @@ const ProjectCounter = () => {
                     className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    Ravelry
+                    {t('ui.ravelry')}
                   </button>
                 </div>
               </div>
@@ -5955,14 +5862,14 @@ const ProjectCounter = () => {
                 }}
                 className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition text-sm font-medium"
               >
-                Annuler
+                {t('ui.cancel')}
               </button>
               <button
                 onClick={handlePatternUrlSubmit}
                 disabled={uploadingPattern || !patternUrl.trim()}
                 className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition disabled:opacity-50 text-sm"
               >
-                {uploadingPattern ? 'Enregistrement...' : 'Enregistrer'}
+                {uploadingPattern ? t('ui.savingDots') : t('ui.save')}
               </button>
             </div>
           </div>
@@ -5973,8 +5880,8 @@ const ProjectCounter = () => {
       {showPatternEditChoiceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full p-6">
-            <h2 className="text-lg font-bold mb-1 text-gray-900">Modifier le patron</h2>
-            <p className="text-sm text-gray-500 mb-5">Choisissez comment vous souhaitez modifier votre patron</p>
+            <h2 className="text-lg font-bold mb-1 text-gray-900">{t('ui.editPattern')}</h2>
+            <p className="text-sm text-gray-500 mb-5">{t('ui.editPatternHint')}</p>
 
             <div className="space-y-2.5">
               {/* Option 1: Bibliothèque */}
@@ -5987,8 +5894,8 @@ const ProjectCounter = () => {
                   <svg className="w-5 h-5 text-primary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">Choisir depuis ma bibliothèque</p>
-                  <p className="text-xs text-gray-500">Utilisez un patron déjà sauvegardé</p>
+                  <p className="font-medium text-gray-900 text-sm">{t('ui.chooseFromLibrary')}</p>
+                  <p className="text-xs text-gray-500">{t('ui.useSavedPattern')}</p>
                 </div>
               </button>
 
@@ -6002,8 +5909,8 @@ const ProjectCounter = () => {
                   <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">Modifier le texte du patron</p>
-                  <p className="text-xs text-gray-500">Coller ou saisir le texte du patron</p>
+                  <p className="font-medium text-gray-900 text-sm">{t('ui.editPatternText')}</p>
+                  <p className="text-xs text-gray-500">{t('ui.pasteOrTypePattern')}</p>
                 </div>
               </button>
 
@@ -6014,8 +5921,8 @@ const ProjectCounter = () => {
                     <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 text-sm">Importer un fichier</p>
-                    <p className="text-xs text-gray-500">PDF, JPG, PNG, WEBP</p>
+                    <p className="font-medium text-gray-900 text-sm">{t('ui.importFile')}</p>
+                    <p className="text-xs text-gray-500">{t('ui.pdfJpgPngWebp')}</p>
                   </div>
                 </div>
                 <input type="file" accept="image/*,.pdf,application/pdf" onChange={(e) => { setShowPatternEditChoiceModal(false); handlePatternUpload(e) }} className="hidden" disabled={uploadingPattern} />
@@ -6031,8 +5938,8 @@ const ProjectCounter = () => {
                   <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">Lien vers une page web</p>
-                  <p className="text-xs text-gray-500">YouTube, Pinterest, blog...</p>
+                  <p className="font-medium text-gray-900 text-sm">{t('ui.linkToWebPage')}</p>
+                  <p className="text-xs text-gray-500">{t('ui.sourcesHint')}</p>
                 </div>
               </button>
             </div>
@@ -6042,7 +5949,7 @@ const ProjectCounter = () => {
                 onClick={() => setShowPatternEditChoiceModal(false)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
               >
-                Annuler
+                {t('ui.cancel')}
               </button>
             </div>
           </div>
@@ -6055,11 +5962,11 @@ const ProjectCounter = () => {
           <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 flex-shrink-0">
               <h2 className="text-lg font-bold text-gray-900">
-                {project.pattern_text ? 'Modifier le patron texte' : 'Créer un patron texte'}
+                {project.pattern_text ? t('ui.editPatternText') : t('ui.createPatternText')}
               </h2>
               <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3 mt-3">
                 <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <p className="text-sm text-blue-800"><strong>Astuce :</strong> Vous pouvez copier-coller le texte de votre patron ici</p>
+                <p className="text-sm text-blue-800"><strong>{t('ui.tip')}</strong> {t('ui.pastePatternTip')}</p>
               </div>
             </div>
 
@@ -6068,13 +5975,7 @@ const ProjectCounter = () => {
                 value={patternTextEdit}
                 onChange={(e) => setPatternTextEdit(e.target.value)}
                 rows={20}
-                placeholder="Collez ici le texte de votre patron...
-
-Exemple :
-Rang 1 : 6 mailles serrées dans un cercle magique
-Rang 2 : 2ms dans chaque maille (12)
-Rang 3 : *1ms, aug* x6 (18)
-..."
+                placeholder={t('ui.phPatternTextArea')}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                 autoFocus
               />
@@ -6090,14 +5991,14 @@ Rang 3 : *1ms, aug* x6 (18)
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                   disabled={savingPatternText}
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </button>
                 <button
                   onClick={handleSavePatternText}
                   disabled={savingPatternText || !patternTextEdit.trim()}
                   className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingPatternText ? 'Enregistrement...' : 'Enregistrer'}
+                  {savingPatternText ? t('ui.savingDots') : t('ui.save')}
                 </button>
               </div>
             </div>
@@ -6109,8 +6010,8 @@ Rang 3 : *1ms, aug* x6 (18)
       {showPhotoUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-bold mb-1 text-gray-900">Ajouter une photo</h2>
-            <p className="text-sm text-gray-500 mb-5">Sélectionnez une photo de votre projet</p>
+            <h2 className="text-lg font-bold mb-1 text-gray-900">{t('ui.addPhoto')}</h2>
+            <p className="text-sm text-gray-500 mb-5">{t('ui.selectProjectPhoto')}</p>
 
             {/* Inputs cachés */}
             <input ref={(el) => (window.cameraInputCounter = el)} type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} className="hidden" disabled={uploadingPhoto} />
@@ -6125,7 +6026,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   className="flex flex-col items-center justify-center gap-3 p-6 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition disabled:opacity-50"
                 >
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  <span className="font-semibold text-sm">Prendre une photo</span>
+                  <span className="font-semibold text-sm">{t('ui.takePhoto')}</span>
                 </button>
               )}
               <button
@@ -6135,16 +6036,16 @@ Rang 3 : *1ms, aug* x6 (18)
                 className="flex flex-col items-center justify-center gap-3 p-6 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition disabled:opacity-50"
               >
                 <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                <span className="font-semibold text-sm">Choisir depuis la galerie</span>
+                <span className="font-semibold text-sm">{t('ui.chooseFromGallery')}</span>
               </button>
             </div>
 
-            <p className="text-xs text-gray-400 text-center mb-4">JPG, PNG, WEBP</p>
+            <p className="text-xs text-gray-500 text-center mb-4">{t('ui.jpgPngWebp')}</p>
 
             {uploadingPhoto && (
               <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
                 <div className="w-4 h-4 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
-                Upload en cours...
+                {t('ui.uploading')}
               </div>
             )}
 
@@ -6154,7 +6055,7 @@ Rang 3 : *1ms, aug* x6 (18)
                 disabled={uploadingPhoto}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
               >
-                Annuler
+                {t('ui.cancel')}
               </button>
             </div>
           </div>
@@ -6166,8 +6067,8 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full shadow-xl">
             <div className="px-6 pt-6 pb-2">
-              <h2 className="text-lg font-bold text-gray-900">Embellir cette photo ?</h2>
-              <p className="text-sm text-gray-500 mt-1">Fond et éclairage retravaillés — votre ouvrage reste intact.</p>
+              <h2 className="text-lg font-bold text-gray-900">{t('ui.beautifyThisPhoto')}</h2>
+              <p className="text-sm text-gray-500 mt-1">{t('ui.photoEnhanceNote')}</p>
             </div>
             <div className="px-6 pb-6 flex flex-col gap-4">
               <div className="rounded-xl overflow-hidden bg-gray-100 max-h-48 flex items-center justify-center">
@@ -6183,27 +6084,27 @@ Rang 3 : *1ms, aug* x6 (18)
                 if (isFree && credits.total_available > 0) return (
                   <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                     <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-sm text-green-700 font-medium">Essai gratuit disponible</span>
+                    <span className="text-sm text-green-700 font-medium">{t('ui.freeTrialAvailable')}</span>
                   </div>
                 )
                 if (isFree && credits.total_available === 0) return (
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
                       <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      <span className="text-sm text-amber-700 font-medium">Votre essai a été utilisé</span>
+                      <span className="text-sm text-amber-700 font-medium">{t('ui.trialUsed')}</span>
                     </div>
-                    <p className="text-xs text-gray-500 px-1">Passez en PLUS pour embellir toutes vos créations</p>
+                    <p className="text-xs text-gray-500 px-1">{t('ui.upgradeToEnhanceAll')}</p>
                   </div>
                 )
                 if (credits.total_available === 0) return (
                   <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
                     <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span className="text-sm text-amber-700">Plus de crédits — rechargement le 1er du mois</span>
+                    <span className="text-sm text-amber-700">{t('ui.noMoreCredits')}</span>
                   </div>
                 )
                 return (
                   <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <span className="text-sm text-gray-600">Crédits disponibles</span>
+                    <span className="text-sm text-gray-600">{t('ui.availableCredits')}</span>
                     <span className="text-sm font-bold text-gray-900">{credits.total_available}</span>
                   </div>
                 )
@@ -6215,7 +6116,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   onClick={() => { setShowPostUploadModal(false); setPostUploadPhoto(null) }}
                   className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition font-medium text-sm"
                 >
-                  Pas maintenant
+                  {t('ui.notNow')}
                 </button>
                 {credits && credits.total_available === 0 ? (
                   <a
@@ -6223,8 +6124,8 @@ Rang 3 : *1ms, aug* x6 (18)
                     className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm text-center"
                   >
                     {(!user?.subscription_type || user?.subscription_type === 'free')
-                      ? 'Débloquer le Studio photo'
-                      : 'Acheter des crédits'}
+                      ? t('ui.unlockPhotoStudio')
+                      : t('ui.buyCredits')}
                   </a>
                 ) : (
                   <button
@@ -6236,7 +6137,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     }}
                     className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm"
                   >
-                    Embellir
+                    {t('ui.beautify')}
                   </button>
                 )}
               </div>
@@ -6250,8 +6151,8 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4 pb-20 sm:pb-4">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-xl max-h-[calc(100vh-6rem)] flex flex-col">
             <div className="px-6 pt-6 pb-2 flex-shrink-0">
-              <h2 className="text-lg font-bold text-gray-900">Embellir cette photo ?</h2>
-              <p className="text-sm text-gray-500 mt-1">Fond et éclairage retravaillés — votre ouvrage reste intact.</p>
+              <h2 className="text-lg font-bold text-gray-900">{t('ui.beautifyThisPhoto')}</h2>
+              <p className="text-sm text-gray-500 mt-1">{t('ui.photoEnhanceNote')}</p>
             </div>
 
             <form onSubmit={handleEnhancePhoto} className="px-6 pb-6 flex flex-col gap-4 overflow-y-auto">
@@ -6267,7 +6168,7 @@ Rang 3 : *1ms, aug* x6 (18)
 
               {/* Sélecteur de style */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Choisissez un style :</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.chooseStyle')}</label>
                 <div className="space-y-1.5">
                   {getAvailableStyles(detectProjectCategory(project?.type || '')).map((style) => (
                     <label
@@ -6288,9 +6189,9 @@ Rang 3 : *1ms, aug* x6 (18)
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900">{style.label}</span>
+                          <span className="text-sm font-medium text-gray-900">{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</span>
                         </div>
-                        <p className="text-xs text-gray-500 truncate">{style.desc}</p>
+                        <p className="text-xs text-gray-500 truncate">{t(`photoStyles.${style.key}.desc`, { ns: 'common' })}</p>
                       </div>
                     </label>
                   ))}
@@ -6303,18 +6204,18 @@ Rang 3 : *1ms, aug* x6 (18)
                 if (isFree && credits.total_available > 0) return (
                   <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
                     <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-sm text-green-700 font-medium">Essai gratuit disponible</span>
+                    <span className="text-sm text-green-700 font-medium">{t('ui.freeTrialAvailable')}</span>
                   </div>
                 )
                 if (isFree && credits.total_available === 0) return (
                   <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
                     <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span className="text-sm text-amber-700">Essai gratuit utilisé — <a href="/subscription" className="font-semibold underline">passer en PLUS</a></span>
+                    <span className="text-sm text-amber-700">{t('ui.freeTrialUsedPrefix')}<a href="/subscription" className="font-semibold underline">{t('ui.upgradeToPlus')}</a></span>
                   </div>
                 )
                 return (
                   <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-                    <span className="text-sm text-gray-600">Crédits disponibles</span>
+                    <span className="text-sm text-gray-600">{t('ui.availableCredits')}</span>
                     <span className="text-sm font-bold text-gray-900">{credits.total_available}</span>
                   </div>
                 )
@@ -6324,7 +6225,7 @@ Rang 3 : *1ms, aug* x6 (18)
               {enhancing && (
                 <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600"></div>
-                  Génération en cours...
+                  {t('ui.generating')}
                 </div>
               )}
 
@@ -6336,18 +6237,18 @@ Rang 3 : *1ms, aug* x6 (18)
                   disabled={enhancing}
                   className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 font-medium text-sm"
                 >
-                  Pas maintenant
+                  {t('ui.notNow')}
                 </button>
                 {credits && credits.total_available < 1 ? (
                   <button type="button" onClick={() => setUpgradeFeature('photo_credits')} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm">
-                    Plus de crédits
+                    {t('ui.noMoreCredits')}
                   </button>
                 ) : (
                   <button type="submit" disabled={enhancing || !credits} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition disabled:opacity-50 text-sm">
-                    {enhancing ? 'Génération...' : (
+                    {enhancing ? t('ui.generating') : (
                       (!user?.subscription_type || user?.subscription_type === 'free')
-                        ? 'Utiliser mon essai gratuit'
-                        : 'Embellir'
+                        ? t('ui.useFreeTrial')
+                        : t('ui.enhance')
                     )}
                   </button>
                 )}
@@ -6363,7 +6264,7 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="bg-primary-700 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
-              <h2 className="text-lg font-bold">Exemples de styles</h2>
+              <h2 className="text-lg font-bold">{t('ui.styleExamples')}</h2>
               <button
                 onClick={() => setShowStyleExamplesModal(false)}
                 className="text-white hover:bg-white/20 rounded-full p-2 transition"
@@ -6377,11 +6278,11 @@ Rang 3 : *1ms, aug* x6 (18)
             <div className="flex-1 overflow-y-auto p-6">
               {/* Photo originale unique en haut */}
               <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 border-2 border-gray-300">
-                <h3 className="text-sm font-bold text-gray-900 mb-2 text-center">📷 Photo originale</h3>
+                <h3 className="text-sm font-bold text-gray-900 mb-2 text-center">{t('ui.originalPhotoTitle')}</h3>
                 <div className="max-w-xs mx-auto">
                   <img
                     src={`/style-examples/${detectProjectCategory(project?.type || '')}_before.jpg`}
-                    alt="Photo originale"
+                    alt={t('ui.altOriginalPhoto')}
                     className="w-full rounded-lg shadow"
                     onError={(e) => {
                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EPhoto à venir%3C/text%3E%3C/svg%3E'
@@ -6392,8 +6293,8 @@ Rang 3 : *1ms, aug* x6 (18)
 
               {/* Résultats des 9 styles */}
               <div className="mb-4">
-                <h3 className="text-lg font-bold text-gray-900 text-center">Résultats par style</h3>
-                <p className="text-sm text-gray-600 text-center mt-1">Les 9 styles disponibles appliqués à la même photo</p>
+                <h3 className="text-lg font-bold text-gray-900 text-center">{t('ui.resultsByStyle')}</h3>
+                <p className="text-sm text-gray-600 text-center mt-1">{t('ui.nineStyles')}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -6406,7 +6307,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     <div className="relative bg-gray-100">
                       <img
                         src={`/style-examples/${style.key}_after.jpg`}
-                        alt={style.label}
+                        alt={t(`photoStyles.${style.key}.label`, { ns: 'common' })}
                         className="w-full h-64 object-cover"
                         onError={(e) => {
                           e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EExemple à venir%3C/text%3E%3C/svg%3E'
@@ -6419,7 +6320,7 @@ Rang 3 : *1ms, aug* x6 (18)
                       )}
                       {style.tier === 'free' && (
                         <span className="absolute top-2 right-2 px-2 py-1 bg-green-600 text-white text-xs font-bold rounded-full shadow">
-                          GRATUIT
+                          {t('ui.free')}
                         </span>
                       )}
                     </div>
@@ -6427,9 +6328,9 @@ Rang 3 : *1ms, aug* x6 (18)
                     {/* Nom et description du style */}
                     <div className="p-3 bg-white">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-gray-900">{style.label}</h3>
+                        <h3 className="font-bold text-gray-900">{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</h3>
                       </div>
-                      <p className="text-xs text-gray-600">{style.desc}</p>
+                      <p className="text-xs text-gray-600">{t(`photoStyles.${style.key}.desc`, { ns: 'common' })}</p>
                     </div>
                   </div>
                 ))}
@@ -6441,7 +6342,7 @@ Rang 3 : *1ms, aug* x6 (18)
                 onClick={() => setShowStyleExamplesModal(false)}
                 className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition"
               >
-                Fermer
+                {t('ui.close')}
               </button>
             </div>
           </div>
@@ -6452,19 +6353,19 @@ Rang 3 : *1ms, aug* x6 (18)
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
-            <h3 className="text-lg font-bold mb-4 text-gray-900">Modifier le projet</h3>
+            <h3 className="text-lg font-bold mb-4 text-gray-900">{t('ui.editProject')}</h3>
 
             {/* Description */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                {t('ui.description')}
               </label>
               <textarea
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                 rows={4}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Décrivez votre projet..."
+                placeholder={t('ui.phDescribeProject')}
                 autoFocus
               />
             </div>
@@ -6472,7 +6373,7 @@ Rang 3 : *1ms, aug* x6 (18)
             {/* Catégorie */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Catégorie <span className="text-red-600">*</span>
+                {t('ui.categoryRequired')} <span className="text-red-600">*</span>
               </label>
               <select
                 value={editForm.type}
@@ -6480,43 +6381,43 @@ Rang 3 : *1ms, aug* x6 (18)
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
-                <option value="">-- Sélectionner une catégorie --</option>
-                <option value="Vêtements">Vêtements</option>
-                <option value="Accessoires">Accessoires</option>
-                <option value="Jouets/Peluches">Jouets/Peluches</option>
-                <option value="Vêtements bébé">Vêtements bébé</option>
-                <option value="Accessoires bébé">Accessoires bébé</option>
-                <option value="Vêtements enfant">Vêtements enfant</option>
-                <option value="Maison/Déco">Maison/Déco</option>
-                <option value="Autre">Autre</option>
+                <option value="">{t('ui.selectCategory')}</option>
+                <option value="Vêtements">{t('ui.catClothing')}</option>
+                <option value="Accessoires">{t('ui.catAccessories')}</option>
+                <option value="Jouets/Peluches">{t('ui.catToysPlushies')}</option>
+                <option value="Vêtements bébé">{t('ui.catBabyClothing')}</option>
+                <option value="Accessoires bébé">{t('ui.catBabyAccessories')}</option>
+                <option value="Vêtements enfant">{t('ui.catKidsClothing')}</option>
+                <option value="Maison/Déco">{t('ui.catHomeDecor')}</option>
+                <option value="Autre">{t('ui.catOther')}</option>
               </select>
             </div>
 
             {/* Taille du crochet */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Taille du crochet
+                {t('ui.hookSize')}
               </label>
               <input
                 type="text"
                 value={editForm.hook_size}
                 onChange={(e) => setEditForm({ ...editForm, hook_size: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Ex: 3.5mm"
+                placeholder={t('ui.ph35mm')}
               />
             </div>
 
             {/* Marque de fil */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Marque de fil
+                {t('ui.yarnBrand')}
               </label>
               <input
                 type="text"
                 value={editForm.yarn_brand}
                 onChange={(e) => setEditForm({ ...editForm, yarn_brand: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Ex: Phildar Phil Coton 3"
+                placeholder={t('ui.phYarnBrand')}
               />
             </div>
 
@@ -6527,14 +6428,14 @@ Rang 3 : *1ms, aug* x6 (18)
                 disabled={savingProject}
                 className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
               >
-                Annuler
+                {t('ui.cancel')}
               </button>
               <button
                 onClick={handleSaveProject}
                 disabled={savingProject}
                 className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
               >
-                {savingProject ? 'Enregistrement...' : 'Enregistrer'}
+                {savingProject ? t('ui.savingDots') : t('ui.save')}
               </button>
             </div>
           </div>
@@ -6546,9 +6447,9 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 border-b border-gray-200 bg-white flex-shrink-0">
-              <h3 className="text-lg font-bold text-gray-900">Détails techniques</h3>
+              <h3 className="text-lg font-bold text-gray-900">{t('ui.technicalDetails')}</h3>
               <p className="text-sm text-gray-600 mt-1">
-                Ajoutez les informations sur la laine, les aiguilles/crochets et l'échantillon
+                {t('ui.noTechnicalDetailsHint')}
               </p>
             </div>
 
@@ -6556,14 +6457,14 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* Description générale */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description / Notes
+                  {t('ui.descriptionNotes')}
                 </label>
                 <textarea
                   value={technicalForm.description}
                   onChange={(e) => setTechnicalForm({ ...technicalForm, description: e.target.value })}
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Description générale du projet, notes personnelles..."
+                  placeholder={t('ui.phGeneralDescription')}
                   autoFocus
                 />
               </div>
@@ -6572,7 +6473,7 @@ Rang 3 : *1ms, aug* x6 (18)
               <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-gray-900">
-                    {project.technique === 'tricot' ? 'Laine' : 'Fil'}
+                    {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
                   </h4>
                   <button
                     type="button"
@@ -6582,14 +6483,14 @@ Rang 3 : *1ms, aug* x6 (18)
                     })}
                     className="px-3 py-1 bg-primary-600 text-white rounded text-sm hover:bg-primary-700"
                   >
-                    + Ajouter
+                    {t('ui.addPlus')}
                   </button>
                 </div>
                 {technicalForm.yarn.map((y, yIdx) => (
                   <div key={yIdx} className="mb-4 p-4 bg-white rounded-lg shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-medium text-gray-700">
-                        {project.technique === 'tricot' ? 'Laine' : 'Fil'} #{yIdx + 1}
+                        {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')} #{yIdx + 1}
                       </span>
                       {technicalForm.yarn.length > 1 && (
                         <button
@@ -6600,7 +6501,7 @@ Rang 3 : *1ms, aug* x6 (18)
                           })}
                           className="text-red-600 hover:text-red-700 text-sm"
                         >
-                          ✕ Supprimer
+                          {t('ui.removeX')}
                         </button>
                       )}
                     </div>
@@ -6612,7 +6513,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     </datalist>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Marque</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('ui.brand')}</label>
                         <input
                           type="text"
                           value={y.brand}
@@ -6623,11 +6524,11 @@ Rang 3 : *1ms, aug* x6 (18)
                             setTechnicalForm({ ...technicalForm, yarn: newYarn })
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                          placeholder="Ex: DROPS ALPACA"
+                          placeholder={t('ui.phDropsAlpaca')}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Nom</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('ui.nameLabelShort')}</label>
                         <input
                           type="text"
                           value={y.name}
@@ -6638,12 +6539,12 @@ Rang 3 : *1ms, aug* x6 (18)
                             setTechnicalForm({ ...technicalForm, yarn: newYarn })
                           }}
                           className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                          placeholder="Ex: Garnstudio (groupe A)"
+                          placeholder={t('ui.phGarnstudio')}
                         />
                       </div>
                     </div>
                     <div className="mb-3">
-                      <label className="block text-xs text-gray-600 mb-1">Lien produit</label>
+                      <label className="block text-xs text-gray-600 mb-1">{t('ui.productLink')}</label>
                       <div className="flex gap-2 items-center">
                         <input
                           type="url"
@@ -6654,19 +6555,19 @@ Rang 3 : *1ms, aug* x6 (18)
                             setTechnicalForm({ ...technicalForm, yarn: newYarn })
                           }}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
-                          placeholder="https://www.drops-design.com/..."
+                          placeholder={t('ui.phProductUrl')}
                         />
                         {y.url && (
                           <a href={y.url} target="_blank" rel="noopener noreferrer"
                             className="flex-shrink-0 text-primary-600 hover:text-primary-700 text-xs underline">
-                            Voir
+                            {t('ui.view')}
                           </a>
                         )}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <label className="block text-xs text-gray-600">Quantités et coloris</label>
+                        <label className="block text-xs text-gray-600">{t('ui.quantitiesAndColours')}</label>
                         <button
                           type="button"
                           onClick={() => {
@@ -6676,7 +6577,7 @@ Rang 3 : *1ms, aug* x6 (18)
                           }}
                           className="text-primary-600 hover:text-primary-700 text-xs"
                         >
-                          + Ajouter coloris
+                          {t('ui.addColourway')}
                         </button>
                       </div>
                       {y.quantities.map((q, qIdx) => (
@@ -6684,7 +6585,7 @@ Rang 3 : *1ms, aug* x6 (18)
                           {/* Ligne 1: Quantité + Unité */}
                           <div className="grid grid-cols-[1fr,auto] gap-3 mb-2">
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Quantité</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">{t('ui.quantity')}</label>
                               <input
                                 type="text"
                                 value={q.amount}
@@ -6694,11 +6595,11 @@ Rang 3 : *1ms, aug* x6 (18)
                                   setTechnicalForm({ ...technicalForm, yarn: newYarn })
                                 }}
                                 className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
-                                placeholder="Ex: 3, 2-3, 150-200"
+                                placeholder={t('ui.phQuantities')}
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Unité</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">{t('ui.unit')}</label>
                               <div className="flex border border-gray-300 rounded overflow-hidden">
                                 <button
                                   type="button"
@@ -6713,7 +6614,7 @@ Rang 3 : *1ms, aug* x6 (18)
                                       : 'bg-white text-gray-700 hover:bg-gray-50'
                                   }`}
                                 >
-                                  Pelotes
+                                  {t('ui.balls')}
                                 </button>
                                 <button
                                   type="button"
@@ -6728,7 +6629,7 @@ Rang 3 : *1ms, aug* x6 (18)
                                       : 'bg-white text-gray-700 hover:bg-gray-50'
                                   }`}
                                 >
-                                  Grammes
+                                  {t('ui.grams')}
                                 </button>
                               </div>
                             </div>
@@ -6736,7 +6637,7 @@ Rang 3 : *1ms, aug* x6 (18)
                           {/* Ligne 2: Coloris + Supprimer */}
                           <div className="flex gap-2 items-end">
                             <div className="flex-1">
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Coloris</label>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">{t('ui.colorway')}</label>
                               <input
                                 type="text"
                                 value={q.color}
@@ -6746,7 +6647,7 @@ Rang 3 : *1ms, aug* x6 (18)
                                   setTechnicalForm({ ...technicalForm, yarn: newYarn })
                                 }}
                                 className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
-                                placeholder="Ex: Rouge, Bleu marine"
+                                placeholder={t('ui.phColours')}
                               />
                             </div>
                             {y.quantities.length > 1 && (
@@ -6758,7 +6659,7 @@ Rang 3 : *1ms, aug* x6 (18)
                                   setTechnicalForm({ ...technicalForm, yarn: newYarn })
                                 }}
                                 className="text-red-500 hover:text-red-700 px-2 py-1.5"
-                                title="Supprimer ce coloris"
+                                title={t('ui.deleteColourway')}
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                               </button>
@@ -6775,7 +6676,7 @@ Rang 3 : *1ms, aug* x6 (18)
               <div className="mb-6 p-4 bg-sage-50 rounded-lg border border-sage-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    {project.technique === 'tricot' ? 'Aiguilles' : 'Crochets'}
+                    {project.technique === 'tricot' ? t('ui.needles') : t('ui.hooks')}
                   </h4>
                   <button
                     type="button"
@@ -6785,7 +6686,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     })}
                     className="px-3 py-1 bg-sage-600 text-white rounded text-sm hover:bg-sage-700"
                   >
-                    + Ajouter
+                    {t('ui.addPlus')}
                   </button>
                 </div>
                 {technicalForm.needles.map((n, nIdx) => (
@@ -6793,7 +6694,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     {(technicalForm.needles.length > 1 || project.technique === 'tricot') && (
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium text-gray-700">
-                          {project.technique === 'tricot' ? `Aiguille #${nIdx + 1}` : `Crochet #${nIdx + 1}`}
+                          {project.technique === 'tricot' ? t('ui.needleNum', { n: nIdx + 1 }) : t('ui.hookNum', { n: nIdx + 1 })}
                         </span>
                         {technicalForm.needles.length > 1 && (
                           <button
@@ -6805,7 +6706,7 @@ Rang 3 : *1ms, aug* x6 (18)
                             className="text-red-500 hover:text-red-700 text-sm flex items-center gap-1"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            Supprimer
+                            {t('ui.delete')}
                           </button>
                         )}
                       </div>
@@ -6813,7 +6714,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     <div className={`grid grid-cols-1 ${project.technique === 'tricot' ? 'md:grid-cols-3' : 'md:grid-cols-1'} gap-2`}>
                       {project.technique === 'tricot' && (
                         <div>
-                          <label className="block text-xs text-gray-600 mb-1">Type</label>
+                          <label className="block text-xs text-gray-600 mb-1">{t('ui.type')}</label>
                           <input
                             type="text"
                             value={n.type}
@@ -6823,12 +6724,12 @@ Rang 3 : *1ms, aug* x6 (18)
                               setTechnicalForm({ ...technicalForm, needles: newNeedles })
                             }}
                             className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
-                            placeholder="Ex: Circulaires, Doubles pointes"
+                            placeholder={t('ui.phNeedleTypes')}
                           />
                         </div>
                       )}
                       <div>
-                        <label className="block text-xs text-gray-600 mb-1">Taille (mm)</label>
+                        <label className="block text-xs text-gray-600 mb-1">{t('ui.sizeMm')}</label>
                         <input
                           type="text"
                           value={n.size}
@@ -6838,12 +6739,12 @@ Rang 3 : *1ms, aug* x6 (18)
                             setTechnicalForm({ ...technicalForm, needles: newNeedles })
                           }}
                           className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
-                          placeholder="Ex: 4, 5, 3.5"
+                          placeholder={t('ui.phNeedleSizes')}
                         />
                       </div>
                       {project.technique === 'tricot' && (
                         <div>
-                          <label className="block text-xs text-gray-600 mb-1">Longueur</label>
+                          <label className="block text-xs text-gray-600 mb-1">{t('ui.length')}</label>
                           <input
                             type="text"
                             value={n.length}
@@ -6853,7 +6754,7 @@ Rang 3 : *1ms, aug* x6 (18)
                               setTechnicalForm({ ...technicalForm, needles: newNeedles })
                             }}
                             className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
-                            placeholder="Ex: 40cm et 80cm"
+                            placeholder={t('ui.phNeedleLengths')}
                           />
                         </div>
                       )}
@@ -6865,11 +6766,11 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* ÉCHANTILLON / GAUGE */}
               <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  Échantillon
+                  {t('ui.gaugeLabel')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Largeur (mailles)</label>
+                    <label className="block text-sm text-gray-700 mb-1">{t('ui.widthStitches')}</label>
                     <input
                       type="text"
                       value={technicalForm.gauge.stitches}
@@ -6878,11 +6779,11 @@ Rang 3 : *1ms, aug* x6 (18)
                         gauge: { ...technicalForm.gauge, stitches: e.target.value }
                       })}
                       className="w-full px-3 py-2 border border-gray-300 rounded"
-                      placeholder="Ex: 17 mailles"
+                      placeholder={t('ui.ph17Stitches')}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Hauteur (rangs)</label>
+                    <label className="block text-sm text-gray-700 mb-1">{t('ui.heightRows')}</label>
                     <input
                       type="text"
                       value={technicalForm.gauge.rows}
@@ -6891,11 +6792,11 @@ Rang 3 : *1ms, aug* x6 (18)
                         gauge: { ...technicalForm.gauge, rows: e.target.value }
                       })}
                       className="w-full px-3 py-2 border border-gray-300 rounded"
-                      placeholder="Ex: 22 rangs"
+                      placeholder={t('ui.ph22Rows')}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-700 mb-1">Dimensions</label>
+                    <label className="block text-sm text-gray-700 mb-1">{t('ui.dimensions')}</label>
                     <input
                       type="text"
                       value={technicalForm.gauge.dimensions}
@@ -6904,12 +6805,12 @@ Rang 3 : *1ms, aug* x6 (18)
                         gauge: { ...technicalForm.gauge, dimensions: e.target.value }
                       })}
                       className="w-full px-3 py-2 border border-gray-300 rounded"
-                      placeholder="10 x 10 cm"
+                      placeholder={t('ui.phGauge10')}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Notes</label>
+                  <label className="block text-sm text-gray-700 mb-1">{t('ui.notes')}</label>
                   <textarea
                     value={technicalForm.gauge.notes}
                     onChange={(e) => setTechnicalForm({
@@ -6918,7 +6819,7 @@ Rang 3 : *1ms, aug* x6 (18)
                     })}
                     rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    placeholder="Ex: en jersey, avec 1 fil de chaque qualité et les aiguilles 5"
+                    placeholder={t('ui.phGaugeNotes')}
                   />
                 </div>
               </div>
@@ -6932,14 +6833,14 @@ Rang 3 : *1ms, aug* x6 (18)
                   disabled={savingTechnical}
                   className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </button>
                 <button
                   onClick={handleSaveTechnicalDetails}
                   disabled={savingTechnical}
                   className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingTechnical ? 'Enregistrement...' : 'Enregistrer'}
+                  {savingTechnical ? t('ui.savingDots') : t('ui.save')}
                 </button>
               </div>
             </div>
@@ -6953,7 +6854,7 @@ Rang 3 : *1ms, aug* x6 (18)
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-bold text-gray-900">
-                Notes du projet
+                {t('ui.projectNotes')}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {project.name}
@@ -6963,14 +6864,14 @@ Rang 3 : *1ms, aug* x6 (18)
             <div className="p-6 flex-1 overflow-y-auto">
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes personnelles
+                  {t('ui.personalNotes')}
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={12}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
-                  placeholder="Ajoutez vos notes personnelles sur ce projet :&#10;&#10;• Modifications apportées au patron&#10;• Difficultés rencontrées&#10;• Astuces et conseils&#10;• Idées pour la suite&#10;• Points d'attention..."
+                  placeholder={t('ui.phProjectNotes')}
                   autoFocus
                 />
               </div>
@@ -6986,14 +6887,14 @@ Rang 3 : *1ms, aug* x6 (18)
                   className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                   disabled={savingNotes}
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </button>
                 <button
                   onClick={handleSaveNotes}
                   disabled={savingNotes}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingNotes ? 'Sauvegarde...' : 'Sauvegarder'}
+                  {savingNotes ? t('ui.savingAlt') : t('ui.saveAlt')}
                 </button>
               </div>
             </div>
@@ -7001,57 +6902,8 @@ Rang 3 : *1ms, aug* x6 (18)
         </div>
       )}
 
-      {/* [AI:Claude] Modal d'alerte personnalisée */}
-      {showAlertModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-            <h3 className={`text-xl font-bold mb-4 ${
-              alertData.type === 'error' ? 'text-red-600' : 'text-gray-900'
-            }`}>
-              {alertData.title}
-            </h3>
-            <p className="text-gray-600 mb-6 whitespace-pre-line">{alertData.message}</p>
-            <button
-              onClick={() => setShowAlertModal(false)}
-              className={`w-full px-4 py-3 rounded-lg font-medium text-white transition ${
-                alertData.type === 'error' ? 'bg-red-600 hover:bg-red-700' :
-                'bg-primary-600 hover:bg-primary-700'
-              }`}
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* [AI:Claude] Modal de confirmation personnalisée */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">
-              {confirmData.title}
-            </h3>
-            <p className="text-gray-700 mb-6 whitespace-pre-line">{confirmData.message}</p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => {
-                  confirmData.onConfirm()
-                  setShowConfirmModal(false)
-                }}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
-              >
-                Confirmer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modales d'alerte et de confirmation (hook partagé) */}
+      <AlertModals />
 
       {/* [AI:Claude] Modal de fin de projet - toutes sections terminées */}
       {showProjectCompletionModal && (
@@ -7064,10 +6916,10 @@ Rang 3 : *1ms, aug* x6 (18)
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-gray-900">
-                Toutes les sections sont terminées !
+                {t('ui.allSectionsDone')}
               </h3>
               <p className="text-gray-500 text-sm mt-1">
-                Félicitations pour votre {project?.name || 'projet'} !
+                {t('ui.congratsOn', { name: project?.name || t('ui.projectFallback') })}
               </p>
             </div>
 
@@ -7082,8 +6934,8 @@ Rang 3 : *1ms, aug* x6 (18)
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <span>
-                  Mettre mon ouvrage en valeur
-                  <span className="block text-xs font-normal text-primary-200">{credits.total_available} crédit{credits.total_available > 1 ? 's' : ''} photo disponible{credits.total_available > 1 ? 's' : ''}</span>
+                  {t('ui.showcaseMyWork')}
+                  <span className="block text-xs font-normal text-primary-200">{t('ui.photoCreditsAvailable', { count: credits.total_available })}</span>
                 </span>
               </button>
             ) : (
@@ -7095,7 +6947,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Ajouter une photo
+                {t('ui.addPhoto')}
               </button>
             )}
 
@@ -7107,7 +6959,7 @@ Rang 3 : *1ms, aug* x6 (18)
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
                 </svg>
-                Gérer mon stock de laine
+                {t('ui.manageStash')}
               </button>
               <button
                 onClick={() => {
@@ -7118,20 +6970,20 @@ Rang 3 : *1ms, aug* x6 (18)
                 }}
                 className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
               >
-                Ajouter une section
+                {t('ui.addSection')}
               </button>
               <button
                 onClick={handleCompleteProject}
                 className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
               >
-                Terminer sans ajouter de photo
+                {t('ui.finishWithoutPhoto')}
               </button>
             </div>
             <button
               onClick={() => setShowProjectCompletionModal(false)}
               className="w-full mt-2 px-4 py-2 text-gray-400 hover:text-gray-600 transition text-xs"
             >
-              Annuler (rester en cours)
+              {t('ui.cancelStayInProgress')}
             </button>
           </div>
         </div>
@@ -7142,14 +6994,14 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <h2 className="text-2xl font-bold mb-4">
-              {editingSection ? 'Modifier la section' : 'Ajouter une section'}
+              {editingSection ? t('ui.editSection') : t('ui.addSection2')}
             </h2>
 
             <form onSubmit={handleSaveSection}>
               {/* Nom */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom de la section <span className="text-red-600">*</span>
+                  {t('ui.sectionNameLabel')} <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -7157,7 +7009,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   onChange={(e) => setSectionForm({ ...sectionForm, name: e.target.value })}
                   required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="Ex: Face, Dos, Manche gauche..."
+                  placeholder={t('ui.sectionNamePlaceholder')}
                   autoFocus
                 />
               </div>
@@ -7165,28 +7017,28 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* Description */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description (optionnel)
+                  {t('ui.descriptionOptional')}
                 </label>
                 <textarea
                   value={sectionForm.description}
                   onChange={(e) => setSectionForm({ ...sectionForm, description: e.target.value })}
                   rows={2}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="Notes sur cette section..."
+                  placeholder={t('ui.sectionNotesPlaceholderAlt')}
                 />
               </div>
 
               {/* Nombre de rangs */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre total de rangs (optionnel)
+                  {t('ui.totalRowsOptional')}
                 </label>
                 <input
                   type="number"
                   value={sectionForm.total_rows}
                   onChange={(e) => setSectionForm({ ...sectionForm, total_rows: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="Ex: 50"
+                  placeholder={t('ui.ph50')}
                   min="0"
                 />
               </div>
@@ -7194,14 +7046,14 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* Notes */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes (optionnel)
+                  {t('ui.notesOptional')}
                 </label>
                 <textarea
                   value={sectionForm.notes}
                   onChange={(e) => setSectionForm({ ...sectionForm, notes: e.target.value })}
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="Instructions particulières, rappels, modifications..."
+                  placeholder={t('ui.sectionInstructionsPlaceholder')}
                 />
               </div>
 
@@ -7217,14 +7069,14 @@ Rang 3 : *1ms, aug* x6 (18)
                   disabled={savingSection}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={savingSection}
                   className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {savingSection ? 'Enregistrement...' : (editingSection ? 'Modifier' : 'Créer')}
+                  {savingSection ? t('ui.saving') : (editingSection ? t('ui.edit') : t('ui.create'))}
                 </button>
               </div>
             </form>
@@ -7237,23 +7089,23 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
             <h3 className="text-2xl font-bold mb-2 text-gray-900">
-              📚 Enregistrer dans la bibliothèque ?
+              {t('ui.saveToLibraryQuestion')}
             </h3>
             <p className="text-sm text-gray-600 mb-6">
-              Sauvegardez ce patron dans votre bibliothèque pour le réutiliser facilement dans d'autres projets.
+              {t('ui.saveToLibraryHint')}
             </p>
 
             {/* Nom du patron */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nom du patron <span className="text-red-600">*</span>
+                {t('ui.patternNameLabel')} <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
                 value={libraryForm.name}
                 onChange={(e) => setLibraryForm({ ...libraryForm, name: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Ex: Pull irlandais torsadé"
+                placeholder={t('ui.phProjectName')}
                 autoFocus
               />
             </div>
@@ -7261,14 +7113,14 @@ Rang 3 : *1ms, aug* x6 (18)
             {/* Description */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description (optionnel)
+                {t('ui.descriptionOptional')}
               </label>
               <textarea
                 value={libraryForm.description}
                 onChange={(e) => setLibraryForm({ ...libraryForm, description: e.target.value })}
                 rows={2}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Notes sur ce patron..."
+                placeholder={t('ui.patternNotesPlaceholder')}
               />
             </div>
 
@@ -7277,34 +7129,34 @@ Rang 3 : *1ms, aug* x6 (18)
               {/* Catégorie */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Catégorie
+                  {t('ui.category')}
                 </label>
                 <select
                   value={libraryForm.category}
                   onChange={(e) => setLibraryForm({ ...libraryForm, category: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
-                  <option value="clothing">Vêtements</option>
-                  <option value="accessories">Accessoires</option>
-                  <option value="home_decor">Déco maison</option>
-                  <option value="toys">Jouets/Amigurumi</option>
-                  <option value="other">Autre</option>
+                  <option value="clothing">{t('ui.catClothing')}</option>
+                  <option value="accessories">{t('ui.catAccessories')}</option>
+                  <option value="home_decor">{t('ui.catHomeDeco')}</option>
+                  <option value="toys">{t('ui.catToysAmigurumi')}</option>
+                  <option value="other">{t('ui.catOther')}</option>
                 </select>
               </div>
 
               {/* Difficulté */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Difficulté
+                  {t('ui.difficulty')}
                 </label>
                 <select
                   value={libraryForm.difficulty}
                   onChange={(e) => setLibraryForm({ ...libraryForm, difficulty: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
-                  <option value="beginner">Débutant</option>
-                  <option value="intermediate">Intermédiaire</option>
-                  <option value="advanced">Avancé</option>
+                  <option value="beginner">{t('ui.levelBeginner')}</option>
+                  <option value="intermediate">{t('ui.levelIntermediate')}</option>
+                  <option value="advanced">{t('ui.levelAdvanced')}</option>
                 </select>
               </div>
             </div>
@@ -7312,14 +7164,14 @@ Rang 3 : *1ms, aug* x6 (18)
             {/* Technique */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Technique (optionnel)
+                {t('ui.techniqueOptional')}
               </label>
               <input
                 type="text"
                 value={libraryForm.technique}
                 onChange={(e) => setLibraryForm({ ...libraryForm, technique: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Ex: Jacquard, Torsades, Granny square..."
+                placeholder={t('ui.phTechnique')}
               />
             </div>
 
@@ -7330,14 +7182,14 @@ Rang 3 : *1ms, aug* x6 (18)
                 disabled={savingToLibrary}
                 className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
               >
-                Continuer sans enregistrer
+                {t('ui.continueWithoutSaving')}
               </button>
               <button
                 onClick={handleAddToLibrary}
                 disabled={savingToLibrary || !libraryForm.name.trim()}
                 className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {savingToLibrary ? 'Enregistrement...' : '📚 Enregistrer dans la bibliothèque'}
+                {savingToLibrary ? t('ui.saving') : t('ui.saveToLibrary')}
               </button>
             </div>
           </div>
@@ -7367,9 +7219,9 @@ Rang 3 : *1ms, aug* x6 (18)
           onConfirmed={(remainders) => {
             setShowCloseModal(false)
             if (remainders.length > 0) {
-              showAlert(`Projet clôturé. ${remainders.reduce((acc, r) => acc + r.returned, 0)} pelote(s) remise(s) dans ton stock.`, 'success')
+              showAlert({ message: t('alerts.projectClosedWithYarn', { count: remainders.reduce((acc, r) => acc + r.returned, 0) }), type: 'success' })
             } else {
-              showAlert('Projet clôturé.', 'success')
+              showAlert({ message: t('alerts.projectClosed'), type: 'success' })
             }
             fetchProject()
           }}
@@ -7386,11 +7238,11 @@ Rang 3 : *1ms, aug* x6 (18)
       )}
 
       {/* [AI:Claude] Bouton flottant pour les notes - masqué quand popup ouverte */}
-      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !showAlertModal && !showConfirmModal && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && (
+      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !isAnyAlertOpen && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && (
       <button
         onClick={handleOpenNotes}
         className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-2xl px-4 py-3 flex items-center gap-3"
-        title="Notes du projet"
+        title={t('ui.projectNotes')}
       >
         {/* Icône SVG */}
         <svg
@@ -7407,7 +7259,7 @@ Rang 3 : *1ms, aug* x6 (18)
           />
         </svg>
         <div className="flex flex-col items-start">
-          <span className="text-white font-bold text-sm leading-tight">Notes</span>
+          <span className="text-white font-bold text-sm leading-tight">{t('ui.notes')}</span>
         </div>
         {/* Badge animé avec stylo */}
         <span className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full border-2 border-primary-600 flex items-center justify-center animate-bounce">
@@ -7436,10 +7288,10 @@ Rang 3 : *1ms, aug* x6 (18)
             <div className="text-center mb-6">
               <div className="text-5xl mb-4">🤔</div>
               <h2 className="text-2xl font-bold mb-2 text-gray-900">
-                Que faire avec les rangs existants ?
+                {t('ui.existingRowsQuestion')}
               </h2>
               <p className="text-gray-600">
-                Vous avez déjà <span className="font-bold text-primary-600">{project.current_row} rang{project.current_row > 1 ? 's' : ''}</span> au compteur.
+                <Trans t={t} i18nKey="ui.alreadyCounted" count={project.current_row} values={{ count: project.current_row }}><span className="font-bold text-primary-600" /></Trans>
               </p>
             </div>
 
@@ -7453,9 +7305,9 @@ Rang 3 : *1ms, aug* x6 (18)
               >
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                 <div>
-                  <div className="font-bold">Attribuer à la section</div>
+                  <div className="font-bold">{t('ui.assignToSection')}</div>
                   <div className="text-sm text-primary-100">
-                    La section "{sectionForm.name}" démarrera à {project.current_row} rangs
+                    {t('ui.sectionWillStartAt', { name: sectionForm.name, count: project.current_row })}
                   </div>
                 </div>
               </button>
@@ -7469,9 +7321,9 @@ Rang 3 : *1ms, aug* x6 (18)
               >
                 <span className="text-2xl">🔄</span>
                 <div>
-                  <div className="font-bold">Remettre à zéro</div>
+                  <div className="font-bold">{t('ui.resetToZero')}</div>
                   <div className="text-sm text-gray-500">
-                    La section commencera à 0 (les rangs précédents étaient du test)
+                    {t('ui.sectionWillStartAtZero')}
                   </div>
                 </div>
               </button>
@@ -7520,17 +7372,17 @@ Rang 3 : *1ms, aug* x6 (18)
 
             {/* Titre */}
             <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
-              Image téléchargée !
+              {t('ui.imageDownloaded')}
             </h3>
 
             {/* Message */}
             <div className="text-center mb-8 space-y-3">
               <p className="text-gray-600 leading-relaxed">
-                Votre image est prête à être partagée !
+                {t('ui.imageReadyToShare')}
               </p>
               <div className="bg-gradient-to-br from-primary-50 to-primary-50 border-2 border-primary-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700 font-medium">
-                  💡 <span className="font-semibold">Comment faire :</span> Cliquez sur le bouton ci-dessous pour ouvrir Instagram, puis cliquez sur <span className="font-bold text-primary-600">+</span> pour créer un nouveau post et uploadez l'image téléchargée.
+                  💡 <span className="font-semibold">{t('ui.howTo')}</span> {t('ui.instagramStep1')}<span className="font-bold text-primary-600">+</span>{t('ui.instagramStep2')}
                 </p>
               </div>
             </div>
@@ -7543,7 +7395,7 @@ Rang 3 : *1ms, aug* x6 (18)
               }}
               className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-primary-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
             >
-              Ouvrir Instagram
+              {t('ui.openInstagram')}
             </button>
           </div>
         </div>
@@ -7567,14 +7419,14 @@ Rang 3 : *1ms, aug* x6 (18)
               </svg>
             </div>
             <div>
-              <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">Rappel — rang {activeReminder.row}</p>
+              <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">{t('ui.reminderRow', { row: activeReminder.row })}</p>
               <p className="text-lg font-bold text-gray-900">{activeReminder.message}</p>
             </div>
             <button
               onClick={() => dismissReminder(activeReminder.id)}
               className="w-full py-3 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition"
             >
-              Compris !
+              {t('ui.gotIt')}
             </button>
           </div>
         </div>
@@ -7594,20 +7446,20 @@ Rang 3 : *1ms, aug* x6 (18)
         <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Rappels de rang</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('ui.rowReminders')}</h2>
               <button onClick={() => setShowReminderManager(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
             </div>
 
             {/* Formulaire ajout */}
             <div className="bg-gray-50 rounded-xl p-3 space-y-2">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Nouveau rappel</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('ui.newReminder')}</p>
               <div className="flex gap-2">
                 <input
                   type="number"
                   min="1"
                   value={reminderForm.row}
                   onChange={e => setReminderForm(f => ({ ...f, row: e.target.value }))}
-                  placeholder="Rang"
+                  placeholder={t('ui.row')}
                   className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <input
@@ -7615,7 +7467,7 @@ Rang 3 : *1ms, aug* x6 (18)
                   value={reminderForm.message}
                   onChange={e => setReminderForm(f => ({ ...f, message: e.target.value }))}
                   onKeyDown={e => e.key === 'Enter' && addReminder()}
-                  placeholder="Ex : Commencer les diminutions"
+                  placeholder={t('ui.reminderExample')}
                   className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -7624,13 +7476,13 @@ Rang 3 : *1ms, aug* x6 (18)
                 disabled={!reminderForm.row || !reminderForm.message.trim()}
                 className="w-full py-1.5 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
               >
-                Ajouter
+                {t('ui.add')}
               </button>
             </div>
 
             {/* Liste des reminders */}
             {reminders.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-2">Aucun rappel pour le moment.</p>
+              <p className="text-sm text-gray-500 text-center py-2">{t('ui.noReminders')}</p>
             ) : (
               <div className="space-y-2">
                 {reminders.map(r => (
@@ -7641,11 +7493,11 @@ Rang 3 : *1ms, aug* x6 (18)
                     <p className={`flex-1 text-sm ${r.done ? 'line-through text-gray-400' : 'text-gray-800'}`}>{r.message}</p>
                     <div className="flex gap-1">
                       {r.done && (
-                        <button onClick={() => resetReminder(r.id)} className="text-gray-400 hover:text-primary-600 transition" title="Réactiver">
+                        <button onClick={() => resetReminder(r.id)} className="text-gray-500 hover:text-primary-600 transition" title={t('ui.reactivate')}>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                         </button>
                       )}
-                      <button onClick={() => deleteReminder(r.id)} className="text-gray-400 hover:text-red-500 transition" title="Supprimer">
+                      <button onClick={() => deleteReminder(r.id)} className="text-gray-500 hover:text-red-500 transition" title={t('ui.delete')}>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </div>
@@ -7662,18 +7514,19 @@ Rang 3 : *1ms, aug* x6 (18)
 }
 
 function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
+  const { t } = useTranslation('counter')
   const [draft, setDraft] = useState(currentDeadline || '')
   const today = new Date().toISOString().substring(0, 10)
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">Objectif de date</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('ui.targetDate')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
-        <p className="text-sm text-gray-500">Fixe une date cible pour terminer ce projet. Tu verras le compte à rebours sur le compteur.</p>
+        <p className="text-sm text-gray-500">{t('ui.targetDateHint')}</p>
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Date cible</label>
+          <label className="block text-sm font-medium text-gray-700">{t('ui.targetDateLabel')}</label>
           <input
             type="date"
             value={draft}
@@ -7688,7 +7541,7 @@ function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
               onClick={() => onSave(null)}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
             >
-              Supprimer
+              {t('ui.delete')}
             </button>
           )}
           <button
@@ -7696,7 +7549,7 @@ function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
             disabled={!draft}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
           >
-            Enregistrer
+            {t('ui.save')}
           </button>
         </div>
       </div>

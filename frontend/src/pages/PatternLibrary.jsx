@@ -11,13 +11,17 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import UpgradePrompt from '../components/UpgradePrompt'
+import { projectTypeKey } from '../data/projectTypes'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 const PatternLibrary = () => {
+  const { t } = useTranslation('library')
   const { user } = useAuth()
   const isPro = user?.subscription_type && user.subscription_type !== 'free'
   const [showUpgradeLibrary, setShowUpgradeLibrary] = useState(false)
@@ -67,17 +71,10 @@ const PatternLibrary = () => {
   const [uploading, setUploading] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
 
-  // Traduction des catégories
+  // Libelle affichable d'une valeur stockee : la valeur elle-meme reste en base.
   const getCategoryLabel = (category) => {
-    const translations = {
-      'other': 'Autre',
-      'Vêtements': 'Vêtements',
-      'Accessoires': 'Accessoires',
-      'Maison/Déco': 'Maison/Déco',
-      'Jouets/Peluches': 'Jouets/Peluches',
-      'Accessoires bébé': 'Accessoires bébé'
-    }
-    return translations[category] || category
+    const key = projectTypeKey(category)
+    return key ? t(`projectTypes.${key}`, { ns: 'common' }) : category
   }
 
   useEffect(() => {
@@ -170,7 +167,7 @@ const PatternLibrary = () => {
 
         if (isChangingToFile && !file) {
           // Si on change vers 'file', un fichier est obligatoire
-          errors.file = '⚠️ Veuillez sélectionner un fichier (PDF, JPG, PNG ou WEBP)'
+          errors.file = t('ui.pickFile')
         } else if (file) {
           // Si un fichier est fourni, le valider
           const maxSize = 10 * 1024 * 1024 // 10MB
@@ -185,30 +182,30 @@ const PatternLibrary = () => {
       } else if (sourceType === 'url') {
         // URL obligatoire en édition
         if (!formData.url || !formData.url.trim()) {
-          errors.url = '⚠️ Veuillez entrer une URL'
+          errors.url = t('ui.enterUrl2')
         } else {
           try {
             new URL(formData.url)
             if (!formData.url.startsWith('http://') && !formData.url.startsWith('https://')) {
-              errors.url = '⚠️ L\'URL doit commencer par http:// ou https://'
+              errors.url = t('ui.urlMustStartHttp')
             }
           } catch {
-            errors.url = '⚠️ L\'URL n\'est pas valide. Exemple: https://www.exemple.com'
+            errors.url = t('ui.urlInvalid')
           }
         }
       } else if (sourceType === 'text') {
         // Texte obligatoire en édition
         if (!formData.pattern_text || !formData.pattern_text.trim()) {
-          errors.pattern_text = '⚠️ Veuillez entrer le texte du patron'
+          errors.pattern_text = t('ui.enterPatternText2')
         } else if (formData.pattern_text.trim().length < 10) {
-          errors.pattern_text = '⚠️ Le texte du patron doit contenir au moins 10 caractères'
+          errors.pattern_text = t('ui.patternTextMin10')
         }
       }
     } else {
       // Mode ajout
       if (addType === 'file') {
         if (!file) {
-          errors.file = '⚠️ Veuillez sélectionner un fichier (PDF, JPG, PNG ou WEBP)'
+          errors.file = t('ui.pickFile')
         } else {
           const maxSize = 10 * 1024 * 1024 // 10MB
           if (file.size > maxSize) {
@@ -221,33 +218,33 @@ const PatternLibrary = () => {
         }
       } else if (addType === 'url') {
         if (!formData.url || !formData.url.trim()) {
-          errors.url = '⚠️ Veuillez entrer une URL'
+          errors.url = t('ui.enterUrl2')
         } else {
           try {
             new URL(formData.url)
             if (!formData.url.startsWith('http://') && !formData.url.startsWith('https://')) {
-              errors.url = '⚠️ L\'URL doit commencer par http:// ou https://'
+              errors.url = t('ui.urlMustStartHttp')
             }
           } catch {
-            errors.url = '⚠️ L\'URL n\'est pas valide. Exemple: https://www.exemple.com'
+            errors.url = t('ui.urlInvalid')
           }
         }
       } else if (addType === 'text') {
         if (!formData.pattern_text || !formData.pattern_text.trim()) {
-          errors.pattern_text = '⚠️ Veuillez entrer le texte du patron'
+          errors.pattern_text = t('ui.enterPatternText2')
         } else if (formData.pattern_text.trim().length < 10) {
-          errors.pattern_text = '⚠️ Le texte du patron doit contenir au moins 10 caractères'
+          errors.pattern_text = t('ui.patternTextMin10')
         }
       }
     }
 
     // Validation du nom (obligatoire pour tous les types)
     if (!formData.name || !formData.name.trim()) {
-      errors.name = '⚠️ Le nom du patron est obligatoire'
+      errors.name = t('ui.patternNameRequired')
     } else if (formData.name.trim().length < 2) {
-      errors.name = '⚠️ Le nom doit contenir au moins 2 caractères'
+      errors.name = t('ui.patternNameMin2')
     } else if (formData.name.length > 200) {
-      errors.name = '⚠️ Le nom ne peut pas dépasser 200 caractères'
+      errors.name = t('ui.patternNameMax200')
     }
 
     setValidationErrors(errors)
@@ -312,7 +309,7 @@ const PatternLibrary = () => {
         setShowAddModal(false)
         setShowUpgradeLibrary(true)
       } else {
-        const errorMessage = err.response?.data?.message || err.response?.data?.error || "Erreur lors de l'ajout du patron"
+        const errorMessage = err.response?.data?.message || err.response?.data?.error || t('ui.patternAddFailed')
         alert(errorMessage)
       }
     } finally {
@@ -335,7 +332,7 @@ const PatternLibrary = () => {
   }
 
   const handleDelete = async (patternId) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce patron ?'))
+    if (!confirm(t('ui.confirmDeletePattern')))
       return
 
     try {
@@ -343,7 +340,7 @@ const PatternLibrary = () => {
       setPatterns(patterns.filter(p => p.id !== patternId))
     } catch (err) {
       console.error('Erreur suppression:', err)
-      alert('Erreur lors de la suppression du patron')
+      alert(t('ui.patternDeleteFailed'))
     }
   }
 
@@ -471,7 +468,7 @@ const PatternLibrary = () => {
       setTimeout(() => window.URL.revokeObjectURL(url), 600000)
     } catch (err) {
       console.error('Erreur ouverture fichier:', err)
-      alert('Erreur lors de l\'ouverture du fichier')
+      alert(t('ui.fileOpenFailed'))
     }
   }
 
@@ -482,12 +479,12 @@ const PatternLibrary = () => {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
         </svg>
-        Ressources
+        {t('ui.resources')}
       </Link>
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mes patrons</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('ui.myPatterns')}</h1>
       </div>
 
       {/* Barre d'action */}
@@ -512,11 +509,11 @@ const PatternLibrary = () => {
                     <span className={`text-sm font-semibold ${
                       isAtLimit ? 'text-red-700' : isNearLimit ? 'text-amber-700' : 'text-gray-700'
                     }`}>
-                      {count}/{max} patrons
+                      {t('ui.patternsQuota', { count, max })}
                     </span>
                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                       isAtLimit ? 'bg-red-100 text-red-700' : isNearLimit ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'
-                    }`}>FREE</span>
+                    }`}>{t('ui.planFree')}</span>
                   </div>
                   <div className="w-32 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                     <div
@@ -532,9 +529,9 @@ const PatternLibrary = () => {
                       isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-primary-600'
                     }`}
                   >
-                    {isAtLimit ? 'Limite atteinte — Passer à PRO' :
-                     isNearLimit ? `Plus que ${remaining} — Passer à PRO` :
-                     'Passer à PRO pour plus'}
+                    {isAtLimit ? t('ui.limitReachedGoPro') :
+                     isNearLimit ? t('ui.onlyNLeftGoPro', { count: remaining }) :
+                     t('ui.goToPlan', { plan: planLabel(upgradeTarget('pattern_library', 'free')), price: PLAN_PRICES.plus.monthlyEquiv })}
                   </button>
                 </div>
               )
@@ -551,7 +548,7 @@ const PatternLibrary = () => {
               <path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/>
               <path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/>
             </svg>
-            Traduire
+            {t('ui.translate')}
           </Link>
           <button
             onClick={() => setShowAddModal(true)}
@@ -560,7 +557,7 @@ const PatternLibrary = () => {
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            Ajouter un patron
+            {t('ui.addPattern')}
           </button>
         </div>
       </div>
@@ -571,7 +568,7 @@ const PatternLibrary = () => {
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
-            placeholder="Rechercher un patron..."
+            placeholder={t('ui.searchPattern')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -582,10 +579,10 @@ const PatternLibrary = () => {
             onChange={(e) => setSortBy(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
           >
-            <option value="date_desc">Plus récents</option>
-            <option value="date_asc">Plus anciens</option>
-            <option value="name_asc">A → Z</option>
-            <option value="name_desc">Z → A</option>
+            <option value="date_desc">{t('ui.sortNewest')}</option>
+            <option value="date_asc">{t('ui.sortOldest')}</option>
+            <option value="name_asc">{t('ui.sortNameAZ')}</option>
+            <option value="name_desc">{t('ui.sortNameZA')}</option>
           </select>
         </div>
 
@@ -601,7 +598,7 @@ const PatternLibrary = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Favoris
+              {t('ui.favorites')}
             </button>
 
             {/* Technique */}
@@ -613,7 +610,7 @@ const PatternLibrary = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Crochet
+              {t('ui.crochet')}
             </button>
 
             <button
@@ -624,7 +621,7 @@ const PatternLibrary = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              Tricot
+              {t('ui.knitting')}
             </button>
 
             {/* Catégories */}
@@ -648,7 +645,7 @@ const PatternLibrary = () => {
                 onClick={resetFilters}
                 className="px-3 py-1.5 rounded-full text-sm font-medium text-red-600 hover:bg-red-50 transition"
               >
-                ✕ Réinitialiser
+                {t('ui.resetX')}
               </button>
             )}
           </div>
@@ -659,7 +656,7 @@ const PatternLibrary = () => {
       {loading && (
         <div className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-          <p className="mt-4 text-gray-600">Chargement de vos patrons...</p>
+          <p className="mt-4 text-gray-600">{t('ui.loadingPatterns')}</p>
         </div>
       )}
 
@@ -674,10 +671,10 @@ const PatternLibrary = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                 </svg>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Aucun patron trouvé
+                  {t('ui.noPatternFound')}
                 </h3>
                 <p className="text-gray-600">
-                  Aucun patron ne correspond aux filtres sélectionnés
+                  {t('ui.noPatternMatchFilters')}
                 </p>
               </div>
             ) : (
@@ -688,15 +685,15 @@ const PatternLibrary = () => {
                 </svg>
 
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 leading-snug">
-                  Vos patrons éparpillés partout ?
+                  {t('ui.patternsScattered')}
                   <br />
-                  <span className="text-primary-600">Rassemblez-les ici.</span>
+                  <span className="text-primary-600">{t('ui.gatherThemHere')}</span>
                 </h2>
 
                 <p className="text-gray-700 text-lg leading-relaxed mb-8 max-w-xl mx-auto">
-                  PDF, liens Ravelry, notes perso…
+                  {t('ui.pdfRavelryNotes')}
                   <br className="hidden sm:block" />
-                  Tout au même endroit, accessible sur tous vos appareils.
+                  {t('ui.allInOnePlace')}
                 </p>
 
                 <button
@@ -706,12 +703,12 @@ const PatternLibrary = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                   </svg>
-                  Ajouter mon premier patron
+                  {t('ui.addFirstPattern')}
                 </button>
 
                 {/* Mention discrète des projets */}
                 <p className="text-sm text-gray-500">
-                  Envie de compter vos rangs ? <Link to="/projects" className="text-primary-600 hover:text-primary-700 underline">Créer un projet</Link>
+                  {t('ui.wantToCountRows')} <Link to="/projects" className="text-primary-600 hover:text-primary-700 underline">{t('ui.createProject')}</Link>
                 </p>
               </div>
             )
@@ -739,7 +736,7 @@ const PatternLibrary = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-12 h-12 text-gray-400 mx-auto mb-2">
                               <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
                             </svg>
-                            <p className="text-xs text-gray-500">Image non disponible</p>
+                            <p className="text-xs text-gray-500">{t('ui.imageUnavailable')}</p>
                           </div>
                         </div>
                       ) : (
@@ -754,7 +751,7 @@ const PatternLibrary = () => {
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-14 h-14 text-red-400 mx-auto mb-2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                           </svg>
-                          <p className="text-xs text-red-700 font-medium">PDF</p>
+                          <p className="text-xs text-red-700 font-medium">{t('ui.pdf')}</p>
                         </div>
                       </div>
                     ) : pattern.source_type === 'text' ? (
@@ -763,7 +760,7 @@ const PatternLibrary = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-10 h-10 text-blue-400 mb-2">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                         </svg>
-                        <p className="text-xs text-blue-700 font-medium mb-2">TEXTE</p>
+                        <p className="text-xs text-blue-700 font-medium mb-2">{t('ui.textUpper')}</p>
                         <div className="text-xs text-blue-600 font-mono text-center line-clamp-3 max-w-full">
                           {pattern.pattern_text?.substring(0, 80)}...
                         </div>
@@ -780,7 +777,7 @@ const PatternLibrary = () => {
                             e.target.parentElement.innerHTML = `
                               <div class="w-full h-full bg-gradient-to-br from-primary-100 to-primary-100 flex items-center justify-center">
                                 <div class="text-center">
-                                  <p class="text-xs text-primary-700 font-medium mt-2">Lien web</p>
+                                  <p class="text-xs text-primary-700 font-medium mt-2">{t('ui.webLink')}</p>
                                 </div>
                               </div>
                             `
@@ -792,7 +789,7 @@ const PatternLibrary = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-14 h-14 text-primary-400 mx-auto mb-2">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                             </svg>
-                            <p className="text-xs text-primary-700 font-medium">Lien web</p>
+                            <p className="text-xs text-primary-700 font-medium">{t('ui.webLink')}</p>
                           </div>
                         </div>
                       )
@@ -831,7 +828,7 @@ const PatternLibrary = () => {
                     <div className="flex flex-wrap gap-2 mb-4">
                       {pattern.technique && (
                         <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded text-xs font-medium">
-                          {pattern.technique === 'tricot' ? 'Tricot' : 'Crochet'}
+                          {pattern.technique === 'tricot' ? t('ui.knitting') : 'Crochet'}
                         </span>
                       )}
                       {pattern.category && (
@@ -849,7 +846,7 @@ const PatternLibrary = () => {
                     {/* Stats usage */}
                     {pattern.times_used > 0 && (
                       <p className="text-xs text-gray-500 mb-3">
-                        Utilisé {pattern.times_used} fois
+                        {t('ui.usedTimes', { count: pattern.times_used })}
                       </p>
                     )}
 
@@ -858,7 +855,7 @@ const PatternLibrary = () => {
                       to={`/pattern-library/${pattern.id}`}
                       className="block w-full px-4 py-2 bg-primary-600 text-white rounded-lg text-center font-medium hover:bg-primary-700 transition text-sm"
                     >
-                      Voir les détails
+                      {t('ui.viewDetails')}
                     </Link>
                   </div>
                 </div>
@@ -873,14 +870,14 @@ const PatternLibrary = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-content-mobile">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
-              <h2 className="text-2xl font-bold text-gray-900">Ajouter un patron</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('ui.addPattern')}</h2>
             </div>
 
             <form onSubmit={handleAddPattern} className="p-6">
               {/* Type de patron */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Type de patron
+                  {t('ui.patternType')}
                 </label>
                 <div className="grid grid-cols-3 gap-4">
                   <button
@@ -898,8 +895,8 @@ const PatternLibrary = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mx-auto mb-2 text-gray-500">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                     </svg>
-                    <p className="font-medium">Fichier</p>
-                    <p className="text-xs text-gray-600">PDF, JPG, PNG</p>
+                    <p className="font-medium">{t('ui.file')}</p>
+                    <p className="text-xs text-gray-600">{t('ui.pdfJpgPng')}</p>
                   </button>
 
                   <button
@@ -917,8 +914,8 @@ const PatternLibrary = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mx-auto mb-2 text-gray-500">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                     </svg>
-                    <p className="font-medium">Lien web</p>
-                    <p className="text-xs text-gray-600">YouTube, blog...</p>
+                    <p className="font-medium">{t('ui.webLink')}</p>
+                    <p className="text-xs text-gray-600">{t('ui.phYoutubeBlog')}</p>
                   </button>
 
                   <button
@@ -936,8 +933,8 @@ const PatternLibrary = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mx-auto mb-2 text-gray-500">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                     </svg>
-                    <p className="font-medium">Texte</p>
-                    <p className="text-xs text-gray-600">Copier-coller</p>
+                    <p className="font-medium">{t('ui.text')}</p>
+                    <p className="text-xs text-gray-600">{t('ui.copyPaste')}</p>
                   </button>
                 </div>
               </div>
@@ -946,7 +943,7 @@ const PatternLibrary = () => {
               {addType === 'file' && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fichier(s) <span className="text-red-600">*</span>
+                    {t('ui.filesLabel2')} <span className="text-red-600">*</span>
                   </label>
 
                   {/* Drop zone */}
@@ -975,8 +972,8 @@ const PatternLibrary = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-gray-400 mx-auto mb-2">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                     </svg>
-                    <p className="text-sm text-gray-600 mb-1">Glissez vos fichiers ici</p>
-                    <p className="text-xs text-gray-400 mb-3">PDF, JPG, PNG, WEBP</p>
+                    <p className="text-sm text-gray-600 mb-1">{t('ui.dragFilesHere')}</p>
+                    <p className="text-xs text-gray-500 mb-3">{t('ui.pdfJpgPngWebp')}</p>
                     <label className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 cursor-pointer transition">
                       <input
                         type="file"
@@ -995,7 +992,7 @@ const PatternLibrary = () => {
                         }}
                         className="hidden"
                       />
-                      Parcourir
+                      {t('ui.browse')}
                     </label>
                   </div>
 
@@ -1008,7 +1005,7 @@ const PatternLibrary = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                           </svg>
                           <span className="text-sm text-gray-800 flex-1 truncate">{file.name}</span>
-                          <span className="text-xs text-primary-600 font-medium">Principal</span>
+                          <span className="text-xs text-primary-600 font-medium">{t('ui.main')}</span>
                           <button type="button" onClick={() => { setFile(extraFiles[0] || null); setExtraFiles(prev => prev.slice(1)) }} className="text-gray-400 hover:text-red-500 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                           </button>
@@ -1020,7 +1017,7 @@ const PatternLibrary = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                           </svg>
                           <span className="text-sm text-gray-700 flex-1 truncate">{xf.name}</span>
-                          <span className="text-xs text-gray-400">Additionnel</span>
+                          <span className="text-xs text-gray-500">{t('ui.additional')}</span>
                           <button type="button" onClick={() => setExtraFiles(prev => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500 transition">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
                           </button>
@@ -1048,7 +1045,7 @@ const PatternLibrary = () => {
                       setFormData({ ...formData, url: e.target.value })
                       setValidationErrors({ ...validationErrors, url: '' })
                     }}
-                    placeholder="https://..."
+                    placeholder={t('ui.phHttps')}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
                       validationErrors.url ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
@@ -1063,7 +1060,7 @@ const PatternLibrary = () => {
               {addType === 'text' && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Texte du patron <span className="text-red-600">*</span>
+                    {t('ui.patternTextLabel')} <span className="text-red-600">*</span>
                   </label>
                   <textarea
                     value={formData.pattern_text}
@@ -1072,7 +1069,7 @@ const PatternLibrary = () => {
                       setValidationErrors({ ...validationErrors, pattern_text: '' })
                     }}
                     rows={15}
-                    placeholder="Collez ici le texte de votre patron...&#10;&#10;Exemple :&#10;Rang 1 : 6 mailles serrées dans un cercle magique&#10;Rang 2 : 2ms dans chaque maille (12)&#10;Rang 3 : *1ms, aug* x6 (18)&#10;..."
+                    placeholder={t('ui.phPatternTextArea')}
                     className={`w-full px-4 py-2 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 ${
                       validationErrors.pattern_text ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
@@ -1081,7 +1078,7 @@ const PatternLibrary = () => {
                     <p className="mt-2 text-sm text-red-600">{validationErrors.pattern_text}</p>
                   ) : (
                     <p className="text-xs text-gray-500 mt-1">
-                      Astuce : vous pouvez copier-coller le texte depuis n'importe quelle source
+                      {t('ui.tipCopyPaste')}
                     </p>
                   )}
                 </div>
@@ -1090,7 +1087,7 @@ const PatternLibrary = () => {
               {/* Nom */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom du patron <span className="text-red-600">*</span>
+                  {t('ui.patternNameLabel')} <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -1099,7 +1096,7 @@ const PatternLibrary = () => {
                     setFormData({ ...formData, name: e.target.value })
                     setValidationErrors({ ...validationErrors, name: '' })
                   }}
-                  placeholder="Ex: Pull irlandais"
+                  placeholder={t('ui.phPatternName')}
                   autoFocus
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
                     validationErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
@@ -1113,13 +1110,13 @@ const PatternLibrary = () => {
               {/* Description */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  {t('ui.description')}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  placeholder="Description du patron..."
+                  placeholder={t('ui.phPatternDescription')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
@@ -1129,54 +1126,54 @@ const PatternLibrary = () => {
                 {/* Catégorie */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Catégorie
+                    {t('ui.category')}
                   </label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="">-- Sélectionner --</option>
-                    <option value="Vêtements">Vêtements</option>
-                    <option value="Accessoires">Accessoires</option>
-                    <option value="Jouets/Peluches">Jouets/Peluches</option>
-                    <option value="Vêtements bébé">Vêtements bébé</option>
-                    <option value="Accessoires bébé">Accessoires bébé</option>
-                    <option value="Vêtements enfant">Vêtements enfant</option>
-                    <option value="Maison/Déco">Maison/Déco</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="Vêtements">{t('ui.catClothing')}</option>
+                    <option value="Accessoires">{t('ui.catAccessories')}</option>
+                    <option value="Jouets/Peluches">{t('ui.catToys')}</option>
+                    <option value="Vêtements bébé">{t('ui.catBabyClothing')}</option>
+                    <option value="Accessoires bébé">{t('ui.catBabyAccessories')}</option>
+                    <option value="Vêtements enfant">{t('ui.catKidsClothing')}</option>
+                    <option value="Maison/Déco">{t('ui.catHome')}</option>
                   </select>
                 </div>
 
                 {/* Technique */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Technique
+                    {t('ui.technique')}
                   </label>
                   <select
                     value={formData.technique}
                     onChange={(e) => setFormData({ ...formData, technique: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="">-- Sélectionner --</option>
-                    <option value="crochet">Crochet</option>
-                    <option value="tricot">Tricot</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="crochet">{t('ui.crochet')}</option>
+                    <option value="tricot">{t('ui.knitting')}</option>
                   </select>
                 </div>
 
                 {/* Difficulté */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Difficulté
+                    {t('ui.difficulty')}
                   </label>
                   <select
                     value={formData.difficulty}
                     onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="">-- Sélectionner --</option>
-                    <option value="facile">Facile</option>
-                    <option value="moyen">Moyen</option>
-                    <option value="difficile">Difficile</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="facile">{t('ui.diffEasy')}</option>
+                    <option value="moyen">{t('ui.diffMedium')}</option>
+                    <option value="difficile">{t('ui.diffHard')}</option>
                   </select>
                 </div>
               </div>
@@ -1184,13 +1181,13 @@ const PatternLibrary = () => {
               {/* Notes */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes personnelles
+                  {t('ui.personalNotes')}
                 </label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
-                  placeholder="Vos notes sur ce patron..."
+                  placeholder={t('ui.phNotesOnPattern')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
@@ -1199,7 +1196,7 @@ const PatternLibrary = () => {
               {(!formData.category || !formData.technique || !formData.difficulty) && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>Astuce :</strong> Remplir la catégorie, la technique et le niveau facilite la recherche et le filtrage de vos patrons.
+                    <strong>{t('ui.tip')}</strong> {t('ui.metadataHelpsSearch')}
                   </p>
                 </div>
               )}
@@ -1214,14 +1211,14 @@ const PatternLibrary = () => {
                   }}
                   className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {uploading ? 'Ajout en cours...' : 'Ajouter'}
+                  {uploading ? t('ui.adding') : t('ui.add2')}
                 </button>
               </div>
             </form>
@@ -1234,9 +1231,9 @@ const PatternLibrary = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto modal-content-mobile">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
-              <h2 className="text-2xl font-bold text-gray-900">Modifier le patron</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{t('ui.editPattern')}</h2>
               <p className="text-sm text-gray-600 mt-1">
-                Vous pouvez modifier le type de patron si besoin
+                {t('ui.canChangePatternType')}
               </p>
             </div>
 
@@ -1244,7 +1241,7 @@ const PatternLibrary = () => {
               {/* Sélection du type de patron */}
               <div className="mb-6 pb-6 border-b border-gray-200">
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Type de patron
+                  {t('ui.patternType')}
                 </label>
                 <div className="grid grid-cols-3 gap-4">
                   <button
@@ -1262,8 +1259,8 @@ const PatternLibrary = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mx-auto mb-2 text-gray-500">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                     </svg>
-                    <p className="font-medium">Fichier</p>
-                    <p className="text-xs text-gray-600">PDF, JPG, PNG</p>
+                    <p className="font-medium">{t('ui.file')}</p>
+                    <p className="text-xs text-gray-600">{t('ui.pdfJpgPng')}</p>
                   </button>
 
                   <button
@@ -1281,8 +1278,8 @@ const PatternLibrary = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mx-auto mb-2 text-gray-500">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                     </svg>
-                    <p className="font-medium">Lien web</p>
-                    <p className="text-xs text-gray-600">YouTube, blog...</p>
+                    <p className="font-medium">{t('ui.webLink')}</p>
+                    <p className="text-xs text-gray-600">{t('ui.phYoutubeBlog')}</p>
                   </button>
 
                   <button
@@ -1300,8 +1297,8 @@ const PatternLibrary = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mx-auto mb-2 text-gray-500">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                     </svg>
-                    <p className="font-medium">Texte</p>
-                    <p className="text-xs text-gray-600">Copier/coller</p>
+                    <p className="font-medium">{t('ui.text')}</p>
+                    <p className="text-xs text-gray-600">{t('ui.copyPasteAlt')}</p>
                   </button>
                 </div>
               </div>
@@ -1310,17 +1307,17 @@ const PatternLibrary = () => {
               {editType === 'file' && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {editingPattern.source_type === 'file' ? 'Remplacer le fichier (optionnel)' : 'Fichier '}
+                    {editingPattern.source_type === 'file' ? t('ui.replaceFileOptional') : t('ui.fileLabel')}
                     {editingPattern.source_type !== 'file' && <span className="text-red-600">*</span>}
                   </label>
                   {editingPattern.source_type === 'file' && (
                     <p className="text-xs text-gray-600 mb-3">
-                      Fichier actuel : <strong>{editingPattern.file_name || 'Non disponible'}</strong>
+                      <Trans t={t} i18nKey="ui.currentFileNamed" values={{ name: editingPattern.file_name || t('ui.notAvailable') }}><strong /></Trans>
                     </p>
                   )}
                   {editingPattern.source_type !== 'file' && (
                     <p className="text-xs text-gray-600 mb-3">
-                      Vous changez le type de patron vers "Fichier". Un fichier est requis.
+                      {t('ui.switchingToFile')}
                     </p>
                   )}
                   <input
@@ -1346,15 +1343,15 @@ const PatternLibrary = () => {
                             <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
                           </svg>
                           <p className="font-medium text-gray-900">{file.name}</p>
-                          <p className="text-sm text-gray-600 mt-1">Nouveau fichier sélectionné</p>
+                          <p className="text-sm text-gray-600 mt-1">{t('ui.newFileSelected')}</p>
                         </>
                       ) : (
                         <>
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-400 mx-auto mb-2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                           </svg>
-                          <p className="font-medium text-gray-900">Choisir un nouveau fichier</p>
-                          <p className="text-sm text-gray-600 mt-1">PDF, JPG, PNG, WEBP (max 10MB)</p>
+                          <p className="font-medium text-gray-900">{t('ui.chooseNewFile')}</p>
+                          <p className="text-sm text-gray-600 mt-1">{t('ui.formatsMax10')}</p>
                         </>
                       )}
                     </div>
@@ -1378,7 +1375,7 @@ const PatternLibrary = () => {
                       setFormData({ ...formData, url: e.target.value })
                       setValidationErrors({ ...validationErrors, url: '' })
                     }}
-                    placeholder="https://..."
+                    placeholder={t('ui.phHttps')}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
                       validationErrors.url ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
@@ -1393,7 +1390,7 @@ const PatternLibrary = () => {
               {editType === 'text' && (
                 <div className="mb-6 pb-6 border-b border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Texte du patron <span className="text-red-600">*</span>
+                    {t('ui.patternTextLabel')} <span className="text-red-600">*</span>
                   </label>
                   <textarea
                     value={formData.pattern_text}
@@ -1402,7 +1399,7 @@ const PatternLibrary = () => {
                       setValidationErrors({ ...validationErrors, pattern_text: '' })
                     }}
                     rows={15}
-                    placeholder="Collez ici le texte de votre patron..."
+                    placeholder={t('ui.phPastePatternText')}
                     className={`w-full px-4 py-2 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 ${
                       validationErrors.pattern_text ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
@@ -1416,7 +1413,7 @@ const PatternLibrary = () => {
               {/* Nom */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nom du patron <span className="text-red-600">*</span>
+                  {t('ui.patternNameLabel')} <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -1425,7 +1422,7 @@ const PatternLibrary = () => {
                     setFormData({ ...formData, name: e.target.value })
                     setValidationErrors({ ...validationErrors, name: '' })
                   }}
-                  placeholder="Ex: Pull irlandais"
+                  placeholder={t('ui.phPatternName')}
                   autoFocus
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
                     validationErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
@@ -1439,13 +1436,13 @@ const PatternLibrary = () => {
               {/* Description */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  {t('ui.description')}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
-                  placeholder="Description du patron..."
+                  placeholder={t('ui.phPatternDescription')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
@@ -1455,54 +1452,54 @@ const PatternLibrary = () => {
                 {/* Catégorie */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Catégorie
+                    {t('ui.category')}
                   </label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="">-- Sélectionner --</option>
-                    <option value="Vêtements">Vêtements</option>
-                    <option value="Accessoires">Accessoires</option>
-                    <option value="Jouets/Peluches">Jouets/Peluches</option>
-                    <option value="Vêtements bébé">Vêtements bébé</option>
-                    <option value="Accessoires bébé">Accessoires bébé</option>
-                    <option value="Vêtements enfant">Vêtements enfant</option>
-                    <option value="Maison/Déco">Maison/Déco</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="Vêtements">{t('ui.catClothing')}</option>
+                    <option value="Accessoires">{t('ui.catAccessories')}</option>
+                    <option value="Jouets/Peluches">{t('ui.catToys')}</option>
+                    <option value="Vêtements bébé">{t('ui.catBabyClothing')}</option>
+                    <option value="Accessoires bébé">{t('ui.catBabyAccessories')}</option>
+                    <option value="Vêtements enfant">{t('ui.catKidsClothing')}</option>
+                    <option value="Maison/Déco">{t('ui.catHome')}</option>
                   </select>
                 </div>
 
                 {/* Technique */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Technique
+                    {t('ui.technique')}
                   </label>
                   <select
                     value={formData.technique}
                     onChange={(e) => setFormData({ ...formData, technique: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="">-- Sélectionner --</option>
-                    <option value="tricot">Tricot</option>
-                    <option value="crochet">Crochet</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="tricot">{t('ui.knitting')}</option>
+                    <option value="crochet">{t('ui.crochet')}</option>
                   </select>
                 </div>
 
                 {/* Niveau */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Niveau
+                    {t('ui.level')}
                   </label>
                   <select
                     value={formData.difficulty}
                     onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="">-- Sélectionner --</option>
-                    <option value="Débutant">Débutant</option>
-                    <option value="Intermédiaire">Intermédiaire</option>
-                    <option value="Avancé">Avancé</option>
+                    <option value="">{t('ui.selectPlaceholder')}</option>
+                    <option value="Débutant">{t('ui.lvlBeginner')}</option>
+                    <option value="Intermédiaire">{t('ui.lvlIntermediate')}</option>
+                    <option value="Avancé">{t('ui.lvlAdvanced')}</option>
                   </select>
                 </div>
               </div>
@@ -1510,13 +1507,13 @@ const PatternLibrary = () => {
               {/* Notes */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes personnelles
+                  {t('ui.personalNotes')}
                 </label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
-                  placeholder="Vos notes personnelles..."
+                  placeholder={t('ui.phPersonalNotes')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                 />
               </div>
@@ -1525,7 +1522,7 @@ const PatternLibrary = () => {
               {(!formData.category || !formData.technique || !formData.difficulty) && (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>Astuce :</strong> Remplir la catégorie, la technique et le niveau facilite la recherche et le filtrage de vos patrons.
+                    <strong>{t('ui.tip')}</strong> {t('ui.metadataHelpsSearch')}
                   </p>
                 </div>
               )}
@@ -1541,14 +1538,14 @@ const PatternLibrary = () => {
                   }}
                   className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
                   className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
-                  {uploading ? 'Enregistrement...' : 'Enregistrer'}
+                  {uploading ? t('ui.savingDots') : t('ui.save')}
                 </button>
               </div>
             </form>
@@ -1574,7 +1571,7 @@ const PatternLibrary = () => {
                   onClick={() => setShowViewerModal(false)}
                   className="px-4 py-2 bg-white text-gray-900 rounded-lg font-bold hover:bg-gray-200 transition flex items-center gap-2"
                 >
-                  ← Retour
+                  {t('ui.backArrow2')}
                 </button>
                 <h2 className="text-lg font-semibold">{viewerData.fileName}</h2>
               </div>
@@ -1583,7 +1580,7 @@ const PatternLibrary = () => {
                 download={viewerData.fileName}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
               >
-                Télécharger
+                {t('ui.download')}
               </a>
             </div>
 
@@ -1617,14 +1614,14 @@ const PatternLibrary = () => {
                 <div className="flex items-center justify-center h-full p-8 text-center">
                   <div>
                     <p className="text-gray-700 mb-4">
-                      Prévisualisation non disponible pour ce type de fichier
+                      {t('ui.previewUnavailable')}
                     </p>
                     <a
                       href={viewerData.url}
                       download={viewerData.fileName}
                       className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition inline-block"
                     >
-                      Télécharger le fichier
+                      {t('ui.downloadFile')}
                     </a>
                   </div>
                 </div>

@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const STASH_NEW_KEY = 'yf_stash_new_seen'
 
 const BottomNav = ({ onOpenAi }) => {
+  const { t } = useTranslation()
   const location = useLocation()
   const isActive = (path) => location.pathname === path
   const isLibraryActive = location.pathname === '/bibliotheque' || location.pathname === '/pattern-library' || location.pathname === '/stash' || location.pathname.startsWith('/pattern-library/')
@@ -37,7 +39,7 @@ const BottomNav = ({ onOpenAi }) => {
             </svg>
           </div>
           <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/tools') ? 'text-primary-600' : 'text-gray-400'}`}>
-            Outils
+            {t('nav.tools')}
           </span>
         </Link>
 
@@ -49,7 +51,7 @@ const BottomNav = ({ onOpenAi }) => {
             </svg>
           </div>
           <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/my-projects') ? 'text-primary-600' : 'text-gray-400'}`}>
-            Projets
+            {t('nav.projects')}
           </span>
         </Link>
 
@@ -64,7 +66,7 @@ const BottomNav = ({ onOpenAi }) => {
             </svg>
           </div>
           <span className="text-[10px] font-medium text-primary-600">
-            Assistant
+            {t('nav.assistant')}
           </span>
         </button>
 
@@ -79,7 +81,7 @@ const BottomNav = ({ onOpenAi }) => {
             )}
           </div>
           <span className={`text-[10px] font-medium transition-colors duration-150 ${isLibraryActive ? 'text-primary-600' : 'text-gray-400'}`}>
-            Ressources
+            {t('nav.resources')}
           </span>
         </Link>
 
@@ -91,7 +93,7 @@ const BottomNav = ({ onOpenAi }) => {
             </svg>
           </div>
           <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/gallery') ? 'text-primary-600' : 'text-gray-400'}`}>
-            Galerie
+            {t('nav.gallery')}
           </span>
         </Link>
 

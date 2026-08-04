@@ -3,8 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { paymentsAPI, authAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
+import { useTranslation, Trans } from 'react-i18next'
 
 export default function PaymentSuccess() {
+  const { t } = useTranslation('tools')
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { updateUser } = useAuth()
@@ -84,7 +86,7 @@ export default function PaymentSuccess() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Vérification du paiement...</p>
+          <p className="text-gray-600 text-lg">{t('ui.verifyingPayment')}</p>
         </div>
       </div>
     )
@@ -99,15 +101,15 @@ export default function PaymentSuccess() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Erreur de paiement</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('ui.paymentError')}</h1>
           <p className="text-gray-600 mb-6">
-            Une erreur est survenue lors de la vérification de votre paiement.
+            {t('ui.paymentVerifyError')}
           </p>
           <button
             onClick={() => navigate('/subscription')}
             className="bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors"
           >
-            Retour à l'abonnement
+            {t('ui.backToSubscription')}
           </button>
         </div>
       </div>
@@ -124,41 +126,41 @@ export default function PaymentSuccess() {
           </svg>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Paiement réussi !</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('ui.paymentSuccess')}</h1>
 
         {paymentInfo?.type === 'credits' && (
           <p className="text-gray-600 mb-6">
-            Vos <strong>{paymentInfo.credits_amount || '?'} crédits photos</strong> ont été ajoutés à votre compte.
+            <Trans t={t} i18nKey="ui.creditsAddedToAccount" values={{ count: paymentInfo.credits_amount || '?' }}><strong /></Trans>
           </p>
         )}
 
         {paymentInfo?.type === 'subscription' && (
           <p className="text-gray-600 mb-6">
-            Votre abonnement <strong>{paymentInfo.plan || '?'}</strong> est maintenant actif !
+            <Trans t={t} i18nKey="ui.subscriptionNowActive" values={{ plan: paymentInfo.plan || '?' }}><strong /></Trans>
           </p>
         )}
 
         {!paymentInfo?.type && (
           <p className="text-gray-600 mb-6">
-            Votre paiement a été traité avec succès.
+            {t('ui.paymentProcessed')}
           </p>
         )}
 
         <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-primary-800">
-            Un email de confirmation vous a été envoyé.
+            {t('ui.confirmationEmailSent')}
           </p>
         </div>
 
         <p className="text-gray-500 text-sm mb-4">
-          Redirection automatique dans {countdown} seconde{countdown > 1 ? 's' : ''}...
+          {t('ui.autoRedirectIn', { count: countdown })}
         </p>
 
         <button
           onClick={() => navigate('/my-projects')}
           className="w-full bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors"
         >
-          Aller à mes projets
+          {t('ui.goToMyProjects')}
         </button>
       </div>
     </div>
