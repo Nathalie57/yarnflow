@@ -84,7 +84,7 @@ const Step4Optional = ({
           className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary focus:ring-2"
         />
         <span className="text-sm font-medium text-gray-700 group-hover:text-primary transition">
-          Marquer comme favori
+          {t('ui.markFavorite2')}
         </span>
       </label>
 
@@ -120,7 +120,7 @@ const Step4Optional = ({
       {/* Import de patron */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">
-          Patron (optionnel)
+          {t('ui.patternOptional2')}
         </label>
         <div className="grid grid-cols-2 gap-2">
           {/* Option 1: Bibliothèque */}

@@ -514,7 +514,7 @@ const Gallery = () => {
       <div className="mb-6 flex flex-col items-center gap-2">
         {photoQuota && !photoQuota.unlimited && (
           <p className="text-xs text-gray-500">
-            {photoQuota.used} / {photoQuota.limit} photos
+            {t('ui.photoQuota', { used: photoQuota.used, limit: photoQuota.limit })}
             {photoQuota.used >= photoQuota.limit && (
               <a href="/subscription" className="ml-2 text-primary-600 font-semibold hover:underline">{t('ui.upgradeToPlus')}</a>
             )}
@@ -1046,7 +1046,7 @@ const Gallery = () => {
                 )}
 
                 <p className="text-xs text-gray-500">
-                  Formats: JPG, PNG, WEBP • Max 10 MB
+                  {t('ui.photoFormats2')}
                 </p>
               </div>
 

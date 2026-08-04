@@ -351,7 +351,7 @@ const Stats = () => {
               <div className="text-xs text-gray-500 mt-0.5">{t('ui.projects')}</div>
               <div className="mt-2 pt-2 border-t border-gray-100 flex gap-3 text-xs">
                 <span className="text-green-600 font-medium">{t('ui.completedCount', { count: stats.completed_projects || 0 })}</span>
-                <span className="text-orange-500 font-medium">{stats.active_projects || 0} en cours</span>
+                <span className="text-orange-500 font-medium">{t('ui.activeCount', { count: stats.active_projects || 0 })}</span>
               </div>
             </div>
 
@@ -368,7 +368,7 @@ const Stats = () => {
               <div className="text-xs text-gray-500 mt-0.5">{t('ui.ofKnitting')}</div>
               {isPro && stats.average_session_time > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-400">
-                  ~{stats.average_session_time} min / session
+                  {t('ui.avgSession', { n: stats.average_session_time })}
                 </div>
               )}
             </div>
@@ -386,7 +386,7 @@ const Stats = () => {
               <div className="text-xs text-gray-500 mt-0.5">{t('ui.rowsCounted')}</div>
               {isPro && stats.avg_rows_per_hour > 0 && (
                 <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-400">
-                  ~{stats.avg_rows_per_hour} rangs/h en moy.
+                  {t('ui.avgRowsPerHour', { n: stats.avg_rows_per_hour })}
                 </div>
               )}
             </div>
@@ -427,7 +427,7 @@ const Stats = () => {
               </div>
               <div className="text-right">
                 <span className="text-2xl font-bold text-primary-600 tabular-nums">{stats.current_streak || 0}</span>
-                <span className="text-sm text-gray-500 ml-1">jour{stats.current_streak > 1 ? 's' : ''}</span>
+                <span className="text-sm text-gray-500 ml-1">{t('ui.dayUnit', { count: stats.current_streak })}</span>
               </div>
             </div>
 
@@ -435,16 +435,16 @@ const Stats = () => {
               <>
                 {streakCalendar()}
                 <div className="mt-3 text-center text-xs text-gray-400">
-                  Record personnel : <strong className="text-gray-600">{stats.longest_streak || 0} jour{stats.longest_streak > 1 ? 's' : ''}</strong>
+                  <Trans t={t} i18nKey="ui.personalRecord" count={stats.longest_streak || 0} values={{ count: stats.longest_streak || 0 }}><strong className="text-gray-600" /></Trans>
                 </div>
               </>
             ) : (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">
-                  Record : <strong className="text-gray-700">{stats.longest_streak || 0} jour{stats.longest_streak > 1 ? 's' : ''}</strong>
+                  <Trans t={t} i18nKey="ui.recordShort" count={stats.longest_streak || 0} values={{ count: stats.longest_streak || 0 }}><strong className="text-gray-700" /></Trans>
                 </span>
                 <Link to="/subscription" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
-                  Calendrier PRO →
+                  {t('ui.proCalendar')}
                 </Link>
               </div>
             )}
@@ -459,7 +459,7 @@ const Stats = () => {
 
                 {/* Progression 30 jours */}
                 <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-4">Progression — 30 derniers jours</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-4">{t('ui.progress30Days')}</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <AreaChart data={
                       stats.progression && stats.progression.length > 0
@@ -479,7 +479,7 @@ const Stats = () => {
                         content={({ active, payload, label }) => active && payload?.length ? (
                           <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-md text-xs">
                             <p className="font-semibold text-gray-700">{label}</p>
-                            <p className="text-primary-600">{payload[0].value} rangs</p>
+                            <p className="text-primary-600">{t('ui.rowsTooltip', { count: payload[0].value })}</p>
                           </div>
                         ) : null}
                       />
@@ -520,7 +520,7 @@ const Stats = () => {
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
-                      <span className="text-gray-600">En cours ({stats.active_projects || 0})</span>
+                      <span className="text-gray-600">{t('ui.inProgressParen', { count: stats.active_projects || 0 })}</span>
                     </div>
                   </div>
                 </div>
@@ -535,7 +535,7 @@ const Stats = () => {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-0.5">{t('ui.bestHour')}</p>
-                      <p className="text-2xl font-bold text-gray-900 tabular-nums">{stats.best_hour}h – {stats.best_hour + 1}h</p>
+                      <p className="text-2xl font-bold text-gray-900 tabular-nums">{t('ui.hourRange', { from: stats.best_hour, to: stats.best_hour + 1 })}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{t('ui.fastestSlot')}</p>
                     </div>
                   </div>
@@ -597,7 +597,7 @@ const Stats = () => {
               <h3 className="font-semibold text-gray-900 text-sm mb-4">
                 {t('ui.badges')}
                 <span className="ml-2 text-xs font-normal text-gray-400">
-                  {earnedBadges.length} obtenus{!isPro && lockedBadges.length > 0 ? ` · ${lockedBadges.length} à débloquer` : ''}
+                  {t('ui.badgesEarned', { count: earnedBadges.length })}{!isPro && lockedBadges.length > 0 ? t('ui.badgesToUnlockSuffix', { count: lockedBadges.length }) : ''}
                 </span>
               </h3>
 

@@ -304,7 +304,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check /><span>{t('ui.oneCounterPerProject')}</span></li>
             <li className="flex items-start gap-2"><Check /><span>{t('ui.notesPerSection')}</span></li>
             <li className="flex items-start gap-2"><Check /><span>{t('ui.aiCreations3Free')}</span></li>
-            <li className="flex items-start gap-2"><Check /><span>5 questions IA / mois</span></li>
+            <li className="flex items-start gap-2"><Check /><span>{t('ui.aiQuestionsMonth', { count: 5 })}</span></li>
             <li className="flex items-start gap-2"><Check /><span>{t('ui.photoStudio2Free')}</span></li>
             <li className="flex items-start gap-2"><Check /><span>{t('ui.translations3Free')}</span></li>
           </ul>
@@ -325,7 +325,7 @@ const Subscription = () => {
             <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">Plus</p>
             <div className="flex items-baseline gap-1 mb-1">
               <span className="text-3xl font-bold text-gray-900">{plusMonthlyEquiv}</span>
-              <span className="text-sm text-gray-500">/mois</span>
+              <span className="text-sm text-gray-500">{t('ui.perMonthSuffix')}</span>
             </div>
             <p className="text-xs text-green-600 font-medium mb-1">{t('ui.billedYearlySave2', { price: plusAnnualPrice })}</p>
             <p className="text-sm text-gray-500">{t('ui.plusDesc')}</p>
@@ -333,11 +333,11 @@ const Subscription = () => {
 
           <ul className="space-y-2 mb-5 flex-1 text-sm text-gray-700">
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>{t('ui.allOfFree')}</span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.unlimitedStorage')}</span> · 200 photos</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.unlimitedStorage')}</span>{t('ui.andPhotosCount', { count: 200 })}</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.upTo10Counters')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.stash15Refs')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.aiCreations3Month')}</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>10 questions IA / mois</span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>{t('ui.aiQuestionsMonth', { count: 10 })}</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>{t('ui.photoStudio5Month')}</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span><span className="font-medium">{t('ui.translations3Month')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-500" /><span>{t('ui.advancedStats')}</span></li>
@@ -393,7 +393,7 @@ const Subscription = () => {
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">Pro</p>
             <div className="flex items-baseline gap-1 mb-1">
               <span className="text-3xl font-bold text-gray-900">4,99€</span>
-              <span className="text-sm text-gray-500">/mois</span>
+              <span className="text-sm text-gray-500">{t('ui.perMonthSuffix')}</span>
             </div>
             <p className="text-xs text-green-600 font-medium mb-1">{t('ui.billedYearlySave')}</p>
             <p className="text-sm text-gray-500">{t('ui.proDesc')}</p>
@@ -403,7 +403,7 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>{t('ui.allOfPlus')}</span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.unlimitedStash')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.aiCreations15Month')}</span></span></li>
-            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">30 questions IA / mois</span></span></li>
+            <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.aiQuestionsMonth', { count: 30 })}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.photoStudio20Month')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span><span className="font-medium">{t('ui.translations15Month')}</span></span></li>
             <li className="flex items-start gap-2"><Check className="text-primary-600" /><span>{t('ui.advancedStats')}</span></li>
@@ -451,11 +451,11 @@ const Subscription = () => {
               </div>
               <div className="text-right">
                 <span className="text-3xl font-bold text-gray-900">4,99€</span>
-                <p className="text-xs text-gray-500">paiement unique</p>
+                <p className="text-xs text-gray-500">{t('ui.oneOffPayment')}</p>
               </div>
             </div>
             <ul className="space-y-2 mb-5">
-              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">50 photos IA</span></li>
+              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.aiPhotosCount', { count: 50 })}</span></li>
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.validForLife')}</span></li>
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.stackableCredits')}</span></li>
             </ul>
@@ -476,11 +476,11 @@ const Subscription = () => {
               </div>
               <div className="text-right">
                 <span className="text-3xl font-bold text-gray-900">9,99€</span>
-                <p className="text-xs text-gray-500">paiement unique</p>
+                <p className="text-xs text-gray-500">{t('ui.oneOffPayment')}</p>
               </div>
             </div>
             <ul className="space-y-2 mb-5">
-              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">150 photos IA</span></li>
+              <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.aiPhotosCount', { count: 150 })}</span></li>
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.validForLife')}</span></li>
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.stackableCredits')}</span></li>
             </ul>

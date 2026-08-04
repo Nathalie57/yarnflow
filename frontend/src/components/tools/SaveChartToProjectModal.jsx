@@ -112,7 +112,7 @@ export default function SaveChartToProjectModal({ chart, existingChart, onClose,
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Projet {isReassign && <span className="text-red-500">*</span>}
+                {t('ui.projectRequired')} {isReassign && <span className="text-red-500">*</span>}
               </label>
               <select
                 value={selectedProjectId}

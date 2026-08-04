@@ -355,7 +355,7 @@ export default function PatternTranslator() {
           ) : (
             <>
               <p className="text-sm text-gray-500">{t('ui.clickToSelectPdf')}</p>
-              <p className="text-xs text-gray-400 mt-1">Max 30 Mo</p>
+              <p className="text-xs text-gray-400 mt-1">{t('ui.maxSize30b')}</p>
             </>
           )}
         </div>

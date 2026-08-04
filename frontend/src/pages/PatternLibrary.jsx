@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
@@ -508,7 +508,7 @@ const PatternLibrary = () => {
                     <span className={`text-sm font-semibold ${
                       isAtLimit ? 'text-red-700' : isNearLimit ? 'text-amber-700' : 'text-gray-700'
                     }`}>
-                      {count}/{max} patrons
+                      {t('ui.patternsQuota', { count, max })}
                     </span>
                     <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                       isAtLimit ? 'bg-red-100 text-red-700' : isNearLimit ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'
@@ -580,8 +580,8 @@ const PatternLibrary = () => {
           >
             <option value="date_desc">{t('ui.sortNewest')}</option>
             <option value="date_asc">{t('ui.sortOldest')}</option>
-            <option value="name_asc">A → Z</option>
-            <option value="name_desc">Z → A</option>
+            <option value="name_asc">{t('ui.sortNameAZ')}</option>
+            <option value="name_desc">{t('ui.sortNameZA')}</option>
           </select>
         </div>
 
@@ -942,7 +942,7 @@ const PatternLibrary = () => {
               {addType === 'file' && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Fichier(s) <span className="text-red-600">*</span>
+                    {t('ui.filesLabel2')} <span className="text-red-600">*</span>
                   </label>
 
                   {/* Drop zone */}
@@ -1311,7 +1311,7 @@ const PatternLibrary = () => {
                   </label>
                   {editingPattern.source_type === 'file' && (
                     <p className="text-xs text-gray-600 mb-3">
-                      Fichier actuel : <strong>{editingPattern.file_name || 'Non disponible'}</strong>
+                      <Trans t={t} i18nKey="ui.currentFileNamed" values={{ name: editingPattern.file_name || t('ui.notAvailable') }}><strong /></Trans>
                     </p>
                   )}
                   {editingPattern.source_type !== 'file' && (
@@ -1350,7 +1350,7 @@ const PatternLibrary = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                           </svg>
                           <p className="font-medium text-gray-900">{t('ui.chooseNewFile')}</p>
-                          <p className="text-sm text-gray-600 mt-1">PDF, JPG, PNG, WEBP (max 10MB)</p>
+                          <p className="text-sm text-gray-600 mt-1">{t('ui.formatsMax10')}</p>
                         </>
                       )}
                     </div>
@@ -1570,7 +1570,7 @@ const PatternLibrary = () => {
                   onClick={() => setShowViewerModal(false)}
                   className="px-4 py-2 bg-white text-gray-900 rounded-lg font-bold hover:bg-gray-200 transition flex items-center gap-2"
                 >
-                  ← Retour
+                  {t('ui.backArrow2')}
                 </button>
                 <h2 className="text-lg font-semibold">{viewerData.fileName}</h2>
               </div>

@@ -43,7 +43,7 @@ const Step3Sections = ({ sections, onSectionsChange, selectedCategory, counterUn
       {presets.length > 0 && sections.length === 0 && (
         <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
           <p className="text-sm font-medium text-primary-800 mb-3">
-            Exemples rapides :
+            {t('ui.quickExamples2')}
           </p>
           <div className="flex flex-wrap gap-2">
             {presets.map((preset) => (

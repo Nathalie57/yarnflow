@@ -290,7 +290,7 @@ export default function YarnCalculator() {
                   </p>
                   {!stockCheck.enough && (
                     <p className="text-xs text-amber-600 mt-1">
-                      Il manque {(estimatedMeters - stockCheck.total).toLocaleString('fr-FR')} m
+                      {t('ui.shortByMeters', { n: (estimatedMeters - stockCheck.total).toLocaleString(i18n.language) })}
                     </p>
                   )}
                 </div>

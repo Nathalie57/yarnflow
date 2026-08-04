@@ -286,7 +286,7 @@ const Profile = () => {
 
           {/* Aide */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Aide & Contact</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('ui.helpAndContact2')}</h2>
 
             <Link
               to="/contact"

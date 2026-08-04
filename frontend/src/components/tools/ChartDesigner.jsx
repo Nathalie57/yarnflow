@@ -301,7 +301,7 @@ export default function ChartDesigner() {
                     <div>
                       <p className="text-sm font-medium text-gray-900">{c.name}</p>
                       <p className="text-xs text-gray-400">
-                        {c.project_name}{c.section_name ? ` — ${c.section_name}` : ''} · {c.width} × {c.height} · rang {c.current_row}/{c.height}
+                        {c.project_name}{c.section_name ? ` — ${c.section_name}` : ''} · {c.width} × {c.height} · {t('ui.rowShort', { row: c.current_row, total: c.height })}
                       </p>
                     </div>
                     <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>

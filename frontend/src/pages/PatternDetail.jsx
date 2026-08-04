@@ -146,7 +146,7 @@ const PatternDetail = () => {
             onClick={() => window.print()}
             className="btn-secondary"
           >
-            🖨️ Imprimer
+            {t('ui.printBtn2')}
           </button>
         </div>
       </div>
@@ -249,7 +249,7 @@ const PatternDetail = () => {
         <div className="card bg-gray-50 text-sm text-gray-600">
           <h3 className="font-bold mb-2">{t('ui.technicalInfo')}</h3>
           <div className="space-y-1">
-            <div>Provider IA : {pattern.ai_provider}</div>
+            <div>{t('ui.aiProvider2', { name: pattern.ai_provider })}</div>
             {pattern.tokens_used && <div>{t('ui.tokensUsedVal', { n: pattern.tokens_used })}</div>}
             {pattern.price_paid > 0 && <div>{t('ui.pricePaidVal2', { price: pattern.price_paid.toFixed(2) })}</div>}
           </div>

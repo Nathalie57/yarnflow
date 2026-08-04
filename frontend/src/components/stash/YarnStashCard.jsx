@@ -79,7 +79,7 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
             </span>
 
             <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 text-gray-600 text-xs rounded-full">
-              {totalWeight} g · {totalYardage} m
+              {t('ui.gramsAndMeters', { g: totalWeight, m: totalYardage })}
             </span>
 
             {entry.yarn_weight_category && (
@@ -90,7 +90,7 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
 
             {entry.needle_size_mm && (
               <span className="px-2.5 py-1 bg-gray-50 text-gray-500 text-xs rounded-full">
-                Aig. {entry.needle_size_mm} mm
+                {t('ui.needlesSize', { size: entry.needle_size_mm })}
               </span>
             )}
 

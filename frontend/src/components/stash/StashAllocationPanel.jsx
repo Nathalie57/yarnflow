@@ -118,7 +118,7 @@ const StashAllocationPanel = ({ projectId, onClose }) => {
                       <p className="text-sm font-medium text-gray-800 truncate">{a.brand} — {a.yarn_name}</p>
                       {a.color_name && <p className="text-xs text-gray-500 truncate">{a.color_name}</p>}
                       <p className="text-xs text-primary-600 mt-0.5">
-                        {Math.round(a.total_reserved_g)} g · {Math.round(a.total_reserved_m)} m
+                        {t('ui.gramsAndMeters', { g: Math.round(a.total_reserved_g), m: Math.round(a.total_reserved_m) })}
                       </p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">

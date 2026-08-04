@@ -92,7 +92,7 @@ const ImageLightbox = ({ src, alt, onClose }) => {
             className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 text-sm font-medium transition"
             title={t('ui.rotate90')}
           >
-            ↻ Pivoter
+            {t('ui.rotate2')}
           </button>
 
           <button

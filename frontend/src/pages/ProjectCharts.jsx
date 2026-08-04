@@ -160,7 +160,7 @@ const ProjectCharts = () => {
               <div key={c.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
                 <Link to={`/projects/${projectId}/charts/${c.id}`} className="flex-1">
                   <p className="font-semibold text-gray-900">{c.name}</p>
-                  <p className="text-xs text-gray-400">{c.width} × {c.height} — rang {c.current_row}/{c.height}</p>
+                  <p className="text-xs text-gray-400">{t('ui.chartSize', { w: c.width, h: c.height, row: c.current_row })}</p>
                 </Link>
                 <button
                   onClick={() => handleDelete(c.id)}
@@ -331,7 +331,7 @@ const ProjectCharts = () => {
             onClick={() => setIsCreating(true)}
             className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-primary-400 hover:text-primary-600 text-sm font-medium"
           >
-            ＋ Nouvelle grille
+            {t('ui.newChartBtn')}
           </button>
         )}
       </div>

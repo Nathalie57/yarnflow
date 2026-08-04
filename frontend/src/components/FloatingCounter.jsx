@@ -56,7 +56,7 @@ const FloatingCounter = ({
               onClick={onExpand}
               className="px-2 py-1 bg-white/20 hover:bg-white/30 rounded text-[10px] font-medium"
             >
-              ⬆️ Plus
+              {t('ui.morePlus2')}
             </button>
           </div>
 
@@ -174,7 +174,7 @@ const FloatingCounter = ({
               {sectionName || projectName}
             </div>
             <div className="text-[10px] opacity-70">
-              Rang {currentRow}{totalRows > 0 ? `/${totalRows}` : ''}
+              {t('ui.rowOfTotal', { row: currentRow, suffix: totalRows > 0 ? `/${totalRows}` : '' })}
             </div>
           </button>
 

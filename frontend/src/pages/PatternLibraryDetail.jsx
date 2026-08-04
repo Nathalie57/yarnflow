@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import PDFViewer from '../components/PDFViewer'
@@ -692,7 +692,7 @@ const PatternLibraryDetail = () => {
                 </svg>
                 {t('ui.linkedProjects')}
                 <span className="ml-auto text-xs text-gray-500 font-normal">
-                  {pattern.times_used || linkedProjects.length} projet{(pattern.times_used || linkedProjects.length) > 1 ? 's' : ''}
+                  {t('ui.usedInCount', { count: pattern.times_used || linkedProjects.length })}
                 </span>
               </h3>
 
@@ -1155,7 +1155,7 @@ const PatternLibraryDetail = () => {
                     {t('ui.replaceFileOptional')}
                   </label>
                   <p className="text-xs text-gray-500 mb-3">
-                    Fichier actuel : <strong>{pattern.file_name || 'Non disponible'}</strong>
+                    <Trans t={t} i18nKey="ui.currentFileNamed" values={{ name: pattern.file_name || t('ui.notAvailable') }}><strong /></Trans>
                   </p>
                   <input
                     type="file"
@@ -1183,7 +1183,7 @@ const PatternLibraryDetail = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                           </svg>
                           <p className="font-medium text-sm text-gray-900">{t('ui.chooseNewFile')}</p>
-                          <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG, WEBP (max 10MB)</p>
+                          <p className="text-xs text-gray-500 mt-1">{t('ui.formatsMax10')}</p>
                         </>
                       )}
                     </div>
@@ -1220,7 +1220,7 @@ const PatternLibraryDetail = () => {
 
               {/* Nom */}
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nom <span className="text-red-600">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.nameRequired')} <span className="text-red-600">*</span></label>
                 <input type="text" value={formData.name}
                   onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setValidationErrors({ ...validationErrors, name: '' }) }}
                   className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${validationErrors.name ? 'border-red-400' : 'border-gray-300'}`}

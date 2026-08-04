@@ -340,6 +340,12 @@
     "phLength": "Length",
     "phStitches": "Stitches",
     "phRows": "Rows",
-    "phGaugeDim": "10x10 cm"
+    "phGaugeDim": "10x10 cm",
+    "optionsSummary2": "Options — pattern, tags, description...",
+    "quickExamples2": "Quick examples:",
+    "markFavorite2": "Mark as favourite",
+    "patternOptional2": "Pattern (optional)",
+    "skipArrow2": "Skip →",
+    "nextArrow2": "Next →"
   }
 }

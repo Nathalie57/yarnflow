@@ -390,6 +390,21 @@
     "copyLinkFailed": "Impossible de copier le lien",
     "altPattern": "Patron",
     "altOriginalPhoto": "Photo originale",
-    "phGauge10": "10 x 10 cm"
+    "phGauge10": "10 x 10 cm",
+    "backArrow3": "← Retour",
+    "tagsPlusBadge": "Tags — PLUS",
+    "secondaryCounterPlus": "Compteur secondaire — PLUS",
+    "sectionsTitle": "Sections",
+    "nameColumn": "Nom",
+    "sourcesHint": "YouTube, Pinterest, blog...",
+    "ballsCount_one": "{{count}} pelote",
+    "ballsCount_other": "{{count}} pelotes",
+    "gramsAndMeters": "{{g}} g · {{m}} m",
+    "stitchesCount": "{{count}} mailles",
+    "rowsCount": "{{count}} rangs",
+    "originalPhotoTitle": "📷 Photo originale",
+    "nameLabelShort": "Nom",
+    "reminderRow": "Rappel — rang {{row}}",
+    "sourcesHint3": "YouTube, Pinterest, blog..."
   }
 }

@@ -113,7 +113,7 @@ const ImportPartnerPattern = () => {
 
         {/* Partenaire */}
         <p className="text-xs font-medium text-primary-600 uppercase tracking-wider mb-1">
-          Patron {template.partner_name}
+          {t('ui.partnerPattern', { name: template.partner_name })}
         </p>
 
         {/* Titre */}
@@ -133,7 +133,7 @@ const ImportPartnerPattern = () => {
           )}
           {template.needle_size && (
             <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
-              Aiguilles {template.needle_size}
+              {t('ui.needlesOf', { size: template.needle_size })}
             </span>
           )}
           {template.yarn_weight && (
@@ -147,14 +147,14 @@ const ImportPartnerPattern = () => {
         {template.sections && template.sections.length > 0 && (
           <div className="mb-6">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-              Sections ({template.sections.length})
+              {t('ui.sectionsCount2', { count: template.sections.length })}
             </p>
             <div className="space-y-1.5">
               {template.sections.map((s, i) => (
                 <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50">
                   <span className="text-sm text-gray-700">{s.title}</span>
                   {s.row_count && (
-                    <span className="text-xs text-gray-400">{s.row_count} rangs</span>
+                    <span className="text-xs text-gray-400">{t('ui.rowsOfSection', { count: s.row_count })}</span>
                   )}
                 </div>
               ))}

@@ -480,7 +480,7 @@ export default function SmartProjectCreator() {
             {mode === 'pdf' && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fichier PDF (max 10 MB)
+                  {t('ui.pdfFileLabel')}
                 </label>
                 <input
                   type="file"
@@ -495,7 +495,7 @@ export default function SmartProjectCreator() {
                 />
                 {file && (
                   <p className="mt-2 text-sm text-green-600">
-                    ✓ {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                    {t('ui.fileChosen', { name: file.name, size: (file.size / 1024 / 1024).toFixed(2) })}
                   </p>
                 )}
               </div>
@@ -551,7 +551,7 @@ export default function SmartProjectCreator() {
                 onClick={() => setStep(1)}
                 className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
               >
-                ← Retour
+                {t('ui.backArrow4')}
               </button>
 
               {extractedData ? (
@@ -848,7 +848,7 @@ export default function SmartProjectCreator() {
                 onClick={() => setStep(2)}
                 className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
               >
-                ← Retour
+                {t('ui.backArrow4')}
               </button>
 
               <button

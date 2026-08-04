@@ -137,7 +137,7 @@ export default function DistributeIncrDec() {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Nombre d'{type === 'aug' ? 'augmentations' : 'diminutions'}
+            {type === 'aug' ? t('ui.numberOfIncreases') : t('ui.numberOfDecreases')}
           </label>
           <input
             type="number"

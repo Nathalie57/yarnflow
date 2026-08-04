@@ -420,7 +420,7 @@ const CreateProjectWizard = ({
               className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition flex items-center justify-between"
             >
               <span className="text-sm font-medium text-gray-600">
-                Options — patron, tags, description...
+                {t('ui.optionsSummary2')}
               </span>
               <svg
                 className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${showOptions ? 'rotate-180' : ''}`}

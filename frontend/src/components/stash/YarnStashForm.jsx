@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { yarnStashAPI } from '../../services/api'
-import { useTranslation } from 'react-i18next'
+import { useTranslation, Trans } from 'react-i18next'
 
 const YARN_WEIGHT_OPTIONS = [
   { value: '',            labelKey: 'weightOptional' },
@@ -256,7 +256,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   onClick={() => openPhotoInput('extra', galleryInputRef)}
                   className="text-gray-400 hover:text-primary-600"
                 >
-                  importer
+                  {t('ui.importWord2')}
                 </button>
               </div>
             )
@@ -410,7 +410,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       {/* Calcul automatique */}
       {(totalWeight > 0 || totalYardage > 0) && (
         <div className="bg-primary-50 rounded-xl p-3 text-sm text-primary-700 text-center font-medium">
-          Total : <strong>{totalWeight} g</strong> · <strong>{totalYardage} m</strong>
+          <Trans t={t} i18nKey="ui.totalWeightYardage" values={{ g: totalWeight, m: totalYardage }}><strong /><strong /></Trans>
         </div>
       )}
 
@@ -567,7 +567,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   onClick={() => openPhotoInput('extra', galleryInputRef)}
                   className="text-gray-400 hover:text-primary-600"
                 >
-                  importer
+                  {t('ui.importWord2')}
                 </button>
               </div>
             )
