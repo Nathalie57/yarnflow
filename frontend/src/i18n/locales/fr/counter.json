@@ -62,9 +62,9 @@
     "projectClosedWithYarn_one": "Projet clôturé. {{count}} pelote remise dans ton stock.",
     "projectClosedWithYarn_other": "Projet clôturé. {{count}} pelotes remises dans ton stock.",
     "projectReopened": "Projet réouvert",
-    "confirmDeletePhoto": "Êtes-te sûr de vouloir supprimer cette photo ? Cette action est irréversible.",
+    "confirmDeletePhoto": "Veux-tu vraiment supprimer cette photo ? Cette action est irréversible.",
     "confirmDeletePhotoTitle": "🗑️ Supprimer la photo",
-    "confirmDeleteSection": "Êtes-te sûr de vouloir supprimer la section \"{{name}}\" ? Tous les rangs associés seront dissociés de cette section.",
+    "confirmDeleteSection": "Veux-tu vraiment supprimer la section \"{{name}}\" ? Tous les rangs associés seront dissociés de cette section.",
     "confirmDeleteSectionTitle": "🗑️ Supprimer la section"
   },
   "ui": {

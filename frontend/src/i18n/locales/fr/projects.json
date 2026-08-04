@@ -8,7 +8,7 @@
     "paymentSuccessDesc": "Ton abonnement est maintenant actif. Profite de toutes les fonctionnalités {{plan}}.",
     "welcomeNamed": "Bienvenue, {{name}} !",
     "welcome": "Bienvenue sur YarnFlow !",
-    "whereToStart": "Par où veux-toi commencer ?",
+    "whereToStart": "Par où veux-tu commencer ?",
     "startSmart": "Démarrer un nouveau projet",
     "startSmartDesc": "PDF ou lien — on remplit tout automatiquement.",
     "createManually": "Créer un projet manuellement",
@@ -85,7 +85,7 @@
   },
   "confirmDelete": {
     "title": "Supprimer le projet",
-    "message": "Êtes-te sûr de vouloir supprimer ce projet ? Cette action est irréversible."
+    "message": "Veux-tu vraiment supprimer ce projet ? Cette action est irréversible."
   },
   "success": {
     "deletedTitle": "Suppression réussie",
@@ -216,7 +216,7 @@
     "upgradePro": "Passer à PRO",
     "proExhausted": "15/15 utilisées — renouvellement le 1er du mois",
     "fillManually": "ou remplir moi-même les informations",
-    "step1Title": "Quel type de projet crée-toi ?",
+    "step1Title": "Quel type de projet crées-tu ?",
     "step1Desc": "Choisis une catégorie pour ton projet",
     "projectName": "Nom du projet",
     "projectNamePlaceholder": "Ex: Pull blanc pour maman",
@@ -287,7 +287,7 @@
     "clearPattern": "✕ Effacer le patron",
     "technicalDetails": "Détails techniques — laine, aiguilles, échantillon",
     "addPlus": "+ Ajouter",
-    "whatProjectType": "Quel type de projet crée-toi ?",
+    "whatProjectType": "Quel type de projet crées-tu ?",
     "pickCategory": "Choisis une catégorie pour ton projet",
     "countUnit": "Unité de comptage",
     "howToCount": "Choisis comment tu veux compter ta progression",
