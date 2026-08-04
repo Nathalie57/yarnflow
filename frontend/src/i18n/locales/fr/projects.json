@@ -328,6 +328,18 @@
     "fileLabel": "Fichier",
     "webLinkLabel": "Lien web",
     "skipArrow": "Passer →",
-    "nextArrow": "Suivant →"
+    "nextArrow": "Suivant →",
+    "rowsLabel": "Rangs",
+    "phProjectName": "Ex: Bonnet slouchy rouge",
+    "phSectionDesc": "Description (optionnel)",
+    "phSectionNotes": "📝 Notes (optionnel) - instructions, rappels...",
+    "phBrand": "Marque",
+    "phName": "Nom",
+    "phType": "Type",
+    "phSizeMm": "Taille (mm)",
+    "phLength": "Longueur",
+    "phStitches": "Mailles",
+    "phRows": "Rangs",
+    "phGaugeDim": "10x10 cm"
   }
 }

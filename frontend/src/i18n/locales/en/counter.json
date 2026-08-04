@@ -385,6 +385,11 @@
     "morePlus": "⬆️ More",
     "rowLabelShort": "Row",
     "ofRowsTotal": "/ {{total}} rows",
-    "nameLabel": "Name"
+    "nameLabel": "Name",
+    "projectLoadFailed": "Could not load the project",
+    "copyLinkFailed": "Could not copy the link",
+    "altPattern": "Pattern",
+    "altOriginalPhoto": "Original photo",
+    "phGauge10": "10 x 10 cm"
   }
 }

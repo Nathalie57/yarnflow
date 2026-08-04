@@ -142,7 +142,7 @@ const Gallery = () => {
       if (err.response?.status === 404 || err.response?.data?.photos === null) {
         setPhotos([])
       } else {
-        setError('Impossible de charger vos photos')
+        setError(t('ui.photosLoadFailed'))
       }
     } finally {
       setLoading(false)
@@ -311,7 +311,7 @@ const Gallery = () => {
       setPhotos(photos.filter(p => p.id !== photoId))
     } catch (err) {
       console.error('Erreur suppression:', err)
-      alert('Erreur lors de la suppression')
+      alert(t('ui.deleteFailed'))
     }
   }
 
@@ -917,7 +917,7 @@ const Gallery = () => {
                                   setOpenMenuId(null)
                                 } catch (err) {
                                   console.error('Erreur copie:', err)
-                                  alert('Impossible de copier le lien')
+                                  alert(t('ui.copyLinkFailed'))
                                 }
                               }}
                               className="w-full px-4 py-2 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors group"

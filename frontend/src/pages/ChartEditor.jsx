@@ -80,7 +80,7 @@ const ChartEditor = () => {
 
         setChart(loadedChart)
       } catch (err) {
-        setError(err.response?.data?.error || 'Impossible de charger cette grille')
+        setError(err.response?.data?.error || t('ui.chartLoadFailed'))
       } finally {
         setLoading(false)
       }

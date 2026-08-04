@@ -24,7 +24,7 @@ const Step2BasicInfo = ({ formData, onFormChange }) => {
           value={formData.name}
           onChange={(e) => handleChange('name', e.target.value)}
           className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
-          placeholder="Ex: Bonnet slouchy rouge"
+          placeholder={t('ui.phProjectName')}
           autoFocus
         />
         {formData.name && formData.name.length < 2 && (

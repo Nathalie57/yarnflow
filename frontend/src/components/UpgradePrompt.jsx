@@ -77,6 +77,9 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
   )
 
   const content = FEATURES[feature] || FEATURES.tags
+  // [AI:Claude] Meme repli pour les traductions : sans ca, un feature inconnu
+  // ferait renvoyer la cle brute a t(), et le .map() sur les items planterait.
+  const featureKey = FEATURES[feature] ? feature : 'tags'
 
   const handleUpgrade = () => {
     navigate('/subscription')
@@ -112,15 +115,15 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-0.5">
               {t('ui.featureBadge', { plan: content.plan === 'plus' ? 'PLUS' : 'PRO' })}
             </p>
-            <h3 className="text-lg font-bold text-gray-900">{t(`upgrade.${feature}.title`)}</h3>
+            <h3 className="text-lg font-bold text-gray-900">{t(`upgrade.${featureKey}.title`)}</h3>
           </div>
         </div>
 
         {/* Description */}
-        <p className="text-sm text-gray-600 leading-relaxed">{t(`upgrade.${feature}.description`)}</p>
+        <p className="text-sm text-gray-600 leading-relaxed">{t(`upgrade.${featureKey}.description`)}</p>
 
         <ul className="space-y-2">
-          {t(`upgrade.${feature}.items`, { returnObjects: true }).map((item, i) => (
+          {t(`upgrade.${featureKey}.items`, { returnObjects: true }).map((item, i) => (
             <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

@@ -120,7 +120,7 @@ const PatternLibraryDetail = () => {
       }
     } catch (err) {
       console.error('Erreur chargement patron:', err)
-      setError('Impossible de charger le patron')
+      setError(t('ui.patternLoadFailed'))
     } finally {
       setLoading(false)
     }
@@ -159,7 +159,7 @@ const PatternLibraryDetail = () => {
       navigate('/pattern-library')
     } catch (err) {
       console.error('Erreur suppression:', err)
-      alert('Erreur lors de la suppression')
+      alert(t('ui.deleteFailed'))
     }
   }
 
@@ -200,7 +200,7 @@ const PatternLibraryDetail = () => {
       fetchPattern()
     } catch (err) {
       console.error('Erreur liaison projet:', err)
-      alert('Erreur lors de la liaison du projet')
+      alert(t('ui.linkProjectFailed'))
     } finally {
       setLinkingProject(false)
     }
@@ -283,7 +283,7 @@ const PatternLibraryDetail = () => {
       if (selectedFileId === fileId) setSelectedFileId(null)
     } catch (err) {
       console.error('Erreur suppression fichier:', err)
-      alert('Erreur lors de la suppression')
+      alert(t('ui.deleteFailed'))
     }
   }
 
@@ -330,7 +330,7 @@ const PatternLibraryDetail = () => {
       setUsageNotes(prev => prev.filter(n => n.id !== noteId))
     } catch (err) {
       console.error('Erreur suppression note:', err)
-      alert('Erreur lors de la suppression')
+      alert(t('ui.deleteFailed'))
     }
   }
 
@@ -388,7 +388,7 @@ const PatternLibraryDetail = () => {
       setFile(null)
     } catch (err) {
       console.error('Erreur modification:', err)
-      alert(err.response?.data?.message || 'Erreur lors de la modification')
+      alert(err.response?.data?.message || t('ui.editFailed'))
     } finally {
       setUploading(false)
     }

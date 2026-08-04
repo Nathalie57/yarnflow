@@ -734,7 +734,23 @@
     "aiPhotos": "{{count}} AI photos",
     "ofRowsTotal": "/ {{total}} rows",
     "morePlus": "⬆️ More",
-    "rowLabelShort": "Row"
+    "rowLabelShort": "Row",
+    "modeUrl": "URL link",
+    "modeText": "Text",
+    "modePdf": "PDF",
+    "translateThisPattern": "Translate this pattern",
+    "onbWelcomeTitle": "Welcome to YarnFlow",
+    "onbCounterTitle": "Row counter",
+    "onbToolsTitle": "Tools to knit better",
+    "itemWomensSweater": "Women's sweater",
+    "itemMensSweater": "Men's sweater",
+    "itemWomensCardigan": "Women's cardigan",
+    "itemBeanie": "Beanie",
+    "tabMyAccount": "My account",
+    "tabPassword": "Password",
+    "fileTooLarge": "File too large (max 10 MB)",
+    "enterUrlPlease": "Please enter a URL",
+    "titleRequired": "The project title is required"
   },
   "toolsList": {
     "distribute": {

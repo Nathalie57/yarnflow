@@ -23,7 +23,7 @@ const PatternDetail = () => {
       setPattern(response.data.data)
     } catch (error) {
       console.error('Erreur chargement patron:', error)
-      alert('Patron introuvable')
+      alert(t('ui.patternNotFound2'))
       navigate('/my-patterns')
     } finally {
       setLoading(false)

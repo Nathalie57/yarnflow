@@ -734,7 +734,23 @@
     "aiPhotos": "{{count}} photos IA",
     "ofRowsTotal": "/ {{total}} rangs",
     "morePlus": "⬆️ Plus",
-    "rowLabelShort": "Rang"
+    "rowLabelShort": "Rang",
+    "modeUrl": "Lien URL",
+    "modeText": "Texte",
+    "modePdf": "PDF",
+    "translateThisPattern": "Traduire ce patron",
+    "onbWelcomeTitle": "Bienvenue sur YarnFlow",
+    "onbCounterTitle": "Compteur de rangs",
+    "onbToolsTitle": "Des outils pour tricoter mieux",
+    "itemWomensSweater": "Pull Femme",
+    "itemMensSweater": "Pull Homme",
+    "itemWomensCardigan": "Gilet Femme",
+    "itemBeanie": "Bonnet",
+    "tabMyAccount": "Mon compte",
+    "tabPassword": "Mot de passe",
+    "fileTooLarge": "Fichier trop volumineux (max 10 Mo)",
+    "enterUrlPlease": "Veuillez saisir une URL",
+    "titleRequired": "Le titre du projet est requis"
   },
   "toolsList": {
     "distribute": {

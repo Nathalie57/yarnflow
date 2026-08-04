@@ -328,6 +328,18 @@
     "fileLabel": "File",
     "webLinkLabel": "Web link",
     "skipArrow": "Skip →",
-    "nextArrow": "Next →"
+    "nextArrow": "Next →",
+    "rowsLabel": "Rows",
+    "phProjectName": "E.g. Red slouchy beanie",
+    "phSectionDesc": "Description (optional)",
+    "phSectionNotes": "📝 Notes (optional) - instructions, reminders...",
+    "phBrand": "Brand",
+    "phName": "Name",
+    "phType": "Type",
+    "phSizeMm": "Size (mm)",
+    "phLength": "Length",
+    "phStitches": "Stitches",
+    "phRows": "Rows",
+    "phGaugeDim": "10x10 cm"
   }
 }

@@ -438,7 +438,7 @@ const CreateProjectWizard = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.counterUnit')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: 'rows', label: 'Rangs', icon: '📏' },
+                      { value: 'rows', labelKey: 'rowsLabel', icon: '📏' },
                       { value: 'cm', label: t('wizard.centimeters'), icon: '📐' }
                     ].map(opt => (
                       <button
@@ -452,7 +452,7 @@ const CreateProjectWizard = ({
                         }`}
                       >
                         <span>{opt.icon}</span>
-                        <span>{opt.label}</span>
+                        <span>{opt.labelKey ? t(`ui.${opt.labelKey}`) : opt.label}</span>
                       </button>
                     ))}
                   </div>

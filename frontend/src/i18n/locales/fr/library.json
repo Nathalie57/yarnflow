@@ -375,7 +375,17 @@
     "backArrow": "← Retour",
     "photoWord": "Photo",
     "photosWord": "photos",
-    "photoFormats": "Formats : JPG, PNG, WEBP • Max 10 Mo"
+    "photoFormats": "Formats : JPG, PNG, WEBP • Max 10 Mo",
+    "chartLoadFailed": "Impossible de charger cette grille",
+    "photosLoadFailed": "Impossible de charger vos photos",
+    "deleteFailed": "Erreur lors de la suppression",
+    "copyLinkFailed": "Impossible de copier le lien",
+    "patternNotFound2": "Patron introuvable",
+    "patternDeleteFailed": "Erreur lors de la suppression du patron",
+    "patternLoadFailed": "Impossible de charger le patron",
+    "linkProjectFailed": "Erreur lors de la liaison du projet",
+    "editFailed": "Erreur lors de la modification",
+    "chartsLoadFailed": "Impossible de charger les grilles"
   },
   "badges": {
     "proj-1": {

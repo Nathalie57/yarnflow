@@ -14,7 +14,7 @@ const SLIDES = [
         <path d="M8 12l2.5 2.5L16 9"/>
       </svg>
     ),
-    title: 'Bienvenue sur YarnFlow',
+    titleKey: 'onbWelcomeTitle',
     descKey: 'onbAppDesc',
   },
   {
@@ -26,7 +26,7 @@ const SLIDES = [
         <path d="M12 14l2 2 4-4"/>
       </svg>
     ),
-    title: 'Compteur de rangs',
+    titleKey: 'onbCounterTitle',
     descKey: 'onbCounterDesc',
   },
   {
@@ -61,7 +61,7 @@ const SLIDES = [
         <line x1="12" y1="15" x2="12" y2="21"/>
       </svg>
     ),
-    title: 'Des outils pour tricoter mieux',
+    titleKey: 'onbToolsTitle',
     descKey: 'onbToolsDesc',
   },
 ]

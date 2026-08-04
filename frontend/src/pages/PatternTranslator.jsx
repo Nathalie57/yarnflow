@@ -275,9 +275,9 @@ export default function PatternTranslator() {
       {/* Sélection du mode */}
       <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
         {[
-          { key: 'url', label: 'Lien URL' },
-          { key: 'text', label: 'Texte' },
-          { key: 'pdf', label: 'PDF' },
+          { key: 'url', labelKey: 'modeUrl' },
+          { key: 'text', labelKey: 'modeText' },
+          { key: 'pdf', labelKey: 'modePdf' },
         ].map(m => (
           <button
             key={m.key}
@@ -286,7 +286,7 @@ export default function PatternTranslator() {
               mode === m.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {m.label}
+            {t(`ui.${m.labelKey}`)}
           </button>
         ))}
       </div>
@@ -382,7 +382,7 @@ export default function PatternTranslator() {
             </svg>
             {t('ui.translating')}
           </span>
-        ) : 'Traduire ce patron'}
+        ) : t('ui.translateThisPattern')}
       </button>
 
     </div>

@@ -250,7 +250,7 @@ const Step4Optional = ({
                         setTechnicalForm({ ...technicalForm, yarn: newYarn })
                       }}
                       className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                      placeholder="Marque"
+                      placeholder={t('ui.phBrand')}
                     />
                     <input
                       type="text"
@@ -261,7 +261,7 @@ const Step4Optional = ({
                         setTechnicalForm({ ...technicalForm, yarn: newYarn })
                       }}
                       className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                      placeholder="Nom"
+                      placeholder={t('ui.phName')}
                     />
                   </div>
                   {technicalForm.yarn.length > 1 && (
@@ -308,7 +308,7 @@ const Step4Optional = ({
                           setTechnicalForm({ ...technicalForm, needles: newNeedles })
                         }}
                         className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                        placeholder="Type"
+                        placeholder={t('ui.phType')}
                       />
                     )}
                     <input
@@ -320,7 +320,7 @@ const Step4Optional = ({
                         setTechnicalForm({ ...technicalForm, needles: newNeedles })
                       }}
                       className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                      placeholder="Taille (mm)"
+                      placeholder={t('ui.phSizeMm')}
                     />
                     {technique === 'tricot' && (
                       <input
@@ -332,7 +332,7 @@ const Step4Optional = ({
                           setTechnicalForm({ ...technicalForm, needles: newNeedles })
                         }}
                         className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                        placeholder="Longueur"
+                        placeholder={t('ui.phLength')}
                       />
                     )}
                   </div>
@@ -362,7 +362,7 @@ const Step4Optional = ({
                     gauge: { ...technicalForm.gauge, stitches: e.target.value }
                   })}
                   className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                  placeholder="Mailles"
+                  placeholder={t('ui.phStitches')}
                 />
                 <input
                   type="text"
@@ -372,7 +372,7 @@ const Step4Optional = ({
                     gauge: { ...technicalForm.gauge, rows: e.target.value }
                   })}
                   className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                  placeholder="Rangs"
+                  placeholder={t('ui.phRows')}
                 />
                 <input
                   type="text"
@@ -382,7 +382,7 @@ const Step4Optional = ({
                     gauge: { ...technicalForm.gauge, dimensions: e.target.value }
                   })}
                   className="px-2 py-1.5 border border-gray-300 rounded text-xs"
-                  placeholder="10x10 cm"
+                  placeholder={t('ui.phGaugeDim')}
                 />
               </div>
             </div>

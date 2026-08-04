@@ -15,7 +15,7 @@ import { useTranslation, Trans } from 'react-i18next'
 // Matrice de métrages estimés (en mètres) par [projet][épaisseur][taille]
 const MATRIX = {
   pull_femme: {
-    label: 'Pull Femme',
+    labelKey: 'itemWomensSweater',
     sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
     weights: {
       lace:      [1600, 1800, 2000, 2250, 2500, 2800],
@@ -27,7 +27,7 @@ const MATRIX = {
     },
   },
   pull_homme: {
-    label: 'Pull Homme',
+    labelKey: 'itemMensSweater',
     sizes: ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
     weights: {
       lace:      [1900, 2100, 2400, 2700, 3000, 3300],
@@ -39,7 +39,7 @@ const MATRIX = {
     },
   },
   gilet_femme: {
-    label: 'Gilet Femme',
+    labelKey: 'itemWomensCardigan',
     sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
     weights: {
       lace:      [1300, 1450, 1650, 1850, 2100, 2350],
@@ -51,7 +51,7 @@ const MATRIX = {
     },
   },
   bonnet: {
-    label: 'Bonnet',
+    labelKey: 'itemBeanie',
     sizes: ['Enfant', 'Adulte S/M', 'Adulte L/XL'],
     weights: {
       lace:      [250, 350, 400],

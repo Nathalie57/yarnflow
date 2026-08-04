@@ -339,7 +339,7 @@ const PatternLibrary = () => {
       setPatterns(patterns.filter(p => p.id !== patternId))
     } catch (err) {
       console.error('Erreur suppression:', err)
-      alert('Erreur lors de la suppression du patron')
+      alert(t('ui.patternDeleteFailed'))
     }
   }
 

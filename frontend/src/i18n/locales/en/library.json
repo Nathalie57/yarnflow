@@ -375,7 +375,17 @@
     "backArrow": "← Back",
     "photoWord": "Photo",
     "photosWord": "photos",
-    "photoFormats": "Formats: JPG, PNG, WEBP • Max 10 MB"
+    "photoFormats": "Formats: JPG, PNG, WEBP • Max 10 MB",
+    "chartLoadFailed": "Could not load this chart",
+    "photosLoadFailed": "Could not load your photos",
+    "deleteFailed": "Delete failed",
+    "copyLinkFailed": "Could not copy the link",
+    "patternNotFound2": "Pattern not found",
+    "patternDeleteFailed": "Could not delete the pattern",
+    "patternLoadFailed": "Could not load the pattern",
+    "linkProjectFailed": "Could not link the project",
+    "editFailed": "Could not save the changes",
+    "chartsLoadFailed": "Could not load the charts"
   },
   "badges": {
     "proj-1": {

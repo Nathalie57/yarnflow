@@ -103,7 +103,7 @@ export default function SmartProjectCreator() {
     const selectedFile = e.target.files[0]
     if (selectedFile) {
       if (selectedFile.size > 10 * 1024 * 1024) {
-        setError('Fichier trop volumineux (max 10 MB)')
+        setError(t('ui.fileTooLarge'))
         return
       }
       if (selectedFile.type !== 'application/pdf') {
@@ -121,7 +121,7 @@ export default function SmartProjectCreator() {
       return
     }
     if (mode === 'url' && !url) {
-      setError('Veuillez saisir une URL')
+      setError(t('ui.enterUrlPlease'))
       return
     }
     if (mode === 'library' && !selectedLibraryPattern) {
@@ -216,7 +216,7 @@ export default function SmartProjectCreator() {
 
   const handleConfirm = async () => {
     if (!project.title) {
-      setError('Le titre du projet est requis')
+      setError(t('ui.titleRequired'))
       return
     }
 

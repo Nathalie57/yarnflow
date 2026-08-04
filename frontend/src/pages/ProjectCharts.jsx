@@ -39,7 +39,7 @@ const ProjectCharts = () => {
       const res = await api.get(`/projects/${projectId}/charts`)
       setCharts(res.data.charts || [])
     } catch {
-      setError('Impossible de charger les grilles')
+      setError(t('ui.chartsLoadFailed'))
     } finally {
       setLoading(false)
     }
@@ -132,7 +132,7 @@ const ProjectCharts = () => {
       await api.delete(`/projects/${projectId}/charts/${chartId}`)
       setCharts(prev => prev.filter(c => c.id !== chartId))
     } catch {
-      setError('Erreur lors de la suppression')
+      setError(t('ui.deleteFailed'))
     }
   }
 
