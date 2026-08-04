@@ -154,3 +154,9 @@ generate-*.sh
 get-*.php
 info.php
 database/fix_*.sql
+
+# Copies de la production telechargees en FTP avant un deploiement, pour
+# pouvoir revenir en arriere. Ce sont des artefacts de build deja compiles
+# (des centaines de fichiers hashes accumules au fil des mises en ligne) :
+# ils n'ont rien a faire dans l'historique.
+public_html/
