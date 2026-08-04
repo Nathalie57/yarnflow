@@ -331,6 +331,36 @@
     "other": "Other"
   },
   "errors": {
-    "generic": "Something went wrong. Please try again in a moment."
+    "generic": "Something went wrong. Please try again in a moment.",
+    "file_too_large": "File too large (10 MB maximum)",
+    "pdf_only": "Only PDF files are accepted",
+    "note_too_long": "Notes cannot exceed 2,000 characters",
+    "note_required": "A note is required",
+    "password_too_short": "Your password must be at least 8 characters long",
+    "library_limit_free": "Limit reached: the FREE plan allows 5 patterns in your library.",
+    "secondary_counter_limit": "This section already has the maximum of 10 secondary counters",
+    "contact_rate_limit": "Too many messages sent. Please try again in an hour.",
+    "preview_rate_limit": "Too many previews in a row. Please wait 30 seconds.",
+    "translation_failed": "Translation failed. Please try again.",
+    "chart_too_large": "The chart cannot exceed 200x200 cells",
+    "counter_label_required": "The counter label is required",
+    "message_too_long": "Messages cannot exceed 5,000 characters",
+    "subject_too_long": "The subject cannot exceed 200 characters",
+    "ai_message_too_long": "Message too long (1,000 characters maximum).",
+    "name_email_required": "Name and email are required",
+    "subject_message_required": "Subject and message are required",
+    "chart_fields_required": "Name, width and height are required",
+    "email_invalid": "Invalid email address",
+    "url_invalid": "Invalid URL",
+    "text_empty": "The text is empty.",
+    "link_already_used": "This link has already been used",
+    "tags_invalid": "No valid tag (2-50 characters, letters, numbers, spaces and hyphens only)",
+    "photo_invalid": "Photo file missing or invalid",
+    "pattern_source_required": "A PDF file, a URL or a pattern from your library is required",
+    "project_data_required": "Project and section data are required",
+    "refund_limit": "Refund limit reached",
+    "ai_monthly_limit": "Monthly limit reached ({{count}} messages). Come back next month.",
+    "import_monthly_limit": "Monthly limit reached ({{count}} imports per month).",
+    "stash_insufficient": "Not enough yarn: {{count}} skein(s) available."
   }
 }

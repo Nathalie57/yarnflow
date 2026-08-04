@@ -66,13 +66,13 @@ class ContactController {
             if (!$userId) {
                 if (empty($data['name']) || empty($data['email'])) {
                     http_response_code(400);
-                    echo json_encode(['error' => 'Nom et email requis']);
+                    echo json_encode(['error' => 'Nom et email requis', 'error_code' => 'name_email_required']);
                     return;
                 }
 
                 if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
                     http_response_code(400);
-                    echo json_encode(['error' => 'Email invalide']);
+                    echo json_encode(['error' => 'Email invalide', 'error_code' => 'email_invalid']);
                     return;
                 }
             }
@@ -80,7 +80,7 @@ class ContactController {
             // Validation des autres champs
             if (empty($data['subject']) || empty($data['message'])) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Sujet et message requis']);
+                echo json_encode(['error' => 'Sujet et message requis', 'error_code' => 'subject_message_required']);
                 return;
             }
 
@@ -92,13 +92,13 @@ class ContactController {
             // Limites de caractères
             if (strlen($data['subject']) > 200) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Le sujet ne peut pas dépasser 200 caractères']);
+                echo json_encode(['error' => 'Le sujet ne peut pas dépasser 200 caractères', 'error_code' => 'subject_too_long']);
                 return;
             }
 
             if (strlen($data['message']) > 5000) {
                 http_response_code(400);
-                echo json_encode(['error' => 'Le message ne peut pas dépasser 5000 caractères']);
+                echo json_encode(['error' => 'Le message ne peut pas dépasser 5000 caractères', 'error_code' => 'message_too_long']);
                 return;
             }
 
@@ -106,7 +106,7 @@ class ContactController {
             $ipAddress = $this->getClientIP();
             if (!$this->checkRateLimit($ipAddress)) {
                 http_response_code(429);
-                echo json_encode(['error' => 'Trop de messages envoyés. Veuillez réessayer dans 1 heure.']);
+                echo json_encode(['error' => 'Trop de messages envoyés. Veuillez réessayer dans 1 heure.', 'error_code' => 'contact_rate_limit']);
                 return;
             }
 

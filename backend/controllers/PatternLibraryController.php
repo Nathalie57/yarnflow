@@ -749,6 +749,7 @@ class PatternLibraryController
                     echo json_encode([
                         'success'          => false,
                         'error'            => 'Limite atteinte : le plan FREE permet 5 patrons en bibliothèque.',
+                        'error_code'       => 'library_limit_free',
                         'upgrade_required' => true,
                         'required_plan'    => 'pro',
                         'current_count'    => $count,
@@ -979,12 +980,12 @@ class PatternLibraryController
             $data = $this->getJsonInput();
 
             if (empty($data['note']) || trim($data['note']) === '') {
-                $this->sendResponse(400, ['success' => false, 'error' => 'La note est obligatoire']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'La note est obligatoire', 'error_code' => 'note_required']);
                 return;
             }
 
             if (strlen($data['note']) > 2000) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'La note ne peut pas dépasser 2000 caractères']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'La note ne peut pas dépasser 2000 caractères', 'error_code' => 'note_too_long']);
                 return;
             }
 
@@ -1024,12 +1025,12 @@ class PatternLibraryController
             $data = $this->getJsonInput();
 
             if (empty($data['note']) || trim($data['note']) === '') {
-                $this->sendResponse(400, ['success' => false, 'error' => 'La note est obligatoire']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'La note est obligatoire', 'error_code' => 'note_required']);
                 return;
             }
 
             if (strlen($data['note']) > 2000) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'La note ne peut pas dépasser 2000 caractères']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'La note ne peut pas dépasser 2000 caractères', 'error_code' => 'note_too_long']);
                 return;
             }
 

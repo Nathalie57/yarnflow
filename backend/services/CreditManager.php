@@ -479,7 +479,7 @@ class CreditManager
             if ($refundsThisMonth >= 3) {
                 return [
                     'success' => false,
-                    'error' => 'Limite de remboursements atteinte',
+                    'error' => 'Limite de remboursements atteinte', 'error_code' => 'refund_limit',
                     'message' => 'Vous avez atteint la limite de 3 remboursements par mois. Contactez le support pour assistance.'
                 ];
             }

@@ -160,6 +160,8 @@ class SmartProjectController
                 if ($usedThisMonth >= $plan['monthly_limit']) {
                     $this->jsonResponse([
                         'error' => "Limite mensuelle atteinte ({$plan['monthly_limit']} imports/mois).",
+                        'error_code' => 'import_monthly_limit',
+                        'error_params' => ['count' => $plan['monthly_limit']],
                         'quota_exceeded' => true
                     ], 403);
                     return;
@@ -223,13 +225,13 @@ class SmartProjectController
 
                 // Validation
                 if ($fileSize > self::MAX_FILE_SIZE) {
-                    $this->jsonResponse(['error' => 'Fichier trop volumineux (max 10 MB)'], 400);
+                    $this->jsonResponse(['error' => 'Fichier trop volumineux (max 10 MB)', 'error_code' => 'file_too_large'], 400);
                     return;
                 }
 
                 $mimeType = mime_content_type($filePath);
                 if ($mimeType !== 'application/pdf') {
-                    $this->jsonResponse(['error' => 'Seuls les fichiers PDF sont acceptés'], 400);
+                    $this->jsonResponse(['error' => 'Seuls les fichiers PDF sont acceptés', 'error_code' => 'pdf_only'], 400);
                     return;
                 }
 
@@ -244,7 +246,7 @@ class SmartProjectController
                 $sourceName = $_POST['url'];
 
             } else {
-                $this->jsonResponse(['error' => 'Fichier PDF, URL ou patron de bibliothèque requis'], 400);
+                $this->jsonResponse(['error' => 'Fichier PDF, URL ou patron de bibliothèque requis', 'error_code' => 'pattern_source_required'], 400);
                 return;
             }
 
@@ -318,7 +320,7 @@ class SmartProjectController
             $data = json_decode(file_get_contents('php://input'), true);
 
             if (!isset($data['project']) || !isset($data['sections'])) {
-                $this->jsonResponse(['error' => 'Données projet et sections requises'], 400);
+                $this->jsonResponse(['error' => 'Données projet et sections requises', 'error_code' => 'project_data_required'], 400);
                 return;
             }
 

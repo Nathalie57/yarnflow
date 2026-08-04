@@ -331,6 +331,36 @@
     "other": "Autre"
   },
   "errors": {
-    "generic": "Une erreur est survenue. Réessaie dans un instant."
+    "generic": "Une erreur est survenue. Réessaie dans un instant.",
+    "file_too_large": "Fichier trop volumineux (max 10 MB)",
+    "pdf_only": "Seuls les fichiers PDF sont acceptés",
+    "note_too_long": "La note ne peut pas dépasser 2000 caractères",
+    "note_required": "La note est obligatoire",
+    "password_too_short": "Le mot de passe doit contenir au moins 8 caractères",
+    "library_limit_free": "Limite atteinte : le plan FREE permet 5 patrons en bibliothèque.",
+    "secondary_counter_limit": "Limite de 10 compteurs secondaires atteinte pour cette section",
+    "contact_rate_limit": "Trop de messages envoyés. Réessaie dans une heure.",
+    "preview_rate_limit": "Trop d'aperçus d'affilée. Attends 30 secondes.",
+    "translation_failed": "La traduction a échoué. Réessaie.",
+    "chart_too_large": "La grille ne peut pas dépasser 200x200 cases",
+    "counter_label_required": "Le libellé du compteur est requis",
+    "message_too_long": "Le message ne peut pas dépasser 5000 caractères",
+    "subject_too_long": "Le sujet ne peut pas dépasser 200 caractères",
+    "ai_message_too_long": "Message trop long (max 1000 caractères).",
+    "name_email_required": "Nom et email requis",
+    "subject_message_required": "Sujet et message requis",
+    "chart_fields_required": "Nom, largeur et hauteur sont requis",
+    "email_invalid": "Email invalide",
+    "url_invalid": "URL invalide",
+    "text_empty": "Texte vide.",
+    "link_already_used": "Ce lien a déjà été utilisé",
+    "tags_invalid": "Aucun tag valide (2-50 caractères, lettres/chiffres/espaces/tirets uniquement)",
+    "photo_invalid": "Fichier photo manquant ou invalide",
+    "pattern_source_required": "Fichier PDF, URL ou patron de bibliothèque requis",
+    "project_data_required": "Données projet et sections requises",
+    "refund_limit": "Limite de remboursements atteinte",
+    "ai_monthly_limit": "Limite mensuelle atteinte ({{count}} messages). Reviens le mois prochain.",
+    "import_monthly_limit": "Limite mensuelle atteinte ({{count}} imports par mois).",
+    "stash_insufficient": "Stock insuffisant : {{count}} pelote(s) disponible(s)."
   }
 }

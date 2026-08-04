@@ -223,7 +223,7 @@ PROMPT;
             $this->deleteGeminiFile($fileUri);
 
             if (!$translated) {
-                return ['success' => false, 'error' => 'La traduction a échoué. Réessayez.'];
+                return ['success' => false, 'error' => 'La traduction a échoué. Réessayez.', 'error_code' => 'translation_failed'];
             }
 
             return [
@@ -332,7 +332,7 @@ PROMPT;
     public function translateFromText(string $text, string $targetLang = 'fr'): array
     {
         if (empty(trim($text))) {
-            return ['success' => false, 'error' => 'Texte vide.'];
+            return ['success' => false, 'error' => 'Texte vide.', 'error_code' => 'text_empty'];
         }
 
         return $this->translateText($text, 'text', 'texte direct', $targetLang);
@@ -375,7 +375,7 @@ PROMPT;
             $translated = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
             if (!$translated) {
-                return ['success' => false, 'error' => 'La traduction a échoué. Réessayez.'];
+                return ['success' => false, 'error' => 'La traduction a échoué. Réessayez.', 'error_code' => 'translation_failed'];
             }
 
             return [

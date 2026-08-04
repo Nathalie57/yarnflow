@@ -107,6 +107,8 @@ class AiAssistantController
             if ($used >= $limit) {
                 $this->sendResponse(429, [
                     'error' => "Limite mensuelle atteinte ({$limit} messages). Revenez le mois prochain.",
+                    'error_code' => 'ai_monthly_limit',
+                    'error_params' => ['count' => $limit],
                     'limit_reached' => true,
                     'limit' => $limit,
                     'used' => $used
@@ -128,7 +130,7 @@ class AiAssistantController
                     $content = $msg['content'] ?? '';
 
                     if (mb_strlen($content) > self::MAX_MESSAGE_LENGTH) {
-                        $this->sendResponse(400, ['error' => 'Message trop long (max 1000 caractères).']);
+                        $this->sendResponse(400, ['error' => 'Message trop long (max 1000 caractères).', 'error_code' => 'ai_message_too_long']);
                         return;
                     }
 

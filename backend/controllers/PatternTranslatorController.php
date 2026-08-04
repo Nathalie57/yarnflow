@@ -85,10 +85,10 @@ class PatternTranslatorController
                 // PDF uploadé
                 $file = $_FILES['file'];
                 if ($file['size'] > self::MAX_FILE_SIZE) {
-                    $this->json(['error' => 'Fichier trop volumineux (max 10 MB)'], 400); return;
+                    $this->json(['error' => 'Fichier trop volumineux (max 10 MB)', 'error_code' => 'file_too_large'], 400); return;
                 }
                 if (mime_content_type($file['tmp_name']) !== 'application/pdf') {
-                    $this->json(['error' => 'Seuls les fichiers PDF sont acceptés'], 400); return;
+                    $this->json(['error' => 'Seuls les fichiers PDF sont acceptés', 'error_code' => 'pdf_only'], 400); return;
                 }
                 $tempPath = self::UPLOAD_DIR . uniqid('trans_') . '.pdf';
                 if (!is_dir(self::UPLOAD_DIR)) mkdir(self::UPLOAD_DIR, 0755, true);

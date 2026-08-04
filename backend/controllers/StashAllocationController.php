@@ -103,6 +103,8 @@ class StashAllocationController
                 $this->sendResponse(409, [
                     'success'   => false,
                     'error'     => "Stock insuffisant. {$available} pelote(s) disponible(s).",
+                    'error_code'   => 'stash_insufficient',
+                    'error_params' => ['count' => $available],
                     'available' => $available,
                 ]);
                 return;

@@ -28,7 +28,7 @@ class WebFetchService {
             return [
                 'success' => false,
                 'html' => null,
-                'error' => 'URL invalide',
+                'error' => 'URL invalide', 'error_code' => 'url_invalid',
                 'status_code' => 0
             ];
         }

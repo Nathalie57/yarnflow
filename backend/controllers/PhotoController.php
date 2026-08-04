@@ -598,7 +598,7 @@ class PhotoController
                 if (count($attempts) >= 3) {
                     $this->sendResponse(429, [
                         'success' => false,
-                        'error' => 'Trop de previews. Attendez 30 secondes.'
+                        'error' => 'Trop de previews. Attendez 30 secondes.', 'error_code' => 'preview_rate_limit'
                     ]);
                     return;
                 }

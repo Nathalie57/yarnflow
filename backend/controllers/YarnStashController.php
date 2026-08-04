@@ -379,7 +379,7 @@ class YarnStashController
             }
 
             if (empty($files)) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'Fichier photo manquant ou invalide']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'Fichier photo manquant ou invalide', 'error_code' => 'photo_invalid']);
                 return;
             }
 
@@ -507,7 +507,7 @@ PROMPT;
             }
 
             if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'Fichier photo manquant ou invalide']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'Fichier photo manquant ou invalide', 'error_code' => 'photo_invalid']);
                 return;
             }
 

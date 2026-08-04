@@ -151,7 +151,7 @@ class PasswordResetService
                 error_log("[TOKEN VERIFY] Token déjà utilisé");
                 return [
                     'valid' => false,
-                    'error' => 'Ce lien a déjà été utilisé'
+                    'error' => 'Ce lien a déjà été utilisé', 'error_code' => 'link_already_used'
                 ];
             }
 
@@ -205,7 +205,7 @@ class PasswordResetService
             if (strlen($newPassword) < 8) {
                 return [
                     'success' => false,
-                    'error' => 'Le mot de passe doit contenir au moins 8 caractères'
+                    'error' => 'Le mot de passe doit contenir au moins 8 caractères', 'error_code' => 'password_too_short'
                 ];
             }
 

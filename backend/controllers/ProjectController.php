@@ -1650,7 +1650,7 @@ class ProjectController
             $data = $this->getJsonInput();
 
             if (empty($data['label'])) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'Le libellé du compteur est requis']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'Le libellé du compteur est requis', 'error_code' => 'counter_label_required']);
                 return;
             }
 
@@ -1671,7 +1671,7 @@ class ProjectController
             if (!$counterId) {
                 $this->sendResponse(400, [
                     'success' => false,
-                    'error' => 'Limite de 10 compteurs secondaires atteinte pour cette section'
+                    'error' => 'Limite de 10 compteurs secondaires atteinte pour cette section', 'error_code' => 'secondary_counter_limit'
                 ]);
                 return;
             }
@@ -1857,12 +1857,12 @@ class ProjectController
             $data = $this->getJsonInput();
 
             if (empty($data['name']) || empty($data['width']) || empty($data['height'])) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'Nom, largeur et hauteur sont requis']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'Nom, largeur et hauteur sont requis', 'error_code' => 'chart_fields_required']);
                 return;
             }
 
             if ((int)$data['width'] > 200 || (int)$data['height'] > 200) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'La grille ne peut pas dépasser 200x200 cases']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'La grille ne peut pas dépasser 200x200 cases', 'error_code' => 'chart_too_large']);
                 return;
             }
 
@@ -1915,12 +1915,12 @@ class ProjectController
             $data = $this->getJsonInput();
 
             if (empty($data['name']) || empty($data['width']) || empty($data['height'])) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'Nom, largeur et hauteur sont requis']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'Nom, largeur et hauteur sont requis', 'error_code' => 'chart_fields_required']);
                 return;
             }
 
             if ((int)$data['width'] > 200 || (int)$data['height'] > 200) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'La grille ne peut pas dépasser 200x200 cases']);
+                $this->sendResponse(400, ['success' => false, 'error' => 'La grille ne peut pas dépasser 200x200 cases', 'error_code' => 'chart_too_large']);
                 return;
             }
 
@@ -2537,7 +2537,7 @@ class ProjectController
             if (empty($validTags)) {
                 $this->sendResponse(400, [
                     'success' => false,
-                    'error' => 'Aucun tag valide (2-50 caractères, lettres/chiffres/espaces/tirets uniquement)'
+                    'error' => 'Aucun tag valide (2-50 caractères, lettres/chiffres/espaces/tirets uniquement)', 'error_code' => 'tags_invalid'
                 ]);
                 return;
             }
