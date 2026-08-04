@@ -92,6 +92,16 @@ const Stats = () => {
   const [error, setError] = useState(null)
   const [period, setPeriod] = useState('all')
   const [celebration, setCelebration] = useState(null)
+  // [AI:Claude] La surcouche PRO se ferme et reste fermee : sans ca, une
+  // utilisatrice FREE retombe sur la meme publicite a chaque visite.
+  const UPSELL_KEY = 'yf_stats_upsell_dismissed'
+  const [upsellDismissed, setUpsellDismissed] = useState(() => {
+    try { return localStorage.getItem(UPSELL_KEY) === '1' } catch { return false }
+  })
+  const dismissUpsell = () => {
+    try { localStorage.setItem(UPSELL_KEY, '1') } catch { /* stockage indisponible */ }
+    setUpsellDismissed(true)
+  }
 
   useEffect(() => {
     fetchStats()
@@ -450,7 +460,26 @@ const Stats = () => {
             )}
           </div>
 
-          {/* Graphiques — visibles pour tous, floutés pour FREE */}
+          {/* Graphiques — visibles pour tous, floutés pour FREE.
+              Une fois la surcouche fermee, on remplace tout le bloc par une
+              barre compacte : montrer des graphiques floutes sans pouvoir les
+              lire ni fermer la publicite ne sert personne. */}
+          {!isPro && upsellDismissed ? (
+            <Link
+              to="/subscription"
+              className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 shadow-sm hover:border-primary-300 transition"
+            >
+              <span className="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm font-medium text-gray-800">{t('ui.fullAnalytics')}</span>
+              </span>
+              <span className="text-xs font-bold px-2 py-0.5 bg-primary-100 text-primary-700 rounded-full flex-shrink-0">PRO</span>
+            </Link>
+          ) : (
           <div className="relative">
 
             {/* Contenu — flouté si FREE */}
@@ -569,7 +598,15 @@ const Stats = () => {
             {/* Overlay CTA — FREE uniquement */}
             {!isPro && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-primary-200 shadow-xl p-6 text-center mx-4 max-w-sm">
+                <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl border border-primary-200 shadow-xl p-6 text-center mx-4 max-w-sm">
+                  <button
+                    type="button"
+                    onClick={dismissUpsell}
+                    aria-label={t('ui.close')}
+                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  >
+                    ×
+                  </button>
                   <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
@@ -590,6 +627,7 @@ const Stats = () => {
               </div>
             )}
           </div>
+          )}
 
           {/* Badges */}
           {(earnedBadges.length > 0 || notEarnedBadges.length > 0 || (!isPro && lockedBadges.length > 0)) && (
