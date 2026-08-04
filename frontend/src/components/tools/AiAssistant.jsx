@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
 import { useTranslation } from 'react-i18next'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../../data/upgradePlans'
 
 const MarkdownText = ({ text }) => {
   const lines = text.split('\n')
@@ -48,8 +49,14 @@ const SUGGESTION_KEYS = ['aiQ1', 'aiQ2', 'aiQ3', 'aiQ4', 'aiQ5', 'aiQ6']
 
 export default function AiAssistant() {
   const { t } = useTranslation('tools')
-  const { hasActiveSubscription } = useAuth()
+  const { hasActiveSubscription , getSubscriptionPlan } = useAuth()
   const isPro = hasActiveSubscription()
+
+  // [AI:Claude] isPro vaut hasActiveSubscription() : vrai pour PLUS aussi.
+
+  // Le plan reel decide quel palier proposer, ou aucun.
+
+  const currentPlan = getSubscriptionPlan ? getSubscriptionPlan() : (isPro ? 'pro' : 'free')
 
   const STORAGE_KEY = 'ai_assistant_messages'
 
@@ -123,7 +130,7 @@ export default function AiAssistant() {
           to="/subscription"
           className="inline-block bg-primary-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
         >
-          {t('ui.goProPrice')}
+          {(() => { const p = upgradeTarget('ai_questions', currentPlan); return p && t('ui.goToPlan', { plan: planLabel(p), price: PLAN_PRICES[p].monthlyEquiv }) })()}
         </Link>
         <p className="text-xs text-gray-500">{t('ui.quotaResets')}</p>
       </div>

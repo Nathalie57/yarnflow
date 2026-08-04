@@ -354,6 +354,9 @@
     "zeroTimeShort": "0h 0min",
     "cmValue": "{{n}} cm",
     "rowsValue_one": "{{count}} rang",
-    "rowsValue_other": "{{count}} rangs"
+    "rowsValue_other": "{{count}} rangs",
+    "goToPlan": "Passer à {{plan}} — dès {{price}}/mois",
+    "billedAnnually": "Facturé {{annual}}/an · résiliable à tout moment",
+    "seeAllPlans": "Voir tous les plans"
   }
 }

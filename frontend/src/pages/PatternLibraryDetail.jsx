@@ -15,12 +15,13 @@ import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import ProxyViewer from '../components/ProxyViewer'
 import { projectTypeKey } from '../data/projectTypes'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 const PatternLibraryDetail = () => {
   const { t } = useTranslation('library')
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, getSubscriptionPlan } = useAuth()
 
   const [pattern, setPattern] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -71,6 +72,15 @@ const PatternLibraryDetail = () => {
   const [editType, setEditType] = useState('file')
 
   const isPro = user?.subscription_type && user.subscription_type !== 'free'
+
+
+  // [AI:Claude] isPro vaut hasActiveSubscription() : vrai pour PLUS aussi.
+
+
+  // Le plan reel decide quel palier proposer, ou aucun.
+
+
+  const currentPlan = getSubscriptionPlan ? getSubscriptionPlan() : (isPro ? 'pro' : 'free')
 
   // Libelle affichable d'une valeur stockee : la valeur elle-meme reste en base.
   const getCategoryLabel = (category) => {
@@ -759,7 +769,7 @@ const PatternLibraryDetail = () => {
                   {t('ui.noteAdaptations')}
                 </p>
                 <Link to="/subscription" className="text-xs text-primary-600 hover:text-primary-700 font-medium">
-                  {t('ui.goProPrice')}
+                  {(() => { const p = upgradeTarget('pattern_library', currentPlan); return p && t('ui.goToPlan', { plan: planLabel(p), price: PLAN_PRICES[p].monthlyEquiv }) })()}
                 </Link>
               </div>
             ) : (

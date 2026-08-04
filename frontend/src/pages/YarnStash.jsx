@@ -14,6 +14,7 @@ import YarnStashStats from '../components/stash/YarnStashStats'
 import YarnStashCard from '../components/stash/YarnStashCard'
 import YarnStashForm from '../components/stash/YarnStashForm'
 import { useTranslation } from 'react-i18next'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 const YarnStash = () => {
   const { t } = useTranslation('tools')
@@ -216,7 +217,7 @@ const YarnStash = () => {
                 to="/subscription"
                 className="text-xs font-semibold text-primary-600 hover:text-primary-700"
               >
-                {isPlus ? t('ui.goProArrow') : t('ui.goPlusOrProArrow')}
+                {(() => { const p = upgradeTarget('stash', plan) || 'pro'; return t('ui.goToPlan', { plan: planLabel(p), price: PLAN_PRICES[p].monthlyEquiv }) })()}
               </Link>
             ) : (
               <span className="text-xs text-amber-600">{isPlus ? t('ui.planPlusName') : t('ui.planFreeName')}</span>

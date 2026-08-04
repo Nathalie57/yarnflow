@@ -6,6 +6,7 @@
 import { useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import { useAuth } from '../contexts/AuthContext'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 import { useTranslation, Trans } from 'react-i18next'
 
 const FEATURES = {
@@ -23,13 +24,6 @@ const FEATURES = {
     svg: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
-      </svg>
-    ),
-  },
-  section_notes: {
-    svg: (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
     ),
   },
@@ -53,7 +47,7 @@ const FEATURES = {
 const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
   const { t } = useTranslation('tools')
   const navigate = useNavigate()
-  const { isTWA } = useAuth()
+  const { isTWA, getSubscriptionPlan } = useAuth()
 
   if (!isOpen) return null
 
@@ -80,6 +74,12 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
   // [AI:Claude] Meme repli pour les traductions : sans ca, un feature inconnu
   // ferait renvoyer la cle brute a t(), et le .map() sur les items planterait.
   const featureKey = FEATURES[feature] ? feature : 'tags'
+
+  // [AI:Claude] On propose le plan le moins cher qui debloque la fonctionnalite,
+  // pas systematiquement PRO : annoncer PRO quand PLUS suffisait est un probleme
+  // de confiance autant qu'une vente ratee.
+  const targetPlan = upgradeTarget(feature, getSubscriptionPlan()) || 'plus'
+  const price = PLAN_PRICES[targetPlan]
 
   const handleUpgrade = () => {
     navigate('/subscription')
@@ -181,10 +181,18 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             onClick={handleUpgrade}
             className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition text-sm font-semibold shadow-sm"
           >
-            {content.plan === 'plus' ? t('ui.seePlans') : t('ui.goPro')}
+            {t('ui.goToPlan', { plan: planLabel(targetPlan), price: price.monthlyEquiv })}
           </button>
         </div>
-        <p className="text-xs text-gray-500 text-center -mt-2">{t('ui.noCommitment')}</p>
+        <p className="text-xs text-gray-500 text-center -mt-2">
+          {t('ui.billedAnnually', { annual: price.annual })}
+        </p>
+        <button
+          onClick={handleUpgrade}
+          className="block mx-auto text-xs text-gray-400 hover:text-primary-600 underline transition"
+        >
+          {t('ui.seeAllPlans')}
+        </button>
       </div>
     </div>
   )

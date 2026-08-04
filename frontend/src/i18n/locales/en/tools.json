@@ -810,7 +810,10 @@
     "trialsLeft_one": "{{count}} free trial left",
     "trialsLeft_other": "{{count}} free trials left",
     "goPlusYearly": "Upgrade to PLUS (yearly) — {{price}}/year",
-    "monthlyPrice": "Monthly — {{price}}/month"
+    "monthlyPrice": "Monthly — {{price}}/month",
+    "goToPlan": "Upgrade to {{plan}} — from {{price}}/month",
+    "billedAnnually": "Billed {{annual}}/year · cancel any time",
+    "seeAllPlans": "See all plans"
   },
   "toolsList": {
     "distribute": {
@@ -871,15 +874,6 @@
         "Up to 10 counters per section",
         "Custom label (e.g. \"Dec.\")",
         "Ideal for jumpers, shawls, socks"
-      ]
-    },
-    "section_notes": {
-      "title": "Notes per section",
-      "description": "Add notes to each section of your project — not just one note for the whole thing.",
-      "items": [
-        "Separate notes per section",
-        "Saved automatically",
-        "Find your instructions section by section"
       ]
     },
     "photo_credits": {

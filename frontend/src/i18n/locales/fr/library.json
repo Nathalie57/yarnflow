@@ -431,7 +431,10 @@
     "imageWord": "Image",
     "savingEllipsisAlt": "Enregistrement…",
     "inProgress2": "En cours",
-    "onlyNLeftGoPro": "Plus que {{count}} — Passer à PRO"
+    "onlyNLeftGoPro": "Plus que {{count}} — Passer à PRO",
+    "goToPlan": "Passer à {{plan}} — dès {{price}}/mois",
+    "billedAnnually": "Facturé {{annual}}/an · résiliable à tout moment",
+    "seeAllPlans": "Voir tous les plans"
   },
   "badges": {
     "proj-1": {

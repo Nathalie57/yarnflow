@@ -354,6 +354,9 @@
     "zeroTimeShort": "0h 0min",
     "cmValue": "{{n}} cm",
     "rowsValue_one": "{{count}} row",
-    "rowsValue_other": "{{count}} rows"
+    "rowsValue_other": "{{count}} rows",
+    "goToPlan": "Upgrade to {{plan}} — from {{price}}/month",
+    "billedAnnually": "Billed {{annual}}/year · cancel any time",
+    "seeAllPlans": "See all plans"
   }
 }

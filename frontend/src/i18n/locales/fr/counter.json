@@ -431,6 +431,9 @@
     "cmValue": "{{n}} cm",
     "rowValue": "rang {{n}}",
     "needleNum": "Aiguille #{{n}}",
-    "hookNum": "Crochet #{{n}}"
+    "hookNum": "Crochet #{{n}}",
+    "goToPlan": "Passer à {{plan}} — dès {{price}}/mois",
+    "billedAnnually": "Facturé {{annual}}/an · résiliable à tout moment",
+    "seeAllPlans": "Voir tous les plans"
   }
 }

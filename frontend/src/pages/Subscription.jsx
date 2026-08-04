@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { userAPI, paymentsAPI } from '../services/api'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { useTranslation, Trans } from 'react-i18next'
+import { PLAN_PRICES } from '../data/upgradePlans'
 
 const Check = ({ className = 'text-primary-500' }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 flex-shrink-0 mt-0.5 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -183,9 +184,11 @@ const Subscription = () => {
     subscription?.type === 'annual'
   )
 
-  const plusPrice = '3,99€'
-  const plusAnnualPrice = '29,99€'
-  const plusMonthlyEquiv = '2,49€'
+  // [AI:Claude] Prix lus depuis data/upgradePlans : les popins d’upgrade
+  // affichaient un prix different de cette page.
+  const plusPrice = PLAN_PRICES.plus.monthly
+  const plusAnnualPrice = PLAN_PRICES.plus.annual
+  const plusMonthlyEquiv = PLAN_PRICES.plus.monthlyEquiv
 
   if (loading) {
     return (
@@ -392,7 +395,7 @@ const Subscription = () => {
           <div className="mb-4 mt-2">
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">Pro</p>
             <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-bold text-gray-900">4,99€</span>
+              <span className="text-3xl font-bold text-gray-900">{PLAN_PRICES.pro.monthlyEquiv}</span>
               <span className="text-sm text-gray-500">{t('ui.perMonthSuffix')}</span>
             </div>
             <p className="text-xs text-green-600 font-medium mb-1">{t('ui.billedYearlySave')}</p>
@@ -450,7 +453,7 @@ const Subscription = () => {
                 <p className="text-xs text-gray-500 mt-0.5">{t('ui.pack50Price')}</p>
               </div>
               <div className="text-right">
-                <span className="text-3xl font-bold text-gray-900">4,99€</span>
+                <span className="text-3xl font-bold text-gray-900">{PLAN_PRICES.pro.monthlyEquiv}</span>
                 <p className="text-xs text-gray-500">{t('ui.oneOffPayment')}</p>
               </div>
             </div>

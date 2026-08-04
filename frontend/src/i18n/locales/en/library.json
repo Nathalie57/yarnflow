@@ -431,7 +431,10 @@
     "imageWord": "Image",
     "savingEllipsisAlt": "Saving…",
     "inProgress2": "In progress",
-    "onlyNLeftGoPro": "Only {{count}} left — upgrade to PRO"
+    "onlyNLeftGoPro": "Only {{count}} left — upgrade to PRO",
+    "goToPlan": "Upgrade to {{plan}} — from {{price}}/month",
+    "billedAnnually": "Billed {{annual}}/year · cancel any time",
+    "seeAllPlans": "See all plans"
   },
   "badges": {
     "proj-1": {

@@ -18,6 +18,7 @@ import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import UpgradePrompt from '../components/UpgradePrompt'
 import { projectTypeKey } from '../data/projectTypes'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 const PatternLibrary = () => {
   const { t } = useTranslation('library')
@@ -530,7 +531,7 @@ const PatternLibrary = () => {
                   >
                     {isAtLimit ? t('ui.limitReachedGoPro') :
                      isNearLimit ? t('ui.onlyNLeftGoPro', { count: remaining }) :
-                     t('ui.goProForMore')}
+                     t('ui.goToPlan', { plan: planLabel(upgradeTarget('pattern_library', 'free')), price: PLAN_PRICES.plus.monthlyEquiv })}
                   </button>
                 </div>
               )

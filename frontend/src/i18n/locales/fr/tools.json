@@ -810,7 +810,10 @@
     "trialsLeft_one": "{{count}} essai gratuit restant",
     "trialsLeft_other": "{{count}} essais gratuits restants",
     "goPlusYearly": "Passer à PLUS (Annuel) — {{price}}/an",
-    "monthlyPrice": "Mensuel — {{price}}/mois"
+    "monthlyPrice": "Mensuel — {{price}}/mois",
+    "goToPlan": "Passer à {{plan}} — dès {{price}}/mois",
+    "billedAnnually": "Facturé {{annual}}/an · résiliable à tout moment",
+    "seeAllPlans": "Voir tous les plans"
   },
   "toolsList": {
     "distribute": {
@@ -871,15 +874,6 @@
         "Jusqu'à 10 compteurs par section",
         "Label personnalisable (ex: \"Dim.\")",
         "Idéal pour pulls, châles, chaussettes"
-      ]
-    },
-    "section_notes": {
-      "title": "Notes par section",
-      "description": "Ajoute des notes spécifiques à chaque section de ton projet — pas juste une note globale.",
-      "items": [
-        "Notes indépendantes par section",
-        "Sauvegarde automatique",
-        "Retrouve tes instructions section par section"
       ]
     },
     "photo_credits": {

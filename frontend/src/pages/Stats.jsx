@@ -16,6 +16,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
 } from 'recharts'
+import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 // [AI:Claude] `metric`/`threshold` alimentent à la fois `condition` (dérivée
 // automatiquement) et la barre de progression des badges pas encore obtenus —
@@ -83,8 +84,14 @@ const LOCKED_PREVIEW = 6
 
 const Stats = () => {
   const { t } = useTranslation('library')
-  const { hasActiveSubscription } = useAuth()
+  const { hasActiveSubscription , getSubscriptionPlan } = useAuth()
   const isPro = hasActiveSubscription()
+
+  // [AI:Claude] isPro vaut hasActiveSubscription() : vrai pour PLUS aussi.
+
+  // Le plan reel decide quel palier proposer, ou aucun.
+
+  const currentPlan = getSubscriptionPlan ? getSubscriptionPlan() : (isPro ? 'pro' : 'free')
 
   const [stats, setStats] = useState(null)
   const [photoStats, setPhotoStats] = useState(null)
@@ -620,7 +627,7 @@ const Stats = () => {
                     to="/subscription"
                     className="inline-block w-full px-5 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition shadow-sm"
                   >
-                    {t('ui.unlockWithPro')}
+                    {(() => { const p = upgradeTarget('advanced_stats', currentPlan); return p && t('ui.goToPlan', { plan: planLabel(p), price: PLAN_PRICES[p].monthlyEquiv }) })()}
                   </Link>
                   <p className="text-xs text-gray-500 mt-2">{t('ui.cancelAnytime')}</p>
                 </div>

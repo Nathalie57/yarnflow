@@ -431,6 +431,9 @@
     "cmValue": "{{n}} cm",
     "rowValue": "row {{n}}",
     "needleNum": "Needle #{{n}}",
-    "hookNum": "Hook #{{n}}"
+    "hookNum": "Hook #{{n}}",
+    "goToPlan": "Upgrade to {{plan}} — from {{price}}/month",
+    "billedAnnually": "Billed {{annual}}/year · cancel any time",
+    "seeAllPlans": "See all plans"
   }
 }
