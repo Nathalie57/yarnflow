@@ -1168,8 +1168,8 @@ const MyProjects = () => {
                             {project.sections_count > 0 && project.current_section_name
                               ? project.current_section_name
                               : project.counter_unit === 'cm'
-                                ? `${Number(project.current_row || 0).toFixed(1)} cm`
-                                : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
+                                ? t('ui.cmValue', { n: Number(project.current_row || 0).toFixed(1) })
+                                : t('ui.rowsValue', { count: Math.floor(Number(project.current_row || 0)) })
                             }
                           </span>
                           {project.time_formatted && project.time_formatted !== '0h 0min' && (
@@ -1218,8 +1218,8 @@ const MyProjects = () => {
                           </span>
                           <span className="text-xs font-bold text-gray-700">
                             {project.counter_unit === 'cm'
-                              ? `${Number(project.current_row || 0).toFixed(1)} cm`
-                              : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
+                              ? t('ui.cmValue', { n: Number(project.current_row || 0).toFixed(1) })
+                              : t('ui.rowsValue', { count: Math.floor(Number(project.current_row || 0)) })
                             }
                           </span>
                         </div>
@@ -1233,8 +1233,8 @@ const MyProjects = () => {
                           </span>
                           <span className="text-xs font-bold text-gray-700">
                             {project.counter_unit === 'cm'
-                              ? `${Number(project.current_row || 0).toFixed(1)} cm`
-                              : `${Math.floor(Number(project.current_row || 0))} rang${(project.current_row || 0) > 1 ? 's' : ''}`
+                              ? t('ui.cmValue', { n: Number(project.current_row || 0).toFixed(1) })
+                              : t('ui.rowsValue', { count: Math.floor(Number(project.current_row || 0)) })
                             }
                           </span>
                         </div>

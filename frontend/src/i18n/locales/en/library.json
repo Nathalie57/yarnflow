@@ -430,7 +430,8 @@
     "mainImage": "Main image",
     "imageWord": "Image",
     "savingEllipsisAlt": "Saving…",
-    "inProgress2": "In progress"
+    "inProgress2": "In progress",
+    "onlyNLeftGoPro": "Only {{count}} left — upgrade to PRO"
   },
   "badges": {
     "proj-1": {

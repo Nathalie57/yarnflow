@@ -96,7 +96,7 @@ const STASH_CATEGORIES = {
 }
 
 export default function YarnCalculator() {
-  const { t } = useTranslation('tools')
+  const { t, i18n } = useTranslation('tools')
   const [projectType, setProjectType] = useState('')
   const [size, setSize] = useState('')
   const [weight, setWeight] = useState('')
@@ -284,8 +284,8 @@ export default function YarnCalculator() {
                 <div className={`rounded-lg p-4 text-center ${stockCheck.enough ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
                   <p className={`font-semibold text-base ${stockCheck.enough ? 'text-emerald-700' : 'text-amber-700'}`}>
                     {stockCheck.enough
-                      ? `Vous avez assez — ${stockCheck.total.toLocaleString('fr-FR')} m disponibles`
-                      : `Pas encore assez — ${stockCheck.total.toLocaleString('fr-FR')} m disponibles`
+                      ? t('ui.enoughYarn', { n: stockCheck.total.toLocaleString(i18n.language) })
+                      : t('ui.notEnoughYarn', { n: stockCheck.total.toLocaleString(i18n.language) })
                     }
                   </p>
                   {!stockCheck.enough && (

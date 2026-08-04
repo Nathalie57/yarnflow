@@ -223,8 +223,8 @@ export default function GaugeCalculator() {
                 {adaptResult.diff === 0
                   ? t('ui.gaugeMatchesPattern')
                   : adaptResult.diff > 0
-                    ? `Ajoutez ${adaptResult.diff} maille${adaptResult.diff > 1 ? 's' : ''} par rapport au patron.`
-                    : `Retirez ${Math.abs(adaptResult.diff)} maille${Math.abs(adaptResult.diff) > 1 ? 's' : ''} par rapport au patron.`
+                    ? t('ui.addStitches', { count: adaptResult.diff })
+                    : t('ui.removeStitches', { count: Math.abs(adaptResult.diff) })
                 }
               </p>
             </div>

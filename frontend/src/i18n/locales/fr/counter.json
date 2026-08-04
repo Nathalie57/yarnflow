@@ -423,6 +423,14 @@
     "savingDots": "Enregistrement...",
     "savingAlt": "Sauvegarde...",
     "editSection": "Modifier la section",
-    "addSection2": "Ajouter une section"
+    "addSection2": "Ajouter une section",
+    "daysLate": "{{count}}j de retard",
+    "daysLeft": "{{count}}j restants",
+    "cmOfTotal": "{{done}} / {{total}} cm",
+    "rowOfTotal2": "rang {{done}} / {{total}}",
+    "cmValue": "{{n}} cm",
+    "rowValue": "rang {{n}}",
+    "needleNum": "Aiguille #{{n}}",
+    "hookNum": "Crochet #{{n}}"
   }
 }

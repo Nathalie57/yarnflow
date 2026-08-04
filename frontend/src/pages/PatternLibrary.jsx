@@ -529,7 +529,7 @@ const PatternLibrary = () => {
                     }`}
                   >
                     {isAtLimit ? t('ui.limitReachedGoPro') :
-                     isNearLimit ? `Plus que ${remaining} — Passer à PRO` :
+                     isNearLimit ? t('ui.onlyNLeftGoPro', { count: remaining }) :
                      t('ui.goProForMore')}
                   </button>
                 </div>

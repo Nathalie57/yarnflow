@@ -315,8 +315,8 @@ export default function SmartProjectCreator() {
             <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-primary-50 border-primary-200">
               <span className="text-sm font-medium text-primary-700">
                 {quota.is_pro
-                  ? `${quota.remaining} import${quota.remaining !== 1 ? 's' : ''} restant${quota.remaining !== 1 ? 's' : ''} ce mois`
-                  : `${quota.remaining} essai${quota.remaining !== 1 ? 's' : ''} gratuit${quota.remaining !== 1 ? 's' : ''} restant${quota.remaining !== 1 ? 's' : ''}`
+                  ? t('ui.importsLeft', { count: quota.remaining })
+                  : t('ui.trialsLeft', { count: quota.remaining })
                 }
               </span>
             </div>

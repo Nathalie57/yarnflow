@@ -351,6 +351,9 @@
     "yarn": "Fil",
     "needles": "Aiguilles",
     "hooks": "Crochets",
-    "zeroTimeShort": "0h 0min"
+    "zeroTimeShort": "0h 0min",
+    "cmValue": "{{n}} cm",
+    "rowsValue_one": "{{count}} rang",
+    "rowsValue_other": "{{count}} rangs"
   }
 }

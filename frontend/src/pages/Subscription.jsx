@@ -362,14 +362,14 @@ const Subscription = () => {
                 disabled={processing}
                 className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {processing ? t('ui.loadingEllipsis2') : `Passer à PLUS (Annuel) — ${plusAnnualPrice}/an`}
+                {processing ? t('ui.loadingEllipsis2') : t('ui.goPlusYearly', { price: plusAnnualPrice })}
               </button>
               <button
                 onClick={handleSubscribePlus}
                 disabled={processing}
                 className="w-full py-2.5 text-gray-500 hover:text-gray-700 text-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {processing ? t('ui.loadingEllipsis2') : `Mensuel — ${plusPrice}/mois`}
+                {processing ? t('ui.loadingEllipsis2') : t('ui.monthlyPrice', { price: plusPrice })}
               </button>
             </div>
           )}

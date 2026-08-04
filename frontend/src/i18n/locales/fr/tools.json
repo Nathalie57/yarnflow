@@ -797,7 +797,20 @@
     "freeWord": "Gratuit",
     "loadingEllipsis2": "Chargement…",
     "planPlusName": "Plan Plus",
-    "planFreeName": "Plan Free"
+    "planFreeName": "Plan Free",
+    "messagesUsedMonth": "{{used}} / {{limit}} messages utilisés ce mois",
+    "addStitches_one": "Ajoute {{count}} maille par rapport au patron.",
+    "addStitches_other": "Ajoute {{count}} mailles par rapport au patron.",
+    "removeStitches_one": "Retire {{count}} maille par rapport au patron.",
+    "removeStitches_other": "Retire {{count}} mailles par rapport au patron.",
+    "enoughYarn": "Tu en as assez — {{n}} m disponibles",
+    "notEnoughYarn": "Pas encore assez — {{n}} m disponibles",
+    "importsLeft_one": "{{count}} import restant ce mois",
+    "importsLeft_other": "{{count}} imports restants ce mois",
+    "trialsLeft_one": "{{count}} essai gratuit restant",
+    "trialsLeft_other": "{{count}} essais gratuits restants",
+    "goPlusYearly": "Passer à PLUS (Annuel) — {{price}}/an",
+    "monthlyPrice": "Mensuel — {{price}}/mois"
   },
   "toolsList": {
     "distribute": {

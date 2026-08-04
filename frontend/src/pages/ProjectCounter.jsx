@@ -3359,9 +3359,9 @@ const ProjectCounter = () => {
                   }`}
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                  {daysUntilDeadline < 0 ? `${Math.abs(daysUntilDeadline)}j de retard` :
+                  {daysUntilDeadline < 0 ? t('ui.daysLate', { count: Math.abs(daysUntilDeadline) }) :
                    daysUntilDeadline === 0 ? t('ui.todayExcl') :
-                   `${daysUntilDeadline}j restants`}
+                   t('ui.daysLeft', { count: daysUntilDeadline })}
                 </button>
               ) : (
                 <button
@@ -4305,14 +4305,14 @@ const ProjectCounter = () => {
                         {section.total_rows ? (
                           <span className="text-xs text-gray-500 block mb-1">
                             {counterUnit === 'cm'
-                              ? `${Number(section.current_row || 0).toFixed(1)} / ${Number(section.total_rows).toFixed(1)} cm`
-                              : `rang ${Math.floor(section.current_row || 0)} / ${Math.floor(section.total_rows)}`}
+                              ? t('ui.cmOfTotal', { done: Number(section.current_row || 0).toFixed(1), total: Number(section.total_rows).toFixed(1) })
+                              : t('ui.rowOfTotal2', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })}
                           </span>
                         ) : section.current_row > 0 ? (
                           <span className="text-xs text-gray-500 block mb-1">
                             {counterUnit === 'cm'
-                              ? `${Number(section.current_row).toFixed(1)} cm`
-                              : `rang ${Math.floor(section.current_row)}`}
+                              ? t('ui.cmValue', { n: Number(section.current_row).toFixed(1) })
+                              : t('ui.rowValue', { n: Math.floor(section.current_row) })}
                           </span>
                         ) : null}
                         {sectionProgress !== null ? (
@@ -4503,11 +4503,11 @@ const ProjectCounter = () => {
                             <span className="text-xs text-gray-400">
                               {section.total_rows
                                 ? counterUnit === 'cm'
-                                  ? `${Number(section.current_row || 0).toFixed(1)} / ${Number(section.total_rows).toFixed(1)} cm`
-                                  : `rang ${Math.floor(section.current_row || 0)} / ${Math.floor(section.total_rows)}`
+                                  ? t('ui.cmOfTotal', { done: Number(section.current_row || 0).toFixed(1), total: Number(section.total_rows).toFixed(1) })
+                                  : t('ui.rowOfTotal2', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })
                                 : counterUnit === 'cm'
-                                  ? `${Number(section.current_row).toFixed(1)} cm`
-                                  : `rang ${Math.floor(section.current_row)}`}
+                                  ? t('ui.cmValue', { n: Number(section.current_row).toFixed(1) })
+                                  : t('ui.rowValue', { n: Math.floor(section.current_row) })}
                             </span>
                           )}
                         </div>
@@ -6694,7 +6694,7 @@ const ProjectCounter = () => {
                     {(technicalForm.needles.length > 1 || project.technique === 'tricot') && (
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium text-gray-700">
-                          {project.technique === 'tricot' ? `Aiguille #${nIdx + 1}` : `Crochet #${nIdx + 1}`}
+                          {project.technique === 'tricot' ? t('ui.needleNum', { n: nIdx + 1 }) : t('ui.hookNum', { n: nIdx + 1 })}
                         </span>
                         {technicalForm.needles.length > 1 && (
                           <button

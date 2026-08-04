@@ -423,6 +423,14 @@
     "savingDots": "Saving...",
     "savingAlt": "Saving...",
     "editSection": "Edit the section",
-    "addSection2": "Add a section"
+    "addSection2": "Add a section",
+    "daysLate": "{{count}}d late",
+    "daysLeft": "{{count}}d left",
+    "cmOfTotal": "{{done}} / {{total}} cm",
+    "rowOfTotal2": "row {{done}} / {{total}}",
+    "cmValue": "{{n}} cm",
+    "rowValue": "row {{n}}",
+    "needleNum": "Needle #{{n}}",
+    "hookNum": "Hook #{{n}}"
   }
 }
