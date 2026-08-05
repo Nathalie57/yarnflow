@@ -77,54 +77,67 @@ class Project extends BaseModel
      */
     public function getUserProjects(int $userId, ?string $status = null, int $limit = 50, int $offset = 0): array
     {
+        // [AI:Claude] 2026-08-05 — Requete reecrite pour la vitesse.
+        //
+        // Elle joignait project_rows uniquement pour calculer `rows_count`, un
+        // champ que ni le frontend ni le PHP ne lisent nulle part. Cette
+        // jointure materialisait TOUS les rangs de la personne avant le
+        // regroupement, et le LIMIT ne s'appliquant qu'apres, elle payait ce
+        // cout meme pour n'afficher que douze projets.
+        //
+        // Elle executait par ailleurs une douzaine de sous-requetes correlees
+        // sur project_sections par projet, dont cinq fois le meme COUNT(*).
+        // Elles sont remplacees par une seule jointure agregee : les sections
+        // d'un projet se comptent en une passe au lieu de douze.
+        //
+        // Les trois lectures de la section courante restent des sous-requetes :
+        // ce sont des acces par cle primaire, donc negligeables, et les passer
+        // en jointure obligerait a les envelopper dans un agregat a cause de
+        // ONLY_FULL_GROUP_BY.
+        //
+        // Resultats identiques, verifies champ par champ sur la base locale.
         $query = "SELECT p.*,
-                  COUNT(DISTINCT pr.id) as rows_count,
                   CONCAT(
                       FLOOR(
                           CASE
-                              WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
-                                  COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                              WHEN COUNT(s.id) > 0 THEN COALESCE(SUM(s.time_spent), 0)
                               ELSE p.total_time
                           END / 3600
                       ), 'h ',
                       FLOOR(
                           (CASE
-                              WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
-                                  COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                              WHEN COUNT(s.id) > 0 THEN COALESCE(SUM(s.time_spent), 0)
                               ELSE p.total_time
                           END % 3600) / 60
                       ), 'min ',
                       (CASE
-                          WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
-                              COALESCE((SELECT SUM(time_spent) FROM project_sections WHERE project_id = p.id), 0)
+                          WHEN COUNT(s.id) > 0 THEN COALESCE(SUM(s.time_spent), 0)
                           ELSE p.total_time
                       END % 60), 'sec'
                   ) as time_formatted,
                   CASE
-                      WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
-                          (SELECT CASE
-                              WHEN SUM(total_rows) > 0 THEN ROUND((SUM(current_row) / SUM(total_rows)) * 100, 1)
+                      WHEN COUNT(s.id) > 0 THEN
+                          CASE
+                              WHEN SUM(s.total_rows) > 0 THEN ROUND((SUM(s.current_row) / SUM(s.total_rows)) * 100, 1)
                               ELSE NULL
-                          END FROM project_sections WHERE project_id = p.id)
+                          END
                       WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
                       ELSE NULL
                   END as completion_percentage,
                   CASE
-                      WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
-                          COALESCE((SELECT SUM(current_row) FROM project_sections WHERE project_id = p.id), 0)
+                      WHEN COUNT(s.id) > 0 THEN COALESCE(SUM(s.current_row), 0)
                       ELSE p.current_row
                   END as current_row,
                   CASE
-                      WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
-                          (SELECT SUM(total_rows) FROM project_sections WHERE project_id = p.id)
+                      WHEN COUNT(s.id) > 0 THEN SUM(s.total_rows)
                       ELSE p.total_rows
                   END as total_rows,
                   (SELECT name FROM project_sections WHERE id = p.current_section_id) as current_section_name,
                   (SELECT current_row FROM project_sections WHERE id = p.current_section_id) as current_section_row,
                   (SELECT total_rows FROM project_sections WHERE id = p.current_section_id) as current_section_total_rows,
-                  (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) as sections_count
+                  COUNT(s.id) as sections_count
                   FROM {$this->table} p
-                  LEFT JOIN project_rows pr ON p.id = pr.project_id
+                  LEFT JOIN project_sections s ON s.project_id = p.id
                   WHERE p.user_id = :user_id";
 
         if ($status !== null)

@@ -121,9 +121,15 @@ const Landing = () => {
           </div>
 
           <div className="flex justify-center md:justify-end">
+            {/* [AI:Claude] La seule image chargee en priorite : c'est celle du
+                premier ecran. La differer retarderait l'affichage principal.
+                Les cinq autres, plus bas dans la page, sont en loading="lazy" —
+                elles pesaient 3,3 Mo a elles seules et se telechargeaient
+                toutes des l'arrivee, avant meme d'etre visibles. */}
             <img
               src="/screenshots/counter-mobile.jpg"
               alt={t('hero.screenshotAlt')}
+              fetchPriority="high"
               className="w-56 md:w-64 rounded-[2rem] shadow-2xl border border-gray-200"
             />
           </div>
@@ -184,7 +190,7 @@ const Landing = () => {
 
             {/* Screenshot compteur */}
             <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200">
-              <img src="/compteur.jpg" alt={t('counter.screenshotAlt')} className="w-full object-cover" />
+              <img src="/compteur.jpg" alt={t('counter.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover" />
             </div>
 
             <div>
@@ -260,11 +266,11 @@ const Landing = () => {
             {/* Avant/après réels */}
             <div className="order-1 md:order-2 grid grid-cols-2 gap-3">
               <div className="relative rounded-xl overflow-hidden shadow-sm border border-gray-200 aspect-square">
-                <img src="/photo-avant.jpg" alt={t('photoStudio.beforeAlt')} className="w-full h-full object-cover" />
+                <img src="/photo-avant.jpg" alt={t('photoStudio.beforeAlt')} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 <div className="absolute top-2 left-2 bg-gray-700/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{t('photoStudio.before')}</div>
               </div>
               <div className="relative rounded-xl overflow-hidden shadow-sm border border-primary-200 aspect-square">
-                <img src="/photo-apres.jpg" alt={t('photoStudio.afterAlt')} className="w-full h-full object-cover" />
+                <img src="/photo-apres.jpg" alt={t('photoStudio.afterAlt')} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 <div className="absolute top-2 left-2 bg-primary-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{t('photoStudio.after')}</div>
               </div>
             </div>
@@ -275,7 +281,7 @@ const Landing = () => {
 
             {/* Screenshot projets */}
             <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
-              <img src="/projets.jpg" alt={t('library.screenshotAlt')} className="w-full object-cover object-top max-h-[480px]" />
+              <img src="/projets.jpg" alt={t('library.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover object-top max-h-[480px]" />
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
 
@@ -312,7 +318,7 @@ const Landing = () => {
 
             {/* Screenshot étape validation */}
             <div className="rounded-2xl overflow-hidden shadow-md border border-gray-200 relative">
-              <img src="/patron.jpg" alt={t('smartCreation.screenshotAlt')} className="w-full object-cover object-top max-h-[480px]" />
+              <img src="/patron.jpg" alt={t('smartCreation.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover object-top max-h-[480px]" />
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
 

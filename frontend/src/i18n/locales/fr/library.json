@@ -437,7 +437,8 @@
     "seeAllPlans": "Voir tous les plans",
     "patternEditFailed": "Erreur lors de la modification du patron",
     "notEnoughCredits": "Tu n'as pas assez de crédits. Il t'en faut 1.",
-    "photoGeneratedSuccess": "✨ Photo générée avec succès !"
+    "photoGeneratedSuccess": "✨ Photo générée avec succès !",
+    "aiPhotoAlt": "Photo générée par IA"
   },
   "badges": {
     "proj-1": {

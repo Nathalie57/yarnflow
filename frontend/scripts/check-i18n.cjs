@@ -275,8 +275,13 @@ for (const lang of ['fr', 'en']) for (const ns of NSS) DICT[lang + ':' + ns] = f
   const s = fs.readFileSync('src/App.jsx', 'utf8')
   const bad = []
   for (const m of s.matchAll(/element=\{<(\w+)/g)) {
-    if (['Navigate', 'Layout', 'ProtectedRoute'].includes(m[1])) continue
-    if (!new RegExp(`import\\s+${m[1]}\\b`).test(s)) bad.push('route <' + m[1] + '> sans import')
+    if (['Navigate', 'ProtectedRoute'].includes(m[1])) continue
+    // [AI:Claude] Deux formes possibles depuis le decoupage du bundle :
+    // `import Landing from ...` pour les pages chargees d'emblee, et
+    // `const Stats = lazy(() => import(...))` pour les pages differees.
+    const eager = new RegExp(`import\\s+${m[1]}\\b`)
+    const differe = new RegExp(`const\\s+${m[1]}\\s*=\\s*lazy\\(`)
+    if (!eager.test(s) && !differe.test(s)) bad.push('route <' + m[1] + '> ni importee ni differee')
   }
   report('Routes App.jsx', [...new Set(bad)], [...s.matchAll(/path="/g)].length + ' routes, tous les composants importes')
 }

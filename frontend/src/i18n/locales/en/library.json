@@ -437,7 +437,8 @@
     "seeAllPlans": "See all plans",
     "patternEditFailed": "Failed to update the pattern",
     "notEnoughCredits": "You don't have enough credits. You need 1.",
-    "photoGeneratedSuccess": "✨ Photo generated!"
+    "photoGeneratedSuccess": "✨ Photo generated!",
+    "aiPhotoAlt": "AI-generated photo"
   },
   "badges": {
     "proj-1": {

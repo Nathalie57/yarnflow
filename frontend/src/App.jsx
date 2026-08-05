@@ -1,55 +1,89 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AuthProvider } from './contexts/AuthContext'
 import { HintsProvider } from './contexts/HintsContext'
 import PrivateRoute from './components/PrivateRoute'
-import Layout from './components/Layout'
 import PWAPrompt from './components/PWAPrompt'
 import ContextualHint from './components/ContextualHint'
 import ErrorBoundary from './components/ErrorBoundary'
 import CookieConsent from 'react-cookie-consent'
 
-// Pages
+/**
+ * [AI:Claude] 2026-08-05 — Decoupage du bundle.
+ *
+ * Toutes les pages etaient importees d'emblee : afficher la page d'accueil
+ * faisait telecharger 2 233 Ko de JavaScript, soit l'application entiere —
+ * compteur, studio photo, graphiques, editeur de grilles, administration.
+ *
+ * Ce n'est pas theorique : une campagne Facebook a produit 185 clics pour
+ * 114 vues de page. 38 % des visiteurs, deja payes, partaient avant
+ * l'affichage. Dans le navigateur integre de Facebook, sur mobile, plusieurs
+ * secondes d'ecran blanc suffisent.
+ *
+ * Restent charges d'emblee : la page d'accueil, la connexion et l'inscription.
+ * C'est le tunnel d'acquisition — y ajouter un aller-retour reseau au moment
+ * ou la personne clique sur « S'inscrire » couterait plus qu'il ne rapporte.
+ *
+ * Tout le reste est differe, y compris Layout : il tire la navbar, la
+ * navigation du bas et le tiroir d'assistant IA, dont un visiteur non connecte
+ * n'a aucun usage.
+ */
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import OAuthCallback from './pages/OAuthCallback'
-import Subscription from './pages/Subscription'
-import Profile from './pages/Profile'
-import MyProjects from './pages/MyProjects'
-import ProjectCounter from './pages/ProjectCounter'
-import ProjectCharts from './pages/ProjectCharts'
-import ChartEditor from './pages/ChartEditor'
-import SmartProjectCreator from './pages/SmartProjectCreator'
-import Stats from './pages/Stats'
-import Gallery from './pages/Gallery'
-import Tools from './pages/Tools'
-import Bibliotheque from './pages/Bibliotheque'
-import PatternLibrary from './pages/PatternLibrary'
-import PatternLibraryDetail from './pages/PatternLibraryDetail'
-import YarnStash from './pages/YarnStash'
-import PaymentSuccess from './pages/PaymentSuccess'
-import ImportPartnerPattern from './pages/ImportPartnerPattern'
-import PatternTranslator from './pages/PatternTranslator'
+
+const Layout = lazy(() => import('./components/Layout'))
+
+// Pages
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const OAuthCallback = lazy(() => import('./pages/OAuthCallback'))
+const Subscription = lazy(() => import('./pages/Subscription'))
+const Profile = lazy(() => import('./pages/Profile'))
+const MyProjects = lazy(() => import('./pages/MyProjects'))
+const ProjectCounter = lazy(() => import('./pages/ProjectCounter'))
+const ProjectCharts = lazy(() => import('./pages/ProjectCharts'))
+const ChartEditor = lazy(() => import('./pages/ChartEditor'))
+const SmartProjectCreator = lazy(() => import('./pages/SmartProjectCreator'))
+const Stats = lazy(() => import('./pages/Stats'))
+const Gallery = lazy(() => import('./pages/Gallery'))
+const Tools = lazy(() => import('./pages/Tools'))
+const Bibliotheque = lazy(() => import('./pages/Bibliotheque'))
+const PatternLibrary = lazy(() => import('./pages/PatternLibrary'))
+const PatternLibraryDetail = lazy(() => import('./pages/PatternLibraryDetail'))
+const YarnStash = lazy(() => import('./pages/YarnStash'))
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
+const ImportPartnerPattern = lazy(() => import('./pages/ImportPartnerPattern'))
+const PatternTranslator = lazy(() => import('./pages/PatternTranslator'))
 
 // Pages légales
-import CGU from './pages/CGU'
-import Privacy from './pages/Privacy'
-import Mentions from './pages/Mentions'
-import Contact from './pages/Contact'
+const CGU = lazy(() => import('./pages/CGU'))
+const Privacy = lazy(() => import('./pages/Privacy'))
+const Mentions = lazy(() => import('./pages/Mentions'))
+const Contact = lazy(() => import('./pages/Contact'))
 
 // Admin
-import AdminDashboard from './pages/admin/AdminDashboard'
-import AdminUsers from './pages/admin/AdminUsers'
-import AdminTemplates from './pages/admin/AdminTemplates'
-import AdminPayments from './pages/admin/AdminPayments'
-import AdminPhotoFeedback from './pages/admin/AdminPhotoFeedback'
-import AdminCategories from './pages/admin/AdminCategories'
-import AdminOptions from './pages/admin/AdminOptions'
-import AdminPartnerPatterns from './pages/admin/AdminPartnerPatterns'
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'))
+const AdminTemplates = lazy(() => import('./pages/admin/AdminTemplates'))
+const AdminPayments = lazy(() => import('./pages/admin/AdminPayments'))
+const AdminPhotoFeedback = lazy(() => import('./pages/admin/AdminPhotoFeedback'))
+const AdminCategories = lazy(() => import('./pages/admin/AdminCategories'))
+const AdminOptions = lazy(() => import('./pages/admin/AdminOptions'))
+const AdminPartnerPatterns = lazy(() => import('./pages/admin/AdminPartnerPatterns'))
+
+/**
+ * [AI:Claude] Ecran d'attente pendant le telechargement d'une page differee.
+ * Volontairement muet : pas de texte, donc rien a traduire, et rien qui
+ * ressemble a un message d'erreur si le reseau est lent. Le fond reprend celui
+ * de l'app pour eviter un flash blanc entre deux pages.
+ */
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50" role="status" aria-live="polite">
+    <div className="w-8 h-8 rounded-full border-2 border-gray-200 border-t-primary-600 animate-spin" />
+  </div>
+)
 
 // [AI:Claude] Titre par route — sans ça, la quasi-totalité des pages héritent
 // du <title> statique d'index.html et GA4 ne voit plus qu'une seule "page"
@@ -136,6 +170,7 @@ function App() {
         <HintsProvider>
         <AnalyticsTracker />
         <ErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Routes publiques */}
           <Route path="/" element={<Landing />} />
@@ -198,6 +233,7 @@ function App() {
             <Route path="/admin/partner-patterns" element={<AdminPartnerPatterns />} />
           </Route>
         </Routes>
+        </Suspense>
         </ErrorBoundary>
         <PWAPrompt />
         <ContextualHint />

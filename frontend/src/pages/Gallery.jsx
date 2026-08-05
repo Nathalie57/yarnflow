@@ -658,9 +658,16 @@ const Gallery = () => {
                   className="relative rounded-lg group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow"
                 >
                   {/* Photo (originale ou embellie selon toggle) */}
+                  {/* [AI:Claude] loading="lazy" : sans lui, la galerie
+                      telechargeait toutes ses photos des l'ouverture, y compris
+                      celles situees plusieurs ecrans plus bas. C'est la cause
+                      principale de sa lenteur — pas le JavaScript, dont le
+                      morceau ne pese que 43 Ko. */}
                   <img
                     src={`${import.meta.env.VITE_BACKEND_URL}${viewingOriginalIds.has(photo.id) ? photo.original_path : (photo.enhanced_path || photo.original_path)}`}
-                    alt={photo.item_name || 'Photo IA'}
+                    alt={photo.item_name || t('ui.aiPhotoAlt')}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover rounded-lg transition-opacity duration-300"
                     onError={(e) => {
                       console.error('Erreur chargement image:', photo.enhanced_path)
