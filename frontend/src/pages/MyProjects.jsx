@@ -457,7 +457,30 @@ const MyProjects = () => {
     }
   }
 
-  // [AI:Claude] Créer un nouveau projet via le wizard
+  /**
+   * [AI:Claude] Projet de demonstration : le Lemon Zest Cardigan (DROPS 268-1),
+   * taille M, tricote de haut en bas.
+   *
+   * Il a remplace un bonnet a trois sections, qui ne montrait pas grand-chose.
+   * Un gilet en a neuf, dont deux manches identiques et trois bordures : c'est
+   * exactement le genre de projet ou suivre ses rangs section par section a un
+   * interet, donc exactement ce que la demo doit donner a voir.
+   *
+   * Il arrive DEJA COMMENCE — dos, devants et empiecement termines, corps a
+   * mi-parcours, manches intactes. Un projet vide se ressemble d'une app a
+   * l'autre ; un projet en cours montre a quoi ressemble le sien dans trois
+   * semaines.
+   *
+   * La progression est posee via `current_row` sur chaque section, JAMAIS en
+   * creant des lignes dans project_rows : les statistiques comptent les rangs
+   * avec COUNT(*) sur cette table (Project::getUserStatsByPeriod), et des rangs
+   * offerts fausseraient les compteurs, les series et les badges. Seuls les
+   * rangs reellement tricotes comptent.
+   *
+   * Droits : DROPS autorise le partage du nom, du numero et des fournitures de
+   * ses modeles, mais interdit la reproduction des explications. On se limite
+   * donc aux metadonnees et au lien vers la page d'origine.
+   */
   const handleCreateDemoProject = async () => {
     setIsCreatingDemo(true)
     let demoProjectId = null
@@ -465,35 +488,89 @@ const MyProjects = () => {
       const response = await api.post('/projects', {
         name: t('demoProject.name'),
         technique: 'tricot',
-        type: 'accessoires',
+        // [AI:Claude] Valeur capitalisee : c'est celle stockee en base
+        // (cf. data/projectTypes.js). L'ancienne demo ecrivait 'accessoires',
+        // absent de la liste, donc le type ne s'affichait pas.
+        type: 'Vêtements',
         description: t('demoProject.description'),
         status: 'in_progress',
         counter_unit: 'rows',
         counter_unit_increment: 1.0,
         technical_details: JSON.stringify({
           description: t('demoProject.description'),
-          yarn: [{ brand: 'Drops', name: t('demoProject.yarnName'), url: '', quantities: [{ amount: '2', unit: 'pelotes', color: t('demoProject.yarnColor') }] }],
-          needles: [{ type: t('demoProject.needleType'), size: '3,5', length: '40 cm' }],
-          gauge: { stitches: '22', rows: '30', dimensions: '10 x 10 cm', notes: '' }
+          yarn: [
+            { brand: 'DROPS', name: 'Baby Merino', url: '', quantities: [{ amount: '8', unit: 'pelotes', color: t('demoProject.yarnColorMerino') }] },
+            { brand: 'DROPS', name: 'Kid-Silk', url: '', quantities: [{ amount: '7', unit: 'pelotes', color: t('demoProject.yarnColorSilk') }] },
+          ],
+          needles: [
+            { type: t('demoProject.needleType'), size: '4', length: '80 cm' },
+            { type: t('demoProject.needleType'), size: '2,5', length: '80 cm' },
+          ],
+          gauge: { stitches: '19', rows: '25', dimensions: '10 x 10 cm', notes: t('demoProject.gaugeNote') }
         })
       })
       demoProjectId = response.data.project?.id
 
+      // [AI:Claude] Nombre de rangs en taille M, deduit du patron : soit compte
+      // directement (dos, empiecement), soit calcule depuis les centimetres a
+      // l'echantillon (25 rangs = 10 cm, donc 2,5 rangs/cm).
       const demoSections = [
-        { name: t('demoProject.sectionRibbing'), total_rows: 25 },
-        { name: t('demoProject.sectionBody'), total_rows: 51 },
-        { name: t('demoProject.sectionCrown'), total_rows: 26 },
+        { key: 'sectionBack',        total_rows: 21,  current_row: 21 },
+        { key: 'sectionRightFront',  total_rows: 33,  current_row: 33 },
+        { key: 'sectionLeftFront',   total_rows: 33,  current_row: 33 },
+        { key: 'sectionYoke',        total_rows: 38,  current_row: 38 },
+        { key: 'sectionBody',        total_rows: 64,  current_row: 41, note: 'noteBody' },
+        { key: 'sectionHem',         total_rows: 10,  current_row: 0 },
+        { key: 'sectionRightSleeve', total_rows: 108, current_row: 0, note: 'noteSleeve' },
+        { key: 'sectionLeftSleeve',  total_rows: 108, current_row: 0 },
+        { key: 'sectionBands',       total_rows: 24,  current_row: 0 },
       ]
+      let sectionEnCoursId = null
+      const terminees = []
       for (let i = 0; i < demoSections.length; i++) {
-        await api.post(`/projects/${demoProjectId}/sections`, {
-          name: demoSections[i].name,
-          total_rows: demoSections[i].total_rows,
+        const s = demoSections[i]
+        const res = await api.post(`/projects/${demoProjectId}/sections`, {
+          name: t(`demoProject.${s.key}`),
+          total_rows: s.total_rows,
+          current_row: s.current_row,
           display_order: i,
-          notes: null
+          notes: s.note ? t(`demoProject.${s.note}`) : null
         })
+        const id = res.data.section?.id
+        if (s.key === 'sectionBody') sectionEnCoursId = id
+        else if (id && s.current_row >= s.total_rows) terminees.push(id)
       }
 
-      await api.post(`/projects/${demoProjectId}/pattern-url`, { pattern_url: 'https://www.garnstudio.com/pattern.php?id=11639&cid=8' })
+      // [AI:Claude] `is_completed` n'est pas deduit de current_row : c'est une
+      // colonne a part, et createSection ne l'accepte pas. Sans ce passage, les
+      // quatre parties finies s'afficheraient comme en cours malgre leur
+      // compteur au maximum.
+      // Quatre UPDATE independants sur des lignes distinctes : en parallele.
+      await Promise.all(terminees.map(id =>
+        api.put(`/projects/${demoProjectId}/sections/${id}`, { is_completed: 1 })
+      ))
+
+      // [AI:Claude] En dernier, une fois les sections terminees marquees : sinon
+      // le compteur s'ouvrirait sur la premiere section creee (createSection
+      // renseigne current_section_id au premier appel), c'est-a-dire sur le dos,
+      // deja fini. La personne arriverait devant un compteur a 21/21, ou le seul
+      // geste qui compte — appuyer sur +1 — n'aurait aucun sens.
+      if (sectionEnCoursId) {
+        await api.post(`/projects/${demoProjectId}/current-section`, { section_id: sectionEnCoursId })
+      }
+
+      await api.post(`/projects/${demoProjectId}/pattern-url`, { pattern_url: 'https://www.garnstudio.com/pattern.php?id=12575&cid=8' })
+
+      // [AI:Claude] La page compteur additionne les sections, mais la carte de
+      // la liste lit projects.current_row : sans cette mise a jour, la carte
+      // afficherait 0 rang alors que le projet est a mi-parcours.
+      const totalRows = demoSections.reduce((n, s) => n + s.total_rows, 0)
+      const doneRows = demoSections.reduce((n, s) => n + s.current_row, 0)
+      await api.put(`/projects/${demoProjectId}`, {
+        current_row: doneRows,
+        total_rows: totalRows,
+        notes: t('demoProject.projectNote'),
+      })
 
       // [AI:Claude] Pas de colonne is_demo en base — on marque ce projet comme
       // "démo" via localStorage (même convention que l'onboarding yf_onboarded_*)

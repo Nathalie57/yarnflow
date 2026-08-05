@@ -3537,17 +3537,25 @@ const ProjectCounter = () => {
               ></div>
             </div>
           </div>
-          <div className="text-center flex-shrink-0 border-l border-gray-100 pl-4">
-            <div className="text-sm font-semibold text-gray-800">
-              {(() => {
-                const totalTime = project?.total_time || 0
-                const totalHours = Math.floor(totalTime / 3600)
-                const totalMins = Math.floor((totalTime % 3600) / 60)
-                return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
-              })()}
+          {/* [AI:Claude] Tant qu'aucun temps n'a ete chronometre, on masque le
+              bloc entier plutot que d'afficher « 0min ». Un zero a cote d'une
+              barre de progression avancee se lit comme une incoherence — c'est
+              le cas du projet de demo, livre a 38 % sans temps (le temps
+              alimente les statistiques, on ne le fabrique pas), et celui de
+              tout projet qu'on vient de creer. */}
+          {(project?.total_time || 0) > 0 && (
+            <div className="text-center flex-shrink-0 border-l border-gray-100 pl-4">
+              <div className="text-sm font-semibold text-gray-800">
+                {(() => {
+                  const totalTime = project.total_time
+                  const totalHours = Math.floor(totalTime / 3600)
+                  const totalMins = Math.floor((totalTime % 3600) / 60)
+                  return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
+                })()}
+              </div>
+              <div className="text-[10px] text-gray-500">{t('ui.totalTime')}</div>
             </div>
-            <div className="text-[10px] text-gray-500">{t('ui.totalTime')}</div>
-          </div>
+          )}
           <button
             onClick={handleToggleProjectComplete}
             className={`px-4 py-2 rounded-xl font-medium text-sm transition whitespace-nowrap ${
@@ -3581,9 +3589,12 @@ const ProjectCounter = () => {
             ></div>
           </div>
           <div className="flex items-center justify-between gap-2">
+            {/* Le div reste en place meme vide : il tient la premiere place du
+                justify-between, sans quoi le bouton glisserait a gauche. */}
             <div className="text-xs text-gray-500">
               {(() => {
                 const totalTime = project?.total_time || 0
+                if (!totalTime) return null
                 const totalHours = Math.floor(totalTime / 3600)
                 const totalMins = Math.floor((totalTime % 3600) / 60)
                 return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
@@ -3768,11 +3779,18 @@ const ProjectCounter = () => {
               {(() => {
                 const currentSection = currentSectionId ? sections.find(s => s.id === currentSectionId) : null
                 if (!currentSection) return null
+                // [AI:Claude] `time_formatted` est construit en SQL par CONCAT :
+                // il vaut « 0h 0min 0sec » plutot que NULL, donc le repli qui
+                // existait ici ne se declenchait jamais. On teste la valeur
+                // numerique, et on masque le total tant qu'il est nul — un
+                // chronometre a zero a cote d'un compteur bien avance se lit
+                // comme une erreur.
+                if (!(Number(currentSection.time_spent) > 0)) return null
 
                 return (
                   <div className="text-center border-l border-gray-300 pl-2 sm:pl-3">
                     <div className="text-sm sm:text-lg font-semibold text-primary-700">
-                      {currentSection.time_formatted || t('ui.zeroTimeLong')}
+                      {currentSection.time_formatted}
                     </div>
                     <div className="text-[10px] text-gray-500">{t('ui.total')}</div>
                   </div>
@@ -4329,10 +4347,12 @@ const ProjectCounter = () => {
                             <span className="text-xs font-medium text-gray-700 min-w-[35px]">
                               {sectionProgress}%
                             </span>
-                            <span className="text-xs text-gray-500 ml-2 flex items-center gap-1">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                              {section.time_formatted || t('ui.zeroTimeLong')}
-                            </span>
+                            {Number(section.time_spent) > 0 && (
+                              <span className="text-xs text-gray-500 ml-2 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                {section.time_formatted}
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
@@ -4614,10 +4634,12 @@ const ProjectCounter = () => {
                           </div>
                         )}
 
-                        {/* Temps */}
-                        <div className="text-sm text-gray-600">
-                          ⏱️ {section.time_formatted || t('ui.zeroTimeLong')}
-                        </div>
+                        {/* Temps — masque tant qu'aucun chrono n'a tourne */}
+                        {Number(section.time_spent) > 0 && (
+                          <div className="text-sm text-gray-600">
+                            ⏱️ {section.time_formatted}
+                          </div>
+                        )}
 
                         {/* Actions */}
                         <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
