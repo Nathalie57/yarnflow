@@ -263,8 +263,15 @@ const MyProjects = () => {
       setProjects(response.data.projects || [])
 
       // [AI:Claude] Sert a n'afficher la demande de notifications qu'apres le premier
-      // projet. Pose ici et pas a la creation : couvre aussi les comptes existants.
-      if ((response.data.projects || []).length > 0) localStorage.setItem('yf_has_projects', '1')
+      // PROJET REEL. Pose ici et pas a la creation : couvre aussi les comptes existants.
+      //
+      // Le projet de demo compte pour rien : sans ce filtre, le creer suffisait a
+      // armer le bandeau de notifications, qui pouvait alors s'empiler sur la
+      // checklist du tutoriel — exactement ce qu'on voulait eviter en le
+      // repoussant apres un premier projet (retour Gemini, 2026-08-05).
+      const aUnProjetReel = (response.data.projects || [])
+        .some(p => !localStorage.getItem('yf_demo_project_' + p.id))
+      if (aUnProjetReel) localStorage.setItem('yf_has_projects', '1')
 
       // [AI:Claude] Extraire tous les tags disponibles pour le filtrage
       if (response.data.projects) {
