@@ -1,5 +1,10 @@
 <?php
-$source = __DIR__ . '/icon-512x512.png';
+// [AI:Claude] Deplace hors de public/ : dans public/, ce script etait copie
+// dans dist/ par le build puis mis en ligne, ou n'importe qui pouvait le
+// declencher pour reecrire les icones PWA du serveur. Constate le 2026-08-05,
+// il repondait 200 sur yarnflow.fr.
+define('ICONS_DIR', __DIR__ . '/../../public/icons');
+$source = ICONS_DIR . '/icon-512x512.png';
 
 if (!file_exists($source)) {
     die('icon-512x512.png introuvable');
@@ -16,7 +21,7 @@ foreach ($sizes as $size) {
     $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
     imagefill($dst, 0, 0, $transparent);
     imagecopyresampled($dst, $src, 0, 0, 0, 0, $size, $size, 512, 512);
-    imagepng($dst, __DIR__ . "/icon-{$size}x{$size}.png");
+    imagepng($dst, ICONS_DIR . "/icon-{$size}x{$size}.png");
     imagedestroy($dst);
     echo "icon-{$size}x{$size}.png généré\n";
 }
@@ -29,7 +34,7 @@ foreach ([192, 512] as $size) {
     $padding = (int)($size * 0.1);
     $innerSize = $size - ($padding * 2);
     imagecopyresampled($dst, $src, $padding, $padding, 0, 0, $innerSize, $innerSize, 512, 512);
-    imagepng($dst, __DIR__ . "/icon-maskable-{$size}x{$size}.png");
+    imagepng($dst, ICONS_DIR . "/icon-maskable-{$size}x{$size}.png");
     imagedestroy($dst);
     echo "icon-maskable-{$size}x{$size}.png généré\n";
 }
