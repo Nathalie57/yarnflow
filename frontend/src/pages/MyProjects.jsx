@@ -33,7 +33,7 @@ const MyProjects = () => {
   const { user, updateUser } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const { trackProjectCreated } = useAnalytics()
+  const { trackProjectCreated, trackTutorialStep } = useAnalytics()
 
   const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [pendingPlan, setPendingPlan] = useState(null)
@@ -577,6 +577,11 @@ const MyProjects = () => {
       // pour que la checklist du tutoriel réapparaisse après un rechargement,
       // même une fois le paramètre ?demo=1 nettoyé de l'URL.
       localStorage.setItem('yf_demo_project_' + demoProjectId, '1')
+
+      // [AI:Claude] Premier jalon du parcours de decouverte. Les suivants
+      // (ouverture, premier rang, changement de section, photo) sont emis
+      // depuis ProjectCounter.
+      trackTutorialStep('created', { project_id: demoProjectId })
     } catch (err) {
       console.error('Erreur création projet démo:', err)
     } finally {

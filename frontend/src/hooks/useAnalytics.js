@@ -237,6 +237,32 @@ export const useAnalytics = () => {
     })
   }
 
+  /**
+   * [AI:Claude] 2026-08-05 — Parcours de la premiere seance.
+   *
+   * Sur 37 personnes ayant eu au moins une semaine pour revenir, 23 ne sont
+   * venues qu'un seul jour (62 %), tandis que 5 fideles produisent 62 % de
+   * toute l'activite. Le produit tient ; c'est la premiere seance qui casse.
+   *
+   * On savait qui ne revenait pas, jamais OU la personne s'arretait. Ces
+   * evenements jalonnent le parcours du projet de demonstration pour reponder
+   * a cette question — et pour mesurer si le gilet mis en place le 2026-08-05
+   * change quelque chose.
+   *
+   * Chaque etape n'est envoyee qu'une fois par projet (garde en localStorage
+   * cote appelant) : ce qui interesse, c'est le franchissement, pas le volume.
+   *
+   * etape : 'created' | 'opened' | 'first_row' | 'section_changed'
+   *       | 'photo_added' | 'dismissed'
+   */
+  const trackTutorialStep = (etape, params = {}) => {
+    trackEvent('tutorial_step', {
+      event_category: 'onboarding',
+      step: etape,
+      ...params,
+    })
+  }
+
   return {
     trackEvent,
     trackPageView,
@@ -256,6 +282,7 @@ export const useAnalytics = () => {
     trackPhotoDownloaded,
     trackAiQuestion,
     trackQuotaReached,
+    trackTutorialStep,
   }
 }
 

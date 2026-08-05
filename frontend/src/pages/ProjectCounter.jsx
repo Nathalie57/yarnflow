@@ -20,6 +20,7 @@ import { useImagePreview } from '../hooks/useImagePreview'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { useMediaSession } from '../hooks/useMediaSession'
 import { useHints } from '../hooks/useHints'
+import { useAnalytics } from '../hooks/useAnalytics'
 import api, { networkUtils, stashAllocationAPI } from '../services/api'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
@@ -176,6 +177,47 @@ const ProjectCounter = () => {
       return next
     })
   }
+
+  // [AI:Claude] 2026-08-05 — Jalons de la premiere seance, pour savoir OU les
+  // gens decrochent. 62 % de celles qui ont eu une semaine pour revenir ne sont
+  // venues qu'un seul jour ; on ignorait a quelle etape elles s'arretaient.
+  //
+  // L'envoi se fait dans un effet et non dans le setState : React invoque la
+  // fonction de mise a jour deux fois en developpement, ce qui doublerait les
+  // evenements. Le franchissement seul compte, jamais le volume — d'ou la
+  // memoire des etapes deja envoyees, persistee pour survivre a un rechargement.
+  const { trackTutorialStep } = useAnalytics()
+
+  // useAnalytics renvoie de nouvelles fonctions a chaque rendu : sans cette
+  // reference stable, l'effet se relancerait a chaque rendu du composant.
+  const traceur = useRef(trackTutorialStep)
+  traceur.current = trackTutorialStep
+
+  const cleEtapesEnvoyees = 'yf_tutorial_sent_' + projectId
+  const etapesEnvoyees = useRef(null)
+
+  useEffect(() => {
+    if (!isDemoProject || !projectId) return
+
+    if (etapesEnvoyees.current === null) {
+      try {
+        etapesEnvoyees.current = new Set(JSON.parse(localStorage.getItem(cleEtapesEnvoyees) || '[]'))
+      } catch { etapesEnvoyees.current = new Set() }
+    }
+
+    const franchir = (etape) => {
+      if (etapesEnvoyees.current.has(etape)) return
+      etapesEnvoyees.current.add(etape)
+      try { localStorage.setItem(cleEtapesEnvoyees, JSON.stringify([...etapesEnvoyees.current])) } catch { /* ignore */ }
+      traceur.current(etape, { project_id: projectId })
+    }
+
+    franchir('opened')
+    if (demoSteps.rows > 0) franchir('first_row')
+    if (demoSteps.section) franchir('section_changed')
+    if (demoSteps.photo) franchir('photo_added')
+    if (demoSteps.dismissed) franchir('dismissed')
+  }, [isDemoProject, projectId, demoSteps, cleEtapesEnvoyees])
 
   useEffect(() => {
     if (!demoRowsCelebrate) return
