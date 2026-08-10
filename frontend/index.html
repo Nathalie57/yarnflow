@@ -117,6 +117,24 @@
     <!-- noscript du Meta Pixel : doit être dans <body>, pas <head> (le HTML
          n'autorise pas <img> dans un <noscript> placé dans <head>) -->
     <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1018618181083011&ev=PageView&noscript=1" alt="" /></noscript>
+    <!-- [AI:Claude] 2026-08-10 — Polyfill URL.parse() pour Safari.
+         pdf.js (via react-pdf) appelle URL.parse(), une methode statique
+         recente du standard URL, absente des versions de Safari encore
+         largement utilisees. Signale par une utilisatrice : "Une erreur
+         s'est produite" a l'ouverture ou l'enregistrement d'un patron PDF,
+         TypeError "URL.parse is not a function".
+         Correctif cible plutot que remplacer toute la classe URL : on
+         n'ajoute que la methode manquante, sans toucher au reste du
+         comportement natif. Place ici, avant le bundle, pour s'appliquer
+         quel que soit le morceau charge (le compteur de projet, ou l'import
+         de patron, sont tous deux dans des morceaux differencies). -->
+    <script>
+      if (typeof URL.parse !== 'function') {
+        URL.parse = function (url, base) {
+          try { return new URL(url, base); } catch { return null; }
+        };
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
 
