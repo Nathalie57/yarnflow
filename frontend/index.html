@@ -140,8 +140,14 @@
 
     <script>
 
-      // Force mise à jour SW — version incrémentée pour nettoyer les caches périmés
-      var SW_VERSION = '2026070701';
+      // Force mise à jour SW — INCREMENTER A CHAQUE DEPLOIEMENT MAJEUR.
+      // [AI:Claude] 2026-08-17 — Oubli constate : le correctif URL.parse() du
+      // 10 aout etait bien deploye cote serveur, mais restait invisible pour
+      // les personnes ayant deja visite le site, faute d'avoir incremente ce
+      // numero. Sans changement de valeur, ce bloc ne fait rien : le service
+      // worker et les caches perimes ne sont jamais purges, meme quand
+      // index.html lui-meme a change sur le serveur.
+      var SW_VERSION = '2026081701';
       var STORED_VERSION = localStorage.getItem('sw_version');
       if (STORED_VERSION !== SW_VERSION) {
         if ('serviceWorker' in navigator) {
