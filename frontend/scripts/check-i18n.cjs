@@ -222,6 +222,31 @@ for (const lang of ['fr', 'en']) for (const ns of NSS) DICT[lang + ':' + ns] = f
   report('Portee de `t` (pas de ReferenceError au rendu)', bad, 'tous les appels sont dans une portee valide')
 }
 
+// ---------- 10d. `i18n.xxx` utilise hors d'une portee ou `i18n` est lie -------
+// Meme angle mort que 10b, mais pour l'objet i18n plutot que la fonction t() :
+// useTranslation('ns') ne destructure parfois que { t }, et un usage plus loin
+// de i18n.language / i18n.resolvedLanguage plante au rendu (ReferenceError),
+// invisible pour un simple controle de syntaxe. Trouve en prod le 2026-08-18
+// dans PatternLibraryDetail.jsx : useTranslation('library') ne recuperait que
+// `t`, et une date affichee appelait i18n.language quelques lignes plus loin.
+{
+  const traverse = require('@babel/traverse').default
+  const bad = []
+  for (const f of ALL) {
+    const code = fs.readFileSync(f, 'utf8')
+    if (!/\bi18n\s*\./.test(code)) continue
+    let ast
+    try { ast = parser.parse(code, { sourceType: 'module', plugins: ['jsx'] }) } catch { continue }
+    traverse(ast, {
+      ReferencedIdentifier(p) {
+        if (p.node.name !== 'i18n') return
+        if (!p.scope.hasBinding('i18n')) bad.push(rel(f) + ':' + p.node.loc.start.line + '  ' + code.slice(p.node.start, Math.min(p.node.end + 30, code.length)).split('\n')[0])
+      },
+    })
+  }
+  report('Portee de `i18n` (pas de ReferenceError au rendu)', bad, 'tous les usages sont dans une portee valide')
+}
+
 // ---------- 10c. francais dans les noeuds de TEXTE JSX ------------------------
 // (JSXText n'est ni un StringLiteral ni forcement sur une seule ligne :
 //  c'est le troisieme angle mort qu'on a paye cher)

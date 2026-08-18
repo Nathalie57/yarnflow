@@ -19,7 +19,7 @@ import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 import { apiErrorMessage } from '../utils/apiError'
 const PatternLibraryDetail = () => {
-  const { t } = useTranslation('library')
+  const { t, i18n } = useTranslation('library')
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, getSubscriptionPlan } = useAuth()
