@@ -20,6 +20,26 @@ class ErrorBoundary extends Component {
       error,
       errorInfo
     })
+
+    // [AI:Claude] 2026-08-19 — Ce composant enveloppe TOUTES les routes : une
+    // erreur ici casse l'app entiere, pas juste une page, et jusqu'ici rien
+    // n'en gardait trace nulle part (console.error seul). Le bug i18n du
+    // 18 aout a tourne au moins deux semaines avant d'etre decouvert, et
+    // seulement parce qu'une utilisatrice a envoye une capture d'ecran — sans
+    // visibilite sur combien d'autres sont simplement parties sans rien dire.
+    //
+    // Meme limite de consentement que le reste du suivi analytics (voir
+    // apiError.js) : une personne qui plante des sa toute premiere page n'a
+    // pas forcement encore accepte les cookies, donc cet evenement ne capture
+    // pas tout. Mais pour qui a deja navigue un peu, c'est desormais visible
+    // dans GA4 sans attendre qu'elle ecrive.
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'app_error', {
+        event_category: 'error',
+        error_message: String(error?.message || error).slice(0, 150),
+        page_path: window.location?.pathname || '(inconnu)',
+      })
+    }
   }
 
   render() {
