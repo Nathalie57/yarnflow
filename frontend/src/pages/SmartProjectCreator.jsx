@@ -225,18 +225,17 @@ export default function SmartProjectCreator() {
     setError(null)
 
     try {
-      const token = localStorage.getItem('token')
-      const response = await axios.post('/api/projects/smart-create/confirm', {
+      // [AI:Claude] Etait en axios brut avec un chemin absolu ('/api/...') et un
+      // token relu a la main, incoherent avec le reste de l'app : l'instance
+      // partagee `api` a deja la bonne base d'URL et un intercepteur qui ajoute
+      // le token. N'expliquait pas d'echec constate (les deux autres tentatives
+      // du meme utilisateur ont reussi via ce meme code), corrige par prudence.
+      const response = await api.post('/projects/smart-create/confirm', {
         project,
         sections,
         source_type: mode,
         source_url: mode === 'pdf' ? file?.name : mode === 'library' ? selectedLibraryPattern?.name : url,
         analyze_metadata: analyzeMetadata
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
       })
 
       if (response.data.success) {
