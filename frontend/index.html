@@ -140,13 +140,22 @@
 
     <script>
 
-      // Force mise à jour SW — INCREMENTER A CHAQUE DEPLOIEMENT MAJEUR.
-      // [AI:Claude] 2026-08-17 — Oubli constate : le correctif URL.parse() du
-      // 10 aout etait bien deploye cote serveur, mais restait invisible pour
-      // les personnes ayant deja visite le site, faute d'avoir incremente ce
-      // numero. Sans changement de valeur, ce bloc ne fait rien : le service
-      // worker et les caches perimes ne sont jamais purges, meme quand
-      // index.html lui-meme a change sur le serveur.
+      // Force mise a jour SW — a n'incrementer QUE pour un vrai bug de cache
+      // generalise, pas a chaque deploiement.
+      // [AI:Claude] 2026-08-20 — Revise apres coup. La note d'origine disait
+      // "incrementer a chaque deploiement majeur" (2026-08-17), suite a l'oubli
+      // qui avait empeche le correctif URL.parse() du 10 aout d'atteindre les
+      // visiteuses deja passees sur le site. Mais l'incrementer a chaque fois a
+      // son propre cout : ce bloc desinscrit le service worker et vide TOUS les
+      // caches de TOUT LE MONDE a la prochaine visite, qui doit alors tout
+      // retelecharger avant de pouvoir fonctionner hors ligne ou en reseau
+      // faible. Une utilisatrice a perdu l'usage de l'app Android pile a ce
+      // moment, en mauvais reseau — resolu par un simple rechargement en bon
+      // reseau, mais evitable : le renouvellement des noms de fichiers avec
+      // empreinte (deja en place, cleanupOutdatedCaches: true dans
+      // vite.config.js) suffit pour un deploiement normal. Ce interrupteur
+      // reste reserve aux cas ou un cache perime doit etre purge de force chez
+      // tout le monde, pas a une habitude systematique.
       var SW_VERSION = '2026081701';
       var STORED_VERSION = localStorage.getItem('sw_version');
       if (STORED_VERSION !== SW_VERSION) {
