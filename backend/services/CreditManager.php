@@ -511,14 +511,13 @@ class CreditManager
             // [AI:Claude] Récupérer les crédits actuels
             $creditsData = $this->getUserCredits($userId);
 
-            // [AI:Claude] Ajouter 1 crédit au quota de packs
-            $updateQuery = "UPDATE user_photo_credits
-                           SET pack_credits = pack_credits + 1
-                           WHERE user_id = :user_id";
-
-            $updateStmt = $this->db->prepare($updateQuery);
-            $updateStmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
-            $updateStmt->execute();
+            // [AI:Claude] 2026-08-21 — Ecrivait dans `pack_credits`, colonne
+            // inexistante (les vraies colonnes sont monthly_credits et
+            // purchased_credits) : chaque remboursement echouait silencieusement,
+            // l'exception etant interceptee plus bas avec un message generique.
+            // Un credit remboursé rejoint purchased_credits : comme un credit
+            // achete, il ne doit pas disparaitre au reset mensuel du quota du plan.
+            $this->addPurchasedCredits($userId, 1);
 
             // [AI:Claude] Logger le remboursement
             $logQuery = "INSERT INTO credit_refunds

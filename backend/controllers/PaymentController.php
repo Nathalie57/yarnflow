@@ -693,6 +693,14 @@ class PaymentController
             null  // Reset date d'expiration
         );
 
+        // [AI:Claude] 2026-08-21 — Manquait ici : contrairement au cas d'echec
+        // de paiement (past_due/unpaid, plus haut dans processSubscriptionUpdated),
+        // une annulation complete ne remettait jamais monthly_credits a jour.
+        // checkAndResetMonthlyCredits() ignore volontairement les comptes FREE,
+        // donc sans cet appel explicite, la personne gardait indefiniment le
+        // solde de son ancien plan payant (jusqu'a 20) apres avoir annule.
+        $this->creditManager->initializeUserCredits((int)$user['id'], SUBSCRIPTION_FREE);
+
         error_log("[Payment] Utilisateur {$user['id']} ({$user['email']}) rétrogradé à FREE suite à annulation");
     }
 
