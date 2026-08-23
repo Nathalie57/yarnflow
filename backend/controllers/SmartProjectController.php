@@ -17,6 +17,7 @@ namespace App\Controllers;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\AIPatternExtractorService;
+use App\Services\AnalyticsService;
 use App\Middleware\AuthMiddleware;
 
 class SmartProjectController
@@ -485,6 +486,8 @@ class SmartProjectController
 
                 // Récupérer le projet complet
                 $project = $this->projectModel->findById($projectId);
+
+                AnalyticsService::log($userId, $projectId, 'project_created', ['source' => 'smart_import']);
 
                 $this->jsonResponse([
                     'success' => true,

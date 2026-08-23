@@ -30,6 +30,7 @@ use App\Controllers\StashAllocationController;
 use App\Controllers\PartnerPatternController;
 use App\Controllers\PatternTranslatorController;
 use App\Controllers\EmailTrackingController;
+use App\Controllers\AnalyticsController;
 use App\Middleware\RateLimitMiddleware;
 
 /**
@@ -198,6 +199,9 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^projects\/(\d+)\/current-section$/', $uri, $matches) => (new ProjectController())->setCurrentSection((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/sections\/(\d+)\/complete$/', $uri, $matches) => (new ProjectController())->toggleSectionComplete((int)$matches[1], (int)$matches[2]),
         $method === 'GET' && preg_match('/^projects\/(\d+)\/sections\/(\d+)\/rows$/', $uri, $matches) => (new ProjectController())->getSectionRows((int)$matches[1], (int)$matches[2], $_GET),
+
+        // [AI:Claude] Jalons du parcours produit (created/opened/first_row/section_changed)
+        $method === 'POST' && $uri === 'analytics/track-event' => (new AnalyticsController())->trackEvent(),
 
         // [AI:Claude] Compteurs secondaires (plusieurs par section ou par projet)
         $method === 'GET' && preg_match('/^projects\/(\d+)\/secondary-counters$/', $uri, $matches) => (new ProjectController())->getSecondaryCounters((int)$matches[1], $_GET),

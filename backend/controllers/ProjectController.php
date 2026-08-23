@@ -22,6 +22,7 @@ use App\Middleware\AuthMiddleware;
 use App\Services\PatternStorageService;
 use App\Services\StripeService;
 use App\Services\EmailService;
+use App\Services\AnalyticsService;
 
 class ProjectController
 {
@@ -366,6 +367,8 @@ class ProjectController
                 throw new \Exception('Erreur lors de la création du projet');
 
             $project = $this->projectModel->getProjectById($projectId);
+
+            AnalyticsService::log($userId, $projectId, 'project_created', ['source' => 'manual']);
 
             $this->sendResponse(201, [
                 'success' => true,

@@ -219,6 +219,18 @@ const ProjectCounter = () => {
     if (demoSteps.dismissed) franchir('dismissed')
   }, [isDemoProject, projectId, demoSteps, cleEtapesEnvoyees])
 
+  // [AI:Claude] 2026-08-23 — Équivalent de 'opened' ci-dessus mais pour TOUS les
+  // projets (le bloc au-dessus ne loggue que le projet démo). Écrit dans
+  // analytics_events plutôt que GA4, pour lire l'entonnoir created -> opened ->
+  // first_row -> section_changed en SQL, une seule fois par projet.
+  useEffect(() => {
+    if (!projectId) return
+    const key = `yf_evt_opened_${projectId}`
+    if (localStorage.getItem(key)) return
+    try { localStorage.setItem(key, '1') } catch { /* ignore */ }
+    api.post('/analytics/track-event', { event_name: 'project_opened', project_id: projectId }).catch(() => {})
+  }, [projectId])
+
   useEffect(() => {
     if (!demoRowsCelebrate) return
     const timer = setTimeout(() => setDemoRowsCelebrate(false), 4000)
@@ -2380,6 +2392,16 @@ const ProjectCounter = () => {
       await api.post(`/projects/${projectId}/current-section`, {
         section_id: sectionId
       })
+
+      // [AI:Claude] 2026-08-23 — Jalon d'entonnoir 'section_changed', tous projets
+      // confondus, une seule fois par projet (voir project_opened plus haut).
+      try {
+        const sectionChangedKey = `yf_evt_section_changed_${projectId}`
+        if (!localStorage.getItem(sectionChangedKey)) {
+          localStorage.setItem(sectionChangedKey, '1')
+          api.post('/analytics/track-event', { event_name: 'section_changed', project_id: projectId }).catch(() => {})
+        }
+      } catch { /* ignore */ }
 
       // [AI:Claude] Maintenant on peut changer la section en cours
       setCurrentSectionId(sectionId)
