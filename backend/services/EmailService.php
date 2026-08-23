@@ -1448,7 +1448,7 @@ HTML;
 HTML;
     }
 
-    public function sendReengagementLightEmail(string $email, string $name, int $projectCount, ?int $userId = null): bool
+    public function sendReengagementLightEmail(string $email, string $name, ?int $userId = null): bool
     {
         $subject = "Vous n'avez pas eu le temps de vous lancer sur YarnFlow ?";
         $success = false;
@@ -1460,7 +1460,7 @@ HTML;
             $mail->Subject = $subject;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
-            $mail->Body = $this->getReengagementLightTemplate($name, $projectCount);
+            $mail->Body = $this->getReengagementLightTemplate($name);
             $mail->AltBody = "Bonjour $name,\n\nVous avez jeté un oeil à YarnFlow il y a quelques jours sans trop avoir eu le temps de vous y mettre. Ca prend deux minutes pour démarrer.\n\nDémarrer maintenant : https://yarnflow.fr/smart-project-creator\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
@@ -1475,20 +1475,17 @@ HTML;
         return $success;
     }
 
-    private function getReengagementLightTemplate(string $name, int $projectCount): string
+    private function getReengagementLightTemplate(string $name): string
     {
         $header = $this->getEmailHeader();
         $footer = $this->getEmailFooter();
 
-        if ($projectCount > 0) {
-            $bodyText = "Vous avez commencé un projet sur YarnFlow, mais on ne vous a pas revue depuis. Pas de souci si le temps a manqué — votre projet est toujours là, tel que vous l'avez laissé.";
-            $ctaLabel = "Reprendre mon projet";
-            $ctaUrl = "https://yarnflow.fr/my-projects";
-        } else {
-            $bodyText = "Vous avez fait un tour sur YarnFlow il y a quelques jours, sans forcément avoir eu le temps de créer votre premier projet. Ca prend deux minutes : importez un patron (PDF ou lien) et l'appli s'occupe du reste.";
-            $ctaLabel = "Créer mon premier projet";
-            $ctaUrl = "https://yarnflow.fr/smart-project-creator";
-        }
+        // [AI:Claude] Réservé aux comptes sans aucun projet créé (voir behavioral-triggers.php,
+        // trigger 6) : ceux qui en ont déjà un sont couverts par project_start_reminder /
+        // project_inactive_reminder dans send-engagement-emails.php.
+        $bodyText = "Vous avez fait un tour sur YarnFlow il y a quelques jours, sans forcément avoir eu le temps de créer votre premier projet. Ca prend deux minutes : importez un patron (PDF ou lien) et l'appli s'occupe du reste.";
+        $ctaLabel = "Créer mon premier projet";
+        $ctaUrl = "https://yarnflow.fr/smart-project-creator";
 
         return <<<HTML
 <!DOCTYPE html>

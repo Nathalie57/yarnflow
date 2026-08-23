@@ -259,7 +259,10 @@ try {
     }
 
     // =========================================================================
-    // 5. DORMANT REACTIVATION — était réellement active (≥5 sessions), silence depuis 10-14j
+    // 5. DORMANT REACTIVATION — était réellement active (≥5 sessions), silence
+    //    depuis 15-30j. Fenêtre choisie pour ne pas recouper project_inactive_reminder
+    //    (send-engagement-emails.php, 7-14j) ni reactivation (45-60j) — le vrai
+    //    trou entre les deux, jusqu'ici couvert par rien.
     // =========================================================================
     echo "\n[DORMANT] Recherche des utilisatrices actives devenues silencieuses...\n";
 
@@ -272,9 +275,18 @@ try {
             WHERE email_type = 'dormant_reactivation'
             AND user_id IS NOT NULL
         )
+        -- [AI:Claude] Cooldown : n'importe quel autre email de relance déjà reçu
+        -- récemment évite un doublon de message, peu importe lequel est arrivé
+        -- en premier (need_help_day21, project_inactive_reminder, reengagement_day7).
+        AND u.id NOT IN (
+            SELECT user_id FROM emails_sent_log
+            WHERE email_type IN ('need_help_day21', 'project_inactive_reminder', 'reengagement_day7')
+            AND user_id IS NOT NULL
+            AND DATE(sent_at) >= DATE_SUB(CURDATE(), INTERVAL 10 DAY)
+        )
         GROUP BY u.id
         HAVING COUNT(s.id) >= 5
-           AND last_seen BETWEEN DATE_SUB(NOW(), INTERVAL 14 DAY) AND DATE_SUB(NOW(), INTERVAL 10 DAY)
+           AND last_seen BETWEEN DATE_SUB(NOW(), INTERVAL 30 DAY) AND DATE_SUB(NOW(), INTERVAL 15 DAY)
     ");
     $stmt->execute();
     $dormantUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -301,22 +313,32 @@ try {
     }
 
     // =========================================================================
-    // 6. REENGAGEMENT LIGHT — a peu essayé (1-4 sessions), silence depuis 7-10j
-    //    Différent de dormant_reactivation (≥5 sessions) : ton "vous n'avez pas
-    //    eu le temps de vous lancer ?" plutôt que "on ne vous a pas revue".
+    // 6. REENGAGEMENT LIGHT — a peu essayé (1-4 sessions), silence depuis 7-10j,
+    //    AUCUN projet créé. Recentré sur ce seul cas : dès qu'un projet existe,
+    //    project_start_reminder et project_inactive_reminder (send-engagement-
+    //    emails.php) couvrent déjà le même besoin — inutile de dupliquer.
     // =========================================================================
-    echo "\n[LIGHT] Recherche des utilisatrices qui ont peu essayé et se sont arrêtées...\n";
+    echo "\n[LIGHT] Recherche des comptes qui ont peu essayé, sans avoir créé de projet...\n";
 
     $stmt = $db->prepare("
         SELECT u.id, u.email, u.first_name, COUNT(s.id) AS session_count,
-               MAX(s.last_activity_at) AS last_seen,
-               (SELECT COUNT(*) FROM projects p WHERE p.user_id = u.id) AS project_count
+               MAX(s.last_activity_at) AS last_seen
         FROM users u
         JOIN user_sessions s ON s.user_id = u.id
         WHERE u.id NOT IN (
             SELECT user_id FROM emails_sent_log
             WHERE email_type = 'reengagement_light'
             AND user_id IS NOT NULL
+        )
+        -- [AI:Claude] Cooldown, même logique que dormant_reactivation ci-dessus.
+        AND u.id NOT IN (
+            SELECT user_id FROM emails_sent_log
+            WHERE email_type IN ('need_help_day21', 'reengagement_day7', 'onboarding_day3')
+            AND user_id IS NOT NULL
+            AND DATE(sent_at) >= DATE_SUB(CURDATE(), INTERVAL 10 DAY)
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM projects p WHERE p.user_id = u.id
         )
         GROUP BY u.id
         HAVING session_count BETWEEN 1 AND 4
@@ -328,12 +350,11 @@ try {
     echo "[LIGHT] " . count($lightUsers) . " utilisatrice(s) éligible(s)\n";
 
     foreach ($lightUsers as $user) {
-        echo "[LIGHT] Envoi à {$user['email']} ({$user['session_count']} session(s), {$user['project_count']} projet(s))... ";
+        echo "[LIGHT] Envoi à {$user['email']} ({$user['session_count']} session(s), aucun projet)... ";
         try {
             $ok = $emailService->sendReengagementLightEmail(
                 $user['email'],
                 $user['first_name'] ?? 'Utilisatrice',
-                (int)$user['project_count'],
                 (int)$user['id']
             );
             if ($ok) {
