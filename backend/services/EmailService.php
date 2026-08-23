@@ -1448,6 +1448,92 @@ HTML;
 HTML;
     }
 
+    public function sendReengagementLightEmail(string $email, string $name, int $projectCount, ?int $userId = null): bool
+    {
+        $subject = "Vous n'avez pas eu le temps de vous lancer sur YarnFlow ?";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getReengagementLightTemplate($name, $projectCount);
+            $mail->AltBody = "Bonjour $name,\n\nVous avez jeté un oeil à YarnFlow il y a quelques jours sans trop avoir eu le temps de vous y mettre. Ca prend deux minutes pour démarrer.\n\nDémarrer maintenant : https://yarnflow.fr/smart-project-creator\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] reengagement_light: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'reengagement_light', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getReengagementLightTemplate(string $name, int $projectCount): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+
+        if ($projectCount > 0) {
+            $bodyText = "Vous avez commencé un projet sur YarnFlow, mais on ne vous a pas revue depuis. Pas de souci si le temps a manqué — votre projet est toujours là, tel que vous l'avez laissé.";
+            $ctaLabel = "Reprendre mon projet";
+            $ctaUrl = "https://yarnflow.fr/my-projects";
+        } else {
+            $bodyText = "Vous avez fait un tour sur YarnFlow il y a quelques jours, sans forcément avoir eu le temps de créer votre premier projet. Ca prend deux minutes : importez un patron (PDF ou lien) et l'appli s'occupe du reste.";
+            $ctaLabel = "Créer mon premier projet";
+            $ctaUrl = "https://yarnflow.fr/smart-project-creator";
+        }
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        {$bodyText}
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="{$ctaUrl}" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                {$ctaLabel}
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#4b5563;font-size:15px;line-height:1.7;margin:0 0 24px;">
+        Si quelque chose vous a bloquée ou si vous avez une question, répondez directement à cet email — je lis tout.
+    </p>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">À bientôt,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+
+    <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:0;">
+        <a href="https://yarnflow.fr/profile" style="color:#9ca3af;text-decoration:underline;">Se désinscrire de ces emails</a>
+    </p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
     // =========================================================================
     // EMAILS RÉTENTION & CONVERSION (série 2)
     // =========================================================================

@@ -4,12 +4,13 @@
  * @file behavioral-triggers.php
  * @brief Triggers comportementaux — stash limit, quota IA, utilisatrice active FREE
  *
- * Cinq déclencheurs :
+ * Six déclencheurs :
  *   1. stash_limit_approaching  — utilisatrice FREE à 4/5 pelotes
  *   2. ai_quota_approaching     — utilisatrice FREE (4/5) ou PLUS (9/10) de questions IA
  *   3. active_user_upgrade      — utilisatrice FREE active J+7→J+14 avec ≥2 projets
  *   4. abandoned_checkout       — paiement subscription pending depuis 2h-48h
  *   5. dormant_reactivation     — était active (≥5 sessions), silence depuis 10-14j
+ *   6. reengagement_light       — a peu essayé (1-4 sessions), silence depuis 7-10j
  *
  * Cron: 0 11 * * * /usr/bin/php /path/to/backend/cron/behavioral-triggers.php
  */
@@ -38,6 +39,7 @@ try {
         'upgrade'   => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'abandoned' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'dormant'   => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'light'     => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
     ];
 
     $currentMonth = date('Y-m');
@@ -299,6 +301,53 @@ try {
     }
 
     // =========================================================================
+    // 6. REENGAGEMENT LIGHT — a peu essayé (1-4 sessions), silence depuis 7-10j
+    //    Différent de dormant_reactivation (≥5 sessions) : ton "vous n'avez pas
+    //    eu le temps de vous lancer ?" plutôt que "on ne vous a pas revue".
+    // =========================================================================
+    echo "\n[LIGHT] Recherche des utilisatrices qui ont peu essayé et se sont arrêtées...\n";
+
+    $stmt = $db->prepare("
+        SELECT u.id, u.email, u.first_name, COUNT(s.id) AS session_count,
+               MAX(s.last_activity_at) AS last_seen,
+               (SELECT COUNT(*) FROM projects p WHERE p.user_id = u.id) AS project_count
+        FROM users u
+        JOIN user_sessions s ON s.user_id = u.id
+        WHERE u.id NOT IN (
+            SELECT user_id FROM emails_sent_log
+            WHERE email_type = 'reengagement_light'
+            AND user_id IS NOT NULL
+        )
+        GROUP BY u.id
+        HAVING session_count BETWEEN 1 AND 4
+           AND last_seen BETWEEN DATE_SUB(NOW(), INTERVAL 10 DAY) AND DATE_SUB(NOW(), INTERVAL 7 DAY)
+    ");
+    $stmt->execute();
+    $lightUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo "[LIGHT] " . count($lightUsers) . " utilisatrice(s) éligible(s)\n";
+
+    foreach ($lightUsers as $user) {
+        echo "[LIGHT] Envoi à {$user['email']} ({$user['session_count']} session(s), {$user['project_count']} projet(s))... ";
+        try {
+            $ok = $emailService->sendReengagementLightEmail(
+                $user['email'],
+                $user['first_name'] ?? 'Utilisatrice',
+                (int)$user['project_count'],
+                (int)$user['id']
+            );
+            if ($ok) {
+                echo "✓\n"; $stats['light']['sent']++;
+            } else {
+                echo "✗\n"; $stats['light']['errors']++;
+            }
+        } catch (Exception $e) {
+            echo "✗ {$e->getMessage()}\n"; $stats['light']['errors']++;
+        }
+        sleep(2);
+    }
+
+    // =========================================================================
     // RÉSUMÉ
     // =========================================================================
     echo "\n" . str_repeat("=", 60) . "\n";
@@ -309,6 +358,7 @@ try {
     echo sprintf("UPGRADE  : %d envoyés, %d erreurs\n", $stats['upgrade']['sent'], $stats['upgrade']['errors']);
     echo sprintf("ABANDON  : %d envoyés, %d erreurs\n", $stats['abandoned']['sent'], $stats['abandoned']['errors']);
     echo sprintf("DORMANT  : %d envoyés, %d erreurs\n", $stats['dormant']['sent'], $stats['dormant']['errors']);
+    echo sprintf("LIGHT    : %d envoyés, %d erreurs\n", $stats['light']['sent'], $stats['light']['errors']);
     $total = array_sum(array_column($stats, 'sent'));
     echo "TOTAL   : {$total} emails envoyés\n";
     echo "[CRON] Terminé - " . date('Y-m-d H:i:s') . "\n\n";
