@@ -189,11 +189,16 @@ export const useAnalytics = () => {
     })
   }
 
-  // source: 'manual' | 'smart' | 'partner_import'
-  const trackProjectCreated = (source = 'manual', technique = null) => {
+  // creationMethod: 'manual' | 'smart' | 'partner_import'
+  // [AI:Claude] 2026-08-23 — Nommé `creation_method`, pas `source` : GA4 traite
+  // un paramètre d'événement nommé `source` comme une donnée de campagne et
+  // écrase l'attribution de trafic réelle de la session avec sa valeur. Ça a
+  // pollué la moitié du rapport Acquisition de trafic (833 sessions) avec des
+  // lignes "manual"/"smart" au lieu de la vraie provenance.
+  const trackProjectCreated = (creationMethod = 'manual', technique = null) => {
     trackEvent('project_created', {
       event_category: 'engagement',
-      source,
+      creation_method: creationMethod,
       technique,
     })
   }
