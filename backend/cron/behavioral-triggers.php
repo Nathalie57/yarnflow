@@ -4,10 +4,12 @@
  * @file behavioral-triggers.php
  * @brief Triggers comportementaux — stash limit, quota IA, utilisatrice active FREE
  *
- * Trois déclencheurs :
+ * Cinq déclencheurs :
  *   1. stash_limit_approaching  — utilisatrice FREE à 4/5 pelotes
  *   2. ai_quota_approaching     — utilisatrice FREE (4/5) ou PLUS (9/10) de questions IA
  *   3. active_user_upgrade      — utilisatrice FREE active J+7→J+14 avec ≥2 projets
+ *   4. abandoned_checkout       — paiement subscription pending depuis 2h-48h
+ *   5. dormant_reactivation     — était active (≥5 sessions), silence depuis 10-14j
  *
  * Cron: 0 11 * * * /usr/bin/php /path/to/backend/cron/behavioral-triggers.php
  */
@@ -35,6 +37,7 @@ try {
         'ai'      => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'upgrade'   => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'abandoned' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'dormant'   => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
     ];
 
     $currentMonth = date('Y-m');
@@ -254,6 +257,48 @@ try {
     }
 
     // =========================================================================
+    // 5. DORMANT REACTIVATION — était réellement active (≥5 sessions), silence depuis 10-14j
+    // =========================================================================
+    echo "\n[DORMANT] Recherche des utilisatrices actives devenues silencieuses...\n";
+
+    $stmt = $db->prepare("
+        SELECT u.id, u.email, u.first_name, MAX(s.last_activity_at) AS last_seen
+        FROM users u
+        JOIN user_sessions s ON s.user_id = u.id
+        WHERE u.id NOT IN (
+            SELECT user_id FROM emails_sent_log
+            WHERE email_type = 'dormant_reactivation'
+            AND user_id IS NOT NULL
+        )
+        GROUP BY u.id
+        HAVING COUNT(s.id) >= 5
+           AND last_seen BETWEEN DATE_SUB(NOW(), INTERVAL 14 DAY) AND DATE_SUB(NOW(), INTERVAL 10 DAY)
+    ");
+    $stmt->execute();
+    $dormantUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    echo "[DORMANT] " . count($dormantUsers) . " utilisatrice(s) éligible(s)\n";
+
+    foreach ($dormantUsers as $user) {
+        echo "[DORMANT] Envoi à {$user['email']} (vue pour la dernière fois le {$user['last_seen']})... ";
+        try {
+            $ok = $emailService->sendDormantReactivationEmail(
+                $user['email'],
+                $user['first_name'] ?? 'Utilisatrice',
+                (int)$user['id']
+            );
+            if ($ok) {
+                echo "✓\n"; $stats['dormant']['sent']++;
+            } else {
+                echo "✗\n"; $stats['dormant']['errors']++;
+            }
+        } catch (Exception $e) {
+            echo "✗ {$e->getMessage()}\n"; $stats['dormant']['errors']++;
+        }
+        sleep(2);
+    }
+
+    // =========================================================================
     // RÉSUMÉ
     // =========================================================================
     echo "\n" . str_repeat("=", 60) . "\n";
@@ -263,6 +308,7 @@ try {
     echo sprintf("AI       : %d envoyés, %d erreurs\n", $stats['ai']['sent'], $stats['ai']['errors']);
     echo sprintf("UPGRADE  : %d envoyés, %d erreurs\n", $stats['upgrade']['sent'], $stats['upgrade']['errors']);
     echo sprintf("ABANDON  : %d envoyés, %d erreurs\n", $stats['abandoned']['sent'], $stats['abandoned']['errors']);
+    echo sprintf("DORMANT  : %d envoyés, %d erreurs\n", $stats['dormant']['sent'], $stats['dormant']['errors']);
     $total = array_sum(array_column($stats, 'sent'));
     echo "TOTAL   : {$total} emails envoyés\n";
     echo "[CRON] Terminé - " . date('Y-m-d H:i:s') . "\n\n";

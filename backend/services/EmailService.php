@@ -1373,6 +1373,81 @@ HTML;
 HTML;
     }
 
+    public function sendDormantReactivationEmail(string $email, string $name, ?int $userId = null): bool
+    {
+        $subject = "On ne t'a pas revue depuis un moment sur YarnFlow";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getDormantReactivationTemplate($name);
+            $mail->AltBody = "Bonjour $name,\n\nÇa fait quelques jours qu'on ne t'a pas vue sur YarnFlow. Tes projets t'attendent tels que tu les as laissés.\n\nRouvrir mes projets : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] dormant_reactivation: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, 'dormant_reactivation', $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getDormantReactivationTemplate(string $name): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Ça fait quelques jours qu'on ne t'a pas vue sur YarnFlow. Tes projets sont toujours là, exactement où tu les as laissés — rangs comptés, sections en cours, tout est gardé.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Reprendre là où j'en étais
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#4b5563;font-size:15px;line-height:1.7;margin:0 0 24px;">
+        Si tu as buté sur quelque chose ou si tu as une question, réponds directement à cet email — je lis tout.
+    </p>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">À bientôt,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+
+    <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:0;">
+        <a href="https://yarnflow.fr/profile" style="color:#9ca3af;text-decoration:underline;">Se désinscrire de ces emails</a>
+    </p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
     // =========================================================================
     // EMAILS RÉTENTION & CONVERSION (série 2)
     // =========================================================================
