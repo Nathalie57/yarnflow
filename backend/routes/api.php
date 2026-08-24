@@ -120,6 +120,7 @@ function route(string $method, string $uri): void
         $method === 'POST' && $uri === 'payments/portal' => (new PaymentController())->createPortal(),
         $method === 'POST' && $uri === 'payments/webhook' => (new PaymentController())->handleWebhook(),
         $method === 'GET' && $uri === 'payments/history' => (new PaymentController())->getHistory(),
+        $method === 'GET' && $uri === 'payments/pending-checkout' => (new PaymentController())->getPendingCheckout(),
         $method === 'POST' && preg_match('/^payments\/(\d+)\/refund$/', $uri, $matches) => (new PaymentController())->createRefund((int)$matches[1]),
 
         // [AI:Claude] Routes utilisateur

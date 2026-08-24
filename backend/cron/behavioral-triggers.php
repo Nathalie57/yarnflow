@@ -4,13 +4,15 @@
  * @file behavioral-triggers.php
  * @brief Triggers comportementaux — stash limit, quota IA, utilisatrice active FREE
  *
- * Six déclencheurs :
+ * Sept déclencheurs :
  *   1. stash_limit_approaching  — utilisatrice FREE à 4/5 pelotes
  *   2. ai_quota_approaching     — utilisatrice FREE (4/5) ou PLUS (9/10) de questions IA
  *   3. active_user_upgrade      — utilisatrice FREE active J+7→J+14 avec ≥2 projets
- *   4. abandoned_checkout       — paiement subscription pending depuis 2h-48h
- *   5. dormant_reactivation     — était active (≥5 sessions), silence depuis 10-14j
- *   6. reengagement_light       — a peu essayé (1-4 sessions), silence depuis 7-10j
+ *   4. abandoned_checkout       — paiement subscription pending depuis 2h-48h (rappel neutre)
+ *   4bis. abandoned_checkout_discount_20 — toujours pending 3-4j après (-20%, code REVIENS20)
+ *   4ter. abandoned_checkout_discount_35 — toujours pending 7-8j après (-35%, code REVIENS35)
+ *   5. dormant_reactivation     — était active (≥5 sessions), silence depuis 15-30j
+ *   6. reengagement_light       — a peu essayé (1-4 sessions), aucun projet, silence depuis 7-10j
  *
  * Cron: 0 11 * * * /usr/bin/php /path/to/backend/cron/behavioral-triggers.php
  */
@@ -38,6 +40,7 @@ try {
         'ai'      => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'upgrade'   => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'abandoned' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
+        'abandoned_promo' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'dormant'   => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'light'     => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
     ];
@@ -259,6 +262,70 @@ try {
     }
 
     // =========================================================================
+    // 4bis. PANIER ABANDONNÉ AVEC CODE PROMO — urgence croissante, deux paliers.
+    //    Le rappel neutre ci-dessus couvre déjà 2-48h, pas besoin de re-tester ce
+    //    statut avant. Chaque palier a son propre code promo (à créer dans Stripe)
+    //    et son propre email_type, donc les deux sont indépendants l'un de l'autre.
+    // =========================================================================
+    $discountTiers = [
+        ['days_min' => 3, 'days_max' => 4, 'percent' => 20, 'code' => 'REVIENS20'],
+        ['days_min' => 7, 'days_max' => 8, 'percent' => 35, 'code' => 'REVIENS35'],
+    ];
+
+    foreach ($discountTiers as $tier) {
+        $label = "ABANDON_PROMO_{$tier['percent']}";
+        echo "\n[{$label}] Recherche des paniers abandonnés depuis {$tier['days_min']}-{$tier['days_max']} jours...\n";
+
+        $stmt = $db->prepare("
+            SELECT
+                u.id, u.email, u.first_name,
+                pay.payment_type
+            FROM payments pay
+            JOIN users u ON u.id = pay.user_id
+            WHERE pay.status = 'pending'
+            AND pay.payment_type LIKE 'subscription_%'
+            AND pay.created_at BETWEEN DATE_SUB(NOW(), INTERVAL :days_max DAY) AND DATE_SUB(NOW(), INTERVAL :days_min DAY)
+            AND (u.subscription_type = 'free' OR u.subscription_type IS NULL)
+            AND NOT EXISTS (
+                SELECT 1 FROM emails_sent_log
+                WHERE user_id = u.id
+                AND email_type = :email_type
+                AND status = 'sent'
+            )
+            GROUP BY u.id
+        ");
+        $stmt->execute([
+            ':days_max' => $tier['days_max'],
+            ':days_min' => $tier['days_min'],
+            ':email_type' => "abandoned_checkout_discount_{$tier['percent']}",
+        ]);
+        $tierUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo "[{$label}] " . count($tierUsers) . " utilisatrice(s) éligible(s)\n";
+
+        foreach ($tierUsers as $user) {
+            $plan = str_contains($user['payment_type'], 'pro') ? 'pro' : 'plus';
+            echo "[{$label}] Envoi à {$user['email']} (plan: {$plan})... ";
+            try {
+                $ok = $emailService->sendAbandonedCheckoutDiscountEmail(
+                    $user['email'],
+                    $user['first_name'] ?? 'Utilisatrice',
+                    $plan,
+                    $tier['percent'],
+                    $tier['code'],
+                    (int)$user['id']
+                );
+                if ($ok) {
+                    echo "✓\n"; $stats['abandoned_promo']['sent']++;
+                } else { echo "✗\n"; $stats['abandoned_promo']['errors']++; }
+            } catch (Exception $e) {
+                echo "✗ {$e->getMessage()}\n"; $stats['abandoned_promo']['errors']++;
+            }
+            sleep(2);
+        }
+    }
+
+    // =========================================================================
     // 5. DORMANT REACTIVATION — était réellement active (≥5 sessions), silence
     //    depuis 15-30j. Fenêtre choisie pour ne pas recouper project_inactive_reminder
     //    (send-engagement-emails.php, 7-14j) ni reactivation (45-60j) — le vrai
@@ -378,6 +445,7 @@ try {
     echo sprintf("AI       : %d envoyés, %d erreurs\n", $stats['ai']['sent'], $stats['ai']['errors']);
     echo sprintf("UPGRADE  : %d envoyés, %d erreurs\n", $stats['upgrade']['sent'], $stats['upgrade']['errors']);
     echo sprintf("ABANDON  : %d envoyés, %d erreurs\n", $stats['abandoned']['sent'], $stats['abandoned']['errors']);
+    echo sprintf("ABANDON_PROMO : %d envoyés, %d erreurs\n", $stats['abandoned_promo']['sent'], $stats['abandoned_promo']['errors']);
     echo sprintf("DORMANT  : %d envoyés, %d erreurs\n", $stats['dormant']['sent'], $stats['dormant']['errors']);
     echo sprintf("LIGHT    : %d envoyés, %d erreurs\n", $stats['light']['sent'], $stats['light']['errors']);
     $total = array_sum(array_column($stats, 'sent'));

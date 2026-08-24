@@ -728,6 +728,56 @@ class PaymentController
      * [AI:Claude] Historique des paiements de l'utilisateur
      * GET /api/payments/history
      */
+    /**
+     * [AI:Claude] 2026-08-24 — GET /api/payments/pending-checkout
+     * Panier abandonné, version bandeau in-app plutôt qu'email : certaines
+     * adresses (jetables, jamais consultées) ne recevront jamais la relance par
+     * mail, mais si la personne rouvre l'app, on peut la relancer directement.
+     * Mêmes paliers que abandoned_checkout_discount_20/35 dans behavioral-triggers.php
+     * — à garder synchronisé si les seuils changent d'un côté.
+     */
+    public function getPendingCheckout(): void
+    {
+        $authMiddleware = new \App\Middleware\AuthMiddleware();
+        $userData = $authMiddleware->authenticate();
+
+        if ($userData === null)
+            return;
+
+        // [AI:Claude] findOne() ne trie pas — on veut explicitement le paiement
+        // pending le plus récent si plusieurs existent.
+        $db = \App\Config\Database::getInstance()->getConnection();
+        $stmt = $db->prepare(
+            "SELECT * FROM payments WHERE user_id = :user_id AND status = :status
+             ORDER BY created_at DESC LIMIT 1"
+        );
+        $stmt->execute([':user_id' => $userData['user_id'], ':status' => PAYMENT_PENDING]);
+        $payment = $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
+
+        if (!$payment || !str_starts_with($payment['payment_type'] ?? '', 'subscription_')) {
+            Response::success(['has_pending_checkout' => false]);
+            return;
+        }
+
+        $hoursSince = (time() - strtotime($payment['created_at'])) / 3600;
+        $discountPercent = null;
+        $promoCode = null;
+        if ($hoursSince >= 168) {
+            $discountPercent = 35;
+            $promoCode = 'REVIENS35';
+        } elseif ($hoursSince >= 72) {
+            $discountPercent = 20;
+            $promoCode = 'REVIENS20';
+        }
+
+        Response::success([
+            'has_pending_checkout' => true,
+            'plan' => str_contains($payment['payment_type'], 'pro') ? 'pro' : 'plus',
+            'discount_percent' => $discountPercent,
+            'promo_code' => $promoCode,
+        ]);
+    }
+
     public function getHistory(): void
     {
         $authMiddleware = new \App\Middleware\AuthMiddleware();

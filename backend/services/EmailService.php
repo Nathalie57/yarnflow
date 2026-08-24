@@ -1857,6 +1857,109 @@ HTML;
 HTML;
     }
 
+    /**
+     * [AI:Claude] 2026-08-24 — Suite de sendAbandonedCheckoutEmail (rappel neutre,
+     * J+2h/48h) : si toujours pas finalisé quelques jours après, relance(s) avec
+     * code promo, en urgence croissante (ex: -20% à J+3, -35% à J+7). Le pourcentage
+     * fait partie du nom du code (ex: REVIENS20/REVIENS35) — un coupon + code promo
+     * Stripe par palier, à créer manuellement dans le Dashboard Stripe avant le
+     * premier envoi réel. `allow_promotion_codes` est déjà activé sur les sessions
+     * d'abonnement, la cliente saisit le code directement au checkout.
+     *
+     * email_type loggé dynamiquement ('abandoned_checkout_discount_20', '_35', ...)
+     * pour que chaque palier ait sa propre garde anti-doublon dans emails_sent_log,
+     * indépendamment des autres.
+     */
+    public function sendAbandonedCheckoutDiscountEmail(string $email, string $name, string $plan, int $discountPercent, string $promoCode, ?int $userId = null): bool
+    {
+        $planLabel = str_contains($plan, 'pro') ? 'PRO' : 'PLUS';
+        $subject = "-{$discountPercent}% sur YarnFlow {$planLabel}, pour vous";
+        $emailType = "abandoned_checkout_discount_{$discountPercent}";
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+            $this->addAntiSpamHeaders($mail, 'transactional');
+            $mail->isHTML(true);
+            $mail->Body = $this->getAbandonedCheckoutDiscountTemplate($name, $planLabel, $discountPercent, $promoCode);
+            $mail->AltBody = "Bonjour $name,\n\nVous aviez commence a vous abonner a YarnFlow {$planLabel} sans finaliser. Voici -{$discountPercent}% sur votre premier paiement avec le code {$promoCode}, a saisir au moment du paiement.\n\nReprendre l'abonnement : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
+            $mail->send();
+            $success = true;
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] {$emailType}: {$errorMessage}");
+        }
+
+        $this->logEmail($email, $name, $emailType, $subject, $success, $errorMessage, $userId);
+        return $success;
+    }
+
+    private function getAbandonedCheckoutDiscountTemplate(string $name, string $planLabel, int $discountPercent, string $promoCode): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $code = $promoCode;
+
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
+        Vous aviez commencé à vous abonner à YarnFlow <strong>{$planLabel}</strong> il y a quelques jours, sans finaliser. Si le prix vous a fait hésiter, voici de quoi essayer à moindre coût :
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="border:2px dashed #557055;border-radius:8px;margin:0 0 24px;">
+        <tr><td style="padding:20px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">-{$discountPercent}% sur votre premier paiement</p>
+            <p style="margin:0;font-size:24px;font-weight:700;color:#557055;letter-spacing:1px;">{$code}</p>
+        </td></tr>
+    </table>
+
+    <p style="color:#4b5563;font-size:15px;line-height:1.7;margin:0 0 24px;">
+        À saisir dans le champ "code promo" au moment du paiement.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="https://yarnflow.fr/subscription" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Reprendre mon abonnement
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#4b5563;font-size:15px;line-height:1.7;margin:0 0 24px;">
+        Une question avant de vous décider ? Répondez directement à cet email, je réponds moi-même.
+    </p>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;"><strong style="color:#374151;">Nathalie</strong> — YarnFlow</p>
+
+    <p style="color:#9ca3af;font-size:12px;line-height:1.6;margin:0;">
+        <a href="https://yarnflow.fr/profile" style="color:#9ca3af;text-decoration:underline;">Se désinscrire de ces emails</a>
+    </p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
     public function sendStreakAtRiskEmail(string $email, string $name, int $streak, ?int $userId = null): bool
     {
         $subject = "Votre série de {$streak} jours touche à sa fin ce soir";
