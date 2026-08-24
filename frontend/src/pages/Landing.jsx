@@ -20,7 +20,11 @@ const CheckIcon = () => (
 )
 
 const Landing = () => {
-  const { t } = useTranslation('landing')
+  const { t, i18n } = useTranslation('landing')
+  // [AI:Claude] 2026-08-24 — Les captures d'origine montrent l'interface en
+  // francais (texte visible dedans, pas traduisible via i18n). En anglais, on
+  // bascule vers les versions -en prises specifiquement pour la landing.
+  const isEnglish = i18n.resolvedLanguage === 'en'
   const [openFAQ, setOpenFAQ] = useState(null)
   const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
@@ -127,7 +131,7 @@ const Landing = () => {
                 elles pesaient 3,3 Mo a elles seules et se telechargeaient
                 toutes des l'arrivee, avant meme d'etre visibles. */}
             <img
-              src="/screenshots/counter-mobile.jpg"
+              src={isEnglish ? '/screenshots/compteur-en.png' : '/screenshots/counter-mobile.jpg'}
               alt={t('hero.screenshotAlt')}
               fetchPriority="high"
               className="w-56 md:w-64 rounded-[2rem] shadow-2xl border border-gray-200"
@@ -190,7 +194,7 @@ const Landing = () => {
 
             {/* Screenshot compteur */}
             <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200">
-              <img src="/compteur.jpg" alt={t('counter.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover" />
+              <img src={isEnglish ? '/screenshots/compteur-en.png' : '/compteur.jpg'} alt={t('counter.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover" />
             </div>
 
             <div>
@@ -281,7 +285,7 @@ const Landing = () => {
 
             {/* Screenshot projets */}
             <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
-              <img src="/projets.jpg" alt={t('library.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover object-top max-h-[480px]" />
+              <img src={isEnglish ? '/screenshots/projets-en.png' : '/projets.jpg'} alt={t('library.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover object-top max-h-[480px]" />
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
 
@@ -318,7 +322,7 @@ const Landing = () => {
 
             {/* Screenshot étape validation */}
             <div className="rounded-2xl overflow-hidden shadow-md border border-gray-200 relative">
-              <img src="/patron.jpg" alt={t('smartCreation.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover object-top max-h-[480px]" />
+              <img src={isEnglish ? '/screenshots/patron-en.png' : '/patron.jpg'} alt={t('smartCreation.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover object-top max-h-[480px]" />
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
 
