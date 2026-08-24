@@ -174,7 +174,15 @@ try {
         FROM users u
         JOIN projects p ON p.user_id = u.id AND p.status IN ('in_progress', 'active')
         WHERE u.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 14 DAY) AND DATE_SUB(NOW(), INTERVAL 7 DAY)
-        AND u.last_login_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)
+        -- [AI:Claude] 2026-08-24 — last_login_at ne reflete que les vraies
+        -- authentifications, pas chaque ouverture de l'app une fois le token JWT
+        -- en poche (voir send-engagement-emails.php pour le detail) : sans ce
+        -- remplacement, ce trigger ratait quasiment toutes les utilisatrices
+        -- reellement actives.
+        AND EXISTS (
+            SELECT 1 FROM user_sessions s
+            WHERE s.user_id = u.id AND s.last_activity_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)
+        )
         AND (u.subscription_type = 'free' OR u.subscription_type IS NULL)
         AND u.id NOT IN (
             SELECT user_id FROM emails_sent_log

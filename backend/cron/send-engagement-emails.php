@@ -56,7 +56,15 @@ try {
         SELECT u.id, u.email, u.first_name, u.created_at
         FROM users u
         WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 3 DAY)
-        AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 2 DAY))
+        -- [AI:Claude] 2026-08-24 — u.last_login_at ne se met a jour qu'aux vraies
+        -- authentifications (login/register/oauth), pas a chaque ouverture de
+        -- l'app une fois le token JWT en poche : elle reste figee a la premiere
+        -- connexion pour qui a un token longue duree, meme tres active depuis.
+        -- user_sessions.last_activity_at est la vraie mesure d'activite.
+        AND NOT EXISTS (
+            SELECT 1 FROM user_sessions s
+            WHERE s.user_id = u.id AND s.last_activity_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)
+        )
         AND NOT EXISTS (
             SELECT 1 FROM emails_sent_log
             WHERE user_id = u.id AND email_type = 'onboarding_day3' AND status = 'sent'
@@ -113,7 +121,10 @@ try {
         SELECT u.id, u.email, u.first_name, u.created_at, u.last_login_at
         FROM users u
         WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-        AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 3 DAY))
+        AND NOT EXISTS (
+            SELECT 1 FROM user_sessions s
+            WHERE s.user_id = u.id AND s.last_activity_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)
+        )
         AND NOT EXISTS (
             SELECT 1 FROM emails_sent_log
             WHERE user_id = u.id AND email_type = 'reengagement_day7' AND status = 'sent'
@@ -189,7 +200,10 @@ try {
         SELECT u.id, u.email, u.first_name, u.created_at, u.last_login_at
         FROM users u
         WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 21 DAY)
-        AND (u.last_login_at IS NULL OR u.last_login_at < DATE_SUB(NOW(), INTERVAL 14 DAY))
+        AND NOT EXISTS (
+            SELECT 1 FROM user_sessions s
+            WHERE s.user_id = u.id AND s.last_activity_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
+        )
         AND NOT EXISTS (
             SELECT 1 FROM emails_sent_log
             WHERE user_id = u.id AND email_type = 'need_help_day21' AND status = 'sent'
@@ -444,7 +458,10 @@ try {
         FROM users u
         LEFT JOIN projects p ON p.user_id = u.id AND p.status IN ('in_progress', 'active', 'finished')
         WHERE u.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 35 DAY) AND DATE_SUB(NOW(), INTERVAL 25 DAY)
-        AND u.last_login_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND EXISTS (
+            SELECT 1 FROM user_sessions s
+            WHERE s.user_id = u.id AND s.last_activity_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        )
         AND (u.subscription_type = 'free' OR u.subscription_type IS NULL)
         AND u.email_verified = 1
         AND NOT EXISTS (
@@ -494,9 +511,14 @@ try {
 
     $stmt = $db->prepare("
         SELECT u.id, u.email, u.first_name,
-            DATEDIFF(NOW(), u.last_login_at) AS days_since
+            DATEDIFF(NOW(), last_seen.max_activity) AS days_since
         FROM users u
-        WHERE u.last_login_at BETWEEN DATE_SUB(NOW(), INTERVAL 60 DAY) AND DATE_SUB(NOW(), INTERVAL 45 DAY)
+        JOIN (
+            SELECT user_id, MAX(last_activity_at) AS max_activity
+            FROM user_sessions
+            GROUP BY user_id
+        ) last_seen ON last_seen.user_id = u.id
+        WHERE last_seen.max_activity BETWEEN DATE_SUB(NOW(), INTERVAL 60 DAY) AND DATE_SUB(NOW(), INTERVAL 45 DAY)
         AND NOT EXISTS (
             SELECT 1 FROM emails_sent_log
             WHERE user_id = u.id
