@@ -5,9 +5,8 @@
  */
 
 /**
- * Ouvre l'anglais a tout le monde. A passer a `true` le jour ou la version
- * anglaise est prete : captures d'ecran de la landing traduites, messages
- * d'erreur du backend externalises.
+ * Ouvre l'anglais a tout le monde. Active le 2026-08-24 : captures d'ecran de
+ * la landing traduites, messages d'erreur du backend externalises.
  */
 export const LANGUAGE_SWITCHER_ENABLED = true
 
