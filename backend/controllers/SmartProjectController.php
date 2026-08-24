@@ -205,7 +205,7 @@ class SmartProjectController
                     return;
                 }
 
-                $absolutePath = __DIR__ . '/../../public' . $libraryPattern['file_path'];
+                $absolutePath = __DIR__ . '/../public' . $libraryPattern['file_path'];
                 if (!file_exists($absolutePath)) {
                     $this->jsonResponse(['error' => 'Fichier PDF introuvable sur le serveur'], 404);
                     return;
