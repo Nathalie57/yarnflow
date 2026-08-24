@@ -9,7 +9,7 @@
  * anglaise est prete : captures d'ecran de la landing traduites, messages
  * d'erreur du backend externalises.
  */
-export const LANGUAGE_SWITCHER_ENABLED = false
+export const LANGUAGE_SWITCHER_ENABLED = true
 
 /**
  * Comptes autorises a basculer FR/EN meme quand l'interrupteur ci-dessus est
