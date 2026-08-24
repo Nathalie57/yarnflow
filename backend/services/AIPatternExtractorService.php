@@ -179,7 +179,7 @@ PROMPT;
                 return $this->errorResponse('Page introuvable (404). Vérifiez que l\'URL est correcte.', 0);
             }
             if ($statusCode === 403) {
-                return $this->errorResponse('Ce site bloque l\'accès automatique à ses pages. Essayez de copier-coller le texte du patron directement.', 0);
+                return $this->errorResponse('Ce site bloque l\'accès automatique à ses pages. Essayez de copier-coller le texte du patron directement.', 0, 'failed', 'site_blocks_scraping');
             }
             return $this->errorResponse($fetch['error'] ?? 'Impossible d\'accéder à cette URL. Essayez de copier-coller le texte du patron directement.', 0);
         }
@@ -496,12 +496,13 @@ PROMPT;
         return 'partial';
     }
 
-    private function errorResponse(string $message, int $processingTime, string $status = 'failed'): array
+    private function errorResponse(string $message, int $processingTime, string $status = 'failed', ?string $errorCode = null): array
     {
         return [
             'success' => false,
             'data' => null,
             'error' => $message,
+            'error_code' => $errorCode,
             'ai_status' => $status,
             'processing_time_ms' => $processingTime
         ];

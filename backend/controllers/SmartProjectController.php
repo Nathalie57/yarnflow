@@ -275,6 +275,7 @@ class SmartProjectController
                 $this->jsonResponse([
                     'success' => false,
                     'error' => $result['error'],
+                    'error_code' => $result['error_code'] ?? null,
                     'ai_status' => $result['ai_status']
                 ], $result['ai_status'] === 'failed' ? 422 : 200);
                 return;

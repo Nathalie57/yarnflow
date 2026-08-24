@@ -332,6 +332,7 @@
   },
   "errors": {
     "generic": "Something went wrong. Please try again in a moment.",
+    "site_blocks_scraping": "This site blocks automated access to its pages. Try copying and pasting the pattern text directly instead.",
     "file_too_large": "File too large (10 MB maximum)",
     "pdf_only": "Only PDF files are accepted",
     "note_too_long": "Notes cannot exceed 2,000 characters",
