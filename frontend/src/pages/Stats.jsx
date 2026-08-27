@@ -98,6 +98,7 @@ const Stats = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [period, setPeriod] = useState('all')
+  const [photosReady, setPhotosReady] = useState(false)
   const [celebration, setCelebration] = useState(null)
   // [AI:Claude] La surcouche PRO se ferme et reste fermee : sans ca, une
   // utilisatrice FREE retombe sur la meme publicite a chaque visite.
@@ -117,8 +118,13 @@ const Stats = () => {
   // [AI:Claude] Célébration en usage réel — badge nouvellement débloqué ou
   // record de série battu, détecté en comparant à ce qu'on avait déjà vu
   // (localStorage), pas seulement sur le projet démo/tutoriel.
+  // photosReady : stats projets et stats photos se chargent séparément (deux
+  // appels API) — sans attendre les deux, ce calcul tournait une première fois
+  // avec photoStats encore à null, écrasant la liste des badges déjà vus avec
+  // une version qui ne contenait pas les badges photo, qui réapparaissaient
+  // alors "nouvellement débloqués" dès que photoStats arrivait juste après.
   useEffect(() => {
-    if (!stats) return
+    if (!stats || !photosReady) return
     const { earned } = calculateBadges()
 
     const badgeKey = 'yf_seen_badges'
@@ -149,11 +155,12 @@ const Stats = () => {
     } else if (newlyEarned.length > 0) {
       setCelebration({ type: 'badge', badge: newlyEarned[0] })
     }
-  }, [stats, photoStats])
+  }, [stats, photoStats, photosReady])
 
   const fetchStats = async () => {
     setLoading(true)
     setError(null)
+    setPhotosReady(false)
 
     // Stats projets — bloquant
     try {
@@ -172,6 +179,8 @@ const Stats = () => {
       setPhotoStats(response.data.stats || {})
     } catch (err) {
       console.error('Erreur stats photos:', err)
+    } finally {
+      setPhotosReady(true)
     }
   }
 
