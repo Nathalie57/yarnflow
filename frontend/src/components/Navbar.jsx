@@ -36,7 +36,13 @@ const Navbar = () => {
       if (document.visibilityState === 'visible') fetchStreak()
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
+    // [AI:Claude] Émis par ProjectCounter juste après l'ajout d'un rang, pour
+    // ne pas attendre un changement de visibilité avant de voir la série bouger
+    window.addEventListener('yf:row-added', fetchStreak)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('yf:row-added', fetchStreak)
+    }
   }, [user])
 
   const StreakBadge = ({ className = '' }) => (

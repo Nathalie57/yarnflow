@@ -389,6 +389,7 @@ const ProjectCounter = () => {
         pendingRowsRef.current = []
         localStorage.removeItem(`yf_pending_rows_${projectId}`)
         setPendingSync(false)
+        window.dispatchEvent(new Event('yf:row-added'))
       } catch {
         // Toujours offline, on garde la queue
       }
@@ -2013,6 +2014,10 @@ const ProjectCounter = () => {
       }
 
       const rowResponse = await api.post(`/projects/${projectId}/rows`, rowData)
+
+      // [AI:Claude] Prévient la Navbar de rafraîchir son badge de série tout de
+      // suite, plutôt que d'attendre le prochain retour de visibilité de l'onglet
+      window.dispatchEvent(new Event('yf:row-added'))
 
       // [AI:Claude] Gamification — série de 7 jours récompensée par un code
       // promo (envoyé aussi par email), voir ProjectController::grantStreakBonusIfEligible
