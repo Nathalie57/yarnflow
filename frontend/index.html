@@ -135,7 +135,17 @@
         };
       }
     </script>
-    <div id="root"></div>
+    <!-- [AI:Claude] 2026-08-27 — Contenu de secours affiché instantanément, avant même que
+         main.jsx ait fini de se télécharger. Pur HTML/CSS, aucune dépendance à l'app : sur un
+         réseau faible, le premier chargement (ou tout rechargement complet) pouvait rester
+         entièrement blanc pendant que le bundle JS arrivait. React remplace ce contenu dès que
+         l'app monte (voir main.jsx), donc invisible en usage normal. -->
+    <div id="root">
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f9fafb;">
+        <div style="width:32px;height:32px;border-radius:50%;border:2px solid #d1dcd1;border-top-color:#557055;animation:yf-initial-spin 0.8s linear infinite;"></div>
+      </div>
+      <style>@keyframes yf-initial-spin { to { transform: rotate(360deg); } }</style>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
 
     <script>
