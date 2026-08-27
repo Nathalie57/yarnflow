@@ -17,13 +17,26 @@ const Navbar = () => {
 
   // [AI:Claude] Rappel passif de la série en cours, visible sur toutes les
   // pages (contrairement à Stats qu'il faut aller consulter volontairement).
-  // Layout garde Navbar monté en permanence entre les navigations, donc un
-  // seul appel par session suffit.
+  // Layout garde Navbar monté en permanence entre les navigations : un seul
+  // fetch au montage ne suffit pas, il restait figé des jours durant tant que
+  // l'onglet n'était pas rechargé — on rafraîchit aussi quand l'onglet
+  // redevient visible (typiquement en revenant le lendemain).
   useEffect(() => {
     if (!user) return
-    api.get('/projects/stats', { params: { period: 'all' } })
-      .then(res => setStreak(res.data?.stats?.current_streak || 0))
-      .catch(() => {})
+
+    const fetchStreak = () => {
+      api.get('/projects/stats', { params: { period: 'all' } })
+        .then(res => setStreak(res.data?.stats?.current_streak || 0))
+        .catch(() => {})
+    }
+
+    fetchStreak()
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') fetchStreak()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange)
   }, [user])
 
   const StreakBadge = ({ className = '' }) => (
