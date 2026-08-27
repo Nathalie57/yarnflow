@@ -779,6 +779,7 @@ class Project extends BaseModel
 
         // Calculer le streak actuel
         $currentStreak = 0;
+        $streakActiveToday = false; // [AI:Claude] Le dernier jour travaillé est-il aujourd'hui (vs hier) ? Le calendrier de série en dépend pour savoir si la pastille du jour doit s'allumer.
         $today = new \DateTime();
         $today->setTime(0, 0, 0);
 
@@ -789,6 +790,7 @@ class Project extends BaseModel
             // Vérifier si l'utilisateur a travaillé aujourd'hui ou hier
             $lastWorkDate = new \DateTime($workDays[0]);
             $lastWorkDate->setTime(0, 0, 0);
+            $streakActiveToday = ($lastWorkDate == $today);
 
             if ($lastWorkDate >= $yesterday) {
                 // Compter les jours consécutifs
@@ -859,6 +861,7 @@ class Project extends BaseModel
             'avg_stitches_per_hour' => $avgStitchesPerHour,
             'average_session_time' => $avgSessionTime,
             'current_streak' => $currentStreak,
+            'streak_active_today' => $streakActiveToday, // [AI:Claude] Distingue "série close hier, en attente" de "série déjà à jour" pour le calendrier flamme
             'longest_streak' => $longestStreak,
             'best_hour' => $bestHour,
             'progression' => $progressionData,

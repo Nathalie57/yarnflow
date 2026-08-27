@@ -222,13 +222,18 @@ const Stats = () => {
 
   const streakCalendar = () => {
     const today = new Date()
+    // [AI:Claude] current_streak compte les jours consécutifs jusqu'au DERNIER jour travaillé,
+    // qui peut être hier (série pas encore "faite" aujourd'hui) — sans ce décalage, la pastille
+    // du jour s'allumait à tort dès qu'une série était en cours, même sans rang ajouté aujourd'hui.
+    const anchorOffset = stats?.streak_active_today ? 0 : 1
     return (
       <div className="flex gap-2 justify-center">
         {[...Array(7)].map((_, i) => {
           const date = new Date(today)
           date.setDate(today.getDate() - (6 - i))
           const dayName = date.toLocaleDateString('fr-FR', { weekday: 'short' })
-          const isActive = (6 - i) < (stats?.current_streak || 0)
+          const dayOffset = 6 - i
+          const isActive = dayOffset >= anchorOffset && dayOffset < anchorOffset + (stats?.current_streak || 0)
           return (
             <div key={i} className="flex flex-col items-center gap-1">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
