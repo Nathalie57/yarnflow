@@ -465,7 +465,7 @@ const YarnStash = () => {
               <button
                 onClick={handleAssignConfirm}
                 disabled={assignSaving}
-                className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
               >
                 {assignSaving ? t('ui.reservingEllipsis') : t('ui.reserve')}
               </button>
