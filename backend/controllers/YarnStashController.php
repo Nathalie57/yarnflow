@@ -166,6 +166,92 @@ class YarnStashController
     }
 
     // -------------------------------------------------------------------------
+    // GET /api/stash/find-match
+    // -------------------------------------------------------------------------
+
+    /**
+     * [AI:Claude] Cherche une entrée existante du même fil (marque + gamme +
+     * coloris, comparaison insensible à la casse) — pour proposer d'incrémenter
+     * la quantité plutôt que de créer un doublon quand la même pelote est
+     * rescannée. Le numéro de bain/lot n'entre volontairement pas dans le
+     * matching : il varie normalement d'un achat à l'autre pour un même coloris.
+     */
+    public function findMatch(array $params = []): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            $brand    = trim($params['brand'] ?? '');
+            $yarnName = trim($params['yarn_name'] ?? '');
+            if ($brand === '' || $yarnName === '') {
+                $this->sendResponse(200, ['success' => true, 'entry' => null]);
+                return;
+            }
+            $colorName = trim($params['color_name'] ?? '');
+
+            $where = ['user_id = :uid', 'LOWER(brand) = LOWER(:brand)', 'LOWER(yarn_name) = LOWER(:yarn_name)'];
+            $bind  = [':uid' => $userId, ':brand' => $brand, ':yarn_name' => $yarnName];
+
+            if ($colorName !== '') {
+                $where[] = 'LOWER(COALESCE(color_name, "")) = LOWER(:color_name)';
+                $bind[':color_name'] = $colorName;
+            }
+
+            $stmt = $this->db->prepare(
+                'SELECT * FROM yarn_stash WHERE ' . implode(' AND ', $where) . ' ORDER BY created_at DESC LIMIT 1'
+            );
+            $stmt->execute($bind);
+            $entry = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+            $this->sendResponse(200, ['success' => true, 'entry' => $entry]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/stash/{id}/increment
+    // -------------------------------------------------------------------------
+
+    /**
+     * [AI:Claude] Ajoute à la quantité d'une entrée existante plutôt que de
+     * créer une nouvelle référence — pas soumis à la limite du plan (voir
+     * create()) puisqu'aucune nouvelle référence n'est créée.
+     */
+    public function incrementQuantity(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $entry  = $this->findEntry($id);
+
+            if (!$entry) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Entrée introuvable']);
+                return;
+            }
+            if ((int)$entry['user_id'] !== $userId) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+            $addQuantity = max(1, (int)($data['quantity'] ?? 1));
+
+            $stmt = $this->db->prepare(
+                'UPDATE yarn_stash SET quantity = quantity + :qty WHERE id = :id AND user_id = :uid'
+            );
+            $stmt->execute([':qty' => $addQuantity, ':id' => $id, ':uid' => $userId]);
+
+            $updated = $this->findEntry($id);
+            $updated['total_weight_g']  = round((float)$updated['weight_per_skein_g']  * (int)$updated['quantity'], 1);
+            $updated['total_yardage_m'] = round((float)$updated['yardage_per_skein_m'] * (int)$updated['quantity'], 1);
+
+            $this->sendResponse(200, ['success' => true, 'message' => 'Quantité mise à jour', 'entry' => $updated]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, ['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // POST /api/stash
     // -------------------------------------------------------------------------
 

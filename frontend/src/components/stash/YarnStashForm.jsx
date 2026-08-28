@@ -42,12 +42,13 @@ const EMPTY_FORM = {
 // qu'une colonne) — les suivantes ne servent qu'à la lecture IA de l'étiquette.
 const MAX_LABEL_PHOTOS = 3
 
-const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
+const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading }) => {
   const { t } = useTranslation('tools')
   const [form, setForm] = useState(EMPTY_FORM)
   const [photos, setPhotos] = useState([]) // [{ file, preview }]
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState(null)
+  const [duplicateMatch, setDuplicateMatch] = useState(null)
   const fileInputRef = useRef(null)
   const galleryInputRef = useRef(null)
 
@@ -73,6 +74,24 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
       setForm(EMPTY_FORM)
     }
   }, [entry])
+
+  // [AI:Claude] Détecte une entrée existante du même fil (marque + gamme + coloris)
+  // pour proposer d'incrémenter la quantité plutôt que de créer un doublon quand
+  // la même pelote est rescannée ou ressaisie. Uniquement à la création — en
+  // édition, l'entrée courante EST déjà "l'existante", pas de sens à se comparer
+  // à elle-même. Débounce léger pour ne pas requêter à chaque frappe.
+  useEffect(() => {
+    if (entry || !form.brand || !form.yarn_name) {
+      setDuplicateMatch(null)
+      return
+    }
+    const timeout = setTimeout(() => {
+      yarnStashAPI.findMatch({ brand: form.brand, yarn_name: form.yarn_name, color_name: form.color_name })
+        .then(res => setDuplicateMatch(res.data.entry || null))
+        .catch(() => {})
+    }, 500)
+    return () => clearTimeout(timeout)
+  }, [entry, form.brand, form.yarn_name, form.color_name])
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
   const setNum = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value === '' ? '' : Number(e.target.value) }))
@@ -127,6 +146,11 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
 
   const removePhotoAt = (index) => {
     setPhotos(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleMergeIntoExisting = () => {
+    if (!duplicateMatch) return
+    onMergeIntoExisting(duplicateMatch.id, parseInt(form.quantity) || 1)
   }
 
   const handleSubmit = (e) => {
@@ -573,6 +597,36 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
             className="hidden"
             onChange={handlePhotoChange}
           />
+        </div>
+      )}
+
+      {/* Doublon détecté — même marque/gamme/coloris déjà en stock */}
+      {duplicateMatch && onMergeIntoExisting && (
+        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4">
+          <p className="text-sm text-gray-700 mb-3">
+            <Trans t={t} i18nKey="ui.duplicateYarnFound" values={{
+              brand: duplicateMatch.brand,
+              yarnName: duplicateMatch.yarn_name,
+              quantity: duplicateMatch.quantity,
+            }}><strong /></Trans>
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={handleMergeIntoExisting}
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+            >
+              {t('ui.mergeIntoExisting', { count: parseInt(form.quantity) || 1 })}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDuplicateMatch(null)}
+              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              {t('ui.createNewEntryAnyway')}
+            </button>
+          </div>
         </div>
       )}
 

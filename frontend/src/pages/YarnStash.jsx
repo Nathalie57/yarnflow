@@ -105,6 +105,19 @@ const YarnStash = () => {
     }
   }
 
+  const handleMergeIntoExisting = async (existingId, quantityToAdd) => {
+    try {
+      setSaving(true)
+      await yarnStashAPI.incrementQuantity(existingId, quantityToAdd)
+      setShowAddModal(false)
+      loadStash()
+    } catch (err) {
+      setError(apiErrorMessage(err, t('ui.stashAddFailed')))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleUpdate = async (data, photoFile) => {
     try {
       setSaving(true)
@@ -357,6 +370,7 @@ const YarnStash = () => {
               <YarnStashForm
                 entry={null}
                 onSubmit={handleCreate}
+                onMergeIntoExisting={handleMergeIntoExisting}
                 onCancel={() => setShowAddModal(false)}
                 loading={saving}
               />

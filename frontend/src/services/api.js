@@ -321,6 +321,8 @@ export const yarnStashAPI = {
   getById: (id) => api.get(`/stash/${id}`),
   update: (id, data) => api.put(`/stash/${id}`, data),
   delete: (id) => api.delete(`/stash/${id}`),
+  findMatch: (params) => api.get('/stash/find-match', { params }),
+  incrementQuantity: (id, quantity) => api.post(`/stash/${id}/increment`, { quantity }),
   uploadPhoto: (id, file) => {
     const form = new FormData()
     form.append('photo', file)

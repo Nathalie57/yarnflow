@@ -279,6 +279,8 @@ function route(string $method, string $uri): void
 
         // Routes stock de laine (Le Stash)
         $method === 'GET' && $uri === 'stash' => (new YarnStashController())->index($_GET),
+        $method === 'GET' && $uri === 'stash/find-match' => (new YarnStashController())->findMatch($_GET),
+        $method === 'POST' && preg_match('/^stash\/(\d+)\/increment$/', $uri, $matches) => (new YarnStashController())->incrementQuantity((int)$matches[1]),
         $method === 'POST' && $uri === 'stash' => (new YarnStashController())->create(),
         $method === 'GET' && preg_match('/^stash\/(\d+)$/', $uri, $matches) => (new YarnStashController())->show((int)$matches[1]),
         $method === 'PUT' && preg_match('/^stash\/(\d+)$/', $uri, $matches) => (new YarnStashController())->update((int)$matches[1]),
