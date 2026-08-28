@@ -36,24 +36,23 @@ const EMPTY_FORM = {
   notes: '',
 }
 
+// [AI:Claude] L'étiquette est enroulée autour de la pelote : une seule photo ne
+// suffit pas toujours à tout voir, jusqu'à 3 permet de couvrir tous les angles.
+// Seule la première photo est conservée avec l'entrée (yarn_stash.photo_url n'a
+// qu'une colonne) — les suivantes ne servent qu'à la lecture IA de l'étiquette.
+const MAX_LABEL_PHOTOS = 3
+
 const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
   const { t } = useTranslation('tools')
   const [form, setForm] = useState(EMPTY_FORM)
-  const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(null)
-  const [extraPhotoFile, setExtraPhotoFile] = useState(null)
-  const [extraPhotoPreview, setExtraPhotoPreview] = useState(null)
+  const [photos, setPhotos] = useState([]) // [{ file, preview }]
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState(null)
   const fileInputRef = useRef(null)
   const galleryInputRef = useRef(null)
-  const photoSlotRef = useRef('main') // 'main' | 'extra' — quelle photo cible le prochain choix de fichier
 
   useEffect(() => {
-    setPhotoFile(null)
-    setPhotoPreview(null)
-    setExtraPhotoFile(null)
-    setExtraPhotoPreview(null)
+    setPhotos([])
     if (entry) {
       setForm({
         brand:                entry.brand              || '',
@@ -81,25 +80,15 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
   const totalWeight  = form.weight_per_skein_g  && form.quantity ? Math.round(parseFloat(form.weight_per_skein_g)  * parseInt(form.quantity) * 10) / 10 : 0
   const totalYardage = form.yardage_per_skein_m && form.quantity ? Math.round(parseFloat(form.yardage_per_skein_m) * parseInt(form.quantity) * 10) / 10 : 0
 
-  const openPhotoInput = (slot, ref) => {
-    photoSlotRef.current = slot
-    ref.current?.click()
-  }
+  const openPhotoInput = (ref) => ref.current?.click()
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0]
-    if (!file) return
-    const slot = photoSlotRef.current
-    // Fichiers de l'AUTRE slot (avant mise à jour du state courant) pour combiner les 2 photos au scan
-    const otherFile = slot === 'extra' ? photoFile : extraPhotoFile
+    e.target.value = '' // permet de re-choisir le même fichier après une suppression
+    if (!file || photos.length >= MAX_LABEL_PHOTOS) return
 
-    if (slot === 'extra') {
-      setExtraPhotoFile(file)
-      setExtraPhotoPreview(URL.createObjectURL(file))
-    } else {
-      setPhotoFile(file)
-      setPhotoPreview(URL.createObjectURL(file))
-    }
+    const nextPhotos = [...photos, { file, preview: URL.createObjectURL(file) }]
+    setPhotos(nextPhotos)
     setScanError(null)
 
     // Scan automatique uniquement pour une nouvelle entrée ou si les champs clés sont vides
@@ -110,8 +99,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
         const scanTimeout = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('timeout')), 30000)
         )
-        const filesToScan = slot === 'extra' ? [otherFile, file].filter(Boolean) : [file, otherFile].filter(Boolean)
-        const res = await Promise.race([yarnStashAPI.scanLabel(filesToScan), scanTimeout])
+        const res = await Promise.race([yarnStashAPI.scanLabel(nextPhotos.map(p => p.file)), scanTimeout])
         const d = res.data.data
         setForm(f => ({
           ...f,
@@ -137,18 +125,8 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
     }
   }
 
-  const removePhoto = () => {
-    setPhotoFile(null)
-    setPhotoPreview(null)
-    setExtraPhotoFile(null)
-    setExtraPhotoPreview(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-    if (galleryInputRef.current) galleryInputRef.current.value = ''
-  }
-
-  const removeExtraPhoto = () => {
-    setExtraPhotoFile(null)
-    setExtraPhotoPreview(null)
+  const removePhotoAt = (index) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = (e) => {
@@ -161,7 +139,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
     ;['color_name','dye_lot','composition','yarn_weight_category','color_hex','purchase_url','notes'].forEach(k => {
       if (payload[k] === '') payload[k] = null
     })
-    onSubmit(payload, photoFile)
+    onSubmit(payload, photos[0]?.file || null)
   }
 
   const inputCls = "w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent placeholder-gray-300"
@@ -175,10 +153,10 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           {scanError && (
             <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scanError}</p>
           )}
-          {photoPreview ? (
+          {photos[0] ? (
             <div className="relative">
               <img
-                src={photoPreview}
+                src={photos[0].preview}
                 alt={t('ui.labelAlt')}
                 className={`w-full h-40 object-cover rounded-xl border border-gray-200 transition-opacity ${scanning ? 'opacity-50' : ''}`}
               />
@@ -190,7 +168,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               )}
               <button
                 type="button"
-                onClick={removePhoto}
+                onClick={() => removePhotoAt(0)}
                 className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
                 title={t('ui.deletePhoto')}
               >
@@ -202,7 +180,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           ) : (
             <button
               type="button"
-              onClick={() => openPhotoInput('main', fileInputRef)}
+              onClick={() => openPhotoInput(fileInputRef)}
               className="w-full h-24 border-2 border-dashed border-primary-200 bg-primary-50/40 rounded-xl flex flex-col items-center justify-center gap-1.5 text-primary-400 hover:border-primary-400 hover:text-primary-600 transition-colors cursor-pointer"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -212,55 +190,58 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               <span className="text-xs font-medium">{t('ui.labelPhotoHint')}</span>
             </button>
           )}
-          {!photoPreview && (
+          {!photos[0] && (
             <button
               type="button"
-              onClick={() => openPhotoInput('main', galleryInputRef)}
+              onClick={() => openPhotoInput(galleryInputRef)}
               className="w-full mt-2 text-xs text-gray-400 hover:text-primary-600 transition-colors"
             >
               {t('ui.orImportExisting')}
             </button>
           )}
 
-          {/* 2e photo — l'étiquette est enroulée autour de la pelote, une seule vue ne suffit pas toujours */}
-          {photoPreview && (
-            extraPhotoPreview ? (
-              <div className="relative inline-block mt-2">
-                <img
-                  src={extraPhotoPreview}
-                  alt={t('ui.labelAltOther')}
-                  className="h-16 w-16 object-cover rounded-lg border border-gray-200"
-                />
-                <button
-                  type="button"
-                  onClick={removeExtraPhoto}
-                  className="absolute -top-1.5 -right-1.5 bg-white p-0.5 rounded-full shadow text-gray-500 hover:text-red-500 transition-colors"
-                  title={t('ui.deleteThisPhoto')}
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="mt-2 flex items-center gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => openPhotoInput('extra', fileInputRef)}
-                  className="text-primary-500 hover:text-primary-700 font-medium"
-                >
-                  {t('ui.addSecondPhoto')}
-                </button>
-                <span className="text-gray-300">·</span>
-                <button
-                  type="button"
-                  onClick={() => openPhotoInput('extra', galleryInputRef)}
-                  className="text-gray-400 hover:text-primary-600"
-                >
-                  {t('ui.importWord2')}
-                </button>
-              </div>
-            )
+          {/* Photos supplémentaires — l'étiquette est enroulée autour de la pelote, une seule vue ne suffit pas toujours */}
+          {photos.length > 0 && (
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              {photos.slice(1).map((p, i) => (
+                <div key={i} className="relative inline-block">
+                  <img
+                    src={p.preview}
+                    alt={t('ui.labelAltOther')}
+                    className="h-16 w-16 object-cover rounded-lg border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePhotoAt(i + 1)}
+                    className="absolute -top-1.5 -right-1.5 bg-white p-0.5 rounded-full shadow text-gray-500 hover:text-red-500 transition-colors"
+                    title={t('ui.deleteThisPhoto')}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              {photos.length < MAX_LABEL_PHOTOS && (
+                <div className="flex items-center gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => openPhotoInput(fileInputRef)}
+                    className="text-primary-500 hover:text-primary-700 font-medium"
+                  >
+                    {t('ui.addAnotherPhoto', { count: photos.length, max: MAX_LABEL_PHOTOS })}
+                  </button>
+                  <span className="text-gray-300">·</span>
+                  <button
+                    type="button"
+                    onClick={() => openPhotoInput(galleryInputRef)}
+                    className="text-gray-400 hover:text-primary-600"
+                  >
+                    {t('ui.importWord2')}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           <input
@@ -278,7 +259,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
             className="hidden"
             onChange={handlePhotoChange}
           />
-          {!photoPreview && (
+          {!photos[0] && (
             <div className="flex items-center gap-3 my-3">
               <div className="flex-1 h-px bg-gray-200" />
               <span className="text-xs text-gray-500">{t('ui.orFillManually')}</span>
@@ -474,16 +455,16 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
           {scanError && (
             <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scanError}</p>
           )}
-          {photoPreview || entry.photo_url ? (
+          {photos[0] || entry.photo_url ? (
             <div className="relative">
               <img
-                src={photoPreview || (import.meta.env.VITE_API_URL + entry.photo_url)}
+                src={photos[0]?.preview || (import.meta.env.VITE_API_URL + entry.photo_url)}
                 alt={t('ui.labelAlt')}
                 className="w-full h-40 object-cover rounded-xl border border-gray-200"
               />
               <button
                 type="button"
-                onClick={removePhoto}
+                onClick={() => removePhotoAt(0)}
                 className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
                 title={t('ui.deletePhoto')}
               >
@@ -491,18 +472,18 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-              {!photoPreview && (
+              {!photos[0] && (
                 <div className="absolute bottom-2 right-2 flex gap-1.5">
                   <button
                     type="button"
-                    onClick={() => openPhotoInput('main', galleryInputRef)}
+                    onClick={() => openPhotoInput(galleryInputRef)}
                     className="bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
                   >
                     {t('ui.gallery')}
                   </button>
                   <button
                     type="button"
-                    onClick={() => openPhotoInput('main', fileInputRef)}
+                    onClick={() => openPhotoInput(fileInputRef)}
                     className="bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
                   >
                     {t('ui.change')}
@@ -514,7 +495,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
             <>
               <button
                 type="button"
-                onClick={() => openPhotoInput('main', fileInputRef)}
+                onClick={() => openPhotoInput(fileInputRef)}
                 className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -525,7 +506,7 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
               </button>
               <button
                 type="button"
-                onClick={() => openPhotoInput('main', galleryInputRef)}
+                onClick={() => openPhotoInput(galleryInputRef)}
                 className="w-full mt-2 text-xs text-gray-400 hover:text-primary-600 transition-colors"
               >
                 {t('ui.orImportExisting')}
@@ -533,45 +514,48 @@ const YarnStashForm = ({ entry, onSubmit, onCancel, loading }) => {
             </>
           )}
 
-          {/* 2e photo — l'étiquette est enroulée autour de la pelote, une seule vue ne suffit pas toujours */}
-          {photoPreview && (
-            extraPhotoPreview ? (
-              <div className="relative inline-block mt-2">
-                <img
-                  src={extraPhotoPreview}
-                  alt={t('ui.labelAltOther')}
-                  className="h-16 w-16 object-cover rounded-lg border border-gray-200"
-                />
-                <button
-                  type="button"
-                  onClick={removeExtraPhoto}
-                  className="absolute -top-1.5 -right-1.5 bg-white p-0.5 rounded-full shadow text-gray-500 hover:text-red-500 transition-colors"
-                  title={t('ui.deleteThisPhoto')}
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="mt-2 flex items-center gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => openPhotoInput('extra', fileInputRef)}
-                  className="text-primary-500 hover:text-primary-700 font-medium"
-                >
-                  {t('ui.addSecondPhoto')}
-                </button>
-                <span className="text-gray-300">·</span>
-                <button
-                  type="button"
-                  onClick={() => openPhotoInput('extra', galleryInputRef)}
-                  className="text-gray-400 hover:text-primary-600"
-                >
-                  {t('ui.importWord2')}
-                </button>
-              </div>
-            )
+          {/* Photos supplémentaires — l'étiquette est enroulée autour de la pelote, une seule vue ne suffit pas toujours */}
+          {photos.length > 0 && (
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              {photos.slice(1).map((p, i) => (
+                <div key={i} className="relative inline-block">
+                  <img
+                    src={p.preview}
+                    alt={t('ui.labelAltOther')}
+                    className="h-16 w-16 object-cover rounded-lg border border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePhotoAt(i + 1)}
+                    className="absolute -top-1.5 -right-1.5 bg-white p-0.5 rounded-full shadow text-gray-500 hover:text-red-500 transition-colors"
+                    title={t('ui.deleteThisPhoto')}
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              {photos.length < MAX_LABEL_PHOTOS && (
+                <div className="flex items-center gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => openPhotoInput(fileInputRef)}
+                    className="text-primary-500 hover:text-primary-700 font-medium"
+                  >
+                    {t('ui.addAnotherPhoto', { count: photos.length, max: MAX_LABEL_PHOTOS })}
+                  </button>
+                  <span className="text-gray-300">·</span>
+                  <button
+                    type="button"
+                    onClick={() => openPhotoInput(galleryInputRef)}
+                    className="text-gray-400 hover:text-primary-600"
+                  >
+                    {t('ui.importWord2')}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           <input

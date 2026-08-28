@@ -617,7 +617,7 @@
     "uploadPatternPdf": "📤 Uploader le PDF du patron",
     "feedbackHelps": "💡 Ton retour nous aide à améliorer le service",
     "orImportExisting": "ou importer une photo existante",
-    "addSecondPhoto": "+ Ajouter une 2e photo (si l'étiquette ne tenait pas entièrement dans le cadre)",
+    "addAnotherPhoto": "+ Ajouter une autre photo ({{count}}/{{max}}) — si l'étiquette ne tenait pas entièrement dans le cadre",
     "tagInputHint": "Appuie sur Entrée ou virgule pour ajouter un tag (2-50 caractères)",
     "goProPrice": "Passer à PRO — 6,99€/mois",
     "askYourQuestion": "Pose ta question sur le tricot ou le crochet 🧶",

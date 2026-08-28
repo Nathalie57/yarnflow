@@ -383,8 +383,8 @@ class YarnStashController
                 return;
             }
 
-            // Max 2 photos (recto/verso de l'étiquette enroulée autour de la pelote)
-            $files = array_slice($files, 0, 2);
+            // Max 3 photos (l'étiquette enroulée autour de la pelote a parfois besoin de plus de 2 angles)
+            $files = array_slice($files, 0, 3);
             foreach ($files as $file) {
                 $this->validateImageFile($file);
             }

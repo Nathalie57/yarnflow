@@ -617,7 +617,7 @@
     "uploadPatternPdf": "📤 Upload the pattern PDF",
     "feedbackHelps": "💡 Your feedback helps us improve the service",
     "orImportExisting": "or import an existing photo",
-    "addSecondPhoto": "+ Add a 2nd photo (if the ball band didn't fit in the frame)",
+    "addAnotherPhoto": "+ Add another photo ({{count}}/{{max}}) — if the ball band didn't fit in the frame",
     "tagInputHint": "Press Enter or comma to add a tag (2-50 characters)",
     "goProPrice": "Upgrade to PRO — €6.99/month",
     "askYourQuestion": "Ask your knitting or crochet question 🧶",
