@@ -99,7 +99,13 @@ RÈGLES STRICTES :
 - Privilégier "rangs" pour crochet, "cm" pour tricot (sauf si explicite dans le patron)
 - gauge : toujours ramener à 10cm (si échantillon donné pour 5cm, multiplier par 2)
 - yarn.weight : utiliser uniquement les catégories standard (pas de "moyen", "épais" français)
-- needles : lister TOUTES les aiguilles/crochets mentionnés séparément, pas juste le premier — un patron a souvent une taille pour le corps et une autre pour les côtes/bords. size : extraire uniquement le nombre et mm (ex: "4.5" depuis "crochet 4.5mm")
+- needles : lister TOUTES les aiguilles/crochets mentionnés séparément, pas juste le premier — un patron a souvent une taille pour le corps et une autre pour les côtes/bords. La mention peut se trouver n'importe où dans le texte (une section dédiée "Aiguilles"/"Needles"/"Hook", mais aussi souvent noyée dans un paragraphe "Notions"/"Materials"/"Gauge"/"Matériel") — chercher dans TOUT le document, ne jamais se limiter à une section au titre explicite.
+  - EXCLURE toute aiguille qui n'est pas l'outil de tricot/crochet lui-même : une aiguille à laine/à coudre pour rentrer les fils ou assembler les pièces ("yarn needle", "tapestry needle", "sewing needle", "aiguille à laine/à coudre/à broder") n'est PAS une entrée needles, même si le mot "aiguille"/"needle" apparaît.
+  - size : toujours extraire une valeur en mm, quelle que soit la notation d'origine :
+    - "crochet 4.5mm" ou "hook size E-4 (3.50 mm)" → "4.5" / "3.5" (prendre le nombre entre parenthèses s'il est donné en mm, ignorer le codage lettre/chiffre US qui le précède)
+    - notation DROPS/française "aiguille n° 3" ou "numéro 3" → "3" (le numéro DROPS correspond directement aux mm)
+    - taille US/UK sans mm indiqué (ex: "US 7", "size 7 needles", "hook size H") → convertir vers l'équivalent mm standard (tables de conversion aiguilles tricot et crochets US usuelles)
+    - si vraiment aucune taille numérique n'est identifiable ou convertible → null (mais garder quand même l'entrée needles avec son "type" si l'outil est identifié, ex: "Crochet", ne jamais omettre toute l'entrée simplement parce que la taille est introuvable)
 
 Retourne UNIQUEMENT le JSON, sans texte avant/après, sans markdown.
 PROMPT;
