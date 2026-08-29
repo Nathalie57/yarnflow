@@ -167,7 +167,12 @@ const CreateProjectWizard = ({
     const isPlusExhausted = smartQuota && (smartQuota.plan === 'plus' || smartQuota.plan === 'plus_annual') && smartQuota.remaining === 0
     const isProExhausted = smartQuota && smartQuota.is_pro && smartQuota.remaining === 0
     const isFreeTrialAvailable = smartQuota && smartQuota.plan === 'free' && !smartQuota.free_trial_used
-    const isTrialUsed = smartQuota && smartQuota.plan === 'free' && smartQuota.free_trial_used
+    // [AI:Claude] Teaser : une dernière analyse à vie au-delà des 3 essais FREE (voir
+    // SmartProjectController::analyze()/confirm()) — sans distinguer ce cas ici, le bouton
+    // ci-dessous redirigeait tout le monde vers /subscription dès free_trial_used, et
+    // personne n'atteignait jamais le formulaire où le teaser s'applique.
+    const isTeaserAvailable = smartQuota && smartQuota.plan === 'free' && smartQuota.free_trial_used && smartQuota.teaser_available
+    const isTrialUsed = smartQuota && smartQuota.plan === 'free' && smartQuota.free_trial_used && !smartQuota.teaser_available
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
@@ -205,6 +210,11 @@ const CreateProjectWizard = ({
                 {isFreeTrialAvailable && (
                   <p className="text-xs text-white/90 mt-2 font-medium">
                     {t('wizard.freeTrials', { count: smartQuota?.remaining ?? 2 })}
+                  </p>
+                )}
+                {isTeaserAvailable && (
+                  <p className="text-xs text-white/90 mt-2 font-medium">
+                    {t('wizard.teaserAvailable')}
                   </p>
                 )}
                 {isTrialUsed && (

@@ -103,12 +103,18 @@ class SmartProjectController
                 $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND project_id IS NOT NULL");
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
+                // [AI:Claude] Le frontend (CreateProjectWizard) redirige direct vers /subscription
+                // dès que free_trial_used est vrai, sans jamais laisser passer vers le
+                // formulaire — sans ce champ, le teaser (voir analyze()/confirm()) ne serait
+                // jamais atteignable depuis ce point d'entrée.
+                $teaserAvailable = empty($user['smart_creation_teaser_used_at']);
                 $this->jsonResponse([
                     'success' => true,
                     'quota' => [
                         'plan' => 'free',
                         'is_pro' => false,
                         'free_trial_used' => $totalUsed >= 3,
+                        'teaser_available' => $teaserAvailable,
                         'total_used' => $totalUsed,
                         'remaining' => max(0, 3 - $totalUsed),
                     ]
