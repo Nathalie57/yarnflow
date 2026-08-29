@@ -56,6 +56,39 @@ export default function SmartProjectCreator() {
   // champ ne le permette. N'importe pas le patron_text si non vide.
   const [pastedText, setPastedText] = useState('')
 
+  // [AI:Claude] Suggestion "utiliser le stock" — une ou plusieurs entrées de
+  // yarn_stash à réserver pour ce projet (un patron colorwork/jacquard peut
+  // utiliser plusieurs fils différents). { entry, quantity } par sélection.
+  const [stashSelections, setStashSelections] = useState([])
+  const [showStashPicker, setShowStashPicker] = useState(false)
+  const [stashList, setStashList] = useState([])
+  const [loadingStashList, setLoadingStashList] = useState(false)
+
+  const openStashPicker = async () => {
+    setShowStashPicker(true)
+    setLoadingStashList(true)
+    try {
+      const response = await api.get('/stash')
+      setStashList(response.data.entries || [])
+    } catch (err) {
+      console.error('Erreur chargement stock:', err)
+    } finally {
+      setLoadingStashList(false)
+    }
+  }
+
+  // [AI:Claude] Une seule saisie possible pour la quantité, directement dans la
+  // modale — plus de sélection en deux temps (choisir puis fermer puis éditer
+  // ailleurs). Une quantité vide/0 retire l'entrée des sélections.
+  const setStashQuantity = (entry, quantity) => {
+    setStashSelections((prev) => {
+      const withoutEntry = prev.filter((s) => s.entry.id !== entry.id)
+      return quantity && parseInt(quantity, 10) > 0
+        ? [...withoutEntry, { entry, quantity }]
+        : withoutEntry
+    })
+  }
+
   // Projet éditable
   const [project, setProject] = useState({
     title: '',
@@ -137,6 +170,8 @@ export default function SmartProjectCreator() {
       setError(t('ui.selectFromLibrary'))
       return
     }
+
+    setStashSelections([])
     if (mode === 'text' && !pastedText.trim()) {
       setError(t('ui.pasteTextPlease'))
       return
@@ -199,6 +234,25 @@ export default function SmartProjectCreator() {
           gauge: response.data.data.gauge || { stitches: null, rows: null, size_cm: 10 },
           pattern_notes: response.data.data.pattern_notes || ''
         })
+
+        // [AI:Claude] Cherche si chacun des fils détectés est déjà dans le stock
+        // (un patron colorwork/jacquard utilise souvent plusieurs fils), pour
+        // proposer d'en réserver les pelotes plutôt que de tout ressaisir.
+        // Best-effort : une erreur ici ne doit jamais bloquer la création du projet.
+        const detectedYarns = response.data.data.yarn || []
+        const matches = []
+        for (const y of detectedYarns) {
+          if (!y?.brand || !y?.name) continue
+          try {
+            const matchResponse = await api.get('/stash/find-match', {
+              params: { brand: y.brand, yarn_name: y.name, color_name: y.color || '' }
+            })
+            if (matchResponse.data.entry) matches.push({ entry: matchResponse.data.entry, quantity: '' })
+          } catch (matchErr) {
+            console.error('Erreur recherche stock:', matchErr)
+          }
+        }
+        setStashSelections(matches)
 
         setSections(response.data.data.sections || [])
         setStep(3)
@@ -263,6 +317,25 @@ export default function SmartProjectCreator() {
         setCreatedProject(response.data.project)
         setStep(4)
         trackProjectCreated('smart', project.craft_type)
+
+        // [AI:Claude] Réserve les pelotes (stash_allocations) une fois le projet
+        // réellement créé — jamais avant, pour ne pas réserver sur une création
+        // abandonnée en cours de route. Le stock lui-même n'est décrémenté qu'à
+        // la clôture du projet (StashAllocationController::closeProject), pas ici.
+        // Best-effort, ne bloque jamais l'écran de succès si ça échoue.
+        for (const selection of stashSelections) {
+          const quantityUsed = parseInt(selection.quantity, 10)
+          if (quantityUsed > 0) {
+            try {
+              await api.post(`/projects/${response.data.project.id}/allocations`, {
+                stash_entry_id: selection.entry.id,
+                quantity_reserved: quantityUsed
+              })
+            } catch (stashErr) {
+              console.error('Erreur réservation stock:', stashErr)
+            }
+          }
+        }
       } else {
         setError(response.data.error || t('ui.projectCreationFailed'))
       }
@@ -813,6 +886,22 @@ export default function SmartProjectCreator() {
                   </div>
                 </div>
 
+                {stashSelections.length > 0 && (
+                  <div className="bg-primary-50 border border-primary-200 rounded-xl p-3">
+                    <p className="text-sm text-primary-800">
+                      {stashSelections.map((s) => `${s.quantity} × ${s.entry.brand} ${s.entry.yarn_name}${s.entry.color_name ? ` (${s.entry.color_name})` : ''}`).join(', ')}
+                    </p>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={openStashPicker}
+                  className="text-sm text-primary-600 hover:text-primary-800 underline text-left"
+                >
+                  {stashSelections.length > 0 ? t('ui.stashEditSelection') : t('ui.stashBrowse')}
+                </button>
+
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">{t('ui.weight')}</label>
@@ -988,6 +1077,62 @@ export default function SmartProjectCreator() {
       onClose={() => setShowUpgradeModal(false)}
       feature="ai_creations"
     />
+    {showStashPicker && (
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]"
+        onClick={() => setShowStashPicker(false)}
+      >
+        <div
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <h3 className="font-semibold text-gray-900">{t('ui.stashBrowse')}</h3>
+            <button
+              type="button"
+              onClick={() => setShowStashPicker(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div className="overflow-y-auto p-3">
+            {loadingStashList ? (
+              <p className="text-sm text-gray-500 p-3">{t('ui.loading')}</p>
+            ) : stashList.length === 0 ? (
+              <p className="text-sm text-gray-500 p-3">{t('ui.stashEmpty')}</p>
+            ) : (
+              <div className="space-y-1">
+                {stashList.map((entry) => {
+                  const selection = stashSelections.find((s) => s.entry.id === entry.id)
+                  const available = entry.quantity_available ?? entry.quantity
+                  return (
+                    <div key={entry.id} className="px-3 py-2.5 rounded-lg hover:bg-gray-50 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <span className="text-sm text-gray-900">
+                          {entry.brand} {entry.yarn_name}
+                          {entry.color_name && <span className="text-gray-500"> · {entry.color_name}</span>}
+                        </span>
+                        <div className="text-xs text-gray-500">{t('ui.stashAvailable', { count: available })}</div>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        max={available}
+                        value={selection?.quantity ?? ''}
+                        onChange={(e) => setStashQuantity(entry, e.target.value)}
+                        placeholder="0"
+                        className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center shrink-0"
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     </>
   )
 }
