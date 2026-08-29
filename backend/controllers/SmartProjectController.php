@@ -18,6 +18,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Services\AIPatternExtractorService;
 use App\Services\AnalyticsService;
+use App\Services\PatternStorageService;
 use App\Middleware\AuthMiddleware;
 
 class SmartProjectController
@@ -25,6 +26,7 @@ class SmartProjectController
     private Project $projectModel;
     private User $userModel;
     private AIPatternExtractorService $extractorService;
+    private PatternStorageService $patternStorage;
     private AuthMiddleware $authMiddleware;
 
     private const UPLOAD_DIR = __DIR__ . '/../../uploads/patterns/';
@@ -35,6 +37,7 @@ class SmartProjectController
         $this->projectModel = new Project();
         $this->userModel = new User();
         $this->extractorService = new AIPatternExtractorService();
+        $this->patternStorage = new PatternStorageService();
         $this->authMiddleware = new AuthMiddleware();
 
         // Créer le dossier uploads si nécessaire
@@ -290,7 +293,31 @@ class SmartProjectController
 
             $processingTime = isset($result['processing_time_ms']) ? (int)$result['processing_time_ms'] : (int)round((microtime(true) - $extractionStart) * 1000);
 
-            // Nettoyer le fichier temp (jamais pour les fichiers de la bibliothèque)
+            // [AI:Claude] Persiste le fichier analysé (PDF importé ou depuis la bibliothèque)
+            // dans le dossier public servi par l'app — sans ça, seul le JSON extrait par l'IA
+            // survivait, le document lui-même n'était jamais consultable dans l'onglet "Patron"
+            // du projet une fois créé. Une copie (pas un déplacement direct comme
+            // PatternStorageService::savePatternFile()) : ce fichier n'est plus un upload PHP
+            // "frais" à ce stade (déjà déplacé une première fois plus haut, ou jamais un upload
+            // pour un fichier de bibliothèque), move_uploaded_file() échouerait silencieusement.
+            $sourceFilePath = null;
+            if ($result['success'] && ($sourceType === 'pdf' || $sourceType === 'library') && file_exists($filePath)) {
+                try {
+                    $patternsDir = __DIR__ . '/../public/uploads/patterns';
+                    if (!is_dir($patternsDir)) {
+                        mkdir($patternsDir, 0755, true);
+                    }
+                    $filename = 'smart_import_' . uniqid() . '.pdf';
+                    if (copy($filePath, $patternsDir . '/' . $filename)) {
+                        $sourceFilePath = '/uploads/patterns/' . $filename;
+                    }
+                } catch (\Exception $e) {
+                    error_log('[SmartProject] Erreur persistance fichier patron: ' . $e->getMessage());
+                }
+            }
+
+            // Nettoyer le fichier temp de travail (jamais le fichier de bibliothèque lui-même,
+            // et jamais la copie qu'on vient de faire dans public/uploads/patterns)
             if ($sourceType === 'pdf' && !$isLibraryFile && file_exists($filePath)) {
                 unlink($filePath);
             }
@@ -310,7 +337,7 @@ class SmartProjectController
             // [AI:Claude] L'ID est renvoyé au frontend pour être relié au projet lors du confirm()
             // [AI:Claude] $result['data'] (pas null) : sans le PDF conservé, ai_response_json est
             // la seule trace permettant d'auditer a posteriori la qualité d'une extraction.
-            $importId = $this->logImport($userId, null, $sourceType, $sourceName, $fileSize, $result['ai_status'], $result['data'] ?? null, $processingTime, null);
+            $importId = $this->logImport($userId, null, $sourceType, $sourceName, $sourceFilePath, $fileSize, $result['ai_status'], $result['data'] ?? null, $processingTime, null);
 
             $this->jsonResponse([
                 'success' => true,
@@ -356,6 +383,18 @@ class SmartProjectController
             $sourceType = $data['source_type'] ?? 'manual';
             $sourceUrl = $data['source_url'] ?? null;
             $analyzeMetadata = $data['analyze_metadata'] ?? null;
+
+            // [AI:Claude] Retrouve le fichier persisté par analyze() (voir logImport()) pour
+            // que le patron reste consultable dans l'onglet "Patron" une fois le projet créé —
+            // sans ça, seul le JSON extrait par l'IA survivait, jamais le document lui-même.
+            $sourceFilePath = null;
+            if (!empty($analyzeMetadata['import_id'])) {
+                $importLookup = \App\Config\Database::getInstance()->getConnection()->prepare(
+                    'SELECT source_file_path FROM ai_pattern_imports WHERE id = :id AND user_id = :uid'
+                );
+                $importLookup->execute(['id' => (int)$analyzeMetadata['import_id'], 'uid' => $userId]);
+                $sourceFilePath = $importLookup->fetchColumn() ?: null;
+            }
 
             // [AI:Claude] Contrôle qui n'existait pas avant le teaser : analyze() pouvait
             // jusqu'ici laisser passer une analyse au-delà du quota grâce au teaser (voir
@@ -406,6 +445,18 @@ class SmartProjectController
                     'source_url' => $sourceUrl,
                     'status' => 'in_progress'
                 ];
+
+                // [AI:Claude] Onglet "Patron" du projet : selon la source analysée, un seul de
+                // ces trois champs est renseigné (fichier persisté par analyze(), URL d'origine,
+                // ou texte collé — celui-ci renvoyé par le frontend puisqu'il n'est pas conservé
+                // côté serveur après l'extraction).
+                if ($sourceFilePath) {
+                    $insertData['pattern_path'] = $sourceFilePath;
+                } elseif ($sourceType === 'url' && $sourceUrl) {
+                    $insertData['pattern_url'] = $sourceUrl;
+                } elseif ($sourceType === 'text' && !empty($data['pattern_text'])) {
+                    $insertData['pattern_text'] = trim($data['pattern_text']);
+                }
 
                 // Détails techniques — yarn est maintenant une liste (colorwork = plusieurs fils),
                 // les colonnes plates ci-dessous ne gardent que le premier fil pour compatibilité
@@ -592,6 +643,7 @@ class SmartProjectController
         ?int $projectId,
         string $sourceType,
         string $sourceName,
+        ?string $sourceFilePath,
         ?int $fileSize,
         string $aiStatus,
         ?array $aiResponse,
@@ -602,8 +654,8 @@ class SmartProjectController
             $db = \App\Config\Database::getInstance()->getConnection();
             $stmt = $db->prepare("
                 INSERT INTO ai_pattern_imports
-                (user_id, project_id, source_type, source_name, file_size_bytes, ai_status, ai_response_json, processing_time_ms, error_message, ip_address)
-                VALUES (:user_id, :project_id, :source_type, :source_name, :file_size, :ai_status, :ai_response, :processing_time, :error, :ip)
+                (user_id, project_id, source_type, source_name, source_file_path, file_size_bytes, ai_status, ai_response_json, processing_time_ms, error_message, ip_address)
+                VALUES (:user_id, :project_id, :source_type, :source_name, :source_file_path, :file_size, :ai_status, :ai_response, :processing_time, :error, :ip)
             ");
 
             $stmt->execute([
@@ -611,6 +663,7 @@ class SmartProjectController
                 'project_id' => $projectId,
                 'source_type' => $sourceType,
                 'source_name' => $sourceName,
+                'source_file_path' => $sourceFilePath,
                 'file_size' => $fileSize,
                 'ai_status' => $aiStatus,
                 'ai_response' => $aiResponse ? json_encode($aiResponse) : null,

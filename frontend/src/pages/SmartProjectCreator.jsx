@@ -304,12 +304,17 @@ export default function SmartProjectCreator() {
       const response = await api.post('/projects/smart-create/confirm', {
         project,
         sections,
-        source_type: mode,
+        // [AI:Claude] Le mode 'url' avec repli texte collé (Cloudflare bloque le scraping)
+        // est en réalité une analyse de texte, pas d'URL — source_type doit refléter la
+        // vraie source analysée pour que confirm() sache où ranger le patron (pattern_text
+        // vs pattern_url), pas juste l'onglet UI choisi au départ.
+        source_type: (mode === 'text' || pastedText.trim()) ? 'text' : mode,
         source_url: mode === 'pdf'
           ? file?.name
           : mode === 'library'
             ? selectedLibraryPattern?.name
             : (mode === 'text' || pastedText.trim()) ? pastedText.trim().slice(0, 80) : url,
+        pattern_text: (mode === 'text' || pastedText.trim()) ? pastedText.trim() : undefined,
         analyze_metadata: analyzeMetadata
       })
 
