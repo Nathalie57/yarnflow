@@ -62,8 +62,8 @@ export default function SmartProjectCreator() {
     craft_type: 'crochet',
     category: null,
     description: '',
-    yarn: { brand: '', color: '', weight: '', composition: '' },
-    hook_or_needles: { size: '' },
+    yarn: [{ brand: '', color: '', weight: '', composition: '' }],
+    needles: [{ type: '', size: '', length: '' }],
     gauge: { stitches: null, rows: null, size_cm: 10 },
     pattern_notes: ''
   })
@@ -194,8 +194,8 @@ export default function SmartProjectCreator() {
           craft_type: response.data.data.craft_type || 'crochet',
           category: response.data.data.category || null,
           description: response.data.data.description || '',
-          yarn: response.data.data.yarn || { brand: '', color: '', weight: '', composition: '' },
-          hook_or_needles: response.data.data.hook_or_needles || { size: '' },
+          yarn: response.data.data.yarn?.length ? response.data.data.yarn : [{ brand: '', color: '', weight: '', composition: '' }],
+          needles: response.data.data.needles?.length ? response.data.data.needles : [{ type: '', size: '', length: '' }],
           gauge: response.data.data.gauge || { stitches: null, rows: null, size_cm: 10 },
           pattern_notes: response.data.data.pattern_notes || ''
         })
@@ -797,8 +797,8 @@ export default function SmartProjectCreator() {
                     <label className="block text-sm text-gray-700 mb-1">{t('ui.yarnBrand')}</label>
                     <input
                       type="text"
-                      value={project.yarn.brand}
-                      onChange={(e) => setProject({...project, yarn: {...project.yarn, brand: e.target.value}})}
+                      value={project.yarn[0]?.brand || ''}
+                      onChange={(e) => setProject({...project, yarn: [{...project.yarn[0], brand: e.target.value}, ...project.yarn.slice(1)]})}
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                   </div>
@@ -806,8 +806,8 @@ export default function SmartProjectCreator() {
                     <label className="block text-sm text-gray-700 mb-1">{t('ui.color')}</label>
                     <input
                       type="text"
-                      value={project.yarn.color}
-                      onChange={(e) => setProject({...project, yarn: {...project.yarn, color: e.target.value}})}
+                      value={project.yarn[0]?.color || ''}
+                      onChange={(e) => setProject({...project, yarn: [{...project.yarn[0], color: e.target.value}, ...project.yarn.slice(1)]})}
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
                   </div>
@@ -818,8 +818,8 @@ export default function SmartProjectCreator() {
                     <label className="block text-sm text-gray-700 mb-1">{t('ui.weight')}</label>
                     <input
                       type="text"
-                      value={project.yarn.weight}
-                      onChange={(e) => setProject({...project, yarn: {...project.yarn, weight: e.target.value}})}
+                      value={project.yarn[0]?.weight || ''}
+                      onChange={(e) => setProject({...project, yarn: [{...project.yarn[0], weight: e.target.value}, ...project.yarn.slice(1)]})}
                       placeholder={t('ui.phWeightExamples')}
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
@@ -828,8 +828,8 @@ export default function SmartProjectCreator() {
                     <label className="block text-sm text-gray-700 mb-1">{t('ui.hookNeedlesMm')}</label>
                     <input
                       type="text"
-                      value={project.hook_or_needles.size}
-                      onChange={(e) => setProject({...project, hook_or_needles: {...project.hook_or_needles, size: e.target.value}})}
+                      value={project.needles[0]?.size || ''}
+                      onChange={(e) => setProject({...project, needles: [{...project.needles[0], size: e.target.value}, ...project.needles.slice(1)]})}
                       placeholder="4.5"
                       className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
                     />
