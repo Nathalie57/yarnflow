@@ -5577,7 +5577,7 @@ const ProjectCounter = () => {
 
                 const hasDetails = technicalDetails && (
                   (technicalDetails.yarn && technicalDetails.yarn.length > 0 && technicalDetails.yarn[0].brand) ||
-                  (technicalDetails.needles && technicalDetails.needles.length > 0 && technicalDetails.needles[0].type) ||
+                  (technicalDetails.needles && technicalDetails.needles.length > 0 && (technicalDetails.needles[0].type || technicalDetails.needles[0].size)) ||
                   (technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows)) ||
                   technicalDetails.description
                 )
