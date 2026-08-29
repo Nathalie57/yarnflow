@@ -266,7 +266,19 @@ export default function SmartProjectCreator() {
       }
     } catch (err) {
       console.error('Erreur confirm:', err)
-      setError(apiErrorMessage(err, t('ui.projectCreationFailed')))
+      // [AI:Claude] Nouveau cas depuis le teaser : analyze() peut laisser passer une analyse
+      // au-delà du quota FREE (voir SmartProjectController::analyze()), confirm() bloque
+      // alors la validation réelle avec ce même 403 — l'utilisatrice a vu son projet
+      // (étape Validation) mais ne peut pas l'enregistrer sans passer à PLUS/PRO.
+      if (err.response?.status === 403 && err.response?.data?.upgrade_required) {
+        fetchQuota()
+        setError(err.response.data?.free_trial_used
+          ? t('ui.trialUsedGoPro')
+          : t('ui.smartCreationProOnly')
+        )
+      } else {
+        setError(apiErrorMessage(err, t('ui.projectCreationFailed')))
+      }
     } finally {
       setCreating(false)
     }

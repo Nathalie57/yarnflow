@@ -173,12 +173,20 @@ class SmartProjectController
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 if ($totalUsed >= 3) {
-                    $this->jsonResponse([
-                        'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour continuer',
-                        'upgrade_required' => true,
-                        'free_trial_used' => true
-                    ], 403);
-                    return;
+                    // [AI:Claude] Une seule analyse "teaser" à vie au-delà des 3 essais :
+                    // l'utilisatrice voit son projet analysé une dernière fois (l'effet "wow"
+                    // avant de payer), mais confirm() bloquera la validation réelle — voir
+                    // plus bas. Sans ce teaser, on bloquerait ici avant même l'appel Gemini.
+                    if (!empty($user['smart_creation_teaser_used_at'])) {
+                        $this->jsonResponse([
+                            'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour continuer',
+                            'upgrade_required' => true,
+                            'free_trial_used' => true
+                        ], 403);
+                        return;
+                    }
+                    $db->prepare('UPDATE users SET smart_creation_teaser_used_at = NOW() WHERE id = :user_id')
+                        ->execute(['user_id' => $userId]);
                 }
             }
 
@@ -342,6 +350,31 @@ class SmartProjectController
             $sourceType = $data['source_type'] ?? 'manual';
             $sourceUrl = $data['source_url'] ?? null;
             $analyzeMetadata = $data['analyze_metadata'] ?? null;
+
+            // [AI:Claude] Contrôle qui n'existait pas avant le teaser : analyze() pouvait
+            // jusqu'ici laisser passer une analyse au-delà du quota grâce au teaser (voir
+            // analyze()), confirm() faisait alors confiance à ce blocage en amont pour
+            // protéger la vraie création. Le teaser ne donne droit qu'à VOIR le projet
+            // (étape Validation), pas à l'enregistrer — sinon il ne coûterait plus rien
+            // d'avoir un quota FREE.
+            $confirmUser = $this->userModel->findById($userId);
+            if ($confirmUser) {
+                $confirmPlan = $this->getSmartImportPlan($confirmUser['subscription_type'], $userId);
+                if ($confirmPlan['monthly_limit'] === 0) {
+                    $db = \App\Config\Database::getInstance()->getConnection();
+                    $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND project_id IS NOT NULL");
+                    $stmt->execute(['user_id' => $userId]);
+                    $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
+                    if ($totalUsed >= 3) {
+                        $this->jsonResponse([
+                            'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour enregistrer ce projet',
+                            'upgrade_required' => true,
+                            'free_trial_used' => true
+                        ], 403);
+                        return;
+                    }
+                }
+            }
 
             // Créer le projet
             $db = \App\Config\Database::getInstance()->getConnection();
