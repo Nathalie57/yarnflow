@@ -886,20 +886,30 @@ export default function SmartProjectCreator() {
                   </div>
                 </div>
 
-                {stashSelections.length > 0 && (
-                  <div className="bg-primary-50 border border-primary-200 rounded-xl p-3">
-                    <p className="text-sm text-primary-800">
-                      {stashSelections.map((s) => `${s.quantity} × ${s.entry.brand} ${s.entry.yarn_name}${s.entry.color_name ? ` (${s.entry.color_name})` : ''}`).join(', ')}
-                    </p>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={openStashPicker}
-                  className="text-sm text-primary-600 hover:text-primary-800 underline text-left"
-                >
-                  {stashSelections.length > 0 ? t('ui.stashEditSelection') : t('ui.stashBrowse')}
-                </button>
+                {(() => {
+                  // [AI:Claude] Un match auto-détecté n'a pas de quantité tant que
+                  // l'utilisatrice ne l'a pas saisie dans la modale — ne jamais
+                  // l'afficher comme "réservé" avant ça, ni présumer un nombre.
+                  const quantified = stashSelections.filter((s) => parseInt(s.quantity, 10) > 0)
+                  return (
+                    <>
+                      {quantified.length > 0 && (
+                        <div className="bg-primary-50 border border-primary-200 rounded-xl p-3">
+                          <p className="text-sm text-primary-800">
+                            {quantified.map((s) => `${s.quantity} × ${s.entry.brand} ${s.entry.yarn_name}${s.entry.color_name ? ` (${s.entry.color_name})` : ''}`).join(', ')}
+                          </p>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={openStashPicker}
+                        className="text-sm text-primary-600 hover:text-primary-800 underline text-left"
+                      >
+                        {stashSelections.length > 0 ? t('ui.stashEditSelection') : t('ui.stashBrowse')}
+                      </button>
+                    </>
+                  )
+                })()}
 
 
                 <div className="grid grid-cols-2 gap-4">
