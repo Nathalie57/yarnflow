@@ -5676,10 +5676,10 @@ const ProjectCounter = () => {
                                         {y.quantities && y.quantities.length > 0 && (
                                           <div className="text-right">
                                             {y.quantities.map((q, qIdx) => (
-                                              q.amount && (
+                                              (q.amount || q.color) && (
                                                 <div key={qIdx} className="text-xs text-gray-700 whitespace-nowrap">
-                                                  <span className="font-medium">{q.amount} {q.unit || 'pelotes'}</span>
-                                                  {q.color && <span className="text-gray-500 ml-1">· {q.color}</span>}
+                                                  {q.amount && <span className="font-medium">{q.amount} {q.unit || 'pelotes'}</span>}
+                                                  {q.color && <span className={`text-gray-500 ${q.amount ? 'ml-1' : ''}`}>{q.amount ? '· ' : ''}{q.color}</span>}
                                                 </div>
                                               )
                                             ))}
