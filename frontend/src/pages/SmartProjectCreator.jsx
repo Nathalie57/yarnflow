@@ -7,6 +7,7 @@ import api from '../services/api'
 import { useTranslation } from 'react-i18next'
 
 import { apiErrorMessage } from '../utils/apiError'
+import UpgradePrompt from '../components/UpgradePrompt'
 /**
  * SmartProjectCreator - Création intelligente de projets via IA
  * Version 0.17.0 - 2026-01-07
@@ -48,6 +49,7 @@ export default function SmartProjectCreator() {
   const [analyzeMetadata, setAnalyzeMetadata] = useState(null)
   const [error, setError] = useState(null)
   const [errorCode, setErrorCode] = useState(null)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   // [AI:Claude] Repli quand une URL ne peut pas être analysée (ex: site protégé par
   // Cloudflare, cf. error_code 'site_blocks_scraping') — le message d'erreur invitait
   // depuis longtemps à "copier-coller le texte du patron directement" sans qu'aucun
@@ -269,13 +271,12 @@ export default function SmartProjectCreator() {
       // [AI:Claude] Nouveau cas depuis le teaser : analyze() peut laisser passer une analyse
       // au-delà du quota FREE (voir SmartProjectController::analyze()), confirm() bloque
       // alors la validation réelle avec ce même 403 — l'utilisatrice a vu son projet
-      // (étape Validation) mais ne peut pas l'enregistrer sans passer à PLUS/PRO.
+      // (étape Validation) mais ne peut pas l'enregistrer sans passer à PLUS/PRO. Une popin
+      // dédiée plutôt qu'un simple texte d'erreur : sans ça, rien ne se distinguait vraiment
+      // à l'écran à ce stade (formulaire déjà rempli, bouton qui ne semblait rien faire).
       if (err.response?.status === 403 && err.response?.data?.upgrade_required) {
         fetchQuota()
-        setError(err.response.data?.free_trial_used
-          ? t('ui.trialUsedGoPro')
-          : t('ui.smartCreationProOnly')
-        )
+        setShowUpgradeModal(true)
       } else {
         setError(apiErrorMessage(err, t('ui.projectCreationFailed')))
       }
@@ -299,7 +300,10 @@ export default function SmartProjectCreator() {
   }
 
   // FREE avec essai déjà utilisé → écran d'upgrade (seulement à l'étape 1, pas pendant/après le process)
-  if (!isPro && quota?.free_trial_used && step <= 1) {
+  // [AI:Claude] teaser_available : même exception qu'ailleurs (CreateProjectWizard,
+  // SmartProjectController::analyze()/confirm()) — sans elle, ce garde-fou bloquait
+  // avant même le choix du mode, rendant le teaser inatteignable depuis cette page aussi.
+  if (!isPro && quota?.free_trial_used && !quota?.teaser_available && step <= 1) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">
@@ -313,6 +317,12 @@ export default function SmartProjectCreator() {
           <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
             {t('ui.moreAutoCreations')}
           </Link>
+          {/* [AI:Claude] Sans cette porte de sortie gratuite, il ne restait que "payer" ou
+              "partir" — alors que remplir le projet à la main ne coûte rien et n'a aucun
+              rapport avec le quota IA. Reprend le même lien que dans CreateProjectWizard. */}
+          <Link to="/my-projects" className="block text-sm text-primary-600 hover:text-primary-700 underline underline-offset-2">
+            {t('ui.fillManuallyInstead')}
+          </Link>
           <button onClick={() => navigate(-1)} className="block w-full text-sm text-gray-400 hover:text-gray-600">
             {t('ui.back')}
           </button>
@@ -322,6 +332,7 @@ export default function SmartProjectCreator() {
   }
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
 
@@ -972,5 +983,11 @@ export default function SmartProjectCreator() {
 
       </div>
     </div>
+    <UpgradePrompt
+      isOpen={showUpgradeModal}
+      onClose={() => setShowUpgradeModal(false)}
+      feature="ai_creations"
+    />
+    </>
   )
 }

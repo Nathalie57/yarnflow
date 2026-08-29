@@ -142,7 +142,7 @@
     "advancedStats": "Statistiques avancées",
     "unlimitedStash": "Stock illimité",
     "unlimitedStorage": "Stockage fichiers illimité",
-    "moreAutoCreations": "Plus de créations automatiques",
+    "moreAutoCreations": "Obtenir plus de créations automatiques",
     "photoCredits": "Crédits photos",
     "needMorePhotos": "Besoin de plus de photos IA ?",
     "extraCreditsDesc": "Crédits supplémentaires à la carte, sans abonnement, valables à vie",
@@ -383,6 +383,7 @@
     "inactivityEmail": "Reçois un email si tu n'as pas tricoté depuis 7 jours",
     "minSixChars": "Minimum 6 caractères",
     "freeTrialsUsed": "Tu as utilisé tes 3 essais gratuits.",
+    "fillManuallyInstead": "ou remplir moi-même les informations",
     "selectPlaceholder": "-- Sélectionner --",
     "proUpgradeNote": "Pour passer au PRO, clique sur Gérer — les jours restants PLUS seront déduits automatiquement.",
     "unlimitedProjectsPatterns": "Projets & patrons illimités",
@@ -867,6 +868,15 @@
     }
   },
   "upgrade": {
+    "ai_creations": {
+      "title": "Plus de Créations Intelligentes",
+      "description": "Tu as utilisé tes essais gratuits de Création Intelligente. Passe à PLUS ou PRO pour continuer à importer tes patrons en un clic.",
+      "items": [
+        "3 imports IA / mois en PLUS, 15 en PRO",
+        "PDF, lien web ou texte collé",
+        "Ton projet prêt en quelques secondes"
+      ]
+    },
     "tags": {
       "title": "Tags personnalisés",
       "description": "Organise tes projets avec des étiquettes personnalisées et retrouve-les en un clin d'œil.",

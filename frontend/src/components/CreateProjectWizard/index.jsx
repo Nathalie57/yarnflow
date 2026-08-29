@@ -168,10 +168,11 @@ const CreateProjectWizard = ({
     const isProExhausted = smartQuota && smartQuota.is_pro && smartQuota.remaining === 0
     const isFreeTrialAvailable = smartQuota && smartQuota.plan === 'free' && !smartQuota.free_trial_used
     // [AI:Claude] Teaser : une dernière analyse à vie au-delà des 3 essais FREE (voir
-    // SmartProjectController::analyze()/confirm()) — sans distinguer ce cas ici, le bouton
+    // SmartProjectController::analyze()/confirm()) — sans cette exception, le bouton
     // ci-dessous redirigeait tout le monde vers /subscription dès free_trial_used, et
-    // personne n'atteignait jamais le formulaire où le teaser s'applique.
-    const isTeaserAvailable = smartQuota && smartQuota.plan === 'free' && smartQuota.free_trial_used && smartQuota.teaser_available
+    // personne n'atteignait jamais le formulaire où le teaser s'applique. Volontairement
+    // pas d'annotation visuelle dédiée (pas un vrai essai gratuit, juste un aperçu qui ne
+    // pourra pas être enregistré sans passer à PLUS/PRO) — la carte reste neutre.
     const isTrialUsed = smartQuota && smartQuota.plan === 'free' && smartQuota.free_trial_used && !smartQuota.teaser_available
 
     return (
@@ -210,11 +211,6 @@ const CreateProjectWizard = ({
                 {isFreeTrialAvailable && (
                   <p className="text-xs text-white/90 mt-2 font-medium">
                     {t('wizard.freeTrials', { count: smartQuota?.remaining ?? 2 })}
-                  </p>
-                )}
-                {isTeaserAvailable && (
-                  <p className="text-xs text-white/90 mt-2 font-medium">
-                    {t('wizard.teaserAvailable')}
                   </p>
                 )}
                 {isTrialUsed && (

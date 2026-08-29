@@ -142,7 +142,7 @@
     "advancedStats": "Advanced statistics",
     "unlimitedStash": "Unlimited stash",
     "unlimitedStorage": "Unlimited file storage",
-    "moreAutoCreations": "More automatic creations",
+    "moreAutoCreations": "Get more automatic creations",
     "photoCredits": "Photo credits",
     "needMorePhotos": "Need more AI photos?",
     "extraCreditsDesc": "Extra credits on demand, no subscription, valid for life",
@@ -383,6 +383,7 @@
     "inactivityEmail": "Get an email if you haven't knitted for 7 days",
     "minSixChars": "At least 6 characters",
     "freeTrialsUsed": "You've used your 3 free trials.",
+    "fillManuallyInstead": "or fill in the details myself",
     "selectPlaceholder": "-- Select --",
     "proUpgradeNote": "To move up to PRO, click Manage — your remaining PLUS days are deducted automatically.",
     "unlimitedProjectsPatterns": "Unlimited projects & patterns",
@@ -867,6 +868,15 @@
     }
   },
   "upgrade": {
+    "ai_creations": {
+      "title": "More Smart Creations",
+      "description": "You've used your free Smart Creation trials. Upgrade to PLUS or PRO to keep importing your patterns in one click.",
+      "items": [
+        "3 AI imports/month on PLUS, 15 on PRO",
+        "PDF, web link, or pasted text",
+        "Your project ready in seconds"
+      ]
+    },
     "tags": {
       "title": "Custom tags",
       "description": "Organise your projects with your own tags and find them at a glance.",
