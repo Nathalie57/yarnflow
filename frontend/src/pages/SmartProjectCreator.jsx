@@ -47,6 +47,12 @@ export default function SmartProjectCreator() {
   const [aiStatus, setAiStatus] = useState(null)
   const [analyzeMetadata, setAnalyzeMetadata] = useState(null)
   const [error, setError] = useState(null)
+  const [errorCode, setErrorCode] = useState(null)
+  // [AI:Claude] Repli quand une URL ne peut pas être analysée (ex: site protégé par
+  // Cloudflare, cf. error_code 'site_blocks_scraping') — le message d'erreur invitait
+  // depuis longtemps à "copier-coller le texte du patron directement" sans qu'aucun
+  // champ ne le permette. N'importe pas le patron_text si non vide.
+  const [pastedText, setPastedText] = useState('')
 
   // Projet éditable
   const [project, setProject] = useState({
@@ -121,7 +127,7 @@ export default function SmartProjectCreator() {
       setError(t('ui.selectPdf'))
       return
     }
-    if (mode === 'url' && !url) {
+    if (mode === 'url' && !url && !pastedText.trim()) {
       setError(t('ui.enterUrlPlease'))
       return
     }
@@ -129,10 +135,15 @@ export default function SmartProjectCreator() {
       setError(t('ui.selectFromLibrary'))
       return
     }
+    if (mode === 'text' && !pastedText.trim()) {
+      setError(t('ui.pasteTextPlease'))
+      return
+    }
 
     setAnalyzing(true)
     setAnalyzingStep(0)
     setError(null)
+    setErrorCode(null)
 
     // Progression simulée des étapes pendant l'attente
     const stepTimers = [
@@ -147,6 +158,8 @@ export default function SmartProjectCreator() {
 
       if (mode === 'pdf') {
         formData.append('file', file)
+      } else if (mode === 'text' || (mode === 'url' && pastedText.trim())) {
+        formData.append('pattern_text', pastedText.trim())
       } else if (mode === 'url') {
         formData.append('url', url)
       } else if (mode === 'library') {
@@ -194,6 +207,7 @@ export default function SmartProjectCreator() {
       } else {
         trackSmartAnalysis(mode, false)
         setError(response.data.error || t('ui.analysisFailed'))
+        setErrorCode(response.data.error_code || null)
         setAiStatus(response.data.ai_status)
       }
     } catch (err) {
@@ -207,6 +221,7 @@ export default function SmartProjectCreator() {
         )
       } else {
         setError(apiErrorMessage(err, t('ui.patternAnalysisFailed')))
+        setErrorCode(err.response?.data?.error_code || null)
       }
     } finally {
       stepTimers.forEach(clearTimeout)
@@ -234,7 +249,11 @@ export default function SmartProjectCreator() {
         project,
         sections,
         source_type: mode,
-        source_url: mode === 'pdf' ? file?.name : mode === 'library' ? selectedLibraryPattern?.name : url,
+        source_url: mode === 'pdf'
+          ? file?.name
+          : mode === 'library'
+            ? selectedLibraryPattern?.name
+            : (mode === 'text' || pastedText.trim()) ? pastedText.trim().slice(0, 80) : url,
         analyze_metadata: analyzeMetadata
       })
 
@@ -415,6 +434,21 @@ export default function SmartProjectCreator() {
                   <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
                 </div>
               </button>
+
+              {/* Mode Texte collé — pleine largeur sur mobile */}
+              <button
+                onClick={() => handleModeSelect('text')}
+                className="col-span-2 md:col-span-1 p-4 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group text-left flex md:block items-center gap-4"
+              >
+                <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center shrink-0 md:mb-3">
+                  <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-1">{t('ui.pasteText')}</h3>
+                  <p className="text-xs text-gray-500">{t('ui.pasteTextHint')}</p>
+                  <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
+                </div>
+              </button>
             </div>
           </div>
         )}
@@ -423,7 +457,7 @@ export default function SmartProjectCreator() {
         {step === 2 && !analyzing && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
-              {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.chooseFromLibrary') : t('ui.importFromUrl')}
+              {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.chooseFromLibrary') : mode === 'text' ? t('ui.pasteText') : t('ui.importFromUrl')}
             </h2>
 
             {mode === 'library' && (
@@ -509,9 +543,39 @@ export default function SmartProjectCreator() {
                 <input
                   type="url"
                   value={url}
-                  onChange={(e) => setUrl(e.target.value)}
+                  onChange={(e) => { setUrl(e.target.value); setPastedText('') }}
                   placeholder={t('ui.phExampleUrl')}
                   className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+                {errorCode === 'site_blocks_scraping' && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('ui.pasteTextInstead')}
+                    </label>
+                    <textarea
+                      value={pastedText}
+                      onChange={(e) => setPastedText(e.target.value)}
+                      placeholder={t('ui.phPastedPattern')}
+                      rows={8}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {mode === 'text' && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('ui.pasteTextInstead')}
+                </label>
+                <textarea
+                  value={pastedText}
+                  onChange={(e) => setPastedText(e.target.value)}
+                  placeholder={t('ui.phPastedPattern')}
+                  rows={12}
+                  autoFocus
+                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
                 />
               </div>
             )}
@@ -564,7 +628,7 @@ export default function SmartProjectCreator() {
               ) : (
                 <button
                   onClick={handleAnalyze}
-                  disabled={analyzing || (mode === 'pdf' && !file) || (mode === 'url' && !url) || (mode === 'library' && !selectedLibraryPattern)}
+                  disabled={analyzing || (mode === 'pdf' && !file) || (mode === 'url' && !url && !pastedText.trim()) || (mode === 'library' && !selectedLibraryPattern) || (mode === 'text' && !pastedText.trim())}
                   className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {analyzing ? (
@@ -859,6 +923,7 @@ export default function SmartProjectCreator() {
                 {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
               </button>
             </div>
+            <p className="mt-3 text-center text-xs text-gray-400">{t('ui.usesOneCredit')}</p>
           </div>
         )}
 

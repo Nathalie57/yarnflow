@@ -188,6 +188,7 @@ class SmartProjectController
             $filePath = null;
             $fileSize = null;
             $isLibraryFile = false;
+            $patternTextInput = null;
 
             if (isset($_POST['library_pattern_id']) && !empty($_POST['library_pattern_id'])) {
                 // Import depuis la bibliothèque
@@ -246,8 +247,16 @@ class SmartProjectController
                 $sourceType = 'url';
                 $sourceName = $_POST['url'];
 
+            } elseif (isset($_POST['pattern_text']) && !empty(trim($_POST['pattern_text']))) {
+                // [AI:Claude] Repli quand le scraping d'une URL échoue (ex: site protégé par
+                // Cloudflare) — le message d'erreur invite depuis longtemps à "copier-coller
+                // le texte du patron directement", sans qu'aucun champ ne le permette jusqu'ici.
+                $sourceType = 'text';
+                $patternTextInput = trim($_POST['pattern_text']);
+                $sourceName = mb_substr($patternTextInput, 0, 80) . (mb_strlen($patternTextInput) > 80 ? '…' : '');
+
             } else {
-                $this->jsonResponse(['error' => 'Fichier PDF, URL ou patron de bibliothèque requis', 'error_code' => 'pattern_source_required'], 400);
+                $this->jsonResponse(['error' => 'Fichier PDF, URL, texte ou patron de bibliothèque requis', 'error_code' => 'pattern_source_required'], 400);
                 return;
             }
 
@@ -259,6 +268,8 @@ class SmartProjectController
 
             if ($sourceType === 'pdf' || $sourceType === 'library') {
                 $result = $this->extractorService->extractFromPDF($filePath, $patternSize);
+            } elseif ($sourceType === 'text') {
+                $result = $this->extractorService->extractFromText($patternTextInput, $patternSize);
             } else {
                 $result = $this->extractorService->extractFromURL($sourceName, $patternSize);
             }

@@ -214,6 +214,34 @@ PROMPT;
     }
 
     /**
+     * [AI:Claude] Extrait les informations d'un patron depuis du texte collé
+     * directement — notamment le repli promis (mais jamais construit) quand
+     * extractFromURL() échoue avec 'site_blocks_scraping' : le message
+     * d'erreur invite à "copier-coller le texte du patron directement", sans
+     * qu'aucun champ ne permette de le faire. callGeminiWithText() ne dépend
+     * déjà de rien de spécifique à une URL, seul un point d'entrée manquait.
+     */
+    public function extractFromText(string $text, ?string $size = null): array
+    {
+        $startTime = microtime(true);
+
+        if (strlen(trim($text)) < 50) {
+            return $this->errorResponse('Texte trop court pour être analysé.', 0);
+        }
+
+        try {
+            $result = $this->callGeminiWithText($text, $size);
+
+            $processingTime = round((microtime(true) - $startTime) * 1000);
+            $result['processing_time_ms'] = $processingTime;
+
+            return $result;
+        } catch (\Exception $e) {
+            return $this->errorResponse('Erreur lors de l\'analyse: ' . $e->getMessage(), 0);
+        }
+    }
+
+    /**
      * Upload un PDF vers Gemini Files API
      * Retourne l'URI du fichier uploadé (ex: "https://generativelanguage.googleapis.com/v1beta/files/abc123")
      */
