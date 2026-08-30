@@ -83,11 +83,11 @@ export default function CGU() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">4. Offres et tarification</h2>
             <div className="space-y-3">
               <p className="text-gray-700 leading-relaxed">
-                <strong>4.1 Plan GRATUIT :</strong> Accès limité à 3 projets actifs et 5 crédits photos par mois.
+                <strong>4.1 Plan GRATUIT :</strong> Projets illimités, 5 crédits photos par mois.
                 Aucun engagement, aucune carte bancaire requise.
               </p>
               <p className="text-gray-700 leading-relaxed">
-                <strong>4.2 Plan PLUS :</strong> 2,99€/mois ou 29,99€/an. 7 projets actifs, 15 crédits photos/mois,
+                <strong>4.2 Plan PLUS :</strong> 2,99€/mois ou 29,99€/an. Projets illimités, 15 crédits photos/mois,
                 organisation premium, support prioritaire.
               </p>
               <p className="text-gray-700 leading-relaxed">

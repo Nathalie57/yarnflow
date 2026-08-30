@@ -296,49 +296,14 @@ class ProjectController
             if (empty($data['type']))
                 throw new \InvalidArgumentException('La catégorie du projet est obligatoire');
 
-            // [AI:Claude] Vérification des quotas (selon abonnement)
+            // [AI:Claude] Projets illimités sur tous les plans (FREE inclus) — la conversion
+            // payante ne repose pas sur le nombre de projets, cf. pricing landing/subscription
+            // ("Projets & patrons illimités"). Un plafond de 3 projets actifs pour FREE
+            // subsistait ici en contradiction avec ça, jamais retiré.
             $user = $this->userModel->findById($userId);
             if (!$user) {
                 $this->sendResponse(401, ['success' => false, 'error' => 'Utilisateur introuvable']);
                 return;
-            }
-            $userProjects = $this->projectModel->getUserProjects($userId);
-
-            // [AI:Claude] Compter uniquement les projets ACTIFS (non terminés)
-            $activeProjectCount = count(array_filter($userProjects, function($project) {
-                return $project['status'] !== 'completed';
-            }));
-
-            // [AI:Claude] Debug quota
-            error_log("[PROJECT CREATE] User ID: $userId");
-            error_log("[PROJECT CREATE] Subscription: ".$user['subscription_type']);
-            error_log("[PROJECT CREATE] Active projects: $activeProjectCount");
-            error_log("[PROJECT CREATE] Can create: ".($this->canCreateProject($user, $activeProjectCount) ? 'YES' : 'NO'));
-
-            if (!$this->canCreateProject($user, $activeProjectCount)) {
-                // [AI:Claude] Déterminer le vrai type d'abonnement (en tenant compte de l'expiration)
-                $effectiveSubscription = $user['subscription_type'] ?? 'free';
-                if ($effectiveSubscription !== 'free' && isset($user['subscription_expires_at']) && $user['subscription_expires_at'] !== null) {
-                    if (strtotime($user['subscription_expires_at']) <= time()) {
-                        $effectiveSubscription = 'free'; // Abonnement expiré
-                    }
-                }
-
-                $maxProjects = match($effectiveSubscription) {
-                    'free' => 3,
-                    'plus', 'plus_annual' => 7,
-                    default => 999
-                };
-
-                $subscriptionLabel = $effectiveSubscription;
-                if ($effectiveSubscription === 'free' && $user['subscription_type'] !== 'free') {
-                    $subscriptionLabel = 'free (abonnement ' . $user['subscription_type'] . ' expiré)';
-                }
-
-                $upgradeMessage = $effectiveSubscription === 'free'
-                    ? 'Passez à PLUS (2.99€/mois, 7 projets) ou PRO (4.99€/mois, illimité)'
-                    : 'Passez à PRO (4.99€/mois) pour des projets illimités';
-                throw new \Exception("Quota de projets actifs atteint. Vous avez $activeProjectCount projet(s) actif(s), maximum autorisé: $maxProjects (abonnement: {$subscriptionLabel}). Terminez un projet ou $upgradeMessage.");
             }
 
             // [AI:Claude] Préparation des données
@@ -2382,36 +2347,6 @@ class ProjectController
             throw new \Exception('Non authentifié');
 
         return (int)$userData['user_id'];
-    }
-
-    /**
-     * [AI:Claude] Vérifier si l'utilisateur peut créer un projet (quotas v0.14.0 - FREE 3, PLUS 7, PRO illimité)
-     *
-     * @param array $user Données utilisateur
-     * @param int $activeCount Nombre de projets ACTIFS (non terminés)
-     * @return bool Peut créer ou non
-     */
-    private function canCreateProject(array $user, int $activeCount): bool
-    {
-        $subscriptionType = $user['subscription_type'] ?? 'free';
-
-        // [AI:Claude] Vérifier que l'abonnement n'est pas expiré
-        if ($subscriptionType !== 'free' && isset($user['subscription_expires_at']) && $user['subscription_expires_at'] !== null) {
-            $expiresAt = strtotime($user['subscription_expires_at']);
-
-            if ($expiresAt <= time()) {
-                // Abonnement expiré, traiter comme FREE (3 projets actifs max)
-                $subscriptionType = 'free';
-            }
-        }
-
-        // [AI:Claude] Quotas selon le plan
-        return match($subscriptionType) {
-            'free' => $activeCount < 3,
-            'plus', 'plus_annual' => $activeCount < 7,
-            // PRO, PRO_ANNUAL, EARLY_BIRD: projets illimités
-            default => true
-        };
     }
 
     /**
