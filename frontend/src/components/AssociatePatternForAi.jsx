@@ -5,20 +5,28 @@
  * sans jamais toucher aux sections/rangs suivis manuellement (voir
  * ProjectController::linkAiPatternReference() côté backend).
  *
+ * Consomme le même quota que la Création Intelligente classique (voir
+ * ProjectController::linkAiPatternReference()) — jamais déclenché sans une
+ * confirmation explicite de l'utilisatrice, même quand un patron est déjà
+ * attaché et qu'il n'y a "rien d'autre à choisir" : consommer un crédit
+ * limité sans prévenir serait trompeur.
+ *
  * Si le projet a déjà un patron attaché (fichier importé ou URL, via l'onglet
- * Patron classique), on l'analyse automatiquement — pas de choix proposé,
- * puisqu'il n'y a rien d'autre à faire que réutiliser ce qui existe déjà.
- * Sinon, les 4 mêmes modes d'import que la Création Intelligente (PDF, URL,
- * texte collé, bibliothèque) sont proposés, sans étape de relecture : on
- * enregistre directement le résultat pour que l'assistant puisse démarrer.
+ * Patron classique), un seul bouton de confirmation suffit (pas de choix de
+ * source à faire, juste valider). Sinon, les 4 mêmes modes d'import que la
+ * Création Intelligente (PDF, URL, texte collé, bibliothèque) sont proposés,
+ * sans étape de relecture : on enregistre directement le résultat pour que
+ * l'assistant puisse démarrer.
  */
 
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import api from '../services/api'
+import { useAlert } from '../hooks/useAlert'
 
 const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
   const { t } = useTranslation('counter')
+  const { showConfirm, AlertModals } = useAlert()
   const [busy, setBusy] = useState(false)
   const [feedback, setFeedback] = useState(null) // { type: 'success' | 'error', text }
   const [mode, setMode] = useState(null) // null | 'pdf' | 'url' | 'text' | 'library'
@@ -29,7 +37,14 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
   const [pastedTextSourceUrl, setPastedTextSourceUrl] = useState('')
   const [libraryPatterns, setLibraryPatterns] = useState([])
   const [loadingLibrary, setLoadingLibrary] = useState(false)
+  const [quotaRemaining, setQuotaRemaining] = useState(null)
   const fileRef = useRef(null)
+
+  useEffect(() => {
+    api.get('/projects/smart-create/quota')
+      .then(res => setQuotaRemaining(res.data?.quota?.remaining ?? null))
+      .catch(() => {})
+  }, [])
 
   const existingSource = project?.pattern_url
     ? { type: 'url', value: project.pattern_url }
@@ -65,9 +80,10 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
     }
   }
 
-  // [AI:Claude] Patron déjà attaché : on l'analyse directement, aucun choix à faire.
-  useEffect(() => {
-    if (!existingSource || busy || feedback) return
+  // [AI:Claude] Patron déjà attaché : rien à choisir, mais l'analyse consomme quand
+  // même un crédit — un clic de confirmation explicite reste nécessaire.
+  const analyzeExisting = () => {
+    if (!existingSource || busy) return
     if (existingSource.type === 'url') {
       const formData = new FormData()
       formData.append('url', existingSource.value)
@@ -87,8 +103,7 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
         setFeedback({ type: 'error', text: t('ui.aiHelpAnalyzeFailed') })
         setBusy(false)
       })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
 
   const loadLibrary = async () => {
     setMode('library')
@@ -133,7 +148,25 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
     analyzeAndLink(formData)
   }
 
-  // [AI:Claude] Patron déjà attaché : analyse automatique, pas de choix affiché.
+  // [AI:Claude] Aucun moyen de nettoyer une entrée de bibliothèque (ex: test, doublon)
+  // sans quitter ce picker pour la page "Ma bibliothèque" — autant le permettre ici.
+  const handleDeleteLibraryPattern = (pattern) => {
+    showConfirm({
+      message: t('ui.confirmDeleteLibraryPattern', { name: pattern.name }),
+      onConfirm: async () => {
+        try {
+          await api.delete(`/pattern-library/${pattern.id}`)
+          setLibraryPatterns(prev => prev.filter(p => p.id !== pattern.id))
+        } catch {
+          setFeedback({ type: 'error', text: t('ui.aiHelpAnalyzeFailed') })
+        }
+      },
+      title: t('ui.deletePattern')
+    })
+  }
+
+  // [AI:Claude] Patron déjà attaché : rien à choisir comme source, mais l'analyse
+  // consomme un crédit — un bouton de confirmation explicite reste nécessaire.
   if (existingSource) {
     return (
       <div>
@@ -142,12 +175,40 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
           <p className={`text-sm ${feedback.type === 'success' ? 'text-green-700' : 'text-amber-700'}`}>
             {feedback.text}
           </p>
-        ) : (
+        ) : busy ? (
           <p className="text-sm text-gray-500 flex items-center gap-2">
             <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
             {t('ui.aiHelpAnalyzingExisting')}
           </p>
+        ) : (
+          <div>
+            <p className="text-xs text-gray-500 mb-3">
+              {quotaRemaining !== null ? t('ui.aiHelpCreditCost', { count: quotaRemaining }) : t('ui.aiHelpCreditCostGeneric')}
+            </p>
+            <button
+              type="button"
+              onClick={analyzeExisting}
+              className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition"
+            >
+              {t('ui.aiHelpAnalyzeExistingCta')}
+            </button>
+          </div>
         )}
+      </div>
+    )
+  }
+
+  // [AI:Claude] L'analyse (upload PDF/URL/bibliothèque) peut prendre plusieurs dizaines
+  // de secondes (Gemini) — sans indicateur, l'écran semblait figé (boutons désactivés,
+  // rien d'autre) une fois qu'on avait choisi une source.
+  if (busy) {
+    return (
+      <div>
+        <p className="text-sm text-gray-600 mb-3">{t('ui.aiHelpPatternDesc')}</p>
+        <p className="text-sm text-gray-500 flex items-center gap-2">
+          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+          {t('ui.aiHelpAnalyzing')}
+        </p>
       </div>
     )
   }
@@ -162,7 +223,11 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
       )}
 
       {mode === null && (
-        <div className="grid grid-cols-2 gap-2">
+        <>
+          <p className="text-xs text-gray-500 mb-2">
+            {quotaRemaining !== null ? t('ui.aiHelpCreditCost', { count: quotaRemaining }) : t('ui.aiHelpCreditCostGeneric')}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
@@ -199,7 +264,8 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
             <div className="text-sm font-medium text-gray-900">{t('ui.myLibrary')}</div>
             <div className="text-xs text-gray-500">{t('ui.patternAlreadyInLibrary')}</div>
           </button>
-        </div>
+          </div>
+        </>
       )}
 
       {mode === 'url' && (
@@ -271,15 +337,24 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
               <p className="text-sm text-gray-500 p-3">{t('ui.noPdfPattern')}</p>
             ) : (
               libraryPatterns.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => handleLibrarySelect(p)}
-                  disabled={busy}
-                  className="w-full text-left px-3 py-2.5 text-sm hover:bg-gray-50 disabled:opacity-60"
-                >
-                  {p.name}
-                </button>
+                <div key={p.id} className="w-full flex items-center gap-2 hover:bg-gray-50">
+                  <button
+                    type="button"
+                    onClick={() => handleLibrarySelect(p)}
+                    disabled={busy}
+                    className="flex-1 text-left px-3 py-2.5 text-sm disabled:opacity-60"
+                  >
+                    {p.name}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteLibraryPattern(p)}
+                    disabled={busy}
+                    className="px-2 text-gray-400 hover:text-red-500 disabled:opacity-60"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
+                </div>
               ))
             )}
           </div>
@@ -290,6 +365,7 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
       )}
 
       <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={handleFile} />
+      <AlertModals />
     </div>
   )
 }

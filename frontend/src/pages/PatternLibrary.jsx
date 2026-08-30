@@ -14,6 +14,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
+import { useAlert } from '../hooks/useAlert'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
 import UpgradePrompt from '../components/UpgradePrompt'
@@ -24,6 +25,7 @@ import { apiErrorMessage } from '../utils/apiError'
 const PatternLibrary = () => {
   const { t } = useTranslation('library')
   const { user } = useAuth()
+  const { showAlert, showConfirm, AlertModals } = useAlert()
   const isPro = user?.subscription_type && user.subscription_type !== 'free'
   const [showUpgradeLibrary, setShowUpgradeLibrary] = useState(false)
   const [patterns, setPatterns] = useState([])
@@ -332,17 +334,19 @@ const PatternLibrary = () => {
     }
   }
 
-  const handleDelete = async (patternId) => {
-    if (!confirm(t('ui.confirmDeletePattern')))
-      return
-
-    try {
-      await api.delete(`/pattern-library/${patternId}`)
-      setPatterns(patterns.filter(p => p.id !== patternId))
-    } catch (err) {
-      console.error('Erreur suppression:', err)
-      alert(t('ui.patternDeleteFailed'))
-    }
+  const handleDelete = (patternId) => {
+    showConfirm({
+      message: t('ui.confirmDeletePattern'),
+      onConfirm: async () => {
+        try {
+          await api.delete(`/pattern-library/${patternId}`)
+          setPatterns(patterns.filter(p => p.id !== patternId))
+        } catch (err) {
+          console.error('Erreur suppression:', err)
+          showAlert({ message: t('ui.patternDeleteFailed'), type: 'error' })
+        }
+      }
+    })
   }
 
   const handleEditPattern = (pattern) => {
@@ -815,9 +819,17 @@ const PatternLibrary = () => {
 
                   {/* Contenu */}
                   <div className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1">
-                      {pattern.name}
-                    </h3>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">
+                        {pattern.name}
+                      </h3>
+                      <button
+                        onClick={() => handleDelete(pattern.id)}
+                        className="shrink-0 text-gray-400 hover:text-red-500 transition"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
+                    </div>
 
                     {pattern.description && (
                       <p className="text-sm text-gray-600 mb-3 line-clamp-2">
@@ -1636,6 +1648,7 @@ const PatternLibrary = () => {
         onClose={() => setShowUpgradeLibrary(false)}
         feature="pattern_library"
       />
+      <AlertModals />
     </div>
   )
 }

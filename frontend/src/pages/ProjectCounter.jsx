@@ -1425,6 +1425,23 @@ const ProjectCounter = () => {
     }
   }
 
+// [AI:Claude] Retirer le patron du projet (fichier, URL ou texte)
+  const handleDeletePattern = () => {
+    showConfirm({
+      message: t('alerts.confirmDeletePattern'),
+      onConfirm: async () => {
+        try {
+          await api.delete(`/projects/${projectId}/pattern`)
+          await fetchProject()
+        } catch (err) {
+          console.error('Erreur suppression patron:', err)
+          showAlert({ message: t('alerts.patternDeleteFailed'), type: 'error' })
+        }
+      },
+      title: t('alerts.confirmDeletePatternTitle')
+    })
+  }
+
 // [AI:Claude] Supprimer une photo
   const handleDeletePhoto = (photoId) => {
     showConfirm({
@@ -5410,6 +5427,15 @@ const ProjectCounter = () => {
                 <div>
             {project.pattern_text || project.pattern_path || project.pattern_url ? (
               <div>
+                <div className="flex justify-end mb-3">
+                  <button
+                    onClick={handleDeletePattern}
+                    className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1.5"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    {t('ui.deletePattern')}
+                  </button>
+                </div>
                 {/* Affichage du patron selon le type */}
                 <div className="mb-4">
                   {project.pattern_url ? (

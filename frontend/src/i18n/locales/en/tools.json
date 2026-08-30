@@ -640,7 +640,7 @@
     "createNewEntryAnyway": "Create a new entry anyway",
     "tagInputHint": "Press Enter or comma to add a tag (2-50 characters)",
     "goProPrice": "Upgrade to PRO — €6.99/month",
-    "askYourQuestion": "Ask your knitting or crochet question 🧶",
+    "askYourQuestion": "Ask your knitting or crochet question",
     "convertsAnyImage": "Turns any image (photo, logo, drawing) into a pixel-art style colourwork chart. Unlike \"Import a chart\", this does not detect an existing chart — it creates a new one from the image. The result may need a few manual tweaks (retouching cells, merging colours).",
     "saveArrow": "Save →",
     "checkLabel": "Check:",

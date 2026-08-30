@@ -931,6 +931,60 @@ class ProjectController
     }
 
     /**
+     * [AI:Claude] DELETE /api/projects/{id}/pattern - Retirer le patron du projet
+     * (fichier, URL ou texte) — aucune interface ne permettait jusqu'ici de revenir en
+     * arrière une fois un patron attaché, seulement de le remplacer par un autre.
+     * Retire aussi le lien vers l'assistant IA (ai_pattern_imports.project_id) : sans
+     * ça, l'assistant continuerait à répondre à partir d'un patron qui n'est plus
+     * affiché nulle part, et "Je bloque sur ce rang" ne repropose jamais d'en associer
+     * un nouveau puisque has_ai_pattern_reference resterait vrai.
+     *
+     * @param int $id ID du projet
+     * @return void JSON response
+     */
+    public function deletePattern(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($id, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $project = $this->projectModel->getProjectById($id);
+            if (!empty($project['pattern_path'])) {
+                $absolutePath = __DIR__ . '/../public' . $project['pattern_path'];
+                if (file_exists($absolutePath)) {
+                    unlink($absolutePath);
+                }
+            }
+
+            $this->projectModel->updateProject($id, [
+                'pattern_path' => null,
+                'pattern_url' => null,
+                'pattern_text' => null
+            ]);
+
+            $db = \App\Config\Database::getInstance()->getConnection();
+            $stmt = $db->prepare('UPDATE ai_pattern_imports SET project_id = NULL WHERE project_id = :pid');
+            $stmt->execute(['pid' => $id]);
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => 'Patron retiré du projet',
+                'project' => $this->projectModel->getProjectById($id)
+            ]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la suppression du patron',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * [AI:Claude] POST /api/projects/{id}/pattern - Importer un fichier patron (PDF ou image)
      *
      * @param int $id ID du projet
