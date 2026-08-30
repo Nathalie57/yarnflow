@@ -1,13 +1,13 @@
-import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Navbar from './Navbar'
 import BottomNav from './BottomNav'
 import AiAssistantDrawer from './AiAssistantDrawer'
 import PushNotificationBanner from './PushNotificationBanner'
 import PendingCheckoutBanner from './PendingCheckoutBanner'
+import { useAiAssistant } from '../contexts/AiAssistantContext'
 
 const Layout = () => {
-  const [aiOpen, setAiOpen] = useState(false)
+  const { open, openGeneral, close } = useAiAssistant()
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -17,8 +17,8 @@ const Layout = () => {
       <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
         <Outlet />
       </main>
-      <BottomNav onOpenAi={() => setAiOpen(true)} />
-      <AiAssistantDrawer open={aiOpen} onClose={() => setAiOpen(false)} />
+      <BottomNav onOpenAi={openGeneral} />
+      <AiAssistantDrawer open={open} onClose={close} />
     </div>
   )
 }

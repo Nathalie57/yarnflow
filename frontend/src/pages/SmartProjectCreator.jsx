@@ -307,13 +307,17 @@ export default function SmartProjectCreator() {
         // [AI:Claude] Le mode 'url' avec repli texte collé (Cloudflare bloque le scraping)
         // est en réalité une analyse de texte, pas d'URL — source_type doit refléter la
         // vraie source analysée pour que confirm() sache où ranger le patron (pattern_text
-        // vs pattern_url), pas juste l'onglet UI choisi au départ.
+        // vs pattern_url), pas juste l'onglet UI choisi au départ. Dans ce cas précis (mode
+        // 'url' + repli texte), on garde quand même la vraie URL dans source_url plutôt
+        // qu'un extrait du texte collé — sinon le lien vers le patron d'origine est perdu.
         source_type: (mode === 'text' || pastedText.trim()) ? 'text' : mode,
         source_url: mode === 'pdf'
           ? file?.name
           : mode === 'library'
             ? selectedLibraryPattern?.name
-            : (mode === 'text' || pastedText.trim()) ? pastedText.trim().slice(0, 80) : url,
+            : mode === 'url' && pastedText.trim()
+              ? url
+              : (mode === 'text' || pastedText.trim()) ? pastedText.trim().slice(0, 80) : url,
         pattern_text: (mode === 'text' || pastedText.trim()) ? pastedText.trim() : undefined,
         analyze_metadata: analyzeMetadata
       })

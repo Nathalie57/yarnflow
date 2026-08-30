@@ -3,6 +3,7 @@ import { useEffect, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AuthProvider } from './contexts/AuthContext'
 import { HintsProvider } from './contexts/HintsContext'
+import { AiAssistantProvider } from './contexts/AiAssistantContext'
 import PrivateRoute from './components/PrivateRoute'
 import PWAPrompt from './components/PWAPrompt'
 import ContextualHint from './components/ContextualHint'
@@ -168,6 +169,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <HintsProvider>
+        <AiAssistantProvider>
         <AnalyticsTracker />
         <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
@@ -292,6 +294,7 @@ function App() {
             {t('cookie.privacyPolicy')}
           </a>
         </CookieConsent>
+        </AiAssistantProvider>
         </HintsProvider>
       </AuthProvider>
     </BrowserRouter>

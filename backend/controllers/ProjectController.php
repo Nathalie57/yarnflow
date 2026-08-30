@@ -419,15 +419,25 @@ class ProjectController
                 return;
             }
 
+            $db = \App\Config\Database::getInstance()->getConnection();
+
             // [AI:Claude] v0.15.0 - Ajouter les tags si l'utilisateur a la permission
             if ($this->userModel->canUseTags($userId)) {
-                $db = \App\Config\Database::getInstance()->getConnection();
                 $tagStmt = $db->prepare("SELECT tag_name FROM project_tags WHERE project_id = ? ORDER BY tag_name ASC");
                 $tagStmt->execute([$id]);
                 $project['tags'] = array_column($tagStmt->fetchAll(\PDO::FETCH_ASSOC), 'tag_name');
             } else {
                 $project['tags'] = [];
             }
+
+            // [AI:Claude] Indique si l'assistant contextuel a un patron à lire pour ce projet
+            // (via SmartProjectController::analyze() ou ProjectController::linkAiPatternReference())
+            // — sert à décider si "Je bloque sur ce rang" ouvre le chat ou propose d'abord
+            // d'associer le patron, pour ne pas gaspiller le quota de questions IA sur des
+            // réponses qui ne pourraient de toute façon pas être précises.
+            $refStmt = $db->prepare('SELECT 1 FROM ai_pattern_imports WHERE project_id = :pid LIMIT 1');
+            $refStmt->execute([':pid' => $id]);
+            $project['has_ai_pattern_reference'] = (bool)$refStmt->fetchColumn();
 
             $this->sendResponse(200, [
                 'success' => true,
@@ -1449,6 +1459,95 @@ class ProjectController
             $this->sendResponse(500, [
                 'success' => false,
                 'error' => 'Erreur lors du lien du patron',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] POST /api/projects/{id}/link-pattern-reference
+     * Associe une analyse IA déjà effectuée (SmartProjectController::analyze(), import_id
+     * renvoyé) à un projet EXISTANT — pour que l'assistant contextuel connaisse le patron,
+     * typiquement un projet créé à la main. N'écrit jamais dans project_sections/project_rows,
+     * qui restent la seule source de vérité de la progression suivie par l'utilisatrice ; le
+     * patron associé n'est qu'une référence en lecture seule consultée par l'assistant.
+     * Consomme le même quota que la Création Intelligente classique : ce lien est ce qui fait
+     * compter l'analyse (voir SmartProjectController::getSmartImportPlan(), filtre
+     * `project_id IS NOT NULL` sur ai_pattern_imports).
+     *
+     * @param int $id ID du projet
+     * @return void JSON response
+     */
+    public function linkAiPatternReference(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+
+            if (!$this->projectModel->belongsToUser($id, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            if (empty($data['import_id']))
+                throw new \InvalidArgumentException('ID d\'analyse manquant');
+
+            $importId = (int)$data['import_id'];
+
+            $db = \App\Config\Database::getInstance()->getConnection();
+            $stmt = $db->prepare(
+                'UPDATE ai_pattern_imports SET project_id = :project_id
+                 WHERE id = :import_id AND user_id = :user_id'
+            );
+            $stmt->execute([
+                'project_id' => $id,
+                'import_id'  => $importId,
+                'user_id'    => $userId,
+            ]);
+
+            if ($stmt->rowCount() === 0)
+                throw new \InvalidArgumentException('Analyse introuvable');
+
+            // [AI:Claude] Même logique que SmartProjectController::confirm() : le patron
+            // analysé doit rester consultable dans l'onglet "Patron" du projet, pas juste
+            // servir de contexte à l'assistant IA. Ne jamais écraser un patron déjà attaché
+            // (ex: ré-analyse volontaire du même document) — uniquement combler l'absence.
+            $currentProject = $this->projectModel->getProjectById($id);
+            if (empty($currentProject['pattern_path']) && empty($currentProject['pattern_url']) && empty($currentProject['pattern_text'])) {
+                $importStmt = $db->prepare(
+                    'SELECT source_type, source_name, source_file_path FROM ai_pattern_imports WHERE id = :id'
+                );
+                $importStmt->execute(['id' => $importId]);
+                $import = $importStmt->fetch(\PDO::FETCH_ASSOC);
+
+                if ($import) {
+                    if (!empty($import['source_file_path'])) {
+                        $this->projectModel->updateProject($id, ['pattern_path' => $import['source_file_path']]);
+                    } elseif ($import['source_type'] === 'url' && !empty($import['source_name'])) {
+                        $this->projectModel->updateProject($id, ['pattern_url' => $import['source_name']]);
+                    } elseif ($import['source_type'] === 'text' && !empty($data['pattern_text'])) {
+                        $textUpdate = ['pattern_text' => trim($data['pattern_text'])];
+                        // [AI:Claude] Texte collé faute de pouvoir scraper le site (ex: Cloudflare) —
+                        // garder le lien d'origine pour le retrouver facilement, même si le contenu
+                        // affiché dans l'onglet Patron reste le texte.
+                        if (empty($currentProject['source_url']) && !empty($data['source_url'])) {
+                            $textUpdate['source_url'] = trim($data['source_url']);
+                        }
+                        $this->projectModel->updateProject($id, $textUpdate);
+                    }
+                }
+            }
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'message' => 'Patron associé au projet',
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            $this->sendResponse(400, ['success' => false, 'error' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de l\'association du patron',
                 'message' => $e->getMessage()
             ]);
         }

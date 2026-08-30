@@ -188,6 +188,7 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^projects\/(\d+)\/pattern-url$/', $uri, $matches) => (new ProjectController())->savePatternUrl((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/pattern-text$/', $uri, $matches) => (new ProjectController())->savePatternText((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/pattern-from-library$/', $uri, $matches) => (new ProjectController())->linkPatternFromLibrary((int)$matches[1]),
+        $method === 'POST' && preg_match('/^projects\/(\d+)\/link-pattern-reference$/', $uri, $matches) => (new ProjectController())->linkAiPatternReference((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/photo$/', $uri, $matches) => (new ProjectController())->uploadPhoto((int)$matches[1]),
         $method === 'PUT' && preg_match('/^projects\/(\d+)\/set-cover-photo$/', $uri, $matches) => (new ProjectController())->setCoverPhoto((int)$matches[1]),
         $method === 'PUT' && preg_match('/^projects\/(\d+)\/counter-unit$/', $uri, $matches) => (new ProjectController())->switchCounterUnit((int)$matches[1]),

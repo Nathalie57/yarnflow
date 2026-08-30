@@ -243,6 +243,7 @@ class Project extends BaseModel
             'yarn_brand', 'yarn_color', 'yarn_weight', 'hook_size', 'yarn_used_grams',
             'notes', 'pattern_notes', 'is_public', 'is_favorite', 'completed_at',
             'pattern_path', 'pattern_url', 'pattern_text', 'pattern_library_id', // [AI:Claude] v0.13.0 - Support texte patron
+            'source_url', // [AI:Claude] Lien d'origine du patron gardé même quand le contenu affiché est du texte collé (repli Cloudflare)
             'technical_details', // [AI:Claude] v0.13.0 - Détails techniques structurés (laine, aiguilles, échantillon)
             'secondary_label', 'secondary_target', 'secondary_count', // [AI:Claude] Sync compteur secondaire multi-appareils
             'reminders', 'deadline' // Rappels de rang + objectif de date

@@ -13,6 +13,7 @@ use App\Middleware\AuthMiddleware;
 use App\Config\Database;
 use GuzzleHttp\Client;
 use PDO;
+use App\Services\RateLimiter;
 
 class AiAssistantController
 {
@@ -97,27 +98,54 @@ class AiAssistantController
                 return;
             }
 
-            // Vérifier quota mensuel (FREE = 5/mois, PRO = 30/mois)
             $plan = $user['subscription_type'] ?? 'free';
             if (!$this->hasActiveSubscription($user)) $plan = 'free';
-            $limit = self::LIMITS[$plan] ?? 5;
-            $month = date('Y-m');
-            $used = $this->getMonthlyUsage($userId, $month);
-
-            if ($used >= $limit) {
-                $this->sendResponse(429, [
-                    'error' => "Limite mensuelle atteinte ({$limit} messages). Revenez le mois prochain.",
-                    'error_code' => 'ai_monthly_limit',
-                    'error_params' => ['count' => $limit],
-                    'limit_reached' => true,
-                    'limit' => $limit,
-                    'used' => $used
-                ]);
-                return;
-            }
 
             $data = $this->getJsonInput();
             $messages = $data['messages'] ?? [];
+            $projectId = isset($data['project_id']) ? (int)$data['project_id'] : null;
+
+            // [AI:Claude] Une question contextuelle ("Je bloque sur ce rang") n'est PAS
+            // décomptée du quota mensuel affiché — coût réel négligeable (~0,002 $/question),
+            // donc un simple plafond de débit invisible (20/24h) plutôt qu'un compteur qui se
+            // vide et crée une barrière psychologique sur un usage normal. Le quota mensuel
+            // classique reste inchangé pour l'assistant général (hors contexte projet).
+            $isContextualRequest = $projectId !== null;
+            $limit = null;
+            $used = null;
+
+            if ($isContextualRequest) {
+                $rateLimiter = new RateLimiter();
+                if (!$rateLimiter->check('ai_contextual', "user:{$userId}")) {
+                    $this->sendResponse(429, [
+                        'error' => "Tu as posé beaucoup de questions aujourd'hui — réessaie un peu plus tard.",
+                        'error_code' => 'ai_rate_limited',
+                        'limit_reached' => true
+                    ]);
+                    return;
+                }
+            } else {
+                // Vérifier quota mensuel (FREE = 5/mois, PRO = 30/mois)
+                $limit = self::LIMITS[$plan] ?? 5;
+                $month = date('Y-m');
+                $used = $this->getMonthlyUsage($userId, $month);
+
+                if ($used >= $limit) {
+                    $this->sendResponse(429, [
+                        'error' => "Limite mensuelle atteinte ({$limit} messages). Revenez le mois prochain.",
+                        'error_code' => 'ai_monthly_limit',
+                        'error_params' => ['count' => $limit],
+                        'limit_reached' => true,
+                        'limit' => $limit,
+                        'used' => $used
+                    ]);
+                    return;
+                }
+            }
+
+            // [AI:Claude] Contexte projet — ignoré silencieusement si le projet n'appartient
+            // pas à l'utilisateur ou n'existe plus, plutôt que de faire échouer tout le chat
+            $projectContext = $projectId ? $this->buildProjectContext($projectId, $userId) : null;
 
             if (empty($messages)) {
                 $this->sendResponse(400, ['error' => 'Messages manquants']);
@@ -157,10 +185,14 @@ class AiAssistantController
                     'headers' => ['content-type' => 'application/json'],
                     'json' => [
                         'systemInstruction' => [
-                            'parts' => [['text' => $this->getSystemPrompt($plan)]]
+                            'parts' => [['text' => $this->getSystemPrompt($plan, $projectContext)]]
                         ],
                         'contents' => $geminiContents,
-                        'generationConfig' => ['maxOutputTokens' => 1024]
+                        // [AI:Claude] Un patron détaillé + la consigne de toujours donner des
+                        // pistes concrètes (jamais juste une clarification) dépassait souvent
+                        // 1024 tokens et coupait la réponse en plein milieu — d'autant plus
+                        // maintenant qu'on demande aussi les suggestions de suivi à la fin.
+                        'generationConfig' => ['maxOutputTokens' => $isContextualRequest ? 2048 : 1024]
                     ]
                 ]
             );
@@ -168,13 +200,27 @@ class AiAssistantController
             $result = json_decode($response->getBody()->getContents(), true);
             $reply = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
 
-            // Incrémenter le compteur après succès
-            $this->incrementUsage($userId, $month);
-            $remaining = $limit - $used - 1;
+            // [AI:Claude] Suggestions de questions de suivi (mode contextuel uniquement) —
+            // demandées au modèle dans le même appel via un délimiteur en fin de réponse,
+            // séparées ici pour ne jamais les afficher comme texte brut si le parsing échoue.
+            $suggestions = [];
+            if (preg_match('/###SUGGESTIONS###\s*(.+)$/is', $reply, $matches)) {
+                $reply = trim(substr($reply, 0, strpos($reply, '###SUGGESTIONS###')));
+                $suggestions = array_values(array_filter(array_map('trim', explode("\n", $matches[1]))));
+            }
+
+            // [AI:Claude] Le quota mensuel n'est décompté que pour l'assistant général —
+            // une question contextuelle n'a pas de compteur à faire remonter au frontend.
+            $usagePayload = null;
+            if (!$isContextualRequest) {
+                $this->incrementUsage($userId, $month);
+                $usagePayload = ['used' => $used + 1, 'limit' => $limit, 'remaining' => $limit - $used - 1];
+            }
 
             $this->sendResponse(200, [
                 'reply' => $reply,
-                'usage' => ['used' => $used + 1, 'limit' => $limit, 'remaining' => $remaining]
+                'suggestions' => $suggestions,
+                'usage' => $usagePayload
             ]);
 
         } catch (\GuzzleHttp\Exception\ClientException $e) {
@@ -184,7 +230,7 @@ class AiAssistantController
         }
     }
 
-    private function getSystemPrompt(string $plan = 'free'): string
+    private function getSystemPrompt(string $plan = 'free', ?string $projectContext = null): string
     {
         $isFree = ($plan === 'free');
 
@@ -199,6 +245,10 @@ Si ta réponse soulève naturellement un besoin couvert par PRO (ex: gérer un g
         } else {
             $planContext = "L'utilisateur est abonné PRO — il a accès à toutes les fonctionnalités. Ne mentionne aucune limitation.";
         }
+
+        $projectContextBlock = $projectContext !== null
+            ? "\n═══════════════════════════════════════\nCONTEXTE PROJET ACTUEL\n═══════════════════════════════════════\n{$projectContext}\n\nRéponds en tenant compte de ce contexte précis — pas besoin de redemander où en est l'utilisateur, tu le sais déjà. Le nom de la section qu'elle suit peut ne pas correspondre mot pour mot au découpage du patron fourni en référence (langue différente, découpage différent, patron associé après coup à un projet créé à la main) — base-toi sur le sens et sur sa progression en rangs/mailles pour identifier la bonne portion du patron, pas sur une correspondance exacte de nom.\n\nMême face à une question vague (\"je pense avoir fait une erreur\", \"ça ne va pas\"), NE TE CONTENTE JAMAIS de renvoyer une question de clarification sans rien apporter d'autre : donne toujours au moins une ou deux pistes de vérification concrètes tirées du contexte ci-dessus (nombre de mailles/rangs attendu à ce stade, points de vigilance typiques de cette étape du patron, erreur fréquente à cet endroit précis), et pose ta question de clarification EN PLUS de ça, pas à sa place.\n\nÀ la TOUTE FIN de chaque réponse, ajoute impérativement un bloc de 2 à 3 suggestions de questions de suivi, courtes (moins de 8 mots), qui découlent naturellement de ce que tu viens de dire (pas des questions génériques sur le tricot/crochet en général) — au format exact suivant, sur ses propres lignes, rien après :\n###SUGGESTIONS###\nQuestion de suivi 1\nQuestion de suivi 2\n"
+            : '';
 
         return <<<PROMPT
 Tu es un assistant expert en tricot et crochet, intégré dans YarnFlow, une application de gestion de projets textile.
@@ -239,10 +289,86 @@ FORMAT DES RÉPONSES
 CONTEXTE YARNFLOW
 ═══════════════════════════════════════
 L'utilisateur gère ses projets dans YarnFlow. Il peut te parler de son projet en cours (sections, rangs, patron importé).
-Si le contexte projet est fourni dans la conversation, tiens-en compte pour personnaliser ta réponse.
-
+$projectContextBlock
 $planContext
 PROMPT;
+    }
+
+    /**
+     * [AI:Claude] Construit le contexte texte du projet actif pour l'assistant contextuel.
+     * Lit uniquement — ne modifie jamais project_sections/project_rows, qui restent la
+     * source de vérité de la progression réelle de l'utilisatrice. Le patron associé
+     * (ai_pattern_imports.ai_response_json, lié via ProjectController::linkAiPatternReference())
+     * est fourni tel quel en référence : pas de tentative de faire correspondre
+     * programmatiquement ses sections à celles suivies manuellement — un LLM fait ce
+     * rapprochement nativement à partir du contexte, plus fiable qu'un matching par nom.
+     */
+    private function buildProjectContext(int $projectId, int $userId): ?string
+    {
+        $stmt = $this->db->prepare('SELECT id, name, current_section_id FROM projects WHERE id = :id AND user_id = :uid');
+        $stmt->execute([':id' => $projectId, ':uid' => $userId]);
+        $project = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$project) return null;
+
+        $section = null;
+        if ($project['current_section_id']) {
+            $stmt = $this->db->prepare(
+                'SELECT name, description, current_row, total_rows, counter_unit FROM project_sections WHERE id = :id'
+            );
+            $stmt->execute([':id' => $project['current_section_id']]);
+            $section = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        }
+        if (!$section) {
+            $stmt = $this->db->prepare(
+                'SELECT name, description, current_row, total_rows, counter_unit FROM project_sections
+                 WHERE project_id = :pid ORDER BY display_order ASC LIMIT 1'
+            );
+            $stmt->execute([':pid' => $projectId]);
+            $section = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        }
+
+        $lines = ["Projet : {$project['name']}"];
+        if ($section) {
+            $unit = $section['counter_unit'] === 'cm' ? 'cm' : 'rangs';
+            $progress = $section['total_rows']
+                ? "{$section['current_row']}/{$section['total_rows']} {$unit}"
+                : "{$section['current_row']} {$unit}";
+            $lines[] = "Section active : {$section['name']} — progression : {$progress}";
+            if (!empty($section['description'])) {
+                $lines[] = "Instructions de cette section :\n" . $section['description'];
+            }
+        } else {
+            $lines[] = "Aucune section définie pour ce projet.";
+        }
+
+        $stmt = $this->db->prepare(
+            'SELECT ai_response_json, pattern_size FROM ai_pattern_imports WHERE project_id = :pid ORDER BY created_at DESC LIMIT 1'
+        );
+        $stmt->execute([':pid' => $projectId]);
+        $importRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($importRow) {
+            // [AI:Claude] Taille choisie à l'analyse (ex: "Préma" sur un patron multi-tailles) —
+            // sans ça, l'assistant devait deviner laquelle des valeurs "56-62-74-80..." du texte
+            // du patron s'applique, au lieu de le savoir avec certitude.
+            if (!empty($importRow['pattern_size'])) {
+                $lines[] = "Taille choisie pour ce patron : {$importRow['pattern_size']}. Si le patron liste plusieurs valeurs pour un même nombre de mailles/rangs (ex: \"56-62-74-80-86-93-100\" pour plusieurs tailles), utilise UNIQUEMENT celle qui correspond à cette taille précise — jamais la première par défaut.";
+            }
+
+            $parsed = json_decode($importRow['ai_response_json'] ?? '', true);
+            $patternSections = $parsed['sections'] ?? [];
+            if (!empty($patternSections)) {
+                $patternText = '';
+                foreach ($patternSections as $s) {
+                    $patternText .= '### ' . ($s['name'] ?? '?') . "\n" . ($s['description'] ?? '') . "\n\n";
+                }
+                // [AI:Claude] Plafond pour ne pas exploser le coût/contexte sur un très long patron
+                $patternText = mb_substr(trim($patternText), 0, 6000);
+                $lines[] = "Patron complet associé au projet (référence — peut couvrir des sections au-delà de celle suivie ci-dessus) :\n" . $patternText;
+            }
+        }
+
+        return implode("\n\n", $lines);
     }
 
     private function containsInjection(string $text): bool

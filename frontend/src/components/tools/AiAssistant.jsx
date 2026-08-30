@@ -34,7 +34,7 @@ const MarkdownText = ({ text }) => {
         if (/^\d+\.\s/.test(line))
           return <p key={i} className="pl-3">{renderInline(line)}</p>
 
-        if (/^[-•]\s/.test(line))
+        if (/^[-•*]\s/.test(line))
           return <p key={i} className="pl-3">· {renderInline(line.slice(2))}</p>
 
         return <p key={i}>{renderInline(line)}</p>
@@ -46,8 +46,12 @@ const MarkdownText = ({ text }) => {
 // cles seulement : les libelles sont resolus au rendu, sinon ils se figeraient
 // dans la langue du premier chargement (et t n'existe pas ici)
 const SUGGESTION_KEYS = ['aiQ1', 'aiQ2', 'aiQ3', 'aiQ4', 'aiQ5', 'aiQ6']
+// [AI:Claude] En mode contextuel, les suggestions génériques ("Comment faire un SSK ?")
+// n'ont plus de sens — l'utilisatrice vient d'un rang précis, les suggestions doivent
+// s'appuyer sur ce contexte plutôt que de proposer une question sans rapport.
+const CONTEXTUAL_SUGGESTION_KEYS = ['aiCtxQ1', 'aiCtxQ2', 'aiCtxQ3', 'aiCtxQ4']
 
-export default function AiAssistant() {
+export default function AiAssistant({ projectId, projectLabel, open } = {}) {
   const { t } = useTranslation('tools')
   const { hasActiveSubscription , getSubscriptionPlan } = useAuth()
   const isPro = hasActiveSubscription()
@@ -58,14 +62,45 @@ export default function AiAssistant() {
 
   const currentPlan = getSubscriptionPlan ? getSubscriptionPlan() : (isPro ? 'pro' : 'free')
 
-  const STORAGE_KEY = 'ai_assistant_messages'
+  const GENERAL_STORAGE_KEY = 'ai_assistant_messages'
+  // [AI:Claude] Une session contextuelle (ouverte depuis un projet) a sa propre clé de
+  // stockage, distincte de l'historique général — sinon des questions génériques passées
+  // pollueraient le contexte du rang courant, et inversement une question posée "à chaud"
+  // sur un rang resterait affichée hors contexte plus tard. Persistée quand même (pas
+  // seulement en mémoire) pour survivre à un F5, contrairement à l'ancien comportement.
+  const isContextual = Boolean(projectId)
+  const getStorageKey = (pid) => pid ? `ai_assistant_messages_project_${pid}` : GENERAL_STORAGE_KEY
 
   const [messages, setMessages] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY)
+      const saved = localStorage.getItem(getStorageKey(projectId))
       return saved ? JSON.parse(saved) : []
     } catch { return [] }
   })
+  // [AI:Claude] AiAssistant reste monté en permanence dans le tiroir (juste masqué via
+  // CSS) — sans cet effet, l'initialiseur de useState() ci-dessus ne s'exécutant qu'au
+  // tout premier montage, une conversation contextuelle précédente restait affichée à
+  // chaque réouverture (et, dans l'autre sens, revenir en mode général après une session
+  // contextuelle ne rechargeait pas non plus l'historique général persisté).
+  //
+  // lastProjectIdRef évite de vider la conversation à CHAQUE réouverture du tiroir —
+  // seul un vrai changement de contexte (projet différent, ou bascule contextuel ↔
+  // général) doit recharger depuis le stockage ; fermer puis rouvrir sur le même projet
+  // doit garder la conversation en cours telle quelle.
+  const lastProjectIdRef = useRef(projectId)
+  useEffect(() => {
+    if (!open) return
+    const contextChanged = lastProjectIdRef.current !== projectId
+    lastProjectIdRef.current = projectId
+    if (!contextChanged) return
+
+    try {
+      const saved = localStorage.getItem(getStorageKey(projectId))
+      setMessages(saved ? JSON.parse(saved) : [])
+    } catch { setMessages([]) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, projectId])
+
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [usage, setUsage] = useState(null) // { used, limit, remaining }
@@ -83,13 +118,17 @@ export default function AiAssistant() {
     try {
       // Garder uniquement les 30 derniers messages pour ne pas surcharger localStorage
       const toSave = messages.slice(-30)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
+      localStorage.setItem(getStorageKey(projectId), JSON.stringify(toSave))
     } catch { /* quota dépassé, on ignore */ }
-  }, [messages])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, projectId])
 
   const send = async (text) => {
     const content = text || input.trim()
-    if (!content || loading || usage?.remaining === 0) return
+    // [AI:Claude] Le quota mensuel affiché (usage.remaining) ne concerne que l'assistant
+    // général — une session contextuelle n'a pas de compteur à vérifier ici, seul le
+    // plafond de débit invisible côté serveur (voir catch ci-dessous) peut la bloquer.
+    if (!content || loading || (!isContextual && usage?.remaining === 0)) return
 
     setInput('')
     const newMessages = [...messages, { role: 'user', content }]
@@ -97,12 +136,12 @@ export default function AiAssistant() {
     setLoading(true)
 
     try {
-      const res = await api.post('/ai/assistant', { messages: newMessages })
-      setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply }])
+      const res = await api.post('/ai/assistant', { messages: newMessages, ...(projectId ? { project_id: projectId } : {}) })
+      setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply, suggestions: res.data.suggestions || [] }])
       if (res.data.usage) setUsage(res.data.usage)
     } catch (err) {
       const data = err.response?.data
-      if (data?.limit_reached) {
+      if (data?.limit_reached && data?.error_code === 'ai_monthly_limit') {
         setUsage({ used: data.used, limit: data.limit, remaining: 0 })
         setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${data.error}`, isError: true }])
       } else {
@@ -113,8 +152,8 @@ export default function AiAssistant() {
     }
   }
 
-  // FREE avec quota épuisé — CTA upsell
-  if (!isPro && usage?.remaining === 0) {
+  // FREE avec quota épuisé — CTA upsell (assistant général uniquement, jamais en contextuel)
+  if (!isPro && !isContextual && usage?.remaining === 0) {
     return (
       <div className="text-center py-10 space-y-4">
         <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mx-auto">
@@ -139,6 +178,14 @@ export default function AiAssistant() {
 
   return (
     <div className="flex flex-col h-[600px] max-h-[70vh] md:h-[600px]" style={{ height: 'var(--ai-height, 560px)' }}>
+      {isContextual && (
+        <div className="mb-2 inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-primary-50 border border-primary-200 text-xs font-medium text-primary-700">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+          </svg>
+          {t('ui.aiContextChip', { label: projectLabel || t('ui.aiContextChipFallback') })}
+        </div>
+      )}
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-3 pb-2">
         {messages.length === 0 ? (
@@ -147,7 +194,7 @@ export default function AiAssistant() {
               {t('ui.askYourQuestion')}
             </p>
             <div className="grid grid-cols-1 gap-2">
-              {SUGGESTION_KEYS.map(k => t(`ui.${k}`)).map(s => (
+              {(isContextual ? CONTEXTUAL_SUGGESTION_KEYS : SUGGESTION_KEYS).map(k => t(`ui.${k}`)).map(s => (
                 <button
                   key={s}
                   onClick={() => send(s)}
@@ -179,6 +226,23 @@ export default function AiAssistant() {
           ))
         )}
 
+        {/* [AI:Claude] Suggestions de suivi — liées à ce qui vient d'être dit (générées par
+            le modèle lui-même dans sa réponse), pas les mêmes questions génériques que
+            l'état vide. N'apparaissent qu'après la dernière réponse de l'assistant. */}
+        {!loading && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && messages[messages.length - 1].suggestions?.length > 0 && (
+          <div className="flex flex-col gap-2 pt-1">
+            {messages[messages.length - 1].suggestions.map((s, idx) => (
+              <button
+                key={idx}
+                onClick={() => send(s)}
+                className="text-left text-sm px-4 py-2.5 bg-gray-50 hover:bg-primary-50 hover:text-primary-700 border border-gray-200 hover:border-primary-300 rounded-xl transition"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading && (
           <div className="flex justify-start">
             <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3">
@@ -198,7 +262,7 @@ export default function AiAssistant() {
       {messages.length > 0 && !loading && (
         <div className="flex justify-end pb-1">
           <button
-            onClick={() => { setMessages([]); localStorage.removeItem(STORAGE_KEY) }}
+            onClick={() => { setMessages([]); localStorage.removeItem(getStorageKey(projectId)) }}
             className="text-xs text-gray-400 hover:text-red-400 transition"
           >
             {t('ui.clearConversation')}
@@ -206,8 +270,8 @@ export default function AiAssistant() {
         </div>
       )}
 
-      {/* Quota */}
-      {usage && (
+      {/* Quota — assistant général uniquement, jamais affiché en contextuel */}
+      {!isContextual && usage && (
         <div className={`text-xs text-center py-1 ${usage.remaining <= 5 ? 'text-orange-500 font-medium' : 'text-gray-400'}`}>
           {usage.remaining > 0
             ? t('ui.messagesUsedMonth', { used: usage.used, limit: usage.limit })

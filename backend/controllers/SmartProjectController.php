@@ -337,7 +337,7 @@ class SmartProjectController
             // [AI:Claude] L'ID est renvoyé au frontend pour être relié au projet lors du confirm()
             // [AI:Claude] $result['data'] (pas null) : sans le PDF conservé, ai_response_json est
             // la seule trace permettant d'auditer a posteriori la qualité d'une extraction.
-            $importId = $this->logImport($userId, null, $sourceType, $sourceName, $sourceFilePath, $fileSize, $result['ai_status'], $result['data'] ?? null, $processingTime, null);
+            $importId = $this->logImport($userId, null, $sourceType, $sourceName, $sourceFilePath, $fileSize, $result['ai_status'], $result['data'] ?? null, $processingTime, null, $patternSize);
 
             $this->jsonResponse([
                 'success' => true,
@@ -648,14 +648,15 @@ class SmartProjectController
         string $aiStatus,
         ?array $aiResponse,
         int $processingTime,
-        ?string $error
+        ?string $error,
+        ?string $patternSize = null
     ): ?int {
         try {
             $db = \App\Config\Database::getInstance()->getConnection();
             $stmt = $db->prepare("
                 INSERT INTO ai_pattern_imports
-                (user_id, project_id, source_type, source_name, source_file_path, file_size_bytes, ai_status, ai_response_json, processing_time_ms, error_message, ip_address)
-                VALUES (:user_id, :project_id, :source_type, :source_name, :source_file_path, :file_size, :ai_status, :ai_response, :processing_time, :error, :ip)
+                (user_id, project_id, source_type, source_name, source_file_path, pattern_size, file_size_bytes, ai_status, ai_response_json, processing_time_ms, error_message, ip_address)
+                VALUES (:user_id, :project_id, :source_type, :source_name, :source_file_path, :pattern_size, :file_size, :ai_status, :ai_response, :processing_time, :error, :ip)
             ");
 
             $stmt->execute([
@@ -664,6 +665,7 @@ class SmartProjectController
                 'source_type' => $sourceType,
                 'source_name' => $sourceName,
                 'source_file_path' => $sourceFilePath,
+                'pattern_size' => $patternSize,
                 'file_size' => $fileSize,
                 'ai_status' => $aiStatus,
                 'ai_response' => $aiResponse ? json_encode($aiResponse) : null,

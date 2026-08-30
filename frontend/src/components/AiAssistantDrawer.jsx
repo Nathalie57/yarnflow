@@ -5,9 +5,11 @@
 
 import { useTranslation } from 'react-i18next'
 import AiAssistant from './tools/AiAssistant'
+import { useAiAssistant } from '../contexts/AiAssistantContext'
 
 export default function AiAssistantDrawer({ open, onClose }) {
   const { t } = useTranslation('tools')
+  const { projectId, projectLabel } = useAiAssistant()
   return (
     <>
       {/* Overlay */}
@@ -18,9 +20,11 @@ export default function AiAssistantDrawer({ open, onClose }) {
         />
       )}
 
-      {/* Drawer slide-up */}
+      {/* Drawer slide-up en mobile ; panneau flottant en bas à droite à partir de sm
+          (sinon, sur un grand écran, un seul message isolé tout à droite d'un panneau
+          pleine largeur donne une impression de mise en page cassée) */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[420px] z-50 bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl transition-transform duration-300 ease-out ${
           open ? 'translate-y-0' : 'translate-y-full'
         }`}
         style={{ maxHeight: '85vh' }}
@@ -43,7 +47,7 @@ export default function AiAssistantDrawer({ open, onClose }) {
 
         {/* Contenu */}
         <div className="px-4 pt-3 pb-6" style={{ height: 'calc(85vh - 56px)', '--ai-height': 'calc(85vh - 80px)' }}>
-          <AiAssistant />
+          <AiAssistant projectId={projectId} projectLabel={projectLabel} open={open} />
         </div>
       </div>
     </>

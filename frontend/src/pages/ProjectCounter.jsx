@@ -20,6 +20,8 @@ import { useImagePreview } from '../hooks/useImagePreview'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { useMediaSession } from '../hooks/useMediaSession'
 import { useHints } from '../hooks/useHints'
+import { useAiAssistant } from '../contexts/AiAssistantContext'
+import AssociatePatternForAi from '../components/AssociatePatternForAi'
 import { useAnalytics } from '../hooks/useAnalytics'
 import api, { networkUtils, stashAllocationAPI } from '../services/api'
 import PDFViewer from '../components/PDFViewer'
@@ -53,6 +55,7 @@ const ProjectCounter = () => {
   } = useImagePreview()
   const { isSupported: isWakeLockSupported, isActive: isWakeLockActive, request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
   const { triggerOnce } = useHints() // [AI:Claude] Hints contextuels
+  const { openWithProject } = useAiAssistant()
 
 
   const [project, setProject] = useState(null)
@@ -136,6 +139,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Modale de choix de modification du patron
   const [showPatternEditChoiceModal, setShowPatternEditChoiceModal] = useState(false)
+  const [showAssociatePatternModal, setShowAssociatePatternModal] = useState(false)
 
   // [AI:Claude] Upload photo projet
   const [showPhotoUploadModal, setShowPhotoUploadModal] = useState(false)
@@ -1783,6 +1787,35 @@ const ProjectCounter = () => {
       console.error('Erreur changement unité:', err)
       showAlert({ message: t('alerts.unitChangeFailed'), type: 'error' })
     }
+  }
+
+  // [AI:Claude] Ouvre l'assistant IA avec le contexte du projet/section/rang courant déjà
+  // chargé côté serveur (voir AiAssistantController::buildProjectContext) — le libellé n'est
+  // qu'un affichage local, la vraie donnée transmise au chat est project_id.
+  // Si aucun patron n'est associé (projet créé à la main, jamais fait analyser), on ouvre
+  // une popin proposant de l'associer plutôt que le chat directement : un chat sans patron
+  // à lire ne pourrait pas répondre précisément, autant ne pas gaspiller le quota de
+  // questions IA sur une réponse forcément vague. Depuis la popin, l'utilisatrice garde la
+  // main pour fermer et aller questionner l'assistant général de son propre chef.
+  const handleOpenAiHelp = (projectOverride) => {
+    // [AI:Claude] projectOverride : après association d'un patron (AssociatePatternForAi),
+    // le state `project` du composant n'est pas encore à jour au moment de cet appel
+    // (setProject() est asynchrone) — on utilise directement les données fraîches renvoyées
+    // par fetchProject() plutôt que de risquer de relire l'ancien has_ai_pattern_reference.
+    const proj = projectOverride || project
+    if (!proj?.has_ai_pattern_reference) {
+      setShowAssociatePatternModal(true)
+      return
+    }
+    const sectionName = currentSectionId
+      ? sections.find(s => s.id === currentSectionId)?.name
+      : null
+    const total = progressData.total
+    const progress = total ? `${currentRow}/${total}` : `${currentRow}`
+    const label = sectionName
+      ? `${proj?.name || ''} — ${sectionName} (${progress})`
+      : `${proj?.name || ''} — ${progress}`
+    openWithProject(projectId, label)
   }
 
   // [AI:Claude] v0.16.2 - Handlers pour input éditable du compteur
@@ -3925,6 +3958,19 @@ const ProjectCounter = () => {
           </div>
         </div>
 
+        {/* [AI:Claude] Assistant contextuel — ligne dédiée, volontairement à l'écart du
+            cluster −/compteur/+ (retour utilisatrice : trop proche du "−", risque de clic
+            accidentel en comptant vite, et bloc déjà surchargé). */}
+        <button
+          onClick={() => handleOpenAiHelp()}
+          className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
+        >
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+          </svg>
+          {t('ui.aiHelpOnRow')}
+        </button>
+
         {/* [AI:Claude] Compteurs secondaires (PLUS/PRO) — plusieurs par section/projet, max {MAX_SECONDARY_COUNTERS} */}
         {!isPaidPlan ? (
           <div className="pt-2 border-t border-primary-300/50">
@@ -5419,9 +5465,23 @@ const ProjectCounter = () => {
                       ) : null}
                     </>
                   ) : project.pattern_text ? (
-                    // Patron texte seul (sans URL ni fichier)
+                    // Patron texte seul (sans URL ni fichier) — le texte collé peut venir d'un
+                    // repli quand le site d'origine bloquait le scraping (ex: Cloudflare) ;
+                    // source_url garde ce lien même si le contenu affiché est le texte collé.
                     <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('ui.pattern')}</h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">{t('ui.pattern')}</h3>
+                        {project.source_url?.startsWith('http') && (
+                          <a
+                            href={project.source_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-primary-600 hover:text-primary-800 underline"
+                          >
+                            {t('ui.viewOriginalPattern')}
+                          </a>
+                        )}
+                      </div>
                       <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
                         <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                           {project.pattern_text}
@@ -6044,6 +6104,37 @@ const ProjectCounter = () => {
                 {t('ui.cancel')}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* [AI:Claude] Popin "Je bloque" quand aucun patron n'est associé — propose d'en
+          associer un (consomme le quota Création Intelligente) plutôt que d'ouvrir un chat
+          qui ne pourrait pas répondre précisément. Fermer la popin laisse l'utilisatrice
+          libre d'aller questionner l'assistant général de son propre chef si elle préfère. */}
+      {showAssociatePatternModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6">
+            <div className="flex items-start justify-between mb-1">
+              <h2 className="text-lg font-bold text-gray-900">{t('ui.aiHelpModalTitle')}</h2>
+              <button
+                onClick={() => setShowAssociatePatternModal(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 -m-1"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <AssociatePatternForAi
+              projectId={projectId}
+              project={project}
+              onLinked={async () => {
+                setShowAssociatePatternModal(false)
+                const fresh = await fetchProject()
+                handleOpenAiHelp(fresh)
+              }}
+            />
           </div>
         </div>
       )}
@@ -7330,7 +7421,7 @@ const ProjectCounter = () => {
       )}
 
       {/* [AI:Claude] Bouton flottant pour les notes - masqué quand popup ouverte */}
-      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !isAnyAlertOpen && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && (
+      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !isAnyAlertOpen && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && !showAssociatePatternModal && (
       <button
         onClick={handleOpenNotes}
         className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-2xl px-4 py-3 flex items-center gap-3"
