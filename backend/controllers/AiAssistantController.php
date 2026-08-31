@@ -14,6 +14,8 @@ use App\Config\Database;
 use GuzzleHttp\Client;
 use PDO;
 use App\Services\RateLimiter;
+use App\Services\AIPatternExtractorService;
+use App\Services\PatternTranslatorService;
 
 class AiAssistantController
 {
@@ -104,6 +106,9 @@ class AiAssistantController
             $data = $this->getJsonInput();
             $messages = $data['messages'] ?? [];
             $projectId = isset($data['project_id']) ? (int)$data['project_id'] : null;
+            // [AI:Claude] Langue cible pour une demande de traduction ponctuelle
+            // ("Traduis-moi le rang 17") — la langue actuelle de l'interface, pas celle du patron.
+            $lang = $data['lang'] ?? 'fr';
 
             // [AI:Claude] Une question contextuelle ("Je bloque sur ce rang") n'est PAS
             // décomptée du quota mensuel affiché — coût réel négligeable (~0,002 $/question),
@@ -200,11 +205,22 @@ class AiAssistantController
             $result = json_decode($response->getBody()->getContents(), true);
             $reply = $result['candidates'][0]['content']['parts'][0]['text'] ?? '';
 
-            // [AI:Claude] Suggestions de questions de suivi (mode contextuel uniquement) —
-            // demandées au modèle dans le même appel via un délimiteur en fin de réponse,
-            // séparées ici pour ne jamais les afficher comme texte brut si le parsing échoue.
+            // [AI:Claude] Demande de traduction ponctuelle ("Traduis-moi le rang 17") — le
+            // modèle général ne traduit jamais lui-même (cohérence du glossaire tricot/crochet
+            // déjà géré par PatternTranslatorService) : il extrait juste le passage exact
+            // concerné via ce marqueur, la vraie traduction passe par le service existant.
+            // Jamais de suggestions de suivi sur ce type de réponse (voir consigne du prompt).
             $suggestions = [];
-            if (preg_match('/###SUGGESTIONS###\s*(.+)$/is', $reply, $matches)) {
+            if (preg_match('/###TRANSLATE_REQUEST###\s*(.+)$/is', $reply, $matches)) {
+                $textToTranslate = trim($matches[1]);
+                $translationResult = (new PatternTranslatorService())->translateFromText($textToTranslate, $lang);
+                $reply = $translationResult['success']
+                    ? $translationResult['translation']
+                    : "Je n'ai pas réussi à traduire ce passage — réessaie dans un instant.";
+            } elseif (preg_match('/###SUGGESTIONS###\s*(.+)$/is', $reply, $matches)) {
+                // [AI:Claude] Suggestions de questions de suivi (mode contextuel uniquement) —
+                // demandées au modèle dans le même appel via un délimiteur en fin de réponse,
+                // séparées ici pour ne jamais les afficher comme texte brut si le parsing échoue.
                 $reply = trim(substr($reply, 0, strpos($reply, '###SUGGESTIONS###')));
                 $suggestions = array_values(array_filter(array_map('trim', explode("\n", $matches[1]))));
             }
@@ -247,7 +263,13 @@ Si ta réponse soulève naturellement un besoin couvert par PRO (ex: gérer un g
         }
 
         $projectContextBlock = $projectContext !== null
-            ? "\n═══════════════════════════════════════\nCONTEXTE PROJET ACTUEL\n═══════════════════════════════════════\n{$projectContext}\n\nRéponds en tenant compte de ce contexte précis — pas besoin de redemander où en est l'utilisateur, tu le sais déjà. Le nom de la section qu'elle suit peut ne pas correspondre mot pour mot au découpage du patron fourni en référence (langue différente, découpage différent, patron associé après coup à un projet créé à la main) — base-toi sur le sens et sur sa progression en rangs/mailles pour identifier la bonne portion du patron, pas sur une correspondance exacte de nom.\n\nMême face à une question vague (\"je pense avoir fait une erreur\", \"ça ne va pas\"), NE TE CONTENTE JAMAIS de renvoyer une question de clarification sans rien apporter d'autre : donne toujours au moins une ou deux pistes de vérification concrètes tirées du contexte ci-dessus (nombre de mailles/rangs attendu à ce stade, points de vigilance typiques de cette étape du patron, erreur fréquente à cet endroit précis), et pose ta question de clarification EN PLUS de ça, pas à sa place.\n\nÀ la TOUTE FIN de chaque réponse, ajoute impérativement un bloc de 2 à 3 suggestions de questions de suivi, courtes (moins de 8 mots). Elles doivent porter UNIQUEMENT sur un point, une technique ou un terme que TA PROPRE RÉPONSE ci-dessus vient de mentionner explicitement — jamais une technique du patron que tu n'as pas citée dans ta réponse, même si elle apparaît ailleurs dans le patron ou est habituelle pour ce type d'ouvrage (ex: si ta réponse ne parle pas du montage/magic ring, ne le suggère pas juste parce que c'est un amigurumi). En cas de doute sur la pertinence d'une suggestion, ne la propose pas plutôt que de deviner — au format exact suivant, sur ses propres lignes, rien après :\n###SUGGESTIONS###\nQuestion de suivi 1\nQuestion de suivi 2\n"
+            ? "\n═══════════════════════════════════════\nCONTEXTE PROJET ACTUEL\n═══════════════════════════════════════\n{$projectContext}\n\nRéponds en tenant compte de ce contexte précis — pas besoin de redemander où en est l'utilisateur, tu le sais déjà. Le nom de la section qu'elle suit peut ne pas correspondre mot pour mot au découpage du patron fourni en référence (langue différente, découpage différent, patron associé après coup à un projet créé à la main) — base-toi sur le sens et sur sa progression en rangs/mailles pour identifier la bonne portion du patron, pas sur une correspondance exacte de nom.\n\n"
+                . "TROIS TYPES DE DEMANDES DISTINCTS — identifie toujours lequel avant de répondre :\n"
+                . "1. TRADUIRE (ex: \"traduis-moi le rang 17\", \"c'est quoi en français ?\") : tu ne traduis JAMAIS toi-même ce texte. Réponds UNIQUEMENT par le marqueur suivant suivi du texte EXACT (verbatim, dans sa langue d'origine, sans aucune modification) du passage concerné tel qu'il apparaît dans le patron ci-dessus — rien d'autre, ni clarification, ni suggestions :\n###TRANSLATE_REQUEST###\n<texte exact du passage>\n"
+                . "2. EXPLIQUER (ex: \"je ne comprends pas le rang 17\", \"je pense avoir fait une erreur\") : explique la technique/l'instruction avec tes propres mots, comme d'habitude.\n"
+                . "3. AIDER DANS LE CONTEXTE (ex: \"je suis au rang 17, qu'est-ce que je dois faire ?\") : aide contextuelle habituelle.\n\n"
+                . "Pour les cas 2 et 3 uniquement (jamais le cas 1, traduction) :\n"
+                . "Même face à une question vague (\"je pense avoir fait une erreur\", \"ça ne va pas\"), NE TE CONTENTE JAMAIS de renvoyer une question de clarification sans rien apporter d'autre : donne toujours au moins une ou deux pistes de vérification concrètes tirées du contexte ci-dessus (nombre de mailles/rangs attendu à ce stade, points de vigilance typiques de cette étape du patron, erreur fréquente à cet endroit précis), et pose ta question de clarification EN PLUS de ça, pas à sa place.\n\nÀ la TOUTE FIN de chaque réponse, ajoute impérativement un bloc de 2 à 3 suggestions de questions de suivi, courtes (moins de 8 mots). Elles doivent porter UNIQUEMENT sur un point, une technique ou un terme que TA PROPRE RÉPONSE ci-dessus vient de mentionner explicitement — jamais une technique du patron que tu n'as pas citée dans ta réponse, même si elle apparaît ailleurs dans le patron ou est habituelle pour ce type d'ouvrage (ex: si ta réponse ne parle pas du montage/magic ring, ne le suggère pas juste parce que c'est un amigurumi). En cas de doute sur la pertinence d'une suggestion, ne la propose pas plutôt que de deviner — au format exact suivant, sur ses propres lignes, rien après :\n###SUGGESTIONS###\nQuestion de suivi 1\nQuestion de suivi 2\n"
             : '';
 
         return <<<PROMPT
@@ -342,7 +364,7 @@ PROMPT;
         }
 
         $stmt = $this->db->prepare(
-            'SELECT ai_response_json, pattern_size FROM ai_pattern_imports WHERE project_id = :pid ORDER BY created_at DESC LIMIT 1'
+            'SELECT ai_response_json, pattern_size, translated_text, translated_lang FROM ai_pattern_imports WHERE project_id = :pid ORDER BY created_at DESC LIMIT 1'
         );
         $stmt->execute([':pid' => $projectId]);
         $importRow = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -355,16 +377,22 @@ PROMPT;
                 $lines[] = "Taille choisie pour ce patron : {$importRow['pattern_size']}. Si le patron liste plusieurs valeurs pour un même nombre de mailles/rangs (ex: \"56-62-74-80-86-93-100\" pour plusieurs tailles), utilise UNIQUEMENT celle qui correspond à cette taille précise — jamais la première par défaut.";
             }
 
-            $parsed = json_decode($importRow['ai_response_json'] ?? '', true);
-            $patternSections = $parsed['sections'] ?? [];
-            if (!empty($patternSections)) {
-                $patternText = '';
-                foreach ($patternSections as $s) {
-                    $patternText .= '### ' . ($s['name'] ?? '?') . "\n" . ($s['description'] ?? '') . "\n\n";
+            $parsed = json_decode($importRow['ai_response_json'] ?? '', true) ?? [];
+
+            // [AI:Claude] Si une traduction complète existe déjà (proposée quand la langue du
+            // patron diffère de celle de l'utilisatrice), l'utiliser comme texte de référence
+            // principal plutôt que d'envoyer les deux versions intégralement — ça double
+            // inutilement le budget de contexte, et répondre depuis la traduction suffit pour
+            // que l'assistant s'exprime naturellement dans la langue de l'utilisatrice.
+            if (!empty($importRow['translated_text'])) {
+                $patternText = mb_substr(trim($importRow['translated_text']), 0, 6000);
+                $originalLang = $parsed['language'] ?? 'une autre langue';
+                $lines[] = "Patron original en {$originalLang}, traduction disponible ci-dessous (référence — peut couvrir des sections au-delà de celle suivie ci-dessus) :\n" . $patternText;
+            } else {
+                $patternText = mb_substr(AIPatternExtractorService::buildPlainText($parsed), 0, 6000);
+                if ($patternText !== '') {
+                    $lines[] = "Patron complet associé au projet (référence — peut couvrir des sections au-delà de celle suivie ci-dessus) :\n" . $patternText;
                 }
-                // [AI:Claude] Plafond pour ne pas exploser le coût/contexte sur un très long patron
-                $patternText = mb_substr(trim($patternText), 0, 6000);
-                $lines[] = "Patron complet associé au projet (référence — peut couvrir des sections au-delà de celle suivie ci-dessus) :\n" . $patternText;
             }
         }
 

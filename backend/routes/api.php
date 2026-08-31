@@ -190,6 +190,7 @@ function route(string $method, string $uri): void
         $method === 'POST' && preg_match('/^projects\/(\d+)\/pattern-from-library$/', $uri, $matches) => (new ProjectController())->linkPatternFromLibrary((int)$matches[1]),
         $method === 'DELETE' && preg_match('/^projects\/(\d+)\/pattern$/', $uri, $matches) => (new ProjectController())->deletePattern((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/link-pattern-reference$/', $uri, $matches) => (new ProjectController())->linkAiPatternReference((int)$matches[1]),
+        $method === 'POST' && preg_match('/^projects\/(\d+)\/translate-pattern$/', $uri, $matches) => (new ProjectController())->translatePattern((int)$matches[1]),
         $method === 'POST' && preg_match('/^projects\/(\d+)\/photo$/', $uri, $matches) => (new ProjectController())->uploadPhoto((int)$matches[1]),
         $method === 'PUT' && preg_match('/^projects\/(\d+)\/set-cover-photo$/', $uri, $matches) => (new ProjectController())->setCoverPhoto((int)$matches[1]),
         $method === 'PUT' && preg_match('/^projects\/(\d+)\/counter-unit$/', $uri, $matches) => (new ProjectController())->switchCounterUnit((int)$matches[1]),
@@ -234,6 +235,7 @@ function route(string $method, string $uri): void
         $method === 'GET' && $uri === 'projects/smart-create/quota' => (new SmartProjectController())->getQuota(),
         $method === 'POST' && $uri === 'projects/smart-create/analyze' => (new SmartProjectController())->analyze(),
         $method === 'POST' && $uri === 'projects/smart-create/confirm' => (new SmartProjectController())->confirm(),
+        $method === 'POST' && $uri === 'projects/smart-create/translate-preview' => (new SmartProjectController())->translatePreview(),
 
         // [AI:Claude] Routes de gestion des photos IA (AI Photo Studio v0.10.0)
         $method === 'GET' && $uri === 'photos' => (new PhotoController())->index($_GET),

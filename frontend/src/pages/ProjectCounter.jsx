@@ -135,6 +135,8 @@ const ProjectCounter = () => {
   // [AI:Claude] Édition patron texte
   const [showPatternTextModal, setShowPatternTextModal] = useState(false)
   const [patternTextEdit, setPatternTextEdit] = useState('')
+  const [showTranslatedPattern, setShowTranslatedPattern] = useState(false)
+  const [translatingPattern, setTranslatingPattern] = useState(false)
   const [savingPatternText, setSavingPatternText] = useState(false)
 
   // [AI:Claude] Modale de choix de modification du patron
@@ -1440,6 +1442,22 @@ const ProjectCounter = () => {
       },
       title: t('alerts.confirmDeletePatternTitle')
     })
+  }
+
+  // [AI:Claude] Traduit le patron associé (jamais l'original, qui reste consultable via
+  // le toggle) — voir ProjectController::translatePattern()
+  const handleTranslatePattern = async () => {
+    setTranslatingPattern(true)
+    try {
+      await api.post(`/projects/${projectId}/translate-pattern`, { target_lang: i18n.language })
+      await fetchProject()
+      setShowTranslatedPattern(true)
+    } catch (err) {
+      console.error('Erreur traduction patron:', err)
+      showAlert({ message: t('alerts.patternTranslateFailed'), type: 'error' })
+    } finally {
+      setTranslatingPattern(false)
+    }
   }
 
 // [AI:Claude] Supprimer une photo
@@ -5436,6 +5454,55 @@ const ProjectCounter = () => {
                     {t('ui.deletePattern')}
                   </button>
                 </div>
+
+                {/* [AI:Claude] Bandeau de proposition de traduction — uniquement si la
+                    langue détectée du patron diffère de la langue de l'interface et
+                    qu'aucune traduction n'existe déjà. Jamais automatique. */}
+                {project.pattern_language && project.pattern_language !== i18n.language.split('-')[0] && !project.has_pattern_translation && (
+                  <div className="mb-4 bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center justify-between gap-3">
+                    <p className="text-sm text-primary-800">{t('ui.patternTranslateProposal')}</p>
+                    <button
+                      onClick={handleTranslatePattern}
+                      disabled={translatingPattern}
+                      className="shrink-0 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
+                    >
+                      {translatingPattern && (
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                      )}
+                      {translatingPattern ? t('ui.patternTranslating') : t('ui.patternTranslateCta')}
+                    </button>
+                  </div>
+                )}
+
+                {/* [AI:Claude] Toggle Original/Traduction — la traduction ne remplace jamais
+                    l'original, elle s'affiche à la place uniquement le temps de la consulter */}
+                {project.has_pattern_translation && (
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      onClick={() => setShowTranslatedPattern(false)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${!showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    >
+                      {t('ui.patternOriginal')}
+                    </button>
+                    <button
+                      onClick={() => setShowTranslatedPattern(true)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    >
+                      {t('ui.patternTranslated')}
+                    </button>
+                  </div>
+                )}
+
+                {showTranslatedPattern && project.has_pattern_translation ? (
+                  <div className="mb-4 border-2 border-gray-200 rounded-lg p-6 bg-white">
+                    <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                      <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
+                        {project.pattern_translated_text}
+                      </pre>
+                    </div>
+                  </div>
+                ) : (
+                <>
                 {/* Affichage du patron selon le type */}
                 <div className="mb-4">
                   {project.pattern_url ? (
@@ -5551,6 +5618,8 @@ const ProjectCounter = () => {
                     </div>
                   )}
                 </div>
+                </>
+                )}
 
                 {/* Actions de modification */}
                 <div className="flex justify-center mt-4">

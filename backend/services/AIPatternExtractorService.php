@@ -37,6 +37,7 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
 
 {
   "title": "nom du projet (string)",
+  "language": "code ISO 639-1 de la langue dans laquelle le patron est écrit (ex: fr, en, de, nl, es) — pas la langue de l'interface, celle du texte source",
   "craft_type": "tricot" | "crochet" | "autre",
   "category": "bonnet" | "écharpe" | "pull" | "amigurumi" | "couverture" | "sac" | "vêtements" | "accessoires bébé" | "vêtements bébé" | "jouets/peluches" | "maison/déco" | "autre" | null,
   "description": "résumé du projet en 1-2 phrases (string ou null)",
@@ -540,5 +541,81 @@ PROMPT;
             'ai_status' => $status,
             'processing_time_ms' => $processingTime
         ];
+    }
+
+    /**
+     * [AI:Claude] Reconstruit le texte des SECTIONS uniquement (ai_response_json.sections[]),
+     * séparé de buildExtrasPlainText() ci-dessous pour pouvoir les traduire dans un appel à
+     * part et re-découper le résultat section par section (voir parseSectionsFromPlainText())
+     * — nécessaire pour mettre à jour project_sections.name/description avec la version
+     * traduite, ce qu'un unique bloc mêlant sections et extras ne permettrait pas de faire
+     * fiablement.
+     */
+    public static function buildSectionsPlainText(array $sections): string
+    {
+        $text = '';
+        foreach ($sections as $s) {
+            $text .= '### ' . ($s['name'] ?? '?') . "\n" . ($s['description'] ?? '') . "\n\n";
+        }
+        return trim($text);
+    }
+
+    /**
+     * [AI:Claude] Champs texte libre du patron au-delà des instructions rang par rang
+     * (usage d'une aiguille/crochet, notes d'échantillon, notes générales) — les valeurs
+     * structurées voisines (marque, taille, chiffres) n'ont, elles, pas besoin de traduction.
+     */
+    public static function buildExtrasPlainText(array $parsedResponse): string
+    {
+        $text = '';
+        foreach ($parsedResponse['needles'] ?? [] as $n) {
+            if (!empty($n['usage'])) {
+                $text .= '### ' . ($n['type'] ?? 'Aiguille/crochet') . " — usage\n" . $n['usage'] . "\n\n";
+            }
+        }
+        if (!empty($parsedResponse['gauge']['notes'])) {
+            $text .= "### Échantillon — notes\n" . $parsedResponse['gauge']['notes'] . "\n\n";
+        }
+        if (!empty($parsedResponse['pattern_notes'])) {
+            $text .= "### Notes du patron\n" . $parsedResponse['pattern_notes'] . "\n\n";
+        }
+        return trim($text);
+    }
+
+    /**
+     * [AI:Claude] Reconstruit le texte complet du patron (sections + extras) — utilisé pour
+     * le contexte de l'assistant (AiAssistantController::buildProjectContext(), qui tronque
+     * ensuite le résultat) et comme référence d'affichage quand aucune traduction n'existe.
+     * Ne tronque pas ici — PatternTranslatorService a son propre plafond de 50 000 caractères.
+     */
+    public static function buildPlainText(array $parsedResponse): string
+    {
+        $sectionsText = self::buildSectionsPlainText($parsedResponse['sections'] ?? []);
+        $extrasText = self::buildExtrasPlainText($parsedResponse);
+        if ($extrasText === '') return $sectionsText;
+        return trim($sectionsText . "\n\n" . $extrasText);
+    }
+
+    /**
+     * [AI:Claude] Inverse de buildSectionsPlainText() — redécoupe un texte traduit (qui a
+     * conservé le même format "### Nom\nDescription") en tableau de sections {name,
+     * description}, dans le même ordre. Permet de remapper positionnellement une traduction
+     * sur project_sections (voir ProjectController::translatePattern()) sans jamais deviner
+     * quelle section correspond à quoi par le nom (qui a justement changé de langue).
+     */
+    public static function parseSectionsFromPlainText(string $text): array
+    {
+        $blocks = preg_split('/^###\s+/m', trim($text));
+        $result = [];
+        foreach ($blocks as $block) {
+            $block = trim($block);
+            if ($block === '') continue;
+            $lines = explode("\n", $block, 2);
+            $result[] = [
+                'name' => trim($lines[0]),
+                'description' => isset($lines[1]) ? trim($lines[1]) : '',
+            ];
+        }
+        return $result;
     }
 }

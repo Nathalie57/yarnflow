@@ -52,7 +52,7 @@ const SUGGESTION_KEYS = ['aiQ1', 'aiQ2', 'aiQ3', 'aiQ4', 'aiQ5', 'aiQ6']
 const CONTEXTUAL_SUGGESTION_KEYS = ['aiCtxQ1', 'aiCtxQ2', 'aiCtxQ3', 'aiCtxQ4']
 
 export default function AiAssistant({ projectId, projectLabel, open } = {}) {
-  const { t } = useTranslation('tools')
+  const { t, i18n } = useTranslation('tools')
   const { hasActiveSubscription , getSubscriptionPlan } = useAuth()
   const isPro = hasActiveSubscription()
 
@@ -136,7 +136,7 @@ export default function AiAssistant({ projectId, projectLabel, open } = {}) {
     setLoading(true)
 
     try {
-      const res = await api.post('/ai/assistant', { messages: newMessages, ...(projectId ? { project_id: projectId } : {}) })
+      const res = await api.post('/ai/assistant', { messages: newMessages, lang: i18n.language, ...(projectId ? { project_id: projectId } : {}) })
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply, suggestions: res.data.suggestions || [] }])
       if (res.data.usage) setUsage(res.data.usage)
     } catch (err) {

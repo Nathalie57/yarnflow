@@ -404,6 +404,21 @@ class ProjectController
             $refStmt->execute([':pid' => $id]);
             $project['has_ai_pattern_reference'] = (bool)$refStmt->fetchColumn();
 
+            // [AI:Claude] Langue détectée du patron (ai_response_json.language) et présence
+            // d'une traduction déjà générée — sert au frontend à décider s'il propose de
+            // traduire le patron (langue différente de l'UI, pas encore de traduction).
+            $langStmt = $db->prepare(
+                'SELECT ai_response_json, translated_text, translated_lang FROM ai_pattern_imports
+                 WHERE project_id = :pid ORDER BY created_at DESC LIMIT 1'
+            );
+            $langStmt->execute([':pid' => $id]);
+            $langRow = $langStmt->fetch(\PDO::FETCH_ASSOC);
+            $parsedForLang = $langRow ? (json_decode($langRow['ai_response_json'] ?? '', true) ?? []) : [];
+            $project['pattern_language'] = $parsedForLang['language'] ?? null;
+            $project['pattern_translated_text'] = $langRow['translated_text'] ?? null;
+            $project['pattern_translated_lang'] = $langRow['translated_lang'] ?? null;
+            $project['has_pattern_translation'] = !empty($langRow['translated_text']);
+
             $this->sendResponse(200, [
                 'success' => true,
                 'project' => $project
@@ -1478,6 +1493,111 @@ class ProjectController
             $this->sendResponse(500, [
                 'success' => false,
                 'error' => 'Erreur lors du lien du patron',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * [AI:Claude] POST /api/projects/{id}/translate-pattern
+     * Traduit le patron associé (via l'IA d'extraction, pas de nouvel upload) sans jamais
+     * remplacer l'original — pattern_path/pattern_url/pattern_text du projet restent
+     * intacts, la traduction est stockée à part (ai_pattern_imports.translated_text) et
+     * consultable en plus, pas à la place. Réutilise PatternTranslatorService::
+     * translateFromText() tel quel (voir son commentaire de classe) : ne duplique jamais
+     * sa logique de traduction (glossaire tricot/crochet). Volontairement hors du quota
+     * de traduction existant (ai_pattern_translations) — décision produit : la traduction
+     * n'est qu'une facette de la compréhension du patron déjà payée via le crédit
+     * Création Intelligente/association, pas un nouvel usage de l'outil de traduction.
+     *
+     * @param int $id ID du projet
+     * @return void JSON response
+     */
+    public function translatePattern(int $id): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            if (!$this->projectModel->belongsToUser($id, $userId)) {
+                $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
+                return;
+            }
+
+            $data = $this->getJsonInput();
+            $targetLang = $data['target_lang'] ?? 'fr';
+
+            $db = \App\Config\Database::getInstance()->getConnection();
+            $stmt = $db->prepare(
+                'SELECT id, ai_response_json FROM ai_pattern_imports
+                 WHERE project_id = :pid ORDER BY created_at DESC LIMIT 1'
+            );
+            $stmt->execute(['pid' => $id]);
+            $import = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$import) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Aucun patron associé à ce projet']);
+                return;
+            }
+
+            $parsed = json_decode($import['ai_response_json'] ?? '', true) ?? [];
+            $sections = $parsed['sections'] ?? [];
+
+            $translator = new \App\Services\PatternTranslatorService();
+            $result = $translator->translateParsedPattern($parsed, $targetLang);
+
+            if (!$result['success']) {
+                $code = ($result['error'] ?? '') === 'Rien à traduire pour ce patron' ? 400 : 502;
+                $this->sendResponse($code, ['success' => false, 'error' => $result['error'] ?? 'Erreur lors de la traduction']);
+                return;
+            }
+
+            $translatedSections = $result['translated_sections'];
+            $fullTranslatedText = $result['translated_text'];
+
+            $updateStmt = $db->prepare(
+                'UPDATE ai_pattern_imports SET translated_text = :text, translated_lang = :lang WHERE id = :id'
+            );
+            $updateStmt->execute([
+                'text' => $fullTranslatedText,
+                'lang' => $targetLang,
+                'id' => $import['id'],
+            ]);
+
+            // [AI:Claude] Ne met à jour les VRAIES sections suivies (project_sections) que si
+            // leur nombre correspond encore exactement à celui du patron original — sinon
+            // l'utilisatrice a ajouté/supprimé une section entre-temps et le remappage
+            // positionnel ne serait plus fiable ; dans ce cas on n'écrase rien, seule la vue
+            // de référence (translated_text ci-dessus) reste disponible.
+            if (!empty($translatedSections) && count($translatedSections) === count($sections)) {
+                $psStmt = $db->prepare(
+                    'SELECT id FROM project_sections WHERE project_id = :pid ORDER BY display_order ASC'
+                );
+                $psStmt->execute(['pid' => $id]);
+                $existingSectionIds = $psStmt->fetchAll(\PDO::FETCH_COLUMN);
+
+                if (count($existingSectionIds) === count($translatedSections)) {
+                    $updatePs = $db->prepare(
+                        'UPDATE project_sections SET name = :name, description = :description WHERE id = :id'
+                    );
+                    foreach ($existingSectionIds as $idx => $psId) {
+                        $updatePs->execute([
+                            'name' => mb_substr($translatedSections[$idx]['name'], 0, 255),
+                            'description' => $translatedSections[$idx]['description'],
+                            'id' => $psId,
+                        ]);
+                    }
+                }
+            }
+
+            $this->sendResponse(200, [
+                'success' => true,
+                'translated_text' => $fullTranslatedText,
+                'translated_lang' => $targetLang,
+            ]);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la traduction du patron',
                 'message' => $e->getMessage()
             ]);
         }

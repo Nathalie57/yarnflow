@@ -339,6 +339,72 @@ PROMPT;
     }
 
     /**
+     * Traduit un patron déjà extrait (ai_response_json décodé) — sections + extras
+     * (échantillon/usage aiguilles/notes du patron), en deux appels pour pouvoir redécouper
+     * les sections traduites une par une (remappage positionnel sur project_sections ou sur
+     * le formulaire de relecture). Logique partagée entre :
+     * - ProjectController::translatePattern() (patron déjà lié à un projet, persiste sur
+     *   ai_pattern_imports ET project_sections),
+     * - SmartProjectController::translatePreview() (avant création du projet, keyed par
+     *   import_id, ne touche que le formulaire de relecture côté frontend).
+     */
+    public function translateParsedPattern(array $parsed, string $targetLang = 'fr'): array
+    {
+        $sections = $parsed['sections'] ?? [];
+        $sectionsText = \App\Services\AIPatternExtractorService::buildSectionsPlainText($sections);
+        $extrasText = \App\Services\AIPatternExtractorService::buildExtrasPlainText($parsed);
+
+        if ($sectionsText === '' && $extrasText === '') {
+            return ['success' => false, 'error' => 'Rien à traduire pour ce patron'];
+        }
+
+        $translatedSections = [];
+        if ($sectionsText !== '') {
+            $result = $this->translateFromText($sectionsText, $targetLang);
+            if (!$result['success']) {
+                return $result;
+            }
+            $translatedSections = \App\Services\AIPatternExtractorService::parseSectionsFromPlainText($result['translation']);
+        }
+
+        // Best-effort sur les extras : un échec ici n'empêche pas la traduction des sections,
+        // la partie la plus utile.
+        $translatedExtras = [];
+        $translatedExtrasText = '';
+        if ($extrasText !== '') {
+            $extrasResult = $this->translateFromText($extrasText, $targetLang);
+            if ($extrasResult['success']) {
+                $translatedExtrasText = $extrasResult['translation'];
+                $translatedExtras = \App\Services\AIPatternExtractorService::parseSectionsFromPlainText($translatedExtrasText);
+            }
+        }
+
+        $translatedText = trim(implode("\n\n", array_map(
+            fn($s) => '### ' . $s['name'] . "\n" . $s['description'],
+            $translatedSections
+        )));
+        if ($translatedExtrasText !== '') {
+            $translatedText = trim($translatedText . "\n\n" . $translatedExtrasText);
+        }
+
+        // [AI:Claude] Les notes du patron sont TOUJOURS le dernier bloc ajouté par
+        // buildExtrasPlainText() (après usage aiguilles / notes d'échantillon) — on les repère
+        // par position plutôt que par le texte du titre "### Notes du patron", qui peut lui
+        // aussi avoir été traduit par Gemini et ne plus matcher tel quel.
+        $translatedPatternNotes = null;
+        if (!empty($parsed['pattern_notes']) && !empty($translatedExtras)) {
+            $translatedPatternNotes = end($translatedExtras)['description'] ?? null;
+        }
+
+        return [
+            'success' => true,
+            'translated_text' => $translatedText,
+            'translated_sections' => $translatedSections,
+            'translated_pattern_notes' => $translatedPatternNotes,
+        ];
+    }
+
+    /**
      * Appel Gemini pour traduire
      */
     private function translateText(string $text, string $sourceType, string $sourceName, string $targetLang = 'fr'): array

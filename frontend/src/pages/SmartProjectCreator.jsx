@@ -20,7 +20,7 @@ import UpgradePrompt from '../components/UpgradePrompt'
  */
 
 export default function SmartProjectCreator() {
-  const { t } = useTranslation('tools')
+  const { t, i18n } = useTranslation('tools')
   const navigate = useNavigate()
   const { user } = useAuth()
   const { trackSmartAnalysis, trackProjectCreated } = useAnalytics()
@@ -104,6 +104,17 @@ export default function SmartProjectCreator() {
   const [sections, setSections] = useState([])
   const [creating, setCreating] = useState(false)
   const [createdProject, setCreatedProject] = useState(null)
+  const [patternLanguage, setPatternLanguage] = useState(null)
+  const [translatingPreview, setTranslatingPreview] = useState(false)
+  const [translateGatePending, setTranslateGatePending] = useState(false)
+
+  const getLanguageName = (code) => {
+    try {
+      return new Intl.DisplayNames([i18n.language], { type: 'language' }).of(code)
+    } catch {
+      return code
+    }
+  }
 
   // Charger le quota au montage
   useEffect(() => {
@@ -214,8 +225,10 @@ export default function SmartProjectCreator() {
       })
 
       if (response.data.success) {
+        const detectedLang = response.data.data.language || null
         setExtractedData(response.data.data)
         setAiStatus(response.data.ai_status)
+        setPatternLanguage(detectedLang)
         setAnalyzeMetadata({
           source_name: response.data.source_name,
           processing_time_ms: response.data.processing_time_ms,
@@ -255,6 +268,7 @@ export default function SmartProjectCreator() {
         setStashSelections(matches)
 
         setSections(response.data.data.sections || [])
+        setTranslateGatePending(!!detectedLang && detectedLang !== i18n.language.split('-')[0])
         setStep(3)
         trackSmartAnalysis(mode, true)
 
@@ -327,6 +341,14 @@ export default function SmartProjectCreator() {
         setStep(4)
         trackProjectCreated('smart', project.craft_type)
 
+        // [AI:Claude] confirm() renvoie le projet "brut" — pattern_language et
+        // has_pattern_translation ne sont calculés que par ProjectController::show(),
+        // pour proposer la traduction dès cet écran de succès plutôt que d'attendre que
+        // l'utilisatrice pense à aller voir l'onglet Patron. Best-effort, silencieux si ça échoue.
+        api.get(`/projects/${response.data.project.id}`)
+          .then(res => setCreatedProject(res.data.project))
+          .catch(() => {})
+
         // [AI:Claude] Réserve les pelotes (stash_allocations) une fois le projet
         // réellement créé — jamais avant, pour ne pas réserver sur une création
         // abandonnée en cours de route. Le stock lui-même n'est décrémenté qu'à
@@ -364,6 +386,38 @@ export default function SmartProjectCreator() {
       }
     } finally {
       setCreating(false)
+    }
+  }
+
+  // [AI:Claude] Traduit l'aperçu (étape Validation, avant création du projet) via
+  // import_id — remplace directement les sections/notes affichées dans le formulaire de
+  // relecture, pour que ce qu'on modifie/valide soit déjà dans sa langue.
+  const handleTranslatePreview = async () => {
+    if (!analyzeMetadata?.import_id) return
+    setTranslatingPreview(true)
+    try {
+      const res = await api.post('/projects/smart-create/translate-preview', {
+        import_id: analyzeMetadata.import_id,
+        target_lang: i18n.language
+      })
+      if (res.data.success) {
+        if (res.data.translated_sections?.length === sections.length) {
+          setSections(sections.map((s, i) => ({
+            ...s,
+            name: res.data.translated_sections[i]?.name || s.name,
+            description: res.data.translated_sections[i]?.description ?? s.description
+          })))
+        }
+        if (res.data.translated_pattern_notes) {
+          setProject(prev => ({ ...prev, pattern_notes: res.data.translated_pattern_notes }))
+        }
+        setPatternLanguage(null)
+      }
+    } catch (err) {
+      console.error('Erreur traduction aperçu:', err)
+    } finally {
+      setTranslatingPreview(false)
+      setTranslateGatePending(false)
     }
   }
 
@@ -795,8 +849,39 @@ export default function SmartProjectCreator() {
           </div>
         )}
 
+        {/* ÉTAPE 3 (variante) : proposition de traduction AVANT d'afficher le formulaire de
+            relecture — sinon les modifs proposées ci-dessous sont dans une langue que
+            l'utilisatrice ne comprend pas forcément. */}
+        {step === 3 && translateGatePending && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.checkAndEdit')}</h2>
+            <p className="text-gray-600 mb-6">
+              {t('ui.patternTranslateGateBody', { lang: getLanguageName(patternLanguage), targetLang: getLanguageName(i18n.language.split('-')[0]) })}
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={() => setTranslateGatePending(false)}
+                disabled={translatingPreview}
+                className="px-4 py-2 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition disabled:opacity-60"
+              >
+                {t('ui.patternTranslateGateSkip')}
+              </button>
+              <button
+                onClick={handleTranslatePreview}
+                disabled={translatingPreview}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
+              >
+                {translatingPreview && (
+                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                )}
+                {translatingPreview ? t('ui.patternTranslating') : t('ui.patternTranslateGateCta')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ÉTAPE 3 : Validation/Édition */}
-        {step === 3 && (
+        {step === 3 && !translateGatePending && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-2">
               {t('ui.checkAndEdit')}

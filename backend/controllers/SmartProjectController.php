@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Services\AIPatternExtractorService;
 use App\Services\AnalyticsService;
 use App\Services\PatternStorageService;
+use App\Services\PatternTranslatorService;
 use App\Middleware\AuthMiddleware;
 
 class SmartProjectController
@@ -367,6 +368,67 @@ class SmartProjectController
      *   source_url: string
      * }
      */
+    // [AI:Claude] Traduit l'aperçu (sections + extras) d'un import déjà analysé mais PAS
+    // ENCORE lié à un projet — étape Validation de la Création Intelligente. Contrairement à
+    // ProjectController::translatePattern(), keyed par project_id, ici on ne dispose que de
+    // l'import_id (le projet n'existe pas encore) : pas de project_sections à mettre à jour,
+    // seulement le formulaire de relecture côté frontend. On persiste quand même
+    // translated_text/translated_lang sur cette ligne ai_pattern_imports (même si project_id
+    // est encore NULL) — sinon, une fois le projet créé et l'import lié, ProjectController::show()
+    // ne trouve aucune traduction et l'onglet Patron re-propose une traduction déjà faite ici.
+    public function translatePreview(): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = json_decode(file_get_contents('php://input'), true) ?? [];
+            $importId = (int)($data['import_id'] ?? 0);
+            $targetLang = $data['target_lang'] ?? 'fr';
+
+            if (!$importId) {
+                $this->jsonResponse(['success' => false, 'error' => 'import_id requis'], 400);
+                return;
+            }
+
+            $db = \App\Config\Database::getInstance()->getConnection();
+            $stmt = $db->prepare(
+                'SELECT ai_response_json FROM ai_pattern_imports WHERE id = :id AND user_id = :uid'
+            );
+            $stmt->execute(['id' => $importId, 'uid' => $userId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                $this->jsonResponse(['success' => false, 'error' => 'Import introuvable'], 404);
+                return;
+            }
+
+            $parsed = json_decode($row['ai_response_json'] ?? '', true) ?? [];
+            $result = (new PatternTranslatorService())->translateParsedPattern($parsed, $targetLang);
+
+            if (!$result['success']) {
+                $this->jsonResponse(['success' => false, 'error' => $result['error'] ?? 'Échec de la traduction'], 502);
+                return;
+            }
+
+            $updateStmt = $db->prepare(
+                'UPDATE ai_pattern_imports SET translated_text = :text, translated_lang = :lang WHERE id = :id'
+            );
+            $updateStmt->execute([
+                'text' => $result['translated_text'],
+                'lang' => $targetLang,
+                'id' => $importId,
+            ]);
+
+            $this->jsonResponse([
+                'success' => true,
+                'translated_sections' => $result['translated_sections'],
+                'translated_pattern_notes' => $result['translated_pattern_notes'],
+            ]);
+        } catch (\Exception $e) {
+            error_log('Erreur translatePreview: ' . $e->getMessage());
+            $this->jsonResponse(['success' => false, 'error' => 'Erreur serveur'], 500);
+        }
+    }
+
     public function confirm(): void
     {
         try {
