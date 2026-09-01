@@ -13,8 +13,8 @@ import { useAuth } from '../contexts/AuthContext'
 // [AI:Claude] Le même SVG de coche était copié à chaque <li> des listes de
 // features/tarifs — factorisé ici pendant la migration i18n (les listes passent
 // de <li> en dur à une boucle sur les tableaux de traduction).
-const CheckIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+const CheckIcon = ({ className = '' }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
   </svg>
 )
@@ -26,6 +26,7 @@ const Landing = () => {
   // bascule vers les versions -en prises specifiquement pour la landing.
   const isEnglish = i18n.resolvedLanguage === 'en'
   const [openFAQ, setOpenFAQ] = useState(null)
+  const [showComparison, setShowComparison] = useState(false)
   const { user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
@@ -449,11 +450,12 @@ const Landing = () => {
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
 
             {/* FREE */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm">
+            <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm flex flex-col">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{t('pricing.free.name')}</p>
-              <div className="text-4xl font-bold text-gray-900 mb-1">0€</div>
+              <div className="text-4xl font-bold text-gray-900 mb-3">{t('pricing.free.price')}</div>
+              <p className="text-sm font-semibold text-gray-800 mb-1">{t('pricing.free.tagline')}</p>
               <p className="text-sm text-gray-500 mb-6">{t('pricing.free.desc')}</p>
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-1">
                 {t('pricing.free.features', { returnObjects: true }).map((feature, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
                     <CheckIcon />
@@ -464,21 +466,22 @@ const Landing = () => {
               <Link to="/register" className="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition text-sm">
                 {t('pricing.free.cta')}
               </Link>
+              <p className="text-xs text-gray-500 text-center mt-2">{t('pricing.free.reassurance')}</p>
             </div>
 
             {/* PLUS */}
-            <div className="bg-white border-2 border-primary-400 rounded-2xl p-7 shadow-md relative">
+            <div className="bg-white border-2 border-primary-400 rounded-2xl p-7 shadow-md relative flex flex-col">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                 <span className="bg-primary-400 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">{t('pricing.plus.badge')}</span>
               </div>
               <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-3 mt-2">{t('pricing.plus.name')}</p>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-bold text-gray-900">2,49€</span>
+              <div className="flex items-baseline gap-1 mb-3">
+                <span className="text-4xl font-bold text-gray-900">{t('pricing.plus.price')}</span>
                 <span className="text-sm text-gray-500">{t('pricing.perMonth')}</span>
               </div>
-              <p className="text-xs text-green-600 font-medium mb-1">{t('pricing.plus.billing')}</p>
+              <p className="text-sm font-semibold text-gray-800 mb-1">{t('pricing.plus.tagline')}</p>
               <p className="text-sm text-gray-500 mb-6">{t('pricing.plus.desc')}</p>
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-1">
                 {t('pricing.plus.features', { returnObjects: true }).map((feature, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
                     <CheckIcon />
@@ -502,50 +505,26 @@ const Landing = () => {
                   {t('pricing.plus.ctaMonthly')}
                 </Link>
               </div>
+              <p className="text-xs text-green-600 font-medium text-center">{t('pricing.plus.billing')}</p>
               <p className="text-xs text-gray-500 text-center mt-1">{t('pricing.noCommitment')}</p>
             </div>
 
             {/* PRO */}
-            <div className="bg-white border-2 border-primary-600 rounded-2xl p-7 shadow-lg relative">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">{t('pricing.pro.badge')}</span>
-              </div>
-              <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3 mt-2">{t('pricing.pro.name')}</p>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-bold text-gray-900">4,99€</span>
+            <div className="bg-white border-2 border-primary-600 rounded-2xl p-7 shadow-lg flex flex-col">
+              <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3">{t('pricing.pro.name')}</p>
+              <div className="flex items-baseline gap-1 mb-3">
+                <span className="text-4xl font-bold text-gray-900">{t('pricing.pro.price')}</span>
                 <span className="text-sm text-gray-500">{t('pricing.perMonth')}</span>
               </div>
-              <p className="text-xs text-green-600 font-medium mb-1">{t('pricing.pro.billing')}</p>
+              <p className="text-sm font-semibold text-gray-800 mb-1">{t('pricing.pro.tagline')}</p>
               <p className="text-sm text-gray-500 mb-6">{t('pricing.pro.desc')}</p>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  {t('pricing.pro.includesPlus')}
-                </li>
-                {/* <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">{t('ui.unlimitedStash')}</span></span>
-                </li> */}
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">{t('pricing.pro.smartCreation')}</span><span className="block text-gray-500 text-xs mt-0.5">{t('pricing.pro.smartCreationDesc')}</span></span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">{t('pricing.pro.assistant')}</span></span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">{t('pricing.pro.photoStudio')}</span></span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">{t('pricing.pro.translations')}</span></span>
-                </li>
-                <li className="flex items-start gap-2.5 text-sm text-gray-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  <span><span className="font-medium text-gray-800">{t('pricing.pro.stats')}</span><span className="block text-gray-500 text-xs mt-0.5">{t('pricing.pro.statsDesc')}</span></span>
-                </li>
+              <ul className="space-y-3 mb-8 flex-1">
+                {t('pricing.pro.features', { returnObjects: true }).map((feature, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-gray-700">
+                    <CheckIcon />
+                    {feature}
+                  </li>
+                ))}
               </ul>
               <div className="space-y-2">
                 <Link
@@ -563,9 +542,73 @@ const Landing = () => {
                   {t('pricing.pro.ctaMonthly')}
                 </Link>
               </div>
-              <p className="text-xs text-gray-500 text-center mt-2">{t('pricing.noCommitment')}</p>
+              <p className="text-xs text-green-600 font-medium text-center">{t('pricing.pro.billing')}</p>
+              <p className="text-xs text-gray-500 text-center mt-1">{t('pricing.noCommitment')}</p>
             </div>
           </div>
+
+          {/* Tous les plans incluent */}
+          <div className="grid md:grid-cols-2 gap-6 mt-10">
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
+              <p className="font-bold text-gray-900 mb-2">{t('pricing.allPlansInclude.title')}</p>
+              <p className="text-sm text-gray-600 leading-relaxed">{t('pricing.allPlansInclude.desc')}</p>
+            </div>
+            <div className="bg-primary-50 rounded-2xl border border-primary-200 p-6">
+              <p className="font-bold text-gray-900 mb-2">{t('pricing.allPlansInclude.secondaryTitle')}</p>
+              <p className="text-sm text-gray-600 leading-relaxed mb-4">{t('pricing.allPlansInclude.secondaryDesc')}</p>
+              <Link to="/register" className="inline-flex items-center gap-2 text-primary-700 hover:text-primary-800 font-semibold text-sm">
+                {t('pricing.allPlansInclude.cta')}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+
+          {/* Comparatif détaillé — repliable */}
+          <div className="mt-10 text-center">
+            <p className="font-bold text-gray-900 mb-1">{t('pricing.comparison.title')}</p>
+            <p className="text-sm text-gray-500 mb-4 max-w-lg mx-auto">{t('pricing.comparison.desc')}</p>
+            <button
+              onClick={() => setShowComparison(!showComparison)}
+              className="text-sm font-semibold text-primary-600 hover:text-primary-700 underline underline-offset-2"
+            >
+              {showComparison ? t('pricing.comparison.toggleClose') : t('pricing.comparison.toggleOpen')}
+            </button>
+          </div>
+
+          {showComparison && (
+            <div className="mt-6 overflow-x-auto">
+              <table className="w-full text-sm border-collapse min-w-[480px]">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="text-left py-3 pr-3 font-semibold text-gray-900">{t('pricing.comparison.columns.feature')}</th>
+                    <th className="text-center py-3 px-3 font-semibold text-gray-900">{t('pricing.comparison.columns.free')}</th>
+                    <th className="text-center py-3 px-3 font-semibold text-gray-900">{t('pricing.comparison.columns.plus')}</th>
+                    <th className="text-center py-3 pl-3 font-semibold text-gray-900">{t('pricing.comparison.columns.pro')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {t('pricing.comparison.rows', { returnObjects: true }).map((row, i) => (
+                    <tr key={i} className="border-b border-gray-100">
+                      <td className="py-3 pr-3 text-gray-700">{row.label}</td>
+                      {['free', 'plus', 'pro'].map((plan) => (
+                        <td key={plan} className="text-center py-3 px-3 text-gray-600">
+                          {row[plan] === 'check' ? (
+                            <CheckIcon className="mx-auto mt-0" />
+                          ) : row[plan] === '—' ? (
+                            <span className="text-gray-300">—</span>
+                          ) : (
+                            row[plan]
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </section>
 

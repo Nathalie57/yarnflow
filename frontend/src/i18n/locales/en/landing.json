@@ -22,7 +22,7 @@
     "title": "You know that moment when...",
     "items": [
       "You re-read the same row for the third time.",
-      "You stare at the chart and nothing clicks.",
+      "You can't remember if you're supposed to increase or decrease.",
       "You count your stitches… and the count is off."
     ],
     "punchline": "And you wonder: \"Wait… what am I even supposed to do here?\"",
@@ -31,7 +31,7 @@
   "assistant": {
     "eyebrow": "Your knitting & crochet copilot",
     "title": "YarnFlow knows your pattern.<0></0>Not just knitting.",
-    "desc": "Import your pattern as a PDF, a photo or a URL: YarnFlow analyses the instructions, spots the sections and understands the structure of your project. While you knit or crochet, it already knows where you are — no need to re-explain everything every time you ask.",
+    "desc": "Import your pattern as a PDF, pasted text or a URL: YarnFlow analyses the instructions, spots the sections and understands the structure of your project. While you knit or crochet, it already knows where you are — no need to re-explain everything every time you ask.",
     "bullets": [
       "You're on row 27? It already knows.",
       "Don't understand an instruction? Just ask.",
@@ -45,7 +45,7 @@
     "eyebrow": "How it works",
     "title": "From pattern to finished piece",
     "steps": [
-      { "title": "Import your pattern", "desc": "PDF, photo or URL." },
+      { "title": "Import your pattern", "desc": "PDF, pasted text or URL." },
       { "title": "YarnFlow understands it", "desc": "Sections, rows and instructions are structured automatically." },
       { "title": "Start your project", "desc": "Your pattern and your counters live in one place." },
       { "title": "Move at your own pace", "desc": "YarnFlow tracks your progress, rows and secondary counters." },
@@ -93,7 +93,7 @@
       "Perfect for Etsy, Instagram or your own archive"
     ],
     "beforeAlt": "Before — raw photo",
-    "afterAlt": "After — AI Lifestyle render",
+    "afterAlt": "After — Lifestyle render",
     "before": "BEFORE",
     "after": "AFTER"
   },
@@ -112,7 +112,7 @@
   "smartCreation": {
     "eyebrow": "Smart Creation",
     "title": "Import a PDF pattern or a URL.<0></0>The project builds itself.",
-    "desc": "Upload your pattern as a PDF or paste a URL — AI reads the document, creates the sections, fills in the technical details and structures your project in seconds. It's also what activates your contextual assistant on this project.",
+    "desc": "Upload your pattern as a PDF or paste a URL — YarnFlow reads the document, creates the sections, fills in the technical details and structures your project in seconds. It's also what activates your contextual assistant on this project.",
     "screenshotAlt": "YarnFlow Smart Creation — reviewing the extracted pattern",
     "features": [
       "PDF or URL — Ravelry, Etsy, a blog, any source works",
@@ -132,57 +132,86 @@
     ]
   },
   "pricing": {
-    "title": "Simple and transparent",
-    "subtitle": "FREE forever. PLUS when your projects grow. PRO when they deserve everything.",
+    "title": "Tools to create. An assistant so you're never stuck.",
+    "subtitle": "Start for free and explore YarnFlow at your own pace. Upgrade once your projects grow.",
     "perMonth": "/month",
     "noCommitment": "No commitment · Cancel any time",
     "free": {
       "name": "Free",
-      "desc": "The essentials to track your works in progress and discover the power of AI.",
+      "price": "€0",
+      "tagline": "To discover YarnFlow and track your first projects",
+      "desc": "Everything you need to organise your makes and use your assistant whenever you need it.",
       "features": [
-        "Unlimited projects & patterns (100 MB for files)",
-        "1 active row counter per project",
-        "Built-in timer & time tracking",
-        "Notes per section",
-        "3 free AI Smart Creations",
-        "Contextual AI assistant — 5 replies / month",
-        "Photo Studio: 2 free credits",
-        "3 free pattern translations"
+        "Unlimited projects and patterns",
+        "Track your work with a row counter",
+        "Timer to track your making time",
+        "Notes to keep all your info in one place",
+        "Contextual assistant to help on your pattern",
+        "A first taste of smart creations, translations and automatic photo touch-ups"
       ],
-      "cta": "Create my free account"
+      "cta": "Create my free account",
+      "reassurance": "No credit card required."
     },
     "plus": {
-      "badge": "New",
+      "badge": "Recommended",
       "name": "Plus",
-      "billing": "Billed €29.99/year — save €17.89",
-      "desc": "For those who finish several projects a year.",
+      "price": "€2.49",
+      "tagline": "Your everyday project companion.",
+      "desc": "For those who always have several works in progress and want to make the most of YarnFlow.",
       "features": [
-        "Everything in the FREE plan",
-        "Up to 10 secondary counters",
-        "Smart Creation — 3 imports / month",
-        "Contextual AI assistant — 10 replies / month",
-        "Photo Studio: 5 credits / month",
-        "3 pattern translations / month",
-        "Advanced statistics"
+        "Everything in Free",
+        "Up to 10 counters to track every detail of your project",
+        "More smart creations",
+        "More questions to your assistant",
+        "More translations and photo touch-ups",
+        "Statistics to track your progress"
       ],
-      "ctaAnnual": "Go PLUS (Yearly) — €29.99/year",
+      "billing": "€29.99/year · that's €2.49/month",
+      "ctaAnnual": "Choose Plus",
       "ctaMonthly": "Monthly — €3.99/month"
     },
     "pro": {
-      "badge": "For enthusiasts",
       "name": "Pro",
-      "billing": "Billed €59.99/year — save €23.89",
-      "desc": "For enthusiasts who want to keep the full history of their makes.",
-      "includesPlus": "Everything in the PLUS plan",
-      "smartCreation": "Smart Creation — 15 imports / month",
-      "smartCreationDesc": "Drop in a PDF or a photo, AI fills everything in instantly",
-      "assistant": "Contextual AI assistant — 30 replies / month",
-      "photoStudio": "Photo Studio: 20 credits / month",
-      "translations": "15 pattern translations / month",
-      "stats": "Advanced statistics",
-      "statsDesc": "Visual charts, progress badges and average time per session",
-      "ctaAnnual": "Go PRO (Yearly)",
-      "ctaMonthly": "Choose Monthly (€6.99/month)"
+      "price": "€4.99",
+      "tagline": "YarnFlow for enthusiasts.",
+      "desc": "For those juggling several projects who want to get the most out of everything YarnFlow can do.",
+      "features": [
+        "Everything in Plus",
+        "Smart pattern creation and import",
+        "Even more questions to your assistant",
+        "Photo Studio with more credits",
+        "Pattern translations in quantity",
+        "Advanced statistics"
+      ],
+      "billing": "€59.99/year · that's €4.99/month",
+      "ctaAnnual": "Choose Pro",
+      "ctaMonthly": "Monthly — €6.99/month"
+    },
+    "allPlansInclude": {
+      "title": "Your projects stay yours.",
+      "desc": "Your patterns, notes, making time and history stay attached to your account. Start for free and grow whenever you feel like it.",
+      "secondaryTitle": "No need to decide right now.",
+      "secondaryDesc": "Create your free account and discover YarnFlow with your first project.",
+      "cta": "Create my free account"
+    },
+    "comparison": {
+      "title": "Need to compare?",
+      "desc": "The differences between plans are mostly about usage limits on advanced features.",
+      "toggleOpen": "Show the full feature and limit breakdown",
+      "toggleClose": "Hide the details",
+      "columns": { "feature": "Feature", "free": "Free", "plus": "Plus", "pro": "Pro" },
+      "rows": [
+        { "label": "Projects & patterns", "free": "Unlimited", "plus": "Unlimited", "pro": "Unlimited" },
+        { "label": "Main counter", "free": "check", "plus": "check", "pro": "check" },
+        { "label": "Secondary counters", "free": "—", "plus": "Up to 10", "pro": "Up to 10" },
+        { "label": "Timer & time tracking", "free": "check", "plus": "check", "pro": "check" },
+        { "label": "Notes per section", "free": "check", "plus": "check", "pro": "check" },
+        { "label": "Assistant", "free": "5 questions/month", "plus": "10 questions/month", "pro": "30 questions/month" },
+        { "label": "Smart Creations", "free": "3 free", "plus": "3 imports/month", "pro": "15 imports/month" },
+        { "label": "Photo Studio", "free": "2 credits", "plus": "5 credits/month", "pro": "20 credits/month" },
+        { "label": "Pattern translation", "free": "3 free", "plus": "3/month", "pro": "15/month" },
+        { "label": "Advanced statistics", "free": "—", "plus": "check", "pro": "check" }
+      ]
     }
   },
   "faq": {
@@ -194,11 +223,11 @@
       },
       {
         "q": "What's the actual difference between FREE, PLUS and PRO?",
-        "a": "FREE covers everyday use: counting rows, recording your details, notes per section, an unlimited library (100 MB of files), 20 photos, 3 Smart Creation trials, a contextual AI assistant (5 replies/month), 2 lifetime AI photo credits. PLUS (€3.99/month) adds: unlimited file storage, 200 photos, up to 10 secondary counters per section, 3 AI imports/month, AI assistant (10 replies/month), 5 photo credits/month, advanced statistics. PRO (€6.99/month) unlocks everything: 15 AI imports/month, AI assistant (30 replies/month), 20 photo credits/month."
+        "a": "FREE covers everyday use: counting rows, recording your details, notes per section, an unlimited library (100 MB of files), 20 photos, 3 Smart Creation trials, an assistant (5 questions/month), 2 lifetime photo credits. PLUS (€3.99/month) adds: unlimited file storage, 200 photos, up to 10 secondary counters per section, 3 imports/month, assistant (10 questions/month), 5 photo credits/month, advanced statistics. PRO (€6.99/month) unlocks everything: 15 imports/month, assistant (30 questions/month), 20 photo credits/month."
       },
       {
         "q": "What exactly is Smart Creation?",
-        "a": "You import a pattern as a PDF or paste a URL — AI analyses the document, detects the sections (back, front, sleeves...), extracts the technical details (yarn, needles, gauge) and creates your project automatically. It's also what activates the contextual assistant on this project: it then knows the exact text of your pattern, not just its structure. 3 free trials for everyone, then 3 imports/month on PLUS or 15 imports/month on PRO."
+        "a": "You import a pattern as a PDF or paste a URL — YarnFlow analyses the document, detects the sections (back, front, sleeves...), extracts the technical details (yarn, needles, gauge) and creates your project automatically. It's also what activates the contextual assistant on this project: it then knows the exact text of your pattern, not just its structure. 3 free trials for everyone, then 3 imports/month on PLUS or 15 imports/month on PRO."
       },
       {
         "q": "Which devices does it work on?",

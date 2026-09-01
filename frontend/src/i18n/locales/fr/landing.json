@@ -22,7 +22,7 @@
     "title": "Tu connais ce moment où...",
     "items": [
       "Tu relis le même rang pour la troisième fois.",
-      "Tu regardes ton diagramme sans comprendre.",
+      "Tu ne sais plus si tu es censée augmenter ou diminuer.",
       "Tu comptes tes mailles… et le compte n'y est pas."
     ],
     "punchline": "Et tu te demandes : « Mais… je suis censée faire quoi, là ? »",
@@ -31,7 +31,7 @@
   "assistant": {
     "eyebrow": "Ton copilote tricot & crochet",
     "title": "YarnFlow connaît ton patron.<0></0>Pas seulement le tricot.",
-    "desc": "Importe ton patron en PDF, en photo ou via une URL : YarnFlow analyse les instructions, repère les sections et comprend la structure de ton ouvrage. Pendant que tu tricotes ou crochètes, il sait déjà où tu en es — inutile de tout lui réexpliquer à chaque question.",
+    "desc": "Importe ton patron en PDF, en texte ou via une URL : YarnFlow analyse les instructions, repère les sections et comprend la structure de ton ouvrage. Pendant que tu tricotes ou crochètes, il sait déjà où tu en es — inutile de tout lui réexpliquer à chaque question.",
     "bullets": [
       "Tu es au rang 27 ? Il le sait déjà.",
       "Tu ne comprends pas une instruction ? Demande-lui.",
@@ -45,7 +45,7 @@
     "eyebrow": "Comment ça marche",
     "title": "Du patron à ton ouvrage",
     "steps": [
-      { "title": "Importe ton patron", "desc": "PDF, photo ou URL." },
+      { "title": "Importe ton patron", "desc": "PDF, texte ou URL." },
       { "title": "YarnFlow le comprend", "desc": "Les sections, les rangs et les instructions sont structurés automatiquement." },
       { "title": "Commence ton projet", "desc": "Ton patron et tes compteurs sont réunis au même endroit." },
       { "title": "Avance à ton rythme", "desc": "YarnFlow suit ta progression, tes rangs et tes compteurs secondaires." },
@@ -93,7 +93,7 @@
       "Parfait pour Etsy, Instagram ou tes archives"
     ],
     "beforeAlt": "Avant — photo brute",
-    "afterAlt": "Après — rendu IA Lifestyle",
+    "afterAlt": "Après — rendu Lifestyle",
     "before": "AVANT",
     "after": "APRÈS"
   },
@@ -112,7 +112,7 @@
   "smartCreation": {
     "eyebrow": "Création Intelligente",
     "title": "Importe un patron PDF ou une URL.<0></0>Le projet se crée tout seul.",
-    "desc": "Télécharge ton patron en PDF ou colle une URL — l'IA lit le document, crée les sections, remplit les détails techniques et structure ton projet en quelques secondes. C'est aussi ce qui active ton assistant contextuel sur ce projet.",
+    "desc": "Télécharge ton patron en PDF ou colle une URL — YarnFlow lit le document, crée les sections, remplit les détails techniques et structure ton projet en quelques secondes. C'est aussi ce qui active ton assistant contextuel sur ce projet.",
     "screenshotAlt": "Création intelligente YarnFlow — validation du patron extrait",
     "features": [
       "PDF ou URL — Ravelry, Etsy, blog, peu importe la source",
@@ -132,57 +132,86 @@
     ]
   },
   "pricing": {
-    "title": "Simple et transparent",
-    "subtitle": "FREE pour toujours. PLUS quand tes projets grandissent. PRO quand ils méritent tout.",
+    "title": "Des outils pour créer. Un assistant pour ne plus rester bloquée.",
+    "subtitle": "Commence gratuitement et découvre YarnFlow à ton rythme. Passe à l'offre supérieure quand tes projets prennent de l'ampleur.",
     "perMonth": "/mois",
     "noCommitment": "Sans engagement · Résiliable à tout moment",
     "free": {
-      "name": "Free",
-      "desc": "L'essentiel pour suivre tes encours et découvrir la puissance de l'IA.",
+      "name": "Gratuit",
+      "price": "0 €",
+      "tagline": "Pour découvrir YarnFlow et suivre tes premiers projets",
+      "desc": "Tout ce qu'il faut pour organiser tes ouvrages et profiter de ton assistant quand tu en as besoin.",
       "features": [
-        "Projets & patrons illimités (100 Mo pour les fichiers)",
-        "1 compteur de rangs actif par projet",
-        "Timer intégré & suivi du temps",
-        "Notes par section",
-        "3 Créations Intelligentes IA offertes",
-        "Assistant IA contextuel — 5 aides / mois",
-        "Studio Photo : 2 crédits offerts",
-        "3 traductions de patron offertes"
+        "Projets et patrons illimités",
+        "Suivi de ton ouvrage et compteur de rangs",
+        "Timer pour suivre ton temps de création",
+        "Notes pour garder toutes tes informations au même endroit",
+        "Assistant contextuel pour t'aider sur ton patron",
+        "Premières créations, traductions et retouches photo automatiques"
       ],
-      "cta": "Créer mon compte gratuit"
+      "cta": "Créer mon compte gratuitement",
+      "reassurance": "Aucune carte bancaire requise."
     },
     "plus": {
-      "badge": "Nouveau",
+      "badge": "Recommandé",
       "name": "Plus",
-      "billing": "Facturé 29,99€/an — économise 17,89€",
-      "desc": "Pour celles qui terminent plusieurs projets par an.",
+      "price": "2,49 €",
+      "tagline": "Le compagnon de tes projets au quotidien.",
+      "desc": "Pour celles qui ont toujours plusieurs ouvrages en cours et veulent profiter pleinement de YarnFlow.",
       "features": [
-        "Tout ce qu'inclut le plan FREE",
-        "Jusqu'à 10 compteurs secondaires",
-        "Création Intelligente — 3 imports / mois",
-        "Assistant IA contextuel — 10 aides / mois",
-        "Studio Photo : 5 crédits / mois",
-        "3 traductions de patron / mois",
-        "Statistiques avancées"
+        "Tout ce qui est inclus dans Gratuit",
+        "Jusqu'à 10 compteurs pour suivre chaque détail de ton ouvrage",
+        "Plus de créations intelligentes",
+        "Plus de questions à ton assistant",
+        "Plus de traductions et de retouches photo",
+        "Statistiques pour suivre ta progression"
       ],
-      "ctaAnnual": "Passer à PLUS (Annuel) — 29,99€/an",
-      "ctaMonthly": "Mensuel — 3,99€/mois"
+      "billing": "29,99 €/an · soit 2,49 €/mois",
+      "ctaAnnual": "Choisir Plus",
+      "ctaMonthly": "Mensuel — 3,99 €/mois"
     },
     "pro": {
-      "badge": "Pour les passionnées",
       "name": "Pro",
-      "billing": "Facturé 59,99€/an — économise 23,89€",
-      "desc": "Pour les passionnées qui veulent garder l'historique complet de leurs créations.",
-      "includesPlus": "Tout ce qu'inclut le plan PLUS",
-      "smartCreation": "Création Intelligente — 15 imports / mois",
-      "smartCreationDesc": "Dépose un PDF ou une photo, l'IA pré-remplit tout instantanément",
-      "assistant": "Assistant IA contextuel — 30 aides / mois",
-      "photoStudio": "Studio Photo : 20 crédits / mois",
-      "translations": "15 traductions de patron / mois",
-      "stats": "Statistiques avancées",
-      "statsDesc": "Graphiques visuels, badges de progression et temps moyen par session",
-      "ctaAnnual": "Passer à PRO (Annuel)",
-      "ctaMonthly": "Choisir le Mensuel (6,99€/mois)"
+      "price": "4,99 €",
+      "tagline": "YarnFlow pour les passionnées.",
+      "desc": "Pour celles qui multiplient les projets et veulent profiter au maximum de tout ce que YarnFlow peut faire.",
+      "features": [
+        "Tout ce qui est inclus dans Plus",
+        "Création et import de patrons intelligents",
+        "Encore plus de questions à ton assistant",
+        "Studio Photo avec davantage de crédits",
+        "Traductions de patrons en quantité",
+        "Statistiques avancées"
+      ],
+      "billing": "59,99 €/an · soit 4,99 €/mois",
+      "ctaAnnual": "Choisir Pro",
+      "ctaMonthly": "Mensuel — 6,99 €/mois"
+    },
+    "allPlansInclude": {
+      "title": "Tes projets restent à toi.",
+      "desc": "Tes patrons, tes notes, ton temps de création et ton historique restent associés à ton compte. Tu peux commencer gratuitement et évoluer quand tu en ressens le besoin.",
+      "secondaryTitle": "Pas besoin de choisir maintenant.",
+      "secondaryDesc": "Crée ton compte gratuitement et découvre YarnFlow avec ton premier projet.",
+      "cta": "Créer mon compte gratuitement"
+    },
+    "comparison": {
+      "title": "Besoin de comparer ?",
+      "desc": "Les différences entre les offres concernent principalement les limites d'utilisation des fonctions avancées.",
+      "toggleOpen": "Afficher le détail des fonctionnalités et des limites",
+      "toggleClose": "Masquer le détail",
+      "columns": { "feature": "Fonctionnalité", "free": "Gratuit", "plus": "Plus", "pro": "Pro" },
+      "rows": [
+        { "label": "Projets & patrons", "free": "Illimités", "plus": "Illimités", "pro": "Illimités" },
+        { "label": "Compteur principal", "free": "check", "plus": "check", "pro": "check" },
+        { "label": "Compteurs secondaires", "free": "—", "plus": "Jusqu'à 10", "pro": "Jusqu'à 10" },
+        { "label": "Timer & suivi du temps", "free": "check", "plus": "check", "pro": "check" },
+        { "label": "Notes par section", "free": "check", "plus": "check", "pro": "check" },
+        { "label": "Assistant", "free": "5 questions/mois", "plus": "10 questions/mois", "pro": "30 questions/mois" },
+        { "label": "Créations intelligentes", "free": "3 offertes", "plus": "3 imports/mois", "pro": "15 imports/mois" },
+        { "label": "Studio Photo", "free": "2 crédits", "plus": "5 crédits/mois", "pro": "20 crédits/mois" },
+        { "label": "Traduction de patrons", "free": "3 offertes", "plus": "3/mois", "pro": "15/mois" },
+        { "label": "Statistiques avancées", "free": "—", "plus": "check", "pro": "check" }
+      ]
     }
   },
   "faq": {
@@ -194,11 +223,11 @@
       },
       {
         "q": "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-        "a": "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 3 essais création intelligente, assistant IA contextuel (5 aides/mois), 2 crédits photo IA à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, jusqu'à 10 compteurs secondaires par section, 3 imports IA/mois, assistant IA (10 aides/mois), 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports IA/mois, assistant IA (30 aides/mois), 20 crédits photo/mois."
+        "a": "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 3 essais création intelligente, assistant (5 questions/mois), 2 crédits photo à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, jusqu'à 10 compteurs secondaires par section, 3 imports/mois, assistant (10 questions/mois), 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports/mois, assistant (30 questions/mois), 20 crédits photo/mois."
       },
       {
         "q": "La création intelligente, c'est quoi exactement ?",
-        "a": "Tu importes un patron en PDF ou colles une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée ton projet automatiquement. C'est aussi ce qui active l'assistant contextuel sur ce projet : il connaît alors le texte exact de ton patron, pas seulement sa structure. 3 essais gratuits offerts pour tous, puis 3 imports/mois en PLUS ou 15 imports/mois en PRO."
+        "a": "Tu importes un patron en PDF ou colles une URL — YarnFlow analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée ton projet automatiquement. C'est aussi ce qui active l'assistant contextuel sur ce projet : il connaît alors le texte exact de ton patron, pas seulement sa structure. 3 essais gratuits offerts pour tous, puis 3 imports/mois en PLUS ou 15 imports/mois en PRO."
       },
       {
         "q": "Ça marche sur quels appareils ?",
