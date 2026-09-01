@@ -20,6 +20,7 @@ use App\Services\AIPatternExtractorService;
 use App\Services\AnalyticsService;
 use App\Services\PatternStorageService;
 use App\Services\PatternTranslatorService;
+use App\Services\RateLimiter;
 use App\Middleware\AuthMiddleware;
 
 class SmartProjectController
@@ -145,6 +146,18 @@ class SmartProjectController
 
             if (!$user) {
                 $this->jsonResponse(['error' => 'Utilisateur introuvable'], 404);
+                return;
+            }
+
+            // [AI:Claude] Plafond de débit indépendant du quota "3 essais à vie" (qui ne compte
+            // que les imports confirmés) — voir RateLimiter::LIMITS['smart_create_analyze'].
+            $rateLimiter = new RateLimiter();
+            if (!$rateLimiter->check('smart_create_analyze', "user:{$userId}")) {
+                $this->jsonResponse([
+                    'error' => "Tu as lancé beaucoup d'analyses aujourd'hui — réessaie un peu plus tard.",
+                    'error_code' => 'analyze_rate_limited',
+                    'limit_reached' => true
+                ], 429);
                 return;
             }
 

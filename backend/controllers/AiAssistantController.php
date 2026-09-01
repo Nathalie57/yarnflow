@@ -240,9 +240,11 @@ class AiAssistantController
             ]);
 
         } catch (\GuzzleHttp\Exception\ClientException $e) {
-            $this->sendResponse(502, ['error' => 'Erreur API IA : ' . $e->getMessage()]);
+            error_log('[AiAssistant] Erreur API Gemini: ' . $e->getMessage());
+            $this->sendResponse(502, ['error' => "Erreur de l'assistant IA. Réessayez dans quelques instants."]);
         } catch (\Exception $e) {
-            $this->sendResponse(500, ['error' => $e->getMessage()]);
+            error_log('[AiAssistant] Erreur: ' . $e->getMessage());
+            $this->sendResponse(500, ['error' => "Une erreur est survenue. Réessayez dans quelques instants."]);
         }
     }
 

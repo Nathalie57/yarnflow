@@ -35,6 +35,11 @@ class RateLimiter
         // (une utilisatrice qui tricote ne pose jamais 20 questions/jour) — juste un
         // plafond de débit invisible contre l'abus, pas un compteur qui se vide.
         'ai_contextual' => [20, 86400],      // 20 requêtes / 24h par utilisatrice
+        // [AI:Claude] Plafond de débit indépendant du quota "3 essais à vie" : ce dernier ne
+        // compte que les imports confirmés (project_id renseigné), donc une utilisatrice qui
+        // n'appuie jamais sur "confirmer" pouvait relancer analyze() (donc l'appel Gemini)
+        // sans limite. 10/jour couvre largement un usage normal tout en bornant le coût.
+        'smart_create_analyze' => [10, 86400], // 10 analyses / 24h par utilisatrice
         'default' => [100, 60]              // 100 requêtes / 1 minute (global)
     ];
 
@@ -106,14 +111,12 @@ class RateLimiter
             return true;
         }
 
-        // Vérifier si la limite est atteinte
-        if ($record['attempts'] >= $maxAttempts) {
-            return false; // Limite atteinte
-        }
-
-        // Incrémenter le compteur
-        $this->incrementRecord($record['id']);
-        return true;
+        // [AI:Claude] UPDATE conditionnel atomique plutôt que "vérifier puis incrémenter" :
+        // deux requêtes concurrentes lisant le même attempts avant que l'une n'ait écrit son
+        // incrément pouvaient toutes les deux passer sous la limite (TOCTOU). En conditionnant
+        // l'incrément lui-même sur attempts < maxAttempts et en se basant sur rowCount(), MySQL
+        // garantit qu'une seule requête gagne la course sur la dernière place disponible.
+        return $this->incrementIfUnderLimit($record['id'], $maxAttempts);
     }
 
     /**
@@ -191,17 +194,23 @@ class RateLimiter
     }
 
     /**
-     * [AI:Claude] Incrémenter le compteur
+     * [AI:Claude] Incrémenter le compteur seulement si toujours sous la limite (atomique)
+     *
+     * @return bool True si l'incrément a eu lieu (requête autorisée), false si la limite
+     *              était déjà atteinte entre-temps par une requête concurrente
      */
-    private function incrementRecord(int $id): void
+    private function incrementIfUnderLimit(int $id, int $maxAttempts): bool
     {
         $query = "UPDATE rate_limit
                   SET attempts = attempts + 1
-                  WHERE id = :id";
+                  WHERE id = :id AND attempts < :max_attempts";
 
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->bindValue(':max_attempts', $maxAttempts, PDO::PARAM_INT);
         $stmt->execute();
+
+        return $stmt->rowCount() > 0;
     }
 
     /**
