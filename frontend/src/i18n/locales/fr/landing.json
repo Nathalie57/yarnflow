@@ -9,13 +9,13 @@
   },
   "hero": {
     "badge": "Enfin une application pensée par une passionnée, pour les passionné·es de tricot & crochet",
-    "title": "Bloquée sur ton patron ? 😅",
+    "title": "Bloquée sur ton patron ?",
     "subtitle": "YarnFlow le comprend et t'aide à avancer, rang après rang. Ton patron, ton projet, ton assistant — au même endroit.",
     "cta": "Créer mon compte gratuit",
     "reassurance": "Inscription en 30 secondes · Aucune carte bancaire requise",
     "googlePlay": "Disponible sur Google Play",
     "screenshotAlt": "Aperçu de l'application YarnFlow : compteur de rangs et patron affichés côte à côte",
-    "chatQuestion": "Je suis au rang 27, je bloque sur la diminution 😩",
+    "chatQuestion": "Je suis au rang 27, je bloque sur la diminution",
     "chatAnswer": "Au rang 27, ton patron demande un surjet simple (ssk) toutes les 6 mailles. Tu es dans la 3ᵉ répétition : plus que 2 diminutions avant la fin de la section !"
   },
   "problem": {
@@ -25,7 +25,7 @@
       "Tu regardes ton diagramme sans comprendre.",
       "Tu comptes tes mailles… et le compte n'y est pas."
     ],
-    "punchline": "Et tu te demandes : « Mais… je suis censée faire quoi, là ? 😅 »",
+    "punchline": "Et tu te demandes : « Mais… je suis censée faire quoi, là ? »",
     "solution": "Avec YarnFlow, tu peux simplement demander."
   },
   "assistant": {

@@ -9,13 +9,13 @@
   },
   "hero": {
     "badge": "At last, an app built by a maker, for knitting & crochet lovers",
-    "title": "Stuck on your pattern? 😅",
+    "title": "Stuck on your pattern?",
     "subtitle": "YarnFlow understands it and helps you move forward, row after row. Your pattern, your project, your assistant — all in one place.",
     "cta": "Create my free account",
     "reassurance": "Sign up in 30 seconds · No credit card required",
     "googlePlay": "Get it on Google Play",
     "screenshotAlt": "YarnFlow app preview: row counter and pattern side by side",
-    "chatQuestion": "I'm on row 27 and stuck on the decrease 😩",
+    "chatQuestion": "I'm on row 27 and stuck on the decrease",
     "chatAnswer": "On row 27, your pattern calls for a simple decrease (ssk) every 6 stitches. You're in the 3rd repeat — only 2 more decreases before the end of this section!"
   },
   "problem": {
@@ -25,7 +25,7 @@
       "You stare at the chart and nothing clicks.",
       "You count your stitches… and the count is off."
     ],
-    "punchline": "And you wonder: \"Wait… what am I even supposed to do here? 😅\"",
+    "punchline": "And you wonder: \"Wait… what am I even supposed to do here?\"",
     "solution": "With YarnFlow, you can just ask."
   },
   "assistant": {
