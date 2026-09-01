@@ -16,6 +16,7 @@ use PDO;
 use App\Services\RateLimiter;
 use App\Services\AIPatternExtractorService;
 use App\Services\PatternTranslatorService;
+use App\Services\AnalyticsService;
 
 class AiAssistantController
 {
@@ -232,6 +233,11 @@ class AiAssistantController
                 $this->incrementUsage($userId, $month);
                 $usagePayload = ['used' => $used + 1, 'limit' => $limit, 'remaining' => $limit - $used - 1];
             }
+
+            AnalyticsService::log($userId, $projectId, 'ai_question_asked', [
+                'contextual' => $isContextualRequest,
+                'plan' => $plan,
+            ]);
 
             $this->sendResponse(200, [
                 'reply' => $reply,
