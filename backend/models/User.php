@@ -76,6 +76,9 @@ class User extends BaseModel
      * @param string|null $firstName Prénom
      * @param string|null $lastName Nom
      * @param string|null $avatar URL de l'avatar
+     * @param bool $isNew [AI:Claude] Passé par référence — mis à true uniquement si un
+     *   nouveau compte est créé, pour permettre à l'appelant de n'envoyer l'email de
+     *   bienvenue qu'aux vraies premières inscriptions, jamais aux reconnexions.
      * @return array Données de l'utilisateur (nouveau ou existant)
      */
     public function findOrCreateOAuthUser(
@@ -84,8 +87,11 @@ class User extends BaseModel
         string $email,
         ?string $firstName = null,
         ?string $lastName = null,
-        ?string $avatar = null
+        ?string $avatar = null,
+        bool &$isNew = false
     ): array {
+        $isNew = false;
+
         // [AI:Claude] Chercher d'abord par provider + provider_id
         $sql = "SELECT * FROM {$this->table}
                 WHERE oauth_provider = :provider
@@ -119,6 +125,7 @@ class User extends BaseModel
         }
 
         // [AI:Claude] Créer un nouvel utilisateur OAuth
+        $isNew = true;
         $data = [
             'email' => $email,
             'password' => null, // Pas de mot de passe pour OAuth

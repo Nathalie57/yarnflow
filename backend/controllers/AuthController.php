@@ -378,17 +378,33 @@ class AuthController
 
         try {
             // [AI:Claude] Créer ou récupérer l'utilisateur OAuth
+            $isNewUser = false;
             $user = $this->userModel->findOrCreateOAuthUser(
                 $oauthData['provider'],
                 $oauthData['provider_id'],
                 $oauthData['email'],
                 $oauthData['first_name'],
                 $oauthData['last_name'],
-                $oauthData['avatar']
+                $oauthData['avatar'],
+                $isNewUser
             );
 
             // [AI:Claude] Enregistrer la date/heure de connexion
             $this->userModel->updateLastLogin($user['id']);
+
+            // [AI:Claude] Email de bienvenue (non-bloquant) — manquait sur ce chemin :
+            // seule l'inscription classique (register()) l'envoyait jusqu'ici, aucun
+            // compte créé via Google n'a jamais reçu cet email.
+            if ($isNewUser) {
+                try {
+                    $db = \App\Config\Database::getInstance()->getConnection();
+                    $emailService = new \App\Services\EmailService($db);
+                    $userName = $user['first_name'] ?? 'Nouveau membre';
+                    $emailService->sendRegistrationWelcomeEmail($user['email'], $userName, $user['id']);
+                } catch (\Exception $e) {
+                    error_log('[AuthController] Erreur envoi email de bienvenue (Google) : ' . $e->getMessage());
+                }
+            }
 
             $token = $this->jwtService->generateToken($user);
 
@@ -430,17 +446,32 @@ class AuthController
 
         try {
             // [AI:Claude] Créer ou récupérer l'utilisateur OAuth
+            $isNewUser = false;
             $user = $this->userModel->findOrCreateOAuthUser(
                 $oauthData['provider'],
                 $oauthData['provider_id'],
                 $oauthData['email'],
                 $oauthData['first_name'],
                 $oauthData['last_name'],
-                $oauthData['avatar']
+                $oauthData['avatar'],
+                $isNewUser
             );
 
             // [AI:Claude] Enregistrer la date/heure de connexion
             $this->userModel->updateLastLogin($user['id']);
+
+            // [AI:Claude] Email de bienvenue (non-bloquant) — même trou que Google OAuth,
+            // voir googleCallback().
+            if ($isNewUser) {
+                try {
+                    $db = \App\Config\Database::getInstance()->getConnection();
+                    $emailService = new \App\Services\EmailService($db);
+                    $userName = $user['first_name'] ?? 'Nouveau membre';
+                    $emailService->sendRegistrationWelcomeEmail($user['email'], $userName, $user['id']);
+                } catch (\Exception $e) {
+                    error_log('[AuthController] Erreur envoi email de bienvenue (Facebook) : ' . $e->getMessage());
+                }
+            }
 
             $token = $this->jwtService->generateToken($user);
 
