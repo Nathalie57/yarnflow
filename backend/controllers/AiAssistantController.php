@@ -325,9 +325,11 @@ PROMPT;
     }
 
     /**
-     * [AI:Claude] Construit le contexte texte du projet actif pour l'assistant contextuel.
-     * Lit uniquement — ne modifie jamais project_sections/project_rows, qui restent la
-     * source de vérité de la progression réelle de l'utilisatrice. Le patron associé
+     * [AI:Claude] Construit le contexte texte complet du projet pour l'assistant contextuel —
+     * toutes les sections (pas seulement l'active), leurs notes, leurs compteurs secondaires,
+     * et les détails techniques (laine/aiguilles/échantillon) du projet. Lit uniquement —
+     * ne modifie jamais project_sections/project_rows, qui restent la source de vérité de la
+     * progression réelle de l'utilisatrice. Le patron associé
      * (ai_pattern_imports.ai_response_json, lié via ProjectController::linkAiPatternReference())
      * est fourni tel quel en référence : pas de tentative de faire correspondre
      * programmatiquement ses sections à celles suivies manuellement — un LLM fait ce
@@ -335,40 +337,96 @@ PROMPT;
      */
     private function buildProjectContext(int $projectId, int $userId): ?string
     {
-        $stmt = $this->db->prepare('SELECT id, name, current_section_id FROM projects WHERE id = :id AND user_id = :uid');
+        $stmt = $this->db->prepare(
+            'SELECT name, type, current_row, total_rows, current_section_id, notes, pattern_notes,
+                    yarn_brand, yarn_color, hook_size, technical_details
+             FROM projects WHERE id = :id AND user_id = :uid'
+        );
         $stmt->execute([':id' => $projectId, ':uid' => $userId]);
         $project = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$project) return null;
 
-        $section = null;
-        if ($project['current_section_id']) {
-            $stmt = $this->db->prepare(
-                'SELECT name, description, current_row, total_rows, counter_unit FROM project_sections WHERE id = :id'
-            );
-            $stmt->execute([':id' => $project['current_section_id']]);
-            $section = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
-        }
-        if (!$section) {
-            $stmt = $this->db->prepare(
-                'SELECT name, description, current_row, total_rows, counter_unit FROM project_sections
-                 WHERE project_id = :pid ORDER BY display_order ASC LIMIT 1'
-            );
-            $stmt->execute([':pid' => $projectId]);
-            $section = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $lines = ["Projet : {$project['name']}" . (!empty($project['type']) ? " ({$project['type']})" : '')];
+
+        // Détails techniques — le JSON structuré (technical_details) prime sur les anciennes
+        // colonnes plates (yarn_brand/hook_size), qui ne sont plus alimentées par les projets récents.
+        $technical = json_decode($project['technical_details'] ?? '', true);
+        if (is_array($technical)) {
+            if (!empty($technical['needles'])) {
+                $needleLines = array_filter(array_map(function ($n) {
+                    return trim(implode(' ', array_filter([$n['type'] ?? '', $n['size'] ?? '', !empty($n['length']) ? "({$n['length']})" : ''])));
+                }, $technical['needles']));
+                if ($needleLines) $lines[] = 'Aiguilles/crochet : ' . implode(' ; ', $needleLines);
+            }
+            if (!empty($technical['yarn'])) {
+                $yarnLines = array_filter(array_map(function ($y) {
+                    return trim(implode(' — ', array_filter([$y['brand'] ?? '', $y['name'] ?? ''])));
+                }, $technical['yarn']));
+                if ($yarnLines) $lines[] = 'Laine : ' . implode(' ; ', $yarnLines);
+            }
+            if (!empty($technical['gauge']) && (!empty($technical['gauge']['stitches']) || !empty($technical['gauge']['rows']))) {
+                $g = $technical['gauge'];
+                $lines[] = "Échantillon : {$g['stitches']} mailles x {$g['rows']} rangs sur {$g['dimensions']}";
+            }
+        } elseif (!empty($project['yarn_brand']) || !empty($project['hook_size'])) {
+            $lines[] = "Laine : {$project['yarn_brand']} {$project['yarn_color']} — Aiguille/crochet : {$project['hook_size']}";
         }
 
-        $lines = ["Projet : {$project['name']}"];
-        if ($section) {
-            $unit = $section['counter_unit'] === 'cm' ? 'cm' : 'rangs';
-            $progress = $section['total_rows']
-                ? "{$section['current_row']}/{$section['total_rows']} {$unit}"
-                : "{$section['current_row']} {$unit}";
-            $lines[] = "Section active : {$section['name']} — progression : {$progress}";
-            if (!empty($section['description'])) {
-                $lines[] = "Instructions de cette section :\n" . $section['description'];
+        if (!empty($project['notes'])) {
+            $lines[] = "Notes générales du projet :\n" . $project['notes'];
+        }
+        if (!empty($project['pattern_notes'])) {
+            $lines[] = "Notes sur le patron :\n" . $project['pattern_notes'];
+        }
+
+        // Toutes les sections (pas seulement l'active) — la LLM a besoin de la vue d'ensemble
+        // pour répondre à "qu'est-ce qui vient après ?" ou "il me reste combien de parties ?"
+        $stmt = $this->db->prepare(
+            'SELECT id, name, description, notes, current_row, total_rows, counter_unit, is_completed
+             FROM project_sections WHERE project_id = :pid ORDER BY display_order ASC'
+        );
+        $stmt->execute([':pid' => $projectId]);
+        $sections = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stmt = $this->db->prepare(
+            'SELECT section_id, label, target, count FROM project_secondary_counters WHERE project_id = :pid'
+        );
+        $stmt->execute([':pid' => $projectId]);
+        $countersBySection = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $countersBySection[$c['section_id'] ?? 0][] = $c;
+        }
+
+        if ($sections) {
+            foreach ($sections as $section) {
+                $isActive = $project['current_section_id'] && (int)$section['id'] === (int)$project['current_section_id'];
+                $unit = $section['counter_unit'] === 'cm' ? 'cm' : 'rangs';
+                $progress = $section['total_rows']
+                    ? "{$section['current_row']}/{$section['total_rows']} {$unit}"
+                    : "{$section['current_row']} {$unit}";
+                $status = $section['is_completed'] ? ' [terminée]' : ($isActive ? ' [section active — c\'est ici qu\'est l\'utilisatrice en ce moment]' : '');
+                $lines[] = "Section : {$section['name']}{$status} — progression : {$progress}";
+                if (!empty($section['description'])) {
+                    $lines[] = '  Instructions : ' . $section['description'];
+                }
+                if (!empty($section['notes'])) {
+                    $lines[] = '  Notes personnelles de l\'utilisatrice sur cette section : ' . $section['notes'];
+                }
+                foreach ($countersBySection[$section['id']] ?? [] as $counter) {
+                    $target = $counter['target'] !== null ? "/{$counter['target']}" : '';
+                    $lines[] = "  Compteur secondaire « {$counter['label']} » : {$counter['count']}{$target}";
+                }
             }
         } else {
-            $lines[] = "Aucune section définie pour ce projet.";
+            $progress = $project['total_rows'] ? "{$project['current_row']}/{$project['total_rows']}" : (string)$project['current_row'];
+            $lines[] = "Aucune section définie — compteur global : {$progress} rangs";
+        }
+
+        // Compteurs secondaires hors section (section_id NULL) — possible même sur un projet
+        // avec sections, selon comment ils ont été créés.
+        foreach ($countersBySection[0] ?? [] as $counter) {
+            $target = $counter['target'] !== null ? "/{$counter['target']}" : '';
+            $lines[] = "Compteur secondaire « {$counter['label']} » (hors section) : {$counter['count']}{$target}";
         }
 
         $stmt = $this->db->prepare(

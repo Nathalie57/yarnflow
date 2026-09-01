@@ -9,26 +9,54 @@
   },
   "hero": {
     "badge": "Enfin une application pensée par une passionnée, pour les passionné·es de tricot & crochet",
-    "title": "Ne perds plus jamais le fil de tes créations",
-    "subtitle": "Suis chaque projet du premier rang jusqu'à la photo finale : patrons, compteurs, progression et souvenirs, dans une seule application.",
+    "title": "Bloquée sur ton patron ? 😅",
+    "subtitle": "YarnFlow le comprend et t'aide à avancer, rang après rang. Ton patron, ton projet, ton assistant — au même endroit.",
     "cta": "Créer mon compte gratuit",
     "reassurance": "Inscription en 30 secondes · Aucune carte bancaire requise",
     "googlePlay": "Disponible sur Google Play",
-    "screenshotAlt": "Aperçu de l'application YarnFlow : compteur de rangs et patron affichés côte à côte"
+    "screenshotAlt": "Aperçu de l'application YarnFlow : compteur de rangs et patron affichés côte à côte",
+    "chatQuestion": "Je suis au rang 27, je bloque sur la diminution 😩",
+    "chatAnswer": "Au rang 27, ton patron demande un surjet simple (ssk) toutes les 6 mailles. Tu es dans la 3ᵉ répétition : plus que 2 diminutions avant la fin de la section !"
   },
-  "differentiators": {
-    "complex": {
-      "title": "Projets complexes, enfin maîtrisés",
-      "desc": "Sections, plusieurs compteurs secondaires par section, notes par section — même un pull avec manches raglan"
-    },
-    "import": {
-      "title": "Un patron PDF ou URL → un projet prêt",
-      "desc": "L'IA lit ton patron, crée les sections et remplit les détails — en quelques secondes"
-    },
-    "photos": {
-      "title": "Photos dignes de tes créations",
-      "desc": "L'IA sublime tes photos — éclairage, fond, couleurs — sans toucher à ton ouvrage"
-    }
+  "problem": {
+    "title": "Tu connais ce moment où...",
+    "items": [
+      "Tu relis le même rang pour la troisième fois.",
+      "Tu regardes ton diagramme sans comprendre.",
+      "Tu comptes tes mailles… et le compte n'y est pas."
+    ],
+    "punchline": "Et tu te demandes : « Mais… je suis censée faire quoi, là ? 😅 »",
+    "solution": "Avec YarnFlow, tu peux simplement demander."
+  },
+  "assistant": {
+    "eyebrow": "Ton copilote tricot & crochet",
+    "title": "YarnFlow connaît ton patron.<0></0>Pas seulement le tricot.",
+    "desc": "Importe ton patron en PDF, en photo ou via une URL : YarnFlow analyse les instructions, repère les sections et comprend la structure de ton ouvrage. Pendant que tu tricotes ou crochètes, il sait déjà où tu en es — inutile de tout lui réexpliquer à chaque question.",
+    "bullets": [
+      "Tu es au rang 27 ? Il le sait déjà.",
+      "Tu ne comprends pas une instruction ? Demande-lui.",
+      "Tu ne sais plus quoi faire ensuite ? Il peut te guider."
+    ],
+    "question": "J'ai raté 3 rangs sur mon dos, comment je rattrape sans détricoter tout ?",
+    "answer": "Pour rattraper 3 rangs sans détricoter, tu peux utiliser une aiguille auxiliaire…",
+    "tagline": "Ton patron. Ton projet. Ton assistant."
+  },
+  "flow": {
+    "eyebrow": "Comment ça marche",
+    "title": "Du patron à ton ouvrage",
+    "steps": [
+      { "title": "Importe ton patron", "desc": "PDF, photo ou URL." },
+      { "title": "YarnFlow le comprend", "desc": "Les sections, les rangs et les instructions sont structurés automatiquement." },
+      { "title": "Commence ton projet", "desc": "Ton patron et tes compteurs sont réunis au même endroit." },
+      { "title": "Avance à ton rythme", "desc": "YarnFlow suit ta progression, tes rangs et tes compteurs secondaires." },
+      { "title": "Tu bloques ?", "desc": "Demande à ton assistant. Il connaît ton patron et sait où tu en es." },
+      { "title": "Termine ton ouvrage", "desc": "Et garde une trace de ton projet, de tes photos et de ton temps de réalisation." }
+    ]
+  },
+  "translationBlock": {
+    "eyebrow": "Patron en langue étrangère",
+    "title": "Ton patron peut être dans n'importe quelle langue. YarnFlow, lui, le comprend.",
+    "desc": "Patron en anglais, en allemand, ou dans une autre langue ? Traduis-le, puis demande de l'aide à YarnFlow dans ta langue. Traduire. Comprendre. Avancer. Tout depuis ton projet."
   },
   "counter": {
     "eyebrow": "Compteur de rangs",
@@ -84,7 +112,7 @@
   "smartCreation": {
     "eyebrow": "Création Intelligente",
     "title": "Importe un patron PDF ou une URL.<0></0>Le projet se crée tout seul.",
-    "desc": "Télécharge ton patron en PDF ou colle une URL — l'IA lit le document, crée les sections, remplit les détails techniques et structure ton projet en quelques secondes.",
+    "desc": "Télécharge ton patron en PDF ou colle une URL — l'IA lit le document, crée les sections, remplit les détails techniques et structure ton projet en quelques secondes. C'est aussi ce qui active ton assistant contextuel sur ce projet.",
     "screenshotAlt": "Création intelligente YarnFlow — validation du patron extrait",
     "features": [
       "PDF ou URL — Ravelry, Etsy, blog, peu importe la source",
@@ -93,14 +121,6 @@
       "3 essais gratuits · 3 imports/mois en PLUS · 15 imports/mois en PRO"
     ],
     "badge": "Une façon unique de transformer tes patrons en projets organisés"
-  },
-  "assistant": {
-    "eyebrow": "Assistant tricot & crochet",
-    "title": "Un expert tricot & crochet disponible à tout moment",
-    "desc": "Comment calculer les diminutions pour ma taille ? Quel point pour remplacer celui du patron ? L'assistant connaît ton projet et répond en contexte — pas des réponses génériques.",
-    "question": "J'ai raté 3 rangs sur mon dos, comment je rattrape sans détricoter tout ?",
-    "answer": "Pour rattraper 3 rangs sans détricoter, tu peux utiliser une aiguille auxiliaire…",
-    "quota": "5 questions / mois en FREE · 10 questions / mois en PLUS · 30 questions / mois en PRO"
   },
   "testimonials": {
     "title": "Ce qu'en disent nos premières utilisatrices",
@@ -125,7 +145,7 @@
         "Timer intégré & suivi du temps",
         "Notes par section",
         "3 Créations Intelligentes IA offertes",
-        "5 questions / mois à l'assistant IA",
+        "Assistant IA contextuel — 5 aides / mois",
         "Studio Photo : 2 crédits offerts",
         "3 traductions de patron offertes"
       ],
@@ -140,7 +160,7 @@
         "Tout ce qu'inclut le plan FREE",
         "Jusqu'à 10 compteurs secondaires",
         "Création Intelligente — 3 imports / mois",
-        "10 questions / mois à l'assistant IA",
+        "Assistant IA contextuel — 10 aides / mois",
         "Studio Photo : 5 crédits / mois",
         "3 traductions de patron / mois",
         "Statistiques avancées"
@@ -156,7 +176,7 @@
       "includesPlus": "Tout ce qu'inclut le plan PLUS",
       "smartCreation": "Création Intelligente — 15 imports / mois",
       "smartCreationDesc": "Dépose un PDF ou une photo, l'IA pré-remplit tout instantanément",
-      "assistant": "Assistant IA tricot — 30 questions / mois",
+      "assistant": "Assistant IA contextuel — 30 aides / mois",
       "photoStudio": "Studio Photo : 20 crédits / mois",
       "translations": "15 traductions de patron / mois",
       "stats": "Statistiques avancées",
@@ -174,11 +194,11 @@
       },
       {
         "q": "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-        "a": "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 2 essais création intelligente, 5 questions IA/mois, 2 crédits photo IA à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, jusqu'à 10 compteurs secondaires par section, 3 imports IA/mois, 10 questions IA/mois, 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports IA/mois, 30 questions IA/mois, 20 crédits photo/mois."
+        "a": "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 3 essais création intelligente, assistant IA contextuel (5 aides/mois), 2 crédits photo IA à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, jusqu'à 10 compteurs secondaires par section, 3 imports IA/mois, assistant IA (10 aides/mois), 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports IA/mois, assistant IA (30 aides/mois), 20 crédits photo/mois."
       },
       {
         "q": "La création intelligente, c'est quoi exactement ?",
-        "a": "Tu importe un patron en PDF ou colle une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée ton projet automatiquement. 3 essais gratuits offerts pour tous, puis 3 imports/mois en PLUS ou 15 imports/mois en PRO."
+        "a": "Tu importes un patron en PDF ou colles une URL — l'IA analyse le document, détecte les sections (dos, devant, manches...), extrait les détails techniques (laine, aiguilles, tension) et crée ton projet automatiquement. C'est aussi ce qui active l'assistant contextuel sur ce projet : il connaît alors le texte exact de ton patron, pas seulement sa structure. 3 essais gratuits offerts pour tous, puis 3 imports/mois en PLUS ou 15 imports/mois en PRO."
       },
       {
         "q": "Ça marche sur quels appareils ?",

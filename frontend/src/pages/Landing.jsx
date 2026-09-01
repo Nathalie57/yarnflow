@@ -125,64 +125,124 @@ const Landing = () => {
           </div>
 
           <div className="flex justify-center md:justify-end">
-            {/* [AI:Claude] La seule image chargee en priorite : c'est celle du
-                premier ecran. La differer retarderait l'affichage principal.
-                Les cinq autres, plus bas dans la page, sont en loading="lazy" —
-                elles pesaient 3,3 Mo a elles seules et se telechargeaient
-                toutes des l'arrivee, avant meme d'etre visibles. */}
-            <img
-              src={isEnglish ? '/screenshots/compteur-en.png' : '/screenshots/counter-mobile.jpg'}
-              alt={t('hero.screenshotAlt')}
-              fetchPriority="high"
-              className="w-56 md:w-64 rounded-[2rem] shadow-2xl border border-gray-200"
-            />
+            {/* [AI:Claude] Bulles fabriquées en HTML/CSS plutôt qu'une capture d'écran :
+                pas de dépendance à un asset externe, facile à traduire, et montre
+                l'assistant (le nouveau positionnement) plutôt que le compteur dès le
+                premier écran. Remplaçable par une vraie capture le jour où disponible. */}
+            <div className="w-full max-w-sm bg-gray-50 rounded-[2rem] shadow-2xl border border-gray-200 p-5 space-y-3">
+              <div className="flex items-start gap-3 flex-row-reverse">
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">M</div>
+                <div className="bg-white rounded-2xl rounded-tr-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
+                  {t('hero.chatQuestion')}
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-primary-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                  </svg>
+                </div>
+                <div className="bg-primary-50 rounded-2xl rounded-tl-none border border-primary-100 px-4 py-2.5 text-sm text-gray-700">
+                  {t('hero.chatAnswer')}
+                </div>
+              </div>
+            </div>
           </div>
 
         </div>
       </section>
 
-      {/* Différenciateur — 3 points forts */}
-      <section className="bg-primary-50 border-y border-primary-100 py-10" id="features">
+      {/* "Tu connais ce moment où..." — accroche du problème, avant la solution */}
+      <section className="bg-primary-50 border-y border-primary-100 py-14" id="features">
+        <div className="max-w-2xl mx-auto px-4 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('problem.title')}</h2>
+          <ul className="space-y-2 mb-6">
+            {t('problem.items', { returnObjects: true }).map((item, i) => (
+              <li key={i} className="text-gray-600">{item}</li>
+            ))}
+          </ul>
+          <p className="text-gray-700 font-medium mb-2">{t('problem.punchline')}</p>
+          <p className="text-lg font-bold text-primary-700">{t('problem.solution')}</p>
+        </div>
+      </section>
+
+      {/* Assistant IA — copilote, différenciateur principal */}
+      <section className="py-16 bg-white">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="grid md:grid-cols-3 gap-6 text-center">
-
-            <div className="flex flex-col items-center gap-3 p-4">
-              <div className="w-12 h-12 bg-white rounded-2xl border border-primary-200 flex items-center justify-center shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-bold text-gray-900 mb-1">{t('differentiators.complex.title')}</p>
-                <p className="text-sm text-gray-600">{t('differentiators.complex.desc')}</p>
-              </div>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('assistant.eyebrow')}</span>
+              <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
+                <Trans i18nKey="assistant.title" ns="landing" components={[<br key="0" />]} />
+              </h2>
+              <p className="text-gray-600 leading-relaxed mb-5">
+                {t('assistant.desc')}
+              </p>
+              <ul className="space-y-2.5 text-sm text-gray-600 mb-6">
+                {t('assistant.bullets', { returnObjects: true }).map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <span className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-200">
+                {t('assistant.tagline')}
+              </span>
             </div>
 
-            <div className="flex flex-col items-center gap-3 p-4">
-              <div className="w-12 h-12 bg-white rounded-2xl border border-primary-200 flex items-center justify-center shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-                </svg>
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">M</div>
+                <div className="bg-white rounded-xl rounded-tl-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
+                  {t('assistant.question')}
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-gray-900 mb-1">{t('differentiators.import.title')}</p>
-                <p className="text-sm text-gray-600">{t('differentiators.import.desc')}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-3 p-4">
-              <div className="w-12 h-12 bg-white rounded-2xl border border-primary-200 flex items-center justify-center shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-bold text-gray-900 mb-1">{t('differentiators.photos.title')}</p>
-                <p className="text-sm text-gray-600">{t('differentiators.photos.desc')}</p>
+              <div className="flex items-start gap-3 flex-row-reverse">
+                <div className="w-7 h-7 bg-primary-600 rounded-full flex-shrink-0 flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                  </svg>
+                </div>
+                <div className="bg-primary-50 rounded-xl rounded-tr-none border border-primary-100 px-4 py-2.5 text-sm text-gray-700">
+                  {t('assistant.answer')}
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
 
+      {/* Du patron à ton ouvrage — parcours narratif plutôt que liste de features */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4">
+          <span className="text-xs font-bold text-primary-600 uppercase tracking-widest block text-center">{t('flow.eyebrow')}</span>
+          <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-10 text-center">{t('flow.title')}</h2>
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+            {t('flow.steps', { returnObjects: true }).map((step, i) => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5">
+                <div className="text-3xl font-bold text-primary-200 mb-2">{String(i + 1).padStart(2, '0')}</div>
+                <p className="font-bold text-gray-900 mb-1">{step.title}</p>
+                <p className="text-sm text-gray-600">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Traduction — preuve de compréhension, pas un outil isolé */}
+      <section className="py-16 bg-white">
+        <div className="max-w-5xl mx-auto px-4">
+          <div className="bg-primary-50 border border-primary-200 rounded-3xl p-8 md:p-10">
+            <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('translationBlock.eyebrow')}</span>
+            <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-3 max-w-2xl">
+              {t('translationBlock.title')}
+            </h2>
+            <p className="text-gray-600 leading-relaxed max-w-2xl">
+              {t('translationBlock.desc')}
+            </p>
           </div>
         </div>
       </section>
@@ -352,36 +412,6 @@ const Landing = () => {
             </div>
 
           </div>
-        </div>
-      </section>
-
-      {/* Assistant IA */}
-      <section className="py-14 bg-white">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('assistant.eyebrow')}</span>
-          <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">{t('assistant.title')}</h2>
-          <p className="text-gray-600 leading-relaxed mb-8 max-w-xl mx-auto">
-            {t('assistant.desc')}
-          </p>
-          <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 text-left max-w-lg mx-auto space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-7 h-7 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">M</div>
-              <div className="bg-white rounded-xl rounded-tl-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
-                {t('assistant.question')}
-              </div>
-            </div>
-            <div className="flex items-start gap-3 flex-row-reverse">
-              <div className="w-7 h-7 bg-primary-600 rounded-full flex-shrink-0 flex items-center justify-center">
-                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-                </svg>
-              </div>
-              <div className="bg-primary-50 rounded-xl rounded-tr-none border border-primary-100 px-4 py-2.5 text-sm text-gray-700">
-                {t('assistant.answer')}
-              </div>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-4">{t('assistant.quota')}</p>
         </div>
       </section>
 

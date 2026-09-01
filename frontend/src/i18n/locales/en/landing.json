@@ -9,26 +9,54 @@
   },
   "hero": {
     "badge": "At last, an app built by a maker, for knitting & crochet lovers",
-    "title": "Never lose track of your projects again",
-    "subtitle": "Follow every project from the first row to the final photo: patterns, counters, progress and memories, all in one app.",
+    "title": "Stuck on your pattern? 😅",
+    "subtitle": "YarnFlow understands it and helps you move forward, row after row. Your pattern, your project, your assistant — all in one place.",
     "cta": "Create my free account",
     "reassurance": "Sign up in 30 seconds · No credit card required",
     "googlePlay": "Get it on Google Play",
-    "screenshotAlt": "YarnFlow app preview: row counter and pattern side by side"
+    "screenshotAlt": "YarnFlow app preview: row counter and pattern side by side",
+    "chatQuestion": "I'm on row 27 and stuck on the decrease 😩",
+    "chatAnswer": "On row 27, your pattern calls for a simple decrease (ssk) every 6 stitches. You're in the 3rd repeat — only 2 more decreases before the end of this section!"
   },
-  "differentiators": {
-    "complex": {
-      "title": "Complex projects, finally under control",
-      "desc": "Sections, several secondary counters per section, notes per section — even a sweater with raglan sleeves"
-    },
-    "import": {
-      "title": "A PDF or URL pattern → a ready project",
-      "desc": "AI reads your pattern, creates the sections and fills in the details — in seconds"
-    },
-    "photos": {
-      "title": "Photos worthy of your makes",
-      "desc": "AI enhances your photos — lighting, background, colours — without altering your work"
-    }
+  "problem": {
+    "title": "You know that moment when...",
+    "items": [
+      "You re-read the same row for the third time.",
+      "You stare at the chart and nothing clicks.",
+      "You count your stitches… and the count is off."
+    ],
+    "punchline": "And you wonder: \"Wait… what am I even supposed to do here? 😅\"",
+    "solution": "With YarnFlow, you can just ask."
+  },
+  "assistant": {
+    "eyebrow": "Your knitting & crochet copilot",
+    "title": "YarnFlow knows your pattern.<0></0>Not just knitting.",
+    "desc": "Import your pattern as a PDF, a photo or a URL: YarnFlow analyses the instructions, spots the sections and understands the structure of your project. While you knit or crochet, it already knows where you are — no need to re-explain everything every time you ask.",
+    "bullets": [
+      "You're on row 27? It already knows.",
+      "Don't understand an instruction? Just ask.",
+      "Not sure what's next? It can guide you."
+    ],
+    "question": "I missed 3 rows on the back, how do I fix it without frogging everything?",
+    "answer": "To fix 3 rows without frogging, you can use a spare needle…",
+    "tagline": "Your pattern. Your project. Your assistant."
+  },
+  "flow": {
+    "eyebrow": "How it works",
+    "title": "From pattern to finished piece",
+    "steps": [
+      { "title": "Import your pattern", "desc": "PDF, photo or URL." },
+      { "title": "YarnFlow understands it", "desc": "Sections, rows and instructions are structured automatically." },
+      { "title": "Start your project", "desc": "Your pattern and your counters live in one place." },
+      { "title": "Move at your own pace", "desc": "YarnFlow tracks your progress, rows and secondary counters." },
+      { "title": "Stuck?", "desc": "Ask your assistant. It knows your pattern and where you are." },
+      { "title": "Finish your piece", "desc": "And keep a record of your project, your photos and your time spent making it." }
+    ]
+  },
+  "translationBlock": {
+    "eyebrow": "Pattern in another language",
+    "title": "Your pattern can be in any language. YarnFlow understands it either way.",
+    "desc": "Pattern in English, German, or another language? Translate it, then ask YarnFlow for help in your own language. Translate. Understand. Move forward. All from your project."
   },
   "counter": {
     "eyebrow": "Row counter",
@@ -84,7 +112,7 @@
   "smartCreation": {
     "eyebrow": "Smart Creation",
     "title": "Import a PDF pattern or a URL.<0></0>The project builds itself.",
-    "desc": "Upload your pattern as a PDF or paste a URL — AI reads the document, creates the sections, fills in the technical details and structures your project in seconds.",
+    "desc": "Upload your pattern as a PDF or paste a URL — AI reads the document, creates the sections, fills in the technical details and structures your project in seconds. It's also what activates your contextual assistant on this project.",
     "screenshotAlt": "YarnFlow Smart Creation — reviewing the extracted pattern",
     "features": [
       "PDF or URL — Ravelry, Etsy, a blog, any source works",
@@ -93,14 +121,6 @@
       "3 free trials · 3 imports/month on PLUS · 15 imports/month on PRO"
     ],
     "badge": "A unique way to turn your patterns into organised projects"
-  },
-  "assistant": {
-    "eyebrow": "Knitting & crochet assistant",
-    "title": "A knitting & crochet expert available any time",
-    "desc": "How do I work out the decreases for my size? Which stitch can replace the one in the pattern? The assistant knows your project and answers in context — not generic replies.",
-    "question": "I missed 3 rows on the back, how do I fix it without frogging everything?",
-    "answer": "To fix 3 rows without frogging, you can use a spare needle…",
-    "quota": "5 questions / month on FREE · 10 questions / month on PLUS · 30 questions / month on PRO"
   },
   "testimonials": {
     "title": "What our first users say",
@@ -125,7 +145,7 @@
         "Built-in timer & time tracking",
         "Notes per section",
         "3 free AI Smart Creations",
-        "5 questions / month to the AI assistant",
+        "Contextual AI assistant — 5 replies / month",
         "Photo Studio: 2 free credits",
         "3 free pattern translations"
       ],
@@ -140,7 +160,7 @@
         "Everything in the FREE plan",
         "Up to 10 secondary counters",
         "Smart Creation — 3 imports / month",
-        "10 questions / month to the AI assistant",
+        "Contextual AI assistant — 10 replies / month",
         "Photo Studio: 5 credits / month",
         "3 pattern translations / month",
         "Advanced statistics"
@@ -156,7 +176,7 @@
       "includesPlus": "Everything in the PLUS plan",
       "smartCreation": "Smart Creation — 15 imports / month",
       "smartCreationDesc": "Drop in a PDF or a photo, AI fills everything in instantly",
-      "assistant": "AI knitting assistant — 30 questions / month",
+      "assistant": "Contextual AI assistant — 30 replies / month",
       "photoStudio": "Photo Studio: 20 credits / month",
       "translations": "15 pattern translations / month",
       "stats": "Advanced statistics",
@@ -174,11 +194,11 @@
       },
       {
         "q": "What's the actual difference between FREE, PLUS and PRO?",
-        "a": "FREE covers everyday use: counting rows, recording your details, notes per section, an unlimited library (100 MB of files), 20 photos, 2 Smart Creation trials, 5 AI questions/month, 2 lifetime AI photo credits. PLUS (€3.99/month) adds: unlimited file storage, 200 photos, up to 10 secondary counters per section, 3 AI imports/month, 10 AI questions/month, 5 photo credits/month, advanced statistics. PRO (€6.99/month) unlocks everything: 15 AI imports/month, 30 AI questions/month, 20 photo credits/month."
+        "a": "FREE covers everyday use: counting rows, recording your details, notes per section, an unlimited library (100 MB of files), 20 photos, 3 Smart Creation trials, a contextual AI assistant (5 replies/month), 2 lifetime AI photo credits. PLUS (€3.99/month) adds: unlimited file storage, 200 photos, up to 10 secondary counters per section, 3 AI imports/month, AI assistant (10 replies/month), 5 photo credits/month, advanced statistics. PRO (€6.99/month) unlocks everything: 15 AI imports/month, AI assistant (30 replies/month), 20 photo credits/month."
       },
       {
         "q": "What exactly is Smart Creation?",
-        "a": "You import a pattern as a PDF or paste a URL — AI analyses the document, detects the sections (back, front, sleeves...), extracts the technical details (yarn, needles, gauge) and creates your project automatically. 3 free trials for everyone, then 3 imports/month on PLUS or 15 imports/month on PRO."
+        "a": "You import a pattern as a PDF or paste a URL — AI analyses the document, detects the sections (back, front, sleeves...), extracts the technical details (yarn, needles, gauge) and creates your project automatically. It's also what activates the contextual assistant on this project: it then knows the exact text of your pattern, not just its structure. 3 free trials for everyone, then 3 imports/month on PLUS or 15 imports/month on PRO."
       },
       {
         "q": "Which devices does it work on?",
