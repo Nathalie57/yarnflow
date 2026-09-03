@@ -1015,55 +1015,28 @@ const MyProjects = () => {
                 <p className="text-gray-500 text-sm">{t('myProjects.whereToStart')}</p>
               </div>
 
-              {/* Explorer avec un exemple — CTA principal : aucun prerequis */}
+              {/* Importer un patron (Smart Creation) — CTA principal : point d'entrée du copilote */}
               <button
-                onClick={handleCreateDemoProject}
-                disabled={isCreatingDemo}
-                className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-left transition shadow-md hover:shadow-lg group disabled:opacity-60"
+                onClick={() => navigate('/smart-project-creator')}
+                className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-left transition shadow-md hover:shadow-lg group"
               >
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-white text-base">{isCreatingDemo ? t('myProjects.exploreDemoCreating') : t('myProjects.exploreDemo')}</p>
-                      <span className="bg-white bg-opacity-25 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                        {t('myProjects.demoBadge')}
-                      </span>
-                    </div>
-                    <p className="text-primary-100 text-sm leading-relaxed">{t('myProjects.exploreDemoDesc')}</p>
-                  </div>
-                </div>
-              </button>
-
-              {/* Import PDF / lien — secondaire */}
-              <button
-                onClick={() => navigate('/smart-project-creator')}
-                className="w-full mb-3 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
-                    <svg className="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                     </svg>
                   </div>
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition">{t('myProjects.startSmart')}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">
-                      {t('myProjects.startSmartDesc')}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-white text-base mb-1">{t('myProjects.startSmart')}</p>
+                    <p className="text-primary-100 text-sm leading-relaxed">{t('myProjects.startSmartDesc')}</p>
                   </div>
                 </div>
               </button>
 
-              {/* Créer manuellement */}
+              {/* Créer manuellement — alternative */}
               <button
                 onClick={() => { if (canCreateProject) { setCreateModalInitialMode('manual'); setShowCreateModal(true) } }}
-                className="w-full mb-3 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
+                className="w-full mb-4 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
@@ -1077,6 +1050,18 @@ const MyProjects = () => {
                   </div>
                 </div>
               </button>
+
+              {/* Démo — lien discret, friction zéro, ne concurrence plus les vrais CTA */}
+              <p className="text-center text-sm text-gray-500">
+                {t('myProjects.exploreDemoLinkPrefix')}{' '}
+                <button
+                  onClick={handleCreateDemoProject}
+                  disabled={isCreatingDemo}
+                  className="text-primary-600 hover:text-primary-700 font-medium underline underline-offset-2 disabled:opacity-60"
+                >
+                  {isCreatingDemo ? t('myProjects.exploreDemoCreating') : t('myProjects.exploreDemo')}
+                </button>
+              </p>
 
             </div>
           ) : filteredProjects.length === 0 ? (

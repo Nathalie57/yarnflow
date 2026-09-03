@@ -666,9 +666,18 @@ class SmartProjectController
 
                 AnalyticsService::log($userId, $projectId, 'project_created', ['source' => 'smart_import']);
 
+                // [AI:Claude] Permet au frontend de déclencher la checklist tutoriel
+                // (showFirstProjectTip, voir MyProjects.jsx/ProjectCounter.jsx) sur ce
+                // chemin aussi — jusqu'ici elle ne se posait que depuis la création
+                // manuelle, jamais depuis Smart Creation.
+                $countStmt = $db->prepare('SELECT COUNT(*) AS c FROM projects WHERE user_id = :user_id');
+                $countStmt->execute(['user_id' => $userId]);
+                $isFirstProject = (int)$countStmt->fetch(\PDO::FETCH_ASSOC)['c'] === 1;
+
                 $this->jsonResponse([
                     'success' => true,
                     'project' => $project,
+                    'is_first_project' => $isFirstProject,
                     'message' => 'Projet créé avec succès'
                 ], 201);
 

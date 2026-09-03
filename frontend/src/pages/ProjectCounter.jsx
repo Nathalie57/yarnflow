@@ -37,6 +37,25 @@ import { PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 import { PROJECT_TYPE_VALUES, projectTypeKey } from '../data/projectTypes'
 
 import { apiErrorMessage } from '../utils/apiError'
+
+// [AI:Claude] Remplace les cases à cocher ✅/⬜ (emojis) de la checklist tutoriel —
+// cohérent avec le reste de l'app, qui n'utilise jamais d'emoji.
+const TutorialStepBox = ({ done }) => (
+  <svg
+    className={`w-4 h-4 flex-shrink-0 ${done ? 'text-amber-600' : 'text-amber-300'}`}
+    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+  >
+    {done ? (
+      <>
+        <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" stroke="none" />
+        <path strokeLinecap="round" strokeLinejoin="round" stroke="white" d="M8 12.5l2.5 2.5L16 9.5" />
+      </>
+    ) : (
+      <rect x="3" y="3" width="18" height="18" rx="4" />
+    )}
+  </svg>
+)
+
 const ProjectCounter = () => {
   const { t, i18n } = useTranslation('counter')
   const { projectId } = useParams()
@@ -173,7 +192,7 @@ const ProjectCounter = () => {
   // au lieu du bandeau statique d'exploration libre. Persisté en localStorage (pas de
   // colonne is_demo en base), même convention que yf_onboarded_${projectId} ci-dessous.
   const [isDemoProject, setIsDemoProject] = useState(false)
-  const [demoSteps, setDemoSteps] = useState({ rows: 0, section: false, photo: false, dismissed: false })
+  const [demoSteps, setDemoSteps] = useState({ rows: 0, askedAssistant: false, photo: false, dismissed: false })
   const [demoRowsCelebrate, setDemoRowsCelebrate] = useState(false)
 
   const updateDemoSteps = (updater) => {
@@ -220,7 +239,7 @@ const ProjectCounter = () => {
 
     franchir('opened')
     if (demoSteps.rows > 0) franchir('first_row')
-    if (demoSteps.section) franchir('section_changed')
+    if (demoSteps.askedAssistant) franchir('assistant_used')
     if (demoSteps.photo) franchir('photo_added')
     if (demoSteps.dismissed) franchir('dismissed')
   }, [isDemoProject, projectId, demoSteps, cleEtapesEnvoyees])
@@ -1838,7 +1857,11 @@ const ProjectCounter = () => {
     // (setProject() est asynchrone) — on utilise directement les données fraîches renvoyées
     // par fetchProject() plutôt que de risquer de relire l'ancien has_ai_pattern_reference.
     const proj = projectOverride || project
-    if (!proj?.has_ai_pattern_reference) {
+    // [AI:Claude] Le projet démo n'a jamais de patron réellement analysé (juste un
+    // pattern_url factice, voir handleCreateDemoProject) — sans cette exception, la
+    // checklist tutoriel "pose une question à ton assistant" serait impossible à
+    // valider sur la démo, seule la popin d'association s'afficherait.
+    if (!proj?.has_ai_pattern_reference && !isDemoProject) {
       setShowAssociatePatternModal(true)
       return
     }
@@ -1851,6 +1874,13 @@ const ProjectCounter = () => {
       ? `${proj?.name || ''} — ${sectionName} (${progress})`
       : `${proj?.name || ''} — ${progress}`
     openWithProject(projectId, label)
+
+    // [AI:Claude] Tutoriel — étape "poser une question à l'assistant" : le vrai moment
+    // "wow" du nouveau positionnement copilote, remplace l'ancienne étape "éditer une
+    // section" qui ne démontrait rien de différenciant.
+    if (showTutorial) {
+      updateDemoSteps(prev => ({ ...prev, askedAssistant: true }))
+    }
   }
 
   // [AI:Claude] v0.16.2 - Handlers pour input éditable du compteur
@@ -2768,11 +2798,6 @@ const ProjectCounter = () => {
         setCurrentRow(initialCurrentRow)
       }
 
-      // [AI:Claude] Tutoriel — étape "modifier une section" (création ou édition)
-      if (showTutorial) {
-        updateDemoSteps(prev => ({ ...prev, section: true }))
-      }
-
       setShowAddSectionModal(false)
       setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
       setEditingSection(null)
@@ -3355,7 +3380,7 @@ const ProjectCounter = () => {
             ×
           </button>
 
-          {demoSteps.rows >= 5 && demoSteps.section && demoSteps.photo ? (
+          {demoSteps.rows >= 5 && demoSteps.askedAssistant && demoSteps.photo ? (
             <div className="flex items-start gap-3 pr-6">
               <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -3400,18 +3425,18 @@ const ProjectCounter = () => {
                 </p>
                 <ul className="space-y-1.5 text-sm">
                   <li className="flex items-center gap-2 text-amber-700">
-                    <span>{demoSteps.rows >= 5 ? '✅' : '⬜'}</span>
+                    <TutorialStepBox done={demoSteps.rows >= 5} />
                     <span>
                       <Trans i18nKey="ui.tutorialAddRows" ns="counter" components={[<strong key="0" />]} />
                       {demoSteps.rows < 5 && ` (${demoSteps.rows}/5)`}
                     </span>
                   </li>
                   <li className="flex items-center gap-2 text-amber-700">
-                    <span>{demoSteps.section ? '✅' : '⬜'}</span>
-                    <span>{t('ui.tutorialEditSection')}</span>
+                    <TutorialStepBox done={demoSteps.askedAssistant} />
+                    <span>{t('ui.tutorialAskAssistant')}</span>
                   </li>
                   <li className="flex items-center gap-2 text-amber-700">
-                    <span>{demoSteps.photo ? '✅' : '⬜'}</span>
+                    <TutorialStepBox done={demoSteps.photo} />
                     <span>{t('ui.tutorialAddPhoto')}</span>
                   </li>
                 </ul>

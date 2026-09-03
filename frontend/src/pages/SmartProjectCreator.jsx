@@ -104,6 +104,7 @@ export default function SmartProjectCreator() {
   const [sections, setSections] = useState([])
   const [creating, setCreating] = useState(false)
   const [createdProject, setCreatedProject] = useState(null)
+  const [isFirstProject, setIsFirstProject] = useState(false)
   const [patternLanguage, setPatternLanguage] = useState(null)
   const [translatingPreview, setTranslatingPreview] = useState(false)
   const [translateGatePending, setTranslateGatePending] = useState(false)
@@ -338,6 +339,7 @@ export default function SmartProjectCreator() {
 
       if (response.data.success) {
         setCreatedProject(response.data.project)
+        setIsFirstProject(!!response.data.is_first_project)
         setStep(4)
         trackProjectCreated('smart', project.craft_type)
 
@@ -1158,7 +1160,12 @@ export default function SmartProjectCreator() {
 
             <div className="flex gap-4 justify-center">
               <button
-                onClick={() => navigate(`/projects/${createdProject.id}`)}
+                onClick={() => {
+                  if (isFirstProject) {
+                    try { sessionStorage.setItem('showFirstProjectTip', 'true') } catch { /* ignore */ }
+                  }
+                  navigate(`/projects/${createdProject.id}`)
+                }}
                 className="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700"
               >
                 {t('ui.openProjectArrow')}
