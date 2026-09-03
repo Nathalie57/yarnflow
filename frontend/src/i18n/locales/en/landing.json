@@ -163,8 +163,7 @@
         "Up to 10 counters to track every detail of your project",
         "Enough smart creations to stop typing everything by hand",
         "Your assistant on hand throughout the project",
-        "Translate your patterns, make your photos shine before you share them",
-        "Statistics to track your progress"
+        "Translate your patterns, make your photos shine before you share them"
       ],
       "billing": "€29.99/year · that's €2.49/month",
       "ctaAnnual": "Choose Plus",
@@ -180,8 +179,7 @@
         "Smart pattern creation and import",
         "Your assistant, project after project, without a second thought",
         "Photo Studio for every make",
-        "Translate every pattern into your own language",
-        "Advanced statistics"
+        "Translate every pattern into your own language"
       ],
       "billing": "€59.99/year · that's €4.99/month",
       "ctaAnnual": "Choose Pro",
@@ -209,8 +207,7 @@
         { "label": "Assistant", "free": "5 questions/month", "plus": "10 questions/month", "pro": "30 questions/month" },
         { "label": "Smart Creations", "free": "3 free", "plus": "3 imports/month", "pro": "15 imports/month" },
         { "label": "Photo Studio", "free": "2 credits", "plus": "5 credits/month", "pro": "20 credits/month" },
-        { "label": "Pattern translation", "free": "3 free", "plus": "3/month", "pro": "15/month" },
-        { "label": "Advanced statistics", "free": "—", "plus": "check", "pro": "check" }
+        { "label": "Pattern translation", "free": "3 free", "plus": "3/month", "pro": "15/month" }
       ]
     }
   },
@@ -223,7 +220,7 @@
       },
       {
         "q": "What's the actual difference between FREE, PLUS and PRO?",
-        "a": "FREE covers everyday use: counting rows, recording your details, notes per section, an unlimited library (100 MB of files), 20 photos, 3 Smart Creation trials, an assistant (5 questions/month), 2 lifetime photo credits. PLUS (€3.99/month) adds: unlimited file storage, 200 photos, up to 10 secondary counters per section, 3 imports/month, assistant (10 questions/month), 5 photo credits/month, advanced statistics. PRO (€6.99/month) unlocks everything: 15 imports/month, assistant (30 questions/month), 20 photo credits/month."
+        "a": "FREE covers everyday use: counting rows, recording your details, notes per section, an unlimited library (100 MB of files), 20 photos, 3 Smart Creation trials, an assistant (5 questions/month), 2 lifetime photo credits. PLUS (€3.99/month) adds: unlimited file storage, 200 photos, up to 10 secondary counters per section, 3 imports/month, assistant (10 questions/month), 5 photo credits/month. PRO (€6.99/month) unlocks everything: 15 imports/month, assistant (30 questions/month), 20 photo credits/month."
       },
       {
         "q": "What exactly is Smart Creation?",

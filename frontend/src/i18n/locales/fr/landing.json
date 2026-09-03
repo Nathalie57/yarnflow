@@ -163,8 +163,7 @@
         "Jusqu'à 10 compteurs pour suivre chaque détail de ton ouvrage",
         "Assez de créations intelligentes pour ne plus tout saisir à la main",
         "Ton assistant à disposition tout au long du projet",
-        "Traduis tes patrons en langue étrangère, sublime tes photos avant de les partager",
-        "Statistiques pour suivre ta progression"
+        "Traduis tes patrons en langue étrangère, sublime tes photos avant de les partager"
       ],
       "billing": "29,99 €/an · soit 2,49 €/mois",
       "ctaAnnual": "Choisir Plus",
@@ -180,8 +179,7 @@
         "Création et import de patrons intelligents",
         "Ton assistant, projet après projet, sans y penser",
         "Studio Photo pour toutes tes créations",
-        "Traduis tous tes patrons dans leur langue d'origine",
-        "Statistiques avancées"
+        "Traduis tous tes patrons dans leur langue d'origine"
       ],
       "billing": "59,99 €/an · soit 4,99 €/mois",
       "ctaAnnual": "Choisir Pro",
@@ -209,8 +207,7 @@
         { "label": "Assistant", "free": "5 questions/mois", "plus": "10 questions/mois", "pro": "30 questions/mois" },
         { "label": "Créations intelligentes", "free": "3 offertes", "plus": "3 imports/mois", "pro": "15 imports/mois" },
         { "label": "Studio Photo", "free": "2 crédits", "plus": "5 crédits/mois", "pro": "20 crédits/mois" },
-        { "label": "Traduction de patrons", "free": "3 offertes", "plus": "3/mois", "pro": "15/mois" },
-        { "label": "Statistiques avancées", "free": "—", "plus": "check", "pro": "check" }
+        { "label": "Traduction de patrons", "free": "3 offertes", "plus": "3/mois", "pro": "15/mois" }
       ]
     }
   },
@@ -223,7 +220,7 @@
       },
       {
         "q": "Quelle est la différence entre FREE, PLUS et PRO concrètement ?",
-        "a": "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 3 essais création intelligente, assistant (5 questions/mois), 2 crédits photo à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, jusqu'à 10 compteurs secondaires par section, 3 imports/mois, assistant (10 questions/mois), 5 crédits photo/mois, statistiques avancées. PRO (6,99€/mois) débloque tout : 15 imports/mois, assistant (30 questions/mois), 20 crédits photo/mois."
+        "a": "FREE couvre l'usage quotidien : compter ses rangs, noter ses infos, notes par section, bibliothèque illimitée (100 Mo de fichiers), 20 photos, 3 essais création intelligente, assistant (5 questions/mois), 2 crédits photo à vie. PLUS (3,99€/mois) ajoute : stockage fichiers illimité, 200 photos, jusqu'à 10 compteurs secondaires par section, 3 imports/mois, assistant (10 questions/mois), 5 crédits photo/mois. PRO (6,99€/mois) débloque tout : 15 imports/mois, assistant (30 questions/mois), 20 crédits photo/mois."
       },
       {
         "q": "La création intelligente, c'est quoi exactement ?",
