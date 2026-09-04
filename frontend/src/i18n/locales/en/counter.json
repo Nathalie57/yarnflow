@@ -134,7 +134,7 @@
     "projectTags": "Project tags",
     "activeSection": "Active section",
     "reminders": "Reminders",
-    "aiHelpOnRow": "I'm stuck on this row",
+    "aiHelpOnRow": "YarnFlow, help me with this row",
     "aiHelpModalTitle": "Unlock help for this row",
     "aiHelpPatternDesc": "Help YarnFlow understand this pattern: the AI assistant will be able to explain a specific row, check a stitch count, or answer a question about this project — without ever touching the sections you're already tracking.",
     "aiHelpPatternCta": "Help YarnFlow understand this pattern",

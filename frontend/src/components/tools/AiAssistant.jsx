@@ -51,7 +51,7 @@ const SUGGESTION_KEYS = ['aiQ1', 'aiQ2', 'aiQ3', 'aiQ4', 'aiQ5', 'aiQ6']
 // s'appuyer sur ce contexte plutôt que de proposer une question sans rapport.
 const CONTEXTUAL_SUGGESTION_KEYS = ['aiCtxQ1', 'aiCtxQ2', 'aiCtxQ3', 'aiCtxQ4']
 
-export default function AiAssistant({ projectId, projectLabel, open } = {}) {
+export default function AiAssistant({ projectId, projectLabel, projectProgress, open } = {}) {
   const { t, i18n } = useTranslation('tools')
   const { hasActiveSubscription , getSubscriptionPlan } = useAuth()
   const isPro = hasActiveSubscription()
@@ -123,6 +123,23 @@ export default function AiAssistant({ projectId, projectLabel, open } = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, projectId])
 
+  // [AI:Claude] Message d'accueil du chat contextuel — construit à partir des données
+  // réelles du projet (section/rang/total) transmises par ProjectCounter, plutôt qu'une
+  // phrase générique : la première chose que voit l'utilisatrice doit prouver que
+  // l'assistant sait déjà où elle en est.
+  const contextualGreeting = (() => {
+    if (!isContextual) return null
+    const p = projectProgress || {}
+    const isCm = p.unit === 'cm'
+    const progressKey = isCm
+      ? (p.total ? 'ui.progressCmWithTotal' : 'ui.progressCmNoTotal')
+      : (p.total ? 'ui.progressRowsWithTotal' : 'ui.progressRowsNoTotal')
+    const progress = t(progressKey, { current: p.currentRow ?? 0, total: p.total })
+    return p.sectionName
+      ? t('ui.contextualGreetingWithSection', { section: p.sectionName, progress })
+      : t('ui.contextualGreetingWithoutSection', { progress })
+  })()
+
   const send = async (text) => {
     const content = text || input.trim()
     // [AI:Claude] Le quota mensuel affiché (usage.remaining) ne concerne que l'assistant
@@ -190,9 +207,14 @@ export default function AiAssistant({ projectId, projectLabel, open } = {}) {
       <div className="flex-1 overflow-y-auto space-y-3 pb-2">
         {messages.length === 0 ? (
           <div className="space-y-4 py-2">
-            <p className="text-sm text-gray-500 text-center">
-              {t('ui.askYourQuestion')}
-            </p>
+            {isContextual ? (
+              <div className="space-y-1">
+                <p className="text-sm text-gray-600 text-center leading-relaxed">{contextualGreeting}</p>
+                <p className="text-sm text-gray-500 text-center">{t('ui.contextualGreetingClosing')}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 text-center">{t('ui.askYourQuestion')}</p>
+            )}
             <div className="grid grid-cols-1 gap-2">
               {(isContextual ? CONTEXTUAL_SUGGESTION_KEYS : SUGGESTION_KEYS).map(k => t(`ui.${k}`)).map(s => (
                 <button

@@ -9,7 +9,7 @@ import { useAiAssistant } from '../contexts/AiAssistantContext'
 
 export default function AiAssistantDrawer({ open, onClose }) {
   const { t } = useTranslation('tools')
-  const { projectId, projectLabel } = useAiAssistant()
+  const { projectId, projectLabel, projectProgress } = useAiAssistant()
   return (
     <>
       {/* Overlay */}
@@ -47,7 +47,7 @@ export default function AiAssistantDrawer({ open, onClose }) {
 
         {/* Contenu */}
         <div className="px-4 pt-3 pb-6" style={{ height: 'calc(85vh - 56px)', '--ai-height': 'calc(85vh - 80px)' }}>
-          <AiAssistant projectId={projectId} projectLabel={projectLabel} open={open} />
+          <AiAssistant projectId={projectId} projectLabel={projectLabel} projectProgress={projectProgress} open={open} />
         </div>
       </div>
     </>

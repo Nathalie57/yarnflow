@@ -134,7 +134,7 @@
     "projectTags": "Tags du projet",
     "activeSection": "Section active",
     "reminders": "Rappels",
-    "aiHelpOnRow": "Je bloque sur ce rang",
+    "aiHelpOnRow": "YarnFlow, aide-moi sur ce rang",
     "aiHelpModalTitle": "Débloquer l'aide sur ce rang",
     "aiHelpPatternDesc": "Aide YarnFlow à comprendre ce patron : l'assistant IA pourra t'expliquer un rang précis, vérifier un nombre de mailles ou répondre à une question sur ce projet, sans jamais toucher aux sections que tu suis déjà.",
     "aiHelpPatternCta": "Aide YarnFlow à comprendre ce patron",

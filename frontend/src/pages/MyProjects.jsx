@@ -1033,23 +1033,17 @@ const MyProjects = () => {
                 </div>
               </button>
 
-              {/* Créer manuellement — alternative */}
-              <button
-                onClick={() => { if (canCreateProject) { setCreateModalInitialMode('manual'); setShowCreateModal(true) } }}
-                className="w-full mb-4 p-4 bg-white border border-gray-200 hover:border-primary-300 hover:bg-primary-50 text-left rounded-2xl transition group"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-gray-100 group-hover:bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0 transition">
-                    <svg className="w-5 h-5 text-gray-500 group-hover:text-primary-600 transition" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-800 text-sm group-hover:text-primary-700 transition">{t('myProjects.createManually')}</p>
-                    <p className="text-gray-500 text-xs mt-0.5">{t('myProjects.createManuallyDesc')}</p>
-                  </div>
-                </div>
-              </button>
+              {/* Créer manuellement — plus qu'un lien discret, pour ne pas concurrencer
+                  l'import qui est la vraie promesse de l'écran */}
+              <p className="text-center text-sm text-gray-500 mb-2">
+                {t('myProjects.createManuallyPrefix')}{' '}
+                <button
+                  onClick={() => { if (canCreateProject) { setCreateModalInitialMode('manual'); setShowCreateModal(true) } }}
+                  className="text-primary-600 hover:text-primary-700 font-medium underline underline-offset-2"
+                >
+                  {t('myProjects.createManually')}
+                </button>
+              </p>
 
               {/* Démo — lien discret, friction zéro, ne concurrence plus les vrais CTA */}
               <p className="text-center text-sm text-gray-500">

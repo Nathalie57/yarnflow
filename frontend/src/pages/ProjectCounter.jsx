@@ -1873,7 +1873,7 @@ const ProjectCounter = () => {
     const label = sectionName
       ? `${proj?.name || ''} — ${sectionName} (${progress})`
       : `${proj?.name || ''} — ${progress}`
-    openWithProject(projectId, label)
+    openWithProject(projectId, label, { sectionName, currentRow, total, unit: counterUnit })
 
     // [AI:Claude] Tutoriel — étape "poser une question à l'assistant" : le vrai moment
     // "wow" du nouveau positionnement copilote, remplace l'ancienne étape "éditer une

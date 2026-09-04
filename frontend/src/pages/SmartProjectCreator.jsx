@@ -1155,7 +1155,7 @@ export default function SmartProjectCreator() {
               {t('ui.projectCreated')}
             </h2>
             <p className="text-gray-600 mb-6">
-              {t('ui.projectCreatedReady', { name: createdProject.name })}
+              {t('ui.projectCreatedReady', { name: createdProject.name, count: sections.length })}
             </p>
 
             <div className="flex gap-4 justify-center">
