@@ -3,11 +3,13 @@
  * @brief Modal upgrade pour fonctionnalités PRO
  */
 
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PropTypes from 'prop-types'
 import { useAuth } from '../contexts/AuthContext'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 import { useTranslation, Trans } from 'react-i18next'
+import api from '../services/api'
 
 const FEATURES = {
   ai_creations: {
@@ -56,6 +58,15 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
   const { t } = useTranslation('tools')
   const navigate = useNavigate()
   const { isTWA, getSubscriptionPlan } = useAuth()
+
+  // [AI:Claude] Un seul point de log pour toutes les impressions de mur payant de l'app
+  // (tags, compteurs secondaires, crédits photo, création intelligente, bibliothèque...) —
+  // évite de répéter cet appel à chaque endroit qui monte ce composant. Best-effort,
+  // ne doit jamais bloquer l'affichage de la modale.
+  useEffect(() => {
+    if (!isOpen) return
+    api.post('/analytics/track-event', { event_name: 'upgrade_prompt_shown', feature }).catch(() => {})
+  }, [isOpen, feature])
 
   if (!isOpen) return null
 

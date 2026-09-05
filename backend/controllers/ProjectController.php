@@ -333,7 +333,11 @@ class ProjectController
 
             $project = $this->projectModel->getProjectById($projectId);
 
-            AnalyticsService::log($userId, $projectId, 'project_created', ['source' => 'manual']);
+            // [AI:Claude] is_demo distingue le projet démo (zéro friction, exploration) d'une
+            // vraie création manuelle — sans ça les deux étaient confondus sous 'manual' dans
+            // analytics_events, impossible de savoir quel chemin de l'empty state retient le mieux.
+            $source = !empty($data['is_demo']) ? 'demo' : 'manual';
+            AnalyticsService::log($userId, $projectId, 'project_created', ['source' => $source]);
 
             $this->sendResponse(201, [
                 'success' => true,

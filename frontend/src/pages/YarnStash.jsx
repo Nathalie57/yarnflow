@@ -34,6 +34,14 @@ const YarnStash = () => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
+  // [AI:Claude] Une fois par session — voir Tools.jsx pour le contexte (angle mort
+  // "que fait-on avant de créer un projet, ou à la place").
+  useEffect(() => {
+    if (sessionStorage.getItem('yf_evt_stash_viewed')) return
+    try { sessionStorage.setItem('yf_evt_stash_viewed', '1') } catch { /* ignore */ }
+    api.post('/analytics/track-event', { event_name: 'stash_viewed' }).catch(() => {})
+  }, [])
+
   // Filtres / tri
   const [filterBrand, setFilterBrand] = useState('')
   const [filterWeight, setFilterWeight] = useState('')

@@ -3,9 +3,10 @@
  * @brief Page hub des outils pour tricoteurs et crocheteurs
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import api from '../services/api'
 import DistributeIncrDec from '../components/tools/DistributeIncrDec'
 import GaugeCalculator from '../components/tools/GaugeCalculator'
 import NeedleConverter from '../components/tools/NeedleConverter'
@@ -141,6 +142,22 @@ export default function Tools() {
   const visibleTools = TOOLS.filter(x => (!x.betaOnly || canAccessJacquard) && (!x.frenchOnly || isFrench))
 
   const tool = visibleTools.find(t => t.id === activeTool)
+
+  // [AI:Claude] Angle mort connu : rien ne trackait la bibliothèque, le stock ni les
+  // outils avant qu'une utilisatrice crée un projet — impossible de savoir si les gens
+  // qui ne reviennent jamais ont au moins exploré autre chose avant de partir.
+  // Une fois par session (pas à chaque re-render) pour la page hub ; à chaque ouverture
+  // d'outil précis, ça reste un vrai clic délibéré, pas du bruit.
+  useEffect(() => {
+    if (sessionStorage.getItem('yf_evt_tools_viewed')) return
+    try { sessionStorage.setItem('yf_evt_tools_viewed', '1') } catch { /* ignore */ }
+    api.post('/analytics/track-event', { event_name: 'tools_viewed' }).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!activeTool) return
+    api.post('/analytics/track-event', { event_name: 'tool_opened', tool: activeTool }).catch(() => {})
+  }, [activeTool])
 
   if (tool) {
     const ToolComponent = tool.component

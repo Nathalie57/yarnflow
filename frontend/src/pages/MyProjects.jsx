@@ -493,6 +493,7 @@ const MyProjects = () => {
     let demoProjectId = null
     try {
       const response = await api.post('/projects', {
+        is_demo: true,
         name: t('demoProject.name'),
         technique: 'tricot',
         // [AI:Claude] Valeur capitalisee : c'est celle stockee en base
@@ -633,17 +634,10 @@ const MyProjects = () => {
       const response = await api.post('/projects', projectData)
       newProject = response.data.project
 
+      // [AI:Claude] Pas de log analytics_events ici — ProjectController::create() le fait
+      // déjà côté serveur (project_created, source=manual/demo). Ce doublon frontend
+      // comptait chaque création manuelle deux fois en base.
       trackProjectCreated('manual', newProject.technique)
-      try {
-        await api.post('/analytics/track-event', {
-          event_name: 'project_created',
-          project_id: newProject.id,
-          technique: newProject.technique,
-          counter_unit: newProject.counter_unit
-        })
-      } catch (err) {
-        console.error('Erreur tracking project_created:', err)
-      }
 
       // [AI:Claude] ÉTAPE 2 : Créer les sections si définies
       if (sections.length > 0) {

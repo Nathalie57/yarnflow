@@ -33,6 +33,14 @@ const PatternLibrary = () => {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
 
+  // [AI:Claude] Une fois par session — voir Tools.jsx pour le contexte (angle mort
+  // "que fait-on avant de créer un projet, ou à la place").
+  useEffect(() => {
+    if (sessionStorage.getItem('yf_evt_library_viewed')) return
+    try { sessionStorage.setItem('yf_evt_library_viewed', '1') } catch { /* ignore */ }
+    api.post('/analytics/track-event', { event_name: 'library_viewed' }).catch(() => {})
+  }, [])
+
   // [AI:Claude] Filtres
   const [filterCategory, setFilterCategory] = useState('')
   const [filterTechnique, setFilterTechnique] = useState('')

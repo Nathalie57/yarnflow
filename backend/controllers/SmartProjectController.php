@@ -353,6 +353,11 @@ class SmartProjectController
             // la seule trace permettant d'auditer a posteriori la qualité d'une extraction.
             $importId = $this->logImport($userId, null, $sourceType, $sourceName, $sourceFilePath, $fileSize, $result['ai_status'], $result['data'] ?? null, $processingTime, null, $patternSize);
 
+            // [AI:Claude] Distinct de 'project_created' (source=smart_import, posé dans confirm()) :
+            // permet de mesurer l'abandon entre l'analyse et la confirmation — patron analysé mais
+            // jamais transformé en projet (résultat décevant, hésitation à la relecture...).
+            AnalyticsService::log($userId, null, 'smart_creation_analyzed', ['import_id' => $importId, 'source_type' => $sourceType]);
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $result['data'],
