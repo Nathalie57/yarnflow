@@ -115,8 +115,20 @@ class PatternStorageService
             $this->compressImage($file['tmp_name'], $destination, $file['size']);
         }
 
-        // Chemin relatif depuis public/
-        $relative = str_replace($this->publicDir, '', $uploadDir) . '/' . $filename;
+        // [AI:Claude] BUG CORRIGÉ (présent depuis la création de ce service, 17/06) :
+        // $this->publicDir est construit ici via __DIR__ (backend/services/../public),
+        // alors que $uploadDir vient des contrôleurs (backend/controllers/../public/...) —
+        // deux chaînes de caractères différentes bien qu'elles pointent vers le même
+        // dossier une fois résolues. str_replace() comparait du texte brut et ne trouvait
+        // jamais de correspondance : $relative valait alors le chemin ABSOLU complet du
+        // serveur au lieu d'un chemin relatif, stocké tel quel en base — fichier ensuite
+        // introuvable à la lecture (double concaténation avec le préfixe public/ à nouveau).
+        // realpath() résout les ".." des deux côtés avant de comparer, donc peu importe
+        // depuis quel dossier chacun a été construit.
+        $canonicalPublicDir = realpath($this->publicDir);
+        $canonicalUploadDir = realpath($uploadDir);
+        $relative = str_replace($canonicalPublicDir, '', $canonicalUploadDir);
+        $relative = str_replace('\\', '/', $relative) . '/' . $filename;
         return $relative;
     }
 
