@@ -473,10 +473,14 @@ const ProjectCounter = () => {
       } catch { /* ignore */ }
 
       // Passer le current_section_id du projet fraîchement chargé
-      const loadedSections = await fetchSections(projectData?.current_section_id)
+      const { sections: loadedSections, resolvedSectionId } = await fetchSections(projectData?.current_section_id)
 
       // Charger les compteurs secondaires de la section active (ou du projet si pas de section)
-      const activeSectionId = projectData?.current_section_id
+      // [AI:Claude] resolvedSectionId (pas projectData.current_section_id brut) : quand ce
+      // dernier est NULL en base, fetchSections() résout quand même une section par défaut
+      // (localStorage, première non terminée...) — il faut utiliser CETTE section-là, sinon
+      // les compteurs secondaires sont cherchés sous section_id=null et jamais trouvés.
+      const activeSectionId = resolvedSectionId
       const activeSection = activeSectionId && loadedSections?.length > 0
         ? loadedSections.find(s => s.id === activeSectionId)
         : null
@@ -904,7 +908,7 @@ const ProjectCounter = () => {
           const projectSection = loadedSections.find(s => s.id === targetSectionId)
           if (projectSection && !needsNewSection) {
             setCurrentSectionId(projectSection.id)
-            return loadedSections
+            return { sections: loadedSections, resolvedSectionId: projectSection.id }
           }
         }
 
@@ -915,7 +919,7 @@ const ProjectCounter = () => {
             const savedSection = loadedSections.find(s => s.id === parseInt(savedSectionId))
             if (savedSection && !savedSection.is_completed) {
               setCurrentSectionId(savedSection.id)
-              return loadedSections
+              return { sections: loadedSections, resolvedSectionId: savedSection.id }
             }
           }
         }
@@ -924,18 +928,25 @@ const ProjectCounter = () => {
         const firstIncomplete = loadedSections.find(s => !s.is_completed)
         if (firstIncomplete) {
           setCurrentSectionId(firstIncomplete.id)
-          return loadedSections
+          return { sections: loadedSections, resolvedSectionId: firstIncomplete.id }
         }
 
         // Priorité 3 : Première section de la liste (si toutes sont terminées)
         setCurrentSectionId(loadedSections[0].id)
+        return { sections: loadedSections, resolvedSectionId: loadedSections[0].id }
       }
 
-      return loadedSections
+      // [AI:Claude] BUG CORRIGÉ : cette fonction ne renvoyait que le tableau des sections,
+      // jamais l'ID de section effectivement résolu ci-dessus (setCurrentSectionId() est
+      // asynchrone, illisible immédiatement par l'appelant). Le code appelant relisait donc
+      // le current_section_id BRUT du projet (souvent NULL) au lieu de la section réellement
+      // résolue par le repli ci-dessus — les compteurs secondaires (et les rappels) d'une
+      // section étaient alors cherchés avec section_id=null, jamais trouvés, "disparus".
+      return { sections: loadedSections, resolvedSectionId: currentSectionId ?? (loadedSections[0]?.id ?? null) }
     } catch (err) {
       console.error('Erreur chargement sections:', err)
       // [AI:Claude] Pas d'erreur fatale si pas de sections
-      return []
+      return { sections: [], resolvedSectionId: null }
     }
   }
 
@@ -2513,7 +2524,7 @@ const ProjectCounter = () => {
       localStorage.setItem(`currentSection_${projectId}`, sectionId.toString())
 
       // Rafraîchir les sections et le projet avec la nouvelle section
-      const loadedSections = await fetchSections(sectionId)
+      const { sections: loadedSections } = await fetchSections(sectionId)
       await fetchProject()
 
       // Charger les compteurs secondaires de la section cible
