@@ -222,8 +222,9 @@ cd frontend && npm install && npm run dev
 ## 📝 État (v0.17.0)
 
 **✅ Prêt** : Backend 100%, Frontend 100%, Database optimisée, Système d'abonnements sécurisé, Tags & Filtres, Système de contact complet, Emails d'engagement automatisés
-**⚠️ Manque prod** : Gemini API réelle, Stripe prod keys, Email SMTP, CGU/RGPD, Hébergement SSL
-**Lancement** : Phase 1 BETA fermée (20-50 testeurs) → Phase 2 Public (Stripe, SEO) → Phase 3 Croissance
+**✅ En prod** : Gemini API réelle (traductions/Création Intelligente/Studio Photo en usage réel), Stripe en paiement réel (abonnements PLUS/PRO actifs)
+**⚠️ Manque encore** : Email SMTP (à confirmer), CGU/RGPD, Hébergement SSL
+**Lancement** : Au-delà de la bêta fermée — usage public réel (400+ utilisateurs inscrits, abonnements payants actifs, présence Google Play). Phase de croissance, pas de test.
 
 **Derniers ajouts (v0.17.0)** :
 - ✅ **Célébration premier rang** : Modal non-bloquant après le 1er rang compté (auto-fermeture 4s)
