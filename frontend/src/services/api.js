@@ -270,6 +270,14 @@ export const userAPI = {
   getSubscription: () => api.get('/user/subscription')
 }
 
+// Ravelry (Palier 1 — connexion/déconnexion seules)
+export const ravelryAPI = {
+  getStatus: () => api.get('/ravelry/status'),
+  connectStart: () => api.get('/ravelry/connect'),
+  connectCallback: (code, state) => api.get('/ravelry/callback', { params: { code, state } }),
+  disconnect: () => api.post('/ravelry/disconnect')
+}
+
 // Admin
 export const adminAPI = {
   getStats: () => api.get('/admin/stats'),

@@ -320,6 +320,12 @@ function route(string $method, string $uri): void
         $method === 'POST'   && $uri === 'push/subscribe'        => (new \App\Controllers\PushController())->subscribe(),
         $method === 'DELETE' && $uri === 'push/subscribe'        => (new \App\Controllers\PushController())->unsubscribe(),
 
+        // Intégration Ravelry — connexion/déconnexion (Palier 1)
+        $method === 'GET'    && $uri === 'ravelry/connect'  => (new \App\Controllers\RavelryController())->connectStart(),
+        $method === 'GET'    && $uri === 'ravelry/callback' => (new \App\Controllers\RavelryController())->connectCallback(),
+        $method === 'POST'   && $uri === 'ravelry/disconnect' => (new \App\Controllers\RavelryController())->disconnect(),
+        $method === 'GET'    && $uri === 'ravelry/status'   => (new \App\Controllers\RavelryController())->status(),
+
         default => notFound()
     };
 }

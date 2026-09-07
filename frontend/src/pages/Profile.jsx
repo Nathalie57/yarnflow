@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { userAPI } from '../services/api'
 import PasswordInput from '../components/PasswordInput'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import RavelryConnectionCard from '../components/RavelryConnectionCard'
+import SilentErrorBoundary from '../components/SilentErrorBoundary'
 import { useTranslation, Trans } from 'react-i18next'
 
 const Profile = () => {
@@ -369,6 +371,16 @@ const Profile = () => {
               )}
             </div>
           </div>
+
+          {/* Compte Ravelry — fonctionnalité toute neuve, jamais testée en prod. Réservée
+              temporairement à l'utilisatrice elle-même (voir RavelryController::TESTER_USER_ID
+              côté backend, gate équivalente) le temps de valider en conditions réelles, avant
+              ouverture à toutes. Isolée dans son propre error boundary en plus, par prudence. */}
+          {user?.id === 7 && (
+            <SilentErrorBoundary>
+              <RavelryConnectionCard />
+            </SilentErrorBoundary>
+          )}
 
           {/* Zone dangereuse */}
           <div className="card border border-red-200">
