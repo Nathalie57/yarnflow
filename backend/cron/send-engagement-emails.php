@@ -153,7 +153,7 @@ try {
             $projectStmt = $db->prepare("
                 SELECT name, current_row, total_rows
                 FROM projects
-                WHERE user_id = ? AND status = 'active'
+                WHERE user_id = ? AND status = 'active' AND is_demo = 0
                 ORDER BY updated_at DESC
                 LIMIT 1
             ");
@@ -268,6 +268,7 @@ try {
         INNER JOIN projects p ON p.user_id = u.id
         WHERE p.created_at <= DATE_SUB(NOW(), INTERVAL 2 DAY)
         AND p.status IN ('in_progress', 'active')
+        AND p.is_demo = 0
         AND NOT EXISTS (
             SELECT 1 FROM emails_sent_log
             WHERE user_id = u.id
@@ -344,6 +345,7 @@ try {
         FROM users u
         INNER JOIN projects p ON p.user_id = u.id
         WHERE p.status IN ('in_progress', 'active')
+        AND p.is_demo = 0
         AND p.updated_at BETWEEN DATE_SUB(NOW(), INTERVAL 14 DAY) AND DATE_SUB(NOW(), INTERVAL 7 DAY)
         AND u.email_verified = 1
         AND NOT EXISTS (
@@ -456,7 +458,7 @@ try {
             COUNT(DISTINCT p.id) AS project_count,
             COALESCE(SUM(p.current_row), 0) AS total_rows
         FROM users u
-        LEFT JOIN projects p ON p.user_id = u.id AND p.status IN ('in_progress', 'active', 'finished')
+        LEFT JOIN projects p ON p.user_id = u.id AND p.status IN ('in_progress', 'active', 'finished') AND p.is_demo = 0
         WHERE u.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 35 DAY) AND DATE_SUB(NOW(), INTERVAL 25 DAY)
         AND EXISTS (
             SELECT 1 FROM user_sessions s

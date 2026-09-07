@@ -323,7 +323,8 @@ class ProjectController
                 'hook_size' => $data['hook_size'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'technical_details' => $data['technical_details'] ?? null, // [AI:Claude] Détails techniques
-                'is_public' => $data['is_public'] ?? false
+                'is_public' => $data['is_public'] ?? false,
+                'is_demo' => $data['is_demo'] ?? false
             ];
 
             $projectId = $this->projectModel->createProject($projectData);

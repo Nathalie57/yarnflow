@@ -80,6 +80,7 @@ try {
             WHERE email_type = 'project_start_reminder'
             AND user_id IS NOT NULL
         )
+        AND p.is_demo = 0
         AND COALESCE(p.current_row, 0) = 0
         AND COALESCE((SELECT SUM(current_row) FROM project_sections ps WHERE ps.project_id = p.id), 0) = 0
         AND (SELECT COUNT(*) FROM project_rows pr WHERE pr.project_id = p.id) = 0
