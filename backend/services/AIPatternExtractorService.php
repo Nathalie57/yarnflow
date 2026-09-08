@@ -82,7 +82,7 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
 
   "pattern_notes": "notes importantes du patron (conseils généraux, modifications possibles, etc.)",
 
-  "contains_diagram": "true si le patron inclut un diagramme/grille/chart visuel (symboles de mailles, grille jacquard, schéma de montage) DONT tu t'es servi pour écrire les instructions d'au moins une section — false sinon (bool)"
+  "contains_diagram": "true UNIQUEMENT si au moins une section n'a AUCUNE instruction écrite rang par rang/étape par étape et que tu as dû reconstituer sa description en interprétant seul(e) un diagramme/grille/chart/image — false si le patron fournit du texte complet pour chaque section, même s'il contient aussi un diagramme en complément (bool)"
 }
 
 RÈGLES STRICTES :
@@ -110,7 +110,7 @@ RÈGLES STRICTES :
     - notation DROPS/française "aiguille n° 3" ou "numéro 3" → "3" (le numéro DROPS correspond directement aux mm)
     - taille US/UK sans mm indiqué (ex: "US 7", "size 7 needles", "hook size H") → convertir vers l'équivalent mm standard (tables de conversion aiguilles tricot et crochets US usuelles)
     - si vraiment aucune taille numérique n'est identifiable ou convertible → null (mais garder quand même l'entrée needles avec son "type" si l'outil est identifié, ex: "Crochet", ne jamais omettre toute l'entrée simplement parce que la taille est introuvable)
-- contains_diagram : mettre true dès qu'un diagramme/grille/chart visuel a été utilisé pour écrire une section, même si le patron contient aussi du texte à côté — l'interprétation d'un diagramme n'est pas fiable à 100%, ce indicateur sert à prévenir l'utilisatrice de vérifier par elle-même.
+- contains_diagram : mettre true SEULEMENT si au moins une section n'a aucune instruction écrite et que tu as dû déduire son contenu d'un diagramme/grille/chart/image seul (rien à côté pour la rédiger) — c'est ce cas précis qui n'est pas fiable à 100% et mérite de prévenir l'utilisatrice. Si le patron donne des instructions écrites complètes pour chaque section et qu'un diagramme n'est qu'un complément visuel (déjà retranscrit en texte), mettre false — l'utilisatrice n'a alors rien à vérifier de plus.
 
 Retourne UNIQUEMENT le JSON, sans texte avant/après, sans markdown.
 PROMPT;

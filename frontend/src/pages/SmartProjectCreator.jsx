@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
@@ -104,11 +104,14 @@ export default function SmartProjectCreator() {
 
   const [sections, setSections] = useState([])
   const [creating, setCreating] = useState(false)
-  const [createdProject, setCreatedProject] = useState(null)
-  const [isFirstProject, setIsFirstProject] = useState(false)
   const [patternLanguage, setPatternLanguage] = useState(null)
   const [translatingPreview, setTranslatingPreview] = useState(false)
   const [translateGatePending, setTranslateGatePending] = useState(false)
+  // [AI:Claude] Porte d'avertissement (diagramme et/ou extraction partielle) avant la
+  // création automatique du projet — sans ça, ces bandeaux ne s'affichaient que sur
+  // l'écran de relecture manuelle, devenu un simple repli d'erreur jamais vu dans le
+  // cas normal depuis qu'on crée le projet directement après l'analyse.
+  const [warningGatePending, setWarningGatePending] = useState(false)
   // [AI:Claude] Le patron entier (diagramme inclus) part déjà chez Gemini, mais rien ne
   // garantit une lecture fiable d'un diagramme/grille — l'IA le signale elle-même pour
   // qu'on prévienne l'utilisatrice de vérifier plutôt que de faire confiance en silence.
@@ -125,6 +128,21 @@ export default function SmartProjectCreator() {
   // Charger le quota au montage
   useEffect(() => {
     fetchQuota()
+  }, [])
+
+  // [AI:Claude] L'analyse (60-100s) et la création tournent même si l'utilisatrice
+  // quitte cette page — mais si elle est déjà ailleurs dans l'app quand ça se termine,
+  // le navigate() vers le nouveau projet ne doit pas la rediriger de force en pleine
+  // surprise. On garde juste une trace du montage pour éviter ce cas.
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    // [AI:Claude] Remis à true ici (pas seulement à la déclaration) : en StrictMode,
+    // React monte/démonte/remonte chaque effet une fois en dev pour détecter ce genre
+    // de bug — sans ce reset, le nettoyage du premier montage simulé laissait la ref
+    // bloquée à false pour de bon, et navigate() ne se déclenchait plus jamais après
+    // une création pourtant réussie côté serveur.
+    isMountedRef.current = true
+    return () => { isMountedRef.current = false }
   }, [])
 
   // [AI:Claude] Arrivée depuis le partage natif du téléphone (Web Share Target,
@@ -167,10 +185,23 @@ export default function SmartProjectCreator() {
     }
   }
 
+  // [AI:Claude] Efface le résultat d'une analyse précédente dès que la source change
+  // (nouveau fichier, autre URL/texte, autre patron de bibliothèque) — sinon le bouton
+  // "Continuer avec l'analyse précédente" reste affiché et réutilise par erreur les
+  // données extraites de l'ancienne source au lieu d'analyser la nouvelle.
+  const resetExtraction = () => {
+    setExtractedData(null)
+    setPatternLanguage(null)
+    setTranslateGatePending(false)
+    setWarningGatePending(false)
+    setContainsDiagram(false)
+  }
+
   const handleModeSelect = async (selectedMode) => {
     setMode(selectedMode)
     setStep(2)
     setError(null)
+    resetExtraction()
 
     if (selectedMode === 'library') {
       setLoadingLibrary(true)
@@ -199,6 +230,7 @@ export default function SmartProjectCreator() {
       }
       setFile(selectedFile)
       setError(null)
+      resetExtraction()
     }
   }
 
@@ -308,13 +340,41 @@ export default function SmartProjectCreator() {
         setStashSelections(matches)
 
         setSections(response.data.data.sections || [])
-        setContainsDiagram(!!response.data.data.contains_diagram)
-        setTranslateGatePending(!!detectedLang && detectedLang !== i18n.language.split('-')[0])
-        setStep(3)
+        const hasDiagram = !!response.data.data.contains_diagram
+        setContainsDiagram(hasDiagram)
+        const needsTranslateGate = !!detectedLang && detectedLang !== i18n.language.split('-')[0]
+        const needsWarningGate = hasDiagram || response.data.ai_status === 'partial'
+        setTranslateGatePending(needsTranslateGate)
+        setWarningGatePending(needsWarningGate)
         trackSmartAnalysis(mode, true)
 
         // Recharger le quota
         fetchQuota()
+
+        // [AI:Claude] Retour utilisatrice : le badge de crédits est déjà visible AVANT de
+        // cliquer sur Création Intelligente (pas de surprise à en consommer un), donc l'écran
+        // de relecture/édition ne sert qu'à faire perdre l'effet "wouaw" — trop de gens
+        // analysaient avec succès sans jamais valider. On crée le projet directement et on
+        // envoie sur sa page, sans étape intermédiaire — sauf la traduction ou un avertissement
+        // (diagramme, extraction partielle) qui méritent une confirmation avant de continuer
+        // (juste après), et sauf repli sur l'écran de relecture si la création échoue quand
+        // même (titre manquant, erreur serveur...).
+        if (needsTranslateGate || needsWarningGate) {
+          setStep(3)
+        } else {
+          const freshProject = {
+            title: response.data.data.title || '',
+            craft_type: response.data.data.craft_type || 'crochet',
+            category: response.data.data.category || null,
+            description: response.data.data.description || '',
+            yarn: response.data.data.yarn?.length ? response.data.data.yarn : [{ brand: '', color: '', weight: '', composition: '' }],
+            needles: response.data.data.needles?.length ? response.data.data.needles : [{ type: '', size: '', length: '' }],
+            gauge: response.data.data.gauge || { stitches: null, rows: null, size_cm: 10 },
+            pattern_notes: response.data.data.pattern_notes || ''
+          }
+          const freshSections = response.data.data.sections || []
+          submitProject(freshProject, freshSections)
+        }
       } else {
         trackSmartAnalysis(mode, false)
         setError(response.data.error || t('ui.analysisFailed'))
@@ -341,8 +401,21 @@ export default function SmartProjectCreator() {
     }
   }
 
-  const handleConfirm = async () => {
-    if (!project.title) {
+  // [AI:Claude] Accepte project/sections en override (au lieu de lire l'état du composant)
+  // pour le flux automatique juste après l'analyse : setProject()/setSections() sont
+  // asynchrones, les relire immédiatement dans le même tick donnerait les anciennes valeurs.
+  // Sans override (undefined), lit l'état courant — cas de repli (relecture manuelle,
+  // boutons "Créer le projet" toujours présents sur l'écran de relecture en cas d'échec).
+  const submitProject = async (projectOverride, sectionsOverride) => {
+    const projectToSubmit = projectOverride ?? project
+    const sectionsToSubmit = sectionsOverride ?? sections
+
+    if (!projectToSubmit.title) {
+      // [AI:Claude] Pas de titre exploitable détecté : on ne peut pas deviner à sa place,
+      // repli sur l'écran de relecture pour qu'elle le renseigne elle-même.
+      setProject(projectToSubmit)
+      setSections(sectionsToSubmit)
+      setStep(3)
       setError(t('ui.titleRequired'))
       return
     }
@@ -357,8 +430,8 @@ export default function SmartProjectCreator() {
       // le token. N'expliquait pas d'echec constate (les deux autres tentatives
       // du meme utilisateur ont reussi via ce meme code), corrige par prudence.
       const response = await api.post('/projects/smart-create/confirm', {
-        project,
-        sections,
+        project: projectToSubmit,
+        sections: sectionsToSubmit,
         // [AI:Claude] Le mode 'url' avec repli texte collé (Cloudflare bloque le scraping)
         // est en réalité une analyse de texte, pas d'URL — source_type doit refléter la
         // vraie source analysée pour que confirm() sache où ranger le patron (pattern_text
@@ -378,18 +451,7 @@ export default function SmartProjectCreator() {
       })
 
       if (response.data.success) {
-        setCreatedProject(response.data.project)
-        setIsFirstProject(!!response.data.is_first_project)
-        setStep(4)
-        trackProjectCreated('smart', project.craft_type)
-
-        // [AI:Claude] confirm() renvoie le projet "brut" — pattern_language et
-        // has_pattern_translation ne sont calculés que par ProjectController::show(),
-        // pour proposer la traduction dès cet écran de succès plutôt que d'attendre que
-        // l'utilisatrice pense à aller voir l'onglet Patron. Best-effort, silencieux si ça échoue.
-        api.get(`/projects/${response.data.project.id}`)
-          .then(res => setCreatedProject(res.data.project))
-          .catch(() => {})
+        trackProjectCreated('smart', projectToSubmit.craft_type)
 
         // [AI:Claude] Réserve les pelotes (stash_allocations) une fois le projet
         // réellement créé — jamais avant, pour ne pas réserver sur une création
@@ -409,11 +471,32 @@ export default function SmartProjectCreator() {
             }
           }
         }
+
+        // [AI:Claude] Envoi direct sur la page du projet — plus d'écran de succès
+        // intermédiaire à cliquer, voir la note plus haut sur pourquoi.
+        if (response.data.is_first_project) {
+          try { sessionStorage.setItem('showFirstProjectTip', 'true') } catch { /* ignore */ }
+        }
+        // [AI:Claude] Le projet est créé quoi qu'il arrive, mais on ne force la
+        // redirection que si elle est toujours sur cette page — sinon elle retrouvera
+        // simplement son projet dans "Mes projets", sans être arrachée à autre chose.
+        if (isMountedRef.current) {
+          navigate(`/projects/${response.data.project.id}`)
+        }
       } else {
+        // [AI:Claude] Repli sur l'écran de relecture manuelle si la création échoue quand
+        // même (ex: titre jugé valide ici mais rejeté côté serveur) — jamais laisser
+        // l'utilisatrice sans aucun écran après une analyse qui avait pourtant réussi.
+        setProject(projectToSubmit)
+        setSections(sectionsToSubmit)
+        setStep(3)
         setError(response.data.error || t('ui.projectCreationFailed'))
       }
     } catch (err) {
       console.error('Erreur confirm:', err)
+      setProject(projectToSubmit)
+      setSections(sectionsToSubmit)
+      setStep(3)
       // [AI:Claude] Nouveau cas depuis le teaser : analyze() peut laisser passer une analyse
       // au-delà du quota FREE (voir SmartProjectController::analyze()), confirm() bloque
       // alors la validation réelle avec ce même 403 — l'utilisatrice a vu son projet
@@ -437,6 +520,11 @@ export default function SmartProjectCreator() {
   const handleTranslatePreview = async () => {
     if (!analyzeMetadata?.import_id) return
     setTranslatingPreview(true)
+    // [AI:Claude] Valeurs locales plutôt que relire project/sections après setProject()/
+    // setSections() (asynchrones) — soumettre juste après avec les anciennes valeurs
+    // renverrait la version non traduite.
+    let sectionsToUse = sections
+    let projectToUse = project
     try {
       const res = await api.post('/projects/smart-create/translate-preview', {
         import_id: analyzeMetadata.import_id,
@@ -444,14 +532,16 @@ export default function SmartProjectCreator() {
       })
       if (res.data.success) {
         if (res.data.translated_sections?.length === sections.length) {
-          setSections(sections.map((s, i) => ({
+          sectionsToUse = sections.map((s, i) => ({
             ...s,
             name: res.data.translated_sections[i]?.name || s.name,
             description: res.data.translated_sections[i]?.description ?? s.description
-          })))
+          }))
+          setSections(sectionsToUse)
         }
         if (res.data.translated_pattern_notes) {
-          setProject(prev => ({ ...prev, pattern_notes: res.data.translated_pattern_notes }))
+          projectToUse = { ...project, pattern_notes: res.data.translated_pattern_notes }
+          setProject(projectToUse)
         }
         setPatternLanguage(null)
       }
@@ -460,6 +550,12 @@ export default function SmartProjectCreator() {
     } finally {
       setTranslatingPreview(false)
       setTranslateGatePending(false)
+      // [AI:Claude] Si un avertissement (diagramme, extraction partielle) est aussi en
+      // attente, ne pas créer le projet tout de suite — la traduction faite, on retombe
+      // sur l'écran d'avertissement pour l'acquittement final plutôt que de le sauter.
+      if (!warningGatePending) {
+        submitProject(projectToUse, sectionsToUse)
+      }
     }
   }
 
@@ -543,42 +639,11 @@ export default function SmartProjectCreator() {
           )}
         </div>
 
-        {/* Étapes */}
-        {/* Mobile : étape X / 4 + barre de progression */}
-        <div className="mb-8 sm:hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-primary-600">
-              {t('ui.stepXof4', { step, label: [, t('ui.stepMode'), t('ui.stepAnalysis'), t('ui.stepValidation'), t('ui.stepCreation')][step] })}
-            </span>
-          </div>
-          <div className="w-full h-1.5 bg-gray-200 rounded-full">
-            <div
-              className="h-1.5 bg-primary-600 rounded-full transition-all"
-              style={{ width: `${(step / 4) * 100}%` }}
-            />
-          </div>
-        </div>
-        {/* Desktop : stepper complet */}
-        <div className="mb-8 hidden sm:flex items-center justify-center gap-4">
-          {[
-            { num: 1, labelKey: 'stepMode' },
-            { num: 2, labelKey: 'stepAnalysis' },
-            { num: 3, labelKey: 'stepValidation' },
-            { num: 4, labelKey: 'stepCreation' }
-          ].map((s) => (
-            <div key={s.num} className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                step >= s.num ? 'bg-primary-600 text-white' : 'bg-gray-200 text-gray-500'
-              }`}>
-                {s.num}
-              </div>
-              <span className={`text-sm ${step >= s.num ? 'text-primary-600 font-medium' : 'text-gray-400'}`}>
-                {t(`ui.${s.labelKey}`)}
-              </span>
-              {s.num < 4 && <span className="text-gray-300">→</span>}
-            </div>
-          ))}
-        </div>
+        {/* [AI:Claude] Stepper retiré : avec le nouveau flux (analyse -> création auto),
+            "Validation" et "Création" ne sont plus des étapes normales que l'utilisatrice
+            traverse une à une, donc l'afficher comme un parcours à 4 étapes fixes induisait
+            en erreur (cf capture montrant "3 Validation" et "4 Création" encore grisées
+            alors qu'elles ne seront jamais vues dans le cas normal). */}
 
         {/* Erreur globale */}
         {error && (
@@ -655,7 +720,7 @@ export default function SmartProjectCreator() {
         )}
 
         {/* ÉTAPE 2 : Upload/URL/Bibliothèque + Analyse */}
-        {step === 2 && !analyzing && (
+        {step === 2 && !analyzing && !creating && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-gray-900 mb-6">
               {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.chooseFromLibrary') : mode === 'text' ? t('ui.pasteText') : t('ui.importFromUrl')}
@@ -687,7 +752,7 @@ export default function SmartProjectCreator() {
                         .map(p => (
                           <button
                             key={p.id}
-                            onClick={() => setSelectedLibraryPattern(p)}
+                            onClick={() => { setSelectedLibraryPattern(p); resetExtraction() }}
                             className={`w-full text-left px-4 py-3 rounded-xl border transition flex items-center justify-between gap-3 ${
                               selectedLibraryPattern?.id === p.id
                                 ? 'border-primary-500 bg-primary-50'
@@ -744,7 +809,7 @@ export default function SmartProjectCreator() {
                 <input
                   type="url"
                   value={url}
-                  onChange={(e) => { setUrl(e.target.value); setPastedText('') }}
+                  onChange={(e) => { setUrl(e.target.value); setPastedText(''); resetExtraction() }}
                   placeholder={t('ui.phExampleUrl')}
                   className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
@@ -755,7 +820,7 @@ export default function SmartProjectCreator() {
                     </label>
                     <textarea
                       value={pastedText}
-                      onChange={(e) => setPastedText(e.target.value)}
+                      onChange={(e) => { setPastedText(e.target.value); resetExtraction() }}
                       placeholder={t('ui.phPastedPattern')}
                       rows={8}
                       className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
@@ -772,7 +837,7 @@ export default function SmartProjectCreator() {
                 </label>
                 <textarea
                   value={pastedText}
-                  onChange={(e) => setPastedText(e.target.value)}
+                  onChange={(e) => { setPastedText(e.target.value); resetExtraction() }}
                   placeholder={t('ui.phPastedPattern')}
                   rows={12}
                   autoFocus
@@ -821,7 +886,20 @@ export default function SmartProjectCreator() {
 
               {extractedData ? (
                 <button
-                  onClick={() => setStep(3)}
+                  onClick={() => {
+                    // [AI:Claude] Une analyse précédente existe déjà en état (ex: retour en
+                    // arrière pour changer la taille) — on suit la même logique que juste après
+                    // une analyse fraîche : passer par l'étape de traduction si besoin, sinon
+                    // créer directement le projet, plutôt que de renvoyer vers l'écran de
+                    // relecture manuelle qui n'est plus le chemin normal.
+                    const needsTranslateGate = !!patternLanguage && patternLanguage !== i18n.language.split('-')[0]
+                    setTranslateGatePending(needsTranslateGate)
+                    if (needsTranslateGate || warningGatePending) {
+                      setStep(3)
+                    } else {
+                      submitProject()
+                    }
+                  }}
                   className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 flex items-center justify-center gap-2"
                 >
                   {t('ui.continuePrevAnalysis')}
@@ -892,39 +970,90 @@ export default function SmartProjectCreator() {
           </div>
         )}
 
-        {/* ÉTAPE 3 (variante) : proposition de traduction AVANT d'afficher le formulaire de
-            relecture — sinon les modifs proposées ci-dessous sont dans une langue que
-            l'utilisatrice ne comprend pas forcément. */}
-        {step === 3 && translateGatePending && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.checkAndEdit')}</h2>
-            <p className="text-gray-600 mb-6">
-              {t('ui.patternTranslateGateBody', { lang: getLanguageName(patternLanguage), targetLang: getLanguageName(i18n.language.split('-')[0]) })}
-            </p>
-            <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={() => setTranslateGatePending(false)}
-                disabled={translatingPreview}
-                className="px-4 py-2 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition disabled:opacity-60"
-              >
-                {t('ui.patternTranslateGateSkip')}
-              </button>
-              <button
-                onClick={handleTranslatePreview}
-                disabled={translatingPreview}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
-              >
-                {translatingPreview && (
-                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                )}
-                {translatingPreview ? t('ui.patternTranslating') : t('ui.patternTranslateGateCta')}
-              </button>
+        {/* [AI:Claude] Création automatique du projet juste après l'analyse (pas d'écran de
+            relecture manuelle dans le cas normal, voir handleAnalyze/submitProject) — un
+            écran de chargement dédié pour ne pas laisser un flash du formulaire d'étape 2
+            entre la fin de l'analyse et la redirection vers le projet créé. */}
+        {creating && step !== 3 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 relative">
+              <svg className="animate-spin w-16 h-16 text-primary-200" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+              </svg>
+              <svg className="animate-spin w-16 h-16 text-primary-600 absolute inset-0" style={{ animationDuration: '1s' }} viewBox="0 0 24 24" fill="none">
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
             </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.creatingProjectTitle')}</h2>
+            <p className="text-gray-500 text-sm">{t('ui.creatingProjectDesc')}</p>
           </div>
         )}
 
-        {/* ÉTAPE 3 : Validation/Édition */}
-        {step === 3 && !translateGatePending && (
+        {/* ÉTAPE 3 (variante) : porte de pré-création — traduction OU avertissements
+            (diagramme, extraction partielle) AVANT de créer le projet, jamais les deux à
+            la fois. [AI:Claude] Un avertissement (fiabilité de l'extraction en jeu) prime
+            sur la question de traduction (confort) — les cumuler aurait posé deux questions
+            différentes sur un seul écran ("on traduit ?" + "on continue ?"), la traduction
+            est donc sautée silencieusement quand un avertissement est présent : seul le
+            "continuer quand même" reste, le patron restera dans sa langue d'origine.
+            Affichée à la place du formulaire de relecture complet, qui n'est plus le
+            chemin normal (voir handleAnalyze). */}
+        {step === 3 && (translateGatePending || warningGatePending) && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.checkAndEdit')}</h2>
+
+            {!warningGatePending && translateGatePending && (
+              <p className="text-gray-600 mb-4">
+                {t('ui.patternTranslateGateBody', { lang: getLanguageName(patternLanguage), targetLang: getLanguageName(i18n.language.split('-')[0]) })}
+              </p>
+            )}
+
+            {containsDiagram && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm text-left">
+                {t('ui.diagramWarning')}
+              </div>
+            )}
+
+            {aiStatus === 'partial' && (
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 text-sm text-left">
+                {t('ui.someInfoMissing')}
+              </div>
+            )}
+
+            {!warningGatePending && translateGatePending ? (
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => { setTranslateGatePending(false); submitProject() }}
+                  disabled={translatingPreview}
+                  className="px-4 py-2 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition disabled:opacity-60"
+                >
+                  {t('ui.patternTranslateGateSkip')}
+                </button>
+                <button
+                  onClick={handleTranslatePreview}
+                  disabled={translatingPreview}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
+                >
+                  {translatingPreview && (
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  )}
+                  {translatingPreview ? t('ui.patternTranslating') : t('ui.patternTranslateGateCta')}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setWarningGatePending(false); setTranslateGatePending(false); submitProject() }}
+                disabled={creating}
+                className="px-6 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition disabled:opacity-60 text-sm font-medium"
+              >
+                {creating ? t('ui.creatingEllipsis') : t('ui.continueAnyway')}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ÉTAPE 3 : Validation/Édition (repli d'erreur uniquement) */}
+        {step === 3 && !translateGatePending && !warningGatePending && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <div className="flex items-start justify-between gap-4 mb-2">
               <h2 className="text-xl font-bold text-gray-900">
@@ -935,7 +1064,7 @@ export default function SmartProjectCreator() {
                   le résumé est long, personne ne descend jusqu'en bas pour valider. */}
               <div className="flex-shrink-0 flex flex-col items-end gap-1">
                 <button
-                  onClick={handleConfirm}
+                  onClick={() => submitProject()}
                   disabled={creating || !project.title}
                   className="px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                 >
@@ -1140,7 +1269,7 @@ export default function SmartProjectCreator() {
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
                         />
                         <select
-                          value={section.unit}
+                          value={section.unit || 'rangs'}
                           onChange={(e) => updateSection(index, 'unit', e.target.value)}
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
                         >
@@ -1196,7 +1325,7 @@ export default function SmartProjectCreator() {
               </button>
 
               <button
-                onClick={handleConfirm}
+                onClick={() => submitProject()}
                 disabled={creating || !project.title}
                 className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
@@ -1204,42 +1333,6 @@ export default function SmartProjectCreator() {
               </button>
             </div>
             <p className="mt-3 text-center text-xs text-gray-400">{t('ui.usesOneCredit')}</p>
-          </div>
-        )}
-
-        {/* ÉTAPE 4 : Succès */}
-        {step === 4 && createdProject && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center mb-4 mx-auto shadow-lg shadow-primary-200">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {t('ui.projectCreated')}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              {t('ui.projectCreatedReady', { name: createdProject.name, count: sections.length })}
-            </p>
-
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => {
-                  if (isFirstProject) {
-                    try { sessionStorage.setItem('showFirstProjectTip', 'true') } catch { /* ignore */ }
-                  }
-                  navigate(`/projects/${createdProject.id}`)
-                }}
-                className="px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700"
-              >
-                {t('ui.openProjectArrow')}
-              </button>
-
-              <button
-                onClick={() => navigate('/my-projects')}
-                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
-              >
-                {t('ui.viewAllProjects')}
-              </button>
-            </div>
           </div>
         )}
 
