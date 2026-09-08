@@ -301,12 +301,13 @@ export default function SmartProjectCreator() {
         setExtractedData(response.data.data)
         setAiStatus(response.data.ai_status)
         setPatternLanguage(detectedLang)
-        setAnalyzeMetadata({
+        const freshAnalyzeMetadata = {
           source_name: response.data.source_name,
           processing_time_ms: response.data.processing_time_ms,
           ai_status: response.data.ai_status,
           import_id: response.data.import_id
-        })
+        }
+        setAnalyzeMetadata(freshAnalyzeMetadata)
 
         // Pré-remplir les champs
         setProject({
@@ -373,7 +374,7 @@ export default function SmartProjectCreator() {
             pattern_notes: response.data.data.pattern_notes || ''
           }
           const freshSections = response.data.data.sections || []
-          submitProject(freshProject, freshSections)
+          submitProject(freshProject, freshSections, freshAnalyzeMetadata)
         }
       } else {
         trackSmartAnalysis(mode, false)
@@ -401,14 +402,18 @@ export default function SmartProjectCreator() {
     }
   }
 
-  // [AI:Claude] Accepte project/sections en override (au lieu de lire l'état du composant)
-  // pour le flux automatique juste après l'analyse : setProject()/setSections() sont
-  // asynchrones, les relire immédiatement dans le même tick donnerait les anciennes valeurs.
-  // Sans override (undefined), lit l'état courant — cas de repli (relecture manuelle,
-  // boutons "Créer le projet" toujours présents sur l'écran de relecture en cas d'échec).
-  const submitProject = async (projectOverride, sectionsOverride) => {
+  // [AI:Claude] Accepte project/sections/analyzeMetadata en override (au lieu de lire l'état
+  // du composant) pour le flux automatique juste après l'analyse : setProject()/setSections()/
+  // setAnalyzeMetadata() sont asynchrones, les relire immédiatement dans le même tick donnerait
+  // les anciennes valeurs. Bug vécu : import_id resté celui de l'analyse PRÉCÉDENTE (ou null),
+  // donc ai_pattern_imports.project_id jamais renseigné — le patron n'apparaissait plus dans
+  // l'onglet "Patron" du projet. Sans override (undefined), lit l'état courant — cas de repli
+  // (relecture manuelle, boutons "Créer le projet" toujours présents sur l'écran de relecture
+  // en cas d'échec, ou un clic de l'utilisatrice après qu'un rendu ait déjà eu lieu).
+  const submitProject = async (projectOverride, sectionsOverride, analyzeMetadataOverride) => {
     const projectToSubmit = projectOverride ?? project
     const sectionsToSubmit = sectionsOverride ?? sections
+    const analyzeMetadataToSubmit = analyzeMetadataOverride ?? analyzeMetadata
 
     if (!projectToSubmit.title) {
       // [AI:Claude] Pas de titre exploitable détecté : on ne peut pas deviner à sa place,
@@ -447,7 +452,7 @@ export default function SmartProjectCreator() {
               ? url
               : (mode === 'text' || pastedText.trim()) ? pastedText.trim().slice(0, 80) : url,
         pattern_text: (mode === 'text' || pastedText.trim()) ? pastedText.trim() : undefined,
-        analyze_metadata: analyzeMetadata
+        analyze_metadata: analyzeMetadataToSubmit
       })
 
       if (response.data.success) {
