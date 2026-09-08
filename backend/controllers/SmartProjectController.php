@@ -294,18 +294,82 @@ class SmartProjectController
             // Taille choisie (optionnel, pour patrons multi-tailles)
             $patternSize = !empty($_POST['pattern_size']) ? trim($_POST['pattern_size']) : null;
 
-            // Extraire avec IA
-            $extractionStart = microtime(true);
-
+            // [AI:Claude] Empreinte du contenu EXACT (fichier, URL ou texte collé + taille
+            // choisie) — indépendante du nom de fichier temporaire, qui change à chaque upload
+            // même pour un fichier strictement identique.
             if ($sourceType === 'pdf' || $sourceType === 'library') {
-                $result = $this->extractorService->extractFromPDF($filePath, $patternSize);
+                $sourceHash = hash('sha256', hash_file('sha256', $filePath) . '|' . ($patternSize ?? ''));
             } elseif ($sourceType === 'text') {
-                $result = $this->extractorService->extractFromText($patternTextInput, $patternSize);
+                $sourceHash = hash('sha256', $patternTextInput . '|' . ($patternSize ?? ''));
             } else {
-                $result = $this->extractorService->extractFromURL($sourceName, $patternSize);
+                $sourceHash = hash('sha256', $sourceName . '|' . ($patternSize ?? ''));
             }
 
-            $processingTime = isset($result['processing_time_ms']) ? (int)$result['processing_time_ms'] : (int)round((microtime(true) - $extractionStart) * 1000);
+            // [AI:Claude] Réutilise un résultat déjà obtenu pour EXACTEMENT le même contenu
+            // plutôt que de rappeler Gemini — vu en vrai : la même utilisatrice réanalyse le
+            // même fichier plusieurs fois de suite en pensant que ça avait échoué. Seules les
+            // lignes ai_pattern_imports avec ai_status success/partial existent en base (les
+            // échecs ne sont jamais journalisés ici, voir plus bas), donc toute ligne trouvée
+            // correspond forcément à un résultat exploitable, jamais à un échec mis en cache.
+            $cacheStmt = $db->prepare(
+                "SELECT ai_response_json, ai_status FROM ai_pattern_imports
+                 WHERE user_id = :user_id AND source_hash = :hash
+                 AND created_at >= NOW() - INTERVAL 1 DAY
+                 ORDER BY created_at DESC LIMIT 1"
+            );
+            $cacheStmt->execute(['user_id' => $userId, 'hash' => $sourceHash]);
+            $cached = $cacheStmt->fetch(\PDO::FETCH_ASSOC);
+
+            $extractionStart = microtime(true);
+
+            if ($cached) {
+                $result = [
+                    'success' => true,
+                    'data' => json_decode($cached['ai_response_json'], true),
+                    'ai_status' => $cached['ai_status']
+                ];
+                $releaseLock = function () {};
+            } else {
+                // [AI:Claude] Verrou anti-double-analyse : un appel Gemini coûte réellement, et
+                // une analyse peut prendre 60-100s+ — largement plus que ce que l'écran de
+                // chargement laisse deviner. Sans ce verrou, recharger/relancer pendant l'attente
+                // déclenche un second appel IA payant en plus du premier, toujours en cours (le
+                // cache ci-dessus ne protège que les tentatives APRÈS que la première ait fini).
+                // Verrou "périmé" (réutilisable) au-delà de 150s, au cas où une requête
+                // précédente aurait planté sans jamais le libérer.
+                $lockStaleBefore = date('Y-m-d H:i:s', time() - 150);
+                $lockStmt = $db->prepare(
+                    'INSERT INTO smart_creation_locks (user_id, started_at) VALUES (:user_id, NOW())
+                     ON DUPLICATE KEY UPDATE started_at = IF(started_at < :stale_before, NOW(), started_at)'
+                );
+                $lockStmt->execute(['user_id' => $userId, 'stale_before' => $lockStaleBefore]);
+                if (!in_array($lockStmt->rowCount(), [1, 2], true)) {
+                    $this->jsonResponse([
+                        'error' => 'Une analyse est déjà en cours pour ce compte — patiente qu\'elle se termine avant d\'en relancer une autre.',
+                        'error_code' => 'analyze_already_in_progress'
+                    ], 429);
+                    return;
+                }
+
+                // [AI:Claude] jsonResponse() fait exit — un finally ne s'exécuterait jamais après,
+                // donc le verrou doit être libéré explicitement avant chaque sortie (ici-bas et
+                // dans le catch plus bas, y compris si extractFrom*() lève une exception).
+                $releaseLock = function () use ($db, $userId) {
+                    $db->prepare('DELETE FROM smart_creation_locks WHERE user_id = :user_id')
+                        ->execute(['user_id' => $userId]);
+                };
+
+                // Extraire avec IA
+                if ($sourceType === 'pdf' || $sourceType === 'library') {
+                    $result = $this->extractorService->extractFromPDF($filePath, $patternSize);
+                } elseif ($sourceType === 'text') {
+                    $result = $this->extractorService->extractFromText($patternTextInput, $patternSize);
+                } else {
+                    $result = $this->extractorService->extractFromURL($sourceName, $patternSize);
+                }
+            }
+
+            $processingTime = $cached ? 0 : (isset($result['processing_time_ms']) ? (int)$result['processing_time_ms'] : (int)round((microtime(true) - $extractionStart) * 1000));
 
             // [AI:Claude] Persiste le fichier analysé (PDF importé ou depuis la bibliothèque)
             // dans le dossier public servi par l'app — sans ça, seul le JSON extrait par l'IA
@@ -338,6 +402,7 @@ class SmartProjectController
 
             // Retourner le résultat
             if (!$result['success']) {
+                $releaseLock();
                 $this->jsonResponse([
                     'success' => false,
                     'error' => $result['error'],
@@ -351,13 +416,14 @@ class SmartProjectController
             // [AI:Claude] L'ID est renvoyé au frontend pour être relié au projet lors du confirm()
             // [AI:Claude] $result['data'] (pas null) : sans le PDF conservé, ai_response_json est
             // la seule trace permettant d'auditer a posteriori la qualité d'une extraction.
-            $importId = $this->logImport($userId, null, $sourceType, $sourceName, $sourceFilePath, $fileSize, $result['ai_status'], $result['data'] ?? null, $processingTime, null, $patternSize);
+            $importId = $this->logImport($userId, null, $sourceType, $sourceName, $sourceFilePath, $fileSize, $result['ai_status'], $result['data'] ?? null, $processingTime, null, $patternSize, $sourceHash);
 
             // [AI:Claude] Distinct de 'project_created' (source=smart_import, posé dans confirm()) :
             // permet de mesurer l'abandon entre l'analyse et la confirmation — patron analysé mais
             // jamais transformé en projet (résultat décevant, hésitation à la relecture...).
             AnalyticsService::log($userId, null, 'smart_creation_analyzed', ['import_id' => $importId, 'source_type' => $sourceType]);
 
+            $releaseLock();
             $this->jsonResponse([
                 'success' => true,
                 'data' => $result['data'],
@@ -369,6 +435,11 @@ class SmartProjectController
             ]);
 
         } catch (\Exception $e) {
+            // [AI:Claude] $releaseLock n'existe que si on a dépassé l'acquisition du verrou —
+            // une exception avant ce point (validation fichier, etc.) n'a jamais posé de verrou.
+            if (isset($releaseLock)) {
+                $releaseLock();
+            }
             error_log('[SmartProject] Erreur analyze: ' . $e->getMessage());
             error_log('[SmartProject] Stack trace: ' . $e->getTraceAsString());
             $this->jsonResponse(['error' => 'Erreur lors de l\'analyse: ' . $e->getMessage()], 500);
@@ -738,14 +809,15 @@ class SmartProjectController
         ?array $aiResponse,
         int $processingTime,
         ?string $error,
-        ?string $patternSize = null
+        ?string $patternSize = null,
+        ?string $sourceHash = null
     ): ?int {
         try {
             $db = \App\Config\Database::getInstance()->getConnection();
             $stmt = $db->prepare("
                 INSERT INTO ai_pattern_imports
-                (user_id, project_id, source_type, source_name, source_file_path, pattern_size, file_size_bytes, ai_status, ai_response_json, processing_time_ms, error_message, ip_address)
-                VALUES (:user_id, :project_id, :source_type, :source_name, :source_file_path, :pattern_size, :file_size, :ai_status, :ai_response, :processing_time, :error, :ip)
+                (user_id, project_id, source_type, source_name, source_file_path, pattern_size, source_hash, file_size_bytes, ai_status, ai_response_json, processing_time_ms, error_message, ip_address)
+                VALUES (:user_id, :project_id, :source_type, :source_name, :source_file_path, :pattern_size, :source_hash, :file_size, :ai_status, :ai_response, :processing_time, :error, :ip)
             ");
 
             $stmt->execute([
@@ -755,6 +827,7 @@ class SmartProjectController
                 'source_name' => $sourceName,
                 'source_file_path' => $sourceFilePath,
                 'pattern_size' => $patternSize,
+                'source_hash' => $sourceHash,
                 'file_size' => $fileSize,
                 'ai_status' => $aiStatus,
                 'ai_response' => $aiResponse ? json_encode($aiResponse) : null,

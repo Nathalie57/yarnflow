@@ -459,6 +459,27 @@ PROMPT;
             );
         }
 
+        // [AI:Claude] Des sections peuvent exister sans qu'aucune n'ait de vraies instructions
+        // (ex: une image d'inspiration Pinterest avec juste des photos + un diagramme de motif,
+        // sans construction du vêtement) — un tableau sections non vide ne suffit pas à garantir
+        // un patron exploitable. Sans ce contrôle, l'utilisatrice atterrit sur un écran de
+        // vérification presque entièrement vide avec juste un vague avertissement.
+        $hasUsableSection = false;
+        foreach (($data['sections'] ?? []) as $section) {
+            if (!empty($section['description'])) {
+                $hasUsableSection = true;
+                break;
+            }
+        }
+        if (!$hasUsableSection) {
+            return $this->errorResponse(
+                'Aucune instruction exploitable détectée. Ce document ne semble pas contenir un patron complet ' .
+                '(image d\'inspiration sans instructions écrites, aperçu partiel...).',
+                0,
+                'partial'
+            );
+        }
+
         return [
             'success' => true,
             'data' => $data,

@@ -463,6 +463,7 @@
     "progReading": "Lecture du contenu",
     "progExtracting": "Extraction des informations",
     "progFormatting": "Mise en forme du résultat",
+    "progTakingLonger": "Ce patron prend un peu plus de temps que d'habitude — encore un instant, ne quitte pas la page.",
     "creatingEllipsis": "Création...",
     "createProjectCheck": "✓ Valider mon projet",
     "portalFailed": "Impossible d'ouvrir le portail de gestion. Réessaie.",

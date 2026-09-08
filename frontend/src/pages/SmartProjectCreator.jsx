@@ -232,6 +232,12 @@ export default function SmartProjectCreator() {
       setTimeout(() => setAnalyzingStep(1), 3000),
       setTimeout(() => setAnalyzingStep(2), 12000),
       setTimeout(() => setAnalyzingStep(3), 35000),
+      // [AI:Claude] Certains patrons (longs, ou en anglais à traduire) prennent 60-100s,
+      // bien au-delà de l'étape 3 — sans relance visuelle après 35s, l'attente semblait
+      // figée et poussait à recharger/relancer l'analyse plusieurs fois (vu en vrai :
+      // 5 tentatives identiques du même fichier en 3 minutes, une utilisatrice le pensant
+      // planté). Ce palier rassure sans faire croire à une nouvelle étape terminée.
+      setTimeout(() => setAnalyzingStep(4), 55000),
     ]
 
     try {
@@ -862,6 +868,7 @@ export default function SmartProjectCreator() {
                 { labelKey: 'progReading', delay: 1 },
                 { labelKey: 'progExtracting', delay: 2 },
                 { labelKey: 'progFormatting', delay: 3 },
+                { labelKey: 'progTakingLonger', delay: 4 },
               ].map((s, i) => (
                 <div key={i} className="flex items-center gap-3">
                   {analyzingStep > i ? (

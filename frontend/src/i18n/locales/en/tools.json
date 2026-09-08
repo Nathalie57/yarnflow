@@ -463,6 +463,7 @@
     "progReading": "Reading the content",
     "progExtracting": "Extracting the details",
     "progFormatting": "Formatting the result",
+    "progTakingLonger": "This pattern is taking a bit longer than usual — just a moment, don't leave the page.",
     "creatingEllipsis": "Creating...",
     "createProjectCheck": "✓ Confirm my project",
     "portalFailed": "Could not open the billing portal. Please try again.",
