@@ -35,11 +35,6 @@ class RateLimiter
         // (une utilisatrice qui tricote ne pose jamais 20 questions/jour) — juste un
         // plafond de débit invisible contre l'abus, pas un compteur qui se vide.
         'ai_contextual' => [20, 86400],      // 20 requêtes / 24h par utilisatrice
-        // [AI:Claude] Plafond de débit indépendant du quota "3 essais à vie" : ce dernier ne
-        // compte que les imports confirmés (project_id renseigné), donc une utilisatrice qui
-        // n'appuie jamais sur "confirmer" pouvait relancer analyze() (donc l'appel Gemini)
-        // sans limite. 10/jour couvre largement un usage normal tout en bornant le coût.
-        'smart_create_analyze' => [10, 86400], // 10 analyses / 24h par utilisatrice
         'default' => [100, 60]              // 100 requêtes / 1 minute (global)
     ];
 
