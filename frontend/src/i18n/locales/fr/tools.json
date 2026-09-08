@@ -192,6 +192,7 @@
     "projectCreated": "Projet créé avec succès !",
     "checkAndEdit": "Vérifie et modifie les informations",
     "someInfoMissing": "Certaines informations n'ont pas pu être détectées automatiquement. Complète les champs manquants.",
+    "diagramWarning": "Ce patron contient un diagramme : les instructions concernées peuvent contenir des erreurs d'interprétation. À vérifier avant de commencer.",
     "urlImportHint": "Fonctionne pour les sites en HTML classique. Si le résultat est incomplet, télécharge le PDF ou copie le texte du patron.",
     "backToCreation": "Retour à la création",
     "projectType": "Type de projet",

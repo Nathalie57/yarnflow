@@ -109,6 +109,10 @@ export default function SmartProjectCreator() {
   const [patternLanguage, setPatternLanguage] = useState(null)
   const [translatingPreview, setTranslatingPreview] = useState(false)
   const [translateGatePending, setTranslateGatePending] = useState(false)
+  // [AI:Claude] Le patron entier (diagramme inclus) part déjà chez Gemini, mais rien ne
+  // garantit une lecture fiable d'un diagramme/grille — l'IA le signale elle-même pour
+  // qu'on prévienne l'utilisatrice de vérifier plutôt que de faire confiance en silence.
+  const [containsDiagram, setContainsDiagram] = useState(false)
 
   const getLanguageName = (code) => {
     try {
@@ -298,6 +302,7 @@ export default function SmartProjectCreator() {
         setStashSelections(matches)
 
         setSections(response.data.data.sections || [])
+        setContainsDiagram(!!response.data.data.contains_diagram)
         setTranslateGatePending(!!detectedLang && detectedLang !== i18n.language.split('-')[0])
         setStep(3)
         trackSmartAnalysis(mode, true)
@@ -921,14 +926,23 @@ export default function SmartProjectCreator() {
 
               {/* [AI:Claude] Doublon du bouton de validation du bas — retour utilisatrice :
                   le résumé est long, personne ne descend jusqu'en bas pour valider. */}
-              <button
-                onClick={handleConfirm}
-                disabled={creating || !project.title}
-                className="flex-shrink-0 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-              >
-                {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
-              </button>
+              <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                <button
+                  onClick={handleConfirm}
+                  disabled={creating || !project.title}
+                  className="px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                >
+                  {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
+                </button>
+                <p className="text-xs text-gray-400">{t('ui.usesOneCredit')}</p>
+              </div>
             </div>
+
+            {containsDiagram && (
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
+                {t('ui.diagramWarning')}
+              </div>
+            )}
 
             {aiStatus === 'partial' && (
               <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 text-sm">

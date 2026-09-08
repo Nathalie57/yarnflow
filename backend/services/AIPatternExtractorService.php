@@ -80,7 +80,9 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
     }
   ],
 
-  "pattern_notes": "notes importantes du patron (conseils généraux, modifications possibles, etc.)"
+  "pattern_notes": "notes importantes du patron (conseils généraux, modifications possibles, etc.)",
+
+  "contains_diagram": "true si le patron inclut un diagramme/grille/chart visuel (symboles de mailles, grille jacquard, schéma de montage) DONT tu t'es servi pour écrire les instructions d'au moins une section — false sinon (bool)"
 }
 
 RÈGLES STRICTES :
@@ -108,6 +110,7 @@ RÈGLES STRICTES :
     - notation DROPS/française "aiguille n° 3" ou "numéro 3" → "3" (le numéro DROPS correspond directement aux mm)
     - taille US/UK sans mm indiqué (ex: "US 7", "size 7 needles", "hook size H") → convertir vers l'équivalent mm standard (tables de conversion aiguilles tricot et crochets US usuelles)
     - si vraiment aucune taille numérique n'est identifiable ou convertible → null (mais garder quand même l'entrée needles avec son "type" si l'outil est identifié, ex: "Crochet", ne jamais omettre toute l'entrée simplement parce que la taille est introuvable)
+- contains_diagram : mettre true dès qu'un diagramme/grille/chart visuel a été utilisé pour écrire une section, même si le patron contient aussi du texte à côté — l'interprétation d'un diagramme n'est pas fiable à 100%, ce indicateur sert à prévenir l'utilisatrice de vérifier par elle-même.
 
 Retourne UNIQUEMENT le JSON, sans texte avant/après, sans markdown.
 PROMPT;
