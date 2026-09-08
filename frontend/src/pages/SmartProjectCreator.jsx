@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import axios from 'axios'
@@ -22,6 +22,7 @@ import UpgradePrompt from '../components/UpgradePrompt'
 export default function SmartProjectCreator() {
   const { t, i18n } = useTranslation('tools')
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const { trackSmartAnalysis, trackProjectCreated } = useAnalytics()
 
@@ -120,6 +121,34 @@ export default function SmartProjectCreator() {
   // Charger le quota au montage
   useEffect(() => {
     fetchQuota()
+  }, [])
+
+  // [AI:Claude] Arrivée depuis le partage natif du téléphone (Web Share Target,
+  // voir sw.js::handleShareTarget) : pré-remplit le mode URL sans lancer l'analyse
+  // toute seule — l'utilisatrice garde la main pour vérifier/corriger avant de
+  // consommer son quota. Un partage sans URL détectable (juste du texte) tombe en
+  // mode "texte collé" à la place plutôt que d'être perdu silencieusement.
+  useEffect(() => {
+    const sharedUrl = searchParams.get('shared_url')
+    const sharedText = searchParams.get('shared_text')
+    if (!sharedUrl && !sharedText) return
+
+    const urlMatch = sharedUrl || sharedText?.match(/https?:\/\/\S+/)?.[0]
+    if (urlMatch) {
+      setMode('url')
+      setUrl(urlMatch)
+    } else if (sharedText) {
+      setMode('text')
+      setPastedText(sharedText)
+    }
+    setStep(2)
+
+    const next = new URLSearchParams(searchParams)
+    next.delete('shared_url')
+    next.delete('shared_text')
+    next.delete('shared_title')
+    setSearchParams(next, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchQuota = async () => {
@@ -885,9 +914,21 @@ export default function SmartProjectCreator() {
         {/* ÉTAPE 3 : Validation/Édition */}
         {step === 3 && !translateGatePending && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
-              {t('ui.checkAndEdit')}
-            </h2>
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h2 className="text-xl font-bold text-gray-900">
+                {t('ui.checkAndEdit')}
+              </h2>
+
+              {/* [AI:Claude] Doublon du bouton de validation du bas — retour utilisatrice :
+                  le résumé est long, personne ne descend jusqu'en bas pour valider. */}
+              <button
+                onClick={handleConfirm}
+                disabled={creating || !project.title}
+                className="flex-shrink-0 px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+              >
+                {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
+              </button>
+            </div>
 
             {aiStatus === 'partial' && (
               <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 text-sm">

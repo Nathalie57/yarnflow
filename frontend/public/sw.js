@@ -1,7 +1,7 @@
-// YarnFlow Service Worker v0.16.2
+// YarnFlow Service Worker v0.17.1
 // Cache strategy for PWA functionality
 
-const CACHE_NAME = 'yarnflow-v0.16.2';
+const CACHE_NAME = 'yarnflow-v0.17.1';
 const API_CACHE = 'yarnflow-api-v1';
 
 // Assets to cache on install
@@ -43,10 +43,35 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// [AI:Claude] Web Share Target : le manifest déclare une action POST vers /share
+// (title/text/url + image). Le navigateur fait une vraie navigation POST — un
+// composant React classique ne peut pas lire ce corps de requête, seul le service
+// worker le peut. On extrait les champs texte et on redirige en GET vers Smart
+// Creation, pré-rempli, pour laisser l'utilisatrice confirmer avant analyse
+// (jamais d'analyse IA déclenchée automatiquement sans son clic).
+async function handleShareTarget(event) {
+  const formData = await event.request.formData();
+  const sharedUrl = formData.get('url') || '';
+  const sharedText = formData.get('text') || '';
+  const sharedTitle = formData.get('title') || '';
+
+  const params = new URLSearchParams();
+  if (sharedUrl) params.set('shared_url', sharedUrl);
+  if (sharedText) params.set('shared_text', sharedText);
+  if (sharedTitle) params.set('shared_title', sharedTitle);
+
+  return Response.redirect(`/smart-project-creator?${params.toString()}`, 303);
+}
+
 // Fetch event - handle requests
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  if (request.method === 'POST' && url.pathname === '/share') {
+    event.respondWith(handleShareTarget(event));
+    return;
+  }
 
   // Skip non-GET requests
   if (request.method !== 'GET') {
