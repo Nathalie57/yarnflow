@@ -76,7 +76,11 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
       "name": "nom de la section (ex: Corps, Manches, Assemblage)",
       "unit": "rangs" | "cm",
       "target": nombre total de rangs/tours/cm pour cette section — COMPTER les rangs dans les instructions si non explicitement indiqué (ex: si la section va jusqu'à Rnd 39, target=39). IMPORTANT: si le patron est multi-tailles avec des valeurs différentes par taille (format "19-20-21-23 cm" ou "XS-S-M-L"), mettre null car on ne connaît pas la taille choisie,
-      "description": "TOUTES les instructions complètes de cette section, rang par rang ou étape par étape (string)"
+      "description": "TOUTES les instructions complètes de cette section, rang par rang ou étape par étape (string)",
+      "secondary_counter": {
+        "label": "libellé court (ex: Répétitions du motif, Tours de diminution)",
+        "target": nombre total de répétitions (int)
+      } ou null — UNIQUEMENT si cette section contient une séquence de rangs/tours à répéter un nombre de fois EXPLICITE et compté (ex: \"répéter les rangs 1-32 15 fois\", \"répéter ces 4 rangs jusqu'à 11 diminutions\"). null si la section ne contient aucune répétition comptée de ce genre, ou si le nombre de répétitions n'est pas donné explicitement (ex: \"répéter jusqu'à la longueur désirée\")
     }
   ],
 
@@ -110,6 +114,7 @@ RÈGLES STRICTES :
     - notation DROPS/française "aiguille n° 3" ou "numéro 3" → "3" (le numéro DROPS correspond directement aux mm)
     - taille US/UK sans mm indiqué (ex: "US 7", "size 7 needles", "hook size H") → convertir vers l'équivalent mm standard (tables de conversion aiguilles tricot et crochets US usuelles)
     - si vraiment aucune taille numérique n'est identifiable ou convertible → null (mais garder quand même l'entrée needles avec son "type" si l'outil est identifié, ex: "Crochet", ne jamais omettre toute l'entrée simplement parce que la taille est introuvable)
+- secondary_counter : sert à créer un compteur secondaire automatiquement (suivi séparé du compteur de rangs normal). Ne le remplir que pour une répétition VRAIMENT comptée avec un nombre précis donné dans le patron — jamais pour "répéter jusqu'à convenance/la longueur désirée" ou une répétition sans total chiffré. Une section peut tout à fait n'avoir aucun secondary_counter (la plupart n'en ont pas).
 - contains_diagram : mettre true SEULEMENT si au moins une section n'a aucune instruction écrite et que tu as dû déduire son contenu d'un diagramme/grille/chart/image seul (rien à côté pour la rédiger) — c'est ce cas précis qui n'est pas fiable à 100% et mérite de prévenir l'utilisatrice. Si le patron donne des instructions écrites complètes pour chaque section et qu'un diagramme n'est qu'un complément visuel (déjà retranscrit en texte), mettre false — l'utilisatrice n'a alors rien à vérifier de plus.
 
 Retourne UNIQUEMENT le JSON, sans texte avant/après, sans markdown.

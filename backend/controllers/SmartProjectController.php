@@ -704,6 +704,28 @@ class SmartProjectController
                             'description' => $section['description'] ?? null,
                             'display_order' => $index + 1
                         ]);
+
+                        // [AI:Claude] Compteur secondaire auto-créé quand le patron mentionne une
+                        // répétition comptée explicite (ex: "répéter les rangs 1-32 15 fois") — voir
+                        // AIPatternExtractorService::EXTRACTION_PROMPT. Sans ça, seul le compteur de
+                        // rangs du cycle (32) existait, sans rien pour suivre où on en est dans les
+                        // 15 répétitions — l'utilisatrice devait s'en souvenir elle-même.
+                        // [AI:Claude] Créé quel que soit le plan (les compteurs secondaires n'ont
+                        // jamais eu de garde-fou backend, voir Project::MAX_SECONDARY_COUNTERS —
+                        // décision déjà assumée) : un compte FREE ne peut pas s'en servir, mais
+                        // ProjectCounter.jsx s'en sert pour lui montrer PRÉCISÉMENT ce que son
+                        // patron aurait pu suivre automatiquement ("15 répétitions détectées")
+                        // plutôt qu'un bouton générique "passer à PLUS/PRO" sans rapport avec
+                        // son propre patron — un vrai argument de conversion, pas un slogan.
+                        $secondaryCounter = $section['secondary_counter'] ?? null;
+                        if (!empty($secondaryCounter['label']) && !empty($secondaryCounter['target'])) {
+                            $sectionId = (int) $db->lastInsertId();
+                            $this->projectModel->addSecondaryCounter($projectId, $sectionId, [
+                                'label' => $secondaryCounter['label'],
+                                'target' => (int) $secondaryCounter['target'],
+                                'count' => 0
+                            ]);
+                        }
                     }
                 }
 
