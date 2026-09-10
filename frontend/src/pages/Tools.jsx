@@ -108,18 +108,22 @@ const IconGrid = () => (
 
 // [AI:Claude] Les libelles vivent dans les traductions (cle toolsList.<id>.title/.description) :
 // une constante figee au chargement du module resterait dans la langue initiale.
+// [AI:Claude] Ordre basé sur l'usage réel observé (tool_opened, cohorte du 07/09) plutôt
+// qu'alphabétique/arbitraire : yarn et distribute sont de loin les plus ouverts, length n'a
+// jamais été ouvert sur la période — les remonter/descendre évite de faire lire onze
+// descriptions à quelqu'un qui ne sait pas encore ce qu'il cherche.
 const TOOLS = [
+  { id: 'yarn', Icon: IconYarn, component: YarnCalculator },
   { id: 'distribute', Icon: IconDistribute, component: DistributeIncrDec },
+  { id: 'weight', Icon: IconLayers, component: YarnWeightConverter },
   { id: 'gauge', Icon: IconGauge, component: GaugeCalculator },
   { id: 'needles', Icon: IconNeedles, component: NeedleConverter },
-  { id: 'yarn', Icon: IconYarn, component: YarnCalculator },
   // Glossaire : explique les termes FR avec leurs equivalents anglais.
   // Sans objet pour une anglophone, donc masque hors francais.
   { id: 'glossary', Icon: IconBook, component: Glossary, frenchOnly: true },
-  { id: 'length', Icon: IconLength, component: LengthConverter },
   { id: 'remaining', Icon: IconScale, component: RemainingYarn },
-  { id: 'weight', Icon: IconLayers, component: YarnWeightConverter },
   { id: 'ai', Icon: IconMessage, component: AiAssistant },
+  { id: 'length', Icon: IconLength, component: LengthConverter },
   {
     id: 'chart-designer',
     Icon: IconGrid,
@@ -183,16 +187,51 @@ export default function Tools() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 pb-24">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('ui.toolsNav')}</h1>
+      <div className="flex items-center gap-3 mb-2">
+        <span className="w-9 h-9 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center p-2 shrink-0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+            <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6a2 2 0 1 0 2.8 2.8l6-6a4 4 0 0 0 5.4-5.4l-2.1 2.1-2.8-2.8 2.1-2.1z"/>
+          </svg>
+        </span>
+        <h1 className="text-2xl font-bold text-gray-900">{t('ui.toolsNav')}</h1>
+      </div>
       <p className="text-gray-500 text-sm mb-6">{t('ui.toolsTagline')}</p>
 
       <div className="grid grid-cols-2 gap-3">
-        {/* Traducteur de patron — page dédiée */}
+        {/* [AI:Claude] Icônes alternées primary/warm (deux familles de couleur de la marque,
+            "warm" jusqu'ici jamais utilisée ailleurs dans l'app) — onze tuiles strictement
+            identiques rendaient la page terne, sans qu'aucune couleur n'ait à sortir de la
+            charte pour autant. Le -translate-y au survol ajoute un peu de vie sans surcharger. */}
+        {/* [AI:Claude] Création Intelligente — page dédiée, comme le traducteur ci-dessous.
+            C'est ici que les gens sans projet atterrissent le plus souvent (cf. bandeau
+            au-dessus) : autant leur donner un chemin permanent, pas juste conditionné à
+            l'absence de projet. Même icône et libellés que MyProjects/SmartProjectCreator
+            pour rester cohérent visuellement avec le reste de l'app. */}
+        <Link
+          to="/smart-project-creator"
+          className="bg-primary-50 border-2 border-primary-300 rounded-2xl p-5 text-left hover:border-primary-400 hover:shadow-md hover:-translate-y-0.5 transition flex flex-col gap-3"
+        >
+          <span className="w-11 h-11 bg-white text-primary-600 rounded-xl flex items-center justify-center p-2.5 shrink-0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
+              <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+            </svg>
+          </span>
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="font-semibold text-primary-900 text-sm leading-tight">{t('ui.smartCreation')}</div>
+            </div>
+            <div className="text-xs text-primary-700 mt-1 leading-snug">{t('ui.smartCreationDesc')}</div>
+          </div>
+        </Link>
+
+        {/* [AI:Claude] Traducteur — en warm (pas primary) pour continuer l'alternance amorcée
+            par la tuile Création Intelligente juste au-dessus, plutôt que de figer deux
+            tuiles vertes d'affilée en tête et déséquilibrer le compte final vert/terracotta. */}
         <Link
           to="/pattern-translator"
-          className="bg-white border border-gray-200 rounded-2xl p-5 text-left hover:border-primary-300 hover:shadow-md transition flex flex-col gap-3"
+          className="bg-white border border-gray-200 rounded-2xl p-5 text-left hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 transition flex flex-col gap-3"
         >
-          <span className="w-10 h-10 text-primary-600">
+          <span className="w-11 h-11 bg-warm-100 text-warm-600 rounded-xl flex items-center justify-center p-2.5 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
               <path d="M5 8l6 6"/>
               <path d="M4 14l6-6 2-3"/>
@@ -205,22 +244,24 @@ export default function Tools() {
           <div>
             <div className="flex items-center gap-2">
               <div className="font-semibold text-gray-900 text-sm leading-tight">{t('ui.translatePattern')}</div>
-              <span className="bg-primary-100 text-primary-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">IA</span>
             </div>
             <div className="text-xs text-gray-500 mt-1 leading-snug">{t('ui.translatorDesc')}</div>
           </div>
         </Link>
 
         {/* parametre nomme `item` et non `t` : sinon il masquerait la fonction de traduction */}
-        {visibleTools.map(item => {
+        {visibleTools.map((item, index) => {
           const { Icon } = item
+          // Création Intelligente (primary) puis Traducteur (warm) ci-dessus ouvrent la
+          // séquence : la suite continue simplement à alterner à partir de là
+          const isWarm = index % 2 === 1
           return (
             <button
               key={item.id}
               onClick={() => setActiveTool(item.id)}
-              className="bg-white border border-gray-200 rounded-2xl p-5 text-left hover:border-primary-300 hover:shadow-md transition flex flex-col gap-3"
+              className="bg-white border border-gray-200 rounded-2xl p-5 text-left hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 transition flex flex-col gap-3"
             >
-              <span className="w-10 h-10 text-primary-600">
+              <span className={`w-11 h-11 rounded-xl flex items-center justify-center p-2.5 shrink-0 ${isWarm ? 'bg-warm-100 text-warm-600' : 'bg-primary-50 text-primary-600'}`}>
                 <Icon />
               </span>
               <div>
