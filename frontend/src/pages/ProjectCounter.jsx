@@ -22,6 +22,7 @@ import { useMediaSession } from '../hooks/useMediaSession'
 import { useHints } from '../hooks/useHints'
 import { useAiAssistant } from '../contexts/AiAssistantContext'
 import AssociatePatternForAi from '../components/AssociatePatternForAi'
+import DemoStepsCompleteModal from '../components/DemoStepsCompleteModal'
 import { useAnalytics } from '../hooks/useAnalytics'
 import api, { networkUtils, stashAllocationAPI } from '../services/api'
 import PDFViewer from '../components/PDFViewer'
@@ -192,8 +193,13 @@ const ProjectCounter = () => {
   // au lieu du bandeau statique d'exploration libre. Persisté en localStorage (pas de
   // colonne is_demo en base), même convention que yf_onboarded_${projectId} ci-dessous.
   const [isDemoProject, setIsDemoProject] = useState(false)
-  const [demoSteps, setDemoSteps] = useState({ rows: 0, askedAssistant: false, photo: false, dismissed: false })
+  const [demoSteps, setDemoSteps] = useState({ rows: 0, askedAssistant: false, section: false, dismissed: false, celebrationShown: false })
   const [demoRowsCelebrate, setDemoRowsCelebrate] = useState(false)
+  // [AI:Claude] Popup non-bloquante (fermable, pas d'auto-fermeture forcée puisqu'il y a
+  // une vraie décision à prendre dessus) au moment précis où les 3 étapes se terminent —
+  // plus visible qu'un bandeau qu'on peut rater en scrollant. `celebrationShown` (persisté
+  // dans demoSteps) garantit qu'elle ne s'affiche qu'une seule fois par projet.
+  const [showDemoCompleteModal, setShowDemoCompleteModal] = useState(false)
 
   const updateDemoSteps = (updater) => {
     setDemoSteps(prev => {
@@ -240,9 +246,20 @@ const ProjectCounter = () => {
     franchir('opened')
     if (demoSteps.rows > 0) franchir('first_row')
     if (demoSteps.askedAssistant) franchir('assistant_used')
-    if (demoSteps.photo) franchir('photo_added')
+    if (demoSteps.section) franchir('section_changed')
     if (demoSteps.dismissed) franchir('dismissed')
   }, [isDemoProject, projectId, demoSteps, cleEtapesEnvoyees])
+
+  // [AI:Claude] Déclenche la popup de fin de checklist exactement au moment où la 3e
+  // étape se termine (pas à chaque re-render une fois toutes faites, d'où le garde-fou
+  // celebrationShown persisté avec le reste de demoSteps).
+  useEffect(() => {
+    if (!isDemoProject) return
+    if (demoSteps.rows >= 5 && demoSteps.askedAssistant && demoSteps.section && !demoSteps.celebrationShown) {
+      setShowDemoCompleteModal(true)
+      updateDemoSteps(prev => ({ ...prev, celebrationShown: true }))
+    }
+  }, [isDemoProject, demoSteps.rows, demoSteps.askedAssistant, demoSteps.section, demoSteps.celebrationShown])
 
   // [AI:Claude] 2026-08-23 — Équivalent de 'opened' ci-dessus mais pour TOUS les
   // projets (le bloc au-dessus ne loggue que le projet démo). Écrit dans
@@ -971,6 +988,14 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Plan payant actif (PLUS/PRO/Early Bird non expiré)
   const isPaidPlan = hasActiveSubscription()
+  // [AI:Claude] Compteurs secondaires normalement PLUS/PRO — exception pour un projet issu
+  // de Smart Creation : les FREE n'ont que 3 essais à vie, donc l'exposition reste limitée,
+  // et voir un vrai compteur fonctionner (pas juste un bouton "passer à PLUS/PRO" générique)
+  // sur SON patron est un argument de conversion bien plus concret. source_type vaut 'manual'
+  // par défaut (colonne créée dans add_smart_project_creation.sql) pour tout projet créé
+  // manuellement ou en démo — Smart Creation est la seule origine qui le change.
+  const isSmartImportProject = !!project?.source_type && project.source_type !== 'manual'
+  const canUseSecondaryCounters = isPaidPlan || isSmartImportProject
 
 
   const fetchProjectPhotos = async () => {
@@ -1436,11 +1461,6 @@ const ProjectCounter = () => {
       await fetchProjectPhotos()
       await fetchCredits()
       setShowPhotoUploadModal(false)
-
-      // [AI:Claude] Tutoriel — étape "ajouter une photo"
-      if (showTutorial) {
-        updateDemoSteps(prev => ({ ...prev, photo: true }))
-      }
 
       const photosResponse = await api.get('/photos', { params: { project_id: projectId } })
       const allPhotos = photosResponse.data.photos || []
@@ -2517,6 +2537,13 @@ const ProjectCounter = () => {
         }
       } catch { /* ignore */ }
 
+      // [AI:Claude] Checklist démo — remplace l'ancienne étape "photo" (juste un upload,
+      // aucun effet waouh) par le changement de section : démontre la structure du patron
+      // en sections plutôt qu'une simple corvée d'ajout de fichier.
+      if (isDemoProject) {
+        updateDemoSteps(prev => ({ ...prev, section: true }))
+      }
+
       // [AI:Claude] Maintenant on peut changer la section en cours
       setCurrentSectionId(sectionId)
 
@@ -3391,7 +3418,7 @@ const ProjectCounter = () => {
             ×
           </button>
 
-          {demoSteps.rows >= 5 && demoSteps.askedAssistant && demoSteps.photo ? (
+          {demoSteps.rows >= 5 && demoSteps.askedAssistant && demoSteps.section ? (
             <div className="flex items-start gap-3 pr-6">
               <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -3404,7 +3431,7 @@ const ProjectCounter = () => {
                       {t('ui.demoReadyReal')}
                     </p>
                     <button
-                      onClick={() => navigate('/my-projects')}
+                      onClick={() => navigate('/smart-project-creator')}
                       className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
                     >
                       {t('ui.createRealProject')}
@@ -3447,22 +3474,29 @@ const ProjectCounter = () => {
                     <span>{t('ui.tutorialAskAssistant')}</span>
                   </li>
                   <li className="flex items-center gap-2 text-amber-700">
-                    <TutorialStepBox done={demoSteps.photo} />
-                    <span>{t('ui.tutorialAddPhoto')}</span>
+                    <TutorialStepBox done={demoSteps.section} />
+                    <span>{t('ui.tutorialChangeSection')}</span>
                   </li>
+                  {/* [AI:Claude] "Créer mon vrai projet" comme étape à part entière, pas un
+                      lien discret sous la checklist — c'est l'arrivée, pas une option annexe.
+                      Distincte visuellement (séparateur, flèche au lieu d'une case, texte
+                      cliquable dès le début) car elle fait sortir du projet démo, contrairement
+                      aux trois étapes précédentes qui restent dedans. Toujours disponible, pas
+                      seulement une fois les trois autres cochées. */}
+                  {isDemoProject && (
+                    <li className="pt-2 mt-1 border-t border-amber-200">
+                      <button
+                        onClick={() => { updateDemoSteps(prev => ({ ...prev, dismissed: true })); navigate('/smart-project-creator') }}
+                        className="flex items-center gap-2 text-amber-900 font-semibold hover:text-amber-950 transition"
+                      >
+                        <span aria-hidden="true">→</span>
+                        <span>{t('ui.createRealProject')}</span>
+                      </button>
+                    </li>
+                  )}
                 </ul>
                 {demoRowsCelebrate && (
                   <p className="text-xs text-amber-600 mt-2 font-medium">{t('ui.watchProgress')}</p>
-                )}
-                {isDemoProject && (
-                  <div className="flex items-center gap-3 mt-3">
-                    <button
-                      onClick={() => { updateDemoSteps(prev => ({ ...prev, dismissed: true })); navigate('/my-projects') }}
-                      className="text-xs text-amber-700 hover:text-amber-900 underline"
-                    >
-                      {t('ui.createRealProject')}
-                    </button>
-                  </div>
                 )}
               </div>
             </div>
@@ -4043,7 +4077,7 @@ const ProjectCounter = () => {
         </button>
 
         {/* [AI:Claude] Compteurs secondaires (PLUS/PRO) — plusieurs par section/projet, max {MAX_SECONDARY_COUNTERS} */}
-        {!isPaidPlan ? (
+        {!canUseSecondaryCounters ? (
           <div className="pt-2 border-t border-primary-300/50">
             <button
               onClick={() => setUpgradeFeature('secondary_counter')}
@@ -7720,6 +7754,13 @@ const ProjectCounter = () => {
         onClose={() => setUpgradeFeature(null)}
         feature={upgradeFeature || 'tags'}
       />
+
+      {showDemoCompleteModal && (
+        <DemoStepsCompleteModal
+          onClose={() => setShowDemoCompleteModal(false)}
+          onCreateProject={() => { setShowDemoCompleteModal(false); navigate('/smart-project-creator') }}
+        />
+      )}
 
       {/* Onboarding premier rang */}
 
