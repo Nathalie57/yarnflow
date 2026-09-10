@@ -33,6 +33,7 @@ import CookieConsent from 'react-cookie-consent'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import OnboardingIntro from './pages/OnboardingIntro'
 
 const Layout = lazy(() => import('./components/Layout'))
 
@@ -178,6 +179,7 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/onboarding-intro" element={<OnboardingIntro />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
