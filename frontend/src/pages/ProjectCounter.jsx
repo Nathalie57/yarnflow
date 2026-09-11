@@ -4342,8 +4342,9 @@ const ProjectCounter = () => {
             section active restent affichées sous le compteur (dans le bloc sticky) au lieu
             de vivre uniquement dans la liste des sections plus bas — évite d'avoir à
             scroller loin du compteur à chaque rang pour relire le patron. Texte complet,
-            jamais tronqué : le reste de l'écran est masqué en mode travail donc la place
-            ne manque pas, et on scroll la page normalement plutôt qu'une mini-zone interne. */}
+            jamais tronqué, mais dans sa propre zone à défilement borné en hauteur — sans
+            ça, un patron long fait grandir tout le bloc sticky au-delà de l'écran et le
+            compteur lui-même finit par sortir de la vue en scrollant les instructions. */}
         {isTimerRunning && currentSectionId && (() => {
           const workSection = sections.find(s => s.id === currentSectionId)
           if (!workSection?.description) return null
@@ -4353,7 +4354,7 @@ const ProjectCounter = () => {
               <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                 {t('ui.instructions')}
               </div>
-              <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+              <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed max-h-[45vh] overflow-y-auto pr-1">
                 {workSection.description}
               </div>
             </div>
