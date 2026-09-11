@@ -133,6 +133,12 @@ const ProjectCounter = () => {
   // handleStartSession) — "Voir tout" ne fait que le suspendre temporairement.
   const [focusModeDismissed, setFocusModeDismissed] = useState(false)
   const isFocusMode = isTimerRunning && !focusModeDismissed
+  // [AI:Claude] Replie rappels/chrono total/compteurs secondaires derrière "Plus d'options"
+  // au repos — retour utilisatrice : la carte compteur avant même de démarrer était trop
+  // chargée, sans que "Passer en mode travail" et l'assistant ne ressortent comme LES deux
+  // actions à faire. En mode travail, les compteurs secondaires existants restent visibles
+  // automatiquement (déjà décidé), le reste continue de suivre isFocusMode comme avant.
+  const [showMoreOptions, setShowMoreOptions] = useState(false)
 
   // [AI:Claude] FIX BUG x4: Ref pour éviter les multiples appels à endSession
   const isEndingSessionRef = useRef(false)
@@ -1905,12 +1911,19 @@ const ProjectCounter = () => {
     const sectionName = currentSectionId
       ? sections.find(s => s.id === currentSectionId)?.name
       : null
-    const total = progressData.total
-    const progress = total ? `${currentRow}/${total}` : `${currentRow}`
+    // [AI:Claude] Même règle d'affichage que le compteur principal (voir le "-/+/valeur"
+    // plus haut) : un rang ne s'affiche jamais avec une décimale, contrairement au cm.
+    // Sans ça, le contexte envoyé à l'assistant (chip + message d'accueil) affichait
+    // "0.0/32.0" pour un simple compteur de rangs, la valeur brute (souvent DECIMAL en
+    // base pour supporter le cm) n'étant jamais reformatée selon l'unité réelle.
+    const formatForUnit = (value) => counterUnit === 'cm' ? Number(value).toFixed(1) : Math.floor(Number(value) || 0)
+    const displayRow = formatForUnit(currentRow)
+    const total = progressData.total ? formatForUnit(progressData.total) : null
+    const progress = total ? `${displayRow}/${total}` : `${displayRow}`
     const label = sectionName
       ? `${proj?.name || ''} — ${sectionName} (${progress})`
       : `${proj?.name || ''} — ${progress}`
-    openWithProject(projectId, label, { sectionName, currentRow, total, unit: counterUnit })
+    openWithProject(projectId, label, { sectionName, currentRow: displayRow, total, unit: counterUnit })
 
     // [AI:Claude] Tutoriel — étape "poser une question à l'assistant" : le vrai moment
     // "wow" du nouveau positionnement copilote, remplace l'ancienne étape "éditer une
@@ -3864,7 +3877,7 @@ const ProjectCounter = () => {
                   t('ui.wholeProject')
                 )}
               </div>
-              {!isFocusMode && (
+              {!isFocusMode && showMoreOptions && (
                 <button
                   onClick={() => setShowReminderManager(true)}
                   className={`mt-0.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
@@ -3940,7 +3953,7 @@ const ProjectCounter = () => {
                     t('ui.wholeProject')
                   )}
                 </div>
-                {!isFocusMode && (
+                {!isFocusMode && showMoreOptions && (
                   <button
                     onClick={() => setShowReminderManager(true)}
                     className={`flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
@@ -4013,8 +4026,9 @@ const ProjectCounter = () => {
                 </div>
               </div>
 
-              {/* Temps total de la section — masqué en mode travail (redondant avec Session) */}
-              {!isFocusMode && (() => {
+              {/* Temps total de la section — masqué en mode travail (redondant avec Session)
+                  et replié dans "Plus d'options" au repos */}
+              {!isFocusMode && showMoreOptions && (() => {
                 const currentSection = currentSectionId ? sections.find(s => s.id === currentSectionId) : null
                 if (!currentSection) return null
                 // [AI:Claude] `time_formatted` est construit en SQL par CONCAT :
@@ -4040,15 +4054,7 @@ const ProjectCounter = () => {
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               {project.status !== 'completed' && (
                 <>
-                  {!isTimerRunning ? (
-                    <button
-                      onClick={handleStartSession}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap shadow-sm"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                      {t('ui.startWorkMode')}
-                    </button>
-                  ) : (
+                  {isTimerRunning && (
                     <>
                       {/* Bouton Pause/Reprendre */}
                       {!isTimerPaused ? (
@@ -4094,21 +4100,64 @@ const ProjectCounter = () => {
           </div>
         </div>
 
-        {/* [AI:Claude] Assistant contextuel — ligne dédiée, volontairement à l'écart du
-            cluster −/compteur/+ (retour utilisatrice : trop proche du "−", risque de clic
-            accidentel en comptant vite, et bloc déjà surchargé). */}
-        <button
-          onClick={() => handleOpenAiHelp()}
-          className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
-        >
-          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-          </svg>
-          {t('ui.aiHelpOnRow')}
-        </button>
+        {/* [AI:Claude] Retour utilisatrice : l'assistant (gros bouton plein largeur) écrasait
+            visuellement "Passer en mode travail" (simple pastille), alors qu'au repos c'est
+            l'action à faire en premier — l'assistant ne sert vraiment qu'une fois en train
+            de compter. On inverse la hiérarchie visuelle : mode travail devient LE bouton
+            proéminent au repos, l'assistant redescend en secondaire ; une fois en mode
+            travail (Pause/Arrêter déjà affichés au-dessus), l'assistant reprend sa place
+            de premier plan puisque c'est là qu'il sert. */}
+        {!isTimerRunning && project.status !== 'completed' && (
+          <button
+            onClick={handleStartSession}
+            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            {t('ui.startWorkMode')}
+          </button>
+        )}
+
+        {isTimerRunning ? (
+          <button
+            onClick={() => handleOpenAiHelp()}
+            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+            </svg>
+            {t('ui.aiHelpOnRow')}
+          </button>
+        ) : (
+          <button
+            onClick={() => handleOpenAiHelp()}
+            className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 text-primary-700 text-sm font-medium hover:text-primary-900 transition select-none"
+          >
+            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+            </svg>
+            {t('ui.aiHelpOnRow')}
+          </button>
+        )}
+
+        {/* [AI:Claude] Replie rappels/chrono total/compteurs secondaires au repos — retour
+            utilisatrice : la carte était trop chargée avant même de démarrer, au point que
+            les deux vraies actions (mode travail, assistant) ne ressortaient plus. Inutile
+            en mode travail (tout suit déjà sa propre logique isFocusMode). */}
+        {!isFocusMode && (
+          <button
+            onClick={() => setShowMoreOptions(v => !v)}
+            className="mt-3 w-full flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
+          >
+            {showMoreOptions ? t('ui.fewerOptions') : t('ui.moreOptions')}
+            <svg className={`w-3 h-3 transition-transform ${showMoreOptions ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        )}
 
         {/* [AI:Claude] Compteurs secondaires (PLUS/PRO) — plusieurs par section/projet, max {MAX_SECONDARY_COUNTERS} */}
-        {!canUseSecondaryCounters ? (
+        {(isFocusMode || showMoreOptions) && (!canUseSecondaryCounters ? (
+          !isFocusMode && (
           <div className="pt-2 border-t border-primary-300/50">
             <button
               onClick={() => setUpgradeFeature('secondary_counter')}
@@ -4120,6 +4169,7 @@ const ProjectCounter = () => {
               {t('ui.secondaryCounterPlus')}
             </button>
           </div>
+          )
         ) : (
           <div className="pt-2 border-t border-primary-300/50 space-y-3">
             {secondaryCounters.map(counter => (
@@ -4336,7 +4386,7 @@ const ProjectCounter = () => {
               <p className="text-xs text-gray-500">{t('ui.secondaryLimitReached', { max: MAX_SECONDARY_COUNTERS })}</p>
             ))}
           </div>
-        )}
+        ))}
 
         {/* [AI:Claude] Mode travail : pendant que le timer tourne, les instructions de la
             section active restent affichées sous le compteur (dans le bloc sticky) au lieu

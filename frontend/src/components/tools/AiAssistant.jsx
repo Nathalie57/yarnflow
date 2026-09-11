@@ -209,14 +209,10 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
 
   return (
     <div className="flex flex-col h-[600px] max-h-[70vh] md:h-[600px]" style={{ height: 'var(--ai-height, 560px)' }}>
-      {isContextual && (
-        <div className="mb-2 inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full bg-primary-50 border border-primary-200 text-xs font-medium text-primary-700">
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-          </svg>
-          {t('ui.aiContextChip', { label: projectLabel || t('ui.aiContextChipFallback') })}
-        </div>
-      )}
+      {/* [AI:Claude] Puce de contexte retirée — retour utilisatrice : redondante avec le
+          message d'accueil juste en dessous (contextualGreeting), qui dit déjà sur quel
+          projet/section/rang porte la conversation, en langage naturel plutôt qu'un nom
+          de fichier technique ("smart_import_xxx.pdf"). */}
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-3 pb-2">
         {messages.length === 0 ? (
