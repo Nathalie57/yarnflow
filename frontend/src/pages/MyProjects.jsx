@@ -116,6 +116,10 @@ const MyProjects = () => {
   const [loadingStats, setLoadingStats] = useState(true)
   const [credits, setCredits] = useState(null)
   const [smartQuota, setSmartQuota] = useState(null)
+  // [AI:Claude] Import Création Intelligente analysé mais jamais confirmé (patron avec
+  // diagramme/traduction en attente quitté avant "Continuer quand même", ou onglet fermé
+  // pendant l'analyse) — voir SmartProjectController::pendingImport().
+  const [pendingImport, setPendingImport] = useState(null)
 
   // [AI:Claude] Création de projet via wizard
   const [creating, setCreating] = useState(false)
@@ -232,6 +236,7 @@ const MyProjects = () => {
     fetchDashboardStats()
     fetchCredits()
     fetchSmartQuota()
+    fetchPendingImport()
   }, [])
 
   // [AI:Claude] Charger les tags populaires (v0.15.0)
@@ -359,6 +364,13 @@ const MyProjects = () => {
     try {
       const response = await api.get('/projects/smart-create/quota')
       setSmartQuota(response.data.quota)
+    } catch {}
+  }
+
+  const fetchPendingImport = async () => {
+    try {
+      const response = await api.get('/projects/smart-create/pending')
+      setPendingImport(response.data.pending ? response.data : null)
     } catch {}
   }
 
@@ -841,6 +853,30 @@ const MyProjects = () => {
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
+          </button>
+        </div>
+      )}
+
+      {/* [AI:Claude] Import Création Intelligente analysé mais jamais confirmé — patron
+          avec diagramme/traduction en attente quitté avant "Continuer quand même", ou
+          onglet fermé pendant l'analyse. Les données sont déjà en base : le lien reprend
+          directement l'écran de confirmation, sans refaire analyser le patron. */}
+      {pendingImport && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+            <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-amber-800">{t('myProjects.pendingImportTitle')}</p>
+            <p className="text-sm text-amber-700 mt-0.5">{t('myProjects.pendingImportDesc', { name: pendingImport.source_name || t('myProjects.pendingImportUntitled') })}</p>
+          </div>
+          <button
+            onClick={() => navigate('/smart-project-creator?resume=1')}
+            className="flex-shrink-0 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
+          >
+            {t('myProjects.pendingImportResume')}
           </button>
         </div>
       )}

@@ -233,6 +233,7 @@ function route(string $method, string $uri): void
 
         // [AI:Claude] Routes Smart Project Creation (v0.17.0)
         $method === 'GET' && $uri === 'projects/smart-create/quota' => (new SmartProjectController())->getQuota(),
+        $method === 'GET' && $uri === 'projects/smart-create/pending' => (new SmartProjectController())->pendingImport(),
         $method === 'POST' && $uri === 'projects/smart-create/analyze' => (new SmartProjectController())->analyze(),
         $method === 'POST' && $uri === 'projects/smart-create/confirm' => (new SmartProjectController())->confirm(),
         $method === 'POST' && $uri === 'projects/smart-create/translate-preview' => (new SmartProjectController())->translatePreview(),

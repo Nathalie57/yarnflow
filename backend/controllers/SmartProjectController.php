@@ -132,6 +132,60 @@ class SmartProjectController
     }
 
     /**
+     * GET /api/projects/smart-create/pending
+     *
+     * [AI:Claude] Une analyse réussie (succès ou partielle) sans project_id associé est un
+     * import jamais confirmé — patron avec diagramme/traduction en attente quitté avant
+     * "Continuer quand même", ou onglet fermé pendant l'analyse. Les données existent déjà
+     * intégralement dans ai_response_json : pas besoin de tout ré-analyser pour reprendre,
+     * juste de re-hydrater l'écran de porte. Fenêtre de 7 jours pour ne pas faire remonter
+     * indéfiniment un import que l'utilisatrice a en réalité abandonné volontairement.
+     */
+    public function pendingImport(): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $db = \App\Config\Database::getInstance()->getConnection();
+
+            $stmt = $db->prepare(
+                "SELECT id, source_name, source_type, pattern_size, translated_text, translated_lang,
+                        ai_response_json, ai_status, created_at
+                 FROM ai_pattern_imports
+                 WHERE user_id = :user_id
+                   AND project_id IS NULL
+                   AND ai_status IN ('success', 'partial')
+                   AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                 ORDER BY created_at DESC
+                 LIMIT 1"
+            );
+            $stmt->execute(['user_id' => $userId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                $this->jsonResponse(['pending' => false]);
+                return;
+            }
+
+            $this->jsonResponse([
+                'pending' => true,
+                'import_id' => (int)$row['id'],
+                'source_name' => $row['source_name'],
+                'source_type' => $row['source_type'],
+                'pattern_size' => $row['pattern_size'],
+                'translated_text' => $row['translated_text'],
+                'translated_lang' => $row['translated_lang'],
+                'ai_status' => $row['ai_status'],
+                'data' => json_decode($row['ai_response_json'] ?? '', true) ?: [],
+                'created_at' => $row['created_at']
+            ]);
+        } catch (\Exception $e) {
+            error_log('[SmartProject] Erreur pendingImport: ' . $e->getMessage());
+            // Best-effort : ne jamais bloquer l'affichage de "Mes projets" pour ça
+            $this->jsonResponse(['pending' => false]);
+        }
+    }
+
+    /**
      * POST /api/projects/smart-create/analyze
      * Analyse un PDF ou une URL et extrait les informations du patron
      *

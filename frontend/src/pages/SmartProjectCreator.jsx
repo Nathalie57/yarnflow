@@ -173,6 +173,68 @@ export default function SmartProjectCreator() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // [AI:Claude] Arrivée depuis la bannière "Mes projets" (import analysé jamais confirmé —
+  // patron avec diagramme/traduction en attente quitté avant "Continuer quand même", ou
+  // onglet fermé pendant l'analyse). Les données existent déjà en base (ai_pattern_imports),
+  // pas besoin de ré-analyser : on re-hydrate directement l'écran de porte ou de relecture,
+  // comme si analyze() venait de répondre. Pour le mode 'text', le texte collé d'origine
+  // n'est pas conservé côté serveur (seul un extrait de 80 caractères l'est) — le projet
+  // se crée quand même, juste sans l'onglet "Patron" rempli dans ce cas précis.
+  useEffect(() => {
+    if (searchParams.get('resume') !== '1') return
+
+    const next = new URLSearchParams(searchParams)
+    next.delete('resume')
+    setSearchParams(next, { replace: true })
+
+    ;(async () => {
+      try {
+        const response = await api.get('/projects/smart-create/pending')
+        if (!response.data.pending) return
+
+        const data = response.data.data || {}
+        const detectedLang = data.language || null
+
+        setExtractedData(data)
+        setAiStatus(response.data.ai_status)
+        setPatternLanguage(detectedLang)
+        setMode(response.data.source_type)
+        if (response.data.source_type === 'url') {
+          setUrl(response.data.source_name || '')
+        }
+        setAnalyzeMetadata({
+          source_name: response.data.source_name,
+          processing_time_ms: null,
+          ai_status: response.data.ai_status,
+          import_id: response.data.import_id
+        })
+
+        setProject({
+          title: data.title || response.data.source_name || t('ui.untitledPattern'),
+          craft_type: data.craft_type || 'crochet',
+          category: data.category || null,
+          description: data.description || '',
+          yarn: data.yarn?.length ? data.yarn : [{ brand: '', color: '', weight: '', composition: '' }],
+          needles: data.needles?.length ? data.needles : [{ type: '', size: '', length: '' }],
+          gauge: data.gauge || { stitches: null, rows: null, size_cm: 10 },
+          pattern_notes: data.pattern_notes || ''
+        })
+        setSections(data.sections || [])
+
+        const hasDiagram = !!data.contains_diagram
+        setContainsDiagram(hasDiagram)
+        const needsTranslateGate = !!detectedLang && detectedLang !== i18n.language.split('-')[0]
+        const needsWarningGate = hasDiagram || response.data.ai_status === 'partial'
+        setTranslateGatePending(needsTranslateGate)
+        setWarningGatePending(needsWarningGate)
+        setStep(3)
+      } catch (err) {
+        console.error('Erreur reprise import:', err)
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const fetchQuota = async () => {
     try {
       const token = localStorage.getItem('token')
@@ -232,6 +294,33 @@ export default function SmartProjectCreator() {
       setError(null)
       resetExtraction()
     }
+  }
+
+  // [AI:Claude] Titre de repli quand l'IA n'en a détecté aucun (patron sans page de garde
+  // textuelle, souvent le cas d'un patron surtout composé de diagrammes) — sans ça,
+  // "Continuer quand même" sur la porte de pré-création (diagramme/traduction) échouait
+  // silencieusement (titre requis côté submitProject) et renvoyait sur l'écran de relecture
+  // complet sans que ce soit visible : l'utilisatrice avait l'impression que rien ne se
+  // passait. Un titre par défaut dérivé de la source garantit que "Continuer quand même"
+  // fonctionne toujours du premier coup ; il reste modifiable comme n'importe quel titre.
+  const getFallbackTitle = () => {
+    if (mode === 'pdf' && file?.name) {
+      return file.name.replace(/\.pdf$/i, '')
+    }
+    if (mode === 'library' && selectedLibraryPattern?.name) {
+      return selectedLibraryPattern.name
+    }
+    if (mode === 'url' && !pastedText.trim() && url.trim()) {
+      try {
+        return new URL(url.trim()).hostname.replace(/^www\./, '')
+      } catch {
+        return url.trim().slice(0, 60)
+      }
+    }
+    if (pastedText.trim()) {
+      return pastedText.trim().split('\n')[0].slice(0, 60)
+    }
+    return t('ui.untitledPattern')
   }
 
   const handleAnalyze = async () => {
@@ -311,7 +400,7 @@ export default function SmartProjectCreator() {
 
         // Pré-remplir les champs
         setProject({
-          title: response.data.data.title || '',
+          title: response.data.data.title || getFallbackTitle(),
           craft_type: response.data.data.craft_type || 'crochet',
           category: response.data.data.category || null,
           description: response.data.data.description || '',
@@ -364,7 +453,7 @@ export default function SmartProjectCreator() {
           setStep(3)
         } else {
           const freshProject = {
-            title: response.data.data.title || '',
+            title: response.data.data.title || getFallbackTitle(),
             craft_type: response.data.data.craft_type || 'crochet',
             category: response.data.data.category || null,
             description: response.data.data.description || '',
@@ -618,7 +707,17 @@ export default function SmartProjectCreator() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/my-projects')}
+            onClick={() => {
+              // [AI:Claude] Sur la porte de pré-création (step 3, diagramme/traduction en
+              // attente), le projet n'existe pas encore en base — quitter ici sans avoir
+              // cliqué "Continuer quand même" perd tout, silencieusement, alors que sur
+              // toutes les autres étapes ce lien ne coûte rien. Retour utilisatrice : ça
+              // donnait l'impression que l'import ne fonctionnait pas.
+              if ((translateGatePending || warningGatePending) && !window.confirm(t('ui.leaveBeforeConfirmWarning'))) {
+                return
+              }
+              navigate('/my-projects')
+            }}
             className="text-primary-600 hover:text-primary-700 mb-4 flex items-center gap-2"
           >
             {t('ui.backToProjectsArrow')}
@@ -1006,6 +1105,10 @@ export default function SmartProjectCreator() {
         {step === 3 && (translateGatePending || warningGatePending) && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
             <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.checkAndEdit')}</h2>
+
+            {warningGatePending && (
+              <p className="text-sm text-gray-500 mb-4">{t('ui.projectNotCreatedYet')}</p>
+            )}
 
             {!warningGatePending && translateGatePending && (
               <p className="text-gray-600 mb-4">
