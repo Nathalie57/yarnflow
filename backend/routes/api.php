@@ -276,6 +276,7 @@ function route(string $method, string $uri): void
         // [AI:Claude] Routes de récupération de contenu web externe
         $method === 'POST' && $uri === 'ai/assistant' => (new AiAssistantController())->chat(),
         $method === 'GET' && $uri === 'ai/usage' => (new AiAssistantController())->usage(),
+        $method === 'POST' && $uri === 'ai/feedback' => (new AiAssistantController())->feedback(),
 
         $method === 'POST' && $uri === 'web-fetch' => (new WebFetchController())->fetch(),
         $method === 'POST' && $uri === 'web-fetch/metadata' => (new WebFetchController())->fetchMetadata(),

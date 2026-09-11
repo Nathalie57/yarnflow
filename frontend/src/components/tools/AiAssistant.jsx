@@ -154,18 +154,32 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
 
     try {
       const res = await api.post('/ai/assistant', { messages: newMessages, lang: i18n.language, ...(projectId ? { project_id: projectId } : {}) })
-      setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply, suggestions: res.data.suggestions || [] }])
+      setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply, suggestions: res.data.suggestions || [], messageId: res.data.message_id || null, rating: null }])
       if (res.data.usage) setUsage(res.data.usage)
     } catch (err) {
       const data = err.response?.data
       if (data?.limit_reached && data?.error_code === 'ai_monthly_limit') {
         setUsage({ used: data.used, limit: data.limit, remaining: 0 })
-        setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${data.error}`, isError: true }])
+        setMessages(prev => [...prev, { role: 'assistant', content: data.error, isError: true }])
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: `❌ ${data?.error || t('ui.genericErrorShort')}`, isError: true }])
+        setMessages(prev => [...prev, { role: 'assistant', content: data?.error || t('ui.genericErrorShort'), isError: true }])
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  // [AI:Claude] Feedback qualité (pouce haut/bas) — seul signal existant à ce jour sur la
+  // pertinence réelle des réponses (avant ça, seules les erreurs techniques étaient loguées).
+  const rate = async (index, rating) => {
+    const msg = messages[index]
+    if (!msg?.messageId || msg.rating) return
+    setMessages(prev => prev.map((m, i) => i === index ? { ...m, rating } : m))
+    try {
+      await api.post('/ai/feedback', { message_id: msg.messageId, rating })
+    } catch {
+      // best-effort : on ne redonne pas la main sur le rating en cas d'échec réseau,
+      // pas assez important pour interrompre la conversation
     }
   }
 
@@ -229,10 +243,7 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
           </div>
         ) : (
           messages.map((m, i) => (
-            <div
-              key={i}
-              className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+            <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                   m.role === 'user'
@@ -244,6 +255,34 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
               >
                 {m.role === 'user' ? m.content : <MarkdownText text={m.content} />}
               </div>
+              {/* [AI:Claude] Feedback qualité — seul signal existant sur la pertinence
+                  réelle des réponses, absent jusqu'ici (seules les erreurs techniques
+                  étaient loguées). Masqué sur les messages d'erreur et sans message_id. */}
+              {m.role === 'assistant' && !m.isError && m.messageId && (
+                <div className="flex items-center gap-2 mt-1 px-1">
+                  <button
+                    onClick={() => rate(i, 'up')}
+                    disabled={Boolean(m.rating)}
+                    title={t('ui.feedbackHelpful')}
+                    className={`transition ${m.rating === 'up' ? 'text-primary-600' : m.rating ? 'text-gray-300' : 'text-gray-400 hover:text-primary-600'}`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill={m.rating === 'up' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 01-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 00-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => rate(i, 'down')}
+                    disabled={Boolean(m.rating)}
+                    title={t('ui.feedbackNotHelpful')}
+                    className={`transition ${m.rating === 'down' ? 'text-red-500' : m.rating ? 'text-gray-300' : 'text-gray-400 hover:text-red-500'}`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill={m.rating === 'down' ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.367 13.5c-.806 0-1.533.446-2.031 1.08a9.041 9.041 0 01-2.861 2.4c-.723.384-1.35.956-1.653 1.715a4.498 4.498 0 00-.322 1.672V21a.75.75 0 01-.75.75 2.25 2.25 0 01-2.25-2.25c0-1.152.26-2.243.723-3.218.266-.558-.107-1.282-.725-1.282H4.023c-1.026 0-1.945-.694-2.054-1.715a12.134 12.134 0 01-.068-1.285c0-2.848.992-5.464 2.649-7.521.388-.482.987-.729 1.605-.729H9.52c.483 0 .964.078 1.423.23l3.114 1.04a4.501 4.501 0 001.423.23h2.526M9.75 15h-2.25M18.096 5.25c-.083-.205-.173-.405-.27-.602-.197-.4.078-.898.523-.898h.908c.889 0 1.713.518 1.972 1.368.339 1.11.521 2.287.521 3.507 0 1.553-.295 3.036-.831 4.398C20.613 13.797 19.833 14.25 19 14.25h-1.053c-.472 0-.745-.556-.5-.96a8.958 8.958 0 001.302-4.665c0-1.194-.232-2.333-.654-3.375z" />
+                    </svg>
+                  </button>
+                  {m.rating && <span className="text-xs text-gray-400">{t('ui.feedbackThanks')}</span>}
+                </div>
+              )}
             </div>
           ))
         )}

@@ -32,9 +32,9 @@ class RateLimiter
         // [AI:Claude] Questions contextuelles de l'assistant IA ("Je bloque sur ce rang") :
         // coût réel négligeable (~0,001-0,002 $/question, Gemini 2.5 Flash), donc pas de
         // quota mensuel affiché qui crée une "barrière psychologique" pour un usage normal
-        // (une utilisatrice qui tricote ne pose jamais 20 questions/jour) — juste un
+        // (une utilisatrice qui tricote ne pose jamais 50 questions/jour) — juste un
         // plafond de débit invisible contre l'abus, pas un compteur qui se vide.
-        'ai_contextual' => [20, 86400],      // 20 requêtes / 24h par utilisatrice
+        'ai_contextual' => [50, 86400],      // 50 requêtes / 24h par utilisatrice
         'default' => [100, 60]              // 100 requêtes / 1 minute (global)
     ];
 

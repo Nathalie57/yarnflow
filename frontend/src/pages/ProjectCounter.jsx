@@ -128,6 +128,11 @@ const ProjectCounter = () => {
   const [isTimerPaused, setIsTimerPaused] = useState(false)
   const [pausedTime, setPausedTime] = useState(0) // [AI:Claude] Temps accumulé avant pause
   const [sessionStartRow, setSessionStartRow] = useState(0) // [AI:Claude] Rang au début de la session
+  // [AI:Claude] Mode travail : masque le reste de l'écran pour ne garder que compteur +
+  // instructions pendant qu'on compte. Se réactive à chaque nouveau Démarrer (voir
+  // handleStartSession) — "Voir tout" ne fait que le suspendre temporairement.
+  const [focusModeDismissed, setFocusModeDismissed] = useState(false)
+  const isFocusMode = isTimerRunning && !focusModeDismissed
 
   // [AI:Claude] FIX BUG x4: Ref pour éviter les multiples appels à endSession
   const isEndingSessionRef = useRef(false)
@@ -1742,6 +1747,7 @@ const ProjectCounter = () => {
       setIsTimerRunning(true)
       setIsTimerPaused(false)
       setPausedTime(0)
+      setFocusModeDismissed(false)
 
       // [AI:Claude] Activer le wake lock pour garder l'écran allumé
       await requestWakeLock()
@@ -3505,7 +3511,7 @@ const ProjectCounter = () => {
       )}
 
       {/* Nudge sections */}
-      {showSectionsNudge && sections.length === 0 && (
+      {!isFocusMode && showSectionsNudge && sections.length === 0 && (
         <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
           <button
             onClick={() => { setShowSectionsNudge(false); localStorage.setItem(`yf_sections_nudge_${projectId}`, '1') }}
@@ -3546,7 +3552,7 @@ const ProjectCounter = () => {
       )}
 
       {/* [AI:Claude] Header ultra-compact */}
-      <div className="mb-3">
+      <div className={isFocusMode ? 'hidden' : 'mb-3'}>
         <div>
           <Link
             to="/my-projects"
@@ -3823,6 +3829,27 @@ const ProjectCounter = () => {
 
       {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY */}
       <div className="sticky top-[64px] z-40 bg-primary-200 rounded-xl border border-primary-200 p-4 mb-3 shadow-sm">
+        {/* [AI:Claude] Mode travail : bascule "Voir tout" ⇄ "Mode travail" — permet de
+            suspendre temporairement le focus (pour consulter patron/photos/notes) sans
+            arrêter la session en cours. */}
+        {isTimerRunning && (
+          <button
+            onClick={() => setFocusModeDismissed(v => !v)}
+            className="mb-2 text-xs font-medium text-primary-700 hover:text-primary-900 flex items-center gap-1"
+          >
+            {focusModeDismissed ? (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+                {t('ui.backToFocusMode')}
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                {t('ui.viewEverything')}
+              </>
+            )}
+          </button>
+        )}
         {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
         <div className="space-y-3 sm:space-y-0">
           {/* Ligne 1 mobile: Section + Compteur | Desktop: cachée car tout sur une seule ligne */}
@@ -3837,15 +3864,17 @@ const ProjectCounter = () => {
                   t('ui.wholeProject')
                 )}
               </div>
-              <button
-                onClick={() => setShowReminderManager(true)}
-                className={`mt-0.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-              >
-                <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                {t('ui.reminders')}
-              </button>
+              {!isFocusMode && (
+                <button
+                  onClick={() => setShowReminderManager(true)}
+                  className={`mt-0.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                >
+                  <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  {t('ui.reminders')}
+                </button>
+              )}
             </div>
 
             {/* Compteur mobile */}
@@ -3911,15 +3940,17 @@ const ProjectCounter = () => {
                     t('ui.wholeProject')
                   )}
                 </div>
-                <button
-                  onClick={() => setShowReminderManager(true)}
-                  className={`flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                >
-                  <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  {t('ui.reminders')}
-                </button>
+                {!isFocusMode && (
+                  <button
+                    onClick={() => setShowReminderManager(true)}
+                    className={`flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                  >
+                    <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    {t('ui.reminders')}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -3982,8 +4013,8 @@ const ProjectCounter = () => {
                 </div>
               </div>
 
-              {/* Temps total de la section */}
-              {(() => {
+              {/* Temps total de la section — masqué en mode travail (redondant avec Session) */}
+              {!isFocusMode && (() => {
                 const currentSection = currentSectionId ? sections.find(s => s.id === currentSectionId) : null
                 if (!currentSection) return null
                 // [AI:Claude] `time_formatted` est construit en SQL par CONCAT :
@@ -4015,7 +4046,7 @@ const ProjectCounter = () => {
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap shadow-sm"
                     >
                       <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                      {t('ui.start')}
+                      {t('ui.startWorkMode')}
                     </button>
                   ) : (
                     <>
@@ -4240,8 +4271,8 @@ const ProjectCounter = () => {
               </div>
             ))}
 
-            {/* Ajouter un compteur */}
-            {isAddingCounter ? (
+            {/* Ajouter un compteur — masqué en mode travail (config, pas du comptage actif) */}
+            {!isFocusMode && (isAddingCounter ? (
               <div className="flex items-center gap-2 flex-wrap">
                 <input
                   type="text"
@@ -4303,15 +4334,38 @@ const ProjectCounter = () => {
               </div>
             ) : (
               <p className="text-xs text-gray-500">{t('ui.secondaryLimitReached', { max: MAX_SECONDARY_COUNTERS })}</p>
-            )}
+            ))}
           </div>
         )}
+
+        {/* [AI:Claude] Mode travail : pendant que le timer tourne, les instructions de la
+            section active restent affichées sous le compteur (dans le bloc sticky) au lieu
+            de vivre uniquement dans la liste des sections plus bas — évite d'avoir à
+            scroller loin du compteur à chaque rang pour relire le patron. Texte complet,
+            jamais tronqué : le reste de l'écran est masqué en mode travail donc la place
+            ne manque pas, et on scroll la page normalement plutôt qu'une mini-zone interne. */}
+        {isTimerRunning && currentSectionId && (() => {
+          const workSection = sections.find(s => s.id === currentSectionId)
+          if (!workSection?.description) return null
+
+          return (
+            <div className="mt-3 pt-3 border-t border-primary-300/50">
+              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                {t('ui.instructions')}
+              </div>
+              <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+                {workSection.description}
+              </div>
+            </div>
+          )
+        })()}
 
       </div>
 
       {/* [AI:Claude] Accès rapide Patron/Photos/Détails — toujours visible sans avoir
-          à scroller sous la liste des sections (retour Véronique) */}
-      <div className="flex gap-2">
+          à scroller sous la liste des sections (retour Véronique). Masqué en mode
+          travail (focus compteur + instructions) — accessible via "Voir tout". */}
+      <div className={isFocusMode ? 'hidden' : 'flex gap-2'}>
         <button
           onClick={() => jumpToTab('patron')}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
@@ -4352,7 +4406,7 @@ const ProjectCounter = () => {
         )}
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className={isFocusMode ? 'hidden' : 'flex flex-col gap-3'}>
 
       {/* Guidage sections — première visite avec sections */}
       {showOnboarding && sections.length > 0 && !currentSectionId && (

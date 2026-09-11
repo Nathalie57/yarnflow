@@ -123,10 +123,17 @@ class AiAssistantController
             if ($isContextualRequest) {
                 $rateLimiter = new RateLimiter();
                 if (!$rateLimiter->check('ai_contextual', "user:{$userId}")) {
+                    // [AI:Claude] Le plafond (20/24h) reste volontairement invisible tant qu'il
+                    // n'est pas atteint (pas de compteur affiché, cf. commentaire RateLimiter.php),
+                    // mais une fois atteint on donne l'heure exacte de réouverture plutôt qu'un
+                    // vague "plus tard" — comme le fait ChatGPT sur son propre rate limit.
+                    $secondsRemaining = $rateLimiter->getTimeRemaining('ai_contextual', "user:{$userId}");
+                    $availableAt = date('H:i', time() + $secondsRemaining);
                     $this->sendResponse(429, [
-                        'error' => "Tu as posé beaucoup de questions aujourd'hui — réessaie un peu plus tard.",
+                        'error' => "Tu as posé beaucoup de questions aujourd'hui — nouvelle dispo à {$availableAt}.",
                         'error_code' => 'ai_rate_limited',
-                        'limit_reached' => true
+                        'limit_reached' => true,
+                        'available_at' => $availableAt
                     ]);
                     return;
                 }
@@ -239,10 +246,23 @@ class AiAssistantController
                 'plan' => $plan,
             ]);
 
+            // [AI:Claude] Une ligne par échange, pour permettre le pouce haut/bas côté
+            // frontend (POST /api/ai/feedback) — jusqu'ici seules les erreurs techniques
+            // étaient loguées, jamais la pertinence réelle des réponses.
+            $lastUserMessage = '';
+            for ($i = count($messages) - 1; $i >= 0; $i--) {
+                if (($messages[$i]['role'] ?? '') === 'user') {
+                    $lastUserMessage = $messages[$i]['content'] ?? '';
+                    break;
+                }
+            }
+            $messageId = $this->logAssistantMessage($userId, $projectId, $isContextualRequest, $lastUserMessage, $reply);
+
             $this->sendResponse(200, [
                 'reply' => $reply,
                 'suggestions' => $suggestions,
-                'usage' => $usagePayload
+                'usage' => $usagePayload,
+                'message_id' => $messageId
             ]);
 
         } catch (\GuzzleHttp\Exception\ClientException $e) {
@@ -276,6 +296,7 @@ Si ta réponse soulève naturellement un besoin couvert par PRO (ex: gérer un g
                 . "1. TRADUIRE (ex: \"traduis-moi le rang 17\", \"c'est quoi en français ?\") : tu ne traduis JAMAIS toi-même ce texte. Réponds UNIQUEMENT par le marqueur suivant suivi du texte EXACT (verbatim, dans sa langue d'origine, sans aucune modification) du passage concerné tel qu'il apparaît dans le patron ci-dessus — rien d'autre, ni clarification, ni suggestions :\n###TRANSLATE_REQUEST###\n<texte exact du passage>\n"
                 . "2. EXPLIQUER (ex: \"je ne comprends pas le rang 17\", \"je pense avoir fait une erreur\") : explique la technique/l'instruction avec tes propres mots, comme d'habitude.\n"
                 . "3. AIDER DANS LE CONTEXTE (ex: \"je suis au rang 17, qu'est-ce que je dois faire ?\") : aide contextuelle habituelle.\n\n"
+                . "Si le patron ci-dessus se termine par la mention \"[Patron tronqué ici...]\", et que la question porte sur une partie du patron qui semble se situer après ce point (ex: une section, un rang ou une taille non couverte par le texte fourni), dis-le clairement au lieu de deviner ou d'inventer — explique que tu n'as pas cette partie du patron sous les yeux.\n\n"
                 . "Pour les cas 2 et 3 uniquement (jamais le cas 1, traduction) :\n"
                 . "Même face à une question vague (\"je pense avoir fait une erreur\", \"ça ne va pas\"), NE TE CONTENTE JAMAIS de renvoyer une question de clarification sans rien apporter d'autre : donne toujours au moins une ou deux pistes de vérification concrètes tirées du contexte ci-dessus (nombre de mailles/rangs attendu à ce stade, points de vigilance typiques de cette étape du patron, erreur fréquente à cet endroit précis), et pose ta question de clarification EN PLUS de ça, pas à sa place.\n\nÀ la TOUTE FIN de chaque réponse, ajoute impérativement un bloc de 2 à 3 suggestions de questions de suivi, courtes (moins de 8 mots). Elles doivent porter UNIQUEMENT sur un point, une technique ou un terme que TA PROPRE RÉPONSE ci-dessus vient de mentionner explicitement — jamais une technique du patron que tu n'as pas citée dans ta réponse, même si elle apparaît ailleurs dans le patron ou est habituelle pour ce type d'ouvrage (ex: si ta réponse ne parle pas du montage/magic ring, ne le suggère pas juste parce que c'est un amigurumi). En cas de doute sur la pertinence d'une suggestion, ne la propose pas plutôt que de deviner — au format exact suivant, sur ses propres lignes, rien après :\n###SUGGESTIONS###\nQuestion de suivi 1\nQuestion de suivi 2\n"
             : '';
@@ -445,24 +466,104 @@ PROMPT;
 
             $parsed = json_decode($importRow['ai_response_json'] ?? '', true) ?? [];
 
+            // [AI:Claude] contains_diagram = au moins une section du patron n'avait aucune
+            // instruction écrite et a dû être reconstruite par l'IA à partir d'un diagramme/
+            // grille seul lors de l'import — donc potentiellement moins fiable qu'un texte
+            // rédigé. Sans ce signal, l'assistant répondait avec la même assurance sur une
+            // section devinée que sur une section transcrite mot pour mot.
+            if (!empty($parsed['contains_diagram'])) {
+                $lines[] = "ATTENTION : ce patron contient au moins une section dont la description ci-dessous a été déduite d'un diagramme/grille/chart sans instructions écrites d'origine — elle peut être imprécise. Si la question porte sur une telle section, mentionne cette incertitude au lieu de répondre avec la même assurance que pour une section rédigée.";
+            }
+
             // [AI:Claude] Si une traduction complète existe déjà (proposée quand la langue du
             // patron diffère de celle de l'utilisatrice), l'utiliser comme texte de référence
             // principal plutôt que d'envoyer les deux versions intégralement — ça double
             // inutilement le budget de contexte, et répondre depuis la traduction suffit pour
             // que l'assistant s'exprime naturellement dans la langue de l'utilisatrice.
+            // [AI:Claude] 6000 caractères (~1500 tokens) coupait silencieusement des patrons
+            // longs (multi-tailles, jacquard) pile sur la section demandée, sans que
+            // l'utilisatrice ni le modèle ne le sache. Gemini Flash gère un contexte bien
+            // plus grand que ça — 30000 caractères couvre la quasi-totalité des patrons
+            // réels, et on prévient explicitement le modèle quand la coupe a quand même lieu.
             if (!empty($importRow['translated_text'])) {
-                $patternText = mb_substr(trim($importRow['translated_text']), 0, 6000);
+                $fullText = trim($importRow['translated_text']);
+                $patternText = mb_substr($fullText, 0, 30000);
+                $truncatedNote = mb_strlen($fullText) > 30000 ? "\n[Patron tronqué ici — des sections plus loin dans le patron original ne sont pas visibles dans ce texte de référence.]" : '';
                 $originalLang = $parsed['language'] ?? 'une autre langue';
-                $lines[] = "Patron original en {$originalLang}, traduction disponible ci-dessous (référence — peut couvrir des sections au-delà de celle suivie ci-dessus) :\n" . $patternText;
+                $lines[] = "Patron original en {$originalLang}, traduction disponible ci-dessous (référence — peut couvrir des sections au-delà de celle suivie ci-dessus) :\n" . $patternText . $truncatedNote;
             } else {
-                $patternText = mb_substr(AIPatternExtractorService::buildPlainText($parsed), 0, 6000);
+                $fullText = AIPatternExtractorService::buildPlainText($parsed);
+                $patternText = mb_substr($fullText, 0, 30000);
                 if ($patternText !== '') {
-                    $lines[] = "Patron complet associé au projet (référence — peut couvrir des sections au-delà de celle suivie ci-dessus) :\n" . $patternText;
+                    $truncatedNote = mb_strlen($fullText) > 30000 ? "\n[Patron tronqué ici — des sections plus loin dans le patron original ne sont pas visibles dans ce texte de référence.]" : '';
+                    $lines[] = "Patron complet associé au projet (référence — peut couvrir des sections au-delà de celle suivie ci-dessus) :\n" . $patternText . $truncatedNote;
                 }
             }
         }
 
         return implode("\n\n", $lines);
+    }
+
+    /**
+     * [AI:Claude] Enregistre un échange pour permettre le feedback qualité (pouce haut/bas).
+     * Best-effort : une erreur ici ne doit jamais faire échouer la réponse déjà envoyée
+     * à l'utilisatrice, donc on avale l'exception et on retourne null (pas de feedback
+     * possible sur ce message précis, sans conséquence pour le chat lui-même).
+     */
+    private function logAssistantMessage(int $userId, ?int $projectId, bool $contextual, string $question, string $reply): ?int
+    {
+        try {
+            $stmt = $this->db->prepare(
+                'INSERT INTO ai_assistant_feedback (user_id, project_id, contextual, question, reply)
+                 VALUES (:user_id, :project_id, :contextual, :question, :reply)'
+            );
+            $stmt->execute([
+                ':user_id' => $userId,
+                ':project_id' => $projectId,
+                ':contextual' => $contextual ? 1 : 0,
+                ':question' => mb_substr($question, 0, 2000),
+                ':reply' => mb_substr($reply, 0, 8000),
+            ]);
+            return (int)$this->db->lastInsertId();
+        } catch (\Exception $e) {
+            error_log('[AiAssistant] Échec log feedback: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * POST /api/ai/feedback
+     * Body: { message_id: int, rating: 'up'|'down' }
+     */
+    public function feedback(): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = $this->getJsonInput();
+            $messageId = isset($data['message_id']) ? (int)$data['message_id'] : null;
+            $rating = $data['rating'] ?? null;
+
+            if (!$messageId || !in_array($rating, ['up', 'down'], true)) {
+                $this->sendResponse(400, ['error' => 'Requête invalide']);
+                return;
+            }
+
+            $stmt = $this->db->prepare(
+                'UPDATE ai_assistant_feedback SET rating = :rating, rated_at = NOW()
+                 WHERE id = :id AND user_id = :uid'
+            );
+            $stmt->execute([':rating' => $rating, ':id' => $messageId, ':uid' => $userId]);
+
+            if ($stmt->rowCount() === 0) {
+                $this->sendResponse(404, ['error' => 'Message introuvable']);
+                return;
+            }
+
+            $this->sendResponse(200, ['success' => true]);
+        } catch (\Exception $e) {
+            error_log('[AiAssistant] Erreur feedback: ' . $e->getMessage());
+            $this->sendResponse(500, ['error' => 'Une erreur est survenue.']);
+        }
     }
 
     private function containsInjection(string $text): bool
