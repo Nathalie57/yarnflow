@@ -68,6 +68,11 @@ $sql = <<<SQL
             p.last_inactivity_reminder_at IS NULL
          OR p.last_inactivity_reminder_at < DATE_SUB(NOW(), INTERVAL 7 DAY)
       )
+      AND NOT EXISTS (
+            SELECT 1 FROM emails_sent_log
+            WHERE user_id = u.id AND email_type = 'reengagement_day7' AND status = 'sent'
+              AND sent_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+      )
     ORDER BY p.updated_at ASC
 SQL;
 
@@ -100,8 +105,8 @@ foreach ($projects as $project) {
         try {
             $pushService->sendToUser(
                 (int)$project['user_id'],
-                'Votre projet vous attend 🧶',
-                "{$project['project_name']} — reprenez là où vous vous étiez arrêtée",
+                'Ton projet t\'attend',
+                "{$project['project_name']} — reprends là où tu t'étais arrêtée",
                 '/projects/' . $project['project_id']
             );
         } catch (\Exception $e) {

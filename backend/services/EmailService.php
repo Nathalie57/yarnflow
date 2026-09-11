@@ -114,11 +114,14 @@ class EmailService
     {
         $firstName = $name ?? 'Tricoteur/Crocheteur';
 
-        $subject = "🧶 Bienvenue sur la waitlist YarnFlow !";
+        $subject = "Bienvenue sur la waitlist YarnFlow !";
 
         $body = $this->getWelcomeEmailTemplate($firstName);
 
-        return $this->sendEmail($to, $subject, $body, $name);
+        $success = $this->sendEmail($to, $subject, $body, $name);
+        $this->logEmail($to, $firstName, 'waitlist_welcome', $subject, $success);
+
+        return $success;
     }
 
     /**
@@ -160,11 +163,6 @@ class EmailService
             font-size: 32px;
             font-weight: 700;
         }
-        .emoji {
-            font-size: 56px;
-            margin: 0;
-            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-        }
         .content {
             padding: 40px 30px;
         }
@@ -199,7 +197,6 @@ class EmailService
     <div style="background-color: #f6f8f6; padding: 20px 0;">
         <div class="container">
             <div class="header">
-                <div class="emoji">🧶</div>
                 <h1>YarnFlow</h1>
             </div>
 
@@ -210,7 +207,7 @@ class EmailService
 
                 <p>On te contacte très bientôt avec tous les détails de l'offre exclusive et ton accès en avant-première.</p>
 
-                <p>D'ici là, garde tes aiguilles et tes crochets à portée de main 😊</p>
+                <p>D'ici là, garde tes aiguilles et tes crochets à portée de main.</p>
 
                 <div class="signature">
                     <p style="margin: 0;">À très vite,</p>
@@ -382,7 +379,7 @@ HTML;
      */
     public function sendRegistrationWelcomeEmail(string $email, string $name, ?int $userId = null): bool
     {
-        $subject = 'Votre compte YarnFlow est prêt';
+        $subject = 'Ton compte YarnFlow est prêt';
         $success = false;
         $errorMessage = null;
 
@@ -399,7 +396,7 @@ HTML;
             $mail->Body = $this->getRegistrationWelcomeEmailTemplate($name);
 
             // Version texte
-            $mail->AltBody = "Bonjour $name,\n\nVotre compte est actif.\n\nUne seule chose à faire maintenant : ajouter votre projet en cours.\n\nNotez votre rang actuel. La prochaine fois que vous reprenez votre tricot, vous saurez exactement où vous en êtes — même si vous avez été interrompue trois fois entre-temps.\n\nAjouter mon projet : https://yarnflow.fr/my-projects\n\nBonne création,\nNathalie\nYarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTon compte est actif.\n\nUne seule chose à faire maintenant : ajouter ton projet en cours.\n\nNote ton rang actuel. La prochaine fois que tu reprends ton tricot, tu sauras exactement où tu en es — même si tu as été interrompue trois fois entre-temps.\n\nAjouter mon projet : https://yarnflow.fr/my-projects\n\nBonne création,\nNathalie\nYarnFlow";
 
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
@@ -467,11 +464,11 @@ HTML;
 {$header}
 <tr><td style="padding:40px 40px 32px;">
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 8px;">Bonjour <strong>{$name}</strong>,</p>
-    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Votre compte est actif.</p>
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Ton compte est actif.</p>
 
-    <h2 style="color:#111827;font-size:20px;font-weight:700;margin:0 0 12px;">Vous avez un projet en cours ?</h2>
+    <h2 style="color:#111827;font-size:20px;font-weight:700;margin:0 0 12px;">Tu as un projet en cours ?</h2>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
-        Notez votre rang maintenant. La prochaine fois que vous reprenez votre tricot, vous saurez exactement où vous en êtes — même si vous avez été interrompue trois fois entre-temps.
+        Note ton rang maintenant. La prochaine fois que tu reprends ton tricot, tu sauras exactement où tu en es — même si tu as été interrompue trois fois entre-temps.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
@@ -485,7 +482,7 @@ HTML;
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
             <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
-                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Interrompue à mi-rang</strong> — Un clic pour sauvegarder. Vous retrouvez exactement là où vous étiez.</p>
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Interrompue à mi-rang</strong> — Un clic pour sauvegarder. Tu retrouves exactement là où tu étais.</p>
             </td>
         </tr>
         <tr>
@@ -495,13 +492,13 @@ HTML;
         </tr>
         <tr>
             <td style="padding:16px 20px;">
-                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Votre patron toujours avec vous</strong> — PDF ou lien, attaché directement au projet.</p>
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Ton patron toujours avec toi</strong> — PDF ou lien, attaché directement au projet.</p>
             </td>
         </tr>
     </table>
 
     <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 24px;">
-        Envie d'échanger avec d'autres tricoteuses/crocheteuses ? <a href="https://www.facebook.com/groups/844543658285999" style="color:#557055;text-decoration:underline;">Rejoignez la communauté YarnFlow sur Facebook</a>.
+        Envie d'échanger avec d'autres tricoteuses/crocheteuses ? <a href="https://www.facebook.com/groups/844543658285999" style="color:#557055;text-decoration:underline;">Rejoins la communauté YarnFlow sur Facebook</a>.
     </p>
 
     <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
@@ -526,7 +523,7 @@ HTML;
      */
     public function sendPasswordResetEmail(string $email, string $name, string $resetLink): bool
     {
-        $subject = 'Réinitialisation de votre mot de passe YarnFlow';
+        $subject = 'Réinitialisation de ton mot de passe YarnFlow';
         $success = false;
         $errorMessage = null;
 
@@ -537,7 +534,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getPasswordResetEmailTemplate($name, $resetLink);
-            $mail->AltBody = "Bonjour $name,\n\nVous avez demandé à réinitialiser votre mot de passe YarnFlow.\n\nCliquez sur ce lien pour créer un nouveau mot de passe :\n$resetLink\n\nCe lien est valide pendant 1 heure.\n\nSi vous n'avez pas demandé cette réinitialisation, ignorez cet email.\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTu as demandé à réinitialiser ton mot de passe YarnFlow.\n\nClique sur ce lien pour créer un nouveau mot de passe :\n$resetLink\n\nCe lien est valide pendant 1 heure.\n\nSi tu n'as pas demandé cette réinitialisation, ignore cet email.\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -577,7 +574,7 @@ HTML;
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
-        Vous avez demandé à réinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous — ce lien est valide pendant 1 heure.
+        Tu as demandé à réinitialiser ton mot de passe. Clique sur le bouton ci-dessous — ce lien est valide pendant 1 heure.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
@@ -592,7 +589,7 @@ HTML;
         <tr>
             <td style="padding:16px 20px;">
                 <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
-                    Si vous n'avez pas demandé cette réinitialisation, ignorez cet email. Votre mot de passe reste inchangé.
+                    Si tu n'as pas demandé cette réinitialisation, ignore cet email. Ton mot de passe reste inchangé.
                 </p>
             </td>
         </tr>
@@ -619,7 +616,7 @@ HTML;
      */
     public function sendOnboardingDay3Email(string $email, string $name, ?int $userId = null, bool $hasProjects = false): bool
     {
-        $subject = 'Vous avez eu le temps de tricoter ?';
+        $subject = 'Tu as eu le temps de tricoter ?';
         $success = false;
         $errorMessage = null;
 
@@ -633,7 +630,7 @@ HTML;
 
             $mail->isHTML(true);
             $mail->Body = $this->getOnboardingDay3EmailTemplate($name);
-            $mail->AltBody = "Bonjour $name,\n\nDepuis votre inscription il y a 3 jours, avez-vous eu l'occasion de tricoter ?\n\nSi oui — c'est le bon moment pour ouvrir YarnFlow et noter votre rang actuel. Deux secondes, et vous ne perdrez plus jamais votre place.\n\nSi pas encore — c'est normal. Gardez juste YarnFlow en tête pour la prochaine session.\n\nAjouter mon projet : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nDepuis ton inscription il y a 3 jours, as-tu eu l'occasion de tricoter ?\n\nSi oui — c'est le bon moment pour ouvrir YarnFlow et noter ton rang actuel. Deux secondes, et tu ne perdras plus jamais ta place.\n\nSi pas encore — c'est normal. Garde juste YarnFlow en tête pour la prochaine session.\n\nAjouter mon projet : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
@@ -672,14 +669,14 @@ HTML;
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
-        Depuis votre inscription il y a 3 jours, avez-vous eu l'occasion de tricoter ?
+        Depuis ton inscription il y a 3 jours, as-tu eu l'occasion de tricoter ?
     </p>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
-        Si oui — c'est le bon moment pour ouvrir YarnFlow et noter votre rang actuel.<br>
-        Deux secondes, et vous ne perdrez plus jamais votre place.
+        Si oui — c'est le bon moment pour ouvrir YarnFlow et noter ton rang actuel.<br>
+        Deux secondes, et tu ne perdras plus jamais ta place.
     </p>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
-        Si pas encore — gardez juste YarnFlow en tête pour la prochaine session. La prochaine fois que vous serez interrompue en plein milieu d'un rang, vous saurez où aller.
+        Si pas encore — garde juste YarnFlow en tête pour la prochaine session. La prochaine fois que tu seras interrompue en plein milieu d'un rang, tu sauras où aller.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
@@ -693,17 +690,17 @@ HTML;
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
             <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
-                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Vous notez votre rang</strong> — YarnFlow retient votre place. Même si vous êtes interrompue.</p>
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Tu notes ton rang</strong> — YarnFlow retient ta place. Même si tu es interrompue.</p>
             </td>
         </tr>
         <tr>
             <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
-                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Vous avez plusieurs projets</strong> — Chacun a son compteur, ses notes, son patron.</p>
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Tu as plusieurs projets</strong> — Chacun a son compteur, ses notes, son patron.</p>
             </td>
         </tr>
         <tr>
             <td style="padding:16px 20px;">
-                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Votre patron avec vous</strong> — PDF ou lien, attaché directement au projet.</p>
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Ton patron avec toi</strong> — PDF ou lien, attaché directement au projet.</p>
             </td>
         </tr>
     </table>
@@ -730,7 +727,7 @@ HTML;
      */
     public function sendReengagementDay7Email(string $email, string $name, array $projectData = [], ?int $userId = null): bool
     {
-        $subject = 'Votre projet vous attend';
+        $subject = 'Ton projet t\'attend';
         $success = false;
         $errorMessage = null;
 
@@ -744,7 +741,7 @@ HTML;
 
             $mail->isHTML(true);
             $mail->Body = $this->getReengagementDay7EmailTemplate($name, $projectData);
-            $mail->AltBody = "Bonjour $name,\n\nCela fait une semaine. Votre projet est toujours là, au rang où vous l'avez laissé.\n\nReprendre : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nCela fait une semaine. Ton projet est toujours là, au rang où tu l'as laissé.\n\nReprendre : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
@@ -779,7 +776,7 @@ HTML;
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
             <td style="padding:20px 24px;">
-                <p style="margin:0 0 8px;font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">Votre projet en cours</p>
+                <p style="margin:0 0 8px;font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">Ton projet en cours</p>
                 <p style="margin:0 0 12px;font-size:17px;font-weight:600;color:#111827;">{$projectName}</p>
                 <div style="background-color:#e8ede8;border-radius:999px;height:6px;overflow:hidden;">
                     <div style="background:#557055;height:100%;width:{$progress}%;"></div>
@@ -804,10 +801,10 @@ HTML;
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
-        Cela fait une semaine. Votre projet est toujours là, au rang où vous l'avez laissé.
+        Cela fait une semaine. Ton projet est toujours là, au rang où tu l'as laissé.
     </p>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
-        La prochaine fois que vous tricotez et que vous êtes interrompue, YarnFlow est là pour retenir votre place.
+        La prochaine fois que tu tricotes et que tu es interrompue, YarnFlow est là pour retenir ta place.
     </p>
 
     {$projectBlock}
@@ -841,7 +838,7 @@ HTML;
      */
     public function sendNeedHelpDay21Email(string $email, string $name, ?int $userId = null): bool
     {
-        $subject = 'Toujours là si vous revenez';
+        $subject = 'Toujours là si tu reviens';
         $success = false;
         $errorMessage = null;
 
@@ -855,7 +852,7 @@ HTML;
 
             $mail->isHTML(true);
             $mail->Body = $this->getNeedHelpDay21EmailTemplate($name);
-            $mail->AltBody = "Bonjour $name,\n\nCela fait trois semaines. Vos projets sont toujours là, au rang où vous les avez laissés.\n\nSi vous avez un projet en cours — c'est le bon moment pour ouvrir YarnFlow avant votre prochaine session de tricot. Vous saurez exactement où vous en êtes, même si vous avez été interrompue.\n\nReprendre mes projets : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nCela fait trois semaines. Tes projets sont toujours là, au rang où tu les as laissés.\n\nSi tu as un projet en cours — c'est le bon moment pour ouvrir YarnFlow avant ta prochaine session de tricot. Tu sauras exactement où tu en es, même si tu as été interrompue.\n\nReprendre mes projets : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
@@ -885,7 +882,7 @@ HTML;
      */
     public function sendProjectStartReminderEmail(string $email, string $name, string $projectName, ?int $userId = null): bool
     {
-        $subject = 'Votre projet "' . mb_substr($projectName, 0, 30) . '" attend son premier rang';
+        $subject = 'Ton projet "' . mb_substr($projectName, 0, 30) . '" attend son premier rang';
         $success = false;
         $errorMessage = null;
 
@@ -899,7 +896,7 @@ HTML;
 
             $mail->isHTML(true);
             $mail->Body = $this->getProjectStartReminderEmailTemplate($name, $projectName);
-            $mail->AltBody = "Bonjour $name,\n\nVous avez créé le projet \"$projectName\" — il attend son premier rang.\n\nLa prochaine fois que vous tricotez, ouvrez YarnFlow avant de commencer. Quand vous serez interrompue, votre rang sera déjà noté.\n\nOuvrir mon projet : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTu as créé le projet \"$projectName\" — il attend son premier rang.\n\nLa prochaine fois que tu tricotes, ouvre YarnFlow avant de commencer. Quand tu seras interrompue, ton rang sera déjà noté.\n\nOuvrir mon projet : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
@@ -939,10 +936,10 @@ HTML;
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
-        Vous avez créé le projet <strong style="color:#111827;">"{$projectNameEscaped}"</strong> — il attend son premier rang.
+        Tu as créé le projet <strong style="color:#111827;">"{$projectNameEscaped}"</strong> — il attend son premier rang.
     </p>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
-        La prochaine fois que vous tricotez, ouvrez YarnFlow avant de commencer. Quand vous serez interrompue, votre rang sera déjà noté. Vous reprenez exactement là où vous étiez.
+        La prochaine fois que tu tricotes, ouvre YarnFlow avant de commencer. Quand tu seras interrompue, ton rang sera déjà noté. Tu reprends exactement là où tu étais.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
@@ -1078,10 +1075,10 @@ HTML;
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
-        Cela fait trois semaines. Vos projets sont toujours là, au rang où vous les avez laissés.
+        Cela fait trois semaines. Tes projets sont toujours là, au rang où tu les as laissés.
     </p>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
-        Aucune pression. Juste un rappel : la prochaine fois que vous reprenez votre tricot et qu'on vous interrompt, YarnFlow est là pour que vous ne perdiez plus votre place.
+        Aucune pression. Juste un rappel : la prochaine fois que tu reprends ton tricot et qu'on t'interrompt, YarnFlow est là pour que tu ne perdes plus ta place.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
@@ -1197,7 +1194,7 @@ HTML;
 
     public function sendAiQuotaApproachingEmail(string $email, string $name, int $used, int $limit, ?int $userId = null): bool
     {
-        $subject = 'Il te reste ' . ($limit - $used) . ' question' . ($limit - $used > 1 ? 's' : '') . ' IA ce mois-ci';
+        $subject = 'Il te reste ' . ($limit - $used) . ' question' . ($limit - $used > 1 ? 's' : '') . ' à l\'assistant ce mois-ci';
         $success = false;
         $errorMessage = null;
 
@@ -1209,7 +1206,7 @@ HTML;
             $mail->isHTML(true);
             $mail->Body = $this->getAiQuotaApproachingTemplate($name, $used, $limit);
             $remaining = $limit - $used;
-            $mail->AltBody = "Bonjour $name,\n\nTu as utilisé {$used} de tes {$limit} questions à l'assistant IA ce mois-ci. Il t'en reste {$remaining}.\n\nAvec PLUS, tu passes à 10 questions/mois. Avec PRO, 30 questions.\n\nDécouvrir les plans : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTu as utilisé {$used} de tes {$limit} questions à l'assistant ce mois-ci. Il t'en reste {$remaining}.\n\nAvec PLUS, tu passes à 10 questions/mois. Avec PRO, 30 questions.\n\nDécouvrir les plans : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -1244,7 +1241,7 @@ HTML;
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 20px;">
-        Tu as posé <strong>{$used} questions</strong> à l'assistant IA ce mois-ci — il t'en reste <strong>{$remaining}</strong> avant la limite.
+        Tu as posé <strong>{$used} questions</strong> à l'assistant ce mois-ci — il t'en reste <strong>{$remaining}</strong> avant la limite.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
@@ -1293,7 +1290,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getActiveUserUpgradeTemplate($name, $projectCount);
-            $mail->AltBody = "Bonjour $name,\n\nTu utilises activement YarnFlow avec {$projectCount} projets en cours. Voici ce que PLUS peut t'apporter : stock de laines jusqu'à 15 références, compteur secondaire, 10 questions IA par mois, statistiques.\n\nDécouvrir PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTu utilises activement YarnFlow avec {$projectCount} projets en cours. Voici ce que PLUS peut t'apporter : stock de laines jusqu'à 15 références, compteur secondaire, 10 questions à l'assistant par mois, statistiques.\n\nDécouvrir PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -1341,7 +1338,7 @@ HTML;
         </tr>
         <tr>
             <td style="padding:16px 20px;">
-                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">10 questions IA / mois</strong> — Techniques, calculs, lecture de patron : un assistant qui connaît le tricot.</p>
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">10 questions à l'assistant / mois</strong> — Techniques, calculs, lecture de patron : un assistant qui connaît le tricot.</p>
             </td>
         </tr>
     </table>
@@ -1450,7 +1447,7 @@ HTML;
 
     public function sendReengagementLightEmail(string $email, string $name, ?int $userId = null): bool
     {
-        $subject = "Vous n'avez pas eu le temps de vous lancer sur YarnFlow ?";
+        $subject = "Tu n'as pas eu le temps de te lancer sur YarnFlow ?";
         $success = false;
         $errorMessage = null;
 
@@ -1461,7 +1458,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getReengagementLightTemplate($name);
-            $mail->AltBody = "Bonjour $name,\n\nVous avez jeté un oeil à YarnFlow il y a quelques jours sans trop avoir eu le temps de vous y mettre. Ca prend deux minutes pour démarrer.\n\nDémarrer maintenant : https://yarnflow.fr/smart-project-creator\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTu as jeté un oeil à YarnFlow il y a quelques jours sans trop avoir eu le temps de t'y mettre. Ca prend deux minutes pour démarrer.\n\nDémarrer maintenant : https://yarnflow.fr/smart-project-creator\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -1483,7 +1480,7 @@ HTML;
         // [AI:Claude] Réservé aux comptes sans aucun projet créé (voir behavioral-triggers.php,
         // trigger 6) : ceux qui en ont déjà un sont couverts par project_start_reminder /
         // project_inactive_reminder dans send-engagement-emails.php.
-        $bodyText = "Vous avez fait un tour sur YarnFlow il y a quelques jours, sans forcément avoir eu le temps de créer votre premier projet. Ca prend deux minutes : importez un patron (PDF ou lien) et l'appli s'occupe du reste.";
+        $bodyText = "Tu as fait un tour sur YarnFlow il y a quelques jours, sans forcément avoir eu le temps de créer ton premier projet. Ca prend deux minutes : importe un patron (PDF ou lien) et l'appli s'occupe du reste.";
         $ctaLabel = "Créer mon premier projet";
         $ctaUrl = "https://yarnflow.fr/smart-project-creator";
 
@@ -1512,7 +1509,7 @@ HTML;
     </table>
 
     <p style="color:#4b5563;font-size:15px;line-height:1.7;margin:0 0 24px;">
-        Si quelque chose vous a bloquée ou si vous avez une question, répondez directement à cet email — je lis tout.
+        Si quelque chose t'a bloquée ou si tu as une question, réponds directement à cet email — je lis tout.
     </p>
 
     <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">À bientôt,</p>
@@ -1550,7 +1547,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getPlusWelcomeTemplate($name, $planLabel, $isPro);
-            $mail->AltBody = "Bonjour $name,\n\nTon abonnement YarnFlow {$planLabel} est actif. Voici ce que tu peux faire maintenant :\n" . ($isPro ? "- 30 questions IA/mois\n- Stock illimité\n- Studio Photo" : "- 10 questions IA/mois\n- Stock jusqu'à 15 références\n- Compteur secondaire") . "\n\nOuvrir YarnFlow : https://yarnflow.fr\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTon abonnement YarnFlow {$planLabel} est actif. Voici ce que tu peux faire maintenant :\n" . ($isPro ? "- 30 questions à l'assistant/mois\n- Stock illimité\n- Studio Photo" : "- 10 questions à l'assistant/mois\n- Stock jusqu'à 15 références\n- Compteur secondaire") . "\n\nOuvrir YarnFlow : https://yarnflow.fr\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -1570,13 +1567,13 @@ HTML;
         $footer = $this->getEmailFooter();
         $features = $isPro
             ? [
-                ['title' => '30 questions IA / mois', 'desc' => 'Techniques, calculs, lectures de patron — sans limite mensuelle contraignante.'],
+                ['title' => '30 questions à l\'assistant / mois', 'desc' => 'Techniques, calculs, lectures de patron — sans limite mensuelle contraignante.'],
                 ['title' => 'Stock illimité', 'desc' => 'Toutes tes pelotes, coloris et métrages catalogués sans restriction.'],
                 ['title' => 'Studio Photo', 'desc' => 'Génère des visuels de tes projets depuis l\'app.'],
                 ['title' => 'Statistiques avancées', 'desc' => 'Rangs comptés, temps passé, progression par projet.'],
             ]
             : [
-                ['title' => '10 questions IA / mois', 'desc' => 'Deux fois plus de questions pour avancer sur tes projets.'],
+                ['title' => '10 questions à l\'assistant / mois', 'desc' => 'Deux fois plus de questions pour avancer sur tes projets.'],
                 ['title' => 'Stock jusqu\'à 15 références', 'desc' => 'Catalogue tes pelotes, associe-les à tes projets, évite les doublons.'],
                 ['title' => 'Compteur secondaire', 'desc' => 'Pour les diminutions, motifs répétés, ou tout ce qui se compte en parallèle.'],
                 ['title' => 'Historique complet', 'desc' => 'Retrouve tous tes projets terminés avec leurs statistiques.'],
@@ -1640,7 +1637,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getProjectInactiveTemplate($name, $projectName, $daysSince);
-            $mail->AltBody = "Bonjour $name,\n\nTon projet \"{$projectName}\" n'a pas bougé depuis {$daysSince} jours. La prochaine fois que tu tricotas, ouvre YarnFlow avant de commencer.\n\nReprendre : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTon projet \"{$projectName}\" n'a pas bougé depuis {$daysSince} jours. La prochaine fois que tu tricotes, ouvre YarnFlow avant de commencer.\n\nReprendre : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -1703,7 +1700,7 @@ HTML;
     public function sendAiQuotaExhaustedEmail(string $email, string $name, int $limit, ?int $userId = null): bool
     {
         $renewDate = date('1er F', strtotime('first day of next month'));
-        $subject = "Ton quota IA est épuisé — recharge le 1er";
+        $subject = "Ton quota de questions à l'assistant est épuisé — recharge le 1er";
         $success = false;
         $errorMessage = null;
 
@@ -1714,7 +1711,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getAiQuotaExhaustedTemplate($name, $limit, $renewDate);
-            $mail->AltBody = "Bonjour $name,\n\nTu as utilisé tes {$limit} questions IA ce mois-ci. Ton quota se recharge automatiquement le {$renewDate}.\n\nAvec PLUS, tu passes à 10 questions/mois. Avec PRO, 30 questions.\n\nVoir les plans : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTu as utilisé tes {$limit} questions à l'assistant ce mois-ci. Ton quota se recharge automatiquement le {$renewDate}.\n\nAvec PLUS, tu passes à 10 questions/mois. Avec PRO, 30 questions.\n\nVoir les plans : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -1749,7 +1746,7 @@ HTML;
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
-        Tu as posé tes <strong>{$limit} questions</strong> à l'assistant IA ce mois-ci. Ton quota se recharge automatiquement le <strong>{$renewDate}</strong> — tu n'as rien à faire.
+        Tu as posé tes <strong>{$limit} questions</strong> à l'assistant ce mois-ci. Ton quota se recharge automatiquement le <strong>{$renewDate}</strong> — tu n'as rien à faire.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;border-radius:8px;margin:0 0 28px;">
@@ -1873,7 +1870,7 @@ HTML;
     public function sendAbandonedCheckoutDiscountEmail(string $email, string $name, string $plan, int $discountPercent, string $promoCode, ?int $userId = null): bool
     {
         $planLabel = str_contains($plan, 'pro') ? 'PRO' : 'PLUS';
-        $subject = "-{$discountPercent}% sur YarnFlow {$planLabel}, pour vous";
+        $subject = "-{$discountPercent}% sur YarnFlow {$planLabel}, pour toi";
         $emailType = "abandoned_checkout_discount_{$discountPercent}";
         $success = false;
         $errorMessage = null;
@@ -1885,7 +1882,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getAbandonedCheckoutDiscountTemplate($name, $planLabel, $discountPercent, $promoCode);
-            $mail->AltBody = "Bonjour $name,\n\nVous aviez commence a vous abonner a YarnFlow {$planLabel} sans finaliser. Voici -{$discountPercent}% sur votre premier paiement avec le code {$promoCode}, a saisir au moment du paiement.\n\nReprendre l'abonnement : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTu avais commencé à t'abonner à YarnFlow {$planLabel} sans finaliser. Voici -{$discountPercent}% sur ton premier paiement avec le code {$promoCode}, à saisir au moment du paiement.\n\nReprendre l'abonnement : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -1918,12 +1915,12 @@ HTML;
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
-        Vous aviez commencé à vous abonner à YarnFlow <strong>{$planLabel}</strong> il y a quelques jours, sans finaliser. Si le prix vous a fait hésiter, voici de quoi essayer à moindre coût :
+        Tu avais commencé à t'abonner à YarnFlow <strong>{$planLabel}</strong> il y a quelques jours, sans finaliser. Si le prix t'a fait hésiter, voici de quoi essayer à moindre coût :
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="border:2px dashed #557055;border-radius:8px;margin:0 0 24px;">
         <tr><td style="padding:20px;text-align:center;">
-            <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">-{$discountPercent}% sur votre premier paiement</p>
+            <p style="margin:0 0 4px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">-{$discountPercent}% sur ton premier paiement</p>
             <p style="margin:0;font-size:24px;font-weight:700;color:#557055;letter-spacing:1px;">{$code}</p>
         </td></tr>
     </table>
@@ -1941,7 +1938,7 @@ HTML;
     </table>
 
     <p style="color:#4b5563;font-size:15px;line-height:1.7;margin:0 0 24px;">
-        Une question avant de vous décider ? Répondez directement à cet email, je réponds moi-même.
+        Une question avant de te décider ? Réponds directement à cet email, je réponds moi-même.
     </p>
 
     <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">Bonne création,</p>
@@ -1962,7 +1959,7 @@ HTML;
 
     public function sendStreakAtRiskEmail(string $email, string $name, int $streak, ?int $userId = null): bool
     {
-        $subject = "Votre série de {$streak} jours touche à sa fin ce soir";
+        $subject = "Ta série de {$streak} jours touche à sa fin ce soir";
         $success = false;
         $errorMessage = null;
 
@@ -1973,7 +1970,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getStreakAtRiskTemplate($name, $streak);
-            $mail->AltBody = "Bonjour $name,\n\nVous avez tricoté {$streak} jours de suite, mais pas encore aujourd'hui. Comptez au moins un rang avant minuit pour garder votre série.\n\nOuvrir YarnFlow : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTu as tricoté {$streak} jours de suite, mais pas encore aujourd'hui. Compte au moins un rang avant minuit pour garder ta série.\n\nOuvrir YarnFlow : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -2006,13 +2003,12 @@ HTML;
 
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border-radius:8px;margin:0 0 28px;">
         <tr><td style="padding:20px;text-align:center;">
-            <p style="margin:0;font-size:32px;">🔥</p>
             <p style="margin:8px 0 0;font-size:20px;color:#9a3412;font-weight:700;">{$streak} jours de suite</p>
         </td></tr>
     </table>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
-        Vous n'avez pas encore compté de rang aujourd'hui. Un seul suffit avant minuit pour garder votre série intacte.
+        Il reste quelques heures avant minuit pour compter un rang et garder ta série intacte.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
@@ -2038,7 +2034,7 @@ HTML;
     public function sendStreakRewardEmail(string $email, string $name, string $promoCode, ?int $userId = null): bool
     {
         $percent = $_ENV['STRIPE_STREAK_COUPON_PERCENT'] ?? '20';
-        $subject = "7 jours de série — un cadeau pour vous";
+        $subject = "7 jours de série — un cadeau pour toi";
         $success = false;
         $errorMessage = null;
 
@@ -2081,12 +2077,12 @@ HTML;
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
-        7 jours de tricot d'affilée — une vraie régularité. Pour vous remercier, voici un code promo sur un abonnement YarnFlow :
+        7 jours de tricot d'affilée — une vraie régularité. Pour te remercier, voici un code promo sur un abonnement YarnFlow :
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#fff7ed;border-radius:8px;margin:0 0 12px;">
         <tr><td style="padding:20px;text-align:center;">
-            <p style="margin:0;font-size:14px;color:#9a3412;font-weight:600;">-{$percent}% sur votre abonnement</p>
+            <p style="margin:0;font-size:14px;color:#9a3412;font-weight:600;">-{$percent}% sur ton abonnement</p>
             <p style="margin:10px 0 0;font-size:22px;color:#9a3412;font-weight:700;letter-spacing:1px;font-family:monospace;">{$promoCode}</p>
         </td></tr>
     </table>
@@ -2128,7 +2124,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getActiveFreeDay30Template($name, $projectCount, $totalRows);
-            $mail->AltBody = "Bonjour $name,\n\nUn mois que tu utilises YarnFlow — {$projectCount} projets, {$totalRows} rangs comptés. C'est le bon moment pour découvrir PLUS : stock de 15 références, compteur secondaire, 10 questions IA.\n\nDécouvrir PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nUn mois que tu utilises YarnFlow — {$projectCount} projets, {$totalRows} rangs comptés. C'est le bon moment pour découvrir PLUS : stock de 15 références, compteur secondaire, 10 questions à l'assistant.\n\nDécouvrir PLUS : https://yarnflow.fr/subscription\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();
@@ -2172,7 +2168,7 @@ HTML;
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr><td style="padding:14px 20px;border-bottom:1px solid #e8ede8;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Stock de laines (15 références)</strong> — cataloguer tes pelotes, associer à tes projets.</p></td></tr>
         <tr><td style="padding:14px 20px;border-bottom:1px solid #e8ede8;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Compteur secondaire</strong> — diminutions, répétitions, tout ce qui se compte en parallèle.</p></td></tr>
-        <tr><td style="padding:14px 20px;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">10 questions IA / mois</strong> — techniques, calculs, lectures de patron.</p></td></tr>
+        <tr><td style="padding:14px 20px;"><p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">10 questions à l'assistant / mois</strong> — techniques, calculs, lectures de patron.</p></td></tr>
     </table>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
@@ -2211,7 +2207,7 @@ HTML;
             $this->addAntiSpamHeaders($mail, 'transactional');
             $mail->isHTML(true);
             $mail->Body = $this->getReactivationTemplate($name, $daysSince);
-            $mail->AltBody = "Bonjour $name,\n\nTu n'as pas ouvert YarnFlow depuis {$daysSince} jours. Depuis, on a ajouté le stock de laines, l'assistant IA et les statistiques de projets.\n\nRevenirs voir : https://yarnflow.fr\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nTu n'as pas ouvert YarnFlow depuis {$daysSince} jours. Depuis, on a ajouté le stock de laines, l'assistant et les statistiques de projets.\n\nReviens voir : https://yarnflow.fr\n\nNathalie — YarnFlow";
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
             $mail->send();

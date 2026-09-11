@@ -9,7 +9,7 @@
 ## 🎯 Concept
 Différenciation vs concurrents : stats avancées (vitesse, graphiques), embellissement IA photos, sync cloud multi-devices.
 
-**Pricing** : FREE (3 projets actifs, 5 crédits photos/mois) | PLUS (2.99€/mois, 7 projets, 15 crédits photos/mois) | PRO (4.99€/mois, projets illimités, 30 crédits photos/mois) | Annuels avec -15% et -17% | Early Bird (2.99€/mois pour waitlist)
+**Pricing** : FREE (3 projets actifs, 5 crédits photos/mois) | PLUS (3.99€/mois ou 29.99€/an soit 2.49€/mois, 7 projets, 15 crédits photos/mois) | PRO (6.99€/mois ou 59.99€/an soit 4.99€/mois, projets illimités, 30 crédits photos/mois) | Early Bird (2.99€/mois pour waitlist)
 
 ---
 
@@ -27,7 +27,7 @@ Différenciation vs concurrents : stats avancées (vitesse, graphiques), embelli
 - ❌ Pas de tags personnalisés
 - ✅ Accès à toutes les fonctionnalités de base
 
-### Plan PLUS — 2,99 €/mois
+### Plan PLUS — 3,99 €/mois
 - ✅ 7 projets actifs
 - ✅ Patrons illimités
 - ✅ Sections illimitées
@@ -39,12 +39,11 @@ Différenciation vs concurrents : stats avancées (vitesse, graphiques), embelli
 - ✅ **Suggestions de tags intelligentes**
 - ✅ Support prioritaire
 
-### Plan PLUS Annuel — 29,99 €/an (-15%)
+### Plan PLUS Annuel — 29,99 €/an (soit 2,49 €/mois)
 - ✅ Tous les avantages du plan PLUS mensuel
-- ✅ **Économie de 5.89€/an** par rapport au mensuel (35.88€ → 29.99€)
 - ✅ Engagement 12 mois
 
-### Plan PRO — 4,99 €/mois
+### Plan PRO — 6,99 €/mois
 - ✅ Projets illimités
 - ✅ Patrons illimités
 - ✅ Sections illimitées
@@ -54,9 +53,8 @@ Différenciation vs concurrents : stats avancées (vitesse, graphiques), embelli
 - ✅ Support prioritaire + réponses accélérées
 - ✅ Accès premium aux nouveautés
 
-### Plan PRO Annuel — 49,99 €/an (-17%)
+### Plan PRO Annuel — 59,99 €/an (soit 4,99 €/mois)
 - ✅ Tous les avantages du plan PRO mensuel
-- ✅ **Économie de 9.89€/an** par rapport au mensuel (59.88€ → 49.99€)
 - ✅ Engagement 12 mois
 
 ### Plan Early Bird — 2,99 €/mois (Waitlist uniquement)
@@ -195,10 +193,10 @@ DB_NAME=patron_maker
 JWT_SECRET=...
 STRIPE_SECRET_KEY=sk_test_...
 GEMINI_API_KEY=...
-SUBSCRIPTION_PLUS_MONTHLY_PRICE=2.99
+SUBSCRIPTION_PLUS_MONTHLY_PRICE=3.99
 SUBSCRIPTION_PLUS_ANNUAL_PRICE=29.99
-SUBSCRIPTION_PRO_MONTHLY_PRICE=4.99
-SUBSCRIPTION_PRO_ANNUAL_PRICE=49.99
+SUBSCRIPTION_PRO_MONTHLY_PRICE=6.99
+SUBSCRIPTION_PRO_ANNUAL_PRICE=59.99
 ```
 
 ---
@@ -265,8 +263,8 @@ cd frontend && npm install && npm run dev
 
 **✅ Pricing cohérent dans toute l'application** :
 - ✅ Plan FREE : 5 crédits photos/mois, 3 projets actifs max (les projets terminés ne comptent pas)
-- ✅ Plan PLUS : 2.99€/mois (29.99€/an, -15%), 7 projets actifs, 15 crédits photos/mois
-- ✅ Plan PRO : 4.99€/mois (49.99€/an, -17%), projets illimités, 30 crédits photos/mois
+- ✅ Plan PLUS : 3.99€/mois (29.99€/an soit 2.49€/mois), 7 projets actifs, 15 crédits photos/mois
+- ✅ Plan PRO : 6.99€/mois (59.99€/an soit 4.99€/mois), projets illimités, 30 crédits photos/mois
 - ✅ Plan Early Bird : 2.99€/mois (waitlist uniquement)
 - ✅ Packs crédits photos : 50@4.99€, 150@9.99€
 

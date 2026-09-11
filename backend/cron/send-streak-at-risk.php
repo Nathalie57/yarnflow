@@ -97,8 +97,8 @@ try {
                 $sent++;
                 $pushService->sendToUser(
                     $userId,
-                    'Votre série est en danger 🔥',
-                    "{$streak} jours de suite — comptez un rang avant minuit pour la garder.",
+                    'Ta série est en danger',
+                    "{$streak} jours de suite — compte un rang avant minuit pour la garder.",
                     '/my-projects'
                 );
             } else {
