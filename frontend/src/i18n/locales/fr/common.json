@@ -333,7 +333,7 @@
   "errors": {
     "generic": "Une erreur est survenue. Réessaie dans un instant.",
     "site_blocks_scraping": "Ce site bloque l'accès automatique à ses pages. Essaie de copier-coller le texte du patron directement.",
-    "file_too_large": "Fichier trop volumineux (max 10 MB)",
+    "file_too_large": "Fichier trop volumineux (max 20 MB)",
     "pdf_only": "Seuls les fichiers PDF sont acceptés",
     "note_too_long": "La note ne peut pas dépasser 2000 caractères",
     "note_required": "La note est obligatoire",

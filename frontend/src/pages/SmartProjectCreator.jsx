@@ -220,7 +220,7 @@ export default function SmartProjectCreator() {
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0]
     if (selectedFile) {
-      if (selectedFile.size > 10 * 1024 * 1024) {
+      if (selectedFile.size > 20 * 1024 * 1024) {
         setError(t('ui.fileTooLarge'))
         return
       }

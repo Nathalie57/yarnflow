@@ -31,7 +31,7 @@ class SmartProjectController
     private AuthMiddleware $authMiddleware;
 
     private const UPLOAD_DIR = __DIR__ . '/../../uploads/patterns/';
-    private const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+    private const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB — relevé depuis 10 MB, un patron scanné/photographié dépasse facilement cette taille (cas réel à 17 MB)
 
     public function __construct()
     {
@@ -245,7 +245,7 @@ class SmartProjectController
 
                 // Validation
                 if ($fileSize > self::MAX_FILE_SIZE) {
-                    $this->jsonResponse(['error' => 'Fichier trop volumineux (max 10 MB)', 'error_code' => 'file_too_large'], 400);
+                    $this->jsonResponse(['error' => 'Fichier trop volumineux (max 20 MB)', 'error_code' => 'file_too_large'], 400);
                     return;
                 }
 

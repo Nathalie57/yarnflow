@@ -24,7 +24,7 @@ class AIPatternExtractorService
     private string $geminiApiKey;
     private string $geminiModel;
     private Client $httpClient;
-    private const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+    private const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB — relevé depuis 10 MB, un patron scanné/photographié dépasse facilement cette taille (cas réel à 17 MB)
     private const TIMEOUT_SECONDS = 180;
 
     /**
@@ -152,7 +152,7 @@ PROMPT;
 
         $fileSize = filesize($filePath);
         if ($fileSize > self::MAX_FILE_SIZE_BYTES) {
-            return $this->errorResponse('Fichier trop volumineux (max 10 MB)', 0);
+            return $this->errorResponse('Fichier trop volumineux (max 20 MB)', 0);
         }
 
         $fileUri = null;
