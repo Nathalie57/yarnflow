@@ -75,7 +75,7 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
     {
       "name": "nom de la section (ex: Corps, Manches, Assemblage)",
       "unit": "rangs" | "cm",
-      "target": nombre total de rangs/tours/cm pour cette section — COMPTER les rangs dans les instructions si non explicitement indiqué (ex: si la section va jusqu'à Rnd 39, target=39). IMPORTANT: si le patron est multi-tailles avec des valeurs différentes par taille (format "19-20-21-23 cm" ou "XS-S-M-L"), mettre null car on ne connaît pas la taille choisie,
+      "target": nombre total de rangs/tours/cm pour cette section. RÈGLE MÉCANIQUE : repère TOUTES les lignes numérotées de rang/tour de la section ("Round N", "Rnd N", "Rang N", "Tour N" ou équivalent dans la langue du patron) et prends le N le plus élevé — c'est le target, même si du texte non numéroté suit ensuite (rembourrage/stuffing, FO/rabattre, attache d'une pièce, note, référence à une image). Ne JAMAIS mettre null simplement parce qu'une étape finale non numérotée suit le dernier rang/tour : cette étape fait partie de la même section, elle ne change pas le compte. IMPORTANT : mettre null UNIQUEMENT si le patron est multi-tailles avec des valeurs différentes par taille (format "19-20-21-23 cm" ou "XS-S-M-L") et qu'on ne connaît pas la taille choisie — jamais pour une autre raison,
       "description": "TOUTES les instructions complètes de cette section, rang par rang ou étape par étape (string)",
       "secondary_counter": {
         "label": "libellé court (ex: Répétitions du motif, Tours de diminution)",

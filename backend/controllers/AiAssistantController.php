@@ -205,7 +205,11 @@ class AiAssistantController
                         // pistes concrètes (jamais juste une clarification) dépassait souvent
                         // 1024 tokens et coupait la réponse en plein milieu — d'autant plus
                         // maintenant qu'on demande aussi les suggestions de suivi à la fin.
-                        'generationConfig' => ['maxOutputTokens' => $isContextualRequest ? 2048 : 1024]
+                        // Relevé de 2048 à 4096 après un cas réel de coupure en pleine phrase
+                        // (voir ai_assistant_feedback) — le coût ne dépend que des tokens
+                        // réellement générés, pas du plafond, donc ça ne coûte rien de plus
+                        // pour les réponses qui se terminaient déjà normalement.
+                        'generationConfig' => ['maxOutputTokens' => $isContextualRequest ? 4096 : 1024]
                     ]
                 ]
             );
@@ -332,6 +336,7 @@ FORMAT DES RÉPONSES
 - Pour les calculs : montre toujours la formule + un exemple chiffré concret
 - Si des données manquent pour répondre (échantillon, nombre de mailles, taille souhaitée...), demande-les en une seule question claire
 - Si tu n'es pas certain, dis-le — ne jamais inventer une technique ou un chiffre
+- ORIENTATION/POSITION : une étiquette comme "bras droit"/"jambe gauche" sert seulement à distinguer deux pièces identiques (make 2), ce n'est PAS une position spatiale sur l'ouvrage assemblé — ne déduis jamais qu'un repère de couture ou un fil qui dépasse se trouve "sur tel côté du corps" si le patron ne le précise pas explicitement. Si la question porte sur une orientation/position que le patron ne définit pas noir sur blanc, dis-le clairement et réoriente vers un repère réel du patron (ex: le rang identifié comme le dos) plutôt que d'inventer une position avec assurance
 - Utilise les termes français en priorité, avec l'équivalent anglais entre parenthèses si utile (ex : diminution (k2tog))
 - Pour les listes courtes (≤ 4 éléments) : pas de bullet points, écris en ligne
 - Pour les explications longues : utilise des titres courts en gras pour structurer
