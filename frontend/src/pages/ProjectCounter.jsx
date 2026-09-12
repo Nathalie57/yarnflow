@@ -3866,76 +3866,141 @@ const ProjectCounter = () => {
         {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
         <div className="space-y-3 sm:space-y-0">
           {/* Ligne 1 mobile: Section + Compteur | Desktop: cachée car tout sur une seule ligne */}
-          <div className="flex sm:hidden items-center justify-between gap-2">
-            {/* Section active mobile */}
-            <div className="text-left flex-shrink min-w-0">
-              <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
-              <div className="font-semibold text-gray-900 text-sm line-clamp-2 max-w-[180px]">
-                {currentSectionId ? (
-                  sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
-                ) : (
-                  t('ui.wholeProject')
-                )}
-              </div>
-              {!isFocusMode && showMoreOptions && (
-                <button
-                  onClick={() => setShowReminderManager(true)}
-                  className={`mt-0.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
-                >
-                  <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                  {t('ui.reminders')}
-                </button>
-              )}
-            </div>
-
-            {/* Compteur mobile */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={handleDecrementRow}
-                disabled={currentRow === 0}
-                className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
-              >
-                −
-              </button>
-              <div
-                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
-                onClick={handleCounterClick}
-                title={t('ui.clickToEdit')}
-              >
-                {isEditingCounter ? (
-                  <input
-                    type="number"
-                    step={counterUnit === 'cm' ? '0.5' : '1'}
-                    min="0"
-                    value={counterInputValue}
-                    onChange={(e) => setCounterInputValue(e.target.value)}
-                    onKeyDown={handleCounterInputKeyDown}
-                    onBlur={handleCounterInputSubmit}
-                    autoFocus
-                    className="text-5xl font-bold text-primary-600 w-full text-center outline-none tabular-nums"
-                  />
-                ) : (
-                  <div className="text-5xl font-bold text-primary-600 tabular-nums leading-tight">
-                    {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
+          <div className="sm:hidden">
+            {/* [AI:Claude] Retour utilisatrice : en mode travail, le compteur (l'élément qu'on
+                touche à chaque rang) restait de la même petite taille que collé à côté du nom
+                de section — alors que c'est justement l'élément à mettre le plus en avant une
+                fois en train de compter. Layout empilé + compteur pleine largeur uniquement en
+                mode travail ; au repos, la disposition compacte d'origine ne change pas. */}
+            {isFocusMode ? (
+              <div className="space-y-2">
+                <div className="text-left min-w-0">
+                  <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
+                  <div className="font-semibold text-gray-900 text-sm line-clamp-2">
+                    {currentSectionId ? (
+                      sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
+                    ) : (
+                      t('ui.wholeProject')
+                    )}
                   </div>
-                )}
-                <div className="text-[10px] text-gray-400 leading-none mt-0.5">
-                  {progressData.total
-                    ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
-                    : counterUnit === 'cm' ? 'cm' : 'rangs'}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleDecrementRow}
+                    disabled={currentRow === 0}
+                    className="w-14 h-14 flex-shrink-0 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-3xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
+                  >
+                    −
+                  </button>
+                  <div
+                    className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 text-center py-3 cursor-pointer"
+                    onClick={handleCounterClick}
+                    title={t('ui.clickToEdit')}
+                  >
+                    {isEditingCounter ? (
+                      <input
+                        type="number"
+                        step={counterUnit === 'cm' ? '0.5' : '1'}
+                        min="0"
+                        value={counterInputValue}
+                        onChange={(e) => setCounterInputValue(e.target.value)}
+                        onKeyDown={handleCounterInputKeyDown}
+                        onBlur={handleCounterInputSubmit}
+                        autoFocus
+                        className="text-6xl font-bold text-primary-600 w-full text-center outline-none tabular-nums"
+                      />
+                    ) : (
+                      <div className="text-6xl font-bold text-primary-600 tabular-nums leading-tight">
+                        {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-400 leading-none mt-1">
+                      {progressData.total
+                        ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
+                        : counterUnit === 'cm' ? 'cm' : 'rangs'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleIncrementRow}
+                    className="w-14 h-14 flex-shrink-0 bg-primary-600 text-white rounded-xl text-3xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
-              <div className="relative">
-                <button
-                  onClick={handleIncrementRow}
-                  className="w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
-                >
-                  +
-                </button>
+            ) : (
+              <div className="flex items-center justify-between gap-2">
+                {/* Section active mobile */}
+                <div className="text-left flex-shrink min-w-0">
+                  <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
+                  <div className="font-semibold text-gray-900 text-sm line-clamp-2 max-w-[180px]">
+                    {currentSectionId ? (
+                      sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
+                    ) : (
+                      t('ui.wholeProject')
+                    )}
+                  </div>
+                  {showMoreOptions && (
+                    <button
+                      onClick={() => setShowReminderManager(true)}
+                      className={`mt-0.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                    >
+                      <svg className="w-3 h-3 flex-shrink-0" fill={reminders.filter(r => !r.done).length > 0 ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      {t('ui.reminders')}
+                    </button>
+                  )}
+                </div>
+
+                {/* Compteur mobile */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={handleDecrementRow}
+                    disabled={currentRow === 0}
+                    className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
+                  >
+                    −
+                  </button>
+                  <div
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
+                    onClick={handleCounterClick}
+                    title={t('ui.clickToEdit')}
+                  >
+                    {isEditingCounter ? (
+                      <input
+                        type="number"
+                        step={counterUnit === 'cm' ? '0.5' : '1'}
+                        min="0"
+                        value={counterInputValue}
+                        onChange={(e) => setCounterInputValue(e.target.value)}
+                        onKeyDown={handleCounterInputKeyDown}
+                        onBlur={handleCounterInputSubmit}
+                        autoFocus
+                        className="text-5xl font-bold text-primary-600 w-full text-center outline-none tabular-nums"
+                      />
+                    ) : (
+                      <div className="text-5xl font-bold text-primary-600 tabular-nums leading-tight">
+                        {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
+                      </div>
+                    )}
+                    <div className="text-[10px] text-gray-400 leading-none mt-0.5">
+                      {progressData.total
+                        ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
+                        : counterUnit === 'cm' ? 'cm' : 'rangs'}
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <button
+                      onClick={handleIncrementRow}
+                      className="w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Retour à la ligne à toute largeur si Session+Total+Pause+Arrêter ne
@@ -4155,9 +4220,12 @@ const ProjectCounter = () => {
           </button>
         )}
 
-        {/* [AI:Claude] Compteurs secondaires (PLUS/PRO) — plusieurs par section/projet, max {MAX_SECONDARY_COUNTERS} */}
-        {(isFocusMode || showMoreOptions) && (!canUseSecondaryCounters ? (
-          !isFocusMode && (
+        {/* [AI:Claude] Compteurs secondaires (PLUS/PRO) — plusieurs par section/projet, max
+            {MAX_SECONDARY_COUNTERS}. Toujours visible (pas replié dans "Plus d'options") :
+            contrairement aux rappels/chrono total (info secondaire), c'est la seule façon de
+            créer un nouveau compteur secondaire — le cacher derrière un clic supplémentaire
+            empêchait d'en ajouter un au repos. */}
+        {!canUseSecondaryCounters ? (
           <div className="pt-2 border-t border-primary-300/50">
             <button
               onClick={() => setUpgradeFeature('secondary_counter')}
@@ -4169,7 +4237,6 @@ const ProjectCounter = () => {
               {t('ui.secondaryCounterPlus')}
             </button>
           </div>
-          )
         ) : (
           <div className="pt-2 border-t border-primary-300/50 space-y-3">
             {secondaryCounters.map(counter => (
@@ -4386,7 +4453,7 @@ const ProjectCounter = () => {
               <p className="text-xs text-gray-500">{t('ui.secondaryLimitReached', { max: MAX_SECONDARY_COUNTERS })}</p>
             ))}
           </div>
-        ))}
+        )}
 
         {/* [AI:Claude] Mode travail : pendant que le timer tourne, les instructions de la
             section active restent affichées sous le compteur (dans le bloc sticky) au lieu
