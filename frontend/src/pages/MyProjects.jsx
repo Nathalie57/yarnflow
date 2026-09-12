@@ -215,6 +215,11 @@ const MyProjects = () => {
   useEffect(() => {
     if (location.pathname === '/my-projects') {
       fetchProjects()
+      // [AI:Claude] Bug vécu : après avoir confirmé un import via la bannière "Reprendre",
+      // la liste se rafraîchissait bien (nouveau projet visible) mais la bannière restait
+      // affichée — elle n'était vérifiée qu'au tout premier montage du composant, jamais
+      // réévaluée au retour sur cette page si React ne démonte/remonte pas MyProjects.
+      fetchPendingImport()
     }
   }, [location.pathname])
 
@@ -224,6 +229,7 @@ const MyProjects = () => {
       if (!document.hidden && location.pathname === '/my-projects') {
         // La page est redevenue visible, rafraîchir les projets
         fetchProjects()
+        fetchPendingImport()
       }
     }
 
@@ -862,19 +868,21 @@ const MyProjects = () => {
           onglet fermé pendant l'analyse. Les données sont déjà en base : le lien reprend
           directement l'écran de confirmation, sans refaire analyser le patron. */}
       {pendingImport && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-          <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-            <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-amber-800">{t('myProjects.pendingImportTitle')}</p>
-            <p className="text-sm text-amber-700 mt-0.5">{t('myProjects.pendingImportDesc', { name: pendingImport.source_name || t('myProjects.pendingImportUntitled') })}</p>
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-start gap-3">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-amber-800">{t('myProjects.pendingImportTitle')}</p>
+              <p className="text-sm text-amber-700 mt-0.5">{t('myProjects.pendingImportDesc', { name: pendingImport.source_name || t('myProjects.pendingImportUntitled') })}</p>
+            </div>
           </div>
           <button
             onClick={() => navigate('/smart-project-creator?resume=1')}
-            className="flex-shrink-0 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
+            className="w-full sm:w-auto flex-shrink-0 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
           >
             {t('myProjects.pendingImportResume')}
           </button>
