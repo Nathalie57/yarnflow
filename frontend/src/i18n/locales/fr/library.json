@@ -626,6 +626,14 @@
     "stash": {
       "title": "Mon stock",
       "description": "Ton inventaire de pelotes — marque, coloris, métrages, quantités."
+    },
+    "tools": {
+      "title": "Outils",
+      "description": "Calculettes laine, aiguilles, poids, jauge et conversions."
+    },
+    "gallery": {
+      "title": "Galerie photos",
+      "description": "Tes photos de projets sublimées par YarnFlow, prêtes à partager."
     }
   }
 }

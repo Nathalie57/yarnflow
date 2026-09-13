@@ -626,6 +626,14 @@
     "stash": {
       "title": "My stash",
       "description": "Your yarn inventory — brand, colourway, yardage, quantities."
+    },
+    "tools": {
+      "title": "Tools",
+      "description": "Yarn, needle, weight, gauge calculators and conversions."
+    },
+    "gallery": {
+      "title": "Photo gallery",
+      "description": "Your project photos enhanced by YarnFlow, ready to share."
     }
   }
 }

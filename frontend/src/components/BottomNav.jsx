@@ -7,8 +7,8 @@ const STASH_NEW_KEY = 'yf_stash_new_seen'
 const BottomNav = ({ onOpenAi }) => {
   const { t } = useTranslation()
   const location = useLocation()
-  const isActive = (path) => location.pathname === path
-  const isLibraryActive = location.pathname === '/bibliotheque' || location.pathname === '/pattern-library' || location.pathname === '/stash' || location.pathname.startsWith('/pattern-library/')
+  const isProjectsActive = location.pathname === '/my-projects' || location.pathname.startsWith('/projects/')
+  const isLibraryActive = ['/bibliotheque', '/pattern-library', '/stash', '/tools', '/gallery'].includes(location.pathname) || location.pathname.startsWith('/pattern-library/')
 
   const [showNew, setShowNew] = useState(() => !localStorage.getItem(STASH_NEW_KEY))
   const isFirstRender = useRef(true)
@@ -31,27 +31,27 @@ const BottomNav = ({ onOpenAi }) => {
     >
       <div className="flex items-center justify-around px-1 py-1.5">
 
-        {/* Outils */}
-        <Link to="/tools" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1">
-          <div className={`p-1.5 rounded-xl transition-colors duration-150 ${isActive('/tools') ? 'bg-primary-50' : ''}`}>
-            <svg className={`w-6 h-6 transition-colors duration-150 ${isActive('/tools') ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-            </svg>
-          </div>
-          <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/tools') ? 'text-primary-600' : 'text-gray-400'}`}>
-            {t('nav.tools')}
-          </span>
-        </Link>
-
         {/* Projets */}
         <Link to="/my-projects" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1">
-          <div className={`p-1.5 rounded-xl transition-colors duration-150 ${isActive('/my-projects') ? 'bg-primary-50' : ''}`}>
-            <svg className={`w-6 h-6 transition-colors duration-150 ${isActive('/my-projects') ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+          <div className={`p-1.5 rounded-xl transition-colors duration-150 ${isProjectsActive ? 'bg-primary-50' : ''}`}>
+            <svg className={`w-6 h-6 transition-colors duration-150 ${isProjectsActive ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
             </svg>
           </div>
-          <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/my-projects') ? 'text-primary-600' : 'text-gray-400'}`}>
+          <span className={`text-[10px] font-medium transition-colors duration-150 ${isProjectsActive ? 'text-primary-600' : 'text-gray-400'}`}>
             {t('nav.projects')}
+          </span>
+        </Link>
+
+        {/* Créer un projet — action principale, mise en avant visuellement */}
+        <Link to="/my-projects?create=1" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1 -mt-4">
+          <div className="w-12 h-12 rounded-full bg-primary-600 shadow-lg shadow-primary-600/30 flex items-center justify-center">
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </div>
+          <span className="text-[10px] font-medium text-primary-600">
+            {t('nav.create')}
           </span>
         </Link>
 
@@ -70,7 +70,7 @@ const BottomNav = ({ onOpenAi }) => {
           </span>
         </button>
 
-        {/* Bibliothèque */}
+        {/* Ressources (bibliothèque, stock, outils, galerie) */}
         <Link to="/bibliotheque" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1 relative">
           <div className={`p-1.5 rounded-xl transition-colors duration-150 relative ${isLibraryActive ? 'bg-primary-50' : ''}`}>
             <svg className={`w-6 h-6 transition-colors duration-150 ${isLibraryActive ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
@@ -82,18 +82,6 @@ const BottomNav = ({ onOpenAi }) => {
           </div>
           <span className={`text-[10px] font-medium transition-colors duration-150 ${isLibraryActive ? 'text-primary-600' : 'text-gray-400'}`}>
             {t('nav.resources')}
-          </span>
-        </Link>
-
-        {/* Galerie */}
-        <Link to="/gallery" className="flex flex-col items-center gap-0.5 min-w-[56px] py-1">
-          <div className={`p-1.5 rounded-xl transition-colors duration-150 ${isActive('/gallery') ? 'bg-primary-50' : ''}`}>
-            <svg className={`w-6 h-6 transition-colors duration-150 ${isActive('/gallery') ? 'text-primary-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-            </svg>
-          </div>
-          <span className={`text-[10px] font-medium transition-colors duration-150 ${isActive('/gallery') ? 'text-primary-600' : 'text-gray-400'}`}>
-            {t('nav.gallery')}
           </span>
         </Link>
 

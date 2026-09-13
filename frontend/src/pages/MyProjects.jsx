@@ -165,6 +165,14 @@ const MyProjects = () => {
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
 
+  // [AI:Claude] Ouvrir directement le wizard de création depuis le bouton "+" de la bottom nav
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('create') === '1') {
+      setShowCreateModal(true)
+      navigate('/my-projects', { replace: true })
+    }
+  }, [location.search])
+
   // [AI:Claude] Restaurer le brouillon de création si la page a été rechargée (tab mobile)
   useEffect(() => {
     try {
