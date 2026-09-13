@@ -388,6 +388,20 @@ const MyProjects = () => {
     } catch {}
   }
 
+  // [AI:Claude] Écarter un import abandonné sans le reprendre ni attendre 7 jours — sinon,
+  // une fois celui-ci résolu, un import plus ancien traînant en base prenait aussitôt sa
+  // place et la bannière semblait ne jamais disparaître. Re-fetch après pour afficher
+  // immédiatement le suivant s'il y en a un, plutôt que de juste masquer l'actuel.
+  const handleDismissPending = async () => {
+    const importId = pendingImport?.import_id
+    if (!importId) return
+    setPendingImport(null)
+    try {
+      await api.post('/projects/smart-create/pending/dismiss', { import_id: importId })
+    } catch {}
+    fetchPendingImport()
+  }
+
   // [AI:Claude] Récupérer les crédits photos IA
   const fetchCredits = async () => {
     try {
@@ -888,12 +902,20 @@ const MyProjects = () => {
               <p className="text-sm text-amber-700 mt-0.5">{t('myProjects.pendingImportDesc', { name: pendingImport.source_name || t('myProjects.pendingImportUntitled') })}</p>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/smart-project-creator?resume=1')}
-            className="w-full sm:w-auto flex-shrink-0 px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
-          >
-            {t('myProjects.pendingImportResume')}
-          </button>
+          <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
+            <button
+              onClick={handleDismissPending}
+              className="flex-1 sm:flex-none px-4 py-2 bg-white border border-amber-300 text-amber-700 rounded-lg text-sm font-semibold hover:bg-amber-100 transition"
+            >
+              {t('myProjects.pendingImportDismiss')}
+            </button>
+            <button
+              onClick={() => navigate('/smart-project-creator?resume=1')}
+              className="flex-1 sm:flex-none px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
+            >
+              {t('myProjects.pendingImportResume')}
+            </button>
+          </div>
         </div>
       )}
 

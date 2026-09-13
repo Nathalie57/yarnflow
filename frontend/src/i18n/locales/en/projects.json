@@ -9,6 +9,7 @@
     "pendingImportDesc": "\"{{name}}\" was analyzed but the project hasn't been created yet.",
     "pendingImportUntitled": "Your last import",
     "pendingImportResume": "Resume",
+    "pendingImportDismiss": "Dismiss",
     "paymentSuccessDesc": "Your subscription is now active. Enjoy all the {{plan}} features.",
     "welcomeNamed": "Welcome, {{name}}!",
     "welcome": "Welcome to YarnFlow!",

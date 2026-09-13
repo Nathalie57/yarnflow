@@ -153,6 +153,7 @@ class SmartProjectController
                  FROM ai_pattern_imports
                  WHERE user_id = :user_id
                    AND project_id IS NULL
+                   AND dismissed_at IS NULL
                    AND ai_status IN ('success', 'partial')
                    AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
                  ORDER BY created_at DESC
@@ -182,6 +183,43 @@ class SmartProjectController
             error_log('[SmartProject] Erreur pendingImport: ' . $e->getMessage());
             // Best-effort : ne jamais bloquer l'affichage de "Mes projets" pour ça
             $this->jsonResponse(['pending' => false]);
+        }
+    }
+
+    /**
+     * POST /api/projects/smart-create/pending/dismiss
+     *
+     * [AI:Claude] Écarte un import analysé jamais rattaché à un projet, sans le reprendre ni
+     * attendre les 7 jours de pendingImport(). Sans ça, un import de test abandonné revenait
+     * indéfiniment dans la bannière "patron en attente" — et si un autre import plus ancien
+     * traînait aussi, il prenait sa place aussitôt le précédent résolu, donnant l'impression
+     * que la bannière ne disparaissait jamais.
+     */
+    public function dismissPending(): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+            $data = json_decode(file_get_contents('php://input'), true);
+
+            if (empty($data['import_id'])) {
+                $this->jsonResponse(['error' => 'ID d\'import manquant'], 400);
+                return;
+            }
+
+            $db = \App\Config\Database::getInstance()->getConnection();
+            $stmt = $db->prepare(
+                "UPDATE ai_pattern_imports SET dismissed_at = NOW()
+                 WHERE id = :import_id AND user_id = :user_id AND project_id IS NULL"
+            );
+            $stmt->execute([
+                'import_id' => (int)$data['import_id'],
+                'user_id' => $userId,
+            ]);
+
+            $this->jsonResponse(['success' => true]);
+        } catch (\Exception $e) {
+            error_log('[SmartProject] Erreur dismissPending: ' . $e->getMessage());
+            $this->jsonResponse(['error' => 'Erreur serveur'], 500);
         }
     }
 
