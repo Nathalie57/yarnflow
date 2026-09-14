@@ -492,20 +492,20 @@ const Landing = () => {
               <div className="space-y-2">
                 <Link
                   to="/register"
-                  onClick={() => trackSubscriptionClick('plus', 'annual', 'landing')}
-                  className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
-                >
-                  {t('pricing.plus.ctaAnnual')}
-                </Link>
-                <Link
-                  to="/register"
                   onClick={() => trackSubscriptionClick('plus', 'monthly', 'landing')}
-                  className="block w-full text-center text-gray-500 hover:text-gray-700 text-sm py-2 transition"
+                  className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
                 >
                   {t('pricing.plus.ctaMonthly')}
                 </Link>
+                <Link
+                  to="/register"
+                  onClick={() => trackSubscriptionClick('plus', 'annual', 'landing')}
+                  className="block w-full text-center text-gray-500 hover:text-gray-700 text-sm py-2 transition"
+                >
+                  {t('pricing.plus.ctaAnnual')}
+                </Link>
               </div>
-              <p className="text-xs text-green-600 font-medium text-center">{t('pricing.plus.billing')}</p>
+              <p className="text-xs text-gray-400 text-center -mt-1">{t('pricing.plus.billing')}</p>
               <p className="text-xs text-gray-500 text-center mt-1">{t('pricing.noCommitment')}</p>
             </div>
 
@@ -529,20 +529,20 @@ const Landing = () => {
               <div className="space-y-2">
                 <Link
                   to="/register"
-                  onClick={() => trackSubscriptionClick('pro', 'annual', 'landing')}
-                  className="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
-                >
-                  {t('pricing.pro.ctaAnnual')}
-                </Link>
-                <Link
-                  to="/register"
                   onClick={() => trackSubscriptionClick('pro', 'monthly', 'landing')}
-                  className="block w-full text-center border-2 border-primary-600 text-primary-700 hover:bg-primary-50 font-semibold py-2.5 rounded-xl transition text-sm"
+                  className="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
                 >
                   {t('pricing.pro.ctaMonthly')}
                 </Link>
+                <Link
+                  to="/register"
+                  onClick={() => trackSubscriptionClick('pro', 'annual', 'landing')}
+                  className="block w-full text-center border-2 border-primary-600 text-primary-700 hover:bg-primary-50 font-semibold py-2.5 rounded-xl transition text-sm"
+                >
+                  {t('pricing.pro.ctaAnnual')}
+                </Link>
               </div>
-              <p className="text-xs text-green-600 font-medium text-center">{t('pricing.pro.billing')}</p>
+              <p className="text-xs text-gray-400 text-center -mt-1">{t('pricing.pro.billing')}</p>
               <p className="text-xs text-gray-500 text-center mt-1">{t('pricing.noCommitment')}</p>
             </div>
           </div>

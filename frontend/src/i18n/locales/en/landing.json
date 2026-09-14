@@ -155,7 +155,7 @@
     "plus": {
       "badge": "Recommended",
       "name": "Plus",
-      "price": "€2.49",
+      "price": "€3.99",
       "tagline": "Your everyday project companion.",
       "desc": "For those who always have several works in progress and want to make the most of YarnFlow.",
       "features": [
@@ -165,13 +165,13 @@
         "Your assistant on hand throughout the project",
         "Translate your patterns, make your photos shine before you share them"
       ],
-      "billing": "€29.99/year · that's €2.49/month",
-      "ctaAnnual": "Choose Plus",
-      "ctaMonthly": "Monthly — €3.99/month"
+      "billing": "that's €2.49/month",
+      "ctaAnnual": "Switch to annual — €29.99/year",
+      "ctaMonthly": "Choose Plus"
     },
     "pro": {
       "name": "Pro",
-      "price": "€4.99",
+      "price": "€6.99",
       "tagline": "YarnFlow for enthusiasts.",
       "desc": "For those juggling several projects who want to get the most out of everything YarnFlow can do.",
       "features": [
@@ -181,9 +181,9 @@
         "Photo Studio for every make",
         "Translate every pattern into your own language"
       ],
-      "billing": "€59.99/year · that's €4.99/month",
-      "ctaAnnual": "Choose Pro",
-      "ctaMonthly": "Monthly — €6.99/month"
+      "billing": "that's €4.99/month",
+      "ctaAnnual": "Switch to annual — €59.99/year",
+      "ctaMonthly": "Choose Pro"
     },
     "allPlansInclude": {
       "title": "Your projects stay yours.",

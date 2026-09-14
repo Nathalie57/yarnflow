@@ -155,7 +155,7 @@
     "plus": {
       "badge": "Recommandé",
       "name": "Plus",
-      "price": "2,49 €",
+      "price": "3,99 €",
       "tagline": "Le compagnon de tes projets au quotidien.",
       "desc": "Pour celles qui ont toujours plusieurs ouvrages en cours et veulent profiter pleinement de YarnFlow.",
       "features": [
@@ -165,13 +165,13 @@
         "Ton assistant à disposition tout au long du projet",
         "Traduis tes patrons en langue étrangère, sublime tes photos avant de les partager"
       ],
-      "billing": "29,99 €/an · soit 2,49 €/mois",
-      "ctaAnnual": "Choisir Plus",
-      "ctaMonthly": "Mensuel — 3,99 €/mois"
+      "billing": "soit 2,49 €/mois",
+      "ctaAnnual": "Passer à l'annuel — 29,99 €/an",
+      "ctaMonthly": "Choisir Plus"
     },
     "pro": {
       "name": "Pro",
-      "price": "4,99 €",
+      "price": "6,99 €",
       "tagline": "YarnFlow pour les passionnées.",
       "desc": "Pour celles qui multiplient les projets et veulent profiter au maximum de tout ce que YarnFlow peut faire.",
       "features": [
@@ -181,9 +181,9 @@
         "Studio Photo pour toutes tes créations",
         "Traduis tous tes patrons dans leur langue d'origine"
       ],
-      "billing": "59,99 €/an · soit 4,99 €/mois",
-      "ctaAnnual": "Choisir Pro",
-      "ctaMonthly": "Mensuel — 6,99 €/mois"
+      "billing": "soit 4,99 €/mois",
+      "ctaAnnual": "Passer à l'annuel — 59,99 €/an",
+      "ctaMonthly": "Choisir Pro"
     },
     "allPlansInclude": {
       "title": "Tes projets restent à toi.",

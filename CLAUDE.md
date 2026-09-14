@@ -9,31 +9,34 @@
 ## 🎯 Concept
 Différenciation vs concurrents : stats avancées (vitesse, graphiques), embellissement IA photos, sync cloud multi-devices.
 
-**Pricing** : FREE (3 projets actifs, 5 crédits photos/mois) | PLUS (3.99€/mois ou 29.99€/an soit 2.49€/mois, 7 projets, 15 crédits photos/mois) | PRO (6.99€/mois ou 59.99€/an soit 4.99€/mois, projets illimités, 30 crédits photos/mois) | Early Bird (2.99€/mois pour waitlist)
+**Pricing** : FREE (projets illimités, 2 crédits photos à vie, 5 questions assistant/mois) | PLUS (3.99€/mois ou 29.99€/an soit 2.49€/mois, projets illimités, 5 crédits photos/mois, 10 questions assistant/mois) | PRO (6.99€/mois ou 59.99€/an soit 4.99€/mois, projets illimités, 20 crédits photos/mois, 30 questions assistant/mois) | Early Bird (2.99€/mois pour waitlist, 20 crédits photos/mois, 30 questions assistant/mois)
 
 ---
 
 ## 💰 Plans et tarification
 
 ### Plan GRATUIT — YarnFlow Basic
-- ✅ 3 projets actifs max
+- ✅ Projets illimités
 - ✅ Patrons illimités
 - ✅ Sections illimitées
 - ✅ Compteur de rangs
 - ✅ Notes et organisation simplifiée
-- ✅ **5 crédits photos gratuits par mois** (pour tester la génération d'images)
+- ✅ **2 crédits photos gratuits à vie** (jamais réinitialisés — pour tester la génération d'images)
+- ✅ **5 questions assistant IA/mois**
 - ✅ **Filtres de base** (Tous/En cours/Terminés/Favoris)
 - ✅ **Favoris** (marquer projets en ⭐)
 - ❌ Pas de tags personnalisés
 - ✅ Accès à toutes les fonctionnalités de base
 
 ### Plan PLUS — 3,99 €/mois
-- ✅ 7 projets actifs
+- ✅ Projets illimités
 - ✅ Patrons illimités
 - ✅ Sections illimitées
 - ✅ Compteur de rangs
 - ✅ Organisation premium
-- ✅ **15 crédits photos par mois**
+- ✅ **5 crédits photos par mois**
+- ✅ **10 questions assistant IA/mois**
+- ✅ **3 imports de patrons intelligents/mois**
 - ✅ **Tags personnalisés illimités** (cadeau, bébé, urgent...)
 - ✅ **Filtrage multi-tags**
 - ✅ **Suggestions de tags intelligentes**
@@ -49,7 +52,9 @@ Différenciation vs concurrents : stats avancées (vitesse, graphiques), embelli
 - ✅ Sections illimitées
 - ✅ Compteur de rangs
 - ✅ Organisation premium complète
-- ✅ **30 crédits photos par mois** (génération d'images pro)
+- ✅ **20 crédits photos par mois** (génération d'images pro)
+- ✅ **30 questions assistant IA/mois**
+- ✅ **15 imports de patrons intelligents/mois**
 - ✅ Support prioritaire + réponses accélérées
 - ✅ Accès premium aux nouveautés
 
@@ -59,9 +64,8 @@ Différenciation vs concurrents : stats avancées (vitesse, graphiques), embelli
 
 ### Plan Early Bird — 2,99 €/mois (Waitlist uniquement)
 - ✅ **Réservé aux inscrits sur la waitlist** (200 places)
-- ✅ Tous les avantages du plan PRO
+- ✅ Quotas propres (pas un simple alias PRO) : 20 crédits photos/mois, 30 questions assistant/mois, 15 imports/mois
 - ✅ **Prix bloqué à 2.99€/mois pendant 12 mois**
-- ✅ 30 crédits photos/mois
 - ✅ Support prioritaire
 
 ---
@@ -133,7 +137,7 @@ GET    /api/projects?tags=a,b&favorite=true # Filtrer projets
 
 ## 📸 AI Photo Studio
 
-**Crédits** : FREE 5/mois, PLUS 15/mois, PRO 30/mois, Early Bird 30/mois
+**Crédits** : FREE 2 à vie (jamais réinitialisés), PLUS 5/mois, PRO 20/mois, Early Bird 20/mois
 **Styles** : lifestyle, studio, scandinavian, nature, cafe
 **Presets** : 9 par catégorie (Hero, Produit, Etsy, Instagram, Facebook, Carrousel)
 **Multi-génération** : 1-5 photos en batch, -20% si 5 photos (4 crédits), `parent_photo_id` pour variations
@@ -261,11 +265,11 @@ cd frontend && npm install && npm run dev
 - ✅ Compteur flottant avec timer et wake lock
 - ✅ Bibliothèque de patrons avec catégories
 
-**✅ Pricing cohérent dans toute l'application** :
-- ✅ Plan FREE : 5 crédits photos/mois, 3 projets actifs max (les projets terminés ne comptent pas)
-- ✅ Plan PLUS : 3.99€/mois (29.99€/an soit 2.49€/mois), 7 projets actifs, 15 crédits photos/mois
-- ✅ Plan PRO : 6.99€/mois (59.99€/an soit 4.99€/mois), projets illimités, 30 crédits photos/mois
-- ✅ Plan Early Bird : 2.99€/mois (waitlist uniquement)
+**✅ Pricing cohérent dans toute l'application** (source de vérité : `backend/config/constants.php` + `backend/services/CreditManager.php`) :
+- ✅ Plan FREE : 2 crédits photos à vie (jamais réinitialisés), projets illimités, 5 questions assistant/mois
+- ✅ Plan PLUS : 3.99€/mois (29.99€/an soit 2.49€/mois), projets illimités, 5 crédits photos/mois, 10 questions assistant/mois
+- ✅ Plan PRO : 6.99€/mois (59.99€/an soit 4.99€/mois), projets illimités, 20 crédits photos/mois, 30 questions assistant/mois
+- ✅ Plan Early Bird : 2.99€/mois (waitlist uniquement), 20 crédits photos/mois, 30 questions assistant/mois
 - ✅ Packs crédits photos : 50@4.99€, 150@9.99€
 
 ---

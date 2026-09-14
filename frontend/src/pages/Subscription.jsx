@@ -188,7 +188,6 @@ const Subscription = () => {
   // affichaient un prix different de cette page.
   const plusPrice = PLAN_PRICES.plus.monthly
   const plusAnnualPrice = PLAN_PRICES.plus.annual
-  const plusMonthlyEquiv = PLAN_PRICES.plus.monthlyEquiv
 
   if (loading) {
     return (
@@ -327,10 +326,9 @@ const Subscription = () => {
           <div className="mb-4">
             <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">Plus</p>
             <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-bold text-gray-900">{plusMonthlyEquiv}</span>
+              <span className="text-3xl font-bold text-gray-900">{plusPrice}</span>
               <span className="text-sm text-gray-500">{t('ui.perMonthSuffix')}</span>
             </div>
-            <p className="text-xs text-green-600 font-medium mb-1">{t('ui.billedYearlySave2', { price: plusAnnualPrice })}</p>
             <p className="text-sm text-gray-500">{t('ui.plusDesc')}</p>
           </div>
 
@@ -361,19 +359,22 @@ const Subscription = () => {
           ) : (
             <div className="space-y-2">
               <button
-                onClick={() => handleSubscribe('plus_annual')}
+                onClick={handleSubscribePlus}
                 disabled={processing}
                 className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {processing ? t('ui.loadingEllipsis2') : t('ui.goPlusYearly', { price: plusAnnualPrice })}
-              </button>
-              <button
-                onClick={handleSubscribePlus}
-                disabled={processing}
-                className="w-full py-2.5 text-gray-500 hover:text-gray-700 text-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
-              >
                 {processing ? t('ui.loadingEllipsis2') : t('ui.monthlyPrice', { price: plusPrice })}
               </button>
+              <div className="text-center">
+                <button
+                  onClick={() => handleSubscribe('plus_annual')}
+                  disabled={processing}
+                  className="w-full py-2 text-xs text-gray-500 hover:text-gray-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {processing ? t('ui.loadingEllipsis2') : t('ui.goPlusYearly', { price: plusAnnualPrice })}
+                </button>
+                <p className="text-[11px] text-gray-400 -mt-1">{t('ui.billedYearlySave2', { price: plusAnnualPrice })}</p>
+              </div>
             </div>
           )}
         </div>
@@ -395,10 +396,9 @@ const Subscription = () => {
           <div className="mb-4 mt-2">
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">Pro</p>
             <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-bold text-gray-900">{PLAN_PRICES.pro.monthlyEquiv}</span>
+              <span className="text-3xl font-bold text-gray-900">{PLAN_PRICES.pro.monthly}</span>
               <span className="text-sm text-gray-500">{t('ui.perMonthSuffix')}</span>
             </div>
-            <p className="text-xs text-green-600 font-medium mb-1">{t('ui.billedYearlySave')}</p>
             <p className="text-sm text-gray-500">{t('ui.proDesc')}</p>
           </div>
 
@@ -419,19 +419,22 @@ const Subscription = () => {
           ) : (
             <div className="space-y-2">
               <button
-                onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro_annual')}
+                onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro')}
                 disabled={processing}
                 className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {processing ? t('ui.loadingEllipsis') : t('ui.goProYearly')}
-              </button>
-              <button
-                onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro')}
-                disabled={processing}
-                className="w-full py-2.5 border-2 border-primary-600 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
-              >
                 {processing ? t('ui.loadingEllipsis') : t('ui.chooseMonthly')}
               </button>
+              <div className="text-center">
+                <button
+                  onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro_annual')}
+                  disabled={processing}
+                  className="w-full py-2 text-xs text-gray-500 hover:text-gray-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {processing ? t('ui.loadingEllipsis') : t('ui.goProYearly')}
+                </button>
+                <p className="text-[11px] text-gray-400 -mt-1">{t('ui.billedYearlySave')}</p>
+              </div>
             </div>
           )}
         </div>
