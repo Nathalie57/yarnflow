@@ -630,7 +630,7 @@ HTML;
 
             $mail->isHTML(true);
             $mail->Body = $this->getOnboardingDay3EmailTemplate($name);
-            $mail->AltBody = "Bonjour $name,\n\nDepuis ton inscription il y a 3 jours, as-tu eu l'occasion de tricoter ?\n\nSi oui — c'est le bon moment pour ouvrir YarnFlow et noter ton rang actuel. Deux secondes, et tu ne perdras plus jamais ta place.\n\nSi pas encore — c'est normal. Garde juste YarnFlow en tête pour la prochaine session.\n\nAjouter mon projet : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $mail->AltBody = "Bonjour $name,\n\nDepuis ton inscription il y a 3 jours, as-tu eu l'occasion de tricoter ?\n\nSi oui — c'est le bon moment pour ouvrir YarnFlow et noter ton rang actuel. Deux secondes, et tu ne le perdras plus jamais.\n\nSi pas encore — c'est normal. Garde juste YarnFlow en tête pour la prochaine session.\n\nAjouter mon projet : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
@@ -673,7 +673,7 @@ HTML;
     </p>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 24px;">
         Si oui — c'est le bon moment pour ouvrir YarnFlow et noter ton rang actuel.<br>
-        Deux secondes, et tu ne perdras plus jamais ta place.
+        Deux secondes, et tu ne le perdras plus jamais.
     </p>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
         Si pas encore — garde juste YarnFlow en tête pour la prochaine session. La prochaine fois que tu seras interrompue en plein milieu d'un rang, tu sauras où aller.
@@ -690,7 +690,7 @@ HTML;
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
             <td style="padding:16px 20px;border-bottom:1px solid #e8ede8;">
-                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Tu notes ton rang</strong> — YarnFlow retient ta place. Même si tu es interrompue.</p>
+                <p style="margin:0;font-size:15px;color:#374151;"><strong style="color:#111827;">Tu notes ton rang</strong> — YarnFlow le garde en mémoire. Même si tu es interrompue.</p>
             </td>
         </tr>
         <tr>
@@ -804,7 +804,7 @@ HTML;
         Cela fait une semaine. Ton projet est toujours là, au rang où tu l'as laissé.
     </p>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
-        La prochaine fois que tu tricotes et que tu es interrompue, YarnFlow est là pour retenir ta place.
+        La prochaine fois que tu es interrompue en pleine rangée, ouvre YarnFlow : ton rang exact t'attend, pas besoin de recompter.
     </p>
 
     {$projectBlock}
@@ -1078,7 +1078,7 @@ HTML;
         Cela fait trois semaines. Tes projets sont toujours là, au rang où tu les as laissés.
     </p>
     <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
-        Aucune pression. Juste un rappel : la prochaine fois que tu reprends ton tricot et qu'on t'interrompt, YarnFlow est là pour que tu ne perdes plus ta place.
+        Aucune pression. Juste un rappel : la prochaine fois que tu es interrompue, YarnFlow a gardé ton rang exact — plus besoin de deviner où tu en étais.
     </p>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
