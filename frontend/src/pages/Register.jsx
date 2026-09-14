@@ -81,10 +81,11 @@ const Register = () => {
       if (result.success) {
         trackSignup('email')
         const pendingImport = localStorage.getItem('yf_pending_import')
-        // [AI:Claude] Le tour d'intro (4 écrans, cf. OnboardingIntro.jsx) ne s'affiche
-        // que sur une inscription "normale" — un import en attente (QR code) a sa propre
-        // destination immédiate, pas de raison de la retarder avec autre chose.
-        navigate(pendingImport ? `/import/${pendingImport}` : '/onboarding-intro?welcome=1')
+        // [AI:Claude] 2026-09-14 — Tour d'intro (OnboardingIntro.jsx) retiré : redondant
+        // avec l'écran "0 projet" de MyProjects (accroche + CTA import + vue d'ensemble
+        // des fonctionnalités), il n'ajoutait plus qu'un délai avant la première action
+        // réelle, au moment où la rétention J+1 est déjà fragile.
+        navigate(pendingImport ? `/import/${pendingImport}` : '/my-projects?welcome=1')
       } else {
         setError(result.error)
         setLoading(false)
