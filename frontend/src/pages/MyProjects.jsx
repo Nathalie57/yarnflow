@@ -1125,6 +1125,45 @@ const MyProjects = () => {
                 </button>
               </p>
 
+              {/* [AI:Claude] L'écran ne parlait que d'import de patron — quelqu'un qui n'a
+                  pas de patron à importer (ou passe par "Créer mon projet"/"Explorer un
+                  exemple") ne voyait jamais mentionnés le compteur, les notes, l'assistant
+                  ou le studio photo. Bande discrète, sous les vrais CTA, pour donner une
+                  vue d'ensemble sans concurrencer l'entonnoir principal. */}
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <p className="text-center text-xs text-gray-400 mb-3">{t('myProjects.featuresIntro')}</p>
+                <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                    <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="20" x2="17" y2="4" />
+                      <line x1="11" y1="20" x2="23" y2="4" />
+                      <circle cx="5" cy="20" r="1.5" fill="currentColor" stroke="none" />
+                      <circle cx="11" cy="20" r="1.5" fill="currentColor" stroke="none" />
+                    </svg>
+                    {t('myProjects.featureCounter')}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                    <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    {t('myProjects.featureNotes')}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                    <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    {t('myProjects.featureAssistant')}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                    <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                      <circle cx="12" cy="13" r="4" />
+                    </svg>
+                    {t('myProjects.featurePhoto')}
+                  </span>
+                </div>
+              </div>
+
             </div>
           ) : filteredProjects.length === 0 ? (
             <div className="max-w-xl mx-auto text-center py-12 px-6 bg-white rounded-xl border-2 border-gray-200">

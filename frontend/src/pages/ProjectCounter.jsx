@@ -239,7 +239,15 @@ const ProjectCounter = () => {
   const etapesEnvoyees = useRef(null)
 
   useEffect(() => {
-    if (!isDemoProject || !projectId) return
+    // [AI:Claude] 2026-09-14 — Élargi de "isDemoProject uniquement" à showTutorial
+    // (démo OU premier vrai projet) : le même tutoriel s'affiche dans les deux cas
+    // (voir showTutorial plus bas), mais seul le projet démo était jamais tracké.
+    // Impossible jusqu'ici de savoir si la majorité des utilisatrices, qui créent
+    // un vrai projet sans passer par la démo, découvrent le compteur/l'assistant/
+    // les sections. `traceur.current` (GA via gtag) n'écrit jamais en base — voir
+    // useAnalytics.trackEvent — donc ajout d'un log serveur direct (même endpoint
+    // que project_opened plus haut) pour pouvoir interroger ce funnel en SQL.
+    if (!(isDemoProject || isFirstProject) || !projectId) return
 
     if (etapesEnvoyees.current === null) {
       try {
@@ -247,11 +255,19 @@ const ProjectCounter = () => {
       } catch { etapesEnvoyees.current = new Set() }
     }
 
+    const contexte = isDemoProject ? 'demo' : 'first_project'
+
     const franchir = (etape) => {
       if (etapesEnvoyees.current.has(etape)) return
       etapesEnvoyees.current.add(etape)
       try { localStorage.setItem(cleEtapesEnvoyees, JSON.stringify([...etapesEnvoyees.current])) } catch { /* ignore */ }
-      traceur.current(etape, { project_id: projectId })
+      traceur.current(etape, { project_id: projectId, context: contexte })
+      api.post('/analytics/track-event', {
+        event_name: 'tutorial_step',
+        project_id: projectId,
+        step: etape,
+        context: contexte
+      }).catch(() => { /* best-effort, ne doit jamais bloquer le parcours */ })
     }
 
     franchir('opened')
@@ -259,7 +275,7 @@ const ProjectCounter = () => {
     if (demoSteps.askedAssistant) franchir('assistant_used')
     if (demoSteps.section) franchir('section_changed')
     if (demoSteps.dismissed) franchir('dismissed')
-  }, [isDemoProject, projectId, demoSteps, cleEtapesEnvoyees])
+  }, [isDemoProject, isFirstProject, projectId, demoSteps, cleEtapesEnvoyees])
 
   // [AI:Claude] Déclenche la popup de fin de checklist exactement au moment où la 3e
   // étape se termine (pas à chaque re-render une fois toutes faites, d'où le garde-fou
