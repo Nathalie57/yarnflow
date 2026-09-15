@@ -16,6 +16,23 @@ class ErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('❌ [ErrorBoundary] Erreur capturée:', error, errorInfo)
+
+    // [AI:Claude] 2026-09-15 — Vécu lors du bug isFirstProject (TDZ cassant toute
+    // ouverture de projet) : un rechargement complet suffisait à récupérer le bundle
+    // corrigé (fichiers JS hashés, index.html jamais mis en cache côté serveur), mais
+    // personne ne clique sur "Rafraîchir la page" face à un écran d'erreur rouge — les
+    // gens partent plutôt que d'insister. Tente un rechargement automatique, une seule
+    // fois par session (sessionStorage, pas localStorage : ne doit pas empêcher un essai
+    // à la prochaine visite) — l'écran d'erreur ne s'affiche que si ça replante après
+    // coup, signe d'un vrai bug plutôt que d'un bundle périmé.
+    try {
+      if (!sessionStorage.getItem('yf_error_reloaded')) {
+        sessionStorage.setItem('yf_error_reloaded', '1')
+        window.location.reload()
+        return
+      }
+    } catch { /* ignore */ }
+
     this.setState({
       error,
       errorInfo

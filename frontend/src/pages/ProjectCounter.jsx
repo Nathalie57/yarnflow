@@ -235,6 +235,11 @@ const ProjectCounter = () => {
   const traceur = useRef(trackTutorialStep)
   traceur.current = trackTutorialStep
 
+  // [AI:Claude] Doit être déclaré avant le useEffect ci-dessous qui le référence
+  // (dans son corps et son tableau de dépendances) — sinon TDZ : "Cannot access
+  // uninitialized variable" en prod dès l'arrivée sur un projet.
+  const [isFirstProject, setIsFirstProject] = useState(false)
+
   const cleEtapesEnvoyees = 'yf_tutorial_sent_' + projectId
   const etapesEnvoyees = useRef(null)
 
@@ -309,8 +314,8 @@ const ProjectCounter = () => {
   // [AI:Claude] v0.17.0 - Célébration premier rang
   // [AI:Claude] Remplace l'ancien tip statique "showFirstProjectTip" — sert maintenant
   // à activer la checklist tutoriel (voir isDemoProject/demoSteps) sur le premier vrai
-  // projet, en plus du projet démo.
-  const [isFirstProject, setIsFirstProject] = useState(false)
+  // projet, en plus du projet démo. Déclaration déplacée plus haut (voir commentaire
+  // au-dessus de cleEtapesEnvoyees) — reste ici uniquement pour la doc de showTutorial.
 
   // Affiche la checklist tutoriel sur le projet démo OU le premier vrai projet
   const showTutorial = isDemoProject || isFirstProject
