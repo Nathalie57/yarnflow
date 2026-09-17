@@ -22,8 +22,8 @@ export default function AiAssistantDrawer({ open, onClose }) {
           (sinon, sur un grand écran, un seul message isolé tout à droite d'un panneau
           pleine largeur donne une impression de mise en page cassée) */}
       <div
-        className={`fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[420px] z-50 bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl transition-transform duration-300 ease-out ${
-          open ? 'translate-y-0' : 'translate-y-full'
+        className={`fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[420px] z-50 bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl transition-[transform,visibility] duration-300 ease-out ${
+          open ? 'translate-y-0 visible' : 'translate-y-full invisible delay-300'
         }`}
         style={{ maxHeight: '85vh' }}
       >
