@@ -88,6 +88,18 @@ class WebFetchController {
                 return;
             }
 
+            // Le contenu distant n'est pas forcément du HTML (ex: lien direct vers un PDF) :
+            // le servir tel quel avec son vrai Content-Type évite de l'afficher comme du texte brut
+            $contentType = $result['content_type'] ?? '';
+            $isHtml = $contentType === '' || stripos($contentType, 'html') !== false;
+
+            if (!$isHtml) {
+                header('Content-Type: ' . $contentType);
+                header('X-Content-Type-Options: nosniff');
+                echo $result['html'];
+                return;
+            }
+
             // Réécrire les URLs
             $html = WebFetchService::rewriteUrls($result['html'], $url);
 

@@ -98,6 +98,7 @@ class WebFetchService {
         // Exécuter la requête
         $html = curl_exec($ch);
         $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
         $error = curl_error($ch);
         curl_close($ch);
 
@@ -105,6 +106,7 @@ class WebFetchService {
         $result = [
             'success' => $html !== false && $statusCode >= 200 && $statusCode < 400,
             'html' => $html ?: null,
+            'content_type' => $contentType ?: null,
             'error' => $error ?: ($statusCode >= 400 ? "Erreur HTTP $statusCode" : null),
             'status_code' => $statusCode,
             'url' => $url
