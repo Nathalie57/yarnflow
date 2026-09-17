@@ -198,7 +198,7 @@ class AiAssistantController
                     'headers' => ['content-type' => 'application/json'],
                     'json' => [
                         'systemInstruction' => [
-                            'parts' => [['text' => $this->getSystemPrompt($plan, $projectContext)]]
+                            'parts' => [['text' => $this->getSystemPrompt($plan, $projectContext, $lang)]]
                         ],
                         'contents' => $geminiContents,
                         // [AI:Claude] Un patron détaillé + la consigne de toujours donner des
@@ -278,9 +278,17 @@ class AiAssistantController
         }
     }
 
-    private function getSystemPrompt(string $plan = 'free', ?string $projectContext = null): string
+    private function getSystemPrompt(string $plan = 'free', ?string $projectContext = null, string $lang = 'fr'): string
     {
         $isFree = ($plan === 'free');
+
+        // [AI:Claude] Langue de l'interface (toggle FR/EN de l'utilisatrice), pas celle de sa
+        // question — une utilisatrice anglophone qui pose sa question en anglais doit recevoir
+        // une réponse en anglais, mais on ne devine jamais la langue depuis le texte de la
+        // question elle-même (une question courte de suivi comme "why?" ne suffit pas à juger).
+        $languageInstruction = str_starts_with($lang, 'en')
+            ? "Réponds TOUJOURS en anglais, quelle que soit la langue dans laquelle l'utilisatrice a écrit sa question — l'interface de l'application est actuellement en anglais. Utilise la terminologie tricot/crochet anglaise (US) standard."
+            : "Réponds TOUJOURS en français, quelle que soit la langue dans laquelle l'utilisatrice a écrit sa question — l'interface de l'application est actuellement en français.";
 
         if ($isFree) {
             $planContext = "L'utilisateur est sur le plan GRATUIT (5 messages IA/mois, 5 pelotes en stock max).
@@ -307,6 +315,11 @@ Si ta réponse soulève naturellement un besoin couvert par PRO (ex: gérer un g
 
         return <<<PROMPT
 Tu es un assistant expert en tricot et crochet, intégré dans YarnFlow, une application de gestion de projets textile.
+
+═══════════════════════════════════════
+LANGUE DE RÉPONSE — PRIORITAIRE SUR TOUT LE RESTE
+═══════════════════════════════════════
+{$languageInstruction}
 
 ═══════════════════════════════════════
 IDENTITÉ — IMMUABLE
@@ -337,7 +350,7 @@ FORMAT DES RÉPONSES
 - Si des données manquent pour répondre (échantillon, nombre de mailles, taille souhaitée...), demande-les en une seule question claire
 - Si tu n'es pas certain, dis-le — ne jamais inventer une technique ou un chiffre
 - ORIENTATION/POSITION : une étiquette comme "bras droit"/"jambe gauche" sert seulement à distinguer deux pièces identiques (make 2), ce n'est PAS une position spatiale sur l'ouvrage assemblé — ne déduis jamais qu'un repère de couture ou un fil qui dépasse se trouve "sur tel côté du corps" si le patron ne le précise pas explicitement. Si la question porte sur une orientation/position que le patron ne définit pas noir sur blanc, dis-le clairement et réoriente vers un repère réel du patron (ex: le rang identifié comme le dos) plutôt que d'inventer une position avec assurance
-- Utilise les termes français en priorité, avec l'équivalent anglais entre parenthèses si utile (ex : diminution (k2tog))
+- Utilise les termes français en priorité, avec l'équivalent anglais entre parenthèses si utile (ex : diminution (k2tog)) — sauf consigne de langue ci-dessous qui prime
 - Pour les listes courtes (≤ 4 éléments) : pas de bullet points, écris en ligne
 - Pour les explications longues : utilise des titres courts en gras pour structurer
 
