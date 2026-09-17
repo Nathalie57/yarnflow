@@ -727,7 +727,8 @@ HTML;
      */
     public function sendReengagementDay7Email(string $email, string $name, array $projectData = [], ?int $userId = null): bool
     {
-        $subject = 'Ton projet t\'attend';
+        $hasProject = !empty($projectData['name']);
+        $subject = $hasProject ? 'Ton projet t\'attend' : 'On tricote quand tu veux';
         $success = false;
         $errorMessage = null;
 
@@ -741,7 +742,9 @@ HTML;
 
             $mail->isHTML(true);
             $mail->Body = $this->getReengagementDay7EmailTemplate($name, $projectData);
-            $mail->AltBody = "Bonjour $name,\n\nCela fait une semaine. Ton projet est toujours là, au rang où tu l'as laissé.\n\nReprendre : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
+            $mail->AltBody = $hasProject
+                ? "Bonjour $name,\n\nCela fait une semaine. Ton projet est toujours là, au rang où tu l'as laissé.\n\nReprendre : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow"
+                : "Bonjour $name,\n\nCela fait une semaine que tu t'es inscrite sur YarnFlow. Si tu veux démarrer un projet, l'appli t'attend.\n\nCommencer : https://yarnflow.fr/my-projects\n\nNathalie — YarnFlow";
 
             $this->lastTrackingToken = $this->generateTrackingToken();
             $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
@@ -768,8 +771,10 @@ HTML;
         $header = $this->getEmailHeader();
         $footer = $this->getEmailFooter();
 
+        $hasProject = !empty($projectData['name']);
+
         $projectBlock = '';
-        if (!empty($projectData['name'])) {
+        if ($hasProject) {
             $projectName = htmlspecialchars($projectData['name']);
             $progress = (int)($projectData['progress'] ?? 0);
             $projectBlock = <<<HTML
@@ -788,6 +793,28 @@ HTML;
 HTML;
         }
 
+        if ($hasProject) {
+            $introText = <<<HTML
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
+        Cela fait une semaine. Ton projet est toujours là, au rang où tu l'as laissé.
+    </p>
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
+        La prochaine fois que tu es interrompue en pleine rangée, ouvre YarnFlow : ton rang exact t'attend, pas besoin de recompter.
+    </p>
+HTML;
+            $ctaLabel = 'Reprendre mon projet';
+        } else {
+            $introText = <<<HTML
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
+        Cela fait une semaine que tu t'es inscrite sur YarnFlow.
+    </p>
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
+        Pas encore lancé ton premier projet ? Le compteur de rangs t'évite de recompter à chaque interruption, dès la première pelote.
+    </p>
+HTML;
+            $ctaLabel = 'Démarrer un projet';
+        }
+
         return <<<HTML
 <!DOCTYPE html>
 <html lang="fr">
@@ -800,19 +827,14 @@ HTML;
 <tr><td style="padding:40px 40px 32px;">
     <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
 
-    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
-        Cela fait une semaine. Ton projet est toujours là, au rang où tu l'as laissé.
-    </p>
-    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
-        La prochaine fois que tu es interrompue en pleine rangée, ouvre YarnFlow : ton rang exact t'attend, pas besoin de recompter.
-    </p>
+    {$introText}
 
     {$projectBlock}
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr><td align="center">
             <a href="https://yarnflow.fr/my-projects" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
-                Reprendre mon projet
+                {$ctaLabel}
             </a>
         </td></tr>
     </table>
