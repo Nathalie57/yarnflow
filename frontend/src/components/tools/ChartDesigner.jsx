@@ -11,6 +11,7 @@ import SaveChartToProjectModal from './SaveChartToProjectModal'
 import { MAX_GRID_SIZE, NO_GRID_DETECTED, imageFileToChart } from '../../utils/chartImageImport'
 import { photoFileToChart } from '../../utils/photoToChart'
 import { useTranslation } from 'react-i18next'
+import { useAlert } from '../../hooks/useAlert'
 
 const MIN_GRID_SIZE = 1
 const DEFAULT_CELL_PX = 20
@@ -26,6 +27,7 @@ const makeBlankChart = (name, width, height) => ({
 export default function ChartDesigner() {
   const { t } = useTranslation('tools')
   const navigate = useNavigate()
+  const { showConfirm, showAlert, AlertModals } = useAlert()
   const [chart, setChart] = useState(null)
   const [mode, setMode] = useState('draw')
   const [name, setName] = useState('')
@@ -68,6 +70,36 @@ export default function ChartDesigner() {
       setShowAllCharts(false)
     } catch {
       // silencieux : la grille reste dans la liste, l'utilisateur peut réessayer
+    }
+  }
+
+  // [AI:Claude] Suppression d'une grille depuis "Mes grilles" : avertissement
+  // renforce si elle est liee a un projet (le nom du projet est rappele dans
+  // le message), simple confirmation sinon — la route API est la meme dans
+  // les deux cas, seul le texte affiche cote UI change.
+  const deleteChart = async (c) => {
+    try {
+      await api.delete(c.project_id ? `/projects/${c.project_id}/charts/${c.id}` : `/charts/${c.id}`)
+      setMyCharts(prev => prev.filter(x => x.id !== c.id))
+    } catch {
+      showAlert({ message: t('ui.chartDeleteFailed'), type: 'error' })
+    }
+  }
+
+  const confirmDeleteChart = (c) => {
+    if (c.project_id) {
+      showConfirm({
+        title: t('ui.deleteChartLinkedTitle'),
+        message: t('ui.deleteChartLinkedMessage', { project: c.project_name }),
+        confirmLabel: t('ui.deleteAnyway'),
+        onConfirm: () => deleteChart(c),
+      })
+    } else {
+      showConfirm({
+        title: t('ui.deleteChartTitle'),
+        message: t('ui.deleteChartMessage'),
+        onConfirm: () => deleteChart(c),
+      })
     }
   }
 
@@ -157,7 +189,7 @@ export default function ChartDesigner() {
       }
     }
 
-    ctx.strokeStyle = 'rgba(0,0,0,0.15)'
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'
     ctx.lineWidth = 1
     for (let x = 0; x <= chart.width; x++) {
       ctx.beginPath()
@@ -292,37 +324,47 @@ export default function ChartDesigner() {
           ) : (
             <div className="space-y-2">
               {myCharts.map(c => (
-                c.project_id ? (
-                  <Link
-                    key={c.id}
-                    to={`/projects/${c.project_id}/charts/${c.id}`}
-                    className="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{c.name}</p>
-                      <p className="text-xs text-gray-400">
-                        {c.project_name}{c.section_name ? ` — ${c.section_name}` : ''} · {c.width} × {c.height} · {t('ui.rowShort', { row: c.current_row, total: c.height })}
-                      </p>
-                    </div>
-                    <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                  </Link>
-                ) : (
+                <div key={c.id} className="flex items-center gap-2">
+                  {c.project_id ? (
+                    <Link
+                      to={`/projects/${c.project_id}/charts/${c.id}`}
+                      className="flex-1 min-w-0 flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{c.name}</p>
+                        <p className="text-xs text-gray-400">
+                          {c.project_name}{c.section_name ? ` — ${c.section_name}` : ''} · {c.width} × {c.height} · {t('ui.rowShort', { row: c.current_row, total: c.height })}
+                        </p>
+                      </div>
+                      <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => loadUnassignedChart(c.id)}
+                      className="flex-1 min-w-0 flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition text-left"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{c.name}</p>
+                        <p className="text-xs text-gray-500">{t('ui.noProjectSize', { w: c.width, h: c.height })}</p>
+                      </div>
+                      <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                  )}
                   <button
-                    key={c.id}
-                    onClick={() => loadUnassignedChart(c.id)}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition text-left"
+                    onClick={() => confirmDeleteChart(c)}
+                    title={t('ui.deleteChart')}
+                    className="flex-shrink-0 p-2 rounded-lg border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors"
                   >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{c.name}</p>
-                      <p className="text-xs text-gray-500">{t('ui.noProjectSize', { w: c.width, h: c.height })}</p>
-                    </div>
-                    <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
                   </button>
-                )
+                </div>
               ))}
             </div>
           )}
         </div>
+        <AlertModals />
       </div>
     )
   }

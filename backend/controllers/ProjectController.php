@@ -2282,6 +2282,36 @@ class ProjectController
     }
 
     /**
+     * [AI:Claude] DELETE /api/charts/{chartId} — supprime une grille en vérifiant
+     * l'appartenance via user_id (pas via un projet), pour couvrir aussi bien les
+     * grilles non assignées que celles liees a un projet : le frontend affiche un
+     * avertissement renforce cote UI quand la grille est liee, mais la suppression
+     * elle-meme passe toujours par cette route unique.
+     */
+    public function deleteUnassignedChart(int $chartId): void
+    {
+        try {
+            $userId = $this->getUserIdFromAuth();
+
+            $existingChart = $this->projectModel->getChartByUser($chartId, $userId);
+            if (!$existingChart) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Grille introuvable']);
+                return;
+            }
+
+            $this->projectModel->deleteChart($chartId);
+
+            $this->sendResponse(200, ['success' => true, 'message' => 'Grille supprimée']);
+        } catch (\Exception $e) {
+            $this->sendResponse(500, [
+                'success' => false,
+                'error' => 'Erreur lors de la suppression de la grille',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * PUT /api/projects/{projectId}/charts/{chartId}
      * Body: { name?, palette?, cells?, current_row? }
      */

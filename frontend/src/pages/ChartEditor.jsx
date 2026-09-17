@@ -130,7 +130,7 @@ const ChartEditor = () => {
     }
 
     // Grille
-    ctx.strokeStyle = 'rgba(0,0,0,0.15)'
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)'
     ctx.lineWidth = 1
     for (let x = 0; x <= chart.width; x++) {
       ctx.beginPath()
