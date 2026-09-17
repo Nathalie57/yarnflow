@@ -51,7 +51,9 @@ class WebFetchService {
 
         if ($useCache) {
             $cached = self::getFromCache($cacheKey);
-            if ($cached !== null) {
+            // Un cache écrit avant l'ajout de content_type n'a pas cette clé :
+            // on l'ignore pour forcer un refetch plutôt que de reservir une réponse incomplète
+            if ($cached !== null && array_key_exists('content_type', $cached)) {
                 return $cached;
             }
         }
