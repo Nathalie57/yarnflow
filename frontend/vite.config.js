@@ -9,73 +9,17 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*.png', 'icons/*.svg', 'og-image.jpg'],
-      manifest: {
-        name: 'YarnFlow - Tracker Tricot & Crochet',
-        short_name: 'YarnFlow',
-        description: 'Suivez vos projets tricot et crochet avec des stats avancées et l\'AI Photo Studio',
-        theme_color: '#8b5cf6',
-        background_color: '#ffffff',
-        display: 'standalone',
-        orientation: 'portrait-primary',
-        scope: '/',
-        start_url: '/',
-        icons: [
-          {
-            src: '/icons/icon-72x72.png',
-            sizes: '72x72',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-96x96.png',
-            sizes: '96x96',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-128x128.png',
-            sizes: '128x128',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-144x144.png',
-            sizes: '144x144',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-152x152.png',
-            sizes: '152x152',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-384x384.png',
-            sizes: '384x384',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any'
-          },
-          {
-            src: '/icons/icon-maskable-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'maskable'
-          },
-          {
-            src: '/icons/icon-maskable-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'maskable'
-          }
-        ]
-      },
+      // [AI:Claude] Désactivé : Vite-PWA générait son propre manifest.webmanifest
+      // et injectait un second <link rel="manifest">, en concurrence avec notre
+      // public/manifest.json (celui référencé par index.html et par Bubblewrap/
+      // Play Store, seul à déclarer share_target). Un seul manifest doit rester.
+      manifest: false,
       workbox: {
+        // [AI:Claude] Le SW généré par generateSW écrase public/sw.js à chaque
+        // build (même nom de fichier). Le partage (Web Share Target) et les
+        // push notifications vivent donc dans public/share-handler.js à la
+        // place, chargé ici via importScripts() pour survivre à tous les builds.
+        importScripts: ['share-handler.js'],
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff,woff2}'],
         globIgnores: ['**/style-examples/**'], // Exclure les images d'exemples trop volumineuses
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB max (au lieu de 2MB)
