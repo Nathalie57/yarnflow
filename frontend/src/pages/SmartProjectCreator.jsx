@@ -26,6 +26,20 @@ export default function SmartProjectCreator() {
   const { user } = useAuth()
   const { trackSmartAnalysis, trackProjectCreated } = useAnalytics()
 
+  // [AI:Claude] Événement d'entrée sur Smart Creation, envoyé même si l'utilisateur
+  // n'analyse jamais rien ensuite — jusqu'ici seul smart_creation_analyzed existait
+  // (déclenché par analyze()), impossible de distinguer "n'est jamais entré" de
+  // "est entré puis reparti sans rien tenter". Dédupliqué par session comme
+  // tools_viewed/library_viewed : ce qui compte est d'être passé par l'écran, pas le volume.
+  useEffect(() => {
+    if (sessionStorage.getItem('yf_evt_smart_creation_opened')) return
+    try { sessionStorage.setItem('yf_evt_smart_creation_opened', '1') } catch { /* ignore */ }
+    api.post('/analytics/track-event', {
+      event_name: 'smart_creation_opened',
+      resumed: searchParams.get('resume') === '1'
+    }).catch(() => {})
+  }, [])
+
   const isPro = user && user.subscription_type && user.subscription_type !== 'free' && (
     !user.subscription_expires_at || new Date(user.subscription_expires_at) > new Date()
   )
