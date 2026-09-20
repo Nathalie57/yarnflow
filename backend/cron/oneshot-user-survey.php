@@ -63,10 +63,14 @@ try {
     // Requête pour trouver tous les utilisateurs vérifiés n'ayant pas déjà reçu ce sondage
     echo "[QUERY] Recherche des utilisateurs à contacter...\n";
 
+    // [AI:Claude] email_verified n'est fiable que pour les comptes OAuth
+    // (Google/Facebook) : l'inscription classique email/mot de passe ne le
+    // met jamais a 1, donc ce filtre exclurait la majorite des vrais users.
+    // On cible tous les comptes 'user', hors admin.
     $stmt = $db->prepare("
         SELECT id AS user_id, email, first_name
         FROM users
-        WHERE email_verified = 1
+        WHERE role = 'user'
         AND id NOT IN (
             SELECT user_id
             FROM emails_sent_log
