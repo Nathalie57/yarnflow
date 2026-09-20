@@ -89,14 +89,14 @@ const ProjectFilters = ({
   const hasActiveFilters = activeFilter !== 'all' || sortBy !== 'updated_desc' || selectedTags.length > 0
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 md:p-4 space-y-3 relative">
+    <div className="bg-white rounded-card shadow-sm border border-flow-mint p-3 md:p-4 space-y-3 relative">
       {/* Bouton reset */}
       {(
         <div className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
           <button
             onClick={handleResetFilters}
             disabled={!hasActiveFilters}
-            className={`flex items-center gap-1.5 px-2 py-1 md:px-3 md:py-1.5 text-xs font-medium rounded-lg transition-all ${
+            className={`flex items-center gap-1.5 px-2 py-1 md:px-3 md:py-1.5 text-xs font-medium rounded-control transition-all ${
               hasActiveFilters
                 ? 'text-white bg-primary-600 hover:bg-primary-700 shadow-md cursor-pointer'
                 : 'text-gray-400 bg-gray-100 cursor-not-allowed opacity-50'
@@ -117,7 +117,7 @@ const ProjectFilters = ({
           <button
             key={filter.id}
             onClick={() => setActiveFilter(filter.id)}
-            className={`flex items-center gap-1.5 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 rounded-lg text-sm md:text-base transition-all ${
+            className={`flex items-center gap-1.5 md:gap-2 px-2.5 py-1.5 md:px-4 md:py-2 rounded-control text-sm md:text-base transition-all ${
               activeFilter === filter.id
                 ? 'bg-primary-600 text-white shadow-md hover:bg-primary-700'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -134,7 +134,7 @@ const ProjectFilters = ({
           onClick={() => setShowSortOptions(!showSortOptions)}
           className="text-sm font-medium text-gray-700 flex items-center gap-2 w-full md:cursor-default"
         >
-          <span>📊</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
           <span>{t('ui.sortBy')}</span>
           <span className="text-xs text-gray-500">
             {t(`ui.${sortOptions.find(opt => opt.value === sortBy)?.labelKey}`)}
@@ -156,7 +156,7 @@ const ProjectFilters = ({
                 setSortBy(option.value)
                 setShowSortOptions(false)
               }}
-              className={`px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-all ${
+              className={`px-2.5 py-1.5 md:px-3 md:py-2 rounded-control text-xs md:text-sm font-medium transition-all ${
                 sortBy === option.value
                   ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-md hover:shadow-lg'
                   : 'bg-white border border-gray-300 text-gray-700 hover:border-primary-400 hover:bg-primary-50'
@@ -182,7 +182,7 @@ const ProjectFilters = ({
             canUseTags ? 'text-primary' : 'text-gray-400'
           }`}
         >
-          <span>🏷️</span>
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}><path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" /></svg>
           <span className="text-xs md:text-sm">{canUseTags ? t('ui.filterByTags') : t('ui.tagsPlus')}</span>
           {!canUseTags && <span className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded-full">PLUS</span>}
           {canUseTags && availableTags.length > 0 && (
@@ -198,7 +198,7 @@ const ProjectFilters = ({
         </button>
 
         {showTagFilter && canUseTags && availableTags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 md:gap-2 p-2 md:p-3 bg-sage/5 rounded-lg">
+          <div className="flex flex-wrap gap-1.5 md:gap-2 p-2 md:p-3 bg-flow-mint/40 rounded-control">
             {availableTags.map((tag) => (
               <TagBadge
                 key={tag.tag_name}

@@ -17,6 +17,7 @@ import {
   ResponsiveContainer
 } from 'recharts'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
+import FlowMascot from '../components/FlowMascot'
 
 // [AI:Claude] `metric`/`threshold` alimentent à la fois `condition` (dérivée
 // automatiquement) et la barre de progression des badges pas encore obtenus —
@@ -260,12 +261,12 @@ const Stats = () => {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
-        <div className="skeleton h-8 w-48 rounded-lg" />
+        <div className="skeleton h-8 w-48 rounded-control" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-xl" />)}
+          {[...Array(4)].map((_, i) => <div key={i} className="skeleton h-28 rounded-control" />)}
         </div>
-        <div className="skeleton h-32 rounded-xl" />
-        <div className="skeleton h-48 rounded-xl" />
+        <div className="skeleton h-32 rounded-control" />
+        <div className="skeleton h-48 rounded-control" />
       </div>
     )
   }
@@ -273,11 +274,11 @@ const Stats = () => {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-control p-6 text-center">
           <p className="text-red-700 font-medium mb-3">{error}</p>
           <button
             onClick={fetchStats}
-            className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
+            className="px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-semibold hover:bg-primary-700 transition"
           >
             {t('ui.retry')}
           </button>
@@ -295,24 +296,24 @@ const Stats = () => {
       {/* Célébration — badge débloqué ou record de série, en usage réel */}
       {celebration && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-4" onClick={() => setCelebration(null)}>
-          <div className="bg-white rounded-2xl max-w-sm w-full p-8 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="text-5xl mb-4">{celebration.type === 'streak' ? '🔥' : '🏆'}</div>
+          <div className="bg-white rounded-card max-w-sm w-full p-8 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
+            <FlowMascot pose="heureux" size={130} className="mx-auto mb-4" />
             {celebration.type === 'streak' ? (
               <>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.newStreakRecord')}</h2>
+                <h2 className="text-xl font-bold text-flow-ink mb-2">{t('ui.newStreakRecord')}</h2>
                 <p className="text-gray-500 text-sm leading-relaxed">
                   {t('ui.streakRecordDesc', { count: celebration.value })}
                 </p>
               </>
             ) : (
               <>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.badgeUnlocked')} {t(`badges.${celebration.badge.id}.title`)}</h2>
+                <h2 className="text-xl font-bold text-flow-ink mb-2">{t('ui.badgeUnlocked')} {t(`badges.${celebration.badge.id}.title`)}</h2>
                 <p className="text-gray-500 text-sm leading-relaxed">{t(`badges.${celebration.badge.id}.desc`)}</p>
               </>
             )}
             <button
               onClick={() => setCelebration(null)}
-              className="w-full mt-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition"
+              className="w-full mt-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-control font-semibold transition"
             >
               {t('ui.continue')}
             </button>
@@ -322,7 +323,7 @@ const Stats = () => {
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold text-gray-900">{t('ui.statsTitle')}</h1>
+        <h1 className="text-2xl font-bold text-flow-ink">{t('ui.statsTitle')}</h1>
         {isPro && (
           <div className="flex gap-1">
             {[
@@ -334,7 +335,7 @@ const Stats = () => {
               <button
                 key={p.key}
                 onClick={() => setPeriod(p.key)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                className={`px-3 py-1.5 rounded-control text-sm font-medium transition ${
                   period === p.key
                     ? 'bg-primary-600 text-white'
                     : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
@@ -349,19 +350,19 @@ const Stats = () => {
 
       {/* Empty state */}
       {!stats || stats.total_projects === 0 ? (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <div className="text-center py-16 bg-white rounded-control border border-gray-200 shadow-sm">
+          <div className="w-16 h-16 bg-primary-100 rounded-card flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('ui.noStatsTitle')}</h3>
+          <h3 className="text-lg font-semibold text-flow-ink mb-2">{t('ui.noStatsTitle')}</h3>
           <p className="text-gray-500 text-sm mb-6 max-w-xs mx-auto">
             {t('ui.noStatsDesc')}
           </p>
           <Link
             to="/my-projects"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition text-sm"
           >
             {t('ui.createProject')}
           </Link>
@@ -372,13 +373,13 @@ const Stats = () => {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
 
             {/* Projets */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div className="w-9 h-9 bg-primary-100 rounded-xl flex items-center justify-center mb-3">
+            <div className="bg-white rounded-control border border-gray-200 p-4 shadow-sm">
+              <div className="w-9 h-9 bg-primary-100 rounded-control flex items-center justify-center mb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 tabular-nums">{stats.total_projects || 0}</div>
+              <div className="text-2xl font-bold text-flow-ink tabular-nums">{stats.total_projects || 0}</div>
               <div className="text-xs text-gray-500 mt-0.5">{t('ui.projects')}</div>
               <div className="mt-2 pt-2 border-t border-gray-100 flex gap-3 text-xs">
                 <span className="text-green-600 font-medium">{t('ui.completedCount', { count: stats.completed_projects || 0 })}</span>
@@ -387,13 +388,13 @@ const Stats = () => {
             </div>
 
             {/* Temps */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div className="w-9 h-9 bg-primary-100 rounded-xl flex items-center justify-center mb-3">
+            <div className="bg-white rounded-control border border-gray-200 p-4 shadow-sm">
+              <div className="w-9 h-9 bg-primary-100 rounded-control flex items-center justify-center mb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 tabular-nums">
+              <div className="text-2xl font-bold text-flow-ink tabular-nums">
                 {Math.floor((stats.total_crochet_time || 0) / 3600)}h
               </div>
               <div className="text-xs text-gray-500 mt-0.5">{t('ui.ofKnitting')}</div>
@@ -405,13 +406,13 @@ const Stats = () => {
             </div>
 
             {/* Rangs */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div className="w-9 h-9 bg-primary-100 rounded-xl flex items-center justify-center mb-3">
+            <div className="bg-white rounded-control border border-gray-200 p-4 shadow-sm">
+              <div className="w-9 h-9 bg-primary-100 rounded-control flex items-center justify-center mb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 tabular-nums">
+              <div className="text-2xl font-bold text-flow-ink tabular-nums">
                 {(stats.total_rows || 0).toLocaleString()}
               </div>
               <div className="text-xs text-gray-500 mt-0.5">{t('ui.rowsCounted')}</div>
@@ -423,13 +424,13 @@ const Stats = () => {
             </div>
 
             {/* Taux de finition */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-              <div className="w-9 h-9 bg-primary-100 rounded-xl flex items-center justify-center mb-3">
+            <div className="bg-white rounded-control border border-gray-200 p-4 shadow-sm">
+              <div className="w-9 h-9 bg-primary-100 rounded-control flex items-center justify-center mb-3">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-900 tabular-nums">{stats.completion_rate || 0}%</div>
+              <div className="text-2xl font-bold text-flow-ink tabular-nums">{stats.completion_rate || 0}%</div>
               <div className="text-xs text-gray-500 mt-0.5">{t('ui.completionRate')}</div>
               {isPro && (
                 <div className="mt-2 pt-2 border-t border-gray-100">
@@ -445,16 +446,16 @@ const Stats = () => {
           </div>
 
           {/* Streak */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+          <div className="bg-white rounded-control border border-gray-200 p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-primary-100 rounded-control flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" />
                   </svg>
                 </div>
-                <span className="font-semibold text-gray-900">{t('ui.currentStreak')}</span>
+                <span className="font-semibold text-flow-ink">{t('ui.currentStreak')}</span>
               </div>
               <div className="text-right">
                 <span className="text-2xl font-bold text-primary-600 tabular-nums">{stats.current_streak || 0}</span>
@@ -488,9 +489,9 @@ const Stats = () => {
           {!isPro && upsellDismissed ? (
             <Link
               to="/subscription"
-              className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-3 shadow-sm hover:border-primary-300 transition"
+              className="flex items-center gap-3 bg-white rounded-control border border-gray-200 px-4 py-3 shadow-sm hover:border-primary-300 transition"
             >
-              <span className="w-8 h-8 bg-primary-50 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="w-8 h-8 bg-primary-50 rounded-control flex items-center justify-center flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                 </svg>
@@ -508,8 +509,8 @@ const Stats = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                 {/* Progression 30 jours */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-4">{t('ui.progress30Days')}</h3>
+                <div className="bg-white rounded-control border border-gray-200 p-5 shadow-sm">
+                  <h3 className="font-semibold text-flow-ink text-sm mb-4">{t('ui.progress30Days')}</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <AreaChart data={
                       stats.progression && stats.progression.length > 0
@@ -527,7 +528,7 @@ const Stats = () => {
                       <YAxis tick={{ fontSize: 10 }} />
                       <Tooltip
                         content={({ active, payload, label }) => active && payload?.length ? (
-                          <div className="bg-white border border-gray-200 rounded-lg p-2 shadow-md text-xs">
+                          <div className="bg-white border border-gray-200 rounded-control p-2 shadow-md text-xs">
                             <p className="font-semibold text-gray-700">{label}</p>
                             <p className="text-primary-600">{t('ui.rowsTooltip', { count: payload[0].value })}</p>
                           </div>
@@ -539,8 +540,8 @@ const Stats = () => {
                 </div>
 
                 {/* Répartition des projets */}
-                <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-4">{t('ui.projectBreakdown')}</h3>
+                <div className="bg-white rounded-control border border-gray-200 p-5 shadow-sm">
+                  <h3 className="font-semibold text-flow-ink text-sm mb-4">{t('ui.projectBreakdown')}</h3>
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
                       <Pie
@@ -577,15 +578,15 @@ const Stats = () => {
 
                 {/* Meilleure heure — PRO avec données */}
                 {isPro && stats.best_hour !== null && stats.best_hour !== undefined && (
-                  <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="bg-white rounded-control border border-gray-200 p-5 shadow-sm flex items-center gap-4">
+                    <div className="w-12 h-12 bg-primary-100 rounded-control flex items-center justify-center flex-shrink-0">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 mb-0.5">{t('ui.bestHour')}</p>
-                      <p className="text-2xl font-bold text-gray-900 tabular-nums">{t('ui.hourRange', { from: stats.best_hour, to: stats.best_hour + 1 })}</p>
+                      <p className="text-2xl font-bold text-flow-ink tabular-nums">{t('ui.hourRange', { from: stats.best_hour, to: stats.best_hour + 1 })}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{t('ui.fastestSlot')}</p>
                     </div>
                   </div>
@@ -593,19 +594,19 @@ const Stats = () => {
 
                 {/* Stats photos IA — PRO avec données */}
                 {isPro && photoStats && photoStats.total_ai_photos > 0 && (
-                  <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-                    <h3 className="font-semibold text-gray-900 text-sm mb-4">{t('ui.aiPhotoStudio')}</h3>
+                  <div className="bg-white rounded-control border border-gray-200 p-5 shadow-sm">
+                    <h3 className="font-semibold text-flow-ink text-sm mb-4">{t('ui.aiPhotoStudio')}</h3>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="text-center p-3 bg-primary-50 rounded-xl border border-primary-100">
+                      <div className="text-center p-3 bg-primary-50 rounded-control border border-primary-100">
                         <div className="text-xl font-bold text-primary-700 tabular-nums">{photoStats.total_ai_photos || 0}</div>
                         <div className="text-xs text-gray-500 mt-0.5">{t('ui.photosGenerated')}</div>
                       </div>
-                      <div className="text-center p-3 bg-primary-50 rounded-xl border border-primary-100">
+                      <div className="text-center p-3 bg-primary-50 rounded-control border border-primary-100">
                         <div className="text-xl font-bold text-primary-700 tabular-nums">{photoStats.credits_remaining || 0}</div>
                         <div className="text-xs text-gray-500 mt-0.5">{t('ui.creditsLeft')}</div>
                       </div>
                       {photoStats.top_style && (
-                        <div className="col-span-2 text-center p-3 bg-primary-50 rounded-xl border border-primary-100">
+                        <div className="col-span-2 text-center p-3 bg-primary-50 rounded-control border border-primary-100">
                           <div className="text-sm font-semibold text-primary-700">{photoStats.top_style}</div>
                           <div className="text-xs text-gray-500 mt-0.5">{t('ui.favoriteStyle')}</div>
                         </div>
@@ -619,27 +620,27 @@ const Stats = () => {
             {/* Overlay CTA — FREE uniquement */}
             {!isPro && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl border border-primary-200 shadow-xl p-6 text-center mx-4 max-w-sm">
+                <div className="relative bg-white/95 backdrop-blur-sm rounded-card border border-primary-200 shadow-xl p-6 text-center mx-4 max-w-sm">
                   <button
                     type="button"
                     onClick={dismissUpsell}
                     aria-label={t('ui.close')}
-                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                    className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-control transition"
                   >
                     ×
                   </button>
-                  <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <div className="w-12 h-12 bg-primary-100 rounded-control flex items-center justify-center mx-auto mb-3">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
                     </svg>
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-1">{t('ui.fullAnalytics')}</h3>
+                  <h3 className="font-bold text-flow-ink mb-1">{t('ui.fullAnalytics')}</h3>
                   <p className="text-sm text-gray-500 mb-4 leading-relaxed">
                     {t('ui.fullAnalyticsDesc')}
                   </p>
                   <Link
                     to="/subscription"
-                    className="inline-block w-full px-5 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition shadow-sm"
+                    className="inline-block w-full px-5 py-2.5 bg-primary-600 text-white rounded-control text-sm font-semibold hover:bg-primary-700 transition shadow-sm"
                   >
                     {(() => { const p = upgradeTarget('advanced_stats', currentPlan); return p && t('ui.goToPlan', { plan: planLabel(p), price: PLAN_PRICES[p].monthlyEquiv }) })()}
                   </Link>
@@ -652,8 +653,8 @@ const Stats = () => {
 
           {/* Badges */}
           {(earnedBadges.length > 0 || notEarnedBadges.length > 0 || (!isPro && lockedBadges.length > 0)) && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <h3 className="font-semibold text-gray-900 text-sm mb-4">
+            <div className="bg-white rounded-control border border-gray-200 p-5 shadow-sm">
+              <h3 className="font-semibold text-flow-ink text-sm mb-4">
                 {t('ui.badges')}
                 <span className="ml-2 text-xs font-normal text-gray-400">
                   {t('ui.badgesEarned', { count: earnedBadges.length })}{!isPro && lockedBadges.length > 0 ? t('ui.badgesToUnlockSuffix', { count: lockedBadges.length }) : ''}
@@ -666,7 +667,7 @@ const Stats = () => {
                   {earnedBadges.map((badge) => (
                     <div
                       key={badge.id}
-                      className={`rounded-xl border p-3 ${badgeColorClasses[badge.color] || badgeColorClasses.primary}`}
+                      className={`rounded-control border p-3 ${badgeColorClasses[badge.color] || badgeColorClasses.primary}`}
                     >
                       <div className="font-semibold text-sm mb-0.5">{t(`badges.${badge.id}.title`)}</div>
                       <div className="text-xs opacity-70">{t(`badges.${badge.id}.desc`)}</div>
@@ -693,8 +694,8 @@ const Stats = () => {
 
                   {/* Bannière si des objectifs sont déjà atteints */}
                   {earnedButLockedCount > 0 && (
-                    <div className="mb-3 bg-primary-50 border border-primary-200 rounded-xl p-3 flex items-start gap-2.5">
-                      <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="mb-3 bg-primary-50 border border-primary-200 rounded-control p-3 flex items-start gap-2.5">
+                      <div className="w-8 h-8 bg-primary-100 rounded-control flex items-center justify-center flex-shrink-0 mt-0.5">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0" />
                         </svg>
@@ -714,7 +715,7 @@ const Stats = () => {
                     {lockedBadges.slice(0, LOCKED_PREVIEW).map((badge) => (
                       <div
                         key={badge.id}
-                        className={`relative rounded-xl border p-3 ${
+                        className={`relative rounded-control border p-3 ${
                           badge.earnedButLocked
                             ? 'bg-primary-50/60 border-primary-200 ring-1 ring-primary-200'
                             : 'bg-gray-50 border-gray-200'
@@ -734,7 +735,7 @@ const Stats = () => {
                       </div>
                     ))}
                     {lockedBadges.length > LOCKED_PREVIEW && (
-                      <div className="rounded-xl border border-dashed border-gray-200 p-3 flex items-center justify-center">
+                      <div className="rounded-control border border-dashed border-gray-200 p-3 flex items-center justify-center">
                         <span className="text-xs text-gray-400 text-center leading-relaxed">
                           <Trans t={t} i18nKey="ui.moreBadgesToDiscover" values={{ count: lockedBadges.length - LOCKED_PREVIEW }}><br /></Trans>
                         </span>
@@ -744,7 +745,7 @@ const Stats = () => {
 
                   <Link
                     to="/subscription"
-                    className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition shadow-sm"
+                    className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary-600 text-white rounded-control text-sm font-semibold hover:bg-primary-700 transition shadow-sm"
                   >
                     {t('ui.unlockAllProBadges')}
                   </Link>
@@ -764,7 +765,7 @@ const Stats = () => {
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {notEarnedBadges.map((badge) => (
-                      <div key={badge.id} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+                      <div key={badge.id} className="rounded-control border border-gray-200 bg-gray-50 p-3">
                         <div className="font-semibold text-sm mb-0.5 text-gray-600">{t(`badges.${badge.id}.title`)}</div>
                         <div className="text-xs text-gray-500 mb-2">{t(`badges.${badge.id}.desc`)}</div>
                         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">

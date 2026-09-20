@@ -4,6 +4,7 @@ import { paymentsAPI, authAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { useTranslation, Trans } from 'react-i18next'
+import FlowMascot from '../components/FlowMascot'
 
 export default function PaymentSuccess() {
   const { t } = useTranslation('tools')
@@ -95,19 +96,15 @@ export default function PaymentSuccess() {
   if (status === 'error') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('ui.paymentError')}</h1>
+        <div className="max-w-md w-full bg-white rounded-card shadow-xl p-8 text-center">
+          <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-flow-ink mb-2">{t('ui.paymentError')}</h1>
           <p className="text-gray-600 mb-6">
             {t('ui.paymentVerifyError')}
           </p>
           <button
             onClick={() => navigate('/subscription')}
-            className="bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors"
+            className="bg-primary-600 text-white px-6 py-3 rounded-control font-semibold hover:bg-primary-700 transition-colors"
           >
             {t('ui.backToSubscription')}
           </button>
@@ -119,14 +116,10 @@ export default function PaymentSuccess() {
   // Status = success
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-        <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-10 h-10 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
+      <div className="max-w-md w-full bg-white rounded-card shadow-xl p-8 text-center">
+        <FlowMascot pose="heureux" size={130} className="mx-auto mb-4" />
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('ui.paymentSuccess')}</h1>
+        <h1 className="text-3xl font-bold text-flow-ink mb-2">{t('ui.paymentSuccess')}</h1>
 
         {paymentInfo?.type === 'credits' && (
           <p className="text-gray-600 mb-6">
@@ -146,7 +139,7 @@ export default function PaymentSuccess() {
           </p>
         )}
 
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6">
+        <div className="bg-flow-mint/40 border border-flow-mint rounded-control p-4 mb-6">
           <p className="text-sm text-primary-800">
             {t('ui.confirmationEmailSent')}
           </p>
@@ -158,7 +151,7 @@ export default function PaymentSuccess() {
 
         <button
           onClick={() => navigate('/my-projects')}
-          className="w-full bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors"
+          className="w-full bg-primary-600 text-white px-6 py-3 rounded-control font-semibold hover:bg-primary-700 transition-colors"
         >
           {t('ui.goToMyProjects')}
         </button>

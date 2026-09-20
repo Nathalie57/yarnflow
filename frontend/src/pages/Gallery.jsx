@@ -20,6 +20,7 @@ import api from '../services/api'
 import { PHOTO_SEASONS, PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 
 import { apiErrorMessage } from '../utils/apiError'
+import FlowMascot from '../components/FlowMascot'
 const Gallery = () => {
   const { t } = useTranslation('library')
   const { user } = useAuth()
@@ -410,7 +411,7 @@ const Gallery = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
 
       {creditsPurchased && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between">
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-control flex items-center justify-between">
           <p className="text-sm font-medium text-green-800">{t('ui.creditsAdded')}</p>
           <button onClick={() => setCreditsPurchased(false)} className="text-green-600 hover:text-green-800 text-lg font-bold">×</button>
         </div>
@@ -418,23 +419,24 @@ const Gallery = () => {
 
       {/* Header */}
       <div className="mb-6 sm:mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('ui.myGallery')}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-flow-ink">{t('ui.myGallery')}</h1>
             <p className="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">
               {t('ui.myGalleryTagline')}
             </p>
           </div>
+          <FlowMascot pose="content" size={100} className="flex-shrink-0" />
         </div>
       </div>
 
       {/* Crédits IA disponibles */}
       {credits && (
-        <div className="mb-6 bg-gradient-to-r from-primary-50 to-primary-50 border-2 border-primary-200 rounded-lg p-4 sm:p-6">
+        <div className="mb-6 bg-flow-mint/30 border-2 border-flow-mint rounded-card p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -442,13 +444,13 @@ const Gallery = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg text-gray-900">{t('ui.photoCredits')}</h3>
+                    <h3 className="font-bold text-lg text-flow-ink">{t('ui.photoCredits')}</h3>
                     <span className="text-xs text-gray-500 font-normal">{t('ui.oneCreditOnePhoto')}</span>
                   </div>
                   <p className="text-sm text-gray-600">
                     {(() => {
                       const subType = user?.subscription_type;
-                      if (!subType || subType === 'free') return 'Plan FREE · 3 essais IA offerts';
+                      if (!subType || subType === 'free') return 'Plan FREE · 2 crédits offerts à vie';
                       if (subType === 'plus' || subType === 'plus_annual') return t('ui.planPlusCredits');
                       return t('ui.planProCredits');
                     })()}
@@ -472,11 +474,11 @@ const Gallery = () => {
                 if (isFree && credits.total_available === 0) {
                   return (
                     <>
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
+                      <div className="bg-amber-50 border border-amber-200 rounded-control p-3 mb-2">
                         <p className="text-sm text-amber-800 font-medium">{t('ui.freeTrialUsed')}</p>
                         <p className="text-xs text-amber-700 mt-0.5">{t('ui.subscribeToKeepEnhancing')}</p>
                       </div>
-                      <Link to="/subscription" className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition">
+                      <Link to="/subscription" className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-control transition">
                         {t('ui.viewPlans')}
                       </Link>
                     </>
@@ -484,7 +486,7 @@ const Gallery = () => {
                 }
                 if (isFree) {
                   return (
-                    <Link to="/subscription" className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition">
+                    <Link to="/subscription" className="inline-flex items-center justify-center px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-control transition">
                       {t('ui.getMoreCredits')}
                     </Link>
                   )
@@ -492,14 +494,14 @@ const Gallery = () => {
                 return (
                   <div className="flex flex-col gap-2 items-center sm:items-end">
                     {credits.total_available === 0 && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2 w-full">
+                      <div className="bg-amber-50 border border-amber-200 rounded-control p-3 mb-2 w-full">
                         <p className="text-sm text-amber-800 font-medium">{t('ui.noCreditsThisMonth')}</p>
                         <p className="text-xs text-amber-700 mt-0.5">
                           {user?.subscription_expires_at ? t('ui.refillOnDay', { day: new Date(user.subscription_expires_at).getDate() }) : t('ui.refillNextRenewal')}
                         </p>
                       </div>
                     )}
-                    <Link to="/subscription#credits" className="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition">
+                    <Link to="/subscription#credits" className="inline-flex items-center justify-center px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-control transition">
                       {t('ui.buyCredits')}
                     </Link>
                     <span className="text-xs text-gray-500">{user?.subscription_expires_at ? t('ui.refillOnDay', { day: new Date(user.subscription_expires_at).getDate() }) : t('ui.refillNextRenewal')}</span>
@@ -527,7 +529,7 @@ const Gallery = () => {
             setShowUploadModal(true)
           }}
           disabled={photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit}
-          className="inline-flex items-center gap-3 px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg rounded-xl shadow-sm hover:shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-3 px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold text-lg rounded-control shadow-sm hover:shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -547,7 +549,7 @@ const Gallery = () => {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div className="bg-red-50 border border-red-200 rounded-control p-4 mb-6">
           <p className="text-red-800">{error}</p>
         </div>
       )}
@@ -566,7 +568,7 @@ const Gallery = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('ui.searchPhotos')}
-              className="w-full pl-11 pr-12 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+              className="w-full pl-11 pr-12 py-3 border-2 border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
             />
             {searchQuery && (
               <button
@@ -619,13 +621,9 @@ const Gallery = () => {
       {!loading && !error && (
         <>
           {photos.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-xl border border-gray-200 px-6">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-primary-50 flex items-center justify-center">
-                <svg className="w-7 h-7 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
+            <div className="text-center py-16 bg-white rounded-card border border-flow-mint px-6">
+              <FlowMascot pose="onYVa" size={90} className="mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-flow-ink mb-2">
                 {t('ui.emptyGallery')}
               </h3>
               <p className="text-gray-500 text-sm">
@@ -633,11 +631,9 @@ const Gallery = () => {
               </p>
             </div>
           ) : getFilteredPhotos().length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <div className="flex justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <div className="text-center py-12 bg-white rounded-card border border-gray-200">
+              <FlowMascot pose="interrogatif" size={80} className="mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-flow-ink mb-2">
                 {t('ui.noResults')}
               </h3>
               <p className="text-gray-600 mb-4">
@@ -645,7 +641,7 @@ const Gallery = () => {
               </p>
               <button
                 onClick={() => { setSearchQuery(''); setStyleFilter(null) }}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
+                className="px-4 py-2 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition text-sm"
               >
                 {t('ui.clearFilters')}
               </button>
@@ -655,7 +651,7 @@ const Gallery = () => {
               {getFilteredPhotos().map(photo => (
                 <div
                   key={photo.id}
-                  className="relative rounded-lg group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow"
+                  className="relative rounded-control group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow"
                 >
                   {/* Photo (originale ou embellie selon toggle) */}
                   {/* [AI:Claude] loading="lazy" : sans lui, la galerie
@@ -668,7 +664,7 @@ const Gallery = () => {
                     alt={photo.item_name || t('ui.aiPhotoAlt')}
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-cover rounded-lg transition-opacity duration-300"
+                    className="w-full h-full object-cover rounded-control transition-opacity duration-300"
                     onError={(e) => {
                       console.error('Erreur chargement image:', photo.enhanced_path)
                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
@@ -683,7 +679,7 @@ const Gallery = () => {
                   )}
 
                   {/* Overlay minimaliste au hover */}
-                  <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 rounded-lg ${openMenuId === photo.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                  <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 rounded-control ${openMenuId === photo.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                     {/* Nom de la photo — projet > item_name > type */}
                     {(photo.project_name || photo.item_name || photo.item_type) && (
                       <div className="absolute top-3 left-3 right-3">
@@ -714,7 +710,7 @@ const Gallery = () => {
                           const src = viewingOriginalIds.has(photo.id) ? photo.original_path : (photo.enhanced_path || photo.original_path)
                           window.open(`${import.meta.env.VITE_BACKEND_URL}${src}`, '_blank')
                         }}
-                        className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                        className="w-12 h-12 bg-white/90 hover:bg-white text-flow-ink rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
                         title={t('ui.viewLarge')}
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -734,7 +730,7 @@ const Gallery = () => {
                           link.click()
                           trackPhotoDownloaded()
                         }}
-                        className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                        className="w-12 h-12 bg-white/90 hover:bg-white text-flow-ink rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
                         title={t('ui.download')}
                       >
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -749,7 +745,7 @@ const Gallery = () => {
                             e.stopPropagation()
                             setOpenMenuId(openMenuId === photo.id ? null : photo.id)
                           }}
-                          className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                          className="w-12 h-12 bg-white/90 hover:bg-white text-flow-ink rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
                           title={t('ui.moreActions')}
                         >
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -759,7 +755,7 @@ const Gallery = () => {
 
                         {/* Dropdown menu */}
                         {openMenuId === photo.id && (
-                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-primary-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
+                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-primary-50 to-sage-50 rounded-control shadow-2xl border-2 border-primary-400 py-2 z-50">
                             {/* Photo de couverture */}
                             {photo.project_id && (
                               <button
@@ -949,7 +945,7 @@ const Gallery = () => {
                               }}
                               className="w-full px-4 py-2.5 text-left text-sm text-red-700 hover:bg-red-100 flex items-center gap-3 font-medium transition-colors"
                             >
-                              <span className="text-lg">🗑️</span>
+                              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14M4 6h16M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" /></svg>
                               <span>{t('ui.delete')}</span>
                             </button>
                           </div>
@@ -990,9 +986,9 @@ const Gallery = () => {
       {/* Modal d'upload */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-control max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <h2 className="text-2xl font-bold text-gray-900">{t('ui.addPhoto')}</h2>
+              <h2 className="text-2xl font-bold text-flow-ink">{t('ui.addPhoto')}</h2>
               <p className="text-sm text-gray-600 mt-1">
                 {t('ui.takeOrChoosePhoto')}
               </p>
@@ -1028,7 +1024,7 @@ const Gallery = () => {
                     <button
                       type="button"
                       onClick={() => window.cameraInputGallery?.click()}
-                      className="flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-control hover:bg-primary-700 transition"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -1040,7 +1036,7 @@ const Gallery = () => {
                   <button
                     type="button"
                     onClick={() => window.galleryInputGallery?.click()}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-control hover:bg-gray-700 transition"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     <span className="font-medium">{t('ui.choosePhoto')}</span>
@@ -1066,7 +1062,7 @@ const Gallery = () => {
                 <select
                   value={selectedProjectId}
                   onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="">{t('ui.noProject')}</option>
                   {projects.map((project) => (
@@ -1085,14 +1081,14 @@ const Gallery = () => {
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(false)}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                  className="px-6 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition"
                 >
                   {t('ui.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || !uploadData.photo}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-primary-300"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-primary-300"
                 >
                   {uploading ? t('ui.loadingDots') : t('ui.add2')}
                 </button>
@@ -1105,9 +1101,9 @@ const Gallery = () => {
       {/* Modal d'embellissement IA - v0.12.1 SIMPLIFIÉ */}
       {showEnhanceModal && selectedPhoto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-lg w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
+          <div className="bg-white rounded-control max-w-lg w-full my-8 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="bg-white border-b border-gray-200 px-6 py-4 rounded-t-lg">
-              <h2 className="text-2xl font-bold text-gray-900">{t('ui.enhanceMyPhoto')}</h2>
+              <h2 className="text-2xl font-bold text-flow-ink">{t('ui.enhanceMyPhoto')}</h2>
               <p className="text-sm text-gray-600 mt-1">
                 {selectedPhoto.item_name}
               </p>
@@ -1115,11 +1111,11 @@ const Gallery = () => {
 
             <form onSubmit={handleEnhance} className="p-6">
               {/* Photo originale */}
-              <div className="mb-6 rounded-lg border-2 p-4 bg-gray-100 border-gray-200">
+              <div className="mb-6 rounded-control border-2 p-4 bg-gray-100 border-gray-200">
                 <img
                   src={`${import.meta.env.VITE_BACKEND_URL}${selectedPhoto.original_path}`}
                   alt={selectedPhoto.item_name}
-                  className="max-h-48 w-auto object-contain rounded-lg mx-auto"
+                  className="max-h-48 w-auto object-contain rounded-control mx-auto"
                   onError={(e) => {
                     e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23ddd" width="400" height="300"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
                   }}
@@ -1142,7 +1138,7 @@ const Gallery = () => {
                           const styles = getAvailableStyles(key)
                           setSelectedContext(styles[0] || null)
                         }}
-                        className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition ${
+                        className={`px-3 py-2 rounded-control border-2 text-sm font-medium transition ${
                           manualCategory === key
                             ? 'border-primary-600 bg-primary-50 text-primary-900'
                             : 'border-gray-200 text-gray-700 hover:border-gray-300'
@@ -1168,7 +1164,7 @@ const Gallery = () => {
                   {getAvailableStyles(manualCategory || detectProjectCategory(selectedPhoto.item_type || '')).map(style => (
                     <label
                       key={style.key}
-                      className={`flex items-center gap-3 p-3 border-2 rounded-lg transition ${
+                      className={`flex items-center gap-3 p-3 border-2 rounded-control transition ${
                         style.locked
                           ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
                           : selectedContext?.key === style.key
@@ -1187,7 +1183,7 @@ const Gallery = () => {
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <p className={`font-medium ${style.locked ? 'text-gray-500' : 'text-gray-900'}`}>{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</p>
+                          <p className={`font-medium ${style.locked ? 'text-gray-500' : 'text-flow-ink'}`}>{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</p>
                           {style.locked && style.tier === 'pro' && (
                             <span className="text-xs px-2 py-0.5 bg-primary-100 text-primary-600 rounded font-semibold">{t('ui.planPro')}</span>
                           )}
@@ -1203,18 +1199,18 @@ const Gallery = () => {
 
                 {/* Sélecteur de genre pour styles portés (adultes et enfants) */}
                 {selectedContext && selectedContext.worn && (
-                  <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-control">
                     <p className="text-sm font-semibold text-gray-700 mb-2">
                       {selectedContext.key?.startsWith('child_garment_') ? t('ui.childGenderLabel') : t('ui.modelGenderLabel')}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'male' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
+                      <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-control cursor-pointer transition ${modelGender === 'male' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
                         <input type="radio" name="modelGender" value="male" checked={modelGender === 'male'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
-                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? t('ui.boy') : t('ui.man')}</span>
+                        <span className="text-xs font-semibold text-flow-ink">{selectedContext.key?.startsWith('child_garment_') ? t('ui.boy') : t('ui.man')}</span>
                       </label>
-                      <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${modelGender === 'female' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
+                      <label className={`flex items-center justify-center gap-2 p-2 border-2 rounded-control cursor-pointer transition ${modelGender === 'female' ? 'border-primary-600 bg-white ring-2 ring-primary-300' : 'border-gray-300 bg-white hover:border-primary-400'}`}>
                         <input type="radio" name="modelGender" value="female" checked={modelGender === 'female'} onChange={(e) => setModelGender(e.target.value)} className="sr-only" />
-                        <span className="text-xs font-semibold text-gray-900">{selectedContext.key?.startsWith('child_garment_') ? t('ui.girl') : t('ui.woman')}</span>
+                        <span className="text-xs font-semibold text-flow-ink">{selectedContext.key?.startsWith('child_garment_') ? t('ui.girl') : t('ui.woman')}</span>
                       </label>
                     </div>
                   </div>
@@ -1234,7 +1230,7 @@ const Gallery = () => {
                     <button
                       type="button"
                       onClick={() => setSelectedSeason(null)}
-                      className={`flex flex-col items-center gap-1 p-3 border-2 rounded-lg transition ${
+                      className={`flex flex-col items-center gap-1 p-3 border-2 rounded-control transition ${
                         selectedSeason === null
                           ? 'border-primary-600 bg-primary-50'
                           : 'border-gray-200 hover:border-gray-300'
@@ -1250,7 +1246,7 @@ const Gallery = () => {
                         key={season.key}
                         type="button"
                         onClick={() => setSelectedSeason(season.key)}
-                        className={`flex flex-col items-center gap-1 p-3 border-2 rounded-lg transition ${
+                        className={`flex flex-col items-center gap-1 p-3 border-2 rounded-control transition ${
                           selectedSeason === season.key
                             ? 'border-primary-600 bg-primary-50'
                             : 'border-gray-200 hover:border-gray-300'
@@ -1271,7 +1267,7 @@ const Gallery = () => {
 
               {/* Progression de génération HD */}
               {enhancing && (
-                <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
+                <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-control">
                   <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                     <div>
@@ -1288,7 +1284,7 @@ const Gallery = () => {
 
                 if (isFree && credits.total_available > 0) {
                   return (
-                    <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg flex items-center gap-3">
+                    <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-control flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
@@ -1304,10 +1300,10 @@ const Gallery = () => {
 
                 if (isFree && credits.total_available === 0) {
                   return (
-                    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-control">
                       <p className="text-sm font-semibold text-amber-900 mb-1">{t('ui.freeTrialUsed')}</p>
                       <p className="text-xs text-amber-800 mb-3">{t('ui.subscribeToKeepEnhancing')}</p>
-                      <Link to="/subscription" className="inline-flex items-center justify-center w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition">
+                      <Link to="/subscription" className="inline-flex items-center justify-center w-full px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-control transition">
                         {t('ui.viewPlans')}
                       </Link>
                     </div>
@@ -1315,10 +1311,10 @@ const Gallery = () => {
                 }
 
                 return (
-                  <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-control">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{t('ui.generationOneCredit')}</p>
+                        <p className="text-sm font-medium text-flow-ink">{t('ui.generationOneCredit')}</p>
                         <p className="text-xs text-gray-600 mt-1">
                           {t('ui.youWillHaveLeft', { count: credits.total_available - 1 })}
                         </p>
@@ -1341,14 +1337,14 @@ const Gallery = () => {
                     setSelectedPhoto(null)
                   }}
                   disabled={enhancing}
-                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-control font-medium hover:bg-gray-300 transition disabled:opacity-50"
                 >
                   {t('ui.notNow')}
                 </button>
                 <button
                   type="submit"
                   disabled={enhancing || !selectedContext || !credits || credits.total_available < 1}
-                  className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                  className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
                   {enhancing ? t('ui.generating') : ((!user?.subscription_type || user?.subscription_type === 'free') ? t('ui.useFreeTrial') : t('ui.generateWithCredits', { count: credits?.total_available ?? 0 }))}
 
@@ -1366,7 +1362,7 @@ const Gallery = () => {
           onClick={() => setShowInstagramModal(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-200 relative"
+            className="bg-white rounded-card shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-200 relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Bouton fermer */}
@@ -1381,7 +1377,7 @@ const Gallery = () => {
 
             {/* Icône Instagram avec gradient */}
             <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center shadow-lg">
+              <div className="w-20 h-20 rounded-card bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center shadow-lg">
                 <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none">
                   <defs>
                     <radialGradient id="modal-instagram-gradient" cx="30%" cy="107%" r="150%">
@@ -1398,7 +1394,7 @@ const Gallery = () => {
             </div>
 
             {/* Titre */}
-            <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
+            <h3 className="text-2xl font-bold text-flow-ink text-center mb-3">
               {t('ui.imageDownloaded')}
             </h3>
 
@@ -1407,7 +1403,7 @@ const Gallery = () => {
               <p className="text-gray-600 leading-relaxed">
                 {t('ui.imageReadyToShare')}
               </p>
-              <div className="bg-gradient-to-br from-primary-50 to-primary-50 border-2 border-primary-200 rounded-lg p-4">
+              <div className="bg-gradient-to-br from-primary-50 to-primary-50 border-2 border-primary-200 rounded-control p-4">
                 <p className="text-sm text-gray-700 font-medium">
                   <span className="font-semibold">{t('ui.howTo')}</span> {t('ui.instagramStep1')}<span className="font-bold text-primary-600">+</span>{t('ui.instagramStep2')}
                 </p>
@@ -1420,7 +1416,7 @@ const Gallery = () => {
                 window.open('https://www.instagram.com/', '_blank')
                 setShowInstagramModal(false)
               }}
-              className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-primary-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-control font-bold text-lg hover:from-primary-700 hover:to-primary-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
             >
               {t('ui.openInstagram')}
             </button>

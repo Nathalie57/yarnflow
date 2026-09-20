@@ -5,6 +5,7 @@
 
 import AiAssistant from './tools/AiAssistant'
 import { useAiAssistant } from '../contexts/AiAssistantContext'
+import FlowMascot from './FlowMascot'
 
 export default function AiAssistantDrawer({ open, onClose }) {
   const { projectId, projectLabel, projectProgress } = useAiAssistant()
@@ -22,18 +23,18 @@ export default function AiAssistantDrawer({ open, onClose }) {
           (sinon, sur un grand écran, un seul message isolé tout à droite d'un panneau
           pleine largeur donne une impression de mise en page cassée) */}
       <div
-        className={`fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[420px] z-50 bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl transition-[transform,visibility] duration-300 ease-out ${
+        className={`fixed bottom-0 left-0 right-0 sm:left-auto sm:right-6 sm:bottom-6 sm:w-[420px] z-50 bg-white rounded-t-card sm:rounded-card shadow-2xl transition-[transform,visibility] duration-300 ease-out ${
           open ? 'translate-y-0 visible' : 'translate-y-full invisible delay-300'
         }`}
         style={{ maxHeight: '85vh' }}
       >
         {/* [AI:Claude] Titre retiré — retour utilisatrice : troisième reformulation de la
             même idée après le bouton qui ouvre l'assistant et le message d'accueil
-            contextuel, sans apporter d'info en plus. Le bouton fermer reste seul. */}
+            contextuel, sans apporter d'info en plus. Le bouton fermer reste seul.
+            L'etincelle generique est remplacee par Flow (charte section 13 : l'assistant
+            est l'endroit ou sa presence doit etre la plus forte). */}
         <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-gray-100">
-          <svg className="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-          </svg>
+          <FlowMascot pose="content" size={26} />
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-700 text-xl leading-none p-1"

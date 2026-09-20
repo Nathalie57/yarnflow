@@ -188,7 +188,7 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
             <button
               type="button"
               onClick={analyzeExisting}
-              className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition"
+              className="w-full px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-medium hover:bg-primary-700 transition"
             >
               {t('ui.aiHelpAnalyzeExistingCta')}
             </button>
@@ -232,36 +232,36 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={busy}
-            className="p-3 border border-gray-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 transition text-left disabled:opacity-60"
+            className="p-3 border border-gray-200 rounded-control hover:border-primary-400 hover:bg-primary-50 transition text-left disabled:opacity-60"
           >
-            <div className="text-sm font-medium text-gray-900">{t('ui.pdfFile')}</div>
+            <div className="text-sm font-medium text-flow-ink">{t('ui.pdfFile')}</div>
             <div className="text-xs text-gray-500">{t('ui.pdfMaxSize')}</div>
           </button>
           <button
             type="button"
             onClick={() => setMode('url')}
             disabled={busy}
-            className="p-3 border border-gray-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 transition text-left disabled:opacity-60"
+            className="p-3 border border-gray-200 rounded-control hover:border-primary-400 hover:bg-primary-50 transition text-left disabled:opacity-60"
           >
-            <div className="text-sm font-medium text-gray-900">{t('ui.webLink')}</div>
+            <div className="text-sm font-medium text-flow-ink">{t('ui.webLink')}</div>
             <div className="text-xs text-gray-500">{t('ui.fromUrl')}</div>
           </button>
           <button
             type="button"
             onClick={() => setMode('text')}
             disabled={busy}
-            className="p-3 border border-gray-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 transition text-left disabled:opacity-60"
+            className="p-3 border border-gray-200 rounded-control hover:border-primary-400 hover:bg-primary-50 transition text-left disabled:opacity-60"
           >
-            <div className="text-sm font-medium text-gray-900">{t('ui.pasteText')}</div>
+            <div className="text-sm font-medium text-flow-ink">{t('ui.pasteText')}</div>
             <div className="text-xs text-gray-500">{t('ui.pasteTextHint')}</div>
           </button>
           <button
             type="button"
             onClick={loadLibrary}
             disabled={busy}
-            className="p-3 border border-gray-200 rounded-xl hover:border-primary-400 hover:bg-primary-50 transition text-left disabled:opacity-60"
+            className="p-3 border border-gray-200 rounded-control hover:border-primary-400 hover:bg-primary-50 transition text-left disabled:opacity-60"
           >
-            <div className="text-sm font-medium text-gray-900">{t('ui.myLibrary')}</div>
+            <div className="text-sm font-medium text-flow-ink">{t('ui.myLibrary')}</div>
             <div className="text-xs text-gray-500">{t('ui.patternAlreadyInLibrary')}</div>
           </button>
           </div>
@@ -276,14 +276,14 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
             onChange={(e) => setUrlInput(e.target.value)}
             placeholder="https://..."
             disabled={busy}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            className="w-full px-3 py-2 border border-gray-200 rounded-control text-sm"
           />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handleUrlSubmit}
               disabled={busy || !urlInput.trim()}
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60"
+              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60"
             >
               {busy ? t('ui.aiHelpAnalyzing') : t('ui.aiHelpPatternCta')}
             </button>
@@ -302,7 +302,7 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
             rows={5}
             placeholder={t('ui.phPastedPattern')}
             disabled={busy}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            className="w-full px-3 py-2 border border-gray-200 rounded-control text-sm"
           />
           <input
             type="url"
@@ -310,14 +310,14 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
             onChange={(e) => setPastedTextSourceUrl(e.target.value)}
             placeholder={t('ui.phPastedTextSourceUrl')}
             disabled={busy}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            className="w-full px-3 py-2 border border-gray-200 rounded-control text-sm"
           />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handleTextSubmit}
               disabled={busy || !pastedText.trim()}
-              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60"
+              className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60"
             >
               {busy ? t('ui.aiHelpAnalyzing') : t('ui.aiHelpPatternCta')}
             </button>
@@ -330,7 +330,7 @@ const AssociatePatternForAi = ({ projectId, project, onLinked }) => {
 
       {mode === 'library' && (
         <div className="space-y-2">
-          <div className="border border-gray-200 rounded-xl max-h-56 overflow-y-auto">
+          <div className="border border-gray-200 rounded-control max-h-56 overflow-y-auto">
             {loadingLibrary ? (
               <p className="text-sm text-gray-500 p-3">{t('ui.loading')}</p>
             ) : libraryPatterns.length === 0 ? (

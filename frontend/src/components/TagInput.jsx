@@ -106,7 +106,7 @@ const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder =
               setTimeout(() => setShowSuggestions(false), 200)
             }}
             placeholder={placeholder}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary focus:border-transparent"
           />
 
           {/* Bouton d'ajout manuel (utile sur mobile) */}
@@ -118,7 +118,7 @@ const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder =
               }
             }}
             disabled={!inputValue.trim() || inputValue.trim().length < 2}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 bg-primary text-white rounded-control hover:bg-primary/90 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             aria-label={t('ui.addTag')}
           >
             +
@@ -127,13 +127,13 @@ const TagInput = ({ tags, onAddTag, onRemoveTag, suggestions = [], placeholder =
 
         {/* Suggestions autocomplete */}
         {showSuggestions && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-control shadow-lg max-h-48 overflow-y-auto">
             {filteredSuggestions.map((suggestion, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="w-full px-4 py-2 text-left hover:bg-sage/10 transition-colors text-sm"
+                className="w-full px-4 py-2 text-left hover:bg-flow-mint/40 transition-colors text-sm"
               >
                 {suggestion}
               </button>

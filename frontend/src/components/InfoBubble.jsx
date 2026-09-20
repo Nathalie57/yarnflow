@@ -140,7 +140,7 @@ const InfoBubble = ({ text, position = 'top', size = 'sm', portal = false }) => 
   }
 
   const bubbleContent = (
-    <div className="bg-gray-800 text-white text-sm rounded-lg px-3 py-2 shadow-lg">
+    <div className="bg-gray-800 text-white text-sm rounded-control px-3 py-2 shadow-lg">
       {text}
     </div>
   )

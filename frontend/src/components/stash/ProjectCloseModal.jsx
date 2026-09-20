@@ -49,14 +49,14 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+      <div className="bg-white rounded-card shadow-xl w-full max-w-md">
         <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">{t('ui.closeProject')}</h2>
+          <h2 className="font-semibold text-flow-ink">{t('ui.closeProject')}</h2>
           <p className="text-xs text-gray-500 mt-0.5">{t('ui.indicateBallsUsed')}</p>
         </div>
 
         <div className="p-5 space-y-4">
-          {error && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-3">{error}</p>}
+          {error && <p className="text-sm text-red-600 bg-red-50 rounded-control px-4 py-3">{error}</p>}
 
           {loading ? (
             <div className="text-center py-8 text-gray-400">
@@ -70,7 +70,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
                 const used      = parseFloat(usage[a.stash_entry_id] ?? a.quantity_reserved)
                 const remainder = Math.max(0, a.quantity_reserved - used)
                 return (
-                  <div key={a.stash_entry_id} className="p-3 bg-gray-50 rounded-xl">
+                  <div key={a.stash_entry_id} className="p-3 bg-flow-mint/30 rounded-control">
                     <div className="flex items-center justify-between mb-2">
                       <div>
                         <p className="text-sm font-medium text-gray-800">{a.brand} — {a.yarn_name}</p>
@@ -84,7 +84,7 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
                       <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setUsage(u => ({ ...u, [a.stash_entry_id]: Math.max(0, (parseFloat(u[a.stash_entry_id]) || 0) - 0.5) }))}
-                          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-white text-sm"
+                          className="w-7 h-7 rounded-control border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-white text-sm"
                         >−</button>
                         <input
                           type="number"
@@ -93,18 +93,18 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
                           step="0.5"
                           value={usage[a.stash_entry_id] ?? a.quantity_reserved}
                           onChange={e => setUsage(u => ({ ...u, [a.stash_entry_id]: e.target.value }))}
-                          className="w-14 text-center text-sm font-semibold border border-gray-200 rounded-lg py-1 focus:outline-none focus:ring-2 focus:ring-primary-400"
+                          className="w-14 text-center text-sm font-semibold border border-gray-200 rounded-control py-1 focus:outline-none focus:ring-2 focus:ring-primary-400"
                         />
                         <button
                           onClick={() => setUsage(u => ({ ...u, [a.stash_entry_id]: Math.min(a.quantity_reserved, (parseFloat(u[a.stash_entry_id]) || 0) + 0.5) }))}
                           disabled={used >= a.quantity_reserved}
-                          className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 text-sm"
+                          className="w-7 h-7 rounded-control border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 text-sm"
                         >+</button>
                       </div>
                     </div>
 
                     {remainder > 0 && (
-                      <p className="mt-2 text-xs text-primary-600 bg-primary-50 rounded-lg px-2.5 py-1.5">
+                      <p className="mt-2 text-xs text-primary-600 bg-primary-50 rounded-control px-2.5 py-1.5">
                         {t('ui.ballsBack', { count: Math.floor(remainder) })}
                       </p>
                     )}
@@ -118,12 +118,12 @@ const ProjectCloseModal = ({ projectId, onClose, onConfirmed }) => {
         <div className="flex gap-3 px-5 pb-5">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
+            className="flex-1 py-2.5 border border-gray-200 rounded-control text-sm text-gray-600 hover:bg-gray-50"
           >{t('ui.cancel')}</button>
           <button
             onClick={handleClose}
             disabled={saving || loading}
-            className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
+            className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold disabled:opacity-50"
           >{saving ? t('ui.closingEllipsis') : t('ui.closeProject')}</button>
         </div>
       </div>

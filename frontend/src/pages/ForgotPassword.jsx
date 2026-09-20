@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation, Trans } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import api from '../services/api'
+import FlowMascot from '../components/FlowMascot'
 
 import { apiErrorMessage } from '../utils/apiError'
 const ForgotPassword = () => {
@@ -50,14 +51,10 @@ const ForgotPassword = () => {
       {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
       <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
-            </svg>
-          </div>
+        <div className="bg-white rounded-card shadow-2xl p-8 max-w-md w-full text-center">
+          <FlowMascot pose="heureux" size={100} className="mx-auto mb-4" />
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-flow-ink mb-4">
             {t('forgotPassword.sentTitle')}
           </h1>
 
@@ -73,7 +70,7 @@ const ForgotPassword = () => {
 
           <Link
             to="/login"
-            className="block w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 transition"
+            className="block w-full bg-primary-600 text-white py-3 rounded-control font-bold hover:bg-primary-700 transition"
           >
             {t('shared.backToLogin')}
           </Link>
@@ -87,13 +84,11 @@ const ForgotPassword = () => {
       {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
       <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
 
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+      <div className="bg-white rounded-card shadow-2xl p-8 max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">🔑</span>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-flow-ink mb-2">
             {t('forgotPassword.title')}
           </h1>
           <p className="text-gray-600">
@@ -120,7 +115,7 @@ const ForgotPassword = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder={t('shared.emailPlaceholder')}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+              className="w-full px-4 py-3 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               disabled={loading}
             />
           </div>
@@ -128,7 +123,7 @@ const ForgotPassword = () => {
           <button
             type="submit"
             disabled={loading || !email}
-            className="w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-primary-600 text-white py-3 rounded-control font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

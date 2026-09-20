@@ -8,6 +8,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import { useTranslation } from 'react-i18next'
+import FlowMascot from '../components/FlowMascot'
 
 export default function PatternTranslator() {
   const { t } = useTranslation('tools')
@@ -188,10 +189,13 @@ export default function PatternTranslator() {
         </div>
 
         {/* Enregistrer dans la bibliothèque */}
-        <div className="bg-primary-50 border border-primary-200 rounded-2xl p-5 space-y-4">
-          <div>
-            <p className="text-sm font-semibold text-primary-800">{t('ui.saveToLibrary')}</p>
-            <p className="text-xs text-primary-600 mt-0.5">{t('ui.creditUsedWarning')}</p>
+        <div className="bg-primary-50 border border-primary-200 rounded-card p-5 space-y-4">
+          <div className="flex items-center gap-3">
+            <FlowMascot pose="heureux" size={48} className="flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-primary-800">{t('ui.saveToLibrary')}</p>
+              <p className="text-xs text-primary-600 mt-0.5">{t('ui.creditUsedWarning')}</p>
+            </div>
           </div>
           <input
             type="text"
@@ -199,14 +203,14 @@ export default function PatternTranslator() {
             value={saveName}
             onChange={e => setSaveName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSave()}
-            className="w-full border border-primary-200 bg-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary-400"
+            className="w-full border border-primary-200 bg-white rounded-control px-4 py-2.5 text-sm focus:outline-none focus:border-primary-400"
           />
           <div className="flex gap-2">
             {['tricot', 'crochet'].map(t => (
               <button
                 key={t}
                 onClick={() => setSaveTechnique(t)}
-                className={`px-4 py-2 rounded-lg text-xs font-semibold border transition ${
+                className={`px-4 py-2 rounded-control text-xs font-semibold border transition ${
                   saveTechnique === t
                     ? 'bg-primary-600 text-white border-primary-600'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300'
@@ -220,14 +224,14 @@ export default function PatternTranslator() {
           <button
             onClick={handleSave}
             disabled={saving || !saveName.trim()}
-            className="w-full py-3 bg-primary-600 text-white rounded-xl font-semibold text-sm hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-primary-600 text-white rounded-control font-semibold text-sm hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? t('ui.savingEllipsis') : t('ui.saveToLibrary')}
           </button>
         </div>
 
         {/* Texte traduit */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+        <div className="bg-white border border-gray-200 rounded-card p-6">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">{t('ui.patternTranslated')}</h2>
           <div className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap font-mono">
             {result}
@@ -242,16 +246,19 @@ export default function PatternTranslator() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
 
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('ui.patternTranslator')}</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {t('ui.translatorDesc')}
-        </p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-flow-ink">{t('ui.patternTranslator')}</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {t('ui.translatorDesc')}
+          </p>
+        </div>
+        <FlowMascot pose="content" size={56} className="flex-shrink-0" />
       </div>
 
       {/* Quota */}
       {quota && (
-        <div className={`rounded-xl px-4 py-3 text-sm flex items-center justify-between ${
+        <div className={`rounded-control px-4 py-3 text-sm flex items-center justify-between ${
           quota.remaining === 0 ? 'bg-red-50 border border-red-200' : 'bg-primary-50 border border-primary-200'
         }`}>
           <span className={quota.remaining === 0 ? 'text-red-700' : 'text-primary-700'}>
@@ -273,7 +280,7 @@ export default function PatternTranslator() {
       )}
 
       {/* Sélection du mode */}
-      <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
+      <div className="flex gap-2 p-1 bg-gray-100 rounded-control">
         {[
           { key: 'url', labelKey: 'modeUrl' },
           { key: 'text', labelKey: 'modeText' },
@@ -282,8 +289,8 @@ export default function PatternTranslator() {
           <button
             key={m.key}
             onClick={() => { setMode(m.key); setError(null) }}
-            className={`flex-1 py-2 text-sm font-medium rounded-lg transition ${
-              mode === m.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            className={`flex-1 py-2 text-sm font-medium rounded-control transition ${
+              mode === m.key ? 'bg-white text-flow-ink shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {t(`ui.${m.labelKey}`)}
@@ -305,7 +312,7 @@ export default function PatternTranslator() {
             <button
               key={lang.code}
               onClick={() => setTargetLang(lang.code)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+              className={`px-3 py-1.5 rounded-control text-xs font-medium border transition ${
                 targetLang === lang.code
                   ? 'bg-primary-600 text-white border-primary-600'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300'
@@ -325,7 +332,7 @@ export default function PatternTranslator() {
             placeholder={t('ui.phRavelryUrl')}
             value={url}
             onChange={e => setUrl(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary-400"
+            className="w-full border border-gray-200 rounded-control px-4 py-3 text-sm focus:outline-none focus:border-primary-400"
           />
           <p className="text-xs text-gray-500 -mt-4">{t('ui.urlImportHint')}</p>
         </>
@@ -338,7 +345,7 @@ export default function PatternTranslator() {
             value={text}
             onChange={e => setText(e.target.value)}
             rows={12}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary-400 resize-y"
+            className="w-full border border-gray-200 rounded-control px-4 py-3 text-sm font-mono focus:outline-none focus:border-primary-400 resize-y"
           />
           <p className="text-xs text-gray-500 -mt-4">{t('ui.translatorDisclaimer')}</p>
         </>
@@ -347,7 +354,7 @@ export default function PatternTranslator() {
       {mode === 'pdf' && (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50 transition"
+          className="border-2 border-dashed border-gray-200 rounded-control p-8 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50 transition"
         >
           <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={e => setFile(e.target.files[0])} />
           {file ? (
@@ -363,7 +370,7 @@ export default function PatternTranslator() {
 
       {/* Erreur */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+        <div className="bg-red-50 border border-red-200 rounded-control px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -372,7 +379,7 @@ export default function PatternTranslator() {
       <button
         onClick={handleTranslate}
         disabled={loading || !canTranslate}
-        className="w-full py-3.5 bg-primary-600 text-white rounded-xl font-semibold text-sm hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-3.5 bg-primary-600 text-white rounded-control font-semibold text-sm hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? (
           <span className="flex items-center justify-center gap-2">

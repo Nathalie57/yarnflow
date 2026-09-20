@@ -89,7 +89,7 @@ export default function NeedleConverter() {
       <div className="flex gap-2">
         <button
           onClick={() => { setType('knitting'); setSearch('') }}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2 rounded-control text-sm font-medium transition ${
             type === 'knitting' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -97,7 +97,7 @@ export default function NeedleConverter() {
         </button>
         <button
           onClick={() => { setType('crochet'); setSearch('') }}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2 rounded-control text-sm font-medium transition ${
             type === 'crochet' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -111,12 +111,12 @@ export default function NeedleConverter() {
         value={search}
         onChange={e => setSearch(e.target.value)}
         placeholder={t('ui.phSearchSize')}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
       />
 
       {/* Résultat mis en avant si recherche */}
       {highlighted && (
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex justify-around text-center">
+        <div className="bg-primary-50 border border-primary-200 rounded-card p-4 flex justify-around text-center">
           <div>
             <div className="text-2xl font-bold text-primary-700">{highlighted.mm} mm</div>
             <div className="text-xs text-gray-500 mt-1">{t('ui.euSlashMm')}</div>
@@ -135,7 +135,7 @@ export default function NeedleConverter() {
       )}
 
       {/* Table complète */}
-      <div className="rounded-xl border border-gray-200 overflow-hidden">
+      <div className="rounded-card border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
             <tr>

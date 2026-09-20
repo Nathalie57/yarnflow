@@ -10,6 +10,7 @@ import { useState } from 'react'
 import PropTypes from 'prop-types'
 import api from '../services/api'
 import { useTranslation } from 'react-i18next'
+import FlowMascot from './FlowMascot'
 
 import { apiErrorMessage } from '../utils/apiError'
 const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
@@ -64,16 +65,16 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-5 animate-slide-up">
+      <div className="bg-white rounded-card shadow-2xl max-w-lg w-full p-6 space-y-5 animate-slide-up">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="text-5xl">🎨</div>
-          <h2 className="text-2xl font-bold text-gray-900">{t('ui.photoReady')}</h2>
+          <FlowMascot pose="heureux" size={110} className="mx-auto" />
+          <h2 className="text-2xl font-bold text-flow-ink">{t('ui.photoReady')}</h2>
           <p className="text-gray-600">{t('ui.whatDoYouThink')}</p>
         </div>
 
         {/* Photo preview */}
-        <div className="bg-gray-100 rounded-lg p-3 border-2 border-gray-200">
+        <div className="bg-gray-100 rounded-control p-3 border-2 border-gray-200">
           <img
             src={`${import.meta.env.VITE_BACKEND_URL}${photo.enhanced_path || photo.original_path}`}
             alt={photo.item_name}
@@ -102,7 +103,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
                 <svg
                   className={`w-12 h-12 transition-colors ${
                     star <= (hoveredRating || rating)
-                      ? 'text-yellow-400 fill-current'
+                      ? 'text-flow-yellow fill-current'
                       : 'text-gray-300 fill-current'
                   }`}
                   xmlns="http://www.w3.org/2000/svg"
@@ -131,7 +132,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder={t('ui.whatWouldImprove')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none text-sm focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-control resize-none text-sm focus:ring-2 focus:ring-primary-400 focus:border-transparent"
             rows="3"
             maxLength="500"
             disabled={submitting}
@@ -146,7 +147,7 @@ const SatisfactionModal = ({ isOpen, photo, onClose, onFeedbackSubmitted }) => {
           <button
             onClick={handleSubmit}
             disabled={submitting || rating === 0}
-            className="w-full px-6 py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-6 py-3 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? t('ui.sendingRating') : t('ui.sendRating')}
           </button>

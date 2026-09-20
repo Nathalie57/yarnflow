@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react'
 import { useHintsContext } from '../contexts/HintsContext'
 import { useTranslation } from 'react-i18next'
+import FlowMascot from './FlowMascot'
 
 const ContextualHint = () => {
   const { t } = useTranslation('tools')
@@ -81,7 +82,7 @@ const ContextualHint = () => {
       role="alert"
       aria-live="polite"
     >
-      <div className="bg-white rounded-xl shadow-2xl border border-primary-100 overflow-hidden">
+      <div className="bg-white rounded-card shadow-2xl border border-flow-mint overflow-hidden">
         {/* Barre de progression (countdown visuel) */}
         <div className="h-1 bg-gray-100">
           <div
@@ -92,10 +93,8 @@ const ContextualHint = () => {
 
         <div className="p-4">
           <div className="flex items-start gap-3">
-            {/* Icône */}
-            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-primary-100 to-sage-100 rounded-full flex items-center justify-center text-xl">
-              {currentHint.icon || '💡'}
-            </div>
+            {/* Flow — le compagnon qui partage l'astuce */}
+            <FlowMascot pose="bonneIdee" size={40} className="flex-shrink-0" />
 
             {/* Contenu */}
             <div className="flex-1 min-w-0">
@@ -120,7 +119,7 @@ const ContextualHint = () => {
           <div className="mt-3 flex justify-end">
             <button
               onClick={handleClose}
-              className="px-4 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-medium rounded-lg transition-colors"
+              className="px-4 py-1.5 bg-primary-50 hover:bg-primary-100 text-primary-700 text-sm font-medium rounded-control transition-colors"
             >
               {t('ui.gotIt')}
             </button>

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
+import FlowMascot from '../components/FlowMascot'
 
 import { apiErrorMessage } from '../utils/apiError'
 /**
@@ -81,17 +82,17 @@ const OAuthCallback = () => {
   }, [searchParams, navigate, updateUser])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-flow-cream to-flow-mint/40">
       <div className="card max-w-md w-full text-center">
         {processing ? (
           <>
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('oauthCallback.processing')}</h2>
+            <h2 className="text-xl font-bold text-flow-ink mb-2">{t('oauthCallback.processing')}</h2>
             <p className="text-gray-600">{t('oauthCallback.processingDesc')}</p>
           </>
         ) : error ? (
           <>
-            <div className="text-6xl mb-4">❌</div>
+            <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
             <h2 className="text-xl font-bold text-red-700 mb-2">{t('oauthCallback.errorTitle')}</h2>
             <p className="text-gray-600 mb-6">{error}</p>
             <button

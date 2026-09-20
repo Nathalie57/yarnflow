@@ -84,10 +84,10 @@ const RavelryConnectionCard = () => {
 
   return (
     <div className="card">
-      <h2 className="text-lg font-semibold text-gray-900 mb-1">{t('ui.ravelryAccount')}</h2>
+      <h2 className="text-lg font-semibold text-flow-ink mb-1">{t('ui.ravelryAccount')}</h2>
 
       {message && (
-        <div className={`mt-3 mb-1 px-3 py-2 rounded-lg text-sm ${
+        <div className={`mt-3 mb-1 px-3 py-2 rounded-control text-sm ${
           message.type === 'success'
             ? 'bg-green-50 border border-green-300 text-green-800'
             : 'bg-red-50 border border-red-300 text-red-800'
@@ -99,7 +99,7 @@ const RavelryConnectionCard = () => {
       {status?.connected ? (
         <div className="flex items-center justify-between gap-4 mt-4">
           <div>
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-flow-ink">
               {t('ui.ravelryConnectedAs', { username: status.ravelry_username })}
             </p>
             {status.connected_at && (

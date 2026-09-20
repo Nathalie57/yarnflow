@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 // [AI:Claude] Composant classe (obligatoire pour un ErrorBoundary React) :
 // pas de hook possible ici, d'où le HOC withTranslation qui injecte t en prop.
 import { withTranslation } from 'react-i18next'
+import FlowMascot from './FlowMascot'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -65,7 +66,8 @@ class ErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
+          <div className="bg-white rounded-card shadow-xl p-8 max-w-2xl w-full">
+            <FlowMascot pose="interrogatif" size={90} className="mb-4" />
             <h1 className="text-2xl font-bold text-red-600 mb-4">
               {t('errorBoundary.title')}
             </h1>
@@ -88,14 +90,14 @@ class ErrorBoundary extends Component {
             <div className="flex gap-4">
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                className="px-6 py-3 bg-primary-600 text-white rounded-control hover:bg-primary-700 transition"
               >
                 {t('errorBoundary.refresh')}
               </button>
 
               <Link
                 to="/my-projects"
-                className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+                className="px-6 py-3 bg-gray-200 text-gray-800 rounded-control hover:bg-gray-300 transition"
               >
                 {t('errorBoundary.backToProjects')}
               </Link>

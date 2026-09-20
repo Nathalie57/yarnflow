@@ -58,6 +58,9 @@ const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
 const ImportPartnerPattern = lazy(() => import('./pages/ImportPartnerPattern'))
 const PatternTranslator = lazy(() => import('./pages/PatternTranslator'))
 
+// [TEMPORAIRE] demo mascotte Flow — a retirer avec la route /flow-demo une fois validee
+const FlowMascotDemo = lazy(() => import('./pages/FlowMascotDemo'))
+
 // Pages légales
 const CGU = lazy(() => import('./pages/CGU'))
 const Privacy = lazy(() => import('./pages/Privacy'))
@@ -196,6 +199,9 @@ function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/mentions" element={<Mentions />} />
           <Route path="/contact" element={<Contact />} />
+
+          {/* [TEMPORAIRE] demo mascotte Flow — a retirer une fois validee */}
+          <Route path="/flow-demo" element={<FlowMascotDemo />} />
 
           {/* Routes protégées */}
           <Route element={<PrivateRoute><Layout /></PrivateRoute>}>

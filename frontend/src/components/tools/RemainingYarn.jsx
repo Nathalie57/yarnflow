@@ -35,7 +35,7 @@ export default function RemainingYarn() {
               type="number" min="0" value={totalWeight}
               onChange={e => setTotalWeight(e.target.value)}
               placeholder={t('ui.phEx100')}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-400"
+              className="w-full border border-gray-300 rounded-control px-4 py-3 text-flow-ink focus:outline-none focus:ring-2 focus:ring-primary-400"
             />
           </div>
           <div>
@@ -44,7 +44,7 @@ export default function RemainingYarn() {
               type="number" min="0" value={totalMeters}
               onChange={e => setTotalMeters(e.target.value)}
               placeholder={t('ui.phEx200')}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-400"
+              className="w-full border border-gray-300 rounded-control px-4 py-3 text-flow-ink focus:outline-none focus:ring-2 focus:ring-primary-400"
             />
           </div>
         </div>
@@ -59,7 +59,7 @@ export default function RemainingYarn() {
           type="number" min="0" value={remainingWeight}
           onChange={e => setRemainingWeight(e.target.value)}
           placeholder={t('ui.phEx43')}
-          className="w-full border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-400"
+          className="w-full border border-gray-300 rounded-control px-4 py-3 text-flow-ink focus:outline-none focus:ring-2 focus:ring-primary-400"
         />
         <p className="text-xs text-gray-500 mt-1">{t('ui.weighPartialBall')}</p>
       </div>
@@ -77,17 +77,17 @@ export default function RemainingYarn() {
           <p className="text-xs text-center text-gray-500">{t('ui.percentUsed', { percent: usedPercent.toFixed(1) })}</p>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-green-50 rounded-xl px-4 py-3 text-center">
+            <div className="bg-green-50 rounded-control px-4 py-3 text-center">
               <p className="text-xs text-gray-500 mb-1">{t('ui.metersLeft')}</p>
               <p className="text-xl font-bold text-green-700">{Math.round(remainingMeters)} m</p>
             </div>
-            <div className="bg-gray-50 rounded-xl px-4 py-3 text-center">
+            <div className="bg-gray-50 rounded-control px-4 py-3 text-center">
               <p className="text-xs text-gray-500 mb-1">{t('ui.alreadyUsed')}</p>
               <p className="text-xl font-bold text-gray-700">{Math.round(meters - remainingMeters)} m</p>
             </div>
           </div>
 
-          <div className="bg-primary-50 rounded-xl px-4 py-3 text-xs text-primary-700">
+          <div className="bg-primary-50 rounded-control px-4 py-3 text-xs text-primary-700">
             {t('ui.densityLine', { mpg: metersPerGram.toFixed(2), remaining, total })}
           </div>
         </div>

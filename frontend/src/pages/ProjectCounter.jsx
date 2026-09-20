@@ -34,6 +34,7 @@ import SatisfactionModal from '../components/SatisfactionModal'
 import UpgradePrompt from '../components/UpgradePrompt'
 import StashAllocationPanel from '../components/stash/StashAllocationPanel'
 import ProjectCloseModal from '../components/stash/ProjectCloseModal'
+import FlowMascot from '../components/FlowMascot'
 import { PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 import { PROJECT_TYPE_VALUES, projectTypeKey } from '../data/projectTypes'
 
@@ -3258,10 +3259,15 @@ const ProjectCounter = () => {
 
       await fetchProject()
 
-      showAlert({
-        message: isCompleted ? t('alerts.projectReopened') : t('alerts.projectCompleted'),
-        type: 'success'
-      })
+      // [AI:Claude] 2026-09-19 — Meme celebration (Flow "heureux") que le chemin
+      // "toutes les sections terminees", plutot qu'un simple toast : demande
+      // explicite de l'utilisatrice pour que ce bouton donne la meme satisfaction
+      // que l'autre facon de terminer un projet.
+      if (!isCompleted) {
+        setShowProjectCompletionModal(true)
+      } else {
+        showAlert({ message: t('alerts.projectReopened'), type: 'success' })
+      }
     } catch (err) {
       console.error('Erreur toggle project:', err)
       showAlert({ message: t('alerts.updateFailed'), type: 'error' })
@@ -3301,29 +3307,29 @@ const ProjectCounter = () => {
         {/* Skeleton header */}
         <div className="space-y-2">
           <div className="skeleton h-4 w-16 rounded" />
-          <div className="skeleton h-7 w-48 rounded-lg" />
+          <div className="skeleton h-7 w-48 rounded-control" />
           <div className="flex gap-2">
             <div className="skeleton h-5 w-20 rounded-full" />
             <div className="skeleton h-5 w-16 rounded-full" />
           </div>
         </div>
         {/* Skeleton barre progression */}
-        <div className="skeleton h-16 w-full rounded-xl" />
+        <div className="skeleton h-16 w-full rounded-control" />
         {/* Skeleton compteur */}
-        <div className="skeleton h-20 w-full rounded-xl" />
+        <div className="skeleton h-20 w-full rounded-control" />
         {/* Skeleton sections */}
-        <div className="skeleton h-12 w-full rounded-xl" />
+        <div className="skeleton h-12 w-full rounded-control" />
         {/* Skeleton tabs */}
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="bg-white rounded-control border border-gray-100 overflow-hidden">
           <div className="flex border-b border-gray-100">
-            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
-            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
-            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-control" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-control" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-control" />
           </div>
           <div className="p-4 space-y-3">
             <div className="skeleton h-4 w-full rounded" />
             <div className="skeleton h-4 w-3/4 rounded" />
-            <div className="skeleton h-32 w-full rounded-lg" />
+            <div className="skeleton h-32 w-full rounded-control" />
           </div>
         </div>
       </div>
@@ -3333,18 +3339,18 @@ const ProjectCounter = () => {
   if (error || !project) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-control p-6 text-center">
           <p className="text-red-800 mb-4">{error || t('ui.projectNotFound')}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => { setError(null); setLoading(true); fetchProject().then(pd => pd && fetchSections(pd.current_section_id)) }}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+              className="px-6 py-2 bg-primary-600 text-white rounded-control hover:bg-primary-700 transition"
             >
               {t('ui.retry')}
             </button>
             <Link
               to="/my-projects"
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              className="px-6 py-2 bg-red-600 text-white rounded-control hover:bg-red-700 transition"
             >
               {t('ui.backToProjects')}
             </Link>
@@ -3449,7 +3455,7 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Tutoriel interactif — checklist "rangs / section / photo", affichée
           sur le projet démo ET sur le premier vrai projet (showTutorial) */}
       {showTutorial && !demoSteps.dismissed && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-control p-4 relative">
           <button
             onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
             className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
@@ -3472,7 +3478,7 @@ const ProjectCounter = () => {
                     </p>
                     <button
                       onClick={() => navigate('/smart-project-creator')}
-                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-control font-medium transition"
                     >
                       {t('ui.createRealProject')}
                     </button>
@@ -3484,7 +3490,7 @@ const ProjectCounter = () => {
                     </p>
                     <button
                       onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
-                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-control font-medium transition"
                     >
                       {t('ui.continue')}
                     </button>
@@ -3546,7 +3552,7 @@ const ProjectCounter = () => {
 
       {/* Nudge sections */}
       {!isFocusMode && showSectionsNudge && sections.length === 0 && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 relative">
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-control p-4 relative">
           <button
             onClick={() => { setShowSectionsNudge(false); localStorage.setItem(`yf_sections_nudge_${projectId}`, '1') }}
             className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
@@ -3567,7 +3573,7 @@ const ProjectCounter = () => {
 
       {/* Indicateur hors-ligne / sync en attente */}
       {(!isOnline || pendingSync) && (
-        <div className={`mb-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
+        <div className={`mb-3 flex items-center gap-2 px-3 py-2 rounded-control text-xs font-medium ${
           !isOnline
             ? 'bg-orange-50 text-orange-700 border border-orange-200'
             : 'bg-blue-50 text-blue-700 border border-blue-200'
@@ -3596,7 +3602,7 @@ const ProjectCounter = () => {
           </Link>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
+              <h1 className="text-xl font-bold text-flow-ink">{project.name}</h1>
               {daysUntilDeadline !== null ? (
                 <button
                   onClick={() => setShowDeadlinePicker(true)}
@@ -3632,13 +3638,13 @@ const ProjectCounter = () => {
                 </button>
 
                 {showTypeMenu && (
-                  <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border-2 border-gray-200 py-1 z-50 min-w-[150px] max-h-[300px] overflow-y-auto">
+                  <div className="absolute top-full left-0 mt-1 bg-white rounded-control shadow-lg border-2 border-gray-200 py-1 z-50 min-w-[150px] max-h-[300px] overflow-y-auto">
                     {getProjectTypes().map((type) => (
                       <button
                         key={type}
                         onClick={() => handleChangeType(type)}
                         className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 transition ${
-                          project.type === type ? 'bg-gray-50 font-bold text-gray-900' : 'text-gray-700'
+                          project.type === type ? 'bg-gray-50 font-bold text-flow-ink' : 'text-gray-700'
                         }`}
                       >
                         {projectTypeLabel(type)}
@@ -3650,7 +3656,7 @@ const ProjectCounter = () => {
               <div className="relative technique-menu">
                 <button
                   onClick={() => setShowTechniqueMenu(!showTechniqueMenu)}
-                  className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-bold hover:bg-primary-100 transition cursor-pointer flex items-center gap-1"
+                  className="px-2 py-1 bg-flow-lavender/50 text-flow-ink rounded-full text-xs font-bold hover:bg-flow-lavender/70 transition cursor-pointer flex items-center gap-1"
                 >
                   {project.technique === 'tricot' ? t('ui.knitting') : 'Crochet'}
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3659,7 +3665,7 @@ const ProjectCounter = () => {
                 </button>
 
                 {showTechniqueMenu && (
-                  <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border-2 border-gray-200 py-1 z-50 min-w-[120px]">
+                  <div className="absolute top-full left-0 mt-1 bg-white rounded-control shadow-lg border-2 border-gray-200 py-1 z-50 min-w-[120px]">
                     <button
                       onClick={() => handleChangeTechnique('tricot')}
                       className={`w-full px-3 py-2 text-left text-sm hover:bg-primary-50 transition ${
@@ -3674,7 +3680,7 @@ const ProjectCounter = () => {
                         project.technique === 'crochet' ? 'bg-primary-50 font-bold text-primary-700' : 'text-gray-700'
                       }`}
                     >
-                      🪡 Crochet
+                      Crochet
                     </button>
                   </div>
                 )}
@@ -3687,15 +3693,14 @@ const ProjectCounter = () => {
                   className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs font-medium transition-colors"
                   title={t('ui.changeCountingUnit')}
                 >
-                  <span className={counterUnit === 'rows' ? 'text-gray-900 font-semibold' : 'text-gray-500'}>{t('ui.rows')}</span>
-                  <div className="relative inline-flex items-center h-4 w-7 rounded-full transition-colors"
-                       style={{ backgroundColor: counterUnit === 'cm' ? '#557055' : '#9ca3af' }}>
+                  <span className={counterUnit === 'rows' ? 'text-flow-ink font-semibold' : 'text-gray-500'}>{t('ui.rows')}</span>
+                  <div className={`relative inline-flex items-center h-4 w-7 rounded-full transition-colors ${counterUnit === 'cm' ? 'bg-flow-sage' : 'bg-gray-400'}`}>
                     <span
                       className="inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform"
                       style={{ transform: counterUnit === 'cm' ? 'translateX(14px)' : 'translateX(2px)' }}
                     />
                   </div>
-                  <span className={counterUnit === 'cm' ? 'text-gray-900 font-semibold' : 'text-gray-400'}>cm</span>
+                  <span className={counterUnit === 'cm' ? 'text-flow-ink font-semibold' : 'text-gray-400'}>cm</span>
                 </button>
               </div>
 
@@ -3740,7 +3745,7 @@ const ProjectCounter = () => {
                     </button>
                   )}
                   {showTagSection && (
-                    <div className="bg-sage/5 rounded-lg p-3 border border-sage/20">
+                    <div className="bg-flow-mint/40 rounded-control p-3 border border-flow-mint">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-gray-700">{t('ui.projectTags')}</span>
                         <button
@@ -3767,7 +3772,7 @@ const ProjectCounter = () => {
       </div>
 
       {/* [AI:Claude] Barre 1 : Progression globale du projet */}
-      <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 mb-3 shadow-sm">
+      <div className="bg-white rounded-card border border-flow-mint px-4 py-3 mb-3 shadow-sm">
         {/* Version Desktop */}
         <div className="hidden sm:flex items-center gap-4">
           <div className="flex-1">
@@ -3805,10 +3810,10 @@ const ProjectCounter = () => {
           )}
           <button
             onClick={handleToggleProjectComplete}
-            className={`px-4 py-2 rounded-xl font-medium text-sm transition whitespace-nowrap ${
+            className={`px-4 py-2 rounded-control font-medium text-sm transition whitespace-nowrap ${
               project.status === 'completed'
                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-flow-mint text-flow-ink hover:bg-flow-mint/70'
             }`}
             title={project.status === 'completed' ? t('ui.reopenProject') : t('ui.markProjectDone')}
           >
@@ -3849,10 +3854,10 @@ const ProjectCounter = () => {
             </div>
             <button
               onClick={handleToggleProjectComplete}
-              className={`px-3 py-1.5 rounded-xl font-medium text-xs transition ${
+              className={`px-3 py-1.5 rounded-control font-medium text-xs transition ${
                 project.status === 'completed'
                   ? 'bg-green-100 text-green-800'
-                  : 'bg-gray-100 text-gray-700'
+                  : 'bg-flow-mint text-flow-ink'
               }`}
             >
               {project.status === 'completed' ? t('ui.doneCheck') : t('ui.markDone')}
@@ -3862,27 +3867,64 @@ const ProjectCounter = () => {
       </div>
 
       {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY */}
-      <div className="sticky top-[64px] z-40 bg-primary-200 rounded-xl border border-primary-200 p-4 mb-3 shadow-sm">
-        {/* [AI:Claude] Mode travail : bascule "Voir tout" ⇄ "Mode travail" — permet de
-            suspendre temporairement le focus (pour consulter patron/photos/notes) sans
-            arrêter la session en cours. */}
-        {isTimerRunning && (
-          <button
-            onClick={() => setFocusModeDismissed(v => !v)}
-            className="mb-2 text-xs font-medium text-primary-700 hover:text-primary-900 flex items-center gap-1"
-          >
-            {focusModeDismissed ? (
-              <>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
-                {t('ui.backToFocusMode')}
-              </>
-            ) : (
-              <>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                {t('ui.viewEverything')}
-              </>
-            )}
-          </button>
+      <div className="sticky top-[64px] z-40 bg-primary-200 rounded-control border border-primary-200 p-4 mb-3 shadow-sm">
+        {/* [AI:Claude] Flow discret dans la zone de progression — charte section 5,
+            exemple nomme "Encore 8 rangs pour terminer cette section" (Flow a cote,
+            pas de gros pave). N'apparait que si une section a un objectif chiffre et
+            n'est pas deja terminee, pour rester un vrai signal et pas un decor fixe.
+            Pendant une session active, Flow passe en plus grand a droite (retour
+            utilisatrice : il y avait un vide a cet endroit-la une fois le plein ecran
+            ouvert), pose "cestParti" pour marquer l'energie du comptage en cours. */}
+        {isTimerRunning ? (
+          <div className="relative mb-2">
+            <div className="pr-20">
+              {progressData.total !== null && progressData.total - progressData.current > 0 && (
+                <p className="text-xs font-medium text-primary-800 mb-1">
+                  {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : 'ui.flowRowsLeft', {
+                    count: counterUnit === 'cm'
+                      ? Number(progressData.total - progressData.current).toFixed(1)
+                      : Math.ceil(progressData.total - progressData.current)
+                  })}
+                </p>
+              )}
+              {/* [AI:Claude] Mode travail : bascule "Voir tout" ⇄ "Mode travail" — permet de
+                  suspendre temporairement le focus (pour consulter patron/photos/notes) sans
+                  arrêter la session en cours. */}
+              <button
+                onClick={() => setFocusModeDismissed(v => !v)}
+                className="text-xs font-medium text-primary-700 hover:text-primary-900 flex items-center gap-1"
+              >
+                {focusModeDismissed ? (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
+                    {t('ui.backToFocusMode')}
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    {t('ui.viewEverything')}
+                  </>
+                )}
+              </button>
+            </div>
+            {/* [AI:Claude] Absolu plutot que dans le flux : la taille de Flow ne doit
+                pas pousser le compteur plus bas (retour utilisatrice), il remplit juste
+                le vide visuel a droite du texte, par-dessus. */}
+            <FlowMascot pose="cestParti" size={110} className="absolute top-0 right-0" />
+          </div>
+        ) : (
+          progressData.total !== null && progressData.total - progressData.current > 0 && (
+            <div className="flex items-center gap-2.5 mb-2">
+              <FlowMascot pose="content" size={52} className="flex-shrink-0" />
+              <p className="text-sm font-medium text-primary-800">
+                {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : 'ui.flowRowsLeft', {
+                  count: counterUnit === 'cm'
+                    ? Number(progressData.total - progressData.current).toFixed(1)
+                    : Math.ceil(progressData.total - progressData.current)
+                })}
+              </p>
+            </div>
+          )
         )}
         {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
         <div className="space-y-3 sm:space-y-0">
@@ -3897,7 +3939,7 @@ const ProjectCounter = () => {
               <div className="space-y-2">
                 <div className="text-left min-w-0">
                   <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
-                  <div className="font-semibold text-gray-900 text-sm line-clamp-2">
+                  <div className="font-semibold text-flow-ink text-sm line-clamp-2">
                     {currentSectionId ? (
                       sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                     ) : (
@@ -3909,12 +3951,12 @@ const ProjectCounter = () => {
                   <button
                     onClick={handleDecrementRow}
                     disabled={currentRow === 0}
-                    className="w-14 h-14 flex-shrink-0 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-3xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
+                    className="w-14 h-14 flex-shrink-0 bg-white border-2 border-gray-300 text-gray-500 rounded-control text-3xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
                   >
                     −
                   </button>
                   <div
-                    className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 text-center py-3 cursor-pointer"
+                    className="flex-1 bg-white rounded-control shadow-sm border border-gray-200 text-center py-3 cursor-pointer"
                     onClick={handleCounterClick}
                     title={t('ui.clickToEdit')}
                   >
@@ -3943,7 +3985,7 @@ const ProjectCounter = () => {
                   </div>
                   <button
                     onClick={handleIncrementRow}
-                    className="w-14 h-14 flex-shrink-0 bg-primary-600 text-white rounded-xl text-3xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
+                    className="w-14 h-14 flex-shrink-0 bg-primary-600 text-white rounded-control text-3xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
                   >
                     +
                   </button>
@@ -3954,7 +3996,7 @@ const ProjectCounter = () => {
                 {/* Section active mobile */}
                 <div className="text-left flex-shrink min-w-0">
                   <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
-                  <div className="font-semibold text-gray-900 text-sm line-clamp-2 max-w-[180px]">
+                  <div className="font-semibold text-flow-ink text-sm line-clamp-2 max-w-[180px]">
                     {currentSectionId ? (
                       sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                     ) : (
@@ -3979,12 +4021,12 @@ const ProjectCounter = () => {
                   <button
                     onClick={handleDecrementRow}
                     disabled={currentRow === 0}
-                    className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
+                    className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-control text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
                   >
                     −
                   </button>
                   <div
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
+                    className="bg-white rounded-control shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
                     onClick={handleCounterClick}
                     title={t('ui.clickToEdit')}
                   >
@@ -4014,7 +4056,7 @@ const ProjectCounter = () => {
                   <div className="relative">
                     <button
                       onClick={handleIncrementRow}
-                      className="w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
+                      className="w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
                     >
                       +
                     </button>
@@ -4032,7 +4074,7 @@ const ProjectCounter = () => {
             <div className="hidden sm:block text-left flex-shrink-0">
               <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
               <div className="flex items-center gap-1.5">
-                <div className="font-semibold text-gray-900 text-base">
+                <div className="font-semibold text-flow-ink text-base">
                   {currentSectionId ? (
                     sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                   ) : (
@@ -4058,12 +4100,12 @@ const ProjectCounter = () => {
               <button
                 onClick={handleDecrementRow}
                 disabled={currentRow === 0}
-                className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-xl text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
+                className="w-11 h-11 bg-white border-2 border-gray-300 text-gray-500 rounded-control text-2xl font-medium hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 shadow-sm select-none"
               >
                 −
               </button>
               <div
-                className="bg-white rounded-xl shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
+                className="bg-white rounded-control shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
                 onClick={handleCounterClick}
                 title={t('ui.clickToEdit')}
               >
@@ -4092,7 +4134,7 @@ const ProjectCounter = () => {
               </div>
               <button
                 onClick={handleIncrementRow}
-                className="w-11 h-11 bg-primary-600 text-white rounded-xl text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
+                className="w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
               >
                 +
               </button>
@@ -4101,7 +4143,7 @@ const ProjectCounter = () => {
             {/* Timers (gauche mobile, centre desktop) */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink">
               <div className="text-center">
-                <div className="text-base sm:text-xl font-bold text-gray-900">{formatTime(elapsedTime)}</div>
+                <div className="text-base sm:text-xl font-bold text-flow-ink">{formatTime(elapsedTime)}</div>
                 <div className="text-[10px] text-gray-500 flex items-center justify-center gap-1">
                   {t('ui.session')}
                   {isWakeLockActive && (
@@ -4146,7 +4188,7 @@ const ProjectCounter = () => {
                       {!isTimerPaused ? (
                         <button
                           onClick={handlePauseSession}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-control text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
                           title={t('ui.pauseTitle')}
                         >
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
@@ -4155,7 +4197,7 @@ const ProjectCounter = () => {
                       ) : (
                         <button
                           onClick={handleResumeSession}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-control text-xs sm:text-sm font-semibold hover:bg-primary-700 transition whitespace-nowrap"
                           title={t('ui.resume')}
                         >
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -4166,7 +4208,7 @@ const ProjectCounter = () => {
                       {/* Bouton Arrêter */}
                       <button
                         onClick={handleEndSession}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs sm:text-sm font-semibold hover:bg-gray-50 transition whitespace-nowrap"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-control text-xs sm:text-sm font-semibold hover:bg-gray-50 transition whitespace-nowrap"
                         title={t('ui.endSession')}
                       >
                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
@@ -4177,7 +4219,7 @@ const ProjectCounter = () => {
                 </>
               )}
               {project.status === 'completed' && (
-                <div className="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-xl text-xs sm:text-sm font-medium">
+                <div className="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-control text-xs sm:text-sm font-medium">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   {t('ui.done')}
                 </div>
@@ -4196,7 +4238,7 @@ const ProjectCounter = () => {
         {!isTimerRunning && project.status !== 'completed' && (
           <button
             onClick={handleStartSession}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
+            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-control text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
           >
             <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             {t('ui.startWorkMode')}
@@ -4206,7 +4248,7 @@ const ProjectCounter = () => {
         {isTimerRunning ? (
           <button
             onClick={() => handleOpenAiHelp()}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-xl text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
+            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-control text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
           >
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
@@ -4261,7 +4303,7 @@ const ProjectCounter = () => {
         ) : (
           <div className="pt-2 border-t border-primary-300/50 space-y-3">
             {secondaryCounters.map(counter => (
-              <div key={counter.id} className="bg-primary-50/40 rounded-xl p-2.5">
+              <div key={counter.id} className="bg-primary-50/40 rounded-control p-2.5">
                 {editingCounterId === counter.id ? (
                   // Mode édition label + cible
                   <div className="flex items-center gap-2 flex-wrap">
@@ -4323,7 +4365,7 @@ const ProjectCounter = () => {
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
                         </button>
                         {showSecondaryMenuFor === counter.id && (
-                          <div className="absolute right-0 top-7 z-20 bg-white rounded-xl shadow-lg border border-gray-100 py-1 w-44">
+                          <div className="absolute right-0 top-7 z-20 bg-white rounded-control shadow-lg border border-gray-100 py-1 w-44">
                             <button
                               onClick={() => { setSecondaryLabelInput(counter.label); setSecondaryTargetInput(counter.target ? String(counter.target) : ''); setEditingCounterId(counter.id); setIsAddingCounter(false); setShowSecondaryMenuFor(null) }}
                               className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
@@ -4360,7 +4402,7 @@ const ProjectCounter = () => {
                         −
                       </button>
                       <div className="flex-1 text-center">
-                        <span className="font-bold text-xl text-gray-900">{counter.count}</span>
+                        <span className="font-bold text-xl text-flow-ink">{counter.count}</span>
                         {counter.sequence && counter.sequence.steps?.[counter.sequence.current_step] ? (
                           <span className="text-gray-400 font-normal text-sm"> / {counter.sequence.steps[counter.sequence.current_step].repeat}</span>
                         ) : counter.target ? (
@@ -4459,7 +4501,7 @@ const ProjectCounter = () => {
                   {t('ui.addSecondaryCounter')}
                 </button>
                 {showSecondaryTip && (
-                  <div className="absolute left-0 top-7 z-20 bg-gray-900 text-white text-xs rounded-xl px-3 py-2.5 w-56 shadow-lg">
+                  <div className="absolute left-0 top-7 z-20 bg-gray-900 text-white text-xs rounded-control px-3 py-2.5 w-56 shadow-lg">
                     <button
                       onClick={() => { setShowSecondaryTip(false); localStorage.setItem('yf_secondary_tip_seen', '1') }}
                       className="absolute top-1.5 right-2 text-gray-400 hover:text-white leading-none"
@@ -4507,7 +4549,7 @@ const ProjectCounter = () => {
       <div className={isFocusMode ? 'hidden' : 'flex gap-2'}>
         <button
           onClick={() => jumpToTab('patron')}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-control text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
         >
           {t('ui.pattern')}
           {(project.pattern_path || project.pattern_url) && (
@@ -4516,7 +4558,7 @@ const ProjectCounter = () => {
         </button>
         <button
           onClick={() => jumpToTab('photos')}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-control text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
         >
           {t('ui.photos')}
           {projectPhotos.length > 0 && (
@@ -4525,7 +4567,7 @@ const ProjectCounter = () => {
         </button>
         <button
           onClick={() => jumpToTab('description')}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+          className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-control text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
         >
           {t('ui.technicalDetails')}
           {(project.technical_details || projectAllocations.length > 0) && (
@@ -4535,7 +4577,7 @@ const ProjectCounter = () => {
         {canAccessJacquard && (
           <Link
             to={`/projects/${projectId}/charts`}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-control text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 5.25h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5m-16.5 4.5h16.5" />
@@ -4549,7 +4591,7 @@ const ProjectCounter = () => {
 
       {/* Guidage sections — première visite avec sections */}
       {showOnboarding && sections.length > 0 && !currentSectionId && (
-        <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 flex items-start gap-3">
+        <div className="bg-primary-50 border border-primary-200 rounded-control px-4 py-3 flex items-start gap-3">
           <div className="w-6 h-6 rounded-full bg-primary-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">1</div>
           <div>
             <p className="text-sm font-medium text-primary-900">{t('ui.whichPartQuestion')}</p>
@@ -4561,7 +4603,7 @@ const ProjectCounter = () => {
       )}
 
       {/* [AI:Claude] Tableau des sections */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-card border border-flow-mint overflow-hidden">
         <div
           className="px-4 py-3 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
           onClick={() => setSectionsCollapsed(!sectionsCollapsed)}
@@ -4573,7 +4615,7 @@ const ProjectCounter = () => {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            <h2 className="text-sm font-semibold text-gray-900">
+            <h2 className="text-sm font-semibold text-flow-ink">
               {t('ui.sectionsTitle')} {sections.length > 0 && <span className="text-gray-400 font-normal">({sections.length})</span>}
             </h2>
           </div>
@@ -4582,7 +4624,7 @@ const ProjectCounter = () => {
               e.stopPropagation()
               openAddSectionModal()
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-xl text-xs font-semibold hover:bg-primary-700 transition"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 text-white rounded-control text-xs font-semibold hover:bg-primary-700 transition"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -4595,18 +4637,14 @@ const ProjectCounter = () => {
           <>
             {sections.length === 0 ? (
               <div className="p-8 text-center">
-                <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                  </svg>
-                </div>
+                <FlowMascot pose="onYVa" size={72} className="mx-auto mb-3" />
                 <p className="text-gray-700 font-medium mb-1 text-sm">{t('ui.noSection')}</p>
                 <p className="text-xs text-gray-400 mb-4">
                   {t('ui.splitProjectHint')}
                 </p>
                 <button
                   onClick={openAddSectionModal}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-semibold hover:bg-primary-700 transition"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -4624,7 +4662,7 @@ const ProjectCounter = () => {
                       <select
                         value={sectionsSortBy}
                         onChange={(e) => setSectionsSortBy(e.target.value)}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                        className="px-3 py-1.5 border border-gray-300 rounded-control text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                       >
                         <option value="created">{t('ui.sortCustom')}</option>
                         <option value="name-az">{t('ui.sortName')}</option>
@@ -4684,7 +4722,7 @@ const ProjectCounter = () => {
                           {isActive && isCompleted && <span className="w-2 h-2 rounded-full bg-green-600 flex-shrink-0 inline-block" />}
                           {!isActive && isCompleted && <svg className="w-3.5 h-3.5 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                           <span className={`text-sm font-medium ${
-                            isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
+                            isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-flow-ink'
                           }`}>
                             {section.name}
                           </span>
@@ -4712,7 +4750,7 @@ const ProjectCounter = () => {
 
                         {/* Zone notes dépliable */}
                         {expandedNotesSection === section.id && (
-                          <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg" onClick={(e) => e.stopPropagation()}>
+                          <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-control" onClick={(e) => e.stopPropagation()}>
                             <textarea
                               value={sectionNotesText}
                               onChange={(e) => setSectionNotesText(e.target.value)}
@@ -4835,7 +4873,7 @@ const ProjectCounter = () => {
                             className="p-1.5 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition"
                             title={t('ui.edit')}
                           >
-                            ✏️
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                           </button>
                           <button
                             onClick={(e) => {
@@ -4845,7 +4883,7 @@ const ProjectCounter = () => {
                             className="p-1.5 bg-gray-100 text-red-600 hover:bg-red-50 rounded transition"
                             title={t('ui.delete')}
                           >
-                            🗑️
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14M4 6h16M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" /></svg>
                           </button>
                           {/* Séparateur + Bouton Notes */}
                           <div className="ml-3 pl-3 border-l border-gray-200">
@@ -4928,7 +4966,7 @@ const ProjectCounter = () => {
                         {isActive && isCompleted && <span className="text-green-600 font-bold text-xs flex-shrink-0">●</span>}
                         <div className="min-w-0">
                           <h3 className={`text-sm font-semibold line-clamp-2 ${
-                            isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-gray-900'
+                            isCompleted ? 'text-green-900' : isActive ? 'text-primary-900' : 'text-flow-ink'
                           }`}>
                             {section.name}
                             {!isActive && isCompleted && <span className="text-green-600 text-xs ml-1">✓</span>}
@@ -5034,7 +5072,7 @@ const ProjectCounter = () => {
                           <div>
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-sm text-gray-600">{t('ui.progress')}</span>
-                              <span className="text-sm font-medium text-gray-900">{sectionProgress}%</span>
+                              <span className="text-sm font-medium text-flow-ink">{sectionProgress}%</span>
                             </div>
                             <div className="bg-gray-200 rounded-full h-2.5 overflow-hidden">
                               <div
@@ -5061,7 +5099,7 @@ const ProjectCounter = () => {
                               e.stopPropagation()
                               handleToggleSectionComplete(section, e)
                             }}
-                            className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm transition ${
+                            className={`flex-1 py-2 px-3 rounded-control font-medium text-sm transition ${
                               isCompleted
                                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -5076,7 +5114,7 @@ const ProjectCounter = () => {
                                 e.stopPropagation()
                                 setOpenSectionMenu(openSectionMenu === section.id ? null : section.id)
                               }}
-                              className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
+                              className="p-2 bg-gray-100 text-gray-600 rounded-control hover:bg-gray-200 transition"
                             >
                               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
@@ -5094,7 +5132,7 @@ const ProjectCounter = () => {
                                   }}
                                 />
                                 {/* Menu */}
-                                <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+                                <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-control shadow-xl border border-gray-200 z-50 overflow-hidden">
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation()
@@ -5103,7 +5141,7 @@ const ProjectCounter = () => {
                                     }}
                                     className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition"
                                   >
-                                    <span>✏️</span>
+                                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                                     <span>{t('ui.edit')}</span>
                                   </button>
                                   <button
@@ -5114,7 +5152,7 @@ const ProjectCounter = () => {
                                     }}
                                     className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-3 border-t border-gray-100 transition"
                                   >
-                                    <span>🗑️</span>
+                                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14M4 6h16M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" /></svg>
                                     <span>{t('ui.delete')}</span>
                                   </button>
                                 </div>
@@ -5128,7 +5166,7 @@ const ProjectCounter = () => {
 
                     {/* Zone notes dépliable (mobile) - toujours accessible */}
                     {expandedNotesSection === section.id && (
-                      <div className="mt-2 mx-4 mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="mt-2 mx-4 mb-3 p-3 bg-gray-50 border border-gray-200 rounded-control">
                         <textarea
                           value={sectionNotesText}
                           onChange={(e) => setSectionNotesText(e.target.value)}
@@ -5139,7 +5177,7 @@ const ProjectCounter = () => {
                           <button
                             onClick={() => saveSectionNotes(section.id)}
                             disabled={isSavingSectionNotes}
-                            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
+                            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-control hover:bg-primary-700 disabled:opacity-50 transition"
                           >
                             {isSavingSectionNotes ? '...' : t('ui.saveAlt')}
                           </button>
@@ -5157,7 +5195,7 @@ const ProjectCounter = () => {
       </div>
 
       {/* [AI:Claude] Tabs compacts */}
-      <div ref={tabsRef} className="bg-white rounded-xl border border-gray-200 overflow-hidden scroll-mt-20">
+      <div ref={tabsRef} className="bg-white rounded-card border border-flow-mint overflow-hidden scroll-mt-20">
         {/* Tabs header */}
         <div className="border-b border-gray-100">
           <div className="flex">
@@ -5215,7 +5253,7 @@ const ProjectCounter = () => {
                     <div className="mb-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h2 className="text-lg font-semibold text-gray-900">{t('ui.photos')}</h2>
+                          <h2 className="text-lg font-semibold text-flow-ink">{t('ui.photos')}</h2>
                           {photoQuota && !photoQuota.unlimited && (
                             <p className="text-xs text-gray-400">{photoQuota.used} / {photoQuota.limit}</p>
                           )}
@@ -5223,7 +5261,7 @@ const ProjectCounter = () => {
                         <button
                           onClick={() => setShowPhotoUploadModal(true)}
                           disabled={photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -5235,13 +5273,8 @@ const ProjectCounter = () => {
                   )}
 
 {projectPhotos.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-6 flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
+              <div className="rounded-control border border-dashed border-flow-mint bg-flow-cream p-6 flex flex-col items-center gap-3">
+                <FlowMascot pose="onYVa" size={72} />
                 <div className="text-center">
                   <p className="text-sm font-medium text-gray-700">{t('ui.noPhotos')}</p>
                   {credits && credits.total_available > 0 ? (
@@ -5251,13 +5284,13 @@ const ProjectCounter = () => {
                   )}
                 </div>
                 {photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit ? (
-                  <a href="/subscription" className="mt-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm">
+                  <a href="/subscription" className="mt-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition text-sm">
                     {t('ui.upgradeForMorePhotos')}
                   </a>
                 ) : (
                   <button
                     onClick={() => setShowPhotoUploadModal(true)}
-                    className="mt-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm"
+                    className="mt-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition text-sm"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -5281,7 +5314,7 @@ const ProjectCounter = () => {
                     )
 
                     return (
-                      <div key={originalPhoto.id} className="border-2 border-gray-200 rounded-lg">
+                      <div key={originalPhoto.id} className="border-2 border-gray-200 rounded-control">
                         {/* [AI:Claude] Variations IA EN HAUT - c'est le résultat principal ! */}
                         {photoVariations.length > 0 && (
                           <div className="p-6 bg-gradient-to-br from-primary-50 to-pink-50">
@@ -5293,12 +5326,12 @@ const ProjectCounter = () => {
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {photoVariations.map((variation) => (
-                                <div key={variation.id} className="relative rounded-lg group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow">
+                                <div key={variation.id} className="relative rounded-control group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow">
                                   {/* Photo IA générée */}
                                   <img
                                     src={`${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`}
                                     alt={`Variation ${variation.ai_style || 'IA'}`}
-                                    className="w-full h-full object-cover rounded-lg"
+                                    className="w-full h-full object-cover rounded-control"
                                     onError={(e) => {
                                       console.error('Erreur chargement image:', variation.enhanced_path)
                                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
@@ -5306,12 +5339,12 @@ const ProjectCounter = () => {
                                   />
 
                                   {/* Badge style IA en haut */}
-                                  <div className="absolute top-3 left-3 bg-primary-600 text-white text-xs px-3 py-1 rounded-lg font-semibold shadow-lg">
+                                  <div className="absolute top-3 left-3 bg-primary-600 text-white text-xs px-3 py-1 rounded-control font-semibold shadow-lg">
                                     {getStyleLabel(variation.ai_style)}
                                   </div>
 
                                   {/* Overlay minimaliste au hover */}
-                                  <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 rounded-lg ${openMenuId === variation.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                  <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 rounded-control ${openMenuId === variation.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                     {/* Actions principales (3 boutons circulaires) */}
                                     <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center gap-3">
                                       {/* Voir en grand */}
@@ -5320,7 +5353,7 @@ const ProjectCounter = () => {
                                           e.stopPropagation()
                                           setLightboxImage(`${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`)
                                         }}
-                                        className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                                        className="w-12 h-12 bg-white/90 hover:bg-white text-flow-ink rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
                                         title={t('ui.viewLarge')}
                                       >
                                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -5338,7 +5371,7 @@ const ProjectCounter = () => {
                                           link.download = `${project.name.replace(/[^a-z0-9]/gi, '_')}_${variation.ai_style || 'photo'}.jpg`
                                           link.click()
                                         }}
-                                        className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                                        className="w-12 h-12 bg-white/90 hover:bg-white text-flow-ink rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
                                         title={t('ui.download')}
                                       >
                                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -5353,7 +5386,7 @@ const ProjectCounter = () => {
                                             e.stopPropagation()
                                             setOpenMenuId(openMenuId === variation.id ? null : variation.id)
                                           }}
-                                          className="w-12 h-12 bg-white/90 hover:bg-white text-gray-900 rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
+                                          className="w-12 h-12 bg-white/90 hover:bg-white text-flow-ink rounded-full flex items-center justify-center transition shadow-lg backdrop-blur-sm"
                                           title={t('ui.moreActions')}
                                         >
                                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -5363,7 +5396,7 @@ const ProjectCounter = () => {
 
                                         {/* Dropdown menu */}
                                         {openMenuId === variation.id && (
-                                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-primary-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
+                                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-primary-50 to-sage-50 rounded-control shadow-2xl border-2 border-primary-400 py-2 z-50">
                                             {/* Photo de couverture */}
                                             <button
                                               onClick={async (e) => {
@@ -5380,7 +5413,7 @@ const ProjectCounter = () => {
                                               }}
                                               className="w-full px-4 py-2.5 text-left text-sm text-primary-900 hover:bg-primary-100 flex items-center gap-3 transition-colors font-medium"
                                             >
-                                              <span className="text-lg">📸</span>
+                                              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><circle cx="12" cy="13" r="4" /></svg>
                                               <span>{t('ui.setAsCover')}</span>
                                             </button>
 
@@ -5556,7 +5589,7 @@ const ProjectCounter = () => {
                                               }}
                                               className="w-full px-4 py-2.5 text-left text-sm text-red-700 hover:bg-red-50 flex items-center gap-3 transition-colors font-medium"
                                             >
-                                              <span className="text-lg">🗑️</span>
+                                              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 6l1 14a2 2 0 002 2h6a2 2 0 002-2l1-14M4 6h16M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" /></svg>
                                               <span>{t('ui.delete')}</span>
                                             </button>
                                           </div>
@@ -5577,7 +5610,7 @@ const ProjectCounter = () => {
                               <img
                                 src={`${import.meta.env.VITE_BACKEND_URL}${originalPhoto.original_path}`}
                                 alt={originalPhoto.item_name || 'Photo originale'}
-                                className="w-32 h-32 object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:border-primary-500 transition"
+                                className="w-32 h-32 object-cover rounded-control border-2 border-gray-300 cursor-pointer hover:border-primary-500 transition"
                                 onClick={() => setLightboxImage(`${import.meta.env.VITE_BACKEND_URL}${originalPhoto.original_path}`)}
                                 onError={(e) => {
                                   console.error('Erreur chargement image:', originalPhoto.original_path)
@@ -5594,7 +5627,7 @@ const ProjectCounter = () => {
                                 </div>
                               )}
                               {/* Overlay "Voir en grand" au survol */}
-                              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-control flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                 <span className="text-white font-bold text-xs">
                                   {t('ui.viewMagnifier')}
                                 </span>
@@ -5629,7 +5662,7 @@ const ProjectCounter = () => {
                                       alert(t('ui.downloadFailed'))
                                     }
                                   }}
-                                  className="flex-1 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
+                                  className="flex-1 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-2 py-1 rounded-control text-xs font-medium transition shadow-sm flex items-center justify-center"
                                   title={t('ui.downloadThisPhoto')}
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -5642,7 +5675,7 @@ const ProjectCounter = () => {
                                     e.stopPropagation()
                                     handleDeletePhoto(originalPhoto.id)
                                   }}
-                                  className="flex-1 bg-white bg-opacity-90 hover:bg-red-50 hover:text-red-500 text-gray-500 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
+                                  className="flex-1 bg-white bg-opacity-90 hover:bg-red-50 hover:text-red-500 text-gray-500 px-2 py-1 rounded-control text-xs font-medium transition shadow-sm flex items-center justify-center"
                                   title={t('ui.deleteThisPhoto')}
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -5653,7 +5686,7 @@ const ProjectCounter = () => {
                             </div>
 
                             <div className="flex-1">
-                              <h3 className="text-base font-semibold text-gray-900 mb-1">
+                              <h3 className="text-base font-semibold text-flow-ink mb-1">
                                 {originalPhoto.item_name || originalPhoto.item_type || ''}
                               </h3>
                               {originalPhoto.description && (
@@ -5667,7 +5700,7 @@ const ProjectCounter = () => {
                                 <div className="flex flex-col gap-1 items-start">
                                   <button
                                     onClick={() => openEnhanceModal(originalPhoto)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm shadow-sm"
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition text-sm shadow-sm"
                                   >
                                     <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -5683,7 +5716,7 @@ const ProjectCounter = () => {
                               ) : (
                                 <button
                                   onClick={() => openEnhanceModal(originalPhoto)}
-                                  className="inline-flex items-center gap-2 px-4 py-2 border border-primary-300 text-primary-700 rounded-lg font-medium hover:bg-primary-50 transition text-sm"
+                                  className="inline-flex items-center gap-2 px-4 py-2 border border-primary-300 text-primary-700 rounded-control font-medium hover:bg-primary-50 transition text-sm"
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -5722,12 +5755,12 @@ const ProjectCounter = () => {
                     langue détectée du patron diffère de la langue de l'interface et
                     qu'aucune traduction n'existe déjà. Jamais automatique. */}
                 {project.pattern_language && project.pattern_language !== i18n.language.split('-')[0] && !project.has_pattern_translation && (
-                  <div className="mb-4 bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center justify-between gap-3">
+                  <div className="mb-4 bg-primary-50 border border-primary-200 rounded-control p-4 flex items-center justify-between gap-3">
                     <p className="text-sm text-primary-800">{t('ui.patternTranslateProposal')}</p>
                     <button
                       onClick={handleTranslatePattern}
                       disabled={translatingPattern}
-                      className="shrink-0 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
+                      className="shrink-0 px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
                     >
                       {translatingPattern && (
                         <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
@@ -5743,13 +5776,13 @@ const ProjectCounter = () => {
                   <div className="flex gap-2 mb-4">
                     <button
                       onClick={() => setShowTranslatedPattern(false)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${!showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`px-3 py-1.5 rounded-control text-sm font-medium transition ${!showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                     >
                       {t('ui.patternOriginal')}
                     </button>
                     <button
                       onClick={() => setShowTranslatedPattern(true)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`px-3 py-1.5 rounded-control text-sm font-medium transition ${showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                     >
                       {t('ui.patternTranslated')}
                     </button>
@@ -5757,8 +5790,8 @@ const ProjectCounter = () => {
                 )}
 
                 {showTranslatedPattern && project.has_pattern_translation ? (
-                  <div className="mb-4 border-2 border-gray-200 rounded-lg p-6 bg-white">
-                    <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                  <div className="mb-4 border-2 border-gray-200 rounded-control p-6 bg-white">
+                    <div className="bg-gray-50 rounded-control p-4 max-h-[500px] overflow-y-auto">
                       <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                         {project.pattern_translated_text}
                       </pre>
@@ -5771,7 +5804,7 @@ const ProjectCounter = () => {
                   {project.pattern_url ? (
                     // URL externe - Affichage via ProxyViewer
                     <>
-                      <div className="border-2 border-gray-200 rounded-lg overflow-hidden mb-4">
+                      <div className="border-2 border-gray-200 rounded-control overflow-hidden mb-4">
                         <ProxyViewer
                           url={project.pattern_url}
                           onError={() => setProxyError(true)}
@@ -5782,18 +5815,18 @@ const ProjectCounter = () => {
                       {/* Section texte (coexiste avec URL) - Afficher uniquement si texte existe OU si erreur proxy */}
                       {project.pattern_text ? (
                         // Texte existant
-                        <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
+                        <div className="border-2 border-gray-200 rounded-control p-6 bg-white">
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">{t('ui.patternText')}</h3>
+                            <h3 className="text-lg font-semibold text-flow-ink">{t('ui.patternText')}</h3>
                             <button
                               onClick={handleOpenPatternTextModal}
-                              className="px-4 py-2 text-primary-600 border border-primary-600 rounded-lg font-medium hover:bg-primary-50 transition text-sm flex items-center gap-1.5"
+                              className="px-4 py-2 text-primary-600 border border-primary-600 rounded-control font-medium hover:bg-primary-50 transition text-sm flex items-center gap-1.5"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                               {t('ui.editText')}
                             </button>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                          <div className="bg-gray-50 rounded-control p-4 max-h-[500px] overflow-y-auto">
                             <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                               {project.pattern_text}
                             </pre>
@@ -5801,11 +5834,11 @@ const ProjectCounter = () => {
                         </div>
                       ) : proxyError === true ? (
                         // Pas de texte ET erreur proxy - proposer d'en ajouter
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 text-center">
+                        <div className="border-2 border-dashed border-gray-300 rounded-control p-6 bg-gray-50 text-center">
                           <div className="flex justify-center mb-3">
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                           </div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          <h3 className="text-lg font-semibold text-flow-ink mb-2">
                             {t('ui.addPatternText')}
                           </h3>
                           <p className="text-gray-600 text-sm mb-4">
@@ -5813,7 +5846,7 @@ const ProjectCounter = () => {
                           </p>
                           <button
                             onClick={handleOpenPatternTextModal}
-                            className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                            className="px-6 py-3 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition"
                           >
                             {t('ui.addText')}
                           </button>
@@ -5824,9 +5857,9 @@ const ProjectCounter = () => {
                     // Patron texte seul (sans URL ni fichier) — le texte collé peut venir d'un
                     // repli quand le site d'origine bloquait le scraping (ex: Cloudflare) ;
                     // source_url garde ce lien même si le contenu affiché est le texte collé.
-                    <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
+                    <div className="border-2 border-gray-200 rounded-control p-6 bg-white">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">{t('ui.pattern')}</h3>
+                        <h3 className="text-lg font-semibold text-flow-ink">{t('ui.pattern')}</h3>
                         {project.source_url?.startsWith('http') && (
                           <a
                             href={project.source_url}
@@ -5838,7 +5871,7 @@ const ProjectCounter = () => {
                           </a>
                         )}
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                      <div className="bg-gray-50 rounded-control p-4 max-h-[500px] overflow-y-auto">
                         <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                           {project.pattern_text}
                         </pre>
@@ -5846,7 +5879,7 @@ const ProjectCounter = () => {
                     </div>
                   ) : project.pattern_path?.match(/\.(jpg|jpeg|png|webp)$/i) ? (
                     // Image avec lightbox
-                    <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border-2 border-gray-200 rounded-control overflow-hidden">
                       <img
                         key={project.pattern_path}
                         src={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`}
@@ -5872,7 +5905,7 @@ const ProjectCounter = () => {
                     </div>
                   ) : (
                     // PDF avec viewer interactif
-                    <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border-2 border-gray-200 rounded-control overflow-hidden">
                       <PDFViewer
                         key={project.pattern_path}
                         url={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`}
@@ -5888,7 +5921,7 @@ const ProjectCounter = () => {
                 <div className="flex justify-center mt-4">
                   <button
                     onClick={() => setShowPatternEditChoiceModal(true)}
-                    className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
+                    className="px-6 py-2 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     {t('ui.edit')}
@@ -5897,13 +5930,16 @@ const ProjectCounter = () => {
               </div>
             ) : (
               <div className="space-y-4">
+                <div className="flex justify-center mb-2">
+                  <FlowMascot pose="avecPatron" size={100} />
+                </div>
                 {/* Option 1: Bibliothèque */}
                 <button
                   onClick={() => {
                     setShowPatternLibraryModal(true)
                     fetchLibraryPatterns()
                   }}
-                  className="w-full border-2 border-dashed border-primary-300 rounded-lg p-6 hover:border-primary-500 hover:bg-primary-50 transition"
+                  className="w-full border-2 border-dashed border-primary-300 rounded-control p-6 hover:border-primary-500 hover:bg-primary-50 transition"
                   disabled={uploadingPattern}
                 >
                   <div className="flex justify-center mb-2">
@@ -5920,7 +5956,7 @@ const ProjectCounter = () => {
                 {/* Option 2: Créer un patron texte */}
                 <button
                   onClick={handleOpenPatternTextModal}
-                  className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
+                  className="w-full border-2 border-dashed border-gray-300 rounded-control p-6 hover:border-primary-400 hover:bg-primary-50 transition"
                   disabled={uploadingPattern}
                 >
                   <div className="flex justify-center mb-2">
@@ -5936,7 +5972,7 @@ const ProjectCounter = () => {
 
                 {/* Option 3: Upload fichier */}
                 <label className="block cursor-pointer">
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition">
+                  <div className="border-2 border-dashed border-gray-300 rounded-control p-6 hover:border-primary-400 hover:bg-primary-50 transition">
                     <div className="flex justify-center mb-2">
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                     </div>
@@ -5959,7 +5995,7 @@ const ProjectCounter = () => {
                 {/* Option 3: URL */}
                 <button
                   onClick={() => setShowPatternUrlModal(true)}
-                  className="w-full border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-primary-400 hover:bg-primary-50 transition"
+                  className="w-full border-2 border-dashed border-gray-300 rounded-control p-6 hover:border-primary-400 hover:bg-primary-50 transition"
                   disabled={uploadingPattern}
                 >
                   <div className="flex justify-center mb-2">
@@ -6003,11 +6039,11 @@ const ProjectCounter = () => {
                 return (
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold text-gray-900">{t('ui.technicalDetails')}</h2>
+                      <h2 className="text-lg font-semibold text-flow-ink">{t('ui.technicalDetails')}</h2>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setShowStashPanel(true)}
-                          className="px-3 py-1.5 bg-white text-gray-600 border border-gray-200 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-300 transition text-sm flex items-center gap-1.5"
+                          className="px-3 py-1.5 bg-white text-gray-600 border border-gray-200 rounded-control font-medium hover:bg-gray-50 hover:border-gray-300 transition text-sm flex items-center gap-1.5"
                           title={t('ui.linkStashHint')}
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -6017,7 +6053,7 @@ const ProjectCounter = () => {
                         </button>
                         <button
                           onClick={openTechnicalDetailsModal}
-                          className="px-3 py-1.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
+                          className="px-3 py-1.5 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition text-sm flex items-center gap-1.5"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                           {hasDetails ? t('ui.edit2') : t('ui.add2')}
@@ -6035,11 +6071,11 @@ const ProjectCounter = () => {
                         </h3>
                         <div className="space-y-2">
                           {projectAllocations.map(a => (
-                            <div key={a.stash_entry_id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <div key={a.stash_entry_id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-control border border-gray-100">
                               {a.photo_url ? (
-                                <img src={(import.meta.env.VITE_API_URL || '') + a.photo_url} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                                <img src={(import.meta.env.VITE_API_URL || '') + a.photo_url} alt="" className="w-9 h-9 rounded-control object-cover flex-shrink-0" />
                               ) : (
-                                <div className="w-9 h-9 rounded-lg flex-shrink-0 bg-gray-200" />
+                                <div className="w-9 h-9 rounded-control flex-shrink-0 bg-gray-200" />
                               )}
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-800 truncate">{a.brand} — {a.yarn_name}</p>
@@ -6059,7 +6095,7 @@ const ProjectCounter = () => {
                       <>
 
                         {/* Format fiche technique améliorée */}
-                        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="bg-white border border-gray-200 rounded-control overflow-hidden">
                           {/* Description */}
                           {technicalDetails.description && (
                             <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
@@ -6077,7 +6113,7 @@ const ProjectCounter = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               {/* LAINE / YARN */}
                               {technicalDetails.yarn && technicalDetails.yarn.length > 0 && technicalDetails.yarn[0].brand && (
-                                <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg p-3 border-l-4 border-primary-400">
+                                <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-control p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M2 9h20M2 15h20" opacity="0.4"/></svg>
                                     <span className="font-semibold text-primary-700 text-sm">
@@ -6088,7 +6124,7 @@ const ProjectCounter = () => {
                                     {technicalDetails.yarn.map((y, idx) => (
                                       <div key={idx} className="grid grid-cols-[1fr,auto] gap-3 items-start bg-white/70 rounded px-3 py-2">
                                         <div className="text-sm">
-                                          <div className="font-medium text-gray-900">{y.brand}</div>
+                                          <div className="font-medium text-flow-ink">{y.brand}</div>
                                           {y.name && <div className="text-xs text-gray-600">{y.name}</div>}
                                         </div>
                                         {y.quantities && y.quantities.length > 0 && (
@@ -6111,7 +6147,7 @@ const ProjectCounter = () => {
 
                               {/* AIGUILLES / CROCHETS */}
                               {technicalDetails.needles && technicalDetails.needles.length > 0 && (technicalDetails.needles[0].type || technicalDetails.needles[0].size) && (
-                                <div className="bg-gradient-to-br from-sage-50 to-sage-100 rounded-lg p-3 border-l-4 border-sage-400">
+                                <div className="bg-gradient-to-br from-sage-50 to-sage-100 rounded-control p-3 border-l-4 border-sage-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-sage-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
                                     <span className="font-semibold text-sage-700 text-sm">
@@ -6121,7 +6157,7 @@ const ProjectCounter = () => {
                                   <div className="space-y-1.5">
                                     {technicalDetails.needles.map((n, idx) => (
                                       <div key={idx} className="bg-white/70 rounded px-3 py-2">
-                                        <div className="text-sm text-gray-900">
+                                        <div className="text-sm text-flow-ink">
                                           {project.technique === 'tricot' && n.type && (
                                             <span className="font-medium">{n.type}</span>
                                           )}
@@ -6142,13 +6178,13 @@ const ProjectCounter = () => {
 
                               {/* ÉCHANTILLON / GAUGE */}
                               {technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows) && (
-                                <div className="bg-gradient-to-br from-primary-50 to-primary-200 rounded-lg p-3 border-l-4 border-primary-400">
+                                <div className="bg-gradient-to-br from-primary-50 to-primary-200 rounded-control p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="12"/><line x1="15" y1="10" x2="15" y2="14"/><line x1="19" y1="10" x2="19" y2="12"/></svg>
                                     <span className="font-semibold text-primary-700 text-sm">{t('ui.gaugeLabel')}</span>
                                   </div>
                                   <div className="bg-white/70 rounded px-3 py-2">
-                                    <div className="text-sm text-gray-900 font-medium">
+                                    <div className="text-sm text-flow-ink font-medium">
                                       {technicalDetails.gauge.stitches && <span>{t('ui.stitchesCount', { count: technicalDetails.gauge.stitches })}</span>}
                                       {technicalDetails.gauge.stitches && technicalDetails.gauge.rows && <span> × </span>}
                                       {technicalDetails.gauge.rows && <span>{t('ui.rowsCount', { count: technicalDetails.gauge.rows })}</span>}
@@ -6172,14 +6208,12 @@ const ProjectCounter = () => {
                       </>
                     ) : (
                       projectAllocations.length === 0 && (
-                        <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-                          <div className="flex justify-center mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                          </div>
+                        <div className="text-center py-12 border-2 border-dashed border-flow-mint rounded-card">
+                          <FlowMascot pose="onYVa" size={72} className="mx-auto mb-4" />
                           <p className="text-gray-600 mb-4">{t('ui.noTechnicalDetails')}</p>
                           <button
                             onClick={openTechnicalDetailsModal}
-                            className="inline-block px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition flex items-center gap-2 mx-auto"
+                            className="inline-block px-6 py-3 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition flex items-center gap-2 mx-auto"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                             {t('ui.addTechnicalDetails')}
@@ -6198,13 +6232,13 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal sélection patron depuis bibliothèque */}
       {showPatternLibraryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] shadow-xl flex flex-col">
+          <div className="bg-white rounded-card max-w-2xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 border-b border-gray-100 flex-shrink-0">
               <div className="flex items-center gap-3 mb-1">
-                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <div className="w-8 h-8 bg-flow-mint rounded-control flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-flow-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">{t('ui.myPatternLibrary')}</h2>
+                <h2 className="text-xl font-bold text-flow-ink">{t('ui.myPatternLibrary')}</h2>
               </div>
               <p className="text-sm text-gray-500 ml-11">{t('ui.selectSavedPattern')}</p>
             </div>
@@ -6216,8 +6250,8 @@ const ProjectCounter = () => {
                 </div>
               ) : libraryPatterns.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  <div className="w-16 h-16 bg-flow-mint rounded-card flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-flow-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                   </div>
                   <p className="text-gray-700 font-medium mb-1">{t('ui.emptyLibrary')}</p>
                   <p className="text-sm text-gray-500 mb-4">{t('ui.emptyLibraryHint')}</p>
@@ -6238,10 +6272,10 @@ const ProjectCounter = () => {
                       key={pattern.id}
                       onClick={() => handleSelectLibraryPattern(pattern)}
                       disabled={uploadingPattern}
-                      className="border border-gray-200 rounded-xl p-4 hover:border-primary-300 hover:bg-primary-50 transition text-left disabled:opacity-50 group"
+                      className="border border-flow-mint rounded-control p-4 hover:border-primary-300 hover:bg-primary-50 transition text-left disabled:opacity-50 group"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 group-hover:bg-white rounded-xl flex items-center justify-center transition">
+                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 group-hover:bg-white rounded-control flex items-center justify-center transition">
                           {pattern.file_type === 'pdf' ? (
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                           ) : pattern.file_type === 'image' ? (
@@ -6251,7 +6285,7 @@ const ProjectCounter = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-gray-900 truncate text-sm">{pattern.name}</h3>
+                          <h3 className="font-semibold text-flow-ink truncate text-sm">{pattern.name}</h3>
                           {pattern.description && (
                             <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{pattern.description}</p>
                           )}
@@ -6276,7 +6310,7 @@ const ProjectCounter = () => {
             <div className="p-6 border-t border-gray-100 flex-shrink-0">
               <button
                 onClick={() => setShowPatternLibraryModal(false)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition text-sm font-medium"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-control text-gray-600 hover:bg-gray-50 transition text-sm font-medium"
               >
                 {t('ui.cancel')}
               </button>
@@ -6287,20 +6321,20 @@ const ProjectCounter = () => {
 
       {showPatternUrlModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-xl">
+          <div className="bg-white rounded-card max-w-md w-full shadow-xl">
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center gap-3 mb-1">
-                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <div className="w-8 h-8 bg-flow-blue/40 rounded-control flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-flow-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                 </div>
-                <h2 className="text-xl font-bold text-gray-900">{t('ui.patternLink')}</h2>
+                <h2 className="text-xl font-bold text-flow-ink">{t('ui.patternLink')}</h2>
               </div>
               <p className="text-sm text-gray-500 ml-11">{t('ui.pasteUrlOrSearch')}</p>
             </div>
 
             <div className="p-6 space-y-5">
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
-                <p className="text-xs font-semibold text-gray-700 mb-1.5">{t('ui.quickWorkflow')}</p>
+              <div className="bg-flow-blue/20 border border-flow-blue/40 rounded-control p-3">
+                <p className="text-xs font-semibold text-flow-ink mb-1.5">{t('ui.quickWorkflow')}</p>
                 <ol className="text-xs text-gray-500 ml-3 list-decimal space-y-1">
                   <li>{t('ui.searchPatternBelow')}</li>
                   <li>{t('ui.copyFoundUrl')}</li>
@@ -6313,7 +6347,7 @@ const ProjectCounter = () => {
                 value={patternUrl}
                 onChange={(e) => setPatternUrl(e.target.value)}
                 placeholder={t('ui.phPatternUrl')}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                 autoFocus
               />
 
@@ -6332,7 +6366,7 @@ const ProjectCounter = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('ui.phSearchPattern')}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
                 />
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -6342,7 +6376,7 @@ const ProjectCounter = () => {
                         : encodeURIComponent('tricot crochet patron')
                       window.open(`https://www.google.com/search?q=${query}`, '_blank')
                     }}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2"
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-control hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     {t('ui.google')}
@@ -6354,7 +6388,7 @@ const ProjectCounter = () => {
                         : 'https://www.ravelry.com/patterns/search'
                       window.open(url, '_blank')
                     }}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2"
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-control hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     {t('ui.ravelry')}
@@ -6370,14 +6404,14 @@ const ProjectCounter = () => {
                   setPatternUrl('')
                   setSearchQuery('')
                 }}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition text-sm font-medium"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-control text-gray-600 hover:bg-gray-50 transition text-sm font-medium"
               >
                 {t('ui.cancel')}
               </button>
               <button
                 onClick={handlePatternUrlSubmit}
                 disabled={uploadingPattern || !patternUrl.trim()}
-                className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-medium hover:bg-primary-700 transition disabled:opacity-50 text-sm"
+                className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition disabled:opacity-50 text-sm"
               >
                 {uploadingPattern ? t('ui.savingDots') : t('ui.save')}
               </button>
@@ -6389,22 +6423,30 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal de choix de modification du patron */}
       {showPatternEditChoiceModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6">
-            <h2 className="text-lg font-bold mb-1 text-gray-900">{t('ui.editPattern')}</h2>
-            <p className="text-sm text-gray-500 mb-5">{t('ui.editPatternHint')}</p>
+          <div className="bg-white rounded-card max-w-2xl w-full p-6">
+            {/* [AI:Claude] 2026-09-19 — Flow "avecPatron" (charte section 14 :
+                "Flow demande le patron") : c'est l'ecran ou l'utilisatrice choisit
+                comment lui fournir un patron, moment le plus direct pour cette pose. */}
+            <div className="flex items-start gap-3 mb-5">
+              <FlowMascot pose="avecPatron" size={140} className="flex-shrink-0" />
+              <div>
+                <h2 className="text-lg font-bold text-flow-ink">{t('ui.editPattern')}</h2>
+                <p className="text-sm text-gray-500">{t('ui.editPatternHint')}</p>
+              </div>
+            </div>
 
             <div className="space-y-2.5">
               {/* Option 1: Bibliothèque */}
               <button
                 onClick={() => { setShowPatternEditChoiceModal(false); setShowPatternLibraryModal(true); fetchLibraryPatterns() }}
-                className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
+                className="w-full flex items-center gap-4 border border-gray-200 rounded-control p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                 disabled={uploadingPattern}
               >
-                <div className="w-10 h-10 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-primary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                <div className="w-10 h-10 rounded-control bg-flow-mint flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-flow-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">{t('ui.chooseFromLibrary')}</p>
+                  <p className="font-medium text-flow-ink text-sm">{t('ui.chooseFromLibrary')}</p>
                   <p className="text-xs text-gray-500">{t('ui.useSavedPattern')}</p>
                 </div>
               </button>
@@ -6412,26 +6454,26 @@ const ProjectCounter = () => {
               {/* Option 2: Texte */}
               <button
                 onClick={() => { setShowPatternEditChoiceModal(false); handleOpenPatternTextModal() }}
-                className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
+                className="w-full flex items-center gap-4 border border-gray-200 rounded-control p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                 disabled={uploadingPattern}
               >
-                <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                <div className="w-10 h-10 rounded-control bg-flow-lavender/50 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-flow-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">{t('ui.editPatternText')}</p>
+                  <p className="font-medium text-flow-ink text-sm">{t('ui.editPatternText')}</p>
                   <p className="text-xs text-gray-500">{t('ui.pasteOrTypePattern')}</p>
                 </div>
               </button>
 
               {/* Option 3: Fichier */}
               <label className="block cursor-pointer">
-                <div className="flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                <div className="flex items-center gap-4 border border-gray-200 rounded-control p-4 hover:border-primary-400 hover:bg-primary-50 transition">
+                  <div className="w-10 h-10 rounded-control bg-flow-peach/60 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-flow-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 text-sm">{t('ui.importFile')}</p>
+                    <p className="font-medium text-flow-ink text-sm">{t('ui.importFile')}</p>
                     <p className="text-xs text-gray-500">{t('ui.pdfJpgPngWebp')}</p>
                   </div>
                 </div>
@@ -6441,14 +6483,14 @@ const ProjectCounter = () => {
               {/* Option 4: URL */}
               <button
                 onClick={() => { setShowPatternEditChoiceModal(false); setShowPatternUrlModal(true) }}
-                className="w-full flex items-center gap-4 border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
+                className="w-full flex items-center gap-4 border border-gray-200 rounded-control p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                 disabled={uploadingPattern}
               >
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                <div className="w-10 h-10 rounded-control bg-flow-blue/40 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-flow-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900 text-sm">{t('ui.linkToWebPage')}</p>
+                  <p className="font-medium text-flow-ink text-sm">{t('ui.linkToWebPage')}</p>
                   <p className="text-xs text-gray-500">{t('ui.sourcesHint')}</p>
                 </div>
               </button>
@@ -6457,7 +6499,7 @@ const ProjectCounter = () => {
             <div className="mt-6">
               <button
                 onClick={() => setShowPatternEditChoiceModal(false)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition"
               >
                 {t('ui.cancel')}
               </button>
@@ -6472,9 +6514,9 @@ const ProjectCounter = () => {
           libre d'aller questionner l'assistant général de son propre chef si elle préfère. */}
       {showAssociatePatternModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full p-6">
+          <div className="bg-white rounded-card max-w-lg w-full p-6">
             <div className="flex items-start justify-between mb-1">
-              <h2 className="text-lg font-bold text-gray-900">{t('ui.aiHelpModalTitle')}</h2>
+              <h2 className="text-lg font-bold text-flow-ink">{t('ui.aiHelpModalTitle')}</h2>
               <button
                 onClick={() => setShowAssociatePatternModal(false)}
                 className="text-gray-400 hover:text-gray-600 p-1 -m-1"
@@ -6500,14 +6542,14 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal d'édition du patron texte */}
       {showPatternTextModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] shadow-xl flex flex-col">
+          <div className="bg-white rounded-card max-w-3xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 flex-shrink-0">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-flow-ink">
                 {project.pattern_text ? t('ui.editPatternText') : t('ui.createPatternText')}
               </h2>
-              <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-xl p-3 mt-3">
-                <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                <p className="text-sm text-blue-800"><strong>{t('ui.tip')}</strong> {t('ui.pastePatternTip')}</p>
+              <div className="flex items-start gap-2 bg-flow-blue/20 border border-flow-blue/40 rounded-control p-3 mt-3">
+                <svg className="w-4 h-4 text-flow-ink/70 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <p className="text-sm text-flow-ink"><strong>{t('ui.tip')}</strong> {t('ui.pastePatternTip')}</p>
               </div>
             </div>
 
@@ -6517,7 +6559,7 @@ const ProjectCounter = () => {
                 onChange={(e) => setPatternTextEdit(e.target.value)}
                 rows={20}
                 placeholder={t('ui.phPatternTextArea')}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                className="w-full px-4 py-3 border border-gray-300 rounded-control font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                 autoFocus
               />
             </div>
@@ -6529,7 +6571,7 @@ const ProjectCounter = () => {
                     setShowPatternTextModal(false)
                     setPatternTextEdit('')
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition"
                   disabled={savingPatternText}
                 >
                   {t('ui.cancel')}
@@ -6537,7 +6579,7 @@ const ProjectCounter = () => {
                 <button
                   onClick={handleSavePatternText}
                   disabled={savingPatternText || !patternTextEdit.trim()}
-                  className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
                   {savingPatternText ? t('ui.savingDots') : t('ui.save')}
                 </button>
@@ -6550,8 +6592,8 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal d'upload de photo */}
       {showPhotoUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h2 className="text-lg font-bold mb-1 text-gray-900">{t('ui.addPhoto')}</h2>
+          <div className="bg-white rounded-card max-w-md w-full p-6">
+            <h2 className="text-lg font-bold mb-1 text-flow-ink">{t('ui.addPhoto')}</h2>
             <p className="text-sm text-gray-500 mb-5">{t('ui.selectProjectPhoto')}</p>
 
             {/* Inputs cachés */}
@@ -6564,7 +6606,7 @@ const ProjectCounter = () => {
                   type="button"
                   onClick={() => window.cameraInputCounter?.click()}
                   disabled={uploadingPhoto}
-                  className="flex flex-col items-center justify-center gap-3 p-6 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition disabled:opacity-50"
+                  className="flex flex-col items-center justify-center gap-3 p-6 bg-primary-600 text-white rounded-control hover:bg-primary-700 transition disabled:opacity-50"
                 >
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                   <span className="font-semibold text-sm">{t('ui.takePhoto')}</span>
@@ -6574,9 +6616,9 @@ const ProjectCounter = () => {
                 type="button"
                 onClick={() => window.galleryInputCounter?.click()}
                 disabled={uploadingPhoto}
-                className="flex flex-col items-center justify-center gap-3 p-6 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition disabled:opacity-50"
+                className="flex flex-col items-center justify-center gap-3 p-6 bg-flow-mint text-flow-ink rounded-control hover:bg-flow-mint/70 transition disabled:opacity-50"
               >
-                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <svg className="w-8 h-8 text-flow-ink/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 <span className="font-semibold text-sm">{t('ui.chooseFromGallery')}</span>
               </button>
             </div>
@@ -6594,7 +6636,7 @@ const ProjectCounter = () => {
               <button
                 onClick={() => setShowPhotoUploadModal(false)}
                 disabled={uploadingPhoto}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition"
               >
                 {t('ui.cancel')}
               </button>
@@ -6606,13 +6648,13 @@ const ProjectCounter = () => {
       {/* Mini-modale post-upload : proposition d'embellissement */}
       {showPostUploadModal && postUploadPhoto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full shadow-xl">
+          <div className="bg-white rounded-card max-w-sm w-full shadow-xl">
             <div className="px-6 pt-6 pb-2">
-              <h2 className="text-lg font-bold text-gray-900">{t('ui.beautifyThisPhoto')}</h2>
+              <h2 className="text-lg font-bold text-flow-ink">{t('ui.beautifyThisPhoto')}</h2>
               <p className="text-sm text-gray-500 mt-1">{t('ui.photoEnhanceNote')}</p>
             </div>
             <div className="px-6 pb-6 flex flex-col gap-4">
-              <div className="rounded-xl overflow-hidden bg-gray-100 max-h-48 flex items-center justify-center">
+              <div className="rounded-control overflow-hidden bg-gray-100 max-h-48 flex items-center justify-center">
                 <img
                   src={`${import.meta.env.VITE_BACKEND_URL}${postUploadPhoto.original_path}`}
                   alt=""
@@ -6623,14 +6665,14 @@ const ProjectCounter = () => {
               {credits && (() => {
                 const isFree = !user?.subscription_type || user?.subscription_type === 'free'
                 if (isFree && credits.total_available > 0) return (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-control">
                     <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span className="text-sm text-green-700 font-medium">{t('ui.freeTrialAvailable')}</span>
                   </div>
                 )
                 if (isFree && credits.total_available === 0) return (
                   <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-control">
                       <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       <span className="text-sm text-amber-700 font-medium">{t('ui.trialUsed')}</span>
                     </div>
@@ -6638,15 +6680,15 @@ const ProjectCounter = () => {
                   </div>
                 )
                 if (credits.total_available === 0) return (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-control">
                     <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span className="text-sm text-amber-700">{t('ui.noMoreCredits')}</span>
                   </div>
                 )
                 return (
-                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-control">
                     <span className="text-sm text-gray-600">{t('ui.availableCredits')}</span>
-                    <span className="text-sm font-bold text-gray-900">{credits.total_available}</span>
+                    <span className="text-sm font-bold text-flow-ink">{credits.total_available}</span>
                   </div>
                 )
               })()}
@@ -6655,14 +6697,14 @@ const ProjectCounter = () => {
                 <button
                   type="button"
                   onClick={() => { setShowPostUploadModal(false); setPostUploadPhoto(null) }}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition font-medium text-sm"
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition font-medium text-sm"
                 >
                   {t('ui.notNow')}
                 </button>
                 {credits && credits.total_available === 0 ? (
                   <a
                     href="/subscription"
-                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm text-center"
+                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition text-sm text-center"
                   >
                     {(!user?.subscription_type || user?.subscription_type === 'free')
                       ? t('ui.unlockPhotoStudio')
@@ -6676,7 +6718,7 @@ const ProjectCounter = () => {
                       openEnhanceModal(postUploadPhoto)
                       setPostUploadPhoto(null)
                     }}
-                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm"
+                    className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition text-sm"
                   >
                     {t('ui.beautify')}
                   </button>
@@ -6690,15 +6732,15 @@ const ProjectCounter = () => {
       {/* Modal d'embellissement IA */}
       {showEnhanceModal && selectedPhoto && selectedContext && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4 pb-20 sm:pb-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-xl max-h-[calc(100vh-6rem)] flex flex-col">
+          <div className="bg-white rounded-card max-w-md w-full shadow-xl max-h-[calc(100vh-6rem)] flex flex-col">
             <div className="px-6 pt-6 pb-2 flex-shrink-0">
-              <h2 className="text-lg font-bold text-gray-900">{t('ui.beautifyThisPhoto')}</h2>
+              <h2 className="text-lg font-bold text-flow-ink">{t('ui.beautifyThisPhoto')}</h2>
               <p className="text-sm text-gray-500 mt-1">{t('ui.photoEnhanceNote')}</p>
             </div>
 
             <form onSubmit={handleEnhancePhoto} className="px-6 pb-6 flex flex-col gap-4 overflow-y-auto">
               {/* Photo miniature */}
-              <div className="rounded-xl overflow-hidden bg-gray-100 max-h-36 flex items-center justify-center flex-shrink-0">
+              <div className="rounded-control overflow-hidden bg-gray-100 max-h-36 flex items-center justify-center flex-shrink-0">
                 <img
                   src={`${import.meta.env.VITE_BACKEND_URL}${selectedPhoto.original_path}`}
                   alt=""
@@ -6714,7 +6756,7 @@ const ProjectCounter = () => {
                   {getAvailableStyles(detectProjectCategory(project?.type || '')).map((style) => (
                     <label
                       key={style.key}
-                      className={`flex items-center gap-3 p-2.5 border-2 rounded-lg cursor-pointer transition ${
+                      className={`flex items-center gap-3 p-2.5 border-2 rounded-control cursor-pointer transition ${
                         selectedContext?.key === style.key
                           ? 'border-primary-600 bg-primary-50'
                           : 'border-gray-200 hover:border-gray-300'
@@ -6730,7 +6772,7 @@ const ProjectCounter = () => {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900">{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</span>
+                          <span className="text-sm font-medium text-flow-ink">{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</span>
                         </div>
                         <p className="text-xs text-gray-500 truncate">{t(`photoStyles.${style.key}.desc`, { ns: 'common' })}</p>
                       </div>
@@ -6743,21 +6785,21 @@ const ProjectCounter = () => {
               {credits && (() => {
                 const isFree = !user?.subscription_type || user?.subscription_type === 'free'
                 if (isFree && credits.total_available > 0) return (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-control">
                     <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span className="text-sm text-green-700 font-medium">{t('ui.freeTrialAvailable')}</span>
                   </div>
                 )
                 if (isFree && credits.total_available === 0) return (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-control">
                     <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span className="text-sm text-amber-700">{t('ui.freeTrialUsedPrefix')}<a href="/subscription" className="font-semibold underline">{t('ui.upgradeToPlus')}</a></span>
                   </div>
                 )
                 return (
-                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-control">
                     <span className="text-sm text-gray-600">{t('ui.availableCredits')}</span>
-                    <span className="text-sm font-bold text-gray-900">{credits.total_available}</span>
+                    <span className="text-sm font-bold text-flow-ink">{credits.total_available}</span>
                   </div>
                 )
               })()}
@@ -6776,16 +6818,16 @@ const ProjectCounter = () => {
                   type="button"
                   onClick={() => { setShowEnhanceModal(false); setSelectedPhoto(null) }}
                   disabled={enhancing}
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 font-medium text-sm"
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 font-medium text-sm"
                 >
                   {t('ui.notNow')}
                 </button>
                 {credits && credits.total_available < 1 ? (
-                  <button type="button" onClick={() => setUpgradeFeature('photo_credits')} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition text-sm">
+                  <button type="button" onClick={() => setUpgradeFeature('photo_credits')} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition text-sm">
                     {t('ui.noMoreCredits')}
                   </button>
                 ) : (
-                  <button type="submit" disabled={enhancing || !credits} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition disabled:opacity-50 text-sm">
+                  <button type="submit" disabled={enhancing || !credits} className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition disabled:opacity-50 text-sm">
                     {enhancing ? t('ui.generating') : (
                       (!user?.subscription_type || user?.subscription_type === 'free')
                         ? t('ui.useFreeTrial')
@@ -6803,8 +6845,8 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal des exemples de styles IA */}
       {showStyleExamplesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] shadow-xl flex flex-col">
-            <div className="bg-primary-700 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-xl">
+          <div className="bg-white rounded-card max-w-5xl w-full max-h-[90vh] shadow-xl flex flex-col">
+            <div className="bg-primary-700 text-white px-6 py-4 flex items-center justify-between flex-shrink-0 rounded-t-card">
               <h2 className="text-lg font-bold">{t('ui.styleExamples')}</h2>
               <button
                 onClick={() => setShowStyleExamplesModal(false)}
@@ -6818,13 +6860,13 @@ const ProjectCounter = () => {
 
             <div className="flex-1 overflow-y-auto p-6">
               {/* Photo originale unique en haut */}
-              <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 border-2 border-gray-300">
-                <h3 className="text-sm font-bold text-gray-900 mb-2 text-center">{t('ui.originalPhotoTitle')}</h3>
+              <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-control p-3 border-2 border-gray-300">
+                <h3 className="text-sm font-bold text-flow-ink mb-2 text-center">{t('ui.originalPhotoTitle')}</h3>
                 <div className="max-w-xs mx-auto">
                   <img
                     src={`/style-examples/${detectProjectCategory(project?.type || '')}_before.jpg`}
                     alt={t('ui.altOriginalPhoto')}
-                    className="w-full rounded-lg shadow"
+                    className="w-full rounded-control shadow"
                     onError={(e) => {
                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EPhoto à venir%3C/text%3E%3C/svg%3E'
                     }}
@@ -6834,7 +6876,7 @@ const ProjectCounter = () => {
 
               {/* Résultats des 9 styles */}
               <div className="mb-4">
-                <h3 className="text-lg font-bold text-gray-900 text-center">{t('ui.resultsByStyle')}</h3>
+                <h3 className="text-lg font-bold text-flow-ink text-center">{t('ui.resultsByStyle')}</h3>
                 <p className="text-sm text-gray-600 text-center mt-1">{t('ui.nineStyles')}</p>
               </div>
 
@@ -6842,7 +6884,7 @@ const ProjectCounter = () => {
                 {getAvailableStyles(detectProjectCategory(project?.type || '')).map((style) => (
                   <div
                     key={style.key}
-                    className="border-2 border-gray-200 rounded-lg overflow-hidden hover:border-primary-400 transition"
+                    className="border-2 border-gray-200 rounded-control overflow-hidden hover:border-primary-400 transition"
                   >
                     {/* Image générée */}
                     <div className="relative bg-gray-100">
@@ -6869,7 +6911,7 @@ const ProjectCounter = () => {
                     {/* Nom et description du style */}
                     <div className="p-3 bg-white">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-gray-900">{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</h3>
+                        <h3 className="font-bold text-flow-ink">{t(`photoStyles.${style.key}.label`, { ns: 'common' })}</h3>
                       </div>
                       <p className="text-xs text-gray-600">{t(`photoStyles.${style.key}.desc`, { ns: 'common' })}</p>
                     </div>
@@ -6878,10 +6920,10 @@ const ProjectCounter = () => {
               </div>
             </div>
 
-            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex-shrink-0 rounded-b-lg">
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex-shrink-0 rounded-b-card">
               <button
                 onClick={() => setShowStyleExamplesModal(false)}
-                className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition"
+                className="w-full px-6 py-3 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition"
               >
                 {t('ui.close')}
               </button>
@@ -6893,8 +6935,8 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal d'édition du projet */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
-            <h3 className="text-lg font-bold mb-4 text-gray-900">{t('ui.editProject')}</h3>
+          <div className="bg-white rounded-card max-w-lg w-full p-6 shadow-xl">
+            <h3 className="text-lg font-bold mb-4 text-flow-ink">{t('ui.editProject')}</h3>
 
             {/* Description */}
             <div className="mb-4">
@@ -6905,7 +6947,7 @@ const ProjectCounter = () => {
                 value={editForm.description}
                 onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t('ui.phDescribeProject')}
                 autoFocus
               />
@@ -6920,7 +6962,7 @@ const ProjectCounter = () => {
                 value={editForm.type}
                 onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">{t('ui.selectCategory')}</option>
                 <option value="Vêtements">{t('ui.catClothing')}</option>
@@ -6943,7 +6985,7 @@ const ProjectCounter = () => {
                 type="text"
                 value={editForm.hook_size}
                 onChange={(e) => setEditForm({ ...editForm, hook_size: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t('ui.ph35mm')}
               />
             </div>
@@ -6957,7 +6999,7 @@ const ProjectCounter = () => {
                 type="text"
                 value={editForm.yarn_brand}
                 onChange={(e) => setEditForm({ ...editForm, yarn_brand: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t('ui.phYarnBrand')}
               />
             </div>
@@ -6967,14 +7009,14 @@ const ProjectCounter = () => {
               <button
                 onClick={() => setShowEditModal(false)}
                 disabled={savingProject}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
+                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-control text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
               >
                 {t('ui.cancel')}
               </button>
               <button
                 onClick={handleSaveProject}
                 disabled={savingProject}
-                className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition disabled:opacity-50"
               >
                 {savingProject ? t('ui.savingDots') : t('ui.save')}
               </button>
@@ -6986,9 +7028,9 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal des détails techniques */}
       {showTechnicalDetailsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] shadow-xl flex flex-col">
+          <div className="bg-white rounded-card max-w-4xl w-full max-h-[90vh] shadow-xl flex flex-col">
             <div className="p-6 border-b border-gray-200 bg-white flex-shrink-0">
-              <h3 className="text-lg font-bold text-gray-900">{t('ui.technicalDetails')}</h3>
+              <h3 className="text-lg font-bold text-flow-ink">{t('ui.technicalDetails')}</h3>
               <p className="text-sm text-gray-600 mt-1">
                 {t('ui.noTechnicalDetailsHint')}
               </p>
@@ -7004,16 +7046,16 @@ const ProjectCounter = () => {
                   value={technicalForm.description}
                   onChange={(e) => setTechnicalForm({ ...technicalForm, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder={t('ui.phGeneralDescription')}
                   autoFocus
                 />
               </div>
 
               {/* LAINE / YARN */}
-              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200">
+              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-control border border-primary-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-base font-semibold text-gray-900">
+                  <h4 className="text-base font-semibold text-flow-ink">
                     {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
                   </h4>
                   <button
@@ -7028,7 +7070,7 @@ const ProjectCounter = () => {
                   </button>
                 </div>
                 {technicalForm.yarn.map((y, yIdx) => (
-                  <div key={yIdx} className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+                  <div key={yIdx} className="mb-4 p-4 bg-white rounded-control shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-medium text-gray-700">
                         {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')} #{yIdx + 1}
@@ -7214,9 +7256,9 @@ const ProjectCounter = () => {
               </div>
 
               {/* AIGUILLES / CROCHETS */}
-              <div className="mb-6 p-4 bg-sage-50 rounded-lg border border-sage-200">
+              <div className="mb-6 p-4 bg-sage-50 rounded-control border border-sage-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <h4 className="text-lg font-semibold text-flow-ink flex items-center gap-2">
                     {project.technique === 'tricot' ? t('ui.needles') : t('ui.hooks')}
                   </h4>
                   <button
@@ -7231,7 +7273,7 @@ const ProjectCounter = () => {
                   </button>
                 </div>
                 {technicalForm.needles.map((n, nIdx) => (
-                  <div key={nIdx} className="mb-3 p-3 bg-white rounded-lg shadow-sm">
+                  <div key={nIdx} className="mb-3 p-3 bg-white rounded-control shadow-sm">
                     {(technicalForm.needles.length > 1 || project.technique === 'tricot') && (
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium text-gray-700">
@@ -7305,8 +7347,8 @@ const ProjectCounter = () => {
               </div>
 
               {/* ÉCHANTILLON / GAUGE */}
-              <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <div className="mb-6 p-4 bg-primary-50 rounded-control border border-primary-200">
+                <h4 className="text-lg font-semibold text-flow-ink mb-4 flex items-center gap-2">
                   {t('ui.gaugeLabel')}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
@@ -7372,14 +7414,14 @@ const ProjectCounter = () => {
                 <button
                   onClick={() => setShowTechnicalDetailsModal(false)}
                   disabled={savingTechnical}
-                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-control text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
                 >
                   {t('ui.cancel')}
                 </button>
                 <button
                   onClick={handleSaveTechnicalDetails}
                   disabled={savingTechnical}
-                  className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                  className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
                   {savingTechnical ? t('ui.savingDots') : t('ui.save')}
                 </button>
@@ -7392,9 +7434,9 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal des notes du projet */}
       {showNotes && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] px-4 pt-4 pb-20">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-card max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-lg font-bold text-flow-ink">
                 {t('ui.projectNotes')}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
@@ -7411,7 +7453,7 @@ const ProjectCounter = () => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={12}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                   placeholder={t('ui.phProjectNotes')}
                   autoFocus
                 />
@@ -7425,7 +7467,7 @@ const ProjectCounter = () => {
                     setShowNotes(false)
                     setNotes(project.notes || '')
                   }}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                  className="px-6 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition"
                   disabled={savingNotes}
                 >
                   {t('ui.cancel')}
@@ -7433,7 +7475,7 @@ const ProjectCounter = () => {
                 <button
                   onClick={handleSaveNotes}
                   disabled={savingNotes}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
                   {savingNotes ? t('ui.savingAlt') : t('ui.saveAlt')}
                 </button>
@@ -7449,26 +7491,28 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal de fin de projet - toutes sections terminées */}
       {showProjectCompletionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
-            <div className="text-center mb-5">
-              <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-primary-100 flex items-center justify-center">
-                <svg className="w-7 h-7 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
+          <div className="bg-white rounded-card max-w-md w-full p-6 shadow-xl">
+            {/* [AI:Claude] 2026-09-19 — Flow "heureux" a cote du titre plutot
+                qu'au-dessus en petit : demande explicite de l'utilisatrice pour
+                qu'il soit "tres visible" partout ou c'est possible (charte
+                section 4 : "Heureux/Qui fete — reussite, objectif atteint"). */}
+            <div className="flex items-center gap-3 mb-5">
+              <FlowMascot pose="heureux" size={190} className="flex-shrink-0" />
+              <div>
+                <h3 className="text-xl font-bold text-flow-ink">
+                  {t('ui.allSectionsDone')}
+                </h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  {t('ui.congratsOn', { name: project?.name || t('ui.projectFallback') })}
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-gray-900">
-                {t('ui.allSectionsDone')}
-              </h3>
-              <p className="text-gray-500 text-sm mt-1">
-                {t('ui.congratsOn', { name: project?.name || t('ui.projectFallback') })}
-              </p>
             </div>
 
             {/* CTA photo — mis en avant */}
             {credits && credits.total_available > 0 ? (
               <button
                 onClick={handleCompleteAndPhoto}
-                className="w-full mb-3 px-5 py-4 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition flex items-center justify-center gap-3"
+                className="w-full mb-3 px-5 py-4 bg-primary-600 text-white rounded-card font-bold hover:bg-primary-700 transition flex items-center justify-center gap-3"
               >
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -7482,7 +7526,7 @@ const ProjectCounter = () => {
             ) : (
               <button
                 onClick={handleCompleteAndPhoto}
-                className="w-full mb-3 px-5 py-4 bg-primary-50 border-2 border-primary-300 text-primary-700 rounded-xl font-bold hover:bg-primary-100 transition flex items-center justify-center gap-3"
+                className="w-full mb-3 px-5 py-4 bg-primary-50 border-2 border-primary-300 text-primary-700 rounded-card font-bold hover:bg-primary-100 transition flex items-center justify-center gap-3"
               >
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -7495,7 +7539,7 @@ const ProjectCounter = () => {
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => { setShowProjectCompletionModal(false); setShowCloseModal(true) }}
-                className="w-full px-4 py-2.5 border border-amber-200 bg-amber-50 text-amber-700 rounded-xl font-medium hover:bg-amber-100 transition text-sm flex items-center justify-center gap-2"
+                className="w-full px-4 py-2.5 border border-flow-peach bg-flow-peach/30 text-flow-ink rounded-control font-medium hover:bg-flow-peach/50 transition text-sm flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />
@@ -7509,13 +7553,13 @@ const ProjectCounter = () => {
                   setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
                   setEditingSection(null)
                 }}
-                className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
+                className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-control font-medium hover:bg-gray-50 transition text-sm"
               >
                 {t('ui.addSection')}
               </button>
               <button
                 onClick={handleCompleteProject}
-                className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition text-sm"
+                className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-control font-medium hover:bg-gray-50 transition text-sm"
               >
                 {t('ui.finishWithoutPhoto')}
               </button>
@@ -7533,8 +7577,8 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal d'ajout/édition de section */}
       {showAddSectionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4">
+          <div className="bg-white rounded-card max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold mb-4 text-flow-ink">
               {editingSection ? t('ui.editSection') : t('ui.addSection2')}
             </h2>
 
@@ -7549,7 +7593,7 @@ const ProjectCounter = () => {
                   value={sectionForm.name}
                   onChange={(e) => setSectionForm({ ...sectionForm, name: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500"
                   placeholder={t('ui.sectionNamePlaceholder')}
                   autoFocus
                 />
@@ -7564,7 +7608,7 @@ const ProjectCounter = () => {
                   value={sectionForm.description}
                   onChange={(e) => setSectionForm({ ...sectionForm, description: e.target.value })}
                   rows={2}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500"
                   placeholder={t('ui.sectionNotesPlaceholderAlt')}
                 />
               </div>
@@ -7578,7 +7622,7 @@ const ProjectCounter = () => {
                   type="number"
                   value={sectionForm.total_rows}
                   onChange={(e) => setSectionForm({ ...sectionForm, total_rows: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500"
                   placeholder={t('ui.ph50')}
                   min="0"
                 />
@@ -7593,7 +7637,7 @@ const ProjectCounter = () => {
                   value={sectionForm.notes}
                   onChange={(e) => setSectionForm({ ...sectionForm, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500"
                   placeholder={t('ui.sectionInstructionsPlaceholder')}
                 />
               </div>
@@ -7608,14 +7652,14 @@ const ProjectCounter = () => {
                     setEditingSection(null)
                   }}
                   disabled={savingSection}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition disabled:opacity-50"
                 >
                   {t('ui.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={savingSection}
-                  className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition disabled:opacity-50"
                 >
                   {savingSection ? t('ui.saving') : (editingSection ? t('ui.edit') : t('ui.create'))}
                 </button>
@@ -7628,8 +7672,8 @@ const ProjectCounter = () => {
       {/* [AI:Claude] Modal pour ajouter le patron à la bibliothèque */}
       {showAddToLibraryModal && uploadedPatternData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-lg w-full p-6 shadow-xl">
-            <h3 className="text-2xl font-bold mb-2 text-gray-900">
+          <div className="bg-white rounded-card max-w-lg w-full p-6 shadow-xl">
+            <h3 className="text-2xl font-bold mb-2 text-flow-ink">
               {t('ui.saveToLibraryQuestion')}
             </h3>
             <p className="text-sm text-gray-600 mb-6">
@@ -7645,7 +7689,7 @@ const ProjectCounter = () => {
                 type="text"
                 value={libraryForm.name}
                 onChange={(e) => setLibraryForm({ ...libraryForm, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t('ui.phProjectName')}
                 autoFocus
               />
@@ -7660,7 +7704,7 @@ const ProjectCounter = () => {
                 value={libraryForm.description}
                 onChange={(e) => setLibraryForm({ ...libraryForm, description: e.target.value })}
                 rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t('ui.patternNotesPlaceholder')}
               />
             </div>
@@ -7675,7 +7719,7 @@ const ProjectCounter = () => {
                 <select
                   value={libraryForm.category}
                   onChange={(e) => setLibraryForm({ ...libraryForm, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="clothing">{t('ui.catClothing')}</option>
                   <option value="accessories">{t('ui.catAccessories')}</option>
@@ -7693,7 +7737,7 @@ const ProjectCounter = () => {
                 <select
                   value={libraryForm.difficulty}
                   onChange={(e) => setLibraryForm({ ...libraryForm, difficulty: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="beginner">{t('ui.levelBeginner')}</option>
                   <option value="intermediate">{t('ui.levelIntermediate')}</option>
@@ -7711,7 +7755,7 @@ const ProjectCounter = () => {
                 type="text"
                 value={libraryForm.technique}
                 onChange={(e) => setLibraryForm({ ...libraryForm, technique: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t('ui.phTechnique')}
               />
             </div>
@@ -7721,14 +7765,14 @@ const ProjectCounter = () => {
               <button
                 onClick={handleSkipLibrary}
                 disabled={savingToLibrary}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
+                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-control text-gray-700 font-medium hover:bg-gray-50 transition disabled:opacity-50"
               >
                 {t('ui.continueWithoutSaving')}
               </button>
               <button
                 onClick={handleAddToLibrary}
                 disabled={savingToLibrary || !libraryForm.name.trim()}
-                className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {savingToLibrary ? t('ui.saving') : t('ui.saveToLibrary')}
               </button>
@@ -7782,7 +7826,7 @@ const ProjectCounter = () => {
       {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !isAnyAlertOpen && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && !showAssociatePatternModal && (
       <button
         onClick={handleOpenNotes}
-        className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-2xl px-4 py-3 flex items-center gap-3"
+        className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-card px-4 py-3 flex items-center gap-3"
         title={t('ui.projectNotes')}
       >
         {/* Icône SVG */}
@@ -7825,10 +7869,10 @@ const ProjectCounter = () => {
       {/* [AI:Claude] v0.16.2: Modale de confirmation pour attribuer les rangs existants */}
       {showRowsConfirmModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+          <div className="bg-white rounded-card max-w-md w-full p-6 shadow-xl">
             <div className="text-center mb-6">
-              <div className="text-5xl mb-4">🤔</div>
-              <h2 className="text-2xl font-bold mb-2 text-gray-900">
+              <FlowMascot pose="interrogatif" size={96} className="mx-auto mb-3" />
+              <h2 className="text-2xl font-bold mb-2 text-flow-ink">
                 {t('ui.existingRowsQuestion')}
               </h2>
               <p className="text-gray-600">
@@ -7842,7 +7886,7 @@ const ProjectCounter = () => {
                   setShowRowsConfirmModal(false)
                   rowsConfirmResolve('assign')
                 }}
-                className="w-full px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition shadow-lg font-semibold text-left flex items-center gap-3"
+                className="w-full px-6 py-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-control hover:from-primary-700 hover:to-primary-800 transition shadow-lg font-semibold text-left flex items-center gap-3"
               >
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                 <div>
@@ -7858,9 +7902,9 @@ const ProjectCounter = () => {
                   setShowRowsConfirmModal(false)
                   rowsConfirmResolve('reset')
                 }}
-                className="w-full px-6 py-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-semibold text-left flex items-center gap-3"
+                className="w-full px-6 py-4 bg-gray-100 text-gray-700 rounded-control hover:bg-gray-200 transition font-semibold text-left flex items-center gap-3"
               >
-                <span className="text-2xl">🔄</span>
+                <svg className="w-5 h-5 flex-shrink-0 text-flow-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 <div>
                   <div className="font-bold">{t('ui.resetToZero')}</div>
                   <div className="text-sm text-gray-500">
@@ -7880,7 +7924,7 @@ const ProjectCounter = () => {
           onClick={() => setShowInstagramModal(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-200 relative"
+            className="bg-white rounded-card shadow-2xl max-w-md w-full p-8 animate-in zoom-in-95 duration-200 relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Bouton fermer */}
@@ -7895,7 +7939,7 @@ const ProjectCounter = () => {
 
             {/* Icône Instagram avec gradient */}
             <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center shadow-lg">
+              <div className="w-20 h-20 rounded-card bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 flex items-center justify-center shadow-lg">
                 <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none">
                   <defs>
                     <radialGradient id="modal-instagram-gradient" cx="30%" cy="107%" r="150%">
@@ -7912,7 +7956,7 @@ const ProjectCounter = () => {
             </div>
 
             {/* Titre */}
-            <h3 className="text-2xl font-bold text-gray-900 text-center mb-3">
+            <h3 className="text-2xl font-bold text-flow-ink text-center mb-3">
               {t('ui.imageDownloaded')}
             </h3>
 
@@ -7921,9 +7965,9 @@ const ProjectCounter = () => {
               <p className="text-gray-600 leading-relaxed">
                 {t('ui.imageReadyToShare')}
               </p>
-              <div className="bg-gradient-to-br from-primary-50 to-primary-50 border-2 border-primary-200 rounded-lg p-4">
-                <p className="text-sm text-gray-700 font-medium">
-                  💡 <span className="font-semibold">{t('ui.howTo')}</span> {t('ui.instagramStep1')}<span className="font-bold text-primary-600">+</span>{t('ui.instagramStep2')}
+              <div className="bg-flow-blue/20 border border-flow-blue/40 rounded-control p-4">
+                <p className="text-sm text-flow-ink font-medium">
+                  <span className="font-semibold">{t('ui.howTo')}</span> {t('ui.instagramStep1')}<span className="font-bold text-primary-600">+</span>{t('ui.instagramStep2')}
                 </p>
               </div>
             </div>
@@ -7934,7 +7978,7 @@ const ProjectCounter = () => {
                 window.open('https://www.instagram.com/', '_blank')
                 setShowInstagramModal(false)
               }}
-              className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-xl font-bold text-lg hover:from-primary-700 hover:to-primary-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+              className="w-full py-4 bg-gradient-to-r from-primary-600 to-primary-600 text-white rounded-control font-bold text-lg hover:from-primary-700 hover:to-primary-700 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg"
             >
               {t('ui.openInstagram')}
             </button>
@@ -7960,7 +8004,7 @@ const ProjectCounter = () => {
       {/* Modale reminder déclenché */}
       {activeReminder && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center space-y-4">
+          <div className="bg-white rounded-card shadow-2xl w-full max-w-sm p-6 text-center space-y-4">
             <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
               <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -7968,11 +8012,11 @@ const ProjectCounter = () => {
             </div>
             <div>
               <p className="text-xs font-semibold text-amber-600 uppercase tracking-wide mb-1">{t('ui.reminderRow', { row: activeReminder.row })}</p>
-              <p className="text-lg font-bold text-gray-900">{activeReminder.message}</p>
+              <p className="text-lg font-bold text-flow-ink">{activeReminder.message}</p>
             </div>
             <button
               onClick={() => dismissReminder(activeReminder.id)}
-              className="w-full py-3 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition"
+              className="w-full py-3 rounded-control text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition"
             >
               {t('ui.gotIt')}
             </button>
@@ -7992,14 +8036,14 @@ const ProjectCounter = () => {
       {/* Gestionnaire de reminders */}
       {showReminderManager && (
         <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4 max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
+          <div className="bg-white rounded-card shadow-2xl w-full max-w-sm p-6 space-y-4 max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">{t('ui.rowReminders')}</h2>
+              <h2 className="text-lg font-bold text-flow-ink">{t('ui.rowReminders')}</h2>
               <button onClick={() => setShowReminderManager(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
             </div>
 
             {/* Formulaire ajout */}
-            <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+            <div className="bg-flow-mint/50 rounded-control p-3 space-y-2">
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{t('ui.newReminder')}</p>
               <div className="flex gap-2">
                 <input
@@ -8008,7 +8052,7 @@ const ProjectCounter = () => {
                   value={reminderForm.row}
                   onChange={e => setReminderForm(f => ({ ...f, row: e.target.value }))}
                   placeholder={t('ui.row')}
-                  className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-20 border border-gray-300 rounded-control px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <input
                   type="text"
@@ -8016,13 +8060,13 @@ const ProjectCounter = () => {
                   onChange={e => setReminderForm(f => ({ ...f, message: e.target.value }))}
                   onKeyDown={e => e.key === 'Enter' && addReminder()}
                   placeholder={t('ui.reminderExample')}
-                  className="flex-1 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 border border-gray-300 rounded-control px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <button
                 onClick={addReminder}
                 disabled={!reminderForm.row || !reminderForm.message.trim()}
-                className="w-full py-1.5 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
+                className="w-full py-1.5 rounded-control text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
               >
                 {t('ui.add')}
               </button>
@@ -8034,7 +8078,7 @@ const ProjectCounter = () => {
             ) : (
               <div className="space-y-2">
                 {reminders.map(r => (
-                  <div key={r.id} className={`flex items-start gap-3 p-3 rounded-xl border ${r.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-200'}`}>
+                  <div key={r.id} className={`flex items-start gap-3 p-3 rounded-control border ${r.done ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-200'}`}>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 mt-0.5 ${r.done ? 'bg-gray-200 text-gray-500' : 'bg-amber-100 text-amber-700'}`}>
                       {r.row}
                     </span>
@@ -8067,9 +8111,9 @@ function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
   const today = new Date().toISOString().substring(0, 10)
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/40">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+      <div className="bg-white rounded-card shadow-2xl w-full max-w-sm p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">{t('ui.targetDate')}</h2>
+          <h2 className="text-lg font-bold text-flow-ink">{t('ui.targetDate')}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
         <p className="text-sm text-gray-500">{t('ui.targetDateHint')}</p>
@@ -8080,14 +8124,14 @@ function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
             value={draft}
             min={today}
             onChange={e => setDraft(e.target.value)}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
         <div className="flex gap-2">
           {currentDeadline && (
             <button
               onClick={() => onSave(null)}
-              className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
+              className="flex-1 py-2.5 rounded-control text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-50 transition"
             >
               {t('ui.delete')}
             </button>
@@ -8095,7 +8139,7 @@ function DeadlinePickerModal({ currentDeadline, onSave, onClose }) {
           <button
             onClick={() => { if (draft) onSave(draft) }}
             disabled={!draft}
-            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
+            className="flex-1 py-2.5 rounded-control text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-40"
           >
             {t('ui.save')}
           </button>

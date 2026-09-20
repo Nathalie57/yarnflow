@@ -11,6 +11,7 @@ import { useTranslation, Trans } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import api from '../services/api'
 import PasswordInput from '../components/PasswordInput'
+import FlowMascot from '../components/FlowMascot'
 
 import { apiErrorMessage } from '../utils/apiError'
 const ResetPassword = () => {
@@ -111,7 +112,7 @@ const ResetPassword = () => {
       {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
       <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white rounded-card shadow-2xl p-8 max-w-md w-full text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
           <p className="text-gray-600">{t('resetPassword.verifying')}</p>
         </div>
@@ -126,14 +127,10 @@ const ResetPassword = () => {
       {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
       <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
+        <div className="bg-white rounded-card shadow-2xl p-8 max-w-md w-full text-center">
+          <FlowMascot pose="heureux" size={100} className="mx-auto mb-4" />
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-flow-ink mb-4">
             {t('resetPassword.successTitle')}
           </h1>
 
@@ -143,7 +140,7 @@ const ResetPassword = () => {
 
           <Link
             to="/login"
-            className="block w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 transition"
+            className="block w-full bg-primary-600 text-white py-3 rounded-control font-bold hover:bg-primary-700 transition"
           >
             {t('resetPassword.loginNow')}
           </Link>
@@ -159,14 +156,14 @@ const ResetPassword = () => {
       {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
       <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
 
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+        <div className="bg-white rounded-card shadow-2xl p-8 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
 
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+          <h1 className="text-2xl font-bold text-flow-ink mb-4">
             {t('resetPassword.invalidTitle')}
           </h1>
 
@@ -177,7 +174,7 @@ const ResetPassword = () => {
           <div className="space-y-3">
             <Link
               to="/forgot-password"
-              className="block w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 transition"
+              className="block w-full bg-primary-600 text-white py-3 rounded-control font-bold hover:bg-primary-700 transition"
             >
               {t('resetPassword.requestNewLink')}
             </Link>
@@ -207,13 +204,11 @@ const ResetPassword = () => {
       {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
       <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
 
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+      <div className="bg-white rounded-card shadow-2xl p-8 max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-4xl">🔐</span>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <FlowMascot pose="content" size={90} className="mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-flow-ink mb-2">
             {t('resetPassword.title')}
           </h1>
           <p className="text-gray-600">
@@ -240,7 +235,7 @@ const ResetPassword = () => {
               required
               minLength={8}
               placeholder={t('resetPassword.newPasswordPlaceholder')}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+              className="w-full px-4 py-3 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               disabled={loading}
             />
             <p className="mt-1 text-xs text-gray-500">
@@ -259,7 +254,7 @@ const ResetPassword = () => {
               required
               minLength={8}
               placeholder={t('resetPassword.confirmPasswordPlaceholder')}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+              className="w-full px-4 py-3 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               disabled={loading}
             />
           </div>
@@ -267,7 +262,7 @@ const ResetPassword = () => {
           <button
             type="submit"
             disabled={loading || !password || !confirmPassword}
-            className="w-full bg-primary-600 text-white py-3 rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary-600 text-white py-3 rounded-control font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? t('resetPassword.submitting') : t('resetPassword.submit')}
           </button>

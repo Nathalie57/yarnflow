@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
 import LanguageSwitcher from './LanguageSwitcher'
 import api from '../services/api'
+import FlowMascot from './FlowMascot'
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth()
@@ -48,10 +49,14 @@ const Navbar = () => {
   const StreakBadge = ({ className = '' }) => (
     streak > 0 ? (
       <span
-        className={`inline-flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5 ${className}`}
+        className={`inline-flex items-center gap-1 text-xs font-bold text-flow-ink bg-flow-peach border border-flow-peach rounded-full px-2 py-0.5 ${className}`}
         title={t('streak.badgeTitle', { count: streak })}
       >
-        🔥 {streak}
+        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2c-1 3-4 4.5-4 8a4 4 0 008 0c0-1-.5-2-1-2.5.5 2-1 3-1.5 1.5C14 7 12 5 12 2z" />
+          <path d="M8.5 13.5A4.5 4.5 0 0012 20a4.5 4.5 0 003.5-6.5c-.5 2-2 3-3.5 1-1.5 2-3 .5-3.5-1z" opacity="0.6" />
+        </svg>
+        {streak}
       </span>
     ) : null
   )
@@ -71,7 +76,8 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/my-projects" className="text-xl font-bold text-primary-600 tracking-tight">
+          <Link to="/my-projects" className="flex items-center gap-2 text-xl font-bold text-primary-600 tracking-tight">
+            <FlowMascot pose="content" size={30} />
             YarnFlow
           </Link>
 
@@ -94,7 +100,7 @@ const Navbar = () => {
                   className="fixed inset-0 z-40"
                   onClick={() => setShowHelpMenu(false)}
                 />
-                <div className="absolute right-0 top-12 z-50 bg-white rounded-xl shadow-2xl border-2 border-primary-200 w-72 overflow-hidden">
+                <div className="absolute right-0 top-12 z-50 bg-white rounded-control shadow-2xl border-2 border-primary-200 w-72 overflow-hidden">
                   <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3">
                     <h3 className="text-white font-bold text-lg">{t('help.title')}</h3>
                   </div>
@@ -103,13 +109,13 @@ const Navbar = () => {
                     <Link
                       to="/contact"
                       onClick={() => setShowHelpMenu(false)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                      className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-control transition-colors text-left group"
                     >
                       <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
                       </svg>
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                        <p className="font-semibold text-flow-ink group-hover:text-primary-700">
                           {t('help.contactUs')}
                         </p>
                         <p className="text-xs text-gray-600">
@@ -121,13 +127,13 @@ const Navbar = () => {
                     <Link
                       to="/cgu"
                       onClick={() => setShowHelpMenu(false)}
-                      className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                      className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-control transition-colors text-left group"
                     >
                       <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                       </svg>
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                        <p className="font-semibold text-flow-ink group-hover:text-primary-700">
                           {t('help.legal')}
                         </p>
                         <p className="text-xs text-gray-600">
@@ -166,7 +172,7 @@ const Navbar = () => {
             {/* Mobile Menu Button - Mobile uniquement */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-gray-800 hover:bg-gray-100 transition"
+              className="md:hidden p-2 rounded-control text-gray-800 hover:bg-gray-100 transition"
               aria-label={t('menu.toggle')}
             >
               {mobileMenuOpen ? (
@@ -204,7 +210,7 @@ const Navbar = () => {
                     className="fixed inset-0 z-40"
                     onClick={() => setShowHelpMenuDesktop(false)}
                   />
-                  <div className="absolute left-0 top-12 z-50 bg-white rounded-xl shadow-2xl border-2 border-primary-200 w-72 overflow-hidden">
+                  <div className="absolute left-0 top-12 z-50 bg-white rounded-control shadow-2xl border-2 border-primary-200 w-72 overflow-hidden">
                     <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-4 py-3">
                       <h3 className="text-white font-bold text-lg">{t('help.title')}</h3>
                     </div>
@@ -213,15 +219,15 @@ const Navbar = () => {
                       <Link
                         to="/contact"
                         onClick={() => setShowHelpMenuDesktop(false)}
-                        className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                        className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-control transition-colors text-left group"
                       >
-                        <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                        <div className="w-9 h-9 rounded-control bg-primary-100 flex items-center justify-center flex-shrink-0">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                          <p className="font-semibold text-flow-ink group-hover:text-primary-700">
                             {t('help.contactUs')}
                           </p>
                           <p className="text-xs text-gray-600">
@@ -233,15 +239,15 @@ const Navbar = () => {
                       <Link
                         to="/cgu"
                         onClick={() => setShowHelpMenuDesktop(false)}
-                        className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-lg transition-colors text-left group"
+                        className="w-full flex items-center gap-3 p-3 hover:bg-primary-50 rounded-control transition-colors text-left group"
                       >
-                        <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center flex-shrink-0">
+                        <div className="w-9 h-9 rounded-control bg-primary-100 flex items-center justify-center flex-shrink-0">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="font-semibold text-gray-900 group-hover:text-primary-700">
+                          <p className="font-semibold text-flow-ink group-hover:text-primary-700">
                             {t('help.legal')}
                           </p>
                           <p className="text-xs text-gray-600">
@@ -267,7 +273,7 @@ const Navbar = () => {
               className={`text-sm transition-colors ${
                 location.pathname === '/dashboard' || location.pathname === '/my-projects' || location.pathname.startsWith('/projects/')
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 hover:text-flow-ink'
               }`}
             >
               {t('nav.projects')}
@@ -279,7 +285,7 @@ const Navbar = () => {
               className={`text-sm transition-colors ${
                 ['/bibliotheque', '/pattern-library', '/stash'].some(p => location.pathname === p) || location.pathname.startsWith('/pattern-library/')
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 hover:text-flow-ink'
               }`}
             >
               {t('nav.resources')}
@@ -291,7 +297,7 @@ const Navbar = () => {
               className={`text-sm transition-colors ${
                 location.pathname === '/gallery'
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 hover:text-flow-ink'
               }`}
             >
               {t('nav.gallery')}
@@ -303,7 +309,7 @@ const Navbar = () => {
               className={`text-sm transition-colors ${
                 location.pathname === '/tools'
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 hover:text-flow-ink'
               }`}
             >
               {t('nav.tools')}
@@ -315,7 +321,7 @@ const Navbar = () => {
               className={`text-sm transition-colors ${
                 location.pathname === '/stats'
                   ? 'text-primary-600 font-semibold'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 hover:text-flow-ink'
               }`}
             >
               {t('nav.stats')}
@@ -352,22 +358,22 @@ const Navbar = () => {
                 </svg>
               </button>
 
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all">
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-control shadow-lg border border-gray-100 py-1.5 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all">
                 <Link
                   to="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-flow-ink transition-colors"
                 >
                   {t('userMenu.profile')}
                 </Link>
                 <Link
                   to="/subscription"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-flow-ink transition-colors"
                 >
                   {t('userMenu.subscription')}
                 </Link>
                 <Link
                   to="/contact"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-flow-ink transition-colors"
                 >
                   {t('nav.contact')}
                 </Link>
@@ -399,12 +405,13 @@ const Navbar = () => {
         >
           {/* Mobile Menu Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <div className="text-xl font-bold text-primary-600">
+            <div className="flex items-center gap-2 text-xl font-bold text-primary-600">
+              <FlowMascot pose="content" size={30} />
               YarnFlow
             </div>
             <button
               onClick={closeMobileMenu}
-              className="p-2 rounded-lg hover:bg-gray-100 transition"
+              className="p-2 rounded-control hover:bg-gray-100 transition"
             >
               <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -425,7 +432,7 @@ const Navbar = () => {
             <Link
               to="/my-projects"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
+              className={`block px-4 py-3 rounded-control text-sm transition-colors ${
                 location.pathname === '/my-projects' || location.pathname.startsWith('/projects/')
                   ? 'bg-primary-50 text-primary-700 font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'
@@ -437,7 +444,7 @@ const Navbar = () => {
             <Link
               to="/bibliotheque"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
+              className={`block px-4 py-3 rounded-control text-sm transition-colors ${
                 ['/bibliotheque', '/pattern-library', '/stash'].some(p => location.pathname === p) || location.pathname.startsWith('/pattern-library/')
                   ? 'bg-primary-50 text-primary-700 font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'
@@ -449,7 +456,7 @@ const Navbar = () => {
             <Link
               to="/gallery"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
+              className={`block px-4 py-3 rounded-control text-sm transition-colors ${
                 location.pathname === '/gallery'
                   ? 'bg-primary-50 text-primary-700 font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'
@@ -461,7 +468,7 @@ const Navbar = () => {
             <Link
               to="/tools"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
+              className={`block px-4 py-3 rounded-control text-sm transition-colors ${
                 location.pathname === '/tools'
                   ? 'bg-primary-50 text-primary-700 font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'
@@ -473,7 +480,7 @@ const Navbar = () => {
             <Link
               to="/stats"
               onClick={closeMobileMenu}
-              className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
+              className={`block px-4 py-3 rounded-control text-sm transition-colors ${
                 location.pathname === '/stats'
                   ? 'bg-primary-50 text-primary-700 font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'
@@ -486,7 +493,7 @@ const Navbar = () => {
               <Link
                 to="/admin"
                 onClick={closeMobileMenu}
-                className={`block px-4 py-3 rounded-xl text-sm transition-colors ${
+                className={`block px-4 py-3 rounded-control text-sm transition-colors ${
                   location.pathname === '/admin'
                     ? 'bg-primary-50 text-primary-700 font-semibold'
                     : 'text-gray-700 hover:bg-gray-50'
@@ -501,7 +508,7 @@ const Navbar = () => {
             <Link
               to="/profile"
               onClick={closeMobileMenu}
-              className="block px-4 py-3 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              className="block px-4 py-3 rounded-control text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
               {t('userMenu.profile')}
             </Link>
@@ -509,7 +516,7 @@ const Navbar = () => {
             <Link
               to="/subscription"
               onClick={closeMobileMenu}
-              className="block px-4 py-3 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              className="block px-4 py-3 rounded-control text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
               {t('userMenu.subscription')}
             </Link>
@@ -517,14 +524,14 @@ const Navbar = () => {
             <Link
               to="/contact"
               onClick={closeMobileMenu}
-              className="block px-4 py-3 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              className="block px-4 py-3 rounded-control text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
               {t('nav.contact')}
             </Link>
 
             <button
               onClick={handleLogout}
-              className="w-full text-left px-4 py-3 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+              className="w-full text-left px-4 py-3 rounded-control text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
             >
               {t('userMenu.logout')}
             </button>

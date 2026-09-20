@@ -26,6 +26,7 @@ import TagBadge from '../components/TagBadge'
 import UpgradePrompt from '../components/UpgradePrompt'
 import CreateProjectWizard from '../components/CreateProjectWizard'
 import PushNotificationModal, { PUSH_MODAL_STORAGE_KEY } from '../components/PushNotificationModal'
+import FlowMascot from '../components/FlowMascot'
 
 import { apiErrorMessage } from '../utils/apiError'
 const MyProjects = () => {
@@ -805,10 +806,14 @@ const MyProjects = () => {
 
   // [AI:Claude] Badge de statut
   const getStatusBadge = (status) => {
+    // [AI:Claude] 2026-09-18 — Couleurs distinctes du badge technique (charte
+    // section 7 : accents ponctuels hors du vert dominant) : bleu doux pour
+    // "en cours" (info), vert franc pour "termine" (succes), peche pour
+    // "en pause" (doux, pas alarmant comme le rouge precedent).
     const badges = {
-      in_progress: { label: t('status.in_progress'), color: 'bg-primary-100 text-primary-800' },
+      in_progress: { label: t('status.in_progress'), color: 'bg-flow-blue/30 text-flow-ink' },
       completed: { label: t('status.completed'), color: 'bg-green-100 text-green-800' },
-      paused: { label: t('status.paused'), color: 'bg-red-100 text-red-800' },
+      paused: { label: t('status.paused'), color: 'bg-flow-peach text-flow-ink' },
       abandoned: { label: t('status.abandoned'), color: 'bg-gray-100 text-gray-800' }
     }
 
@@ -863,11 +868,25 @@ const MyProjects = () => {
   // Pour débloquer les filtres/organisation avancée
   const hasStartedAtLeastOneProject = projects.some(p => (p.current_row || 0) > 0)
 
+  // [AI:Claude] 2026-09-18 — Fonds de card tres doux, teintes de la charte
+  // en tres faible opacite (10-25%) pour ne pas retomber dans le "trop
+  // criard" deja signale sur une precedente tentative de cards colorees.
+  // Purement decoratif (cycle par index), pas lie au statut/technique qui
+  // ont deja leurs propres badges.
+  const CARD_TINTS = [
+    'bg-flow-mint',
+    'bg-flow-blue/40',
+    'bg-flow-peach',
+    'bg-flow-lavender/60',
+    'bg-flow-cream',
+    'bg-flow-coral/30',
+  ]
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Toast succès paiement Stripe */}
       {paymentSuccess && (
-        <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3">
+        <div className="mb-4 bg-green-50 border border-green-200 rounded-control p-4 flex items-start gap-3">
           <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
             <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -890,7 +909,7 @@ const MyProjects = () => {
           onglet fermé pendant l'analyse. Les données sont déjà en base : le lien reprend
           directement l'écran de confirmation, sans refaire analyser le patron. */}
       {pendingImport && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-start gap-3">
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-control p-4 flex flex-col sm:flex-row sm:items-start gap-3">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
               <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -905,13 +924,13 @@ const MyProjects = () => {
           <div className="flex gap-2 w-full sm:w-auto flex-shrink-0">
             <button
               onClick={handleDismissPending}
-              className="flex-1 sm:flex-none px-4 py-2 bg-white border border-amber-300 text-amber-700 rounded-lg text-sm font-semibold hover:bg-amber-100 transition"
+              className="flex-1 sm:flex-none px-4 py-2 bg-white border border-amber-300 text-amber-700 rounded-control text-sm font-semibold hover:bg-amber-100 transition"
             >
               {t('myProjects.pendingImportDismiss')}
             </button>
             <button
               onClick={() => navigate('/smart-project-creator?resume=1')}
-              className="flex-1 sm:flex-none px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition"
+              className="flex-1 sm:flex-none px-4 py-2 bg-amber-600 text-white rounded-control text-sm font-semibold hover:bg-amber-700 transition"
             >
               {t('myProjects.pendingImportResume')}
             </button>
@@ -924,21 +943,40 @@ const MyProjects = () => {
         {/* Afficher header complet uniquement si des projets existent */}
         {projects.length > 0 ? (
           <>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('myProjects.title')}</h1>
+            {/* [AI:Claude] Flow en haut a droite, plus grand, avec la bulle a sa gauche
+                (pointe tournee vers lui) — charte section 5 : presence claire sans
+                prendre toute la place, le bouton d'action reste sur sa propre ligne. */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-flow-ink">{t('myProjects.title')}</h1>
+                <div className="flex justify-end mt-2 mr-2">
+                  <div className="relative inline-block">
+                    {/* Pointe orientee vers le haut (vers Flow) : border-l + border-t
+                        + rotate-45 est la combinaison qui pointe vers le haut, pas
+                        border-t + border-r (essaye juste avant, dans le mauvais sens). */}
+                    {/* Bulle a gauche de Flow (meme ligne) : pointe vers la droite,
+                        donc border-t + border-r (border-l + border-t pointait vers le
+                        haut, ce qui ne correspondait pas a leur position cote a cote). */}
+                    <span className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-flow-cream border-t-2 border-r-2 border-flow-mint rotate-45" />
+                    <div className="relative bg-flow-cream border-2 border-flow-mint rounded-card px-4 py-2 shadow-md">
+                      <p className="text-sm font-medium text-flow-ink">{t('myProjects.greetingHeader')}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm w-full sm:w-auto justify-center"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                {t('myProjects.newProject')}
-              </button>
+              <FlowMascot pose="content" size={160} className="flex-shrink-0" />
             </div>
+
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="mt-4 flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-control font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm w-full sm:w-auto justify-center"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              {t('myProjects.newProject')}
+            </button>
 
             {/* Stats inline */}
             {!loadingStats && dashboardStats && (
@@ -962,7 +1000,7 @@ const MyProjects = () => {
         ) : (
           /* Header minimaliste pour empty state */
           <div className="text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('myProjects.titleAlt')}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-flow-ink">{t('myProjects.titleAlt')}</h1>
           </div>
         )}
       </div>
@@ -977,7 +1015,7 @@ const MyProjects = () => {
               placeholder={t('myProjects.searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-2.5 pl-10 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition bg-white text-sm"
+              className="w-full px-4 py-2.5 pl-10 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent transition bg-white text-sm"
             />
             <svg
               className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
@@ -1005,20 +1043,20 @@ const MyProjects = () => {
       {loading && !hasLoadedOnce && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+            <div key={i} className="bg-white rounded-card border border-flow-mint overflow-hidden shadow-sm">
               <div className="h-48 skeleton" />
               <div className="p-4 space-y-3">
-                <div className="h-5 skeleton rounded-lg w-3/4" />
+                <div className="h-5 skeleton rounded-control w-3/4" />
                 <div className="flex gap-2">
                   <div className="h-5 skeleton rounded-full w-20" />
                   <div className="h-5 skeleton rounded-full w-16" />
                 </div>
                 <div className="grid grid-cols-2 gap-2 pt-1">
-                  <div className="h-12 skeleton rounded-xl" />
-                  <div className="h-12 skeleton rounded-xl" />
+                  <div className="h-12 skeleton rounded-control" />
+                  <div className="h-12 skeleton rounded-control" />
                 </div>
                 <div className="h-1.5 skeleton rounded-full" />
-                <div className="h-10 skeleton rounded-xl" />
+                <div className="h-10 skeleton rounded-control" />
               </div>
             </div>
           ))}
@@ -1027,7 +1065,7 @@ const MyProjects = () => {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div className="bg-red-50 border border-red-200 rounded-control p-4 mb-6">
           <p className="text-red-800">{error}</p>
         </div>
       )}
@@ -1037,7 +1075,7 @@ const MyProjects = () => {
         <div className="mb-6">
           <button
             onClick={() => setFiltersOpen(o => !o)}
-            className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors mb-2"
+            className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-flow-ink transition-colors mb-2"
           >
             <svg className={`w-4 h-4 transition-transform duration-200 ${filtersOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -1075,9 +1113,10 @@ const MyProjects = () => {
           {projects.length === 0 ? (
             <div className="max-w-lg mx-auto py-10 px-4">
 
-              {/* Accueil */}
+              {/* Accueil — Flow souriant en accompagnement (charte section 12 : etats vides) */}
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                <FlowMascot pose="onYVa" size={120} className="mx-auto mb-3" />
+                <h2 className="text-2xl font-bold text-flow-ink mb-2">
                   {user?.first_name ? t('myProjects.welcomeNamed', { name: user.first_name }) : t('myProjects.welcome')}
                 </h2>
                 <p className="text-gray-500 text-sm">{t('myProjects.whereToStart')}</p>
@@ -1086,10 +1125,10 @@ const MyProjects = () => {
               {/* Importer un patron (Smart Creation) — CTA principal : point d'entrée du copilote */}
               <button
                 onClick={() => navigate('/smart-project-creator')}
-                className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl text-left transition shadow-md hover:shadow-lg group"
+                className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-card text-left transition shadow-md hover:shadow-lg group"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-10 h-10 bg-white bg-opacity-20 rounded-control flex items-center justify-center flex-shrink-0 mt-0.5">
                     <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                     </svg>
@@ -1166,9 +1205,9 @@ const MyProjects = () => {
 
             </div>
           ) : filteredProjects.length === 0 ? (
-            <div className="max-w-xl mx-auto text-center py-12 px-6 bg-white rounded-xl border-2 border-gray-200">
-              <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+            <div className="max-w-xl mx-auto text-center py-12 px-6 bg-white rounded-card border-2 border-flow-mint">
+              <FlowMascot pose="interrogatif" size={104} className="mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-flow-ink mb-3">
                 {t('myProjects.noResultsTitle')}
               </h3>
               <p className="text-gray-600 mb-6 leading-relaxed">
@@ -1177,14 +1216,14 @@ const MyProjects = () => {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition focus:outline-none focus:ring-4 focus:ring-gray-300"
+                  className="px-6 py-3 bg-gray-600 text-white rounded-control font-semibold hover:bg-gray-700 transition focus:outline-none focus:ring-4 focus:ring-gray-300"
                 >
                   {t('myProjects.clearSearch')}
                 </button>
                 {canCreateProject && (
                   <button
                     onClick={() => setShowCreateModal(true)}
-                    className="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
+                    className="px-6 py-3 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
                   >
                     {t('ui.createProjectPlus')}
                   </button>
@@ -1196,7 +1235,7 @@ const MyProjects = () => {
               {filteredProjects.map((project, index) => (
                 <div
                   key={project.id}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden animate-fade-in-up"
+                  className={`${CARD_TINTS[index % CARD_TINTS.length]} rounded-card border border-flow-mint shadow-sm hover:shadow-md transition-shadow overflow-hidden animate-fade-in-up`}
                   style={{ animationDelay: `${index * 55}ms` }}
                 >
                   {/* Photo — uniquement si elle existe */}
@@ -1211,7 +1250,7 @@ const MyProjects = () => {
                         onClick={() => openPhotoUploadModal(project)}
                         className="absolute inset-0 bg-black/0 group-hover:bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
                       >
-                        <span className="flex items-center gap-2 px-4 py-2 bg-white/90 text-gray-800 rounded-xl text-sm font-medium">
+                        <span className="flex items-center gap-2 px-4 py-2 bg-white/90 text-gray-800 rounded-control text-sm font-medium">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
                             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
@@ -1225,7 +1264,7 @@ const MyProjects = () => {
                   {/* Contenu */}
                   <div className="p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-bold text-gray-900 flex-1">
+                      <h3 className="text-lg font-bold text-flow-ink flex-1">
                         {project.name}
                       </h3>
 
@@ -1234,7 +1273,7 @@ const MyProjects = () => {
                         {!project.main_photo && (
                           <button
                             onClick={() => openPhotoUploadModal(project)}
-                            className="p-1.5 text-gray-300 hover:text-gray-500 transition-colors rounded-lg hover:bg-gray-50"
+                            className="p-1.5 text-gray-300 hover:text-gray-500 transition-colors rounded-control hover:bg-gray-50"
                             title={t('myProjects.addPhoto')}
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
@@ -1249,11 +1288,11 @@ const MyProjects = () => {
                         title={project.is_favorite ? t('myProjects.removeFromFavorites') : t('myProjects.addToFavorites')}
                       >
                         {project.is_favorite ? (
-                          <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-flow-yellow" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
                           </svg>
                         ) : (
-                          <svg className="w-5 h-5 text-gray-300 hover:text-amber-300" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-gray-300 hover:text-flow-yellow" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
                           </svg>
                         )}
@@ -1264,7 +1303,11 @@ const MyProjects = () => {
                     {/* Statut + Technique */}
                     <div className="flex items-center flex-wrap gap-1.5 mb-3">
                       {getStatusBadge(project.status)}
-                      <span className="px-2 py-0.5 bg-primary-50 text-primary-600 rounded-full text-xs font-medium">
+                      {/* [AI:Claude] Lavande/corail plutot que bleu/vert : ces deux-la sont
+                          deja pris par les badges de statut juste a cote (in_progress/completed),
+                          la combinaison la plus frequente (ex. "En cours" + "Tricot") se
+                          confondrait sinon. */}
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium text-flow-ink ${project.technique === 'tricot' ? 'bg-flow-lavender/50' : 'bg-flow-coral/30'}`}>
                         {project.technique === 'tricot' ? t('myProjects.knitting') : t('myProjects.crochet')}
                       </span>
                       {project.type && (
@@ -1380,14 +1423,14 @@ const MyProjects = () => {
                     <div className="flex items-center gap-2">
                       <Link
                         to={`/projects/${project.id}`}
-                        className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-center font-semibold text-sm hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-300"
+                        className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-control text-center font-semibold text-sm hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-300"
                       >
                         {t('myProjects.open')}
                       </Link>
 
                       <button
                         onClick={() => handleDeleteProject(project.id)}
-                        className="px-3 py-2.5 border border-gray-200 text-gray-400 rounded-xl hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"
+                        className="px-3 py-2.5 border border-gray-200 text-gray-400 rounded-control hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors focus:outline-none"
                         title={t('myProjects.delete')}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
@@ -1436,13 +1479,13 @@ const MyProjects = () => {
       {/* Modal sélection patron depuis bibliothèque */}
       {showPatternLibraryModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-xl">
+          <div className="bg-white rounded-card max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col shadow-xl">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{t('patternLibraryModal.title')}</h2>
+                <h2 className="text-lg font-bold text-flow-ink">{t('patternLibraryModal.title')}</h2>
                 <p className="text-sm text-gray-500 mt-0.5">{t('patternLibraryModal.subtitle')}</p>
               </div>
-              <button onClick={() => setShowPatternLibraryModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+              <button onClick={() => setShowPatternLibraryModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-control transition">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -1473,10 +1516,10 @@ const MyProjects = () => {
                         setPatternText('')
                         setShowPatternLibraryModal(false)
                       }}
-                      className="border border-gray-200 rounded-xl p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
+                      className="border border-gray-200 rounded-control p-4 hover:border-primary-400 hover:bg-primary-50 transition text-left"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-control flex items-center justify-center">
                           {pattern.file_type === 'pdf' ? (
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-500"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                           ) : pattern.file_type === 'image' ? (
@@ -1486,7 +1529,7 @@ const MyProjects = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-gray-900 truncate text-sm">{pattern.name}</h3>
+                          <h3 className="font-medium text-flow-ink truncate text-sm">{pattern.name}</h3>
                           {pattern.description && (
                             <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{pattern.description}</p>
                           )}
@@ -1509,7 +1552,7 @@ const MyProjects = () => {
             <div className="px-6 py-4 border-t border-gray-100">
               <button
                 onClick={() => setShowPatternLibraryModal(false)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition text-sm font-medium"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-control text-gray-700 hover:bg-gray-50 transition text-sm font-medium"
               >
                 {t('actions.cancel')}
               </button>
@@ -1521,8 +1564,8 @@ const MyProjects = () => {
       {/* Modal ajout URL patron */}
       {showPatternUrlModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
-            <h2 className="text-lg font-bold text-gray-900 mb-1">{t('patternUrlModal.label')}</h2>
+          <div className="bg-white rounded-card max-w-md w-full p-6 shadow-xl">
+            <h2 className="text-lg font-bold text-flow-ink mb-1">{t('patternUrlModal.label')}</h2>
             <p className="text-sm text-gray-500 mb-5">{t('patternUrlModal.hint')}</p>
 
             {/* Champ URL */}
@@ -1531,7 +1574,7 @@ const MyProjects = () => {
               value={patternUrl}
               onChange={(e) => setPatternUrl(e.target.value)}
               placeholder={t('patternUrlModal.placeholder')}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mb-2"
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm mb-2"
               autoFocus
             />
             <p className="text-xs text-gray-500 mb-5">{t('patternUrlModal.pdfHint')}</p>
@@ -1553,7 +1596,7 @@ const MyProjects = () => {
                 value={patternSearchQuery}
                 onChange={(e) => setPatternSearchQuery(e.target.value)}
                 placeholder={t('patternUrlModal.searchPlaceholder')}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl mb-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-control mb-3 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
               />
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -1564,7 +1607,7 @@ const MyProjects = () => {
                       : encodeURIComponent('tricot crochet patron')
                     window.open(`https://www.google.com/search?q=${query}`, '_blank')
                   }}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-control hover:bg-gray-50 transition text-sm font-medium text-gray-700"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>
                   {t('patternUrlModal.google')}
@@ -1577,7 +1620,7 @@ const MyProjects = () => {
                       : 'https://www.ravelry.com/patterns/search'
                     window.open(url, '_blank')
                   }}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-control hover:bg-gray-50 transition text-sm font-medium text-gray-700"
                 >
                   <svg className="w-4 h-4 text-primary-600" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm-1 5v2H9v2h2v6h2v-6h2V9h-2V7h-2z"/></svg>
                   {t('patternUrlModal.ravelry')}
@@ -1594,7 +1637,7 @@ const MyProjects = () => {
                   setPatternUrl('')
                   setPatternSearchQuery('')
                 }}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition font-medium"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-control text-sm text-gray-700 hover:bg-gray-50 transition font-medium"
               >
                 {t('actions.cancel')}
               </button>
@@ -1611,7 +1654,7 @@ const MyProjects = () => {
                   }
                 }}
                 disabled={!patternUrl.trim()}
-                className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-control text-sm font-semibold hover:bg-primary-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {t('actions.save')}
               </button>
@@ -1623,13 +1666,13 @@ const MyProjects = () => {
       {/* Modal ajout texte patron */}
       {showPatternTextModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
+          <div className="bg-white rounded-card max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-lg font-bold text-gray-900">{t('patternTextModal.label')}</h2>
+                <h2 className="text-lg font-bold text-flow-ink">{t('patternTextModal.label')}</h2>
                 <p className="text-sm text-gray-500 mt-0.5">{t('patternTextModal.subtitle')}</p>
               </div>
-              <button onClick={() => setShowPatternTextModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+              <button onClick={() => setShowPatternTextModal(false)} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-control transition">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -1640,7 +1683,7 @@ const MyProjects = () => {
                 onChange={(e) => setPatternText(e.target.value)}
                 rows={18}
                 placeholder={t('patternTextModal.placeholder')}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                className="w-full px-4 py-3 border border-gray-200 rounded-control font-mono text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                 autoFocus
               />
               <p className="text-xs text-gray-500 mt-2">{t('patternTextModal.hint')}</p>
@@ -1651,7 +1694,7 @@ const MyProjects = () => {
                 <button
                   type="button"
                   onClick={() => setShowPatternTextModal(false)}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 transition text-sm font-medium"
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-control text-gray-700 hover:bg-gray-50 transition text-sm font-medium"
                 >
                   {t('actions.cancel')}
                 </button>
@@ -1667,7 +1710,7 @@ const MyProjects = () => {
                     }
                   }}
                   disabled={!patternText.trim()}
-                  className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t('actions.validate')}
                 </button>
@@ -1680,9 +1723,9 @@ const MyProjects = () => {
       {/* Modal upload photo de projet */}
       {showPhotoUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-md w-full">
+          <div className="bg-white rounded-card max-w-md w-full">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-2xl font-bold text-flow-ink">
                 {t('ui.addPhotoCamera')}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
@@ -1719,18 +1762,18 @@ const MyProjects = () => {
                     <button
                       type="button"
                       onClick={() => window.cameraInputProjects?.click()}
-                      className="flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-primary-600 text-white rounded-control hover:bg-primary-700 transition"
                     >
-                      <span className="text-xl">📷</span>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                       <span className="font-medium">{t('photoModal.takePhoto')}</span>
                     </button>
                   )}
                   <button
                     type="button"
                     onClick={() => window.galleryInputProjects?.click()}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-control hover:bg-gray-700 transition"
                   >
-                    <span className="text-xl">🖼️</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
                     <span className="font-medium">{t('photoModal.choosePhoto')}</span>
                   </button>
                 </div>
@@ -1741,7 +1784,7 @@ const MyProjects = () => {
               </div>
 
               {photoFile && (
-                <div className="mb-4 p-3 bg-primary-50 rounded-lg">
+                <div className="mb-4 p-3 bg-primary-50 rounded-control">
                   <p className="text-sm text-primary-700">
                     {t('photoModal.selectedFile', { name: photoFile.name })}
                   </p>
@@ -1755,14 +1798,14 @@ const MyProjects = () => {
                     setShowPhotoUploadModal(false)
                     setPhotoFile(null)
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition"
                   disabled={uploadingPhoto}
                 >
                   {t('actions.cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={uploadingPhoto}
                 >
                   {uploadingPhoto ? t('photoModal.uploading') : t('photoModal.add')}

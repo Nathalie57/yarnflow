@@ -4,6 +4,7 @@ import { userAPI, paymentsAPI } from '../services/api'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { useTranslation, Trans } from 'react-i18next'
 import { PLAN_PRICES } from '../data/upgradePlans'
+import FlowMascot from '../components/FlowMascot'
 
 const Check = ({ className = 'text-primary-500' }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 flex-shrink-0 mt-0.5 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -21,12 +22,8 @@ const TWAMessage = () => {
   const { t } = useTranslation('tools')
   return (
   <div className="max-w-md mx-auto px-6 py-16 text-center space-y-6">
-    <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto">
-      <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-      </svg>
-    </div>
-    <h1 className="text-2xl font-bold text-gray-900">{t('ui.unlockYarnFlow')}</h1>
+    <FlowMascot pose="content" size={90} className="mx-auto" />
+    <h1 className="text-2xl font-bold text-flow-ink">{t('ui.unlockYarnFlow')}</h1>
     <p className="text-gray-600 leading-relaxed">
       <Trans t={t} i18nKey="ui.twaSubsManaged">
         <span className="font-semibold text-primary-700">yarnflow.fr</span>
@@ -192,9 +189,9 @@ const Subscription = () => {
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-12 space-y-4">
-        <div className="skeleton h-10 w-64 rounded-xl mx-auto" />
+        <div className="skeleton h-10 w-64 rounded-control mx-auto" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-          {[...Array(2)].map((_, i) => <div key={i} className="skeleton h-96 rounded-2xl" />)}
+          {[...Array(2)].map((_, i) => <div key={i} className="skeleton h-96 rounded-card" />)}
         </div>
       </div>
     )
@@ -215,7 +212,8 @@ const Subscription = () => {
 
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">{t('ui.choosePlan')}</h1>
+        <FlowMascot pose="content" size={72} className="mx-auto mb-2" />
+        <h1 className="text-3xl font-bold text-flow-ink mb-3">{t('ui.choosePlan')}</h1>
         <p className="text-gray-500">{t('ui.planTagline')}</p>
 
         <div className="flex items-center justify-center gap-2 flex-wrap mt-4 text-xs text-gray-400">
@@ -234,9 +232,9 @@ const Subscription = () => {
 
       {/* Abonnement PLUS actif */}
       {isPlus && (
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between gap-4">
+        <div className="bg-primary-50 border border-primary-200 rounded-control p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary-100 rounded-xl flex items-center justify-center">
+            <div className="w-9 h-9 bg-primary-100 rounded-control flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
               </svg>
@@ -252,7 +250,7 @@ const Subscription = () => {
           <button
             onClick={handleManageSubscription}
             disabled={processing}
-            className="text-xs font-semibold text-primary-700 border border-primary-300 bg-white hover:bg-primary-50 rounded-lg px-3 py-1.5 transition disabled:opacity-60"
+            className="text-xs font-semibold text-primary-700 border border-primary-300 bg-white hover:bg-primary-50 rounded-control px-3 py-1.5 transition disabled:opacity-60"
           >
             {processing ? t('ui.loadingEllipsis') : t('ui.manage')}
           </button>
@@ -261,9 +259,9 @@ const Subscription = () => {
 
       {/* Abonnement PRO actif */}
       {isPro && (
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between gap-4">
+        <div className="bg-primary-50 border border-primary-200 rounded-control p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary-100 rounded-xl flex items-center justify-center">
+            <div className="w-9 h-9 bg-primary-100 rounded-control flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
               </svg>
@@ -278,7 +276,7 @@ const Subscription = () => {
           <button
             onClick={handleManageSubscription}
             disabled={processing}
-            className="text-xs font-semibold text-primary-700 border border-primary-300 bg-white hover:bg-primary-50 rounded-lg px-3 py-1.5 transition disabled:opacity-60"
+            className="text-xs font-semibold text-primary-700 border border-primary-300 bg-white hover:bg-primary-50 rounded-control px-3 py-1.5 transition disabled:opacity-60"
           >
             {processing ? t('ui.loadingEllipsis') : t('ui.manage')}
           </button>
@@ -289,7 +287,7 @@ const Subscription = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto w-full">
 
         {/* FREE */}
-        <div className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col ${isFree ? 'border-gray-300' : 'border-gray-200'}`}>
+        <div className={`bg-white rounded-card border p-5 shadow-sm flex flex-col ${isFree ? 'border-gray-300' : 'border-gray-200'}`}>
           {isFree && (
             <div className="flex justify-center mb-3">
               <span className="bg-gray-100 text-gray-600 text-xs font-semibold px-3 py-1 rounded-full">{t('ui.currentPlan')}</span>
@@ -297,7 +295,7 @@ const Subscription = () => {
           )}
           <div className="mb-4">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Free</p>
-            <div className="text-3xl font-bold text-gray-900 mb-1">0€</div>
+            <div className="text-3xl font-bold text-flow-ink mb-1">0€</div>
             <p className="text-sm text-gray-500">{t('ui.freeDesc')}</p>
           </div>
 
@@ -311,13 +309,13 @@ const Subscription = () => {
             <li className="flex items-start gap-2"><Check /><span>{t('ui.translations3Free')}</span></li>
           </ul>
 
-          <button disabled className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed">
+          <button disabled className="w-full py-2.5 rounded-control border border-gray-200 text-gray-400 text-sm font-semibold cursor-not-allowed">
             {isFree ? t('ui.currentPlanBtn') : t('ui.freeWord')}
           </button>
         </div>
 
         {/* PLUS */}
-        <div className={`bg-white rounded-2xl border p-5 shadow-sm flex flex-col ${isPlus ? 'border-primary-400' : 'border-gray-200'}`}>
+        <div className={`bg-white rounded-card border p-5 shadow-sm flex flex-col ${isPlus ? 'border-primary-400' : 'border-gray-200'}`}>
           {isPlus && (
             <div className="flex justify-center mb-3">
               <span className="bg-primary-100 text-primary-700 text-xs font-semibold px-3 py-1 rounded-full">{t('ui.currentPlan')}</span>
@@ -326,7 +324,7 @@ const Subscription = () => {
           <div className="mb-4">
             <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-2">Plus</p>
             <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-bold text-gray-900">{plusPrice}</span>
+              <span className="text-3xl font-bold text-flow-ink">{plusPrice}</span>
               <span className="text-sm text-gray-500">{t('ui.perMonthSuffix')}</span>
             </div>
             <p className="text-sm text-gray-500">{t('ui.plusDesc')}</p>
@@ -345,14 +343,14 @@ const Subscription = () => {
           </ul>
 
           {isPlus ? (
-            <button disabled className="w-full py-2.5 border-2 border-primary-500 text-primary-700 rounded-xl text-sm font-semibold opacity-60 cursor-not-allowed">
+            <button disabled className="w-full py-2.5 border-2 border-primary-500 text-primary-700 rounded-control text-sm font-semibold opacity-60 cursor-not-allowed">
               {t('ui.currentPlan')}
             </button>
           ) : isPro ? (
             <button
               onClick={handleManageSubscription}
               disabled={processing}
-              className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-control text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {t('ui.downgradePlus')}
             </button>
@@ -361,7 +359,7 @@ const Subscription = () => {
               <button
                 onClick={handleSubscribePlus}
                 disabled={processing}
-                className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-2.5 border-2 border-primary-500 text-primary-700 hover:bg-primary-50 rounded-control text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {processing ? t('ui.loadingEllipsis2') : t('ui.monthlyPrice', { price: plusPrice })}
               </button>
@@ -380,7 +378,7 @@ const Subscription = () => {
         </div>
 
         {/* PRO */}
-        <div className="bg-white rounded-2xl border-2 border-primary-500 p-5 shadow-lg flex flex-col relative">
+        <div className="bg-white rounded-card border-2 border-primary-500 p-5 shadow-lg flex flex-col relative">
           <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
             <span className="bg-primary-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">
               {t('ui.forEnthusiasts')}
@@ -396,7 +394,7 @@ const Subscription = () => {
           <div className="mb-4 mt-2">
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-2">Pro</p>
             <div className="flex items-baseline gap-1 mb-1">
-              <span className="text-3xl font-bold text-gray-900">{PLAN_PRICES.pro.monthly}</span>
+              <span className="text-3xl font-bold text-flow-ink">{PLAN_PRICES.pro.monthly}</span>
               <span className="text-sm text-gray-500">{t('ui.perMonthSuffix')}</span>
             </div>
             <p className="text-sm text-gray-500">{t('ui.proDesc')}</p>
@@ -413,7 +411,7 @@ const Subscription = () => {
           </ul>
 
           {isPro ? (
-            <button disabled className="w-full py-2.5 bg-primary-600 text-white rounded-xl text-sm font-semibold opacity-60 cursor-not-allowed">
+            <button disabled className="w-full py-2.5 bg-primary-600 text-white rounded-control text-sm font-semibold opacity-60 cursor-not-allowed">
               {t('ui.currentPlan')}
             </button>
           ) : (
@@ -421,7 +419,7 @@ const Subscription = () => {
               <button
                 onClick={() => isPlus ? handleManageSubscription() : handleSubscribe('pro')}
                 disabled={processing}
-                className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-xl text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white rounded-control text-sm font-semibold transition shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {processing ? t('ui.loadingEllipsis') : t('ui.chooseMonthly')}
               </button>
@@ -443,20 +441,20 @@ const Subscription = () => {
       {/* Packs de crédits photos */}
       <div id="credits-packs" className="scroll-mt-20">
         <div className="text-center mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-1">{t('ui.needMorePhotos')}</h2>
+          <h2 className="text-xl font-bold text-flow-ink mb-1">{t('ui.needMorePhotos')}</h2>
           <p className="text-sm text-gray-500">{t('ui.extraCreditsDesc')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
           {/* Pack 50 */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+          <div className="bg-white rounded-card border border-gray-200 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="font-bold text-gray-900">{t('ui.pack50')}</p>
+                <p className="font-bold text-flow-ink">{t('ui.pack50')}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{t('ui.pack50Price')}</p>
               </div>
               <div className="text-right">
-                <span className="text-3xl font-bold text-gray-900">{PLAN_PRICES.pro.monthlyEquiv}</span>
+                <span className="text-3xl font-bold text-flow-ink">{PLAN_PRICES.pro.monthlyEquiv}</span>
                 <p className="text-xs text-gray-500">{t('ui.oneOffPayment')}</p>
               </div>
             </div>
@@ -465,23 +463,23 @@ const Subscription = () => {
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.validForLife')}</span></li>
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.stackableCredits')}</span></li>
             </ul>
-            <button onClick={() => handleBuyCredits(50)} disabled={processing} className="w-full py-2.5 border-2 border-primary-600 text-primary-600 hover:bg-primary-50 rounded-xl text-sm font-semibold transition disabled:opacity-60">
+            <button onClick={() => handleBuyCredits(50)} disabled={processing} className="w-full py-2.5 border-2 border-primary-600 text-primary-600 hover:bg-primary-50 rounded-control text-sm font-semibold transition disabled:opacity-60">
               {processing ? t('ui.loadingEllipsis') : t('ui.buyPack50')}
             </button>
           </div>
 
           {/* Pack 150 */}
-          <div className="bg-white rounded-2xl border-2 border-primary-500 p-6 shadow-md relative">
+          <div className="bg-white rounded-card border-2 border-primary-500 p-6 shadow-md relative">
             <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
               <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">{t('ui.bestPrice')}</span>
             </div>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="font-bold text-gray-900">{t('ui.pack150')}</p>
+                <p className="font-bold text-flow-ink">{t('ui.pack150')}</p>
                 <p className="text-xs text-green-600 font-medium mt-0.5">{t('ui.pack150Price')}</p>
               </div>
               <div className="text-right">
-                <span className="text-3xl font-bold text-gray-900">9,99€</span>
+                <span className="text-3xl font-bold text-flow-ink">9,99€</span>
                 <p className="text-xs text-gray-500">{t('ui.oneOffPayment')}</p>
               </div>
             </div>
@@ -490,7 +488,7 @@ const Subscription = () => {
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.validForLife')}</span></li>
               <li className="flex items-start gap-2"><Check /><span className="text-sm text-gray-700">{t('ui.stackableCredits')}</span></li>
             </ul>
-            <button onClick={() => handleBuyCredits(150)} disabled={processing} className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition disabled:opacity-60">
+            <button onClick={() => handleBuyCredits(150)} disabled={processing} className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold transition disabled:opacity-60">
               {processing ? t('ui.loadingEllipsis') : t('ui.buyPack150')}
             </button>
           </div>
@@ -498,8 +496,8 @@ const Subscription = () => {
       </div>
 
       {/* FAQ */}
-      <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 space-y-5">
-        <h2 className="font-bold text-gray-900 text-lg">{t('ui.faq')}</h2>
+      <div className="bg-gray-50 rounded-card border border-gray-200 p-6 space-y-5">
+        <h2 className="font-bold text-flow-ink text-lg">{t('ui.faq')}</h2>
 
         {[
           {
@@ -524,13 +522,13 @@ const Subscription = () => {
           }
         ].map((item, i) => (
           <div key={i} className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-8 h-8 bg-white rounded-control border border-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 {item.icon}
               </svg>
             </div>
             <div>
-              <p className="font-semibold text-gray-900 text-sm mb-0.5">{item.q}</p>
+              <p className="font-semibold text-flow-ink text-sm mb-0.5">{item.q}</p>
               <p className="text-sm text-gray-500 leading-relaxed">{item.a}</p>
             </div>
           </div>

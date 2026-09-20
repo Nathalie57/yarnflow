@@ -13,6 +13,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { partnerImportAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { useTranslation } from 'react-i18next'
+import FlowMascot from '../components/FlowMascot'
 
 const PENDING_IMPORT_KEY = 'yf_pending_import'
 
@@ -86,8 +87,8 @@ const ImportPartnerPattern = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 text-center">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-sm w-full">
-          <p className="text-4xl mb-4">🧶</p>
+        <div className="bg-white rounded-card shadow-sm border border-flow-mint p-8 max-w-sm w-full">
+          <FlowMascot pose="interrogatif" size={80} className="mx-auto mb-4" />
           <h1 className="text-lg font-semibold text-gray-800 mb-2">{t('ui.invalidLink')}</h1>
           <p className="text-sm text-gray-500 mb-6">{error}</p>
           <Link to="/" className="text-sm text-primary-600 hover:text-primary-700 font-medium">
@@ -109,7 +110,9 @@ const ImportPartnerPattern = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex flex-col items-center justify-center px-4 py-12">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-sm w-full">
+      <div className="bg-white rounded-card shadow-sm border border-flow-mint p-8 max-w-sm w-full">
+
+        <FlowMascot pose="avecPatron" size={72} className="mx-auto mb-3" />
 
         {/* Partenaire */}
         <p className="text-xs font-medium text-primary-600 uppercase tracking-wider mb-1">
@@ -117,7 +120,7 @@ const ImportPartnerPattern = () => {
         </p>
 
         {/* Titre */}
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{template.title}</h1>
+        <h1 className="text-2xl font-bold text-flow-ink mb-2">{template.title}</h1>
 
         {/* Description */}
         {template.description && (
@@ -127,7 +130,7 @@ const ImportPartnerPattern = () => {
         {/* Infos techniques */}
         <div className="flex flex-wrap gap-2 mb-6">
           {template.technique && (
-            <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-xs font-medium capitalize">
+            <span className={`px-3 py-1 rounded-full text-xs font-medium capitalize text-flow-ink ${template.technique === 'tricot' ? 'bg-flow-lavender/50' : 'bg-flow-coral/30'}`}>
               {template.technique}
             </span>
           )}
@@ -165,7 +168,7 @@ const ImportPartnerPattern = () => {
         {/* CTA */}
         <button
           onClick={handleImportClick}
-          className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-colors"
+          className="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold transition-colors"
         >
           {user ? t('ui.addToMyProjects') : t('ui.signUpToUse')}
         </button>

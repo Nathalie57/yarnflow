@@ -7,6 +7,7 @@ import { usePushNotifications } from '../hooks/usePushNotifications'
 import RavelryConnectionCard from '../components/RavelryConnectionCard'
 import SilentErrorBoundary from '../components/SilentErrorBoundary'
 import { useTranslation, Trans } from 'react-i18next'
+import FlowMascot from '../components/FlowMascot'
 
 const Profile = () => {
   const { t, i18n } = useTranslation('tools')
@@ -127,15 +128,18 @@ const Profile = () => {
   return (
     <>
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-gray-900">{t('ui.myProfile')}</h1>
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <h1 className="text-2xl font-bold text-flow-ink">{t('ui.myProfile')}</h1>
+        <FlowMascot pose="content" size={56} className="flex-shrink-0" />
+      </div>
 
       {successMessage && (
-        <div className="bg-green-50 border border-green-300 text-green-800 px-4 py-3 rounded-lg mb-4 text-sm">
+        <div className="bg-green-50 border border-green-300 text-green-800 px-4 py-3 rounded-control mb-4 text-sm">
           {successMessage}
         </div>
       )}
       {errorMessage && (
-        <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-lg mb-4 text-sm">
+        <div className="bg-red-50 border border-red-300 text-red-800 px-4 py-3 rounded-control mb-4 text-sm">
           {errorMessage}
         </div>
       )}
@@ -167,7 +171,7 @@ const Profile = () => {
           {/* Informations personnelles */}
           <div className="card">
             <div className="flex justify-between items-center mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">{t('ui.personalInfo')}</h2>
+              <h2 className="text-lg font-semibold text-flow-ink">{t('ui.personalInfo')}</h2>
               {!editMode && (
                 <button onClick={() => setEditMode(true)} className="btn-secondary text-sm">
                   {t('ui.edit')}
@@ -207,20 +211,20 @@ const Profile = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-500 mb-0.5">{t('ui.firstName')}</p>
-                    <p className="font-medium text-gray-900">{userData.first_name || '-'}</p>
+                    <p className="font-medium text-flow-ink">{userData.first_name || '-'}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-0.5">{t('ui.nameLabel')}</p>
-                    <p className="font-medium text-gray-900">{userData.last_name || '-'}</p>
+                    <p className="font-medium text-flow-ink">{userData.last_name || '-'}</p>
                   </div>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">{t('ui.email')}</p>
-                  <p className="font-medium text-gray-900">{userData.email}</p>
+                  <p className="font-medium text-flow-ink">{userData.email}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">{t('ui.memberSince')}</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-flow-ink">
                     {new Date(userData.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                 </div>
@@ -231,29 +235,29 @@ const Profile = () => {
           {/* Abonnement */}
           <div className="card">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-gray-900">{t('ui.subscription')}</h2>
+              <h2 className="text-lg font-semibold text-flow-ink">{t('ui.subscription')}</h2>
               <span className={`px-3 py-1 rounded-full text-xs font-bold ${isPro ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600'}`}>
                 {planLabel}
               </span>
             </div>
 
             <div className="grid grid-cols-3 gap-4 mb-5">
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <div className="text-center p-3 bg-flow-mint/30 rounded-control">
                 <p className="text-2xl font-bold text-primary-600">{stats.total_projects || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">{t('ui.projectsNav')}</p>
               </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <div className="text-center p-3 bg-flow-mint/30 rounded-control">
                 <p className="text-2xl font-bold text-green-600">{stats.completed_projects || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">{t('ui.doneP')}</p>
               </div>
-              <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <div className="text-center p-3 bg-flow-mint/30 rounded-control">
                 <p className="text-2xl font-bold text-primary-600">{stats.photo_credits_remaining || 0}</p>
                 <p className="text-xs text-gray-500 mt-1">{t('ui.photoCredits')}</p>
               </div>
             </div>
 
             {stats.total_time > 0 && (
-              <div className="p-3 bg-primary-50 rounded-lg mb-5">
+              <div className="p-3 bg-primary-50 rounded-control mb-5">
                 <p className="text-xs text-gray-500 mb-0.5">{t('ui.totalKnitTime')}</p>
                 <p className="text-xl font-bold text-primary-600">
                   {(() => {
@@ -268,11 +272,11 @@ const Profile = () => {
             )}
 
             {!isPro && (
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-control">
                 <p className="text-sm text-gray-700 mb-3">
                   <Trans t={t} i18nKey="ui.goProForUnlimited"><strong /></Trans>
                 </p>
-                <Link to="/subscription" className="inline-block px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition">
+                <Link to="/subscription" className="inline-block px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-control hover:bg-primary-700 transition">
                   {t('ui.discoverPro')}
                 </Link>
               </div>
@@ -288,17 +292,17 @@ const Profile = () => {
 
           {/* Aide */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('ui.helpAndContact2')}</h2>
+            <h2 className="text-lg font-semibold text-flow-ink mb-4">{t('ui.helpAndContact2')}</h2>
 
             <Link
               to="/contact"
-              className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 rounded-lg transition group"
+              className="flex items-center gap-3 p-4 bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 rounded-control transition group"
             >
               <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
               <div className="flex-1">
-                <p className="font-medium text-gray-900 group-hover:text-primary-700 text-sm">{t('ui.contactUsAlt')}</p>
+                <p className="font-medium text-flow-ink group-hover:text-primary-700 text-sm">{t('ui.contactUsAlt')}</p>
                 <p className="text-xs text-gray-500">{t('ui.questionOrProblem')}</p>
               </div>
               <svg className="w-4 h-4 text-gray-400 group-hover:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -310,13 +314,13 @@ const Profile = () => {
               href="https://www.facebook.com/groups/844543658285999"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 mt-3 bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 rounded-lg transition group"
+              className="flex items-center gap-3 p-4 mt-3 bg-gray-50 hover:bg-primary-50 border border-gray-200 hover:border-primary-200 rounded-control transition group"
             >
               <svg className="w-5 h-5 text-gray-400 group-hover:text-primary-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
               </svg>
               <div className="flex-1">
-                <p className="font-medium text-gray-900 group-hover:text-primary-700 text-sm">{t('ui.joinCommunity')}</p>
+                <p className="font-medium text-flow-ink group-hover:text-primary-700 text-sm">{t('ui.joinCommunity')}</p>
                 <p className="text-xs text-gray-500">{t('ui.joinCommunityDesc')}</p>
               </div>
               <svg className="w-4 h-4 text-gray-400 group-hover:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,11 +331,11 @@ const Profile = () => {
 
           {/* Notifications */}
           <div className="card">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('ui.notifications')}</h2>
+            <h2 className="text-lg font-semibold text-flow-ink mb-4">{t('ui.notifications')}</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{t('ui.inactivityReminder')}</p>
+                  <p className="text-sm font-medium text-flow-ink">{t('ui.inactivityReminder')}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{t('ui.inactivityEmail')}</p>
                 </div>
                 <button
@@ -347,7 +351,7 @@ const Profile = () => {
               {pushSupported && (
                 <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-100">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{t('ui.pushNotifications')}</p>
+                    <p className="text-sm font-medium text-flow-ink">{t('ui.pushNotifications')}</p>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {permission === 'denied'
                         ? t('ui.pushBlocked')
@@ -390,7 +394,7 @@ const Profile = () => {
             </p>
             <a
               href={`mailto:support@yarnflow.fr?subject=Demande de suppression de compte&body=Bonjour,%0D%0A%0D%0AJe souhaite supprimer mon compte YarnFlow associé à l'email : ${userData.email}%0D%0A%0D%0AJe comprends que cette action est irréversible et que toutes mes données seront définitivement supprimées.%0D%0A%0D%0AMerci.`}
-              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition"
+              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2 px-4 rounded-control transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               {t('ui.requestDeletionByEmail')}
@@ -402,7 +406,7 @@ const Profile = () => {
       {/* Tab: Mot de passe */}
       {activeTab === 'password' && (
         <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 mb-5">{t('ui.changePassword')}</h2>
+          <h2 className="text-lg font-semibold text-flow-ink mb-5">{t('ui.changePassword')}</h2>
           <form onSubmit={handleChangePassword}>
             <div className="mb-4">
               <label className="block text-sm text-gray-700 mb-1.5">{t('ui.currentPassword')}</label>

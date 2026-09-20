@@ -315,7 +315,7 @@ export default function ChartDesigner() {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           {t('ui.backToCreation')}
         </button>
-        <div className="bg-white rounded-2xl shadow-sm p-4">
+        <div className="bg-white rounded-card shadow-sm p-4">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('ui.myCharts')}</p>
           {loadingMyCharts ? (
             <p className="text-sm text-gray-500">{t('ui.loading')}</p>
@@ -328,10 +328,10 @@ export default function ChartDesigner() {
                   {c.project_id ? (
                     <Link
                       to={`/projects/${c.project_id}/charts/${c.id}`}
-                      className="flex-1 min-w-0 flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition"
+                      className="flex-1 min-w-0 flex items-center justify-between px-3 py-2 rounded-control border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{c.name}</p>
+                        <p className="text-sm font-medium text-flow-ink">{c.name}</p>
                         <p className="text-xs text-gray-400">
                           {c.project_name}{c.section_name ? ` — ${c.section_name}` : ''} · {c.width} × {c.height} · {t('ui.rowShort', { row: c.current_row, total: c.height })}
                         </p>
@@ -341,10 +341,10 @@ export default function ChartDesigner() {
                   ) : (
                     <button
                       onClick={() => loadUnassignedChart(c.id)}
-                      className="flex-1 min-w-0 flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition text-left"
+                      className="flex-1 min-w-0 flex items-center justify-between px-3 py-2 rounded-control border border-gray-200 hover:border-primary-300 hover:bg-primary-50 transition text-left"
                     >
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{c.name}</p>
+                        <p className="text-sm font-medium text-flow-ink">{c.name}</p>
                         <p className="text-xs text-gray-500">{t('ui.noProjectSize', { w: c.width, h: c.height })}</p>
                       </div>
                       <svg className="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -353,7 +353,7 @@ export default function ChartDesigner() {
                   <button
                     onClick={() => confirmDeleteChart(c)}
                     title={t('ui.deleteChart')}
-                    className="flex-shrink-0 p-2 rounded-lg border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="flex-shrink-0 p-2 rounded-control border border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-500 hover:bg-red-50 transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -379,13 +379,13 @@ export default function ChartDesigner() {
         {!loadingMyCharts && myCharts.length > 0 && (
           <button
             onClick={() => setShowAllCharts(true)}
-            className="text-xs px-3 py-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 text-gray-600 font-medium"
+            className="text-xs px-3 py-1.5 bg-gray-100 rounded-control hover:bg-gray-200 text-gray-600 font-medium"
           >
             {t('ui.seeMyCharts', { count: myCharts.length })}
           </button>
         )}
 
-        <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+        <div className="flex gap-2 bg-gray-100 rounded-control p-1">
           <button
             onClick={() => setMode('draw')}
             className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'draw' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
@@ -414,7 +414,7 @@ export default function ChartDesigner() {
             onChange={e => setName(e.target.value)}
             placeholder={t('ui.phChartName')}
             maxLength={100}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-control text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
         {mode === 'draw' && (
@@ -432,7 +432,7 @@ export default function ChartDesigner() {
             <button
               onClick={handleStart}
               disabled={!name.trim() || !width || !height}
-              className="w-full py-2.5 rounded-lg text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
+              className="w-full py-2.5 rounded-control text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
             >
               {t('ui.createChart')}
             </button>
@@ -447,7 +447,7 @@ export default function ChartDesigner() {
                 type="file"
                 accept="image/*"
                 onChange={e => { setImageFile(e.target.files?.[0] || null); setImageError('') }}
-                className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-control file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
               />
               <p className="text-xs text-gray-400 mt-1">
                 {t('ui.chartAutoDetect')}
@@ -457,7 +457,7 @@ export default function ChartDesigner() {
             <button
               onClick={handleImageImport}
               disabled={!name.trim() || !imageFile || isProcessingImage}
-              className="w-full py-2.5 rounded-lg text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
+              className="w-full py-2.5 rounded-control text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
             >
               {isProcessingImage ? t('ui.processingEllipsis') : t('ui.chartFromImage')}
             </button>
@@ -472,7 +472,7 @@ export default function ChartDesigner() {
                 type="file"
                 accept="image/*"
                 onChange={e => { setPhotoFile(e.target.files?.[0] || null); setPhotoError('') }}
-                className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-control file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
               />
               <p className="text-xs text-gray-400 mt-1">
                 {t('ui.convertsAnyImage')}
@@ -492,7 +492,7 @@ export default function ChartDesigner() {
             <button
               onClick={handlePhotoImport}
               disabled={!name.trim() || !photoFile || isProcessingPhoto}
-              className="w-full py-2.5 rounded-lg text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
+              className="w-full py-2.5 rounded-control text-sm font-semibold bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
             >
               {isProcessingPhoto ? t('ui.processingEllipsis') : t('ui.chartFromPhoto')}
             </button>
@@ -541,14 +541,14 @@ export default function ChartDesigner() {
         </button>
         <button
           onClick={() => setShowSaveModal(true)}
-          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-600 text-white hover:bg-primary-700 transition"
+          className="px-3 py-1.5 rounded-control text-xs font-semibold bg-primary-600 text-white hover:bg-primary-700 transition"
         >
           {t('ui.saveArrow')}
         </button>
       </div>
 
       {importNote && (
-        <div className="text-xs text-primary-700 bg-primary-50 border border-primary-200 rounded-lg px-3 py-2 flex items-start justify-between gap-2">
+        <div className="text-xs text-primary-700 bg-primary-50 border border-primary-200 rounded-control px-3 py-2 flex items-start justify-between gap-2">
           <span>{importNote}</span>
           <button onClick={() => setImportNote('')} className="text-primary-400 hover:text-primary-600 flex-shrink-0">×</button>
         </div>
@@ -561,7 +561,7 @@ export default function ChartDesigner() {
         <button onClick={fitZoomToScreen} className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 text-gray-600">{t('ui.fitToScreen')}</button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-4">
+      <div className="bg-white rounded-card shadow-sm p-4">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('ui.paletteHint')}</p>
         <div className="flex flex-wrap gap-2">
           {chart.palette.map((hex, i) => (
@@ -569,7 +569,7 @@ export default function ChartDesigner() {
               <button
                 onClick={() => setSelectedColor(i)}
                 onDoubleClick={() => setEditingPaletteIndex(i)}
-                className={`w-9 h-9 rounded-lg border-2 transition ${selectedColor === i ? 'border-primary-600 ring-2 ring-primary-300 ring-offset-1 scale-110' : 'border-gray-200'}`}
+                className={`w-9 h-9 rounded-control border-2 transition ${selectedColor === i ? 'border-primary-600 ring-2 ring-primary-300 ring-offset-1 scale-110' : 'border-gray-200'}`}
                 style={{ backgroundColor: hex }}
                 title={i === 0 ? 'Fond' : `Couleur ${i}`}
               />
@@ -579,7 +579,7 @@ export default function ChartDesigner() {
                 </span>
               )}
               {editingPaletteIndex === i && (
-                <div className="absolute top-10 left-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 whitespace-nowrap">
+                <div className="absolute top-10 left-0 z-20 bg-white rounded-control shadow-lg border border-gray-200 p-2 flex items-center gap-2 whitespace-nowrap">
                   <input type="color" autoFocus value={hex} onChange={e => changePaletteColor(i, e.target.value)} />
                   <button onClick={() => setEditingPaletteIndex(null)} className="text-xs px-2 py-1 bg-primary-600 text-white rounded hover:bg-primary-700">{t('ui.done')}</button>
                 </div>
@@ -592,7 +592,7 @@ export default function ChartDesigner() {
                 >×</button>
               )}
               {mergingPaletteIndex === i && (
-                <div className="absolute top-10 right-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 whitespace-nowrap">
+                <div className="absolute top-10 right-0 z-20 bg-white rounded-control shadow-lg border border-gray-200 p-2 whitespace-nowrap">
                   <p className="text-xs text-gray-500 mb-2">{t('ui.mergeWith')}</p>
                   <div className="flex items-center gap-1.5">
                     {chart.palette.map((targetHex, ti) => ti !== i && (
@@ -612,14 +612,14 @@ export default function ChartDesigner() {
           ))}
           <button
             onClick={addPaletteColor}
-            className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
+            className="w-9 h-9 rounded-control border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
             title={t('ui.addColor')}
           >＋</button>
         </div>
         <p className="text-xs text-gray-500 mt-2">{t('ui.colorMergeHint')}</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">
+      <div className="bg-white rounded-card shadow-sm p-4 overflow-auto">
         <div className="flex justify-center mb-1 gap-1.5">
           <button onClick={() => addRow('top')} title={t('ui.addRowAbove')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
           <button onClick={() => removeRow('top')} title={t('ui.removeTopRow')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>

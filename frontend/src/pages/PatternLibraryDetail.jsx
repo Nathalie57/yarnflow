@@ -431,9 +431,9 @@ const PatternLibraryDetail = () => {
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-gray-400 mx-auto mb-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
           </svg>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('ui.patternNotFound')}</h2>
+          <h2 className="text-2xl font-bold text-flow-ink mb-2">{t('ui.patternNotFound')}</h2>
           <p className="text-gray-600 mb-6">{error || t('ui.patternNotFound')}</p>
-          <Link to="/pattern-library" className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition inline-block">
+          <Link to="/pattern-library" className="px-6 py-3 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition inline-block">
             {t('ui.backToLibrary')}
           </Link>
         </div>
@@ -460,7 +460,7 @@ const PatternLibraryDetail = () => {
 
           {/* Titre + favori */}
           <div className="flex items-start gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex-1 min-w-0 break-words">
+            <h1 className="text-2xl sm:text-3xl font-bold text-flow-ink flex-1 min-w-0 break-words">
               {pattern.name}
             </h1>
             <button
@@ -469,7 +469,7 @@ const PatternLibraryDetail = () => {
               title={pattern.is_favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
             >
               {pattern.is_favorite ? (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-amber-500">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-flow-yellow">
                   <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clipRule="evenodd" />
                 </svg>
               ) : (
@@ -488,7 +488,7 @@ const PatternLibraryDetail = () => {
           <div>
             <Link
               to="/pattern-translator"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-500 hover:border-primary-300 hover:text-primary-700 transition"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-control border border-gray-200 text-gray-500 hover:border-primary-300 hover:text-primary-700 transition"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                 <path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/>
@@ -502,7 +502,7 @@ const PatternLibraryDetail = () => {
           {(pattern.category || pattern.technique || pattern.difficulty) && (
             <div className="flex flex-wrap gap-2">
               {pattern.technique && (
-                <span className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm font-medium">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium text-flow-ink ${pattern.technique === 'tricot' ? 'bg-flow-lavender/50' : 'bg-flow-coral/30'}`}>
                   {pattern.technique === 'tricot' ? t('ui.knitting') : 'Crochet'}
                 </span>
               )}
@@ -520,7 +520,7 @@ const PatternLibraryDetail = () => {
           )}
 
           {/* Contenu du patron */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-control border border-gray-200 overflow-hidden">
 
             {/* Barre de navigation multi-fichiers (uniquement si type = file) */}
             {pattern.source_type === 'file' && (additionalFiles.length > 0 || true) && (
@@ -564,7 +564,7 @@ const PatternLibraryDetail = () => {
                 <div className="ml-auto pb-1.5">
                   <button
                     onClick={() => { setPendingFiles([]); setShowAddFilesModal(true) }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-primary-600 border border-primary-300 rounded-lg hover:bg-primary-50 transition"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-primary-600 border border-primary-300 rounded-control hover:bg-primary-50 transition"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -582,7 +582,7 @@ const PatternLibraryDetail = () => {
                   <div className="min-h-[500px]">
                     {fileUrl && !loadingFile && (
                       <div className="px-4 pt-4 pb-0 flex justify-end">
-                        <button onClick={() => setShowFullscreen(true)} className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition">
+                        <button onClick={() => setShowFullscreen(true)} className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 text-gray-600 rounded-control hover:bg-gray-50 transition">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
                           </svg>
@@ -610,7 +610,7 @@ const PatternLibraryDetail = () => {
                       </div>
                     ) : fileUrl ? (
                       <div className="flex items-center justify-center cursor-pointer" onClick={() => setShowImageLightbox(true)}>
-                        <img src={fileUrl} alt={pattern.name} className="max-w-full max-h-[700px] object-contain shadow-md rounded-lg hover:opacity-90 transition" />
+                        <img src={fileUrl} alt={pattern.name} className="max-w-full max-h-[700px] object-contain shadow-md rounded-control hover:opacity-90 transition" />
                       </div>
                     ) : (
                       <div className="text-center py-12 text-gray-500">{t('ui.cannotLoadImage')}</div>
@@ -639,7 +639,7 @@ const PatternLibraryDetail = () => {
                   {selFile.file_type === 'image' && (
                     <div className="p-6 flex items-center justify-center">
                       {selUrl ? (
-                        <img src={selUrl} alt={selFile.file_name} className="max-w-full max-h-[700px] object-contain shadow-md rounded-lg" />
+                        <img src={selUrl} alt={selFile.file_name} className="max-w-full max-h-[700px] object-contain shadow-md rounded-control" />
                       ) : (
                         <div className="flex items-center justify-center py-12">
                           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
@@ -660,7 +660,7 @@ const PatternLibraryDetail = () => {
             {pattern.source_type === 'text' && pattern.pattern_text && (
               <div>
                 <div className="px-4 pt-4 pb-0 flex justify-end">
-                  <button onClick={() => setShowTextFullscreen(true)} className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition">
+                  <button onClick={() => setShowTextFullscreen(true)} className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 text-gray-600 rounded-control hover:bg-gray-50 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
                     </svg>
@@ -668,7 +668,7 @@ const PatternLibraryDetail = () => {
                   </button>
                 </div>
                 <div className="p-6">
-                  <div className="bg-gray-50 rounded-lg p-5">
+                  <div className="bg-gray-50 rounded-control p-5">
                     <pre className="whitespace-pre-wrap font-sans text-gray-800 leading-relaxed text-sm">{pattern.pattern_text}</pre>
                   </div>
                 </div>
@@ -681,14 +681,14 @@ const PatternLibraryDetail = () => {
         <div className="space-y-4">
 
           {/* CTA principal : utiliser dans un projet */}
-          <div className="bg-primary-50 border border-primary-200 rounded-xl p-4">
+          <div className="bg-primary-50 border border-primary-200 rounded-control p-4">
             <p className="text-sm font-semibold text-primary-800 mb-1">{t('ui.useThisPattern')}</p>
             <p className="text-xs text-primary-600 mb-3">
               {t('ui.linkToProjectDesc')}
             </p>
             <button
               onClick={openLinkProjectModal}
-              className="w-full py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition text-sm"
+              className="w-full py-2.5 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition text-sm"
             >
               {t('ui.linkToProject')}
             </button>
@@ -696,8 +696,8 @@ const PatternLibraryDetail = () => {
 
           {/* Projets liés */}
           {(linkedProjects.length > 0 || pattern.times_used > 0) && (
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <div className="bg-white border border-gray-200 rounded-control p-4">
+              <h3 className="text-sm font-semibold text-flow-ink mb-3 flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-primary-600">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                 </svg>
@@ -713,7 +713,7 @@ const PatternLibraryDetail = () => {
                     <Link
                       key={project.id}
                       to={`/projects/${project.id}`}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition group"
+                      className="flex items-center gap-2 p-2 rounded-control hover:bg-gray-50 transition group"
                     >
                       <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-primary-600">
@@ -739,17 +739,17 @@ const PatternLibraryDetail = () => {
 
           {/* Notes personnelles */}
           {pattern.notes && (
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-2">{t('ui.personalNotes')}</h3>
+            <div className="bg-white border border-gray-200 rounded-control p-4">
+              <h3 className="text-sm font-semibold text-flow-ink mb-2">{t('ui.personalNotes')}</h3>
               <p className="text-sm text-gray-600 whitespace-pre-wrap">{pattern.notes}</p>
             </div>
           )}
 
           {/* Notes d'utilisation */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <div className="bg-white border border-gray-200 rounded-control p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-gray-900">{t('ui.usageNotes')}</h3>
+                <h3 className="text-sm font-semibold text-flow-ink">{t('ui.usageNotes')}</h3>
                 {!isPro && (
                   <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 text-xs font-semibold rounded">{t('ui.planPro')}</span>
                 )}
@@ -777,21 +777,21 @@ const PatternLibraryDetail = () => {
               <div className="space-y-3">
                 {/* Formulaire d'ajout */}
                 {showAddNote && (
-                  <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                  <div className="bg-gray-50 rounded-control p-3 space-y-2">
                     <textarea
                       value={newNoteText}
                       onChange={(e) => setNewNoteText(e.target.value)}
                       placeholder={t('ui.phUsageNotes')}
                       rows={3}
                       autoFocus
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 resize-none"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 resize-none"
                       maxLength={2000}
                     />
                     {userProjects.length > 0 && (
                       <select
                         value={newNoteProjectId}
                         onChange={(e) => setNewNoteProjectId(e.target.value)}
-                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white"
+                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-control bg-white"
                       >
                         <option value="">{t('ui.projectOptional')}</option>
                         {userProjects.map(p => (
@@ -809,7 +809,7 @@ const PatternLibraryDetail = () => {
                       <button
                         onClick={handleCreateNote}
                         disabled={savingNote || !newNoteText.trim()}
-                        className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded-control hover:bg-primary-700 transition disabled:opacity-50"
                       >
                         {savingNote ? t('ui.savingEllipsisAlt') : t('ui.save')}
                       </button>
@@ -825,7 +825,7 @@ const PatternLibraryDetail = () => {
                 )}
 
                 {usageNotes.map(note => (
-                  <div key={note.id} className="border border-gray-100 rounded-lg p-3">
+                  <div key={note.id} className="border border-gray-100 rounded-control p-3">
                     {editingNoteId === note.id ? (
                       <div className="space-y-2">
                         <textarea
@@ -833,7 +833,7 @@ const PatternLibraryDetail = () => {
                           onChange={(e) => setEditingNoteText(e.target.value)}
                           rows={3}
                           autoFocus
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 resize-none"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 resize-none"
                           maxLength={2000}
                         />
                         <div className="flex gap-2 justify-end">
@@ -884,10 +884,10 @@ const PatternLibraryDetail = () => {
           </div>
 
           {/* Actions secondaires */}
-          <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-2">
+          <div className="bg-white border border-gray-200 rounded-control p-4 space-y-2">
             <button
               onClick={handleEdit}
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition"
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-control transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-gray-500">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
@@ -899,7 +899,7 @@ const PatternLibraryDetail = () => {
               <a
                 href={fileUrl}
                 download={pattern.file_name || pattern.name}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition"
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-control transition"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-gray-500">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -910,7 +910,7 @@ const PatternLibraryDetail = () => {
 
             <button
               onClick={handleDelete}
-              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition"
+              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-control transition"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
@@ -933,7 +933,7 @@ const PatternLibraryDetail = () => {
             <h2 className="text-lg font-semibold">{pattern.name}</h2>
             <button
               onClick={() => setShowFullscreen(false)}
-              className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium hover:bg-gray-100 transition"
+              className="px-4 py-2 bg-white text-flow-ink rounded-control font-medium hover:bg-gray-100 transition"
             >
               {t('ui.close')}
             </button>
@@ -956,13 +956,13 @@ const PatternLibraryDetail = () => {
             <h2 className="text-lg font-semibold">{pattern.name}</h2>
             <button
               onClick={() => setShowTextFullscreen(false)}
-              className="px-4 py-2 bg-white text-gray-900 rounded-lg font-medium hover:bg-gray-100 transition"
+              className="px-4 py-2 bg-white text-flow-ink rounded-control font-medium hover:bg-gray-100 transition"
             >
               {t('ui.close')}
             </button>
           </div>
           <div className="flex-1 overflow-auto p-8 bg-gray-50">
-            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+            <div className="max-w-4xl mx-auto bg-white rounded-control shadow-lg p-8">
               <pre className="whitespace-pre-wrap font-sans text-gray-800 leading-relaxed text-base">
                 {pattern.pattern_text}
               </pre>
@@ -974,9 +974,9 @@ const PatternLibraryDetail = () => {
       {/* Modale liaison projet */}
       {showLinkProjectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-control max-w-lg w-full max-h-[80vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <h2 className="text-xl font-bold text-gray-900">{t('ui.linkToProject')}</h2>
+              <h2 className="text-xl font-bold text-flow-ink">{t('ui.linkToProject')}</h2>
               <p className="text-sm text-gray-600 mt-1">
                 {t('ui.chooseProjectDesc')}
               </p>
@@ -988,7 +988,7 @@ const PatternLibraryDetail = () => {
                 placeholder={t('ui.searchProject')}
                 value={projectSearch}
                 onChange={(e) => setProjectSearch(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control mb-4 focus:ring-2 focus:ring-primary-500"
                 autoFocus
               />
 
@@ -1013,7 +1013,7 @@ const PatternLibraryDetail = () => {
                       key={project.id}
                       onClick={() => handleLinkProject(project.id)}
                       disabled={linkingProject === project.id}
-                      className="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:border-primary-400 hover:bg-primary-50 transition text-left"
+                      className="w-full flex items-center gap-3 p-3 border border-gray-200 rounded-control hover:border-primary-400 hover:bg-primary-50 transition text-left"
                     >
                       <div className="w-9 h-9 bg-primary-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-primary-600">
@@ -1021,7 +1021,7 @@ const PatternLibraryDetail = () => {
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{project.name}</p>
+                        <p className="font-medium text-flow-ink truncate">{project.name}</p>
                         {project.status && (
                           <p className="text-xs text-gray-500">{project.status === 'in_progress' ? t('ui.inProgress2') : project.status}</p>
                         )}
@@ -1038,7 +1038,7 @@ const PatternLibraryDetail = () => {
             <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end">
               <button
                 onClick={() => setShowLinkProjectModal(false)}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="px-6 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition"
               >
                 {t('ui.cancel')}
               </button>
@@ -1050,9 +1050,9 @@ const PatternLibraryDetail = () => {
       {/* Modale ajout de fichiers */}
       {showAddFilesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full">
+          <div className="bg-white rounded-control max-w-lg w-full">
             <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">{t('ui.addFiles')}</h2>
+              <h2 className="text-lg font-bold text-flow-ink">{t('ui.addFiles')}</h2>
               <button onClick={() => setShowAddFilesModal(false)} className="text-gray-400 hover:text-gray-600 transition">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -1066,7 +1066,7 @@ const PatternLibraryDetail = () => {
                 onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
                 onDragLeave={() => setIsDragOver(false)}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition cursor-default ${
+                className={`border-2 border-dashed rounded-control p-8 text-center transition cursor-default ${
                   isDragOver ? 'border-primary-400 bg-primary-50' : 'border-gray-300 hover:border-primary-300 hover:bg-gray-50'
                 }`}
               >
@@ -1075,7 +1075,7 @@ const PatternLibraryDetail = () => {
                 </svg>
                 <p className="text-sm text-gray-600 mb-1">{t('ui.dragFilesHere')}</p>
                 <p className="text-xs text-gray-500 mb-3">{t('ui.pdfJpgPngWebp')}</p>
-                <label className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 cursor-pointer transition">
+                <label className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-primary-600 text-white rounded-control hover:bg-primary-700 cursor-pointer transition">
                   <input
                     type="file"
                     accept="image/*,.pdf,application/pdf"
@@ -1094,7 +1094,7 @@ const PatternLibraryDetail = () => {
                     {t('ui.filesSelected', { count: pendingFiles.length })}
                   </p>
                   {pendingFiles.map((f, i) => (
-                    <div key={i} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-lg">
+                    <div key={i} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-control">
                       <div className="w-8 h-8 bg-primary-100 rounded flex items-center justify-center flex-shrink-0">
                         {f.type === 'application/pdf' ? (
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-primary-600">
@@ -1127,14 +1127,14 @@ const PatternLibraryDetail = () => {
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
               <button
                 onClick={() => setShowAddFilesModal(false)}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="px-4 py-2 text-sm border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition"
               >
                 {t('ui.cancel')}
               </button>
               <button
                 onClick={handleUploadPendingFiles}
                 disabled={!pendingFiles.length || uploadingFile}
-                className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 text-sm bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition disabled:opacity-50 flex items-center gap-2"
               >
                 {uploadingFile ? (
                   <>
@@ -1153,9 +1153,9 @@ const PatternLibraryDetail = () => {
       {/* Modale d'édition */}
       {showEditModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-control max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
-              <h2 className="text-2xl font-bold text-gray-900">{t('ui.editPattern')}</h2>
+              <h2 className="text-2xl font-bold text-flow-ink">{t('ui.editPattern')}</h2>
             </div>
 
             <form onSubmit={handleUpdatePattern} className="p-6">
@@ -1177,7 +1177,7 @@ const PatternLibraryDetail = () => {
                   />
                   <label
                     htmlFor="edit-file-input"
-                    className={`flex items-center justify-center w-full px-6 py-4 border-2 border-dashed rounded-lg cursor-pointer transition hover:border-primary-400 hover:bg-primary-50 ${validationErrors.file ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                    className={`flex items-center justify-center w-full px-6 py-4 border-2 border-dashed rounded-control cursor-pointer transition hover:border-primary-400 hover:bg-primary-50 ${validationErrors.file ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                   >
                     <div className="text-center">
                       {file ? (
@@ -1185,7 +1185,7 @@ const PatternLibraryDetail = () => {
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-primary-600 mx-auto mb-2">
                             <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
                           </svg>
-                          <p className="font-medium text-sm text-gray-900">{file.name}</p>
+                          <p className="font-medium text-sm text-flow-ink">{file.name}</p>
                           <p className="text-xs text-gray-500 mt-1">{t('ui.clickToChange')}</p>
                         </>
                       ) : (
@@ -1193,7 +1193,7 @@ const PatternLibraryDetail = () => {
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-gray-400 mx-auto mb-2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                           </svg>
-                          <p className="font-medium text-sm text-gray-900">{t('ui.chooseNewFile')}</p>
+                          <p className="font-medium text-sm text-flow-ink">{t('ui.chooseNewFile')}</p>
                           <p className="text-xs text-gray-500 mt-1">{t('ui.formatsMax10')}</p>
                         </>
                       )}
@@ -1210,7 +1210,7 @@ const PatternLibraryDetail = () => {
                   <input type="url" value={formData.url}
                     onChange={(e) => { setFormData({ ...formData, url: e.target.value }); setValidationErrors({ ...validationErrors, url: '' }) }}
                     placeholder={t('ui.phHttps')}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${validationErrors.url ? 'border-red-400' : 'border-gray-300'}`}
+                    className={`w-full px-4 py-2 border rounded-control focus:ring-2 focus:ring-primary-500 ${validationErrors.url ? 'border-red-400' : 'border-gray-300'}`}
                   />
                   {validationErrors.url && <p className="mt-1 text-sm text-red-600">{validationErrors.url}</p>}
                 </div>
@@ -1223,7 +1223,7 @@ const PatternLibraryDetail = () => {
                   <textarea value={formData.pattern_text}
                     onChange={(e) => { setFormData({ ...formData, pattern_text: e.target.value }); setValidationErrors({ ...validationErrors, pattern_text: '' }) }}
                     rows={12}
-                    className={`w-full px-4 py-2 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-primary-500 ${validationErrors.pattern_text ? 'border-red-400' : 'border-gray-300'}`}
+                    className={`w-full px-4 py-2 border rounded-control font-mono text-sm focus:ring-2 focus:ring-primary-500 ${validationErrors.pattern_text ? 'border-red-400' : 'border-gray-300'}`}
                   />
                   {validationErrors.pattern_text && <p className="mt-1 text-sm text-red-600">{validationErrors.pattern_text}</p>}
                 </div>
@@ -1234,7 +1234,7 @@ const PatternLibraryDetail = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.nameRequired')} <span className="text-red-600">*</span></label>
                 <input type="text" value={formData.name}
                   onChange={(e) => { setFormData({ ...formData, name: e.target.value }); setValidationErrors({ ...validationErrors, name: '' }) }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${validationErrors.name ? 'border-red-400' : 'border-gray-300'}`}
+                  className={`w-full px-4 py-2 border rounded-control focus:ring-2 focus:ring-primary-500 ${validationErrors.name ? 'border-red-400' : 'border-gray-300'}`}
                 />
                 {validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}
               </div>
@@ -1244,7 +1244,7 @@ const PatternLibraryDetail = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.description')}</label>
                 <textarea value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-control"
                 />
               </div>
 
@@ -1252,7 +1252,7 @@ const PatternLibraryDetail = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.category')}</label>
-                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-control">
                     <option value="">{t('ui.selectPlaceholder')}</option>
                     <option value="Vêtements">{t('ui.catClothing')}</option>
                     <option value="Accessoires">{t('ui.catAccessories')}</option>
@@ -1265,7 +1265,7 @@ const PatternLibraryDetail = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.technique')}</label>
-                  <select value={formData.technique} onChange={(e) => setFormData({ ...formData, technique: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <select value={formData.technique} onChange={(e) => setFormData({ ...formData, technique: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-control">
                     <option value="">{t('ui.selectPlaceholder')}</option>
                     <option value="tricot">{t('ui.knitting')}</option>
                     <option value="crochet">{t('ui.crochet')}</option>
@@ -1273,7 +1273,7 @@ const PatternLibraryDetail = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.difficulty')}</label>
-                  <select value={formData.difficulty} onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                  <select value={formData.difficulty} onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-control">
                     <option value="">{t('ui.selectPlaceholder')}</option>
                     <option value="facile">{t('ui.diffEasy')}</option>
                     <option value="moyen">{t('ui.diffMedium')}</option>
@@ -1287,17 +1287,17 @@ const PatternLibraryDetail = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('ui.personalNotes')}</label>
                 <textarea value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                  rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-control"
                 />
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button type="button" onClick={() => setShowEditModal(false)}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                  className="px-6 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition">
                   {t('ui.cancel')}
                 </button>
                 <button type="submit" disabled={uploading}
-                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50">
+                  className="px-6 py-2 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition disabled:opacity-50">
                   {uploading ? t('ui.savingDots') : t('ui.save')}
                 </button>
               </div>

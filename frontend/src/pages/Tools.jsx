@@ -18,6 +18,9 @@ import RemainingYarn from '../components/tools/RemainingYarn'
 import YarnWeightConverter from '../components/tools/YarnWeightConverter'
 import ChartDesigner from '../components/tools/ChartDesigner'
 import { useTranslation } from 'react-i18next'
+import FlowMascot from '../components/FlowMascot'
+
+const TILE_COLORS = ['bg-flow-mint text-flow-ink', 'bg-flow-blue/40 text-flow-ink', 'bg-flow-peach text-flow-ink', 'bg-flow-lavender/50 text-flow-ink']
 
 const IconDistribute = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
@@ -178,7 +181,7 @@ export default function Tools() {
           <span className="w-9 h-9 text-primary-600 flex-shrink-0">
             <Icon />
           </span>
-          <h1 className="text-xl font-bold text-gray-900">{t(`toolsList.${tool.id}.title`)}</h1>
+          <h1 className="text-xl font-bold text-flow-ink">{t(`toolsList.${tool.id}.title`)}</h1>
         </div>
         <ToolComponent />
       </div>
@@ -187,13 +190,9 @@ export default function Tools() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 pb-24">
-      <div className="flex items-center gap-3 mb-2">
-        <span className="w-9 h-9 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center p-2 shrink-0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-            <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4l-6 6a2 2 0 1 0 2.8 2.8l6-6a4 4 0 0 0 5.4-5.4l-2.1 2.1-2.8-2.8 2.1-2.1z"/>
-          </svg>
-        </span>
-        <h1 className="text-2xl font-bold text-gray-900">{t('ui.toolsNav')}</h1>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <h1 className="text-2xl font-bold text-flow-ink">{t('ui.toolsNav')}</h1>
+        <FlowMascot pose="bonneIdee" size={56} className="flex-shrink-0" />
       </div>
       <p className="text-gray-500 text-sm mb-6">{t('ui.toolsTagline')}</p>
 
@@ -209,29 +208,30 @@ export default function Tools() {
             pour rester cohérent visuellement avec le reste de l'app. */}
         <Link
           to="/smart-project-creator"
-          className="bg-primary-50 border-2 border-primary-300 rounded-2xl p-5 text-left hover:border-primary-400 hover:shadow-md hover:-translate-y-0.5 transition flex flex-col gap-3"
+          className="bg-flow-mint/40 border-2 border-flow-mint rounded-card p-5 text-left hover:border-primary-400 hover:shadow-md hover:-translate-y-0.5 transition flex flex-col gap-3"
         >
-          <span className="w-11 h-11 bg-white text-primary-600 rounded-xl flex items-center justify-center p-2.5 shrink-0">
+          <span className="w-11 h-11 bg-white text-primary-600 rounded-control flex items-center justify-center p-2.5 shrink-0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
               <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
             </svg>
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <div className="font-semibold text-primary-900 text-sm leading-tight">{t('ui.smartCreation')}</div>
+              <div className="font-semibold text-flow-ink text-sm leading-tight">{t('ui.smartCreation')}</div>
             </div>
-            <div className="text-xs text-primary-700 mt-1 leading-snug">{t('ui.smartCreationDesc')}</div>
+            <div className="text-xs text-gray-600 mt-1 leading-snug">{t('ui.smartCreationDesc')}</div>
           </div>
         </Link>
 
-        {/* [AI:Claude] Traducteur — en warm (pas primary) pour continuer l'alternance amorcée
-            par la tuile Création Intelligente juste au-dessus, plutôt que de figer deux
-            tuiles vertes d'affilée en tête et déséquilibrer le compte final vert/terracotta. */}
+        {/* [AI:Claude] Traducteur et tuiles d'outils suivantes : couleurs d'accent de la
+            charte (mint/bleu/peche/lavande) qui tournent par index, a la place de l'ancienne
+            alternance primary/warm (warm est hors charte) — meme logique de variete sans
+            sortir de la palette officielle. */}
         <Link
           to="/pattern-translator"
-          className="bg-white border border-gray-200 rounded-2xl p-5 text-left hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 transition flex flex-col gap-3"
+          className="bg-white border border-gray-200 rounded-card hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 transition flex flex-col gap-3 p-5"
         >
-          <span className="w-11 h-11 bg-warm-100 text-warm-600 rounded-xl flex items-center justify-center p-2.5 shrink-0">
+          <span className={`w-11 h-11 rounded-control flex items-center justify-center p-2.5 shrink-0 ${TILE_COLORS[0]}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
               <path d="M5 8l6 6"/>
               <path d="M4 14l6-6 2-3"/>
@@ -243,7 +243,7 @@ export default function Tools() {
           </span>
           <div>
             <div className="flex items-center gap-2">
-              <div className="font-semibold text-gray-900 text-sm leading-tight">{t('ui.translatePattern')}</div>
+              <div className="font-semibold text-flow-ink text-sm leading-tight">{t('ui.translatePattern')}</div>
             </div>
             <div className="text-xs text-gray-500 mt-1 leading-snug">{t('ui.translatorDesc')}</div>
           </div>
@@ -252,21 +252,20 @@ export default function Tools() {
         {/* parametre nomme `item` et non `t` : sinon il masquerait la fonction de traduction */}
         {visibleTools.map((item, index) => {
           const { Icon } = item
-          // Création Intelligente (primary) puis Traducteur (warm) ci-dessus ouvrent la
-          // séquence : la suite continue simplement à alterner à partir de là
-          const isWarm = index % 2 === 1
+          // Traducteur ci-dessus utilise deja TILE_COLORS[0], la suite continue le cycle
+          const color = TILE_COLORS[(index + 1) % TILE_COLORS.length]
           return (
             <button
               key={item.id}
               onClick={() => setActiveTool(item.id)}
-              className="bg-white border border-gray-200 rounded-2xl p-5 text-left hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 transition flex flex-col gap-3"
+              className="bg-white border border-gray-200 rounded-card p-5 text-left hover:border-primary-300 hover:shadow-md hover:-translate-y-0.5 transition flex flex-col gap-3"
             >
-              <span className={`w-11 h-11 rounded-xl flex items-center justify-center p-2.5 shrink-0 ${isWarm ? 'bg-warm-100 text-warm-600' : 'bg-primary-50 text-primary-600'}`}>
+              <span className={`w-11 h-11 rounded-control flex items-center justify-center p-2.5 shrink-0 ${color}`}>
                 <Icon />
               </span>
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="font-semibold text-gray-900 text-sm leading-tight">{t(`toolsList.${item.id}.title`)}</div>
+                  <div className="font-semibold text-flow-ink text-sm leading-tight">{t(`toolsList.${item.id}.title`)}</div>
                   {item.badge && (
                     <span className="bg-primary-100 text-primary-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{item.badge}</span>
                   )}

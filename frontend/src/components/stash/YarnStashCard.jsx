@@ -22,7 +22,7 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
   const totalYardage = Math.round((entry.yardage_per_skein_m * entry.quantity) * 10) / 10
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+    <div className="bg-white rounded-control border border-flow-mint shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
       <div className="flex items-stretch">
         {/* Pastille couleur — repère visuel rapide, plus utile qu'une vignette photo */}
         <div
@@ -37,7 +37,7 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide truncate">
                 {entry.brand}
               </p>
-              <h3 className="font-semibold text-gray-900 leading-tight truncate">
+              <h3 className="font-semibold text-flow-ink leading-tight truncate">
                 {entry.yarn_name}
               </h3>
               {entry.color_name && (
@@ -49,7 +49,7 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
             <div className="flex gap-1 flex-shrink-0">
               <button
                 onClick={() => onEdit(entry)}
-                className="p-1.5 text-gray-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-primary-600 rounded-control hover:bg-primary-50 transition-colors"
                 title={t('ui.edit')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -58,7 +58,7 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
               </button>
               <button
                 onClick={() => onDelete(entry)}
-                className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                className="p-1.5 text-gray-400 hover:text-red-500 rounded-control hover:bg-red-50 transition-colors"
                 title={t('ui.delete')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -83,7 +83,7 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
             </span>
 
             {entry.yarn_weight_category && (
-              <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full">
+              <span className="px-2.5 py-1 bg-flow-blue/30 text-flow-ink text-xs rounded-full">
                 {WEIGHT_LABELS[entry.yarn_weight_category] || entry.yarn_weight_category}
               </span>
             )}
@@ -102,7 +102,7 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
           </div>
 
           {entry.quantity_reserved > 0 && (
-            <div className="mt-2 flex items-center gap-1 text-xs text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5">
+            <div className="mt-2 flex items-center gap-1 text-xs text-amber-700 bg-amber-50 rounded-control px-2.5 py-1.5">
               <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>
@@ -138,7 +138,7 @@ const YarnStashCard = ({ entry, onEdit, onDelete, onAssign }) => {
           {onAssign && entry.quantity_available > 0 && (
             <button
               onClick={() => onAssign(entry)}
-              className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-primary-50 text-primary-700 border border-primary-200 rounded-lg text-xs font-medium hover:bg-primary-100 transition"
+              className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-primary-50 text-primary-700 border border-primary-200 rounded-control text-xs font-medium hover:bg-primary-100 transition"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
