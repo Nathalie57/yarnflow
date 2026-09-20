@@ -11,6 +11,7 @@ import { imageFileToChart, NO_GRID_DETECTED } from '../utils/chartImageImport'
 import { photoFileToChart } from '../utils/photoToChart'
 
 import { apiErrorMessage } from '../utils/apiError'
+import FlowMascot from '../components/FlowMascot'
 const ProjectCharts = () => {
   const { t } = useTranslation('library')
   const { projectId } = useParams()
@@ -145,7 +146,7 @@ const ProjectCharts = () => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             {t('ui.backToProject')}
           </Link>
-          <h1 className="text-lg font-bold text-gray-900">{t('ui.jacquardCharts')}</h1>
+          <h1 className="text-lg font-bold text-flow-ink">{t('ui.jacquardCharts')}</h1>
           <div className="w-24" />
         </div>
 
@@ -155,12 +156,17 @@ const ProjectCharts = () => {
 
         {loading ? (
           <p className="text-center text-gray-500 py-8">{t('ui.loading')}</p>
+        ) : charts.length === 0 && !isCreating ? (
+          <div className="text-center py-10">
+            <FlowMascot pose="onYVa" size={72} className="mx-auto mb-3" />
+            <p className="text-sm text-gray-500">{t('ui.noChartsYetForProject')}</p>
+          </div>
         ) : (
           <div className="space-y-2">
             {charts.map(c => (
-              <div key={c.id} className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+              <div key={c.id} className="bg-white rounded-control border border-flow-mint shadow-sm p-4 flex items-center justify-between">
                 <Link to={`/projects/${projectId}/charts/${c.id}`} className="flex-1">
-                  <p className="font-semibold text-gray-900">{c.name}</p>
+                  <p className="font-semibold text-flow-ink">{c.name}</p>
                   <p className="text-xs text-gray-400">{t('ui.chartSize', { w: c.width, h: c.height, row: c.current_row })}</p>
                 </Link>
                 <button
@@ -176,8 +182,8 @@ const ProjectCharts = () => {
         )}
 
         {isCreating ? (
-          <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
-            <div className="flex gap-2 bg-gray-100 rounded-lg p-1">
+          <div className="bg-white rounded-control shadow-sm p-4 space-y-3">
+            <div className="flex gap-2 bg-gray-100 rounded-control p-1">
               <button
                 onClick={() => setMode('draw')}
                 className={`flex-1 py-1.5 rounded-md text-sm font-medium transition ${mode === 'draw' ? 'bg-white shadow-sm text-primary-700' : 'text-gray-500'}`}
@@ -205,7 +211,7 @@ const ProjectCharts = () => {
               placeholder={t('ui.phChartName')}
               maxLength={100}
               autoFocus
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-control text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
 
             {sections.length > 0 && (
@@ -214,7 +220,7 @@ const ProjectCharts = () => {
                 <select
                   value={sectionId}
                   onChange={e => setSectionId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="">{t('ui.noSectionOption')}</option>
                   {sections.map(s => (
@@ -232,7 +238,7 @@ const ProjectCharts = () => {
                   min="0"
                   value={startRow}
                   onChange={e => setStartRow(e.target.value)}
-                  className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-24 border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   {t('ui.chartStartRowHelp')}
@@ -257,8 +263,8 @@ const ProjectCharts = () => {
                   <input type="number" min="1" max="200" value={height} onChange={e => setHeight(e.target.value)} className="w-20 px-2 py-1 border border-gray-300 rounded text-sm" />
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
-                  <button onClick={handleCreate} disabled={saving || !name.trim()} className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">
+                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-control text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
+                  <button onClick={handleCreate} disabled={saving || !name.trim()} className="flex-1 py-2 rounded-control text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">
                     {saving ? t('ui.creatingEllipsis') : t('ui.create')}
                   </button>
                 </div>
@@ -272,18 +278,18 @@ const ProjectCharts = () => {
                     type="file"
                     accept="image/*"
                     onChange={e => { setImageFile(e.target.files?.[0] || null); setError('') }}
-                    className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                    className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-control file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                   />
                   <p className="text-xs text-gray-400 mt-1">
                     {t('ui.chartAutoDetectHint')}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
+                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-control text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
                   <button
                     onClick={handleCreateFromImage}
                     disabled={saving || isProcessingImage || !name.trim() || !imageFile}
-                    className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+                    className="flex-1 py-2 rounded-control text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
                   >
                     {isProcessingImage ? t('ui.processing') : saving ? t('ui.creatingEllipsis') : t('ui.generateFromImage')}
                   </button>
@@ -298,7 +304,7 @@ const ProjectCharts = () => {
                     type="file"
                     accept="image/*"
                     onChange={e => { setPhotoFile(e.target.files?.[0] || null); setError('') }}
-                    className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                    className="w-full text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-control file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
                   />
                   <p className="text-xs text-gray-400 mt-1">
                     {t('ui.convertsAnyImage')}
@@ -315,11 +321,11 @@ const ProjectCharts = () => {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
+                  <button onClick={() => setIsCreating(false)} className="flex-1 py-2 rounded-control text-sm bg-gray-100 text-gray-700 hover:bg-gray-200">{t('ui.cancel')}</button>
                   <button
                     onClick={handleCreateFromPhoto}
                     disabled={saving || isProcessingPhoto || !name.trim() || !photoFile}
-                    className="flex-1 py-2 rounded-lg text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
+                    className="flex-1 py-2 rounded-control text-sm bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
                   >
                     {isProcessingPhoto ? t('ui.processing') : saving ? t('ui.creatingEllipsis') : t('ui.generateFromPhoto')}
                   </button>
@@ -330,7 +336,7 @@ const ProjectCharts = () => {
         ) : (
           <button
             onClick={() => setIsCreating(true)}
-            className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-primary-400 hover:text-primary-600 text-sm font-medium"
+            className="w-full py-3 rounded-control border-2 border-dashed border-gray-300 text-gray-500 hover:border-primary-400 hover:text-primary-600 text-sm font-medium"
           >
             {t('ui.newChartBtn')}
           </button>

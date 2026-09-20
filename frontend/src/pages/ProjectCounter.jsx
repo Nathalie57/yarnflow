@@ -3307,7 +3307,7 @@ const ProjectCounter = () => {
         {/* Skeleton header */}
         <div className="space-y-2">
           <div className="skeleton h-4 w-16 rounded" />
-          <div className="skeleton h-7 w-48 rounded-lg" />
+          <div className="skeleton h-7 w-48 rounded-control" />
           <div className="flex gap-2">
             <div className="skeleton h-5 w-20 rounded-full" />
             <div className="skeleton h-5 w-16 rounded-full" />
@@ -3322,14 +3322,14 @@ const ProjectCounter = () => {
         {/* Skeleton tabs */}
         <div className="bg-white rounded-control border border-gray-100 overflow-hidden">
           <div className="flex border-b border-gray-100">
-            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
-            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
-            <div className="flex-1 skeleton h-10 m-1 rounded-lg" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-control" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-control" />
+            <div className="flex-1 skeleton h-10 m-1 rounded-control" />
           </div>
           <div className="p-4 space-y-3">
             <div className="skeleton h-4 w-full rounded" />
             <div className="skeleton h-4 w-3/4 rounded" />
-            <div className="skeleton h-32 w-full rounded-lg" />
+            <div className="skeleton h-32 w-full rounded-control" />
           </div>
         </div>
       </div>
@@ -3339,18 +3339,18 @@ const ProjectCounter = () => {
   if (error || !project) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-control p-6 text-center">
           <p className="text-red-800 mb-4">{error || t('ui.projectNotFound')}</p>
           <div className="flex gap-3 justify-center">
             <button
               onClick={() => { setError(null); setLoading(true); fetchProject().then(pd => pd && fetchSections(pd.current_section_id)) }}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+              className="px-6 py-2 bg-primary-600 text-white rounded-control hover:bg-primary-700 transition"
             >
               {t('ui.retry')}
             </button>
             <Link
               to="/my-projects"
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              className="px-6 py-2 bg-red-600 text-white rounded-control hover:bg-red-700 transition"
             >
               {t('ui.backToProjects')}
             </Link>
@@ -3478,7 +3478,7 @@ const ProjectCounter = () => {
                     </p>
                     <button
                       onClick={() => navigate('/smart-project-creator')}
-                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-control font-medium transition"
                     >
                       {t('ui.createRealProject')}
                     </button>
@@ -3490,7 +3490,7 @@ const ProjectCounter = () => {
                     </p>
                     <button
                       onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
-                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-control font-medium transition"
                     >
                       {t('ui.continue')}
                     </button>
@@ -3573,7 +3573,7 @@ const ProjectCounter = () => {
 
       {/* Indicateur hors-ligne / sync en attente */}
       {(!isOnline || pendingSync) && (
-        <div className={`mb-3 flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium ${
+        <div className={`mb-3 flex items-center gap-2 px-3 py-2 rounded-control text-xs font-medium ${
           !isOnline
             ? 'bg-orange-50 text-orange-700 border border-orange-200'
             : 'bg-blue-50 text-blue-700 border border-blue-200'
@@ -3914,9 +3914,9 @@ const ProjectCounter = () => {
           </div>
         ) : (
           progressData.total !== null && progressData.total - progressData.current > 0 && (
-            <div className="flex items-center gap-2 mb-2">
-              <FlowMascot pose="content" size={32} className="flex-shrink-0" />
-              <p className="text-xs font-medium text-primary-800">
+            <div className="flex items-center gap-2.5 mb-2">
+              <FlowMascot pose="content" size={52} className="flex-shrink-0" />
+              <p className="text-sm font-medium text-primary-800">
                 {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : 'ui.flowRowsLeft', {
                   count: counterUnit === 'cm'
                     ? Number(progressData.total - progressData.current).toFixed(1)
@@ -4662,7 +4662,7 @@ const ProjectCounter = () => {
                       <select
                         value={sectionsSortBy}
                         onChange={(e) => setSectionsSortBy(e.target.value)}
-                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                        className="px-3 py-1.5 border border-gray-300 rounded-control text-sm bg-white hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                       >
                         <option value="created">{t('ui.sortCustom')}</option>
                         <option value="name-az">{t('ui.sortName')}</option>
@@ -4750,7 +4750,7 @@ const ProjectCounter = () => {
 
                         {/* Zone notes dépliable */}
                         {expandedNotesSection === section.id && (
-                          <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg" onClick={(e) => e.stopPropagation()}>
+                          <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-control" onClick={(e) => e.stopPropagation()}>
                             <textarea
                               value={sectionNotesText}
                               onChange={(e) => setSectionNotesText(e.target.value)}
@@ -5099,7 +5099,7 @@ const ProjectCounter = () => {
                               e.stopPropagation()
                               handleToggleSectionComplete(section, e)
                             }}
-                            className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm transition ${
+                            className={`flex-1 py-2 px-3 rounded-control font-medium text-sm transition ${
                               isCompleted
                                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -5114,7 +5114,7 @@ const ProjectCounter = () => {
                                 e.stopPropagation()
                                 setOpenSectionMenu(openSectionMenu === section.id ? null : section.id)
                               }}
-                              className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition"
+                              className="p-2 bg-gray-100 text-gray-600 rounded-control hover:bg-gray-200 transition"
                             >
                               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
@@ -5166,7 +5166,7 @@ const ProjectCounter = () => {
 
                     {/* Zone notes dépliable (mobile) - toujours accessible */}
                     {expandedNotesSection === section.id && (
-                      <div className="mt-2 mx-4 mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="mt-2 mx-4 mb-3 p-3 bg-gray-50 border border-gray-200 rounded-control">
                         <textarea
                           value={sectionNotesText}
                           onChange={(e) => setSectionNotesText(e.target.value)}
@@ -5177,7 +5177,7 @@ const ProjectCounter = () => {
                           <button
                             onClick={() => saveSectionNotes(section.id)}
                             disabled={isSavingSectionNotes}
-                            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
+                            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-control hover:bg-primary-700 disabled:opacity-50 transition"
                           >
                             {isSavingSectionNotes ? '...' : t('ui.saveAlt')}
                           </button>
@@ -5314,7 +5314,7 @@ const ProjectCounter = () => {
                     )
 
                     return (
-                      <div key={originalPhoto.id} className="border-2 border-gray-200 rounded-lg">
+                      <div key={originalPhoto.id} className="border-2 border-gray-200 rounded-control">
                         {/* [AI:Claude] Variations IA EN HAUT - c'est le résultat principal ! */}
                         {photoVariations.length > 0 && (
                           <div className="p-6 bg-gradient-to-br from-primary-50 to-pink-50">
@@ -5326,12 +5326,12 @@ const ProjectCounter = () => {
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {photoVariations.map((variation) => (
-                                <div key={variation.id} className="relative rounded-lg group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow">
+                                <div key={variation.id} className="relative rounded-control group aspect-square bg-gray-100 shadow-md hover:shadow-xl transition-shadow">
                                   {/* Photo IA générée */}
                                   <img
                                     src={`${import.meta.env.VITE_BACKEND_URL}${variation.enhanced_path}`}
                                     alt={`Variation ${variation.ai_style || 'IA'}`}
-                                    className="w-full h-full object-cover rounded-lg"
+                                    className="w-full h-full object-cover rounded-control"
                                     onError={(e) => {
                                       console.error('Erreur chargement image:', variation.enhanced_path)
                                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3EImage manquante%3C/text%3E%3C/svg%3E'
@@ -5339,12 +5339,12 @@ const ProjectCounter = () => {
                                   />
 
                                   {/* Badge style IA en haut */}
-                                  <div className="absolute top-3 left-3 bg-primary-600 text-white text-xs px-3 py-1 rounded-lg font-semibold shadow-lg">
+                                  <div className="absolute top-3 left-3 bg-primary-600 text-white text-xs px-3 py-1 rounded-control font-semibold shadow-lg">
                                     {getStyleLabel(variation.ai_style)}
                                   </div>
 
                                   {/* Overlay minimaliste au hover */}
-                                  <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 rounded-lg ${openMenuId === variation.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                  <div className={`absolute inset-0 bg-black/40 transition-opacity duration-200 rounded-control ${openMenuId === variation.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                                     {/* Actions principales (3 boutons circulaires) */}
                                     <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center gap-3">
                                       {/* Voir en grand */}
@@ -5396,7 +5396,7 @@ const ProjectCounter = () => {
 
                                         {/* Dropdown menu */}
                                         {openMenuId === variation.id && (
-                                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-primary-50 to-sage-50 rounded-lg shadow-2xl border-2 border-primary-400 py-2 z-50">
+                                          <div className="absolute bottom-full mb-2 right-0 w-64 bg-gradient-to-br from-primary-50 via-primary-50 to-sage-50 rounded-control shadow-2xl border-2 border-primary-400 py-2 z-50">
                                             {/* Photo de couverture */}
                                             <button
                                               onClick={async (e) => {
@@ -5610,7 +5610,7 @@ const ProjectCounter = () => {
                               <img
                                 src={`${import.meta.env.VITE_BACKEND_URL}${originalPhoto.original_path}`}
                                 alt={originalPhoto.item_name || 'Photo originale'}
-                                className="w-32 h-32 object-cover rounded-lg border-2 border-gray-300 cursor-pointer hover:border-primary-500 transition"
+                                className="w-32 h-32 object-cover rounded-control border-2 border-gray-300 cursor-pointer hover:border-primary-500 transition"
                                 onClick={() => setLightboxImage(`${import.meta.env.VITE_BACKEND_URL}${originalPhoto.original_path}`)}
                                 onError={(e) => {
                                   console.error('Erreur chargement image:', originalPhoto.original_path)
@@ -5627,7 +5627,7 @@ const ProjectCounter = () => {
                                 </div>
                               )}
                               {/* Overlay "Voir en grand" au survol */}
-                              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
+                              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition rounded-control flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                                 <span className="text-white font-bold text-xs">
                                   {t('ui.viewMagnifier')}
                                 </span>
@@ -5662,7 +5662,7 @@ const ProjectCounter = () => {
                                       alert(t('ui.downloadFailed'))
                                     }
                                   }}
-                                  className="flex-1 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
+                                  className="flex-1 bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-700 px-2 py-1 rounded-control text-xs font-medium transition shadow-sm flex items-center justify-center"
                                   title={t('ui.downloadThisPhoto')}
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -5675,7 +5675,7 @@ const ProjectCounter = () => {
                                     e.stopPropagation()
                                     handleDeletePhoto(originalPhoto.id)
                                   }}
-                                  className="flex-1 bg-white bg-opacity-90 hover:bg-red-50 hover:text-red-500 text-gray-500 px-2 py-1 rounded-lg text-xs font-medium transition shadow-sm flex items-center justify-center"
+                                  className="flex-1 bg-white bg-opacity-90 hover:bg-red-50 hover:text-red-500 text-gray-500 px-2 py-1 rounded-control text-xs font-medium transition shadow-sm flex items-center justify-center"
                                   title={t('ui.deleteThisPhoto')}
                                 >
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -5716,7 +5716,7 @@ const ProjectCounter = () => {
                               ) : (
                                 <button
                                   onClick={() => openEnhanceModal(originalPhoto)}
-                                  className="inline-flex items-center gap-2 px-4 py-2 border border-primary-300 text-primary-700 rounded-lg font-medium hover:bg-primary-50 transition text-sm"
+                                  className="inline-flex items-center gap-2 px-4 py-2 border border-primary-300 text-primary-700 rounded-control font-medium hover:bg-primary-50 transition text-sm"
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -5755,12 +5755,12 @@ const ProjectCounter = () => {
                     langue détectée du patron diffère de la langue de l'interface et
                     qu'aucune traduction n'existe déjà. Jamais automatique. */}
                 {project.pattern_language && project.pattern_language !== i18n.language.split('-')[0] && !project.has_pattern_translation && (
-                  <div className="mb-4 bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center justify-between gap-3">
+                  <div className="mb-4 bg-primary-50 border border-primary-200 rounded-control p-4 flex items-center justify-between gap-3">
                     <p className="text-sm text-primary-800">{t('ui.patternTranslateProposal')}</p>
                     <button
                       onClick={handleTranslatePattern}
                       disabled={translatingPattern}
-                      className="shrink-0 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
+                      className="shrink-0 px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
                     >
                       {translatingPattern && (
                         <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
@@ -5776,13 +5776,13 @@ const ProjectCounter = () => {
                   <div className="flex gap-2 mb-4">
                     <button
                       onClick={() => setShowTranslatedPattern(false)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${!showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`px-3 py-1.5 rounded-control text-sm font-medium transition ${!showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                     >
                       {t('ui.patternOriginal')}
                     </button>
                     <button
                       onClick={() => setShowTranslatedPattern(true)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                      className={`px-3 py-1.5 rounded-control text-sm font-medium transition ${showTranslatedPattern ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                     >
                       {t('ui.patternTranslated')}
                     </button>
@@ -5790,8 +5790,8 @@ const ProjectCounter = () => {
                 )}
 
                 {showTranslatedPattern && project.has_pattern_translation ? (
-                  <div className="mb-4 border-2 border-gray-200 rounded-lg p-6 bg-white">
-                    <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                  <div className="mb-4 border-2 border-gray-200 rounded-control p-6 bg-white">
+                    <div className="bg-gray-50 rounded-control p-4 max-h-[500px] overflow-y-auto">
                       <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                         {project.pattern_translated_text}
                       </pre>
@@ -5804,7 +5804,7 @@ const ProjectCounter = () => {
                   {project.pattern_url ? (
                     // URL externe - Affichage via ProxyViewer
                     <>
-                      <div className="border-2 border-gray-200 rounded-lg overflow-hidden mb-4">
+                      <div className="border-2 border-gray-200 rounded-control overflow-hidden mb-4">
                         <ProxyViewer
                           url={project.pattern_url}
                           onError={() => setProxyError(true)}
@@ -5815,18 +5815,18 @@ const ProjectCounter = () => {
                       {/* Section texte (coexiste avec URL) - Afficher uniquement si texte existe OU si erreur proxy */}
                       {project.pattern_text ? (
                         // Texte existant
-                        <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
+                        <div className="border-2 border-gray-200 rounded-control p-6 bg-white">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold text-flow-ink">{t('ui.patternText')}</h3>
                             <button
                               onClick={handleOpenPatternTextModal}
-                              className="px-4 py-2 text-primary-600 border border-primary-600 rounded-lg font-medium hover:bg-primary-50 transition text-sm flex items-center gap-1.5"
+                              className="px-4 py-2 text-primary-600 border border-primary-600 rounded-control font-medium hover:bg-primary-50 transition text-sm flex items-center gap-1.5"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                               {t('ui.editText')}
                             </button>
                           </div>
-                          <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                          <div className="bg-gray-50 rounded-control p-4 max-h-[500px] overflow-y-auto">
                             <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                               {project.pattern_text}
                             </pre>
@@ -5834,7 +5834,7 @@ const ProjectCounter = () => {
                         </div>
                       ) : proxyError === true ? (
                         // Pas de texte ET erreur proxy - proposer d'en ajouter
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50 text-center">
+                        <div className="border-2 border-dashed border-gray-300 rounded-control p-6 bg-gray-50 text-center">
                           <div className="flex justify-center mb-3">
                             <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                           </div>
@@ -5846,7 +5846,7 @@ const ProjectCounter = () => {
                           </p>
                           <button
                             onClick={handleOpenPatternTextModal}
-                            className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                            className="px-6 py-3 bg-primary-600 text-white rounded-control font-medium hover:bg-primary-700 transition"
                           >
                             {t('ui.addText')}
                           </button>
@@ -5857,7 +5857,7 @@ const ProjectCounter = () => {
                     // Patron texte seul (sans URL ni fichier) — le texte collé peut venir d'un
                     // repli quand le site d'origine bloquait le scraping (ex: Cloudflare) ;
                     // source_url garde ce lien même si le contenu affiché est le texte collé.
-                    <div className="border-2 border-gray-200 rounded-lg p-6 bg-white">
+                    <div className="border-2 border-gray-200 rounded-control p-6 bg-white">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold text-flow-ink">{t('ui.pattern')}</h3>
                         {project.source_url?.startsWith('http') && (
@@ -5871,7 +5871,7 @@ const ProjectCounter = () => {
                           </a>
                         )}
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-4 max-h-[500px] overflow-y-auto">
+                      <div className="bg-gray-50 rounded-control p-4 max-h-[500px] overflow-y-auto">
                         <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 leading-relaxed">
                           {project.pattern_text}
                         </pre>
@@ -5879,7 +5879,7 @@ const ProjectCounter = () => {
                     </div>
                   ) : project.pattern_path?.match(/\.(jpg|jpeg|png|webp)$/i) ? (
                     // Image avec lightbox
-                    <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border-2 border-gray-200 rounded-control overflow-hidden">
                       <img
                         key={project.pattern_path}
                         src={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`}
@@ -5905,7 +5905,7 @@ const ProjectCounter = () => {
                     </div>
                   ) : (
                     // PDF avec viewer interactif
-                    <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border-2 border-gray-200 rounded-control overflow-hidden">
                       <PDFViewer
                         key={project.pattern_path}
                         url={`${import.meta.env.VITE_BACKEND_URL}${project.pattern_path}?t=${project.updated_at || ''}`}
@@ -6073,9 +6073,9 @@ const ProjectCounter = () => {
                           {projectAllocations.map(a => (
                             <div key={a.stash_entry_id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-control border border-gray-100">
                               {a.photo_url ? (
-                                <img src={(import.meta.env.VITE_API_URL || '') + a.photo_url} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                                <img src={(import.meta.env.VITE_API_URL || '') + a.photo_url} alt="" className="w-9 h-9 rounded-control object-cover flex-shrink-0" />
                               ) : (
-                                <div className="w-9 h-9 rounded-lg flex-shrink-0 bg-gray-200" />
+                                <div className="w-9 h-9 rounded-control flex-shrink-0 bg-gray-200" />
                               )}
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-800 truncate">{a.brand} — {a.yarn_name}</p>
@@ -6095,7 +6095,7 @@ const ProjectCounter = () => {
                       <>
 
                         {/* Format fiche technique améliorée */}
-                        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="bg-white border border-gray-200 rounded-control overflow-hidden">
                           {/* Description */}
                           {technicalDetails.description && (
                             <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200">
@@ -6113,7 +6113,7 @@ const ProjectCounter = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               {/* LAINE / YARN */}
                               {technicalDetails.yarn && technicalDetails.yarn.length > 0 && technicalDetails.yarn[0].brand && (
-                                <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg p-3 border-l-4 border-primary-400">
+                                <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-control p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/><path d="M12 2a14.5 14.5 0 0 1 0 20"/><path d="M2 9h20M2 15h20" opacity="0.4"/></svg>
                                     <span className="font-semibold text-primary-700 text-sm">
@@ -6147,7 +6147,7 @@ const ProjectCounter = () => {
 
                               {/* AIGUILLES / CROCHETS */}
                               {technicalDetails.needles && technicalDetails.needles.length > 0 && (technicalDetails.needles[0].type || technicalDetails.needles[0].size) && (
-                                <div className="bg-gradient-to-br from-sage-50 to-sage-100 rounded-lg p-3 border-l-4 border-sage-400">
+                                <div className="bg-gradient-to-br from-sage-50 to-sage-100 rounded-control p-3 border-l-4 border-sage-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-sage-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
                                     <span className="font-semibold text-sage-700 text-sm">
@@ -6178,7 +6178,7 @@ const ProjectCounter = () => {
 
                               {/* ÉCHANTILLON / GAUGE */}
                               {technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows) && (
-                                <div className="bg-gradient-to-br from-primary-50 to-primary-200 rounded-lg p-3 border-l-4 border-primary-400">
+                                <div className="bg-gradient-to-br from-primary-50 to-primary-200 rounded-control p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="12"/><line x1="15" y1="10" x2="15" y2="14"/><line x1="19" y1="10" x2="19" y2="12"/></svg>
                                     <span className="font-semibold text-primary-700 text-sm">{t('ui.gaugeLabel')}</span>
@@ -6665,14 +6665,14 @@ const ProjectCounter = () => {
               {credits && (() => {
                 const isFree = !user?.subscription_type || user?.subscription_type === 'free'
                 if (isFree && credits.total_available > 0) return (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-control">
                     <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span className="text-sm text-green-700 font-medium">{t('ui.freeTrialAvailable')}</span>
                   </div>
                 )
                 if (isFree && credits.total_available === 0) return (
                   <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-control">
                       <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       <span className="text-sm text-amber-700 font-medium">{t('ui.trialUsed')}</span>
                     </div>
@@ -6680,13 +6680,13 @@ const ProjectCounter = () => {
                   </div>
                 )
                 if (credits.total_available === 0) return (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-control">
                     <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span className="text-sm text-amber-700">{t('ui.noMoreCredits')}</span>
                   </div>
                 )
                 return (
-                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-control">
                     <span className="text-sm text-gray-600">{t('ui.availableCredits')}</span>
                     <span className="text-sm font-bold text-flow-ink">{credits.total_available}</span>
                   </div>
@@ -6785,19 +6785,19 @@ const ProjectCounter = () => {
               {credits && (() => {
                 const isFree = !user?.subscription_type || user?.subscription_type === 'free'
                 if (isFree && credits.total_available > 0) return (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-control">
                     <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     <span className="text-sm text-green-700 font-medium">{t('ui.freeTrialAvailable')}</span>
                   </div>
                 )
                 if (isFree && credits.total_available === 0) return (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-control">
                     <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     <span className="text-sm text-amber-700">{t('ui.freeTrialUsedPrefix')}<a href="/subscription" className="font-semibold underline">{t('ui.upgradeToPlus')}</a></span>
                   </div>
                 )
                 return (
-                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-200 rounded-control">
                     <span className="text-sm text-gray-600">{t('ui.availableCredits')}</span>
                     <span className="text-sm font-bold text-flow-ink">{credits.total_available}</span>
                   </div>
@@ -6860,13 +6860,13 @@ const ProjectCounter = () => {
 
             <div className="flex-1 overflow-y-auto p-6">
               {/* Photo originale unique en haut */}
-              <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 border-2 border-gray-300">
+              <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-control p-3 border-2 border-gray-300">
                 <h3 className="text-sm font-bold text-flow-ink mb-2 text-center">{t('ui.originalPhotoTitle')}</h3>
                 <div className="max-w-xs mx-auto">
                   <img
                     src={`/style-examples/${detectProjectCategory(project?.type || '')}_before.jpg`}
                     alt={t('ui.altOriginalPhoto')}
-                    className="w-full rounded-lg shadow"
+                    className="w-full rounded-control shadow"
                     onError={(e) => {
                       e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect width="400" height="400" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%239ca3af"%3EPhoto à venir%3C/text%3E%3C/svg%3E'
                     }}
@@ -6884,7 +6884,7 @@ const ProjectCounter = () => {
                 {getAvailableStyles(detectProjectCategory(project?.type || '')).map((style) => (
                   <div
                     key={style.key}
-                    className="border-2 border-gray-200 rounded-lg overflow-hidden hover:border-primary-400 transition"
+                    className="border-2 border-gray-200 rounded-control overflow-hidden hover:border-primary-400 transition"
                   >
                     {/* Image générée */}
                     <div className="relative bg-gray-100">
@@ -7046,14 +7046,14 @@ const ProjectCounter = () => {
                   value={technicalForm.description}
                   onChange={(e) => setTechnicalForm({ ...technicalForm, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder={t('ui.phGeneralDescription')}
                   autoFocus
                 />
               </div>
 
               {/* LAINE / YARN */}
-              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200">
+              <div className="mb-6 p-4 bg-gradient-to-r from-primary-50 to-primary-100 rounded-control border border-primary-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-base font-semibold text-flow-ink">
                     {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
@@ -7070,7 +7070,7 @@ const ProjectCounter = () => {
                   </button>
                 </div>
                 {technicalForm.yarn.map((y, yIdx) => (
-                  <div key={yIdx} className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+                  <div key={yIdx} className="mb-4 p-4 bg-white rounded-control shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-medium text-gray-700">
                         {project.technique === 'tricot' ? t('ui.wool') : t('ui.yarn')} #{yIdx + 1}
@@ -7256,7 +7256,7 @@ const ProjectCounter = () => {
               </div>
 
               {/* AIGUILLES / CROCHETS */}
-              <div className="mb-6 p-4 bg-sage-50 rounded-lg border border-sage-200">
+              <div className="mb-6 p-4 bg-sage-50 rounded-control border border-sage-200">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-flow-ink flex items-center gap-2">
                     {project.technique === 'tricot' ? t('ui.needles') : t('ui.hooks')}
@@ -7273,7 +7273,7 @@ const ProjectCounter = () => {
                   </button>
                 </div>
                 {technicalForm.needles.map((n, nIdx) => (
-                  <div key={nIdx} className="mb-3 p-3 bg-white rounded-lg shadow-sm">
+                  <div key={nIdx} className="mb-3 p-3 bg-white rounded-control shadow-sm">
                     {(technicalForm.needles.length > 1 || project.technique === 'tricot') && (
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-medium text-gray-700">
@@ -7347,7 +7347,7 @@ const ProjectCounter = () => {
               </div>
 
               {/* ÉCHANTILLON / GAUGE */}
-              <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
+              <div className="mb-6 p-4 bg-primary-50 rounded-control border border-primary-200">
                 <h4 className="text-lg font-semibold text-flow-ink mb-4 flex items-center gap-2">
                   {t('ui.gaugeLabel')}
                 </h4>
@@ -7689,7 +7689,7 @@ const ProjectCounter = () => {
                 type="text"
                 value={libraryForm.name}
                 onChange={(e) => setLibraryForm({ ...libraryForm, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t('ui.phProjectName')}
                 autoFocus
               />
@@ -7704,7 +7704,7 @@ const ProjectCounter = () => {
                 value={libraryForm.description}
                 onChange={(e) => setLibraryForm({ ...libraryForm, description: e.target.value })}
                 rows={2}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t('ui.patternNotesPlaceholder')}
               />
             </div>
@@ -7719,7 +7719,7 @@ const ProjectCounter = () => {
                 <select
                   value={libraryForm.category}
                   onChange={(e) => setLibraryForm({ ...libraryForm, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="clothing">{t('ui.catClothing')}</option>
                   <option value="accessories">{t('ui.catAccessories')}</option>
@@ -7737,7 +7737,7 @@ const ProjectCounter = () => {
                 <select
                   value={libraryForm.difficulty}
                   onChange={(e) => setLibraryForm({ ...libraryForm, difficulty: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="beginner">{t('ui.levelBeginner')}</option>
                   <option value="intermediate">{t('ui.levelIntermediate')}</option>
@@ -7755,7 +7755,7 @@ const ProjectCounter = () => {
                 type="text"
                 value={libraryForm.technique}
                 onChange={(e) => setLibraryForm({ ...libraryForm, technique: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder={t('ui.phTechnique')}
               />
             </div>

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 
 import { apiErrorMessage } from '../utils/apiError'
 import UpgradePrompt from '../components/UpgradePrompt'
+import FlowMascot from '../components/FlowMascot'
 /**
  * SmartProjectCreator - Création intelligente de projets via IA
  * Version 0.17.0 - 2026-01-07
@@ -689,14 +690,10 @@ export default function SmartProjectCreator() {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">
-          <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto">
-            <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('ui.smartCreation')}</h1>
+          <FlowMascot pose="interrogatif" size={90} className="mx-auto" />
+          <h1 className="text-2xl font-bold text-flow-ink">{t('ui.smartCreation')}</h1>
           <p className="text-gray-500">{t('ui.freeTrialsUsed')}</p>
-          <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition">
+          <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition">
             {t('ui.moreAutoCreations')}
           </Link>
           {/* [AI:Claude] Sans cette porte de sortie gratuite, il ne restait que "payer" ou
@@ -737,7 +734,7 @@ export default function SmartProjectCreator() {
             {t('ui.backToProjectsArrow')}
           </button>
 
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-flow-ink mb-2">
             {t('ui.smartCreation')}
           </h1>
           <p className="text-gray-600">
@@ -746,7 +743,7 @@ export default function SmartProjectCreator() {
 
           {/* Badge quota */}
           {quota && (
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-primary-50 border-primary-200">
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-control border bg-primary-50 border-primary-200">
               <span className="text-sm font-medium text-primary-700">
                 {quota.is_pro
                   ? t('ui.importsLeft', { count: quota.remaining })
@@ -765,15 +762,16 @@ export default function SmartProjectCreator() {
 
         {/* Erreur globale */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-control text-red-700">
             {error}
           </div>
         )}
 
         {/* ÉTAPE 1 : Choix du mode */}
         {step === 1 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8">
+            <FlowMascot pose="avecPatron" size={100} className="mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-flow-ink mb-6 text-center">
               {t('ui.howToImport')}
             </h2>
 
@@ -781,12 +779,12 @@ export default function SmartProjectCreator() {
               {/* Mode PDF */}
               <button
                 onClick={() => handleModeSelect('pdf')}
-                className="p-4 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group text-left"
+                className="p-4 border border-gray-200 rounded-card hover:border-primary-400 hover:bg-primary-50 transition group text-left"
               >
-                <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center mb-3">
+                <div className="w-10 h-10 bg-primary-50 rounded-control flex items-center justify-center mb-3">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">{t('ui.pdfFile')}</h3>
+                <h3 className="font-bold text-flow-ink mb-1">{t('ui.pdfFile')}</h3>
                 <p className="text-xs text-gray-500">{t('ui.pdfMaxSize')}</p>
                 <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
               </button>
@@ -794,12 +792,12 @@ export default function SmartProjectCreator() {
               {/* Mode URL */}
               <button
                 onClick={() => handleModeSelect('url')}
-                className="p-4 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group text-left"
+                className="p-4 border border-gray-200 rounded-card hover:border-primary-400 hover:bg-primary-50 transition group text-left"
               >
-                <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center mb-3">
+                <div className="w-10 h-10 bg-primary-50 rounded-control flex items-center justify-center mb-3">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">{t('ui.webLink')}</h3>
+                <h3 className="font-bold text-flow-ink mb-1">{t('ui.webLink')}</h3>
                 <p className="text-xs text-gray-500">{t('ui.fromUrl')}</p>
                 <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
               </button>
@@ -807,13 +805,13 @@ export default function SmartProjectCreator() {
               {/* Mode Bibliothèque — pleine largeur sur mobile */}
               <button
                 onClick={() => handleModeSelect('library')}
-                className="col-span-2 md:col-span-1 p-4 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group text-left flex md:block items-center gap-4"
+                className="col-span-2 md:col-span-1 p-4 border border-gray-200 rounded-card hover:border-primary-400 hover:bg-primary-50 transition group text-left flex md:block items-center gap-4"
               >
-                <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center shrink-0 md:mb-3">
+                <div className="w-10 h-10 bg-primary-50 rounded-control flex items-center justify-center shrink-0 md:mb-3">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-1">{t('ui.myLibrary')}</h3>
+                  <h3 className="font-bold text-flow-ink mb-1">{t('ui.myLibrary')}</h3>
                   <p className="text-xs text-gray-500">{t('ui.patternAlreadyInLibrary')}</p>
                   <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
                 </div>
@@ -822,13 +820,13 @@ export default function SmartProjectCreator() {
               {/* Mode Texte collé — pleine largeur sur mobile */}
               <button
                 onClick={() => handleModeSelect('text')}
-                className="col-span-2 md:col-span-1 p-4 border border-gray-200 rounded-2xl hover:border-primary-400 hover:bg-primary-50 transition group text-left flex md:block items-center gap-4"
+                className="col-span-2 md:col-span-1 p-4 border border-gray-200 rounded-card hover:border-primary-400 hover:bg-primary-50 transition group text-left flex md:block items-center gap-4"
               >
-                <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center shrink-0 md:mb-3">
+                <div className="w-10 h-10 bg-primary-50 rounded-control flex items-center justify-center shrink-0 md:mb-3">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-1">{t('ui.pasteText')}</h3>
+                  <h3 className="font-bold text-flow-ink mb-1">{t('ui.pasteText')}</h3>
                   <p className="text-xs text-gray-500">{t('ui.pasteTextHint')}</p>
                   <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
                 </div>
@@ -839,8 +837,8 @@ export default function SmartProjectCreator() {
 
         {/* ÉTAPE 2 : Upload/URL/Bibliothèque + Analyse */}
         {step === 2 && !analyzing && !creating && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8">
+            <h2 className="text-xl font-bold text-flow-ink mb-6">
               {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.chooseFromLibrary') : mode === 'text' ? t('ui.pasteText') : t('ui.importFromUrl')}
             </h2>
 
@@ -862,7 +860,7 @@ export default function SmartProjectCreator() {
                       value={librarySearch}
                       onChange={(e) => setLibrarySearch(e.target.value)}
                       placeholder={t('ui.searchPattern')}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 mb-4"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 mb-4"
                     />
                     <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                       {libraryPatterns
@@ -871,14 +869,14 @@ export default function SmartProjectCreator() {
                           <button
                             key={p.id}
                             onClick={() => { setSelectedLibraryPattern(p); resetExtraction() }}
-                            className={`w-full text-left px-4 py-3 rounded-xl border transition flex items-center justify-between gap-3 ${
+                            className={`w-full text-left px-4 py-3 rounded-control border transition flex items-center justify-between gap-3 ${
                               selectedLibraryPattern?.id === p.id
                                 ? 'border-primary-500 bg-primary-50'
                                 : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
                             }`}
                           >
                             <div className="min-w-0">
-                              <p className="font-medium text-gray-900 truncate">{p.name}</p>
+                              <p className="font-medium text-flow-ink truncate">{p.name}</p>
                               {p.category && <p className="text-xs text-gray-500">{p.category}</p>}
                             </div>
                             {selectedLibraryPattern?.id === p.id && (
@@ -929,7 +927,7 @@ export default function SmartProjectCreator() {
                   value={url}
                   onChange={(e) => { setUrl(e.target.value); setPastedText(''); resetExtraction() }}
                   placeholder={t('ui.phExampleUrl')}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
                 {errorCode === 'site_blocks_scraping' && (
                   <div className="mt-4">
@@ -941,7 +939,7 @@ export default function SmartProjectCreator() {
                       onChange={(e) => { setPastedText(e.target.value); resetExtraction() }}
                       placeholder={t('ui.phPastedPattern')}
                       rows={8}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
                     />
                   </div>
                 )}
@@ -959,7 +957,7 @@ export default function SmartProjectCreator() {
                   placeholder={t('ui.phPastedPattern')}
                   rows={12}
                   autoFocus
-                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
                 />
               </div>
             )}
@@ -975,7 +973,7 @@ export default function SmartProjectCreator() {
                     key={s}
                     type="button"
                     onClick={() => setPatternSize(patternSize === s ? '' : s)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                    className={`px-3 py-1.5 rounded-control text-sm font-medium border transition ${
                       patternSize === s
                         ? 'bg-primary-600 text-white border-primary-600'
                         : 'border-gray-200 text-gray-600 hover:border-primary-400'
@@ -989,7 +987,7 @@ export default function SmartProjectCreator() {
                   value={['XS','S','M','L','XL','XXL','XXXL'].includes(patternSize) ? '' : patternSize}
                   onChange={e => setPatternSize(e.target.value)}
                   placeholder={t('ui.otherSize')}
-                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 w-36"
+                  className="px-3 py-1.5 border border-gray-200 rounded-control text-sm focus:ring-2 focus:ring-primary-500 w-36"
                 />
               </div>
             </div>
@@ -997,7 +995,7 @@ export default function SmartProjectCreator() {
             <div className="flex gap-4">
               <button
                 onClick={() => setStep(1)}
-                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
+                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-control hover:bg-gray-50"
               >
                 {t('ui.backArrow4')}
               </button>
@@ -1018,7 +1016,7 @@ export default function SmartProjectCreator() {
                       submitProject()
                     }
                   }}
-                  className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-control hover:bg-primary-700 flex items-center justify-center gap-2"
                 >
                   {t('ui.continuePrevAnalysis')}
                 </button>
@@ -1026,7 +1024,7 @@ export default function SmartProjectCreator() {
                 <button
                   onClick={handleAnalyze}
                   disabled={analyzing || (mode === 'pdf' && !file) || (mode === 'url' && !url && !pastedText.trim()) || (mode === 'library' && !selectedLibraryPattern) || (mode === 'text' && !pastedText.trim())}
-                  className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-control hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {analyzing ? (
                     <>
@@ -1047,16 +1045,9 @@ export default function SmartProjectCreator() {
 
         {/* LOADING : Analyse en cours */}
         {analyzing && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 text-center">
-            <div className="w-16 h-16 mx-auto mb-6 relative">
-              <svg className="animate-spin w-16 h-16 text-primary-200" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-              <svg className="animate-spin w-16 h-16 text-primary-600 absolute inset-0" style={{ animationDuration: '1s' }} viewBox="0 0 24 24" fill="none">
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.analyzingAlt')}</h2>
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-10 text-center">
+            <FlowMascot pose="quiReflechit" size={110} className="mx-auto mb-6" animate />
+            <h2 className="text-xl font-bold text-flow-ink mb-2">{t('ui.analyzingAlt')}</h2>
             <p className="text-gray-500 text-sm mb-8">{t('ui.aiReadingPattern')}</p>
             <div className="max-w-xs mx-auto space-y-3 text-left">
               {[
@@ -1093,16 +1084,9 @@ export default function SmartProjectCreator() {
             écran de chargement dédié pour ne pas laisser un flash du formulaire d'étape 2
             entre la fin de l'analyse et la redirection vers le projet créé. */}
         {creating && step !== 3 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 text-center">
-            <div className="w-16 h-16 mx-auto mb-6 relative">
-              <svg className="animate-spin w-16 h-16 text-primary-200" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-              </svg>
-              <svg className="animate-spin w-16 h-16 text-primary-600 absolute inset-0" style={{ animationDuration: '1s' }} viewBox="0 0 24 24" fill="none">
-                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.creatingProjectTitle')}</h2>
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-10 text-center">
+            <FlowMascot pose="heureux" size={110} className="mx-auto mb-6" />
+            <h2 className="text-xl font-bold text-flow-ink mb-2">{t('ui.creatingProjectTitle')}</h2>
             <p className="text-gray-500 text-sm">{t('ui.creatingProjectDesc')}</p>
           </div>
         )}
@@ -1117,8 +1101,8 @@ export default function SmartProjectCreator() {
             Affichée à la place du formulaire de relecture complet, qui n'est plus le
             chemin normal (voir handleAnalyze). */}
         {step === 3 && (translateGatePending || warningGatePending) && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('ui.checkAndEdit')}</h2>
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8 text-center">
+            <h2 className="text-xl font-bold text-flow-ink mb-2">{t('ui.checkAndEdit')}</h2>
 
             {warningGatePending && (
               <p className="text-sm text-gray-500 mb-4">{t('ui.projectNotCreatedYet')}</p>
@@ -1131,13 +1115,13 @@ export default function SmartProjectCreator() {
             )}
 
             {containsDiagram && (
-              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm text-left">
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-control text-amber-800 text-sm text-left">
                 {t('ui.diagramWarning')}
               </div>
             )}
 
             {aiStatus === 'partial' && (
-              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 text-sm text-left">
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-control text-gray-600 text-sm text-left">
                 {t('ui.someInfoMissing')}
               </div>
             )}
@@ -1147,14 +1131,14 @@ export default function SmartProjectCreator() {
                 <button
                   onClick={() => { setTranslateGatePending(false); submitProject() }}
                   disabled={translatingPreview}
-                  className="px-4 py-2 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition disabled:opacity-60"
+                  className="px-4 py-2 text-gray-600 rounded-control text-sm font-medium hover:bg-gray-100 transition disabled:opacity-60"
                 >
                   {t('ui.patternTranslateGateSkip')}
                 </button>
                 <button
                   onClick={handleTranslatePreview}
                   disabled={translatingPreview}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
                 >
                   {translatingPreview && (
                     <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
@@ -1166,7 +1150,7 @@ export default function SmartProjectCreator() {
               <button
                 onClick={() => { setWarningGatePending(false); setTranslateGatePending(false); submitProject() }}
                 disabled={creating}
-                className="px-6 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition disabled:opacity-60 text-sm font-medium"
+                className="px-6 py-2.5 bg-primary-600 text-white rounded-control hover:bg-primary-700 transition disabled:opacity-60 text-sm font-medium"
               >
                 {creating ? t('ui.creatingEllipsis') : t('ui.continueAnyway')}
               </button>
@@ -1176,9 +1160,9 @@ export default function SmartProjectCreator() {
 
         {/* ÉTAPE 3 : Validation/Édition (repli d'erreur uniquement) */}
         {step === 3 && !translateGatePending && !warningGatePending && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8">
             <div className="flex items-start justify-between gap-4 mb-2">
-              <h2 className="text-xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-flow-ink">
                 {t('ui.checkAndEdit')}
               </h2>
 
@@ -1188,7 +1172,7 @@ export default function SmartProjectCreator() {
                 <button
                   onClick={() => submitProject()}
                   disabled={creating || !project.title}
-                  className="px-5 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                  className="px-5 py-2.5 bg-primary-600 text-white rounded-control hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                 >
                   {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
                 </button>
@@ -1197,13 +1181,13 @@ export default function SmartProjectCreator() {
             </div>
 
             {containsDiagram && (
-              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
+              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-control text-amber-800 text-sm">
                 {t('ui.diagramWarning')}
               </div>
             )}
 
             {aiStatus === 'partial' && (
-              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-600 text-sm">
+              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-control text-gray-600 text-sm">
                 {t('ui.someInfoMissing')}
               </div>
             )}
@@ -1216,7 +1200,7 @@ export default function SmartProjectCreator() {
                   type="text"
                   value={project.title}
                   onChange={(e) => setProject({...project, title: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
@@ -1226,7 +1210,7 @@ export default function SmartProjectCreator() {
                   <select
                     value={project.craft_type}
                     onChange={(e) => setProject({...project, craft_type: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="crochet">{t('ui.crochetOpt')}</option>
                     <option value="tricot">{t('ui.knit')}</option>
@@ -1239,7 +1223,7 @@ export default function SmartProjectCreator() {
                   <select
                     value={project.category || ''}
                     onChange={(e) => setProject({...project, category: e.target.value || null})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">{t('ui.selectPlaceholder')}</option>
                     <option value="bonnet">{t('ui.hat')}</option>
@@ -1264,14 +1248,14 @@ export default function SmartProjectCreator() {
                   value={project.description}
                   onChange={(e) => setProject({...project, description: e.target.value})}
                   rows="2"
-                  className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
 
             {/* Détails techniques */}
-            <details className="mb-6 border border-gray-200 rounded-2xl p-4" open>
-              <summary className="font-medium text-gray-900 cursor-pointer">{t('ui.technicalDetails')}</summary>
+            <details className="mb-6 border border-gray-200 rounded-card p-4" open>
+              <summary className="font-medium text-flow-ink cursor-pointer">{t('ui.technicalDetails')}</summary>
 
               <div className="mt-4 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -1281,7 +1265,7 @@ export default function SmartProjectCreator() {
                       type="text"
                       value={project.yarn[0]?.brand || ''}
                       onChange={(e) => setProject({...project, yarn: [{...project.yarn[0], brand: e.target.value}, ...project.yarn.slice(1)]})}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-control text-sm"
                     />
                   </div>
                   <div>
@@ -1290,7 +1274,7 @@ export default function SmartProjectCreator() {
                       type="text"
                       value={project.yarn[0]?.color || ''}
                       onChange={(e) => setProject({...project, yarn: [{...project.yarn[0], color: e.target.value}, ...project.yarn.slice(1)]})}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-control text-sm"
                     />
                   </div>
                 </div>
@@ -1303,7 +1287,7 @@ export default function SmartProjectCreator() {
                   return (
                     <>
                       {quantified.length > 0 && (
-                        <div className="bg-primary-50 border border-primary-200 rounded-xl p-3">
+                        <div className="bg-primary-50 border border-primary-200 rounded-control p-3">
                           <p className="text-sm text-primary-800">
                             {quantified.map((s) => `${s.quantity} × ${s.entry.brand} ${s.entry.yarn_name}${s.entry.color_name ? ` (${s.entry.color_name})` : ''}`).join(', ')}
                           </p>
@@ -1329,7 +1313,7 @@ export default function SmartProjectCreator() {
                       value={project.yarn[0]?.weight || ''}
                       onChange={(e) => setProject({...project, yarn: [{...project.yarn[0], weight: e.target.value}, ...project.yarn.slice(1)]})}
                       placeholder={t('ui.phWeightExamples')}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-control text-sm"
                     />
                   </div>
                   <div>
@@ -1339,7 +1323,7 @@ export default function SmartProjectCreator() {
                       value={project.needles[0]?.size || ''}
                       onChange={(e) => setProject({...project, needles: [{...project.needles[0], size: e.target.value}, ...project.needles.slice(1)]})}
                       placeholder="4.5"
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-control text-sm"
                     />
                   </div>
                 </div>
@@ -1352,14 +1336,14 @@ export default function SmartProjectCreator() {
                       value={project.gauge.stitches || ''}
                       onChange={(e) => setProject({...project, gauge: {...project.gauge, stitches: e.target.value ? parseInt(e.target.value) : null}})}
                       placeholder={t('ui.stitches')}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-control text-sm"
                     />
                     <input
                       type="number"
                       value={project.gauge.rows || ''}
                       onChange={(e) => setProject({...project, gauge: {...project.gauge, rows: e.target.value ? parseInt(e.target.value) : null}})}
                       placeholder={t('ui.rowsLabel')}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-control text-sm"
                     />
                   </div>
                 </div>
@@ -1369,10 +1353,10 @@ export default function SmartProjectCreator() {
             {/* Sections */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-gray-900">{t('ui.projectSections')}</h3>
+                <h3 className="font-medium text-flow-ink">{t('ui.projectSections')}</h3>
                 <button
                   onClick={addSection}
-                  className="px-3 py-1 text-sm bg-primary-600 text-white rounded-xl hover:bg-primary-700"
+                  className="px-3 py-1 text-sm bg-primary-600 text-white rounded-control hover:bg-primary-700"
                 >
                   {t('ui.addPlus')}
                 </button>
@@ -1380,7 +1364,7 @@ export default function SmartProjectCreator() {
 
               <div className="space-y-3">
                 {sections.map((section, index) => (
-                  <div key={index} className="border border-gray-200 rounded-2xl p-3">
+                  <div key={index} className="border border-gray-200 rounded-card p-3">
                     <div className="flex gap-2 items-start mb-2">
                       <div className="flex-1 grid grid-cols-3 gap-2">
                         <input
@@ -1432,7 +1416,7 @@ export default function SmartProjectCreator() {
                 value={project.pattern_notes}
                 onChange={(e) => setProject({...project, pattern_notes: e.target.value})}
                 rows="3"
-                className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 text-sm"
+                className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 text-sm"
                 placeholder={t('ui.phImportantNotes')}
               />
             </div>
@@ -1441,7 +1425,7 @@ export default function SmartProjectCreator() {
             <div className="flex gap-4">
               <button
                 onClick={() => setStep(2)}
-                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50"
+                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-control hover:bg-gray-50"
               >
                 {t('ui.backArrow4')}
               </button>
@@ -1449,7 +1433,7 @@ export default function SmartProjectCreator() {
               <button
                 onClick={() => submitProject()}
                 disabled={creating || !project.title}
-                className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-xl hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-control hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
               </button>
@@ -1471,11 +1455,11 @@ export default function SmartProjectCreator() {
         onClick={() => setShowStashPicker(false)}
       >
         <div
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col"
+          className="bg-white rounded-card shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900">{t('ui.stashBrowse')}</h3>
+            <h3 className="font-semibold text-flow-ink">{t('ui.stashBrowse')}</h3>
             <button
               type="button"
               onClick={() => setShowStashPicker(false)}
@@ -1495,9 +1479,9 @@ export default function SmartProjectCreator() {
                   const selection = stashSelections.find((s) => s.entry.id === entry.id)
                   const available = entry.quantity_available ?? entry.quantity
                   return (
-                    <div key={entry.id} className="px-3 py-2.5 rounded-lg hover:bg-gray-50 flex items-center justify-between gap-3">
+                    <div key={entry.id} className="px-3 py-2.5 rounded-control hover:bg-gray-50 flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <span className="text-sm text-gray-900">
+                        <span className="text-sm text-flow-ink">
                           {entry.brand} {entry.yarn_name}
                           {entry.color_name && <span className="text-gray-500"> · {entry.color_name}</span>}
                         </span>
@@ -1510,7 +1494,7 @@ export default function SmartProjectCreator() {
                         value={selection?.quantity ?? ''}
                         onChange={(e) => setStashQuantity(entry, e.target.value)}
                         placeholder="0"
-                        className="w-16 px-2 py-1.5 border border-gray-200 rounded-lg text-sm text-center shrink-0"
+                        className="w-16 px-2 py-1.5 border border-gray-200 rounded-control text-sm text-center shrink-0"
                       />
                     </div>
                   )

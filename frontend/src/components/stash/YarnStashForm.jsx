@@ -166,7 +166,7 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
     onSubmit(payload, photos[0]?.file || null)
   }
 
-  const inputCls = "w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent placeholder-gray-300"
+  const inputCls = "w-full px-3 py-2.5 border border-gray-200 rounded-control text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent placeholder-gray-300"
   const labelCls = "block text-xs font-medium text-gray-600 mb-1"
 
   return (
@@ -175,17 +175,17 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
       {!entry && (
         <div>
           {scanError && (
-            <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scanError}</p>
+            <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-control px-3 py-2">{scanError}</p>
           )}
           {photos[0] ? (
             <div className="relative">
               <img
                 src={photos[0].preview}
                 alt={t('ui.labelAlt')}
-                className={`w-full h-40 object-cover rounded-xl border border-gray-200 transition-opacity ${scanning ? 'opacity-50' : ''}`}
+                className={`w-full h-40 object-cover rounded-control border border-gray-200 transition-opacity ${scanning ? 'opacity-50' : ''}`}
               />
               {scanning && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 rounded-xl">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 rounded-control">
                   <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
                   <span className="text-xs font-medium text-primary-700">{t('ui.readingLabel')}</span>
                 </div>
@@ -193,7 +193,7 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
               <button
                 type="button"
                 onClick={() => removePhotoAt(0)}
-                className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
+                className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-control shadow text-gray-500 hover:text-red-500 transition-colors"
                 title={t('ui.deletePhoto')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -205,7 +205,7 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
             <button
               type="button"
               onClick={() => openPhotoInput(fileInputRef)}
-              className="w-full h-24 border-2 border-dashed border-primary-200 bg-primary-50/40 rounded-xl flex flex-col items-center justify-center gap-1.5 text-primary-400 hover:border-primary-400 hover:text-primary-600 transition-colors cursor-pointer"
+              className="w-full h-24 border-2 border-dashed border-primary-200 bg-primary-50/40 rounded-control flex flex-col items-center justify-center gap-1.5 text-primary-400 hover:border-primary-400 hover:text-primary-600 transition-colors cursor-pointer"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -232,7 +232,7 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
                   <img
                     src={p.preview}
                     alt={t('ui.labelAltOther')}
-                    className="h-16 w-16 object-cover rounded-lg border border-gray-200"
+                    className="h-16 w-16 object-cover rounded-control border border-gray-200"
                   />
                   <button
                     type="button"
@@ -363,7 +363,7 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
           <div className="flex gap-2">
             <input
               type="color"
-              className="h-10 w-12 rounded-lg border border-gray-200 cursor-pointer flex-shrink-0"
+              className="h-10 w-12 rounded-control border border-gray-200 cursor-pointer flex-shrink-0"
               value={form.color_hex || '#e5e7eb'}
               onChange={(e) => setForm(f => ({ ...f, color_hex: e.target.value }))}
             />
@@ -415,7 +415,7 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
 
       {/* Calcul automatique */}
       {(totalWeight > 0 || totalYardage > 0) && (
-        <div className="bg-primary-50 rounded-xl p-3 text-sm text-primary-700 text-center font-medium">
+        <div className="bg-primary-50 rounded-control p-3 text-sm text-primary-700 text-center font-medium">
           <Trans t={t} i18nKey="ui.totalWeightYardage" values={{ g: totalWeight, m: totalYardage }}><strong /><strong /></Trans>
         </div>
       )}
@@ -477,19 +477,19 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
         <div>
           <label className={labelCls}>{t('ui.labelPhoto')}</label>
           {scanError && (
-            <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">{scanError}</p>
+            <p className="mb-2 text-xs text-amber-600 bg-amber-50 rounded-control px-3 py-2">{scanError}</p>
           )}
           {photos[0] || entry.photo_url ? (
             <div className="relative">
               <img
                 src={photos[0]?.preview || (import.meta.env.VITE_API_URL + entry.photo_url)}
                 alt={t('ui.labelAlt')}
-                className="w-full h-40 object-cover rounded-xl border border-gray-200"
+                className="w-full h-40 object-cover rounded-control border border-gray-200"
               />
               <button
                 type="button"
                 onClick={() => removePhotoAt(0)}
-                className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-lg shadow text-gray-500 hover:text-red-500 transition-colors"
+                className="absolute top-2 right-2 bg-white/90 p-1.5 rounded-control shadow text-gray-500 hover:text-red-500 transition-colors"
                 title={t('ui.deletePhoto')}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -501,14 +501,14 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
                   <button
                     type="button"
                     onClick={() => openPhotoInput(galleryInputRef)}
-                    className="bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
+                    className="bg-white/90 px-2.5 py-1 rounded-control shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
                   >
                     {t('ui.gallery')}
                   </button>
                   <button
                     type="button"
                     onClick={() => openPhotoInput(fileInputRef)}
-                    className="bg-white/90 px-2.5 py-1 rounded-lg shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
+                    className="bg-white/90 px-2.5 py-1 rounded-control shadow text-xs text-gray-600 hover:text-primary-600 transition-colors"
                   >
                     {t('ui.change')}
                   </button>
@@ -520,7 +520,7 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
               <button
                 type="button"
                 onClick={() => openPhotoInput(fileInputRef)}
-                className="w-full h-24 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
+                className="w-full h-24 border-2 border-dashed border-gray-200 rounded-control flex flex-col items-center justify-center gap-1.5 text-gray-400 hover:border-primary-300 hover:text-primary-500 transition-colors cursor-pointer"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -546,7 +546,7 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
                   <img
                     src={p.preview}
                     alt={t('ui.labelAltOther')}
-                    className="h-16 w-16 object-cover rounded-lg border border-gray-200"
+                    className="h-16 w-16 object-cover rounded-control border border-gray-200"
                   />
                   <button
                     type="button"
@@ -602,7 +602,7 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
 
       {/* Doublon détecté — même marque/gamme/coloris déjà en stock */}
       {duplicateMatch && onMergeIntoExisting && (
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4">
+        <div className="bg-primary-50 border border-primary-200 rounded-control p-4">
           <p className="text-sm text-gray-700 mb-3">
             <Trans t={t} i18nKey="ui.duplicateYarnFound" values={{
               brand: duplicateMatch.brand,
@@ -615,14 +615,14 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
               type="button"
               onClick={handleMergeIntoExisting}
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
+              className="flex-1 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-medium transition-colors disabled:opacity-60"
             >
               {t('ui.mergeIntoExisting', { count: parseInt(form.quantity) || 1 })}
             </button>
             <button
               type="button"
               onClick={() => setDuplicateMatch(null)}
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-200 rounded-control text-sm text-gray-600 hover:bg-gray-50 transition-colors"
             >
               {t('ui.createNewEntryAnyway')}
             </button>
@@ -635,14 +635,14 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+          className="flex-1 px-4 py-2.5 border border-gray-200 rounded-control text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
         >
           {t('ui.cancel')}
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
+          className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold transition-colors disabled:opacity-60"
         >
           {loading ? t('ui.savingEllipsisAlt') : (entry ? t('ui.save') : t('ui.addToStash'))}
         </button>

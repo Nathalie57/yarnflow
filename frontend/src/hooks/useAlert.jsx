@@ -19,6 +19,7 @@
 
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import FlowMascot from '../components/FlowMascot'
 
 export const useAlert = () => {
   const { t } = useTranslation()
@@ -43,8 +44,14 @@ export const useAlert = () => {
     <>
       {alertData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3 sticky top-0 bg-white pb-3 border-b">
+          <div className="bg-white rounded-card max-w-md w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+            {/* [AI:Claude] Flow uniquement sur les alertes "success" — un vrai moment
+                positif nomme par la charte (section 5, "Bravo !"), pas sur chaque
+                confirmation banale pour ne pas en faire un decor systematique. */}
+            {alertData.type === 'success' && (
+              <FlowMascot pose="heureux" size={72} className="mx-auto mb-2" />
+            )}
+            <h3 className="text-lg font-semibold text-flow-ink mb-3 sticky top-0 bg-white pb-3 border-b">
               {alertData.title || defaultAlertTitle(alertData.type)}
             </h3>
             <div className="text-gray-600 mb-6">
@@ -53,7 +60,7 @@ export const useAlert = () => {
             <div className="flex justify-end sticky bottom-0 bg-white pt-3 border-t">
               <button
                 onClick={() => setAlertData(null)}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
+                className="px-6 py-2 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
               >
                 {t('alert.ok')}
               </button>
@@ -64,8 +71,8 @@ export const useAlert = () => {
 
       {confirmData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
+          <div className="bg-white rounded-card max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-flow-ink mb-3">
               {confirmData.title || t('alert.confirmTitle')}
             </h3>
             <p className="text-gray-600 mb-6">
@@ -74,7 +81,7 @@ export const useAlert = () => {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setConfirmData(null)}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                className="px-6 py-2 border border-gray-300 rounded-control text-gray-700 hover:bg-gray-50 transition"
               >
                 {t('alert.cancel')}
               </button>
@@ -84,7 +91,7 @@ export const useAlert = () => {
                   setConfirmData(null)
                   if (cb) cb()
                 }}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
+                className="px-6 py-2 bg-primary-600 text-white rounded-control font-bold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
               >
                 {confirmData.confirmLabel || t('alert.confirm')}
               </button>

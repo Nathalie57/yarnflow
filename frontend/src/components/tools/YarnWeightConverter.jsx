@@ -80,7 +80,7 @@ export default function YarnWeightConverter() {
       </p>
 
       {WEIGHTS.map((w, i) => (
-        <div key={i} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+        <div key={i} className="border border-gray-200 rounded-card p-4 bg-gray-50">
           {/* Noms */}
           <div className="flex flex-wrap gap-2 mb-3">
             <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary-100 text-primary-700">FR · {t(`ui.${w.euKey}`)}</span>

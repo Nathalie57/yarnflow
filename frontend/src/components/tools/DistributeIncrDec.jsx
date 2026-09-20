@@ -84,7 +84,7 @@ export default function DistributeIncrDec() {
       <div className="flex gap-2">
         <button
           onClick={() => setType('aug')}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2 rounded-control text-sm font-medium transition ${
             type === 'aug' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -92,7 +92,7 @@ export default function DistributeIncrDec() {
         </button>
         <button
           onClick={() => setType('dim')}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2 rounded-control text-sm font-medium transition ${
             type === 'dim' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -104,7 +104,7 @@ export default function DistributeIncrDec() {
       <div className="flex gap-2">
         <button
           onClick={() => setAxis('mailles')}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2 rounded-control text-sm font-medium transition ${
             axis === 'mailles' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -112,7 +112,7 @@ export default function DistributeIncrDec() {
         </button>
         <button
           onClick={() => setAxis('rangs')}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2 rounded-control text-sm font-medium transition ${
             axis === 'rangs' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -132,7 +132,7 @@ export default function DistributeIncrDec() {
             value={total}
             onChange={e => setTotal(e.target.value)}
             placeholder={t('ui.phEx80')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
         <div>
@@ -145,30 +145,30 @@ export default function DistributeIncrDec() {
             value={count}
             onChange={e => setCount(e.target.value)}
             placeholder={t('ui.phEx12')}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
       </div>
 
       {/* Résultat */}
       {hasError && (
-        <div className="bg-red-50 text-red-700 rounded-lg p-4 text-sm">
+        <div className="bg-red-50 text-red-700 rounded-control p-4 text-sm">
           {type === 'aug' ? t('ui.tooManyIncreases') : t('ui.tooManyDecreases')}
         </div>
       )}
 
       {result && explanation && (
-        <div ref={resultRef} className="bg-primary-50 border border-primary-200 rounded-xl p-5 space-y-3">
+        <div ref={resultRef} className="bg-primary-50 border border-primary-200 rounded-card p-5 space-y-3">
           <p className="text-base font-semibold text-primary-900">{explanation}</p>
 
           <div className="flex gap-4 pt-1 text-sm text-primary-700">
             {result.longCount > 0 && (
-              <span className="bg-white rounded-lg px-3 py-1 border border-primary-200">
+              <span className="bg-white rounded-control px-3 py-1 border border-primary-200">
                 <Trans t={t} i18nKey="ui.everyNth" values={{ n: result.longInterval, count: result.longCount }}><strong /></Trans>
               </span>
             )}
             {result.shortCount > 0 && (
-              <span className="bg-white rounded-lg px-3 py-1 border border-primary-200">
+              <span className="bg-white rounded-control px-3 py-1 border border-primary-200">
                 <Trans t={t} i18nKey="ui.everyNth" values={{ n: result.shortInterval, count: result.shortCount }}><strong /></Trans>
               </span>
             )}
@@ -180,7 +180,7 @@ export default function DistributeIncrDec() {
           <div>
             <button
               onClick={() => setShowSaveModal(true)}
-              className="w-full py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
+              className="w-full py-2 rounded-control text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
             >
               {t('ui.saveToProjectArrow')}
             </button>
@@ -191,7 +191,7 @@ export default function DistributeIncrDec() {
               <div>
                 <button
                   onClick={() => setShowSequenceModal(true)}
-                  className="w-full py-2 rounded-lg text-sm font-medium bg-white border border-primary-600 text-primary-700 hover:bg-primary-50 transition"
+                  className="w-full py-2 rounded-control text-sm font-medium bg-white border border-primary-600 text-primary-700 hover:bg-primary-50 transition"
                 >
                   {t('ui.createSectionCounter')}
                 </button>
@@ -201,7 +201,7 @@ export default function DistributeIncrDec() {
               <div>
                 <button
                   onClick={() => navigate('/subscription')}
-                  className="w-full py-2 rounded-lg text-sm font-medium bg-white border border-gray-300 text-gray-400 transition flex items-center justify-center gap-2"
+                  className="w-full py-2 rounded-control text-sm font-medium bg-white border border-gray-300 text-gray-400 transition flex items-center justify-center gap-2"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                   {t('ui.createSectionCounterPro')}

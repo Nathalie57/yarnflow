@@ -70,9 +70,9 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5 max-h-[calc(100vh-6rem)] sm:max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
+      <div className="bg-white rounded-card shadow-2xl w-full max-w-sm p-6 space-y-5 max-h-[calc(100vh-6rem)] sm:max-h-[80vh] overflow-y-auto mb-16 sm:mb-0">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">{t('ui.createSectionCounter')}</h2>
+          <h2 className="text-lg font-bold text-flow-ink">{t('ui.createSectionCounter')}</h2>
           <p className="text-sm text-gray-500 mt-1">{t('ui.sequenceSteps', { label: sequence.label, count: sequence.steps.length })}</p>
           <div className="mt-2 space-y-1">
             {sequence.steps.map((step, i) => (
@@ -94,7 +94,7 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
               <select
                 value={selectedProjectId}
                 onChange={e => setSelectedProjectId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">{t('ui.chooseProject')}</option>
                 {projects.map(p => (
@@ -114,7 +114,7 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
                   <select
                     value={selectedSectionId}
                     onChange={e => setSelectedSectionId(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
                     <option value="">{t('ui.chooseSection')}</option>
                     {sections.map(s => (
@@ -137,14 +137,14 @@ export default function SaveSequenceToSectionModal({ sequence, onClose }) {
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+            className="flex-1 py-2 rounded-control text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
           >
             {t('ui.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={!selectedProjectId || !selectedSectionId || saving || saved}
-            className="flex-1 py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
+            className="flex-1 py-2 rounded-control text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-50"
           >
             {saving ? t('ui.savingDots') : t('ui.save')}
           </button>

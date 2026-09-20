@@ -56,7 +56,7 @@ export default function GaugeCalculator() {
       <div className="flex gap-2">
         <button
           onClick={() => setMode('simple')}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2 rounded-control text-sm font-medium transition ${
             mode === 'simple' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -64,7 +64,7 @@ export default function GaugeCalculator() {
         </button>
         <button
           onClick={() => setMode('adapt')}
-          className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex-1 py-2 rounded-control text-sm font-medium transition ${
             mode === 'adapt' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
@@ -85,7 +85,7 @@ export default function GaugeCalculator() {
                   value={myStsPer10}
                   onChange={e => setMyStsPer10(e.target.value)}
                   placeholder={t('ui.phEx20')}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
@@ -96,7 +96,7 @@ export default function GaugeCalculator() {
                   value={myRowsPer10}
                   onChange={e => setMyRowsPer10(e.target.value)}
                   placeholder={t('ui.phEx28')}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -113,7 +113,7 @@ export default function GaugeCalculator() {
                   value={wantedWidthCm}
                   onChange={e => setWantedWidthCm(e.target.value)}
                   placeholder={t('ui.phEx50')}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
@@ -124,14 +124,14 @@ export default function GaugeCalculator() {
                   value={wantedHeightCm}
                   onChange={e => setWantedHeightCm(e.target.value)}
                   placeholder={t('ui.phEx60')}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
           </div>
 
           {(simpleResult.sts || simpleResult.rows) && (
-            <div className="bg-primary-50 border border-primary-200 rounded-xl p-5 space-y-4">
+            <div className="bg-primary-50 border border-primary-200 rounded-card p-5 space-y-4">
               <div className="grid grid-cols-2 gap-4 text-center">
                 {simpleResult.sts && (
                   <div>
@@ -151,7 +151,7 @@ export default function GaugeCalculator() {
               {myStsPer10 && (
                 <button
                   onClick={() => setShowSaveModal(true)}
-                  className="w-full py-2 rounded-lg text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
+                  className="w-full py-2 rounded-control text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
                 >
                   {t('ui.saveGaugeToProjectArrow')}
                 </button>
@@ -181,7 +181,7 @@ export default function GaugeCalculator() {
                   value={patternStsPer10}
                   onChange={e => setPatternStsPer10(e.target.value)}
                   placeholder={t('ui.phEx20')}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
               <div>
@@ -192,7 +192,7 @@ export default function GaugeCalculator() {
                   value={patternRows}
                   onChange={e => setPatternRows(e.target.value)}
                   placeholder={t('ui.phEx100')}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -208,13 +208,13 @@ export default function GaugeCalculator() {
                 value={myAdaptStsPer10}
                 onChange={e => setMyAdaptStsPer10(e.target.value)}
                 placeholder={t('ui.phEx18')}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full border border-gray-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           </div>
 
           {adaptResult && (
-            <div className="bg-primary-50 border border-primary-200 rounded-xl p-5 space-y-2">
+            <div className="bg-primary-50 border border-primary-200 rounded-card p-5 space-y-2">
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary-700">{adaptResult.adjusted}</div>
                 <div className="text-sm text-primary-600 mt-1">{t('ui.stitchesToCastOn')}</div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useTranslation } from 'react-i18next';
+import FlowMascot from './FlowMascot';
 
 export default function PWAPrompt() {
   const { t } = useTranslation();
@@ -81,15 +82,11 @@ export default function PWAPrompt() {
     <>
       {/* Install Prompt */}
       {showInstallPrompt && (
-        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white rounded-lg shadow-2xl border border-primary-100 p-4 z-50 animate-slide-up">
+        <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white rounded-card shadow-2xl border border-flow-mint p-4 z-50 animate-slide-up">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
+            <FlowMascot pose="content" size={48} className="flex-shrink-0" />
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-1">
+              <h3 className="font-semibold text-flow-ink mb-1">
                 {t('pwa.installTitle')}
               </h3>
               <p className="text-sm text-gray-600 mb-3">
@@ -98,13 +95,13 @@ export default function PWAPrompt() {
               <div className="flex gap-2">
                 <button
                   onClick={handleInstall}
-                  className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+                  className="flex-1 bg-primary-600 text-white px-4 py-2 rounded-control text-sm font-medium hover:bg-primary-700 transition-colors"
                 >
                   {t('pwa.install')}
                 </button>
                 <button
                   onClick={handleDismissInstall}
-                  className="px-4 py-2 text-gray-600 text-sm hover:text-gray-900 transition-colors"
+                  className="px-4 py-2 text-gray-600 text-sm hover:text-flow-ink transition-colors"
                 >
                   {t('pwa.later')}
                 </button>
@@ -116,7 +113,7 @@ export default function PWAPrompt() {
 
       {/* Update Available */}
       {needRefresh && (
-        <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-primary-600 text-white rounded-lg shadow-2xl p-4 z-50 animate-slide-down">
+        <div className="fixed top-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-primary-600 text-white rounded-card shadow-2xl p-4 z-50 animate-slide-down">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -133,7 +130,7 @@ export default function PWAPrompt() {
               <div className="flex gap-2">
                 <button
                   onClick={handleUpdate}
-                  className="flex-1 bg-white text-primary-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-50 transition-colors"
+                  className="flex-1 bg-white text-primary-600 px-4 py-2 rounded-control text-sm font-medium hover:bg-primary-50 transition-colors"
                 >
                   {t('pwa.update')}
                 </button>

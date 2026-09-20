@@ -53,7 +53,7 @@ const PendingCheckoutBanner = () => {
           <div className="flex items-center gap-2 flex-shrink-0">
             <a
               href="/subscription"
-              className="px-4 py-1.5 bg-white text-primary-700 text-sm font-semibold rounded-lg hover:bg-primary-50 transition"
+              className="px-4 py-1.5 bg-white text-primary-700 text-sm font-semibold rounded-control hover:bg-primary-50 transition"
             >
               Reprendre
             </a>

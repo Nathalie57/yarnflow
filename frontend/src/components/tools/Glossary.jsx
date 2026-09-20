@@ -10,6 +10,7 @@
 
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import FlowMascot from '../FlowMascot'
 
 // ---------------------------------------------------------------------------
 // Données
@@ -576,7 +577,7 @@ export default function Glossary() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={t('ui.phSearchTerm')}
-          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-control text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
         {search && (
           <button
@@ -595,7 +596,7 @@ export default function Glossary() {
           <button
             key={c.value}
             onClick={() => setCategory(c.value)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+            className={`px-3 py-1.5 rounded-control text-sm font-medium transition ${
               category === c.value
                 ? 'bg-primary-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -643,10 +644,7 @@ export default function Glossary() {
       {/* ── Liste des termes ── */}
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
-          <svg className="w-10 h-10 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <FlowMascot pose="interrogatif" size={56} className="mx-auto mb-3" />
           <p className="text-sm">{t('ui.noTermMatches')}</p>
         </div>
       ) : (
@@ -654,11 +652,11 @@ export default function Glossary() {
           {filtered.map(t => (
             <div
               key={t.term}
-              className="bg-white border border-gray-200 rounded-xl p-4 hover:border-primary-300 hover:shadow-sm transition"
+              className="bg-white border border-flow-mint rounded-card p-4 hover:border-primary-300 hover:shadow-sm transition"
             >
               {/* En-tête de la card */}
               <div className="flex flex-wrap items-start gap-2 mb-2">
-                <span className="font-semibold text-gray-900 text-sm leading-tight">{t.term}</span>
+                <span className="font-semibold text-flow-ink text-sm leading-tight">{t.term}</span>
                 <span className="text-gray-400 text-xs mt-0.5 leading-tight">{t.en}</span>
                 <div className="flex gap-1.5 ml-auto flex-shrink-0">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${CATEGORY_STYLES[t.category]}`}>

@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import api from '../services/api'
 import PasswordInput from '../components/PasswordInput'
+import FlowMascot from '../components/FlowMascot'
 
 const Login = () => {
   const { t } = useTranslation('auth')
@@ -71,12 +72,13 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-flow-cream to-flow-mint/40">
       {/* [AI:Claude] Selecteur de langue : ces pages n utilisent pas Layout, donc pas de Navbar */}
       <LanguageSwitcher className="fixed top-4 right-4 z-50 shadow-sm" />
 
       <div className="card max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center mb-2">YarnFlow</h1>
+        <FlowMascot pose="content" size={72} className="mx-auto mb-2" />
+        <h1 className="text-3xl font-bold text-center text-flow-ink mb-2">YarnFlow</h1>
         <p className="text-gray-600 text-center mb-6">{t('login.subtitle')}</p>
 
         {error && (
@@ -139,7 +141,7 @@ const Login = () => {
         <button
           onClick={handleGoogleLogin}
           disabled={loading || oauthLoading}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-300 rounded-control font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

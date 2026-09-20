@@ -9,6 +9,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
 import { useTranslation } from 'react-i18next'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../../data/upgradePlans'
+import FlowMascot from '../FlowMascot'
 
 const MarkdownText = ({ text }) => {
   const lines = text.split('\n')
@@ -187,18 +188,14 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
   if (!isPro && !isContextual && usage?.remaining === 0) {
     return (
       <div className="text-center py-10 space-y-4">
-        <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mx-auto">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
-          </svg>
-        </div>
-        <h2 className="text-lg font-bold text-gray-900">{t('ui.monthlyQuotaReached')}</h2>
+        <FlowMascot pose="interrogatif" size={80} className="mx-auto" />
+        <h2 className="text-lg font-bold text-flow-ink">{t('ui.monthlyQuotaReached')}</h2>
         <p className="text-sm text-gray-500 max-w-xs mx-auto">
           {t('ui.aiQuotaExhausted')}
         </p>
         <Link
           to="/subscription"
-          className="inline-block bg-primary-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-700 transition"
+          className="inline-block bg-primary-600 text-white px-6 py-2.5 rounded-control text-sm font-semibold hover:bg-primary-700 transition"
         >
           {(() => { const p = upgradeTarget('ai_questions', currentPlan); return p && t('ui.goToPlan', { plan: planLabel(p), price: PLAN_PRICES[p].monthlyEquiv }) })()}
         </Link>
@@ -217,6 +214,7 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
       <div className="flex-1 overflow-y-auto space-y-3 pb-2">
         {messages.length === 0 ? (
           <div className="space-y-4 py-2">
+            <FlowMascot pose="content" size={64} className="mx-auto" />
             {isContextual ? (
               <div className="space-y-1">
                 <p className="text-sm text-gray-600 text-center leading-relaxed">{contextualGreeting}</p>
@@ -230,7 +228,7 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
                 <button
                   key={s}
                   onClick={() => send(s)}
-                  className="text-left text-sm px-4 py-2.5 bg-gray-50 hover:bg-primary-50 hover:text-primary-700 border border-gray-200 hover:border-primary-300 rounded-xl transition"
+                  className="text-left text-sm px-4 py-2.5 bg-flow-mint/40 hover:bg-flow-mint border border-flow-mint rounded-control transition text-flow-ink"
                 >
                   {s}
                 </button>
@@ -240,16 +238,21 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
         ) : (
           messages.map((m, i) => (
             <div key={i} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-              <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                  m.role === 'user'
-                    ? 'bg-primary-600 text-white rounded-br-sm'
-                    : m.isError
-                      ? 'bg-red-50 text-red-700 border border-red-200 rounded-bl-sm'
-                      : 'bg-gray-100 text-gray-800 rounded-bl-sm'
-                }`}
-              >
-                {m.role === 'user' ? m.content : <MarkdownText text={m.content} />}
+              <div className="flex items-end gap-1.5 max-w-[85%]">
+                {m.role === 'assistant' && !m.isError && (
+                  <FlowMascot pose="content" size={22} className="flex-shrink-0 mb-1" />
+                )}
+                <div
+                  className={`rounded-card px-4 py-3 text-sm leading-relaxed ${
+                    m.role === 'user'
+                      ? 'bg-primary-600 text-white rounded-br-sm'
+                      : m.isError
+                        ? 'bg-red-50 text-red-700 border border-red-200 rounded-bl-sm'
+                        : 'bg-flow-mint/50 text-flow-ink rounded-bl-sm'
+                  }`}
+                >
+                  {m.role === 'user' ? m.content : <MarkdownText text={m.content} />}
+                </div>
               </div>
               {/* [AI:Claude] Feedback qualité — seul signal existant sur la pertinence
                   réelle des réponses, absent jusqu'ici (seules les erreurs techniques
@@ -292,7 +295,7 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
               <button
                 key={idx}
                 onClick={() => send(s)}
-                className="text-left text-sm px-4 py-2.5 bg-gray-50 hover:bg-primary-50 hover:text-primary-700 border border-gray-200 hover:border-primary-300 rounded-xl transition"
+                className="text-left text-sm px-4 py-2.5 bg-flow-mint/40 hover:bg-flow-mint border border-flow-mint rounded-control transition text-flow-ink"
               >
                 {s}
               </button>
@@ -301,12 +304,13 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
         )}
 
         {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3">
+          <div className="flex items-end gap-1.5">
+            <FlowMascot pose="quiReflechit" size={22} className="flex-shrink-0 mb-1" />
+            <div className="bg-flow-mint/50 rounded-card rounded-bl-sm px-4 py-3">
               <div className="flex gap-1 items-center h-4">
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -345,12 +349,12 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
           placeholder={t('ui.phAskQuestion')}
           disabled={loading}
-          className="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+          className="flex-1 border border-gray-300 rounded-control px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
         />
         <button
           onClick={() => send()}
           disabled={!input.trim() || loading || usage?.remaining === 0}
-          className="bg-primary-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-primary-700 transition disabled:opacity-40"
+          className="bg-primary-600 text-white rounded-control px-4 py-2.5 text-sm font-medium hover:bg-primary-700 transition disabled:opacity-40"
         >
           →
         </button>

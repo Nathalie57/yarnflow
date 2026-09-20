@@ -66,7 +66,7 @@ const PushNotificationBanner = () => {
             <button
               onClick={handleSubscribe}
               disabled={loading}
-              className="px-4 py-1.5 bg-white text-primary-700 text-sm font-semibold rounded-lg hover:bg-primary-50 transition disabled:opacity-60"
+              className="px-4 py-1.5 bg-white text-primary-700 text-sm font-semibold rounded-control hover:bg-primary-50 transition disabled:opacity-60"
             >
               {loading ? t('ui.activating') : t('ui.enable')}
             </button>

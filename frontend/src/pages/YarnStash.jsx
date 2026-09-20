@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 import { apiErrorMessage } from '../utils/apiError'
+import FlowMascot from '../components/FlowMascot'
 const YarnStash = () => {
   const { t } = useTranslation('tools')
   const { getSubscriptionPlan } = useAuth()
@@ -212,14 +213,17 @@ const YarnStash = () => {
         </Link>
 
         {/* ---- En-tête ---- */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('ui.myStash')}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{t('ui.stashTagline')}</p>
+        <div className="flex items-center justify-between mb-6 gap-3">
+          <div className="flex items-center gap-3">
+            <FlowMascot pose="content" size={56} className="flex-shrink-0" />
+            <div>
+              <h1 className="text-2xl font-bold text-flow-ink">{t('ui.myStash')}</h1>
+              <p className="text-sm text-gray-500 mt-0.5">{t('ui.stashTagline')}</p>
+            </div>
           </div>
           <button
             onClick={handleAddClick}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-colors"
+            className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold shadow-sm transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -230,7 +234,7 @@ const YarnStash = () => {
 
         {/* ---- Bandeau upgrade FREE ---- */}
         {!isPro && stashLimit !== null && stats && (
-          <div className="mb-4 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <div className="mb-4 flex items-center justify-between bg-amber-50 border border-amber-200 rounded-control px-4 py-3">
             <span className="text-sm text-amber-800">
               <span className="font-semibold">{stats.total_references}/{stashLimit}</span> {t('ui.refsUsed')}
             </span>
@@ -249,7 +253,7 @@ const YarnStash = () => {
 
         {/* ---- Erreur générique ---- */}
         {error && error !== 'upgrade_required' && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm flex items-start gap-2">
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-control px-4 py-3 text-sm flex items-start gap-2">
             <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
             </svg>
@@ -260,7 +264,7 @@ const YarnStash = () => {
 
         {/* ---- Upgrade prompt ---- */}
         {error === 'upgrade_required' && (
-          <div className="mb-4 bg-gradient-to-br from-primary-50 to-violet-50 border border-primary-200 rounded-xl p-5 text-center">
+          <div className="mb-4 bg-gradient-to-br from-primary-50 to-violet-50 border border-primary-200 rounded-control p-5 text-center">
             <p className="font-semibold text-gray-800 mb-1">{t('ui.stashOverflowing')}</p>
             <p className="text-sm text-gray-600 mb-4">
               {t('ui.stashProUpsell')}
@@ -269,13 +273,13 @@ const YarnStash = () => {
             <div className="flex gap-2 justify-center">
               <button
                 onClick={() => setError(null)}
-                className="px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-white transition-colors"
+                className="px-4 py-2 border border-gray-200 rounded-control text-sm text-gray-600 hover:bg-white transition-colors"
               >
                 {t('ui.notNow')}
               </button>
               <Link
                 to="/subscription"
-                className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors"
+                className="px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-semibold hover:bg-primary-700 transition-colors"
               >
                 {t('ui.viewProOffers')}
               </Link>
@@ -292,13 +296,13 @@ const YarnStash = () => {
             <input
               type="text"
               placeholder={t('ui.search')}
-              className="flex-1 min-w-[140px] px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 placeholder-gray-300"
+              className="flex-1 min-w-[140px] px-3 py-2 border border-gray-200 rounded-control text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 placeholder-gray-300"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {brands.length > 1 && (
               <select
-                className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 text-gray-600"
+                className="px-3 py-2 border border-gray-200 rounded-control text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 text-gray-600"
                 value={filterBrand}
                 onChange={(e) => setFilterBrand(e.target.value)}
               >
@@ -307,7 +311,7 @@ const YarnStash = () => {
               </select>
             )}
             <select
-              className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 text-gray-600"
+              className="px-3 py-2 border border-gray-200 rounded-control text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 text-gray-600"
               value={filterWeight}
               onChange={(e) => setFilterWeight(e.target.value)}
             >
@@ -322,7 +326,7 @@ const YarnStash = () => {
               <option value="super_bulky">{t('ui.superBulky')}</option>
             </select>
             <select
-              className="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 text-gray-600"
+              className="px-3 py-2 border border-gray-200 rounded-control text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 text-gray-600"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
@@ -342,6 +346,7 @@ const YarnStash = () => {
           </div>
         ) : entries.length === 0 ? (
           <div className="text-center py-16">
+            <FlowMascot pose="onYVa" size={80} className="mx-auto mb-3" />
             <p className="font-semibold text-gray-700 mb-2">{t('ui.emptyStash')}</p>
             <p className="text-sm text-gray-500">{t('ui.emptyStashDesc')}</p>
           </div>
@@ -365,10 +370,10 @@ const YarnStash = () => {
       ==================================================================== */}
       {showAddModal && (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white w-full max-w-lg rounded-card shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">{t('ui.newBall')}</h2>
-              <button onClick={() => setShowAddModal(false)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+              <h2 className="font-semibold text-flow-ink">{t('ui.newBall')}</h2>
+              <button onClick={() => setShowAddModal(false)} className="p-1 rounded-control text-gray-400 hover:text-gray-600">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -392,10 +397,10 @@ const YarnStash = () => {
       ==================================================================== */}
       {editingEntry && (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white w-full max-w-lg rounded-card shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">{t('ui.editBall')}</h2>
-              <button onClick={() => setEditingEntry(null)} className="p-1 rounded-lg text-gray-400 hover:text-gray-600">
+              <h2 className="font-semibold text-flow-ink">{t('ui.editBall')}</h2>
+              <button onClick={() => setEditingEntry(null)} className="p-1 rounded-control text-gray-400 hover:text-gray-600">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -421,8 +426,8 @@ const YarnStash = () => {
       ==================================================================== */}
       {assigningEntry && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6">
-            <h2 className="font-semibold text-gray-900 mb-1">{t('ui.useForProject')}</h2>
+          <div className="bg-white w-full max-w-sm rounded-card shadow-xl p-6">
+            <h2 className="font-semibold text-flow-ink mb-1">{t('ui.useForProject')}</h2>
             <p className="text-sm text-gray-500 mb-4">
               <strong>{assigningEntry.brand} — {assigningEntry.yarn_name}</strong>
               {assigningEntry.color_name ? ` (${assigningEntry.color_name})` : ''}
@@ -434,7 +439,7 @@ const YarnStash = () => {
                 <select
                   value={assignProjectId}
                   onChange={e => setAssignProjectId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+                  className="w-full border border-gray-200 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
                 >
                   <option value="">{t('ui.phSelectProject')}</option>
                   {activeProjects.map(p => (
@@ -456,7 +461,7 @@ const YarnStash = () => {
                   max={assigningEntry.quantity_available ?? assigningEntry.quantity}
                   value={assignQuantity}
                   onChange={e => setAssignQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+                  className="w-full border border-gray-200 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
                 />
               </div>
             </div>
@@ -466,14 +471,14 @@ const YarnStash = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setAssigningEntry(null)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-control text-sm font-medium text-gray-600 hover:bg-gray-50"
               >
                 {t('ui.cancel')}
               </button>
               <button
                 onClick={handleAssignConfirm}
                 disabled={assignSaving}
-                className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-sm font-semibold disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold disabled:opacity-50"
               >
                 {assignSaving ? t('ui.reservingEllipsis') : t('ui.reserve')}
               </button>
@@ -484,8 +489,8 @@ const YarnStash = () => {
 
       {deletingEntry && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 text-center">
-            <h2 className="font-semibold text-gray-900 mb-1">{t('ui.deleteThisEntry')}</h2>
+          <div className="bg-white w-full max-w-sm rounded-card shadow-xl p-6 text-center">
+            <h2 className="font-semibold text-flow-ink mb-1">{t('ui.deleteThisEntry')}</h2>
             <p className="text-sm text-gray-500 mb-5">
               <strong>{deletingEntry.brand} — {deletingEntry.yarn_name}</strong>
               {deletingEntry.color_name ? ` (${deletingEntry.color_name})` : ''}
@@ -494,13 +499,13 @@ const YarnStash = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setDeletingEntry(null)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-control text-sm font-medium text-gray-600 hover:bg-gray-50"
               >
                 {t('ui.cancel')}
               </button>
               <button
                 onClick={handleDelete}
-                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold"
+                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-control text-sm font-semibold"
               >
                 {t('ui.delete')}
               </button>

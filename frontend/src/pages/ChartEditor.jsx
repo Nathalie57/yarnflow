@@ -276,11 +276,11 @@ const ChartEditor = () => {
             value={chart.name}
             onChange={e => updateChart(prev => ({ ...prev, name: e.target.value }))}
             disabled={isLocked}
-            className="flex-1 min-w-0 text-lg font-bold text-gray-900 text-center bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary-500 focus:outline-none px-2 disabled:opacity-70"
+            className="flex-1 min-w-0 text-lg font-bold text-flow-ink text-center bg-transparent border-b border-transparent hover:border-gray-300 focus:border-primary-500 focus:outline-none px-2 disabled:opacity-70"
           />
           <button
             onClick={toggleLock}
-            className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+            className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-control text-xs font-semibold transition ${
               isLocked ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-primary-600 text-white hover:bg-primary-700'
             }`}
             title={isLocked ? t('ui.chartLocked') : t('ui.chartLockHint')}
@@ -295,7 +295,7 @@ const ChartEditor = () => {
         </div>
 
         {isLocked && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-800 text-center">
+          <div className="bg-amber-50 border border-amber-200 rounded-control px-3 py-2 text-xs text-amber-800 text-center">
             {t('ui.chartLockedLong')}
           </div>
         )}
@@ -304,9 +304,10 @@ const ChartEditor = () => {
             autre projet après sa création (ex: même motif sur un autre pull) */}
         <button
           onClick={() => setShowAssignModal(true)}
-          className="w-full text-xs px-3 py-2 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition text-gray-600 flex items-center justify-center gap-1.5"
+          className="w-full text-xs px-3 py-2 bg-white border border-gray-200 rounded-control hover:border-primary-300 hover:bg-primary-50 transition text-gray-600 flex items-center justify-center gap-1.5"
         >
-          🔗 {chart.section_id ? t('ui.changeProjectSection') : t('ui.linkToProjectSection')}
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+          {chart.section_id ? t('ui.changeProjectSection') : t('ui.linkToProjectSection')}
         </button>
 
         {/* Zoom */}
@@ -319,7 +320,7 @@ const ChartEditor = () => {
 
         {/* Palette — masquée grille verrouillée : la peinture y est désactivée */}
         {!isLocked && (
-          <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="bg-white rounded-card shadow-sm p-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{t('ui.paletteHint')}</p>
             <div className="flex flex-wrap gap-2">
               {chart.palette.map((hex, i) => (
@@ -327,7 +328,7 @@ const ChartEditor = () => {
                   <button
                     onClick={() => setSelectedColor(i)}
                     onDoubleClick={() => setEditingPaletteIndex(i)}
-                    className={`w-9 h-9 rounded-lg border-2 transition ${selectedColor === i ? 'border-primary-600 ring-2 ring-primary-300 ring-offset-1 scale-110' : 'border-gray-200'}`}
+                    className={`w-9 h-9 rounded-control border-2 transition ${selectedColor === i ? 'border-primary-600 ring-2 ring-primary-300 ring-offset-1 scale-110' : 'border-gray-200'}`}
                     style={{ backgroundColor: hex }}
                     title={i === 0 ? 'Fond' : `Couleur ${i}`}
                   />
@@ -337,7 +338,7 @@ const ChartEditor = () => {
                     </span>
                   )}
                   {editingPaletteIndex === i && (
-                    <div className="absolute top-10 left-0 z-20 bg-white rounded-lg shadow-lg border border-gray-200 p-2 flex items-center gap-2 whitespace-nowrap">
+                    <div className="absolute top-10 left-0 z-20 bg-white rounded-control shadow-lg border border-gray-200 p-2 flex items-center gap-2 whitespace-nowrap">
                       <input
                         type="color"
                         autoFocus
@@ -363,7 +364,7 @@ const ChartEditor = () => {
               ))}
               <button
                 onClick={addPaletteColor}
-                className="w-9 h-9 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
+                className="w-9 h-9 rounded-control border-2 border-dashed border-gray-300 text-gray-400 hover:border-primary-400 hover:text-primary-500 flex items-center justify-center"
                 title={t('ui.addColor')}
               >＋</button>
             </div>
@@ -372,7 +373,7 @@ const ChartEditor = () => {
         )}
 
         {/* Grille avec boutons d'ajout/retrait — masqués grille verrouillée */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 overflow-auto">
+        <div className="bg-white rounded-card shadow-sm p-4 overflow-auto">
           {!isLocked && (
             <div className="flex justify-center mb-1 gap-1.5">
               <button onClick={() => addRow('top')} title={t('ui.addRowAbove')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>

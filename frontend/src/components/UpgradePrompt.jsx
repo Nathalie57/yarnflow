@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
+import FlowMascot from './FlowMascot'
 
 const FEATURES = {
   ai_creations: {
@@ -72,17 +73,17 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
 
   if (isTWA) return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 relative" onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-card shadow-2xl max-w-sm w-full p-6 space-y-4 relative" onClick={e => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <h3 className="text-lg font-bold text-gray-900 pr-6">{t('ui.unlockFeature')}</h3>
+        <h3 className="text-lg font-bold text-flow-ink pr-6">{t('ui.unlockFeature')}</h3>
         <p className="text-sm text-gray-600 leading-relaxed">
           <Trans t={t} i18nKey="ui.twaLongExplain"><span className="font-semibold text-primary-700">yarnflow.fr</span></Trans>
         </p>
-        <button onClick={onClose} className="w-full px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700">
+        <button onClick={onClose} className="w-full px-4 py-2.5 border border-gray-200 rounded-control hover:bg-gray-50 transition text-sm font-medium text-gray-700">
           {t('ui.close')}
         </button>
       </div>
@@ -111,7 +112,7 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-5 relative"
+        className="bg-white rounded-card shadow-2xl max-w-sm w-full p-6 space-y-5 relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Fermer */}
@@ -127,14 +128,12 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
 
         {/* Header */}
         <div className="flex items-start gap-3 pt-1">
-          <div className="w-11 h-11 bg-primary-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            {content.svg}
-          </div>
+          <FlowMascot pose="bonneIdee" size={48} className="flex-shrink-0" />
           <div>
             <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-0.5">
               {t('ui.featureBadge', { plan: content.plan === 'plus' ? 'PLUS' : 'PRO' })}
             </p>
-            <h3 className="text-lg font-bold text-gray-900">{t(`upgrade.${featureKey}.title`)}</h3>
+            <h3 className="text-lg font-bold text-flow-ink">{t(`upgrade.${featureKey}.title`)}</h3>
           </div>
         </div>
 
@@ -155,8 +154,8 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
         {/* Prix (équivalent mensuel de l'offre annuelle, comme sur /subscription) */}
         {content.plan === 'plus' ? (
           <div className="grid grid-cols-2 gap-2">
-            <div className="bg-primary-50 border border-primary-200 rounded-xl p-3 flex flex-col">
-              <p className="font-bold text-gray-900 text-sm">PLUS</p>
+            <div className="bg-primary-50 border border-primary-200 rounded-control p-3 flex flex-col">
+              <p className="font-bold text-flow-ink text-sm">PLUS</p>
               <p className="text-xs text-gray-500 mt-0.5">{t('ui.forActive')}</p>
               <div className="mt-2">
                 <span className="text-xl font-bold text-primary-600">2,49€</span>
@@ -164,8 +163,8 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
               </div>
               <p className="text-[11px] text-green-600 font-medium mt-0.5">{t('ui.billedYearlyPlus')}</p>
             </div>
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 flex flex-col">
-              <p className="font-bold text-gray-900 text-sm">PRO</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-control p-3 flex flex-col">
+              <p className="font-bold text-flow-ink text-sm">PRO</p>
               <p className="text-xs text-gray-500 mt-0.5">{t('ui.allFeatures')}</p>
               <div className="mt-2">
                 <span className="text-xl font-bold text-gray-700">4,99€</span>
@@ -175,9 +174,9 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             </div>
           </div>
         ) : (
-          <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-primary-50 border border-primary-200 rounded-control p-4 flex items-center justify-between">
             <div>
-              <p className="font-bold text-gray-900 text-sm">{t('ui.proPlan')}</p>
+              <p className="font-bold text-flow-ink text-sm">{t('ui.proPlan')}</p>
               <p className="text-xs text-gray-500 mt-0.5">{t('ui.forSeriousProjects')}</p>
               <p className="text-[11px] text-green-600 font-medium mt-1">{t('ui.billedYearlyPro')}</p>
             </div>
@@ -192,13 +191,13 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-sm font-medium text-gray-700"
+            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-control hover:bg-gray-50 transition text-sm font-medium text-gray-700"
           >
             {t('ui.later')}
           </button>
           <button
             onClick={handleUpgrade}
-            className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl transition text-sm font-semibold shadow-sm"
+            className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-control transition text-sm font-semibold shadow-sm"
           >
             {t('ui.goToPlan', { plan: planLabel(targetPlan), price: price.monthlyEquiv })}
           </button>

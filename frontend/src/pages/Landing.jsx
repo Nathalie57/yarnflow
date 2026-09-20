@@ -9,6 +9,7 @@ import { useAnalytics, useScrollTracking } from '../hooks/useAnalytics'
 import { useTranslation, Trans } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import { useAuth } from '../contexts/AuthContext'
+import FlowMascot from '../components/FlowMascot'
 
 // [AI:Claude] Le même SVG de coche était copié à chaque <li> des listes de
 // features/tarifs — factorisé ici pendant la migration i18n (les listes passent
@@ -51,10 +52,11 @@ const Landing = () => {
     <div className="min-h-screen bg-white">
 
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-flow-mint bg-flow-cream/90 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-lg md:text-xl text-gray-900">YarnFlow</span>
+            <FlowMascot pose="content" size={32} />
+            <span className="font-bold text-lg md:text-xl text-flow-ink">YarnFlow</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
@@ -69,7 +71,7 @@ const Landing = () => {
             </Link>
             <Link
               to="/register"
-              className="bg-primary-600 hover:bg-primary-700 text-white px-3 sm:px-4 py-2 rounded-xl font-medium transition text-xs sm:text-sm shadow-sm whitespace-nowrap"
+              className="bg-primary-600 hover:bg-primary-700 text-white px-3 sm:px-4 py-2 rounded-control font-medium transition text-xs sm:text-sm shadow-sm whitespace-nowrap"
             >
               <span className="hidden sm:inline">{t('header.ctaLong')}</span>
               <span className="sm:hidden">{t('header.ctaShort')}</span>
@@ -84,14 +86,14 @@ const Landing = () => {
         <div className="grid md:grid-cols-2 gap-10 md:gap-12 items-center">
 
           <div className="text-center md:text-left">
-            <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-full px-4 py-2 text-sm font-bold text-primary-700 mb-8">
+            <div className="inline-flex items-center gap-2 bg-flow-yellow/30 border border-flow-yellow rounded-full px-4 py-2 text-sm font-bold text-flow-ink mb-8">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.499z" />
               </svg>
               {t('hero.badge')}
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold text-flow-ink mb-6 leading-tight">
               {t('hero.title')}
             </h1>
 
@@ -102,7 +104,7 @@ const Landing = () => {
             <div className="flex justify-center md:justify-start mb-3">
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-base px-8 py-3.5 rounded-xl font-semibold transition shadow-md hover:shadow-lg"
+                className="inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white text-base px-8 py-3.5 rounded-control font-semibold transition shadow-md hover:shadow-lg"
               >
                 {t('hero.cta')}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -129,22 +131,22 @@ const Landing = () => {
             {/* [AI:Claude] Bulles fabriquées en HTML/CSS plutôt qu'une capture d'écran :
                 pas de dépendance à un asset externe, facile à traduire, et montre
                 l'assistant (le nouveau positionnement) plutôt que le compteur dès le
-                premier écran. Remplaçable par une vraie capture le jour où disponible. */}
-            <div className="w-full max-w-sm bg-gray-50 rounded-[2rem] shadow-2xl border border-gray-200 p-5 space-y-3">
-              <div className="flex items-start gap-3 flex-row-reverse">
-                <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">M</div>
-                <div className="bg-white rounded-2xl rounded-tr-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
-                  {t('hero.chatQuestion')}
+                premier écran. Flow porte la conversation (avatar sur la réponse) plutôt
+                qu'une icône générique — c'est lui qui parle, pas "un assistant". */}
+            <div className="relative w-full max-w-sm">
+              <FlowMascot pose="content" size={110} className="absolute -top-12 -left-8 z-10 drop-shadow-md" />
+              <div className="w-full bg-flow-cream rounded-card shadow-2xl border border-flow-mint p-5 pt-8 space-y-3">
+                <div className="flex items-start gap-3 flex-row-reverse">
+                  <div className="w-8 h-8 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">M</div>
+                  <div className="bg-white rounded-card rounded-tr-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
+                    {t('hero.chatQuestion')}
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-primary-600 rounded-full flex-shrink-0 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-                  </svg>
-                </div>
-                <div className="bg-primary-50 rounded-2xl rounded-tl-none border border-primary-100 px-4 py-2.5 text-sm text-gray-700">
-                  {t('hero.chatAnswer')}
+                <div className="flex items-start gap-3">
+                  <FlowMascot pose="content" size={32} className="flex-shrink-0" />
+                  <div className="bg-flow-mint/60 rounded-card rounded-tl-none border border-flow-mint px-4 py-2.5 text-sm text-flow-ink">
+                    {t('hero.chatAnswer')}
+                  </div>
                 </div>
               </div>
             </div>
@@ -154,9 +156,10 @@ const Landing = () => {
       </section>
 
       {/* "Tu connais ce moment où..." — accroche du problème, avant la solution */}
-      <section className="bg-primary-50 border-y border-primary-100 py-14" id="features">
+      <section className="bg-flow-peach/40 border-y border-flow-peach py-14" id="features">
         <div className="max-w-2xl mx-auto px-4 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('problem.title')}</h2>
+          <FlowMascot pose="interrogatif" size={110} className="mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-flow-ink mb-6">{t('problem.title')}</h2>
           <ul className="space-y-2 mb-6">
             {t('problem.items', { returnObjects: true }).map((item, i) => (
               <li key={i} className="text-gray-600">{item}</li>
@@ -173,7 +176,7 @@ const Landing = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('assistant.eyebrow')}</span>
-              <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
+              <h2 className="text-2xl font-bold text-flow-ink mt-2 mb-4">
                 <Trans i18nKey="assistant.title" ns="landing" components={[<br key="0" />]} />
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
@@ -189,25 +192,23 @@ const Landing = () => {
                   </li>
                 ))}
               </ul>
-              <span className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-200">
-                {t('assistant.tagline')}
-              </span>
+              <div className="flex items-center gap-6">
+                <span className="inline-flex items-center gap-2 bg-flow-mint text-flow-ink text-xs font-semibold px-3 py-1.5 rounded-full border border-flow-mint">
+                  {t('assistant.tagline')}
+                </span>
+                <FlowMascot pose="quiReflechit" size={110} className="flex-shrink-0" />
+              </div>
             </div>
 
-            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-5 space-y-3">
+            <div className="bg-flow-mint/30 rounded-card border border-flow-mint p-5 space-y-3">
               <div className="flex items-start gap-3">
                 <div className="w-7 h-7 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-gray-500">M</div>
-                <div className="bg-white rounded-xl rounded-tl-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
+                <div className="bg-white rounded-card rounded-tl-none border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
                   {t('assistant.question')}
                 </div>
               </div>
-              <div className="flex items-start gap-3 flex-row-reverse">
-                <div className="w-7 h-7 bg-primary-600 rounded-full flex-shrink-0 flex items-center justify-center">
-                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-                  </svg>
-                </div>
-                <div className="bg-primary-50 rounded-xl rounded-tr-none border border-primary-100 px-4 py-2.5 text-sm text-gray-700">
+              <div className="flex items-center gap-3 flex-row-reverse">
+                <div className="bg-white rounded-card rounded-tr-none border border-flow-mint px-4 py-2.5 text-sm text-flow-ink">
                   {t('assistant.answer')}
                 </div>
               </div>
@@ -217,15 +218,15 @@ const Landing = () => {
       </section>
 
       {/* Du patron à ton ouvrage — parcours narratif plutôt que liste de features */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-flow-cream">
         <div className="max-w-4xl mx-auto px-4">
           <span className="text-xs font-bold text-primary-600 uppercase tracking-widest block text-center">{t('flow.eyebrow')}</span>
-          <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-10 text-center">{t('flow.title')}</h2>
+          <h2 className="text-2xl font-bold text-flow-ink mt-2 mb-10 text-center">{t('flow.title')}</h2>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-5">
             {t('flow.steps', { returnObjects: true }).map((step, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5">
-                <div className="text-3xl font-bold text-primary-200 mb-2">{String(i + 1).padStart(2, '0')}</div>
-                <p className="font-bold text-gray-900 mb-1">{step.title}</p>
+              <div key={i} className="bg-white rounded-card border border-flow-mint p-5">
+                <div className="text-3xl font-bold text-flow-sage mb-2">{String(i + 1).padStart(2, '0')}</div>
+                <p className="font-bold text-flow-ink mb-1">{step.title}</p>
                 <p className="text-sm text-gray-600">{step.desc}</p>
               </div>
             ))}
@@ -236,14 +237,17 @@ const Landing = () => {
       {/* Traduction — preuve de compréhension, pas un outil isolé */}
       <section className="py-16 bg-white">
         <div className="max-w-5xl mx-auto px-4">
-          <div className="bg-primary-50 border border-primary-200 rounded-3xl p-8 md:p-10">
-            <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('translationBlock.eyebrow')}</span>
-            <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-3 max-w-2xl">
-              {t('translationBlock.title')}
-            </h2>
-            <p className="text-gray-600 leading-relaxed max-w-2xl">
-              {t('translationBlock.desc')}
-            </p>
+          <div className="bg-flow-blue/20 border border-flow-blue rounded-card p-8 md:p-10 flex flex-col md:flex-row items-center gap-6">
+            <FlowMascot pose="content" size={90} className="flex-shrink-0" />
+            <div>
+              <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('translationBlock.eyebrow')}</span>
+              <h2 className="text-2xl font-bold text-flow-ink mt-2 mb-3 max-w-2xl">
+                {t('translationBlock.title')}
+              </h2>
+              <p className="text-gray-600 leading-relaxed max-w-2xl">
+                {t('translationBlock.desc')}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -254,15 +258,18 @@ const Landing = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
 
             {/* Screenshot compteur */}
-            <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200">
+            <div className="rounded-card overflow-hidden shadow-sm border border-flow-mint">
               <img src={isEnglish ? '/screenshots/compteur-en.png' : '/compteur.jpg'} alt={t('counter.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover" />
             </div>
 
             <div>
               <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('counter.eyebrow')}</span>
-              <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
-                <Trans i18nKey="counter.title" ns="landing" components={[<br key="0" />]} />
-              </h2>
+              <div className="flex items-center gap-6 mt-2 mb-4">
+                <h2 className="text-2xl font-bold text-flow-ink">
+                  <Trans i18nKey="counter.title" ns="landing" components={[<br key="0" />]} />
+                </h2>
+                <FlowMascot pose="cestParti" size={100} className="flex-shrink-0" />
+              </div>
               <p className="text-gray-600 leading-relaxed mb-5">
                 {t('counter.desc')}
               </p>
@@ -282,9 +289,9 @@ const Landing = () => {
           </div>
 
           {/* Argument différenciant — sections + compteurs multiples */}
-          <div className="bg-primary-50 border border-primary-200 rounded-3xl p-8 md:p-10 mb-20">
+          <div className="bg-flow-lavender/30 border border-flow-lavender rounded-card p-8 md:p-10 mb-20">
             <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('sections.eyebrow')}</span>
-            <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-3">
+            <h2 className="text-2xl font-bold text-flow-ink mt-2 mb-3">
               {t('sections.title')}
             </h2>
             <p className="text-gray-600 leading-relaxed mb-6 max-w-2xl">
@@ -294,7 +301,7 @@ const Landing = () => {
               {[
                 ...t('sections.parts', { returnObjects: true }),
               ].map((item, i) => (
-                <li key={i} className="flex items-center gap-2 bg-white rounded-xl border border-primary-200 px-3.5 py-2.5 text-sm font-medium text-gray-800">
+                <li key={i} className="flex items-center gap-2 bg-white rounded-control border border-flow-lavender px-3.5 py-2.5 text-sm font-medium text-gray-800">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -308,9 +315,12 @@ const Landing = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
             <div className="order-2 md:order-1">
               <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('photoStudio.eyebrow')}</span>
-              <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
-                <Trans i18nKey="photoStudio.title" ns="landing" components={[<br key="0" />]} />
-              </h2>
+              <div className="flex items-center justify-between gap-4 mt-2 mb-4">
+                <h2 className="text-2xl font-bold text-flow-ink">
+                  <Trans i18nKey="photoStudio.title" ns="landing" components={[<br key="0" />]} />
+                </h2>
+                <FlowMascot pose="surpris" size={130} className="flex-shrink-0" />
+              </div>
               <p className="text-gray-600 leading-relaxed mb-5">
                 {t('photoStudio.desc')}
               </p>
@@ -329,14 +339,16 @@ const Landing = () => {
             </div>
 
             {/* Avant/après réels */}
-            <div className="order-1 md:order-2 grid grid-cols-2 gap-3">
-              <div className="relative rounded-xl overflow-hidden shadow-sm border border-gray-200 aspect-square">
-                <img src="/photo-avant.jpg" alt={t('photoStudio.beforeAlt')} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                <div className="absolute top-2 left-2 bg-gray-700/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{t('photoStudio.before')}</div>
-              </div>
-              <div className="relative rounded-xl overflow-hidden shadow-sm border border-primary-200 aspect-square">
-                <img src="/photo-apres.jpg" alt={t('photoStudio.afterAlt')} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                <div className="absolute top-2 left-2 bg-primary-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{t('photoStudio.after')}</div>
+            <div className="order-1 md:order-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative rounded-control overflow-hidden shadow-sm border border-gray-200 aspect-square">
+                  <img src="/photo-avant.jpg" alt={t('photoStudio.beforeAlt')} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  <div className="absolute top-2 left-2 bg-gray-700/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{t('photoStudio.before')}</div>
+                </div>
+                <div className="relative rounded-control overflow-hidden shadow-sm border border-flow-mint aspect-square">
+                  <img src="/photo-apres.jpg" alt={t('photoStudio.afterAlt')} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  <div className="absolute top-2 left-2 bg-primary-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{t('photoStudio.after')}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -345,7 +357,7 @@ const Landing = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
 
             {/* Screenshot projets */}
-            <div className="rounded-2xl overflow-hidden shadow-sm border border-gray-200 relative">
+            <div className="rounded-card overflow-hidden shadow-sm border border-flow-mint relative">
               <img src={isEnglish ? '/screenshots/projets-en.png' : '/projets.jpg'} alt={t('library.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover object-top max-h-[480px]" />
               <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
             </div>
@@ -353,9 +365,12 @@ const Landing = () => {
 
             <div>
               <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('library.eyebrow')}</span>
-              <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
-                <Trans i18nKey="library.title" ns="landing" components={[<br key="0" />]} />
-              </h2>
+              <div className="flex items-center justify-between gap-4 mt-2 mb-4">
+                <h2 className="text-2xl font-bold text-flow-ink">
+                  <Trans i18nKey="library.title" ns="landing" components={[<br key="0" />]} />
+                </h2>
+                <FlowMascot pose="bonneIdee" size={100} className="flex-shrink-0" />
+              </div>
               <p className="text-gray-600 leading-relaxed mb-5">
                 {t('library.desc')}
               </p>
@@ -377,19 +392,22 @@ const Landing = () => {
       </section>
 
       {/* Feature detail — Création intelligente */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-flow-cream">
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
 
             {/* Screenshot étape validation */}
-            <div className="rounded-2xl overflow-hidden shadow-md border border-gray-200 relative">
-              <img src={isEnglish ? '/screenshots/patron-en.png' : '/patron.jpg'} alt={t('smartCreation.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover object-top max-h-[480px]" />
-              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
+            <div className="relative">
+              <FlowMascot pose="avecPatron" size={100} className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 drop-shadow-md" />
+              <div className="rounded-card overflow-hidden shadow-md border border-flow-mint relative">
+                <img src={isEnglish ? '/screenshots/patron-en.png' : '/patron.jpg'} alt={t('smartCreation.screenshotAlt')} loading="lazy" decoding="async" className="w-full object-cover object-top max-h-[480px]" />
+                <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent" />
+              </div>
             </div>
 
             <div>
               <span className="text-xs font-bold text-primary-600 uppercase tracking-widest">{t('smartCreation.eyebrow')}</span>
-              <h2 className="text-2xl font-bold text-gray-900 mt-2 mb-4">
+              <h2 className="text-2xl font-bold text-flow-ink mt-2 mb-4">
                 <Trans i18nKey="smartCreation.title" ns="landing" components={[<br key="0" />]} />
               </h2>
               <p className="text-gray-600 leading-relaxed mb-5">
@@ -407,7 +425,7 @@ const Landing = () => {
                   </li>
                 ))}
               </ul>
-              <span className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-primary-200">
+              <span className="inline-flex items-center gap-2 bg-flow-mint text-flow-ink text-xs font-semibold px-3 py-1.5 rounded-full border border-flow-mint">
                 {t('smartCreation.badge')}
               </span>
             </div>
@@ -417,22 +435,23 @@ const Landing = () => {
       </section>
 
       {/* Témoignages */}
-      <section className="bg-primary-50 border-y border-primary-100 py-14">
+      <section className="bg-flow-mint/30 border-y border-flow-mint py-14">
         <div className="max-w-5xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-2">{t('testimonials.title')}</h2>
+          <FlowMascot pose="heureux" size={150} className="mx-auto mb-2" />
+          <h2 className="text-2xl font-bold text-center text-flow-ink mb-2">{t('testimonials.title')}</h2>
           <p className="text-center text-sm text-gray-500 mb-10">{t('testimonials.subtitle')}</p>
           <div className="grid md:grid-cols-2 gap-5 max-w-3xl mx-auto">
             {t('testimonials.items', { returnObjects: true }).map((quote, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-primary-200 p-6 shadow-sm">
+              <div key={i} className="bg-white rounded-card border border-flow-mint p-6 shadow-sm">
                 <div className="flex gap-0.5 mb-4">
                   {[...Array(5)].map((_, s) => (
-                    <svg key={s} xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary-500" viewBox="0 0 20 20" fill="currentColor">
+                    <svg key={s} xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-flow-yellow" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
                 </div>
                 <p className="text-gray-700 text-sm leading-relaxed mb-4 italic">"{quote}"</p>
-                <p className="font-semibold text-gray-900 text-sm">{t('testimonials.authorFallback')}</p>
+                <p className="font-semibold text-flow-ink text-sm">{t('testimonials.authorFallback')}</p>
               </div>
             ))}
           </div>
@@ -440,9 +459,10 @@ const Landing = () => {
       </section>
 
       {/* Pricing */}
-      <section className="py-16 bg-white" id="pricing">
+      <section className="py-16 bg-flow-cream" id="pricing">
         <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center text-gray-900 mb-3">{t('pricing.title')}</h2>
+          <FlowMascot pose="content" size={80} className="mx-auto mb-3" />
+          <h2 className="text-3xl font-bold text-center text-flow-ink mb-3">{t('pricing.title')}</h2>
           <p className="text-center text-gray-600 mb-10 text-lg">
             {t('pricing.subtitle')}
           </p>
@@ -450,9 +470,9 @@ const Landing = () => {
           <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
 
             {/* FREE */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm flex flex-col">
+            <div className="bg-white border border-flow-mint rounded-card p-7 shadow-sm flex flex-col">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">{t('pricing.free.name')}</p>
-              <div className="text-4xl font-bold text-gray-900 mb-3">{t('pricing.free.price')}</div>
+              <div className="text-4xl font-bold text-flow-ink mb-3">{t('pricing.free.price')}</div>
               <p className="text-sm font-semibold text-gray-800 mb-1">{t('pricing.free.tagline')}</p>
               <p className="text-sm text-gray-500 mb-6">{t('pricing.free.desc')}</p>
               <ul className="space-y-3 mb-8 flex-1">
@@ -463,20 +483,20 @@ const Landing = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/register" className="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-xl transition text-sm">
+              <Link to="/register" className="block w-full text-center border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold py-3 rounded-control transition text-sm">
                 {t('pricing.free.cta')}
               </Link>
               <p className="text-xs text-gray-500 text-center mt-2">{t('pricing.free.reassurance')}</p>
             </div>
 
             {/* PLUS */}
-            <div className="bg-white border-2 border-primary-400 rounded-2xl p-7 shadow-md relative flex flex-col">
+            <div className="bg-white border-2 border-primary-400 rounded-card p-7 shadow-md relative flex flex-col">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                 <span className="bg-primary-400 text-white text-xs font-bold px-4 py-1 rounded-full shadow-sm whitespace-nowrap">{t('pricing.plus.badge')}</span>
               </div>
               <p className="text-xs font-bold text-primary-500 uppercase tracking-widest mb-3 mt-2">{t('pricing.plus.name')}</p>
               <div className="flex items-baseline gap-1 mb-3">
-                <span className="text-4xl font-bold text-gray-900">{t('pricing.plus.price')}</span>
+                <span className="text-4xl font-bold text-flow-ink">{t('pricing.plus.price')}</span>
                 <span className="text-sm text-gray-500">{t('pricing.perMonth')}</span>
               </div>
               <p className="text-sm font-semibold text-gray-800 mb-1">{t('pricing.plus.tagline')}</p>
@@ -493,7 +513,7 @@ const Landing = () => {
                 <Link
                   to="/register"
                   onClick={() => trackSubscriptionClick('plus', 'monthly', 'landing')}
-                  className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
+                  className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-control transition shadow-sm text-sm"
                 >
                   {t('pricing.plus.ctaMonthly')}
                 </Link>
@@ -510,10 +530,10 @@ const Landing = () => {
             </div>
 
             {/* PRO */}
-            <div className="bg-white border-2 border-primary-600 rounded-2xl p-7 shadow-lg flex flex-col">
+            <div className="bg-white border-2 border-primary-600 rounded-card p-7 shadow-lg flex flex-col">
               <p className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-3">{t('pricing.pro.name')}</p>
               <div className="flex items-baseline gap-1 mb-3">
-                <span className="text-4xl font-bold text-gray-900">{t('pricing.pro.price')}</span>
+                <span className="text-4xl font-bold text-flow-ink">{t('pricing.pro.price')}</span>
                 <span className="text-sm text-gray-500">{t('pricing.perMonth')}</span>
               </div>
               <p className="text-sm font-semibold text-gray-800 mb-1">{t('pricing.pro.tagline')}</p>
@@ -530,14 +550,14 @@ const Landing = () => {
                 <Link
                   to="/register"
                   onClick={() => trackSubscriptionClick('pro', 'monthly', 'landing')}
-                  className="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl transition shadow-sm text-sm"
+                  className="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-control transition shadow-sm text-sm"
                 >
                   {t('pricing.pro.ctaMonthly')}
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => trackSubscriptionClick('pro', 'annual', 'landing')}
-                  className="block w-full text-center border-2 border-primary-600 text-primary-700 hover:bg-primary-50 font-semibold py-2.5 rounded-xl transition text-sm"
+                  className="block w-full text-center border-2 border-primary-600 text-primary-700 hover:bg-primary-50 font-semibold py-2.5 rounded-control transition text-sm"
                 >
                   {t('pricing.pro.ctaAnnual')}
                 </Link>
@@ -549,12 +569,12 @@ const Landing = () => {
 
           {/* Tous les plans incluent */}
           <div className="grid md:grid-cols-2 gap-6 mt-10">
-            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6">
-              <p className="font-bold text-gray-900 mb-2">{t('pricing.allPlansInclude.title')}</p>
+            <div className="bg-white rounded-card border border-flow-mint p-6">
+              <p className="font-bold text-flow-ink mb-2">{t('pricing.allPlansInclude.title')}</p>
               <p className="text-sm text-gray-600 leading-relaxed">{t('pricing.allPlansInclude.desc')}</p>
             </div>
-            <div className="bg-primary-50 rounded-2xl border border-primary-200 p-6">
-              <p className="font-bold text-gray-900 mb-2">{t('pricing.allPlansInclude.secondaryTitle')}</p>
+            <div className="bg-flow-blue/20 rounded-card border border-flow-blue p-6">
+              <p className="font-bold text-flow-ink mb-2">{t('pricing.allPlansInclude.secondaryTitle')}</p>
               <p className="text-sm text-gray-600 leading-relaxed mb-4">{t('pricing.allPlansInclude.secondaryDesc')}</p>
               <Link to="/register" className="inline-flex items-center gap-2 text-primary-700 hover:text-primary-800 font-semibold text-sm">
                 {t('pricing.allPlansInclude.cta')}
@@ -567,7 +587,7 @@ const Landing = () => {
 
           {/* Comparatif détaillé — repliable */}
           <div className="mt-10 text-center">
-            <p className="font-bold text-gray-900 mb-1">{t('pricing.comparison.title')}</p>
+            <p className="font-bold text-flow-ink mb-1">{t('pricing.comparison.title')}</p>
             <p className="text-sm text-gray-500 mb-4 max-w-lg mx-auto">{t('pricing.comparison.desc')}</p>
             <button
               onClick={() => setShowComparison(!showComparison)}
@@ -582,10 +602,10 @@ const Landing = () => {
               <table className="w-full text-sm border-collapse min-w-[480px]">
                 <thead>
                   <tr className="border-b-2 border-gray-200">
-                    <th className="text-left py-3 pr-3 font-semibold text-gray-900">{t('pricing.comparison.columns.feature')}</th>
-                    <th className="text-center py-3 px-3 font-semibold text-gray-900">{t('pricing.comparison.columns.free')}</th>
-                    <th className="text-center py-3 px-3 font-semibold text-gray-900">{t('pricing.comparison.columns.plus')}</th>
-                    <th className="text-center py-3 pl-3 font-semibold text-gray-900">{t('pricing.comparison.columns.pro')}</th>
+                    <th className="text-left py-3 pr-3 font-semibold text-flow-ink">{t('pricing.comparison.columns.feature')}</th>
+                    <th className="text-center py-3 px-3 font-semibold text-flow-ink">{t('pricing.comparison.columns.free')}</th>
+                    <th className="text-center py-3 px-3 font-semibold text-flow-ink">{t('pricing.comparison.columns.plus')}</th>
+                    <th className="text-center py-3 pl-3 font-semibold text-flow-ink">{t('pricing.comparison.columns.pro')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -613,17 +633,18 @@ const Landing = () => {
       </section>
 
       {/* FAQ */}
-      <section className="bg-gray-50 border-t border-gray-200 py-16">
+      <section className="bg-flow-lavender/20 border-t border-flow-lavender py-16">
         <div className="max-w-2xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-10">{t('faq.title')}</h2>
+          <FlowMascot pose="interrogatif" size={80} className="mx-auto mb-3" />
+          <h2 className="text-2xl font-bold text-center text-flow-ink mb-10">{t('faq.title')}</h2>
           <div className="space-y-3">
             {t('faq.items', { returnObjects: true }).map((item, i) => (
-              <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div key={i} className="bg-white rounded-control border border-flow-lavender overflow-hidden">
                 <button
                   onClick={() => toggleFAQ(i)}
                   className="w-full text-left px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition gap-4"
                 >
-                  <span className="font-semibold text-gray-900 text-sm">{item.q}</span>
+                  <span className="font-semibold text-flow-ink text-sm">{item.q}</span>
                   <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-gray-500 flex-shrink-0 transition-transform ${openFAQ === i ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                   </svg>
@@ -642,6 +663,7 @@ const Landing = () => {
       {/* CTA final */}
       <section className="py-16 bg-gradient-to-br from-primary-600 to-primary-700 text-white">
         <div className="max-w-2xl mx-auto px-4 text-center">
+          <FlowMascot pose="cestParti" size={100} className="mx-auto mb-4" />
           <h2 className="text-3xl font-bold mb-4">
             {t('finalCta.title')}
           </h2>
@@ -651,7 +673,7 @@ const Landing = () => {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               to="/register"
-              className="inline-flex items-center gap-2 bg-white text-primary-600 hover:bg-gray-100 text-base px-8 py-3.5 rounded-xl font-semibold transition shadow-lg"
+              className="inline-flex items-center gap-2 bg-white text-primary-600 hover:bg-gray-100 text-base px-8 py-3.5 rounded-control font-semibold transition shadow-lg"
             >
               {t('finalCta.cta')}
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -662,7 +684,7 @@ const Landing = () => {
               href="https://play.google.com/store/apps/details?id=app.yarnflow.fr"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/30 text-base px-6 py-3.5 rounded-xl font-medium transition"
+              className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/30 text-base px-6 py-3.5 rounded-control font-medium transition"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M3.18 23.76c.3.17.65.19.97.07l11.65-6.73-2.55-2.55-10.07 9.21zM.44 1.6C.17 1.93 0 2.4 0 3.01v17.98c0 .61.17 1.08.44 1.41l.07.07 10.07-10.07v-.24L.51 1.53l-.07.07zM19.69 8.6l-2.88-1.66-2.86 2.86 2.86 2.86 2.9-1.67c.83-.48.83-1.26-.02-1.39zM3.18.24L13.25 9.45l-2.55 2.55L-.01.31C.32.19.67.21.97.07z"/>
@@ -682,9 +704,7 @@ const Landing = () => {
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" />
-                </svg>
+                <FlowMascot pose="content" size={28} />
                 <span className="font-bold text-lg text-white">YarnFlow</span>
               </div>
               <p className="text-sm">{t('footer.tagline')}</p>

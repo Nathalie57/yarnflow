@@ -165,7 +165,7 @@ export default function YarnCalculator() {
         <select
           value={projectType}
           onChange={e => handleProjectChange(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          className="w-full border border-gray-300 rounded-control px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
         >
           <option value="">{t('ui.chooseType')}</option>
           {Object.entries(MATRIX).map(([key, p]) => (
@@ -183,7 +183,7 @@ export default function YarnCalculator() {
           value={size}
           onChange={e => setSize(e.target.value)}
           disabled={!project}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+          className="w-full border border-gray-300 rounded-control px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
         >
           <option value="">{t('ui.chooseSize')}</option>
           {project?.sizes.map(s => (
@@ -201,7 +201,7 @@ export default function YarnCalculator() {
           value={weight}
           onChange={e => handleWeightChange(e.target.value)}
           disabled={!project}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
+          className="w-full border border-gray-300 rounded-control px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white disabled:bg-gray-50 disabled:text-gray-400"
         >
           <option value="">{t('ui.chooseWeight')}</option>
           {Object.entries(WEIGHT_LABEL_KEYS).map(([key, labelKey]) => (
@@ -212,7 +212,7 @@ export default function YarnCalculator() {
 
       {/* Résultat */}
       {estimatedMeters && (
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-5 space-y-5">
+        <div className="bg-primary-50 border border-primary-200 rounded-card p-5 space-y-5">
 
           {/* Métrage estimé */}
           <div>
@@ -238,15 +238,15 @@ export default function YarnCalculator() {
               value={skeinMeters}
               onChange={e => setSkeinMeters(e.target.value)}
               placeholder={t('ui.phEx200b')}
-              className="w-full border border-primary-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+              className="w-full border border-primary-300 rounded-control px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
             />
             {skeinResult && (
               <div className="grid grid-cols-2 gap-3 mt-3 text-center">
-                <div className="bg-white rounded-lg p-3 border border-primary-200">
+                <div className="bg-white rounded-control p-3 border border-primary-200">
                   <div className="text-3xl font-bold text-primary-700">{skeinResult.min}</div>
                   <div className="text-xs text-primary-600 mt-1">{t('ui.ballsMinimum')}</div>
                 </div>
-                <div className="bg-white rounded-lg p-3 border border-emerald-200">
+                <div className="bg-white rounded-control p-3 border border-emerald-200">
                   <div className="text-3xl font-bold text-emerald-600">{skeinResult.safe}</div>
                   <div className="text-xs text-emerald-600 mt-1">{t('ui.withMargin15')}</div>
                 </div>
@@ -259,7 +259,7 @@ export default function YarnCalculator() {
             <button
               onClick={checkStock}
               disabled={stockCheck?.loading}
-              className="w-full flex items-center justify-center gap-2 bg-white border border-primary-400 text-primary-700 font-medium text-sm rounded-lg px-4 py-2.5 hover:bg-primary-50 transition disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 bg-white border border-primary-400 text-primary-700 font-medium text-sm rounded-control px-4 py-2.5 hover:bg-primary-50 transition disabled:opacity-60"
             >
               {stockCheck?.loading ? (
                 <span>{t('ui.verifying')}</span>
@@ -281,7 +281,7 @@ export default function YarnCalculator() {
             {stockCheck && !stockCheck.loading && (
               <div className="mt-3 space-y-3">
                 {/* Verdict */}
-                <div className={`rounded-lg p-4 text-center ${stockCheck.enough ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
+                <div className={`rounded-control p-4 text-center ${stockCheck.enough ? 'bg-emerald-50 border border-emerald-200' : 'bg-amber-50 border border-amber-200'}`}>
                   <p className={`font-semibold text-base ${stockCheck.enough ? 'text-emerald-700' : 'text-amber-700'}`}>
                     {stockCheck.enough
                       ? t('ui.enoughYarn', { n: stockCheck.total.toLocaleString(i18n.language) })
@@ -302,7 +302,7 @@ export default function YarnCalculator() {
                       {t('ui.stockRefs', { count: stockCheck.entries.length })}
                     </p>
                     {stockCheck.entries.map(e => (
-                      <div key={e.id} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 border border-gray-200">
+                      <div key={e.id} className="flex items-center gap-3 bg-white rounded-control px-3 py-2 border border-gray-200">
                         {e.color_hex && (
                           <span
                             className="w-4 h-4 rounded-full flex-shrink-0 border border-gray-200"

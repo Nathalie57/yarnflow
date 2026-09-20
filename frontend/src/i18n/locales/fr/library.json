@@ -192,6 +192,7 @@
     "tips": "Conseils",
     "noReproduction": "Toute reproduction ou revente est interdite",
     "jacquardCharts": "Grilles jacquard",
+    "noChartsYetForProject": "Aucune grille pour ce projet",
     "loading": "Chargement...",
     "backToProject": "← Retour au projet",
     "drawByHand": "Dessiner à la main",

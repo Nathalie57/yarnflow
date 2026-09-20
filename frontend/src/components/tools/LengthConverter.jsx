@@ -42,12 +42,12 @@ export default function LengthConverter() {
           value={value}
           onChange={e => setValue(e.target.value)}
           placeholder={t('ui.phValue')}
-          className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-400"
+          className="flex-1 border border-gray-300 rounded-card px-4 py-3 text-flow-ink focus:outline-none focus:ring-2 focus:ring-primary-400"
         />
         <select
           value={fromId}
           onChange={e => setFromId(e.target.value)}
-          className="border border-gray-300 rounded-xl px-3 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-400"
+          className="border border-gray-300 rounded-card px-3 py-3 text-flow-ink focus:outline-none focus:ring-2 focus:ring-primary-400"
         >
           {UNITS.map(u => (
             <option key={u.id} value={u.id}>{t(`ui.${u.labelKey}`)}</option>
@@ -58,9 +58,9 @@ export default function LengthConverter() {
       {/* Résultats */}
       <div className="space-y-2">
         {UNITS.filter(u => u.id !== fromId).map(u => (
-          <div key={u.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+          <div key={u.id} className="flex items-center justify-between bg-gray-50 rounded-card px-4 py-3">
             <span className="text-sm text-gray-600">{t(`ui.${u.labelKey}`)}</span>
-            <span className="font-semibold text-gray-900">
+            <span className="font-semibold text-flow-ink">
               {hasValue ? fmt(convert(numVal, from, u)) : '—'}
             </span>
           </div>
@@ -68,7 +68,7 @@ export default function LengthConverter() {
       </div>
 
       {/* Rappel utile */}
-      <div className="bg-primary-50 rounded-xl px-4 py-3 text-xs text-primary-700 space-y-1">
+      <div className="bg-primary-50 rounded-card px-4 py-3 text-xs text-primary-700 space-y-1">
         <p>{t('ui.inchEquals')}</p>
         <p>{t('ui.yardEquals')}</p>
         <p>{t('ui.usYardsEuMeters')}</p>

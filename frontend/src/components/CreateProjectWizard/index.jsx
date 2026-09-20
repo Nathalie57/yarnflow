@@ -12,6 +12,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import TagInput from '../TagInput'
 import { useTranslation } from 'react-i18next'
 import { PROJECT_CATEGORIES } from '../../data/projectTemplates'
+import FlowMascot from '../FlowMascot'
 
 const DEFAULT_TECHNICAL_FORM = {
   yarn: [{ brand: '', name: '', quantities: [{ amount: '', unit: 'pelotes', color: '' }] }],
@@ -177,10 +178,13 @@ const CreateProjectWizard = ({
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-        <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden">
+        <div className="bg-white rounded-card max-w-sm w-full shadow-2xl overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900">{t('wizard.title')}</h2>
-            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+            <div className="flex items-center gap-2.5">
+              <FlowMascot pose="content" size={32} />
+              <h2 className="text-lg font-bold text-flow-ink">{t('wizard.title')}</h2>
+            </div>
+            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-control transition">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -190,9 +194,9 @@ const CreateProjectWizard = ({
             {/* Création Intelligente — mise en avant, choix principal */}
             <button
               onClick={() => { onClose(); navigate(isTrialUsed || isPlusExhausted ? '/subscription' : '/smart-project-creator') }}
-              className="w-full flex items-start gap-3 p-5 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-md transition text-left group"
+              className="w-full flex items-start gap-3 p-5 rounded-card bg-gradient-to-br from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-md transition text-left group"
             >
-              <div className="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+              <div className="w-11 h-11 bg-white/20 rounded-control flex items-center justify-center flex-shrink-0">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                 </svg>
@@ -246,15 +250,18 @@ const CreateProjectWizard = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-      <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <div className="bg-white rounded-control max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0">
-          <h2 className="text-xl font-bold text-gray-900">{t('wizard.title')}</h2>
+          <div className="flex items-center gap-2.5">
+            <FlowMascot pose="content" size={34} />
+            <h2 className="text-xl font-bold text-flow-ink">{t('wizard.title')}</h2>
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-control transition"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -275,7 +282,7 @@ const CreateProjectWizard = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter' && canSubmit) handleSubmit() }}
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition text-base"
+              className="w-full px-4 py-3 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition text-base"
               placeholder={t('wizard.projectNamePlaceholder')}
               autoFocus
             />
@@ -288,7 +295,7 @@ const CreateProjectWizard = ({
               <button
                 type="button"
                 onClick={() => setTechnique('crochet')}
-                className={`px-4 py-3 rounded-xl border font-medium transition flex items-center justify-center gap-2 ${
+                className={`px-4 py-3 rounded-control border font-medium transition flex items-center justify-center gap-2 ${
                   technique === 'crochet'
                     ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
                     : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
@@ -302,7 +309,7 @@ const CreateProjectWizard = ({
               <button
                 type="button"
                 onClick={() => setTechnique('tricot')}
-                className={`px-4 py-3 rounded-xl border font-medium transition flex items-center justify-center gap-2 ${
+                className={`px-4 py-3 rounded-control border font-medium transition flex items-center justify-center gap-2 ${
                   technique === 'tricot'
                     ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
                     : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
@@ -327,7 +334,7 @@ const CreateProjectWizard = ({
                   key={cat.id}
                   type="button"
                   onClick={() => { setSelectedCategory(cat); setSelectedPreset(null); setSectionDetails([{ name: '', total_rows: '' }]) }}
-                  className={`py-2.5 px-2 rounded-xl border text-xs font-medium text-center leading-tight transition ${
+                  className={`py-2.5 px-2 rounded-control border text-xs font-medium text-center leading-tight transition ${
                     selectedCategory?.id === cat.id
                       ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
@@ -378,7 +385,7 @@ const CreateProjectWizard = ({
                             setSectionDetails(next)
                           }}
                           placeholder={`Partie ${i + 1}`}
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          className="flex-1 px-3 py-2 border border-gray-200 rounded-control text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         />
                         <input
                           type="number"
@@ -390,7 +397,7 @@ const CreateProjectWizard = ({
                           }}
                           placeholder={t('wizard.rowsPlaceholder')}
                           min="0"
-                          className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          className="w-24 px-3 py-2 border border-gray-200 rounded-control text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         />
                         {sectionDetails.length > 1 && (
                           <button
@@ -419,7 +426,7 @@ const CreateProjectWizard = ({
           })()}
 
           {/* Accordion options */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="border border-gray-200 rounded-control overflow-hidden">
             <button
               type="button"
               onClick={() => setShowOptions(!showOptions)}
@@ -444,20 +451,19 @@ const CreateProjectWizard = ({
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.counterUnit')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: 'rows', labelKey: 'rowsLabel', icon: '📏' },
-                      { value: 'cm', label: t('wizard.centimeters'), icon: '📐' }
+                      { value: 'rows', labelKey: 'rowsLabel' },
+                      { value: 'cm', label: t('wizard.centimeters') }
                     ].map(opt => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => setCounterUnit(opt.value)}
-                        className={`px-3 py-2.5 rounded-lg border-2 font-medium transition flex items-center gap-2 text-sm ${
+                        className={`px-3 py-2.5 rounded-control border-2 font-medium transition flex items-center gap-2 text-sm ${
                           counterUnit === opt.value
                             ? 'border-primary-600 bg-primary-50 text-primary-700'
                             : 'border-gray-200 hover:border-gray-300 text-gray-700'
                         }`}
                       >
-                        <span>{opt.icon}</span>
                         <span>{opt.labelKey ? t(`ui.${opt.labelKey}`) : opt.label}</span>
                       </button>
                     ))}
@@ -472,7 +478,7 @@ const CreateProjectWizard = ({
                     <button
                       type="button"
                       onClick={onOpenLibraryModal}
-                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'library' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-control bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'library' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={`w-5 h-5 mb-1 ${patternType === 'library' ? 'text-primary-600' : 'text-gray-400'}`}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
@@ -487,7 +493,7 @@ const CreateProjectWizard = ({
                       onDragOver={(e) => { e.preventDefault(); setFileDragOver(true) }}
                       onDragLeave={() => setFileDragOver(false)}
                       onDrop={handleFileDrop}
-                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${
+                      className={`p-3 border rounded-control bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center cursor-pointer ${
                         fileDragOver ? 'border-primary-400 bg-primary-50' :
                         patternType === 'file' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'
                       }`}
@@ -514,7 +520,7 @@ const CreateProjectWizard = ({
                     <button
                       type="button"
                       onClick={onOpenUrlModal}
-                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'url' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-control bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'url' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
@@ -526,7 +532,7 @@ const CreateProjectWizard = ({
                     <button
                       type="button"
                       onClick={onOpenTextModal}
-                      className={`p-3 border rounded-xl bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'text' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
+                      className={`p-3 border rounded-control bg-white hover:border-primary-400 hover:bg-primary-50 transition flex flex-col items-center ${patternType === 'text' ? 'border-primary-400 bg-primary-50 ring-1 ring-primary-300' : 'border-gray-200'}`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 mb-1 text-gray-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
@@ -554,13 +560,13 @@ const CreateProjectWizard = ({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm resize-none"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm resize-none"
                     placeholder={t('wizard.descriptionPlaceholder')}
                   />
                 </div>
 
                 {/* Favori */}
-                <label className="flex items-center gap-3 cursor-pointer group p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                <label className="flex items-center gap-3 cursor-pointer group p-3 bg-gray-50 rounded-control hover:bg-gray-100 transition">
                   <input
                     type="checkbox"
                     checked={isFavorite}
@@ -583,7 +589,7 @@ const CreateProjectWizard = ({
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-control border border-gray-200">
                     <span className="text-sm text-gray-600">{t('ui.tagsLabel')}</span>
                     <div className="flex items-center gap-2">
                       <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 rounded text-[10px] font-bold">PLUS</span>
@@ -595,7 +601,7 @@ const CreateProjectWizard = ({
                 )}
 
                 {/* Détails techniques — nested accordion */}
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="border border-gray-200 rounded-control overflow-hidden">
                   <button
                     type="button"
                     onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
@@ -616,8 +622,8 @@ const CreateProjectWizard = ({
                     <div className="p-4 space-y-4 border-t border-gray-200">
 
                       {/* Laine / Fil */}
-                      <div className="p-3 bg-primary-50 rounded-lg border border-primary-200">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                      <div className="p-3 bg-primary-50 rounded-control border border-primary-200">
+                        <h4 className="text-sm font-semibold text-flow-ink mb-3">
                           {technique === 'tricot' ? t('ui.wool') : t('ui.yarn')}
                         </h4>
                         {technicalForm.yarn.map((y, yIdx) => (
@@ -667,8 +673,8 @@ const CreateProjectWizard = ({
                       </div>
 
                       {/* Aiguilles / Crochets */}
-                      <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                      <div className="p-3 bg-gray-50 rounded-control border border-gray-200">
+                        <h4 className="text-sm font-semibold text-flow-ink mb-3">
                           {technique === 'tricot' ? t('wizard.needles') : t('wizard.hooks')}
                         </h4>
                         {technicalForm.needles.map((n, nIdx) => (
@@ -724,8 +730,8 @@ const CreateProjectWizard = ({
                       </div>
 
                       {/* Échantillon */}
-                      <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">{t('wizard.gauge')}</h4>
+                      <div className="p-3 bg-green-50 rounded-control border border-green-200">
+                        <h4 className="text-sm font-semibold text-flow-ink mb-3">{t('wizard.gauge')}</h4>
                         <div className="grid grid-cols-3 gap-2">
                           <input
                             type="text"
@@ -765,7 +771,7 @@ const CreateProjectWizard = ({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition"
+            className="px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-control transition"
           >
             {t('wizard.cancel')}
           </button>
@@ -773,7 +779,7 @@ const CreateProjectWizard = ({
             type="button"
             onClick={handleSubmit}
             disabled={!canSubmit || isSubmitting}
-            className={`flex-1 px-6 py-2.5 rounded-lg text-sm font-semibold transition ${
+            className={`flex-1 px-6 py-2.5 rounded-control text-sm font-semibold transition ${
               canSubmit && !isSubmitting
                 ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-sm'
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'
