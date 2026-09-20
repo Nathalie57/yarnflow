@@ -2,6 +2,7 @@
   "myProjects": {
     "title": "My projects",
     "titleAlt": "My Projects",
+    "greetingHeader": "Which project are we working on today?",
     "searchPlaceholder": "Search a project by name, type...",
     "loadError": "Unable to load your projects",
     "paymentSuccessTitle": "Payment successful!",
