@@ -994,6 +994,101 @@ HTML;
     }
 
     /**
+     * [AI:Claude] Envoyer l'email ponctuel de sondage produit (personas)
+     *
+     * @param string $email Email du destinataire
+     * @param string $name Prénom de l'utilisateur
+     * @param string $surveyUrl Lien vers le formulaire
+     * @param int|null $userId ID utilisateur
+     * @return bool True si envoi réussi
+     */
+    public function sendUserSurveyEmail(string $email, string $name, string $surveyUrl, ?int $userId = null): bool
+    {
+        $subject = 'Aidez-nous à améliorer YarnFlow (2 minutes)';
+        $success = false;
+        $errorMessage = null;
+
+        try {
+            $mail = clone $this->mailer;
+            $mail->addAddress($email, $name);
+            $mail->Subject = $subject;
+
+            // Headers anti-spam
+            $this->addAntiSpamHeaders($mail, 'transactional');
+
+            $mail->isHTML(true);
+            $mail->Body = $this->getUserSurveyEmailTemplate($name, $surveyUrl);
+            $mail->AltBody = "Bonjour $name,\n\nVous utilisez YarnFlow, et on aimerait mieux comprendre vos habitudes de tricot ou de crochet pour faire évoluer l'application dans la bonne direction.\n\nOn a préparé un petit questionnaire, une dizaine de questions, environ 2 minutes :\n$surveyUrl\n\nVos réponses nous aident directement à décider ce qu'on améliore en priorité. Merci d'avance pour le temps que vous y consacrez.\n\nÀ bientôt,\nL'équipe YarnFlow";
+
+            $this->lastTrackingToken = $this->generateTrackingToken();
+            $mail->Body = $this->injectTrackingPixel($mail->Body, $this->lastTrackingToken);
+            $mail->send();
+            $success = true;
+            error_log("[EMAIL] Email user_survey envoyé à: $email");
+
+        } catch (Exception $e) {
+            $errorMessage = $mail->ErrorInfo;
+            error_log("[EMAIL ERROR] Erreur envoi user_survey: {$errorMessage}");
+        }
+
+        // Logger dans la BDD
+        $this->logEmail($email, $name, 'user_survey', $subject, $success, $errorMessage, $userId);
+
+        return $success;
+    }
+
+    /**
+     * Template HTML pour l'email de sondage produit
+     */
+    private function getUserSurveyEmailTemplate(string $name, string $surveyUrl): string
+    {
+        $header = $this->getEmailHeader();
+        $footer = $this->getEmailFooter();
+        $surveyUrlEscaped = htmlspecialchars($surveyUrl);
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f6f8f6;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f8f6;padding:40px 20px;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,0.07);">
+{$header}
+<tr><td style="padding:40px 40px 32px;">
+    <p style="color:#4b5563;font-size:16px;line-height:1.6;margin:0 0 24px;">Bonjour <strong>{$name}</strong>,</p>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 16px;">
+        Vous utilisez YarnFlow, et on aimerait mieux comprendre vos habitudes de tricot ou de crochet pour faire évoluer l'application dans la bonne direction.
+    </p>
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
+        On a préparé un petit questionnaire, une dizaine de questions, environ 2 minutes.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
+        <tr><td align="center">
+            <a href="{$surveyUrlEscaped}" style="display:inline-block;background:#557055;color:#ffffff;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:600;">
+                Répondre au questionnaire
+            </a>
+        </td></tr>
+    </table>
+
+    <p style="color:#4b5563;font-size:16px;line-height:1.7;margin:0 0 32px;">
+        Vos réponses nous aident directement à décider ce qu'on améliore en priorité. Merci d'avance pour le temps que vous y consacrez.
+    </p>
+
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0 0 4px;">À bientôt,</p>
+    <p style="color:#6b7280;font-size:14px;line-height:1.6;margin:0;"><strong style="color:#374151;">L'équipe YarnFlow</strong></p>
+</td></tr>
+{$footer}
+</table>
+</td></tr>
+</table>
+</body>
+</html>
+HTML;
+    }
+
+    /**
      * J+1 : premier projet créé — lien direct vers le compteur
      */
     public function sendFirstProjectReadyEmail(string $email, string $name, string $projectName, string $projectUrl, ?int $userId = null): bool
