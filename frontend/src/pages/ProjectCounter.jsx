@@ -140,6 +140,10 @@ const ProjectCounter = () => {
   // actions à faire. En mode travail, les compteurs secondaires existants restent visibles
   // automatiquement (déjà décidé), le reste continue de suivre isFocusMode comme avant.
   const [showMoreOptions, setShowMoreOptions] = useState(false)
+  // [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : état séparé de showMoreOptions
+  // (rappels/chrono total), sinon les deux boutons "Plus d'options" et "Afficher/Cacher
+  // les compteurs secondaires" se pilotaient l'un l'autre alors qu'ils semblent independants.
+  const [showSecondaryCountersExpanded, setShowSecondaryCountersExpanded] = useState(false)
 
   // [AI:Claude] FIX BUG x4: Ref pour éviter les multiples appels à endSession
   const isEndingSessionRef = useRef(false)
@@ -2798,6 +2802,19 @@ const ProjectCounter = () => {
     return description.substring(0, limit) + '...'
   }
 
+  // [AI:Claude] Rendu de la description en paragraphes espacés plutôt qu'un bloc
+  // continu — le texte brut contient déjà des \n entre les paliers/étapes (ex:
+  // "...132 m.).\nEmmanchures: A 46 cm...\nEpaules et encolure : A 64 cm..."), mais
+  // whitespace-pre-line seul ne donne qu'un simple retour à la ligne sans respiration
+  // visuelle, donc une section composite à plusieurs paliers ressort comme un pavé
+  // difficile à scanner. Retour utilisatrice (bêta) : perception "trop paquet" sur une
+  // section DOS composite. Découpage sur \n uniquement, aucun changement de données.
+  const renderDescriptionLines = (description) => {
+    return description.split('\n').filter(line => line.trim() !== '').map((line, i) => (
+      <p key={i} className="mb-1.5 last:mb-0">{line}</p>
+    ))
+  }
+
   // [AI:Claude] Toggle expansion description de section
   const toggleDescriptionExpansion = (sectionId) => {
     setExpandedDescriptions(prev => {
@@ -3450,7 +3467,12 @@ const ProjectCounter = () => {
   const progressPercentage = progressData.percentage
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-3">
+    <div className="max-w-7xl mx-auto px-4 pt-3 pb-40 sm:pb-16">
+      {/* [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : le contenu en bas de page
+          (description de section, liste "Sections"...) se retrouvait coupé par le bouton
+          "Notes" (fixed) et la barre de navigation (fixed), faute de marge basse reservee
+          pour eux. pb-40 sur mobile (bouton Notes + nav empiles), pb-16 sur desktop (bouton
+          Notes seul, pas de nav fixe en bas). */}
 
       {/* [AI:Claude] Tutoriel interactif — checklist "rangs / section / photo", affichée
           sur le projet démo ET sur le premier vrai projet (showTutorial) */}
@@ -3876,15 +3898,29 @@ const ProjectCounter = () => {
             utilisatrice : il y avait un vide a cet endroit-la une fois le plein ecran
             ouvert), pose "cestParti" pour marquer l'energie du comptage en cours. */}
         {isTimerRunning ? (
-          <div className="relative mb-2">
-            <div className="pr-20">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div>
               {progressData.total !== null && progressData.total - progressData.current > 0 && (
                 <p className="text-xs font-medium text-primary-800 mb-1">
                   {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : 'ui.flowRowsLeft', {
+                    /* [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : total_rows peut
+                       être decimal en base (champ partage avec le mode cm). Le "/N" affiche
+                       Math.floor(total), donc "reste" doit se baser sur ce meme total arrondi
+                       — sinon Math.ceil(total_brut - current) peut afficher un rang de plus
+                       que le total visible (ex: total reel 7.9 → "/7" mais "Encore 8"). */
                     count: counterUnit === 'cm'
                       ? Number(progressData.total - progressData.current).toFixed(1)
-                      : Math.ceil(progressData.total - progressData.current)
+                      : Math.max(0, Math.floor(progressData.total) - Math.ceil(progressData.current))
                   })}
+                </p>
+              )}
+              {/* [AI:Claude] Section composite (plusieurs paliers/actions successifs) : pas de
+                  total fiable pour "Encore X rangs" (progressData.total est null par design,
+                  voir progression_type). On l'indique explicitement plutôt que de laisser un
+                  compteur libre silencieux, pour ne pas donner l'impression d'un oubli. */}
+              {progressData.total === null && sections.find(s => s.id === currentSectionId)?.progression_type === 'composite' && (
+                <p className="text-xs font-medium text-primary-800 mb-1">
+                  {t('ui.compositeSectionTitle')} — {t('ui.compositeSectionHint')}
                 </p>
               )}
               {/* [AI:Claude] Mode travail : bascule "Voir tout" ⇄ "Mode travail" — permet de
@@ -3907,24 +3943,41 @@ const ProjectCounter = () => {
                 )}
               </button>
             </div>
-            {/* [AI:Claude] Absolu plutot que dans le flux : la taille de Flow ne doit
-                pas pousser le compteur plus bas (retour utilisatrice), il remplit juste
-                le vide visuel a droite du texte, par-dessus. */}
-            <FlowMascot pose="cestParti" size={110} className="absolute top-0 right-0" />
+            {/* [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : en position absolute sans
+                hauteur fiable, Flow debordait du bandeau et se superposait au compteur de
+                rangs juste en dessous (meme sticky container), meme en reservant une hauteur
+                minimale au conteneur (calcul theorique correct mais chevauchement persistant
+                constate en reel). Flux flex normal a la place, comme la variante "content"
+                plus bas dans ce fichier qui n'a jamais eu ce probleme : Flow reserve sa propre
+                place, aucun calcul de hauteur a maintenir. */}
+            <FlowMascot pose="cestParti" size={64} className="flex-shrink-0" />
           </div>
         ) : (
-          progressData.total !== null && progressData.total - progressData.current > 0 && (
-            <div className="flex items-center gap-2.5 mb-2">
-              <FlowMascot pose="content" size={52} className="flex-shrink-0" />
-              <p className="text-sm font-medium text-primary-800">
-                {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : 'ui.flowRowsLeft', {
-                  count: counterUnit === 'cm'
-                    ? Number(progressData.total - progressData.current).toFixed(1)
-                    : Math.ceil(progressData.total - progressData.current)
-                })}
-              </p>
-            </div>
-          )
+          <>
+            {progressData.total !== null && progressData.total - progressData.current > 0 && (
+              <div className="flex items-center gap-2.5 mb-2">
+                <FlowMascot pose="content" size={52} className="flex-shrink-0" />
+                <p className="text-sm font-medium text-primary-800">
+                  {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : 'ui.flowRowsLeft', {
+                    count: counterUnit === 'cm'
+                      ? Number(progressData.total - progressData.current).toFixed(1)
+                      : Math.max(0, Math.floor(progressData.total) - Math.ceil(progressData.current))
+                  })}
+                </p>
+              </div>
+            )}
+            {/* [AI:Claude] Section composite : voir commentaire équivalent dans la variante
+                "timer en cours" ci-dessus — même logique, hors session active. */}
+            {progressData.total === null && sections.find(s => s.id === currentSectionId)?.progression_type === 'composite' && (
+              <div className="flex items-center gap-2.5 mb-2">
+                <FlowMascot pose="content" size={52} className="flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-primary-800">{t('ui.compositeSectionTitle')}</p>
+                  <p className="text-xs text-primary-700">{t('ui.compositeSectionHint')}</p>
+                </div>
+              </div>
+            )}
+          </>
         )}
         {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
         <div className="space-y-3 sm:space-y-0">
@@ -4302,7 +4355,21 @@ const ProjectCounter = () => {
           </div>
         ) : (
           <div className="pt-2 border-t border-primary-300/50 space-y-3">
-            {secondaryCounters.map(counter => (
+            {/* [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : avec plusieurs compteurs
+                secondaires, la carte devenait trop haute au repos (hors mode travail) et
+                empêchait d'atteindre le contenu en dessous (patron, sections...). Repliés
+                par défaut hors mode travail (résumé compact + "Plus d'options" pour les
+                déplier) ; toujours tous visibles en mode travail, où on en a besoin. */}
+            {secondaryCounters.length > 0 && !isFocusMode && !showSecondaryCountersExpanded && (
+              <button
+                onClick={() => setShowSecondaryCountersExpanded(true)}
+                className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-primary-600 transition py-1"
+              >
+                <span>{t('ui.secondaryCountersFoldedSummary', { count: secondaryCounters.length })}</span>
+                <span className="text-primary-600 font-medium">{t('ui.showSecondaryCounters')}</span>
+              </button>
+            )}
+            {(isFocusMode || showSecondaryCountersExpanded) && secondaryCounters.map(counter => (
               <div key={counter.id} className="bg-primary-50/40 rounded-control p-2.5">
                 {editingCounterId === counter.id ? (
                   // Mode édition label + cible
@@ -4451,6 +4518,21 @@ const ProjectCounter = () => {
               </div>
             ))}
 
+            {/* [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : permettre de replier les
+                compteurs secondaires directement ici (symétrique au bouton pour les déplier),
+                sans avoir à remonter jusqu'au "Plus d'options" tout en haut de la carte. */}
+            {!isFocusMode && showSecondaryCountersExpanded && secondaryCounters.length > 0 && (
+              <button
+                onClick={() => setShowSecondaryCountersExpanded(false)}
+                className="w-full flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
+              >
+                {t('ui.hideSecondaryCounters')}
+                <svg className="w-3 h-3 rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            )}
+
             {/* Ajouter un compteur — masqué en mode travail (config, pas du comptage actif) */}
             {!isFocusMode && (isAddingCounter ? (
               <div className="flex items-center gap-2 flex-wrap">
@@ -4518,14 +4600,18 @@ const ProjectCounter = () => {
           </div>
         )}
 
-        {/* [AI:Claude] Mode travail : pendant que le timer tourne, les instructions de la
-            section active restent affichées sous le compteur (dans le bloc sticky) au lieu
-            de vivre uniquement dans la liste des sections plus bas — évite d'avoir à
-            scroller loin du compteur à chaque rang pour relire le patron. Texte complet,
+        {/* [AI:Claude] Mode travail : pendant que le timer tourne EN MODE TRAVAIL (isFocusMode),
+            les instructions de la section active restent affichées sous le compteur (dans le
+            bloc sticky) au lieu de vivre uniquement dans la liste des sections plus bas — évite
+            d'avoir à scroller loin du compteur à chaque rang pour relire le patron. Texte complet,
             jamais tronqué, mais dans sa propre zone à défilement borné en hauteur — sans
             ça, un patron long fait grandir tout le bloc sticky au-delà de l'écran et le
-            compteur lui-même finit par sortir de la vue en scrollant les instructions. */}
-        {isTimerRunning && currentSectionId && (() => {
+            compteur lui-même finit par sortir de la vue en scrollant les instructions.
+            [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : condition sur isTimerRunning
+            seul faisait que ce panneau (potentiellement tres grand) restait affiche meme apres
+            avoir quitte le mode travail ("Revenir en plein ecran"), rendant le reste de la page
+            difficile a atteindre. Sur isFocusMode desormais, comme le reste du "mode travail". */}
+        {isFocusMode && currentSectionId && (() => {
           const workSection = sections.find(s => s.id === currentSectionId)
           if (!workSection?.description) return null
 
@@ -4534,8 +4620,8 @@ const ProjectCounter = () => {
               <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                 {t('ui.instructions')}
               </div>
-              <div className="text-sm text-gray-700 whitespace-pre-line leading-relaxed max-h-[45vh] overflow-y-auto pr-1">
-                {workSection.description}
+              <div className="text-sm text-gray-700 leading-relaxed max-h-[45vh] overflow-y-auto pr-1">
+                {renderDescriptionLines(workSection.description)}
               </div>
             </div>
           )
@@ -4729,11 +4815,15 @@ const ProjectCounter = () => {
                         </div>
                         {section.description && (
                           <div className="mt-0.5">
-                            <p className="text-xs text-gray-500 whitespace-pre-line">
-                              {expandedDescriptions.has(section.id)
-                                ? section.description
-                                : truncateDescription(section.description, 100)}
-                            </p>
+                            {expandedDescriptions.has(section.id) ? (
+                              <div className="text-xs text-gray-500">
+                                {renderDescriptionLines(section.description)}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-gray-500 whitespace-pre-line">
+                                {truncateDescription(section.description, 100)}
+                              </p>
+                            )}
                             {section.description.length > 100 && (
                               <button
                                 onClick={(e) => {
@@ -5032,11 +5122,15 @@ const ProjectCounter = () => {
                         {/* Description */}
                         {section.description && (
                           <div>
-                            <p className="text-sm text-gray-600 whitespace-pre-line">
-                              {expandedDescriptions.has(section.id)
-                                ? section.description
-                                : truncateDescription(section.description, 150)}
-                            </p>
+                            {expandedDescriptions.has(section.id) ? (
+                              <div className="text-sm text-gray-600">
+                                {renderDescriptionLines(section.description)}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-600 whitespace-pre-line">
+                                {truncateDescription(section.description, 150)}
+                              </p>
+                            )}
                             {section.description.length > 150 && (
                               <button
                                 onClick={() => toggleDescriptionExpansion(section.id)}

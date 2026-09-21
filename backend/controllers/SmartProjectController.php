@@ -782,17 +782,24 @@ class SmartProjectController
                 if (!empty($sectionsData)) {
                     $stmt = $db->prepare("
                         INSERT INTO project_sections
-                        (project_id, name, counter_unit, total_rows, description, display_order)
-                        VALUES (:project_id, :name, :counter_unit, :total_rows, :description, :display_order)
+                        (project_id, name, counter_unit, progression_type, total_rows, description, display_order)
+                        VALUES (:project_id, :name, :counter_unit, :progression_type, :total_rows, :description, :display_order)
                     ");
 
                     foreach ($sectionsData as $index => $section) {
                         $unit = $section['unit'] ?? 'rangs';
+                        // [AI:Claude] Section composite = plusieurs paliers/actions successifs qu'un
+                        // total unique représenterait de façon trompeuse (voir EXTRACTION_PROMPT,
+                        // RÈGLE PROGRESSION COMPOSITE). Invariant forcé ici, pas seulement dans le
+                        // prompt : si l'IA renvoie quand même un target malgré composite, on l'ignore
+                        // plutôt que d'afficher un compteur X/Y qui pourrait faire manquer une étape.
+                        $progressionType = ($section['progression_type'] ?? 'simple') === 'composite' ? 'composite' : 'simple';
                         $stmt->execute([
                             'project_id' => $projectId,
                             'name' => $section['name'],
                             'counter_unit' => $unit === 'cm' ? 'cm' : 'rows',
-                            'total_rows' => $section['target'] ?? null,
+                            'progression_type' => $progressionType,
+                            'total_rows' => $progressionType === 'composite' ? null : ($section['target'] ?? null),
                             'description' => $section['description'] ?? null,
                             'display_order' => $index + 1
                         ]);
