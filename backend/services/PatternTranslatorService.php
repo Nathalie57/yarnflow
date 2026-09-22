@@ -48,7 +48,8 @@ sl = glisser
 pm = pm (placer marqueur)
 sm = dm (déplacer marqueur)
 CO = monter
-BO / cast off = rabattre
+BO / cast off (tricot, "bind off") = rabattre
+bo / MB / make bobble (crochet, au milieu d'une instruction de maille) = maille bouffante (bobble)
 st(s) = m (maille/mailles)
 rep = rép (répéter)
 RS = end (endroit)
@@ -73,6 +74,15 @@ sl st = mc (maille coulée)
 ch = ml (maille en l'air)
 sp = esp (espace)
 ch-sp = esp-ml (espace de maille en l'air)
+FO = arrêter (couper et rentrer le fil)
+FLO = brin avant
+BLO = brin arrière
+FPdc = bride avant
+BPdc = bride arrière
+FPtr = bride double avant
+BPtr = bride double arrière
+sc2tog / dc2tog / tr2tog = X mailles ensemble (selon le point, ex: 2 ms ensemble)
+picot = picot
 rnd(s) = tour(s)
 row(s) = rang(s)
 patt = motif
@@ -123,6 +133,7 @@ fM = maille serrée
 4. Si une abréviation est définie dans le patron lui-même (ex: "MB = Make Bobble"), conserve-la ET traduis sa définition
 5. Ajoute une note en bas si tu as fait des choix de traduction non standards
 6. Pour les termes ambigus, garde le terme anglais entre parenthèses
+7. Attention aux abréviations qui changent de sens entre tricot et crochet (ex: "BO" = rabattre en tricot, mais "bo" au milieu d'une instruction de maille en crochet = maille bouffante/bobble). Détermine le sens à partir du contexte (points utilisés autour : ms/mb/bride = crochet, m end/m env = tricot) avant de traduire.
 
 Retourne UNIQUEMENT le texte traduit, sans commentaires ni explications. Commence directement par le contenu traduit.
 PROMPT;
