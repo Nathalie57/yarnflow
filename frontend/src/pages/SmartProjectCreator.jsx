@@ -58,8 +58,17 @@ export default function SmartProjectCreator() {
   const [selectedLibraryPattern, setSelectedLibraryPattern] = useState(null)
   const [loadingLibrary, setLoadingLibrary] = useState(false)
   const [patternSize, setPatternSize] = useState('')
+  // [AI:Claude] Affiche le champ de saisie libre uniquement quand la pilule "Autre
+  // taille" est active — évite d'avoir un champ tronqué en permanence à côté des
+  // tailles standards, sans changer la logique de patternSize sous-jacente.
+  const [customSizeMode, setCustomSizeMode] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
   const [analyzingStep, setAnalyzingStep] = useState(0)
+  // [AI:Claude] Écran d'attente honnête (2026-09-22) : seuls 2 états réels ("reçu" / "en
+  // cours d'analyse", voir handleAnalyze) — showContinueHint et showLongWait sont de purs
+  // repères temporels d'affichage, pas des états backend.
+  const [showContinueHint, setShowContinueHint] = useState(false)
+  const [showLongWait, setShowLongWait] = useState(false)
   const [extractedData, setExtractedData] = useState(null)
   const [aiStatus, setAiStatus] = useState(null)
   const [analyzeMetadata, setAnalyzeMetadata] = useState(null)
@@ -201,6 +210,15 @@ export default function SmartProjectCreator() {
     const next = new URLSearchParams(searchParams)
     next.delete('resume')
     setSearchParams(next, { replace: true })
+
+    // [AI:Claude] 2026-09-22 — Elle vient de cliquer "Voir mon analyse" (ou "Reprendre" sur
+    // Mes projets) : la notice globale (kind 'gate') qui l'a amenée ici — ou qu'elle a pu
+    // suivre via l'autre chemin d'entrée — n'a plus lieu d'être, sinon elle réapparaîtrait
+    // indéfiniment même une fois le gate confirmé (submitProject() ne l'écrit/l'efface pas
+    // dans ce cas puisqu'elle reste montée). Supprimée ici plutôt que conditionnée à son
+    // contenu exact : une seule notice Smart Creation à la fois est la limite acceptée pour
+    // cette V1.
+    try { localStorage.removeItem('yf_smart_project_notice') } catch { /* ignore */ }
 
     ;(async () => {
       try {
@@ -360,20 +378,23 @@ export default function SmartProjectCreator() {
 
     setAnalyzing(true)
     setAnalyzingStep(0)
+    setShowContinueHint(false)
+    setShowLongWait(false)
     setError(null)
     setErrorCode(null)
 
-    // Progression simulée des étapes pendant l'attente
+    // [AI:Claude] 2026-09-22 — Écran d'attente honnête : plus de fausses étapes ("Lecture",
+    // "Extraction", "Mise en forme") simulant une progression backend qui n'existe pas (un
+    // seul appel Gemini, opaque, aucun état intermédiaire réel). Ne reste que : le passage
+    // "reçu" → "en cours d'analyse" (délai court, purement visuel, pour ne pas démarrer sur
+    // un écran figé), l'invite à continuer à naviguer après un délai raisonnable, et le
+    // palier "ça prend plus longtemps que d'habitude" — conservé au même seuil qu'avant
+    // (voir historique : certains patrons prennent 60-100s, sans relance visuelle l'attente
+    // semblait figée et poussait à relancer l'analyse plusieurs fois inutilement).
     const stepTimers = [
-      setTimeout(() => setAnalyzingStep(1), 3000),
-      setTimeout(() => setAnalyzingStep(2), 12000),
-      setTimeout(() => setAnalyzingStep(3), 35000),
-      // [AI:Claude] Certains patrons (longs, ou en anglais à traduire) prennent 60-100s,
-      // bien au-delà de l'étape 3 — sans relance visuelle après 35s, l'attente semblait
-      // figée et poussait à recharger/relancer l'analyse plusieurs fois (vu en vrai :
-      // 5 tentatives identiques du même fichier en 3 minutes, une utilisatrice le pensant
-      // planté). Ce palier rassure sans faire croire à une nouvelle étape terminée.
-      setTimeout(() => setAnalyzingStep(4), 55000),
+      setTimeout(() => setAnalyzingStep(1), 600),
+      setTimeout(() => setShowContinueHint(true), 10000),
+      setTimeout(() => setShowLongWait(true), 55000),
     ]
 
     try {
@@ -465,7 +486,20 @@ export default function SmartProjectCreator() {
         // (juste après), et sauf repli sur l'écran de relecture si la création échoue quand
         // même (titre manquant, erreur serveur...).
         if (needsTranslateGate || needsWarningGate) {
-          setStep(3)
+          if (isMountedRef.current) {
+            setStep(3)
+          } else {
+            // [AI:Claude] 2026-09-22 — Même principe que dans submitProject() (kind 'ready') :
+            // elle a quitté la page pendant l'analyse, mais cette fois un avertissement
+            // (diagramme/traduction/partiel) empêche la création automatique du projet. Le
+            // CTA renvoie vers la reprise existante (?resume=1 → GET /smart-create/pending,
+            // mécanisme pendingImport() non modifié) plutôt que de dupliquer cette logique.
+            const noticeInfo = { kind: 'gate', name: response.data.data.title || getFallbackTitle() }
+            try {
+              localStorage.setItem('yf_smart_project_notice', JSON.stringify(noticeInfo))
+              window.dispatchEvent(new CustomEvent('yf:smart-creation-notice', { detail: noticeInfo }))
+            } catch { /* ignore */ }
+          }
         } else {
           const freshProject = {
             title: response.data.data.title || getFallbackTitle(),
@@ -503,6 +537,8 @@ export default function SmartProjectCreator() {
       stepTimers.forEach(clearTimeout)
       setAnalyzing(false)
       setAnalyzingStep(0)
+      setShowContinueHint(false)
+      setShowLongWait(false)
     }
   }
 
@@ -560,6 +596,16 @@ export default function SmartProjectCreator() {
       })
 
       if (response.data.success) {
+        // [AI:Claude] 2026-09-22 — Posé ici plutôt que de dépendre du navigate() qui suit
+        // (lui-même gardé par isMountedRef) : si l'utilisatrice a quitté cette page pendant
+        // l'analyse ("Continuer dans YarnFlow"), ce navigate() ne s'exécute jamais et
+        // l'ancien point d'écriture (l'effet de montage de ProjectCounter, déclenché par
+        // ?onboarding=smart dans l'URL) n'est donc jamais atteint. localStorage.setItem est
+        // un appel JS synchrone indépendant du cycle de vie React : il s'exécute que ce
+        // composant soit encore monté ou non, garantissant que le flag existe dès que le
+        // projet existe réellement, quel que soit le chemin d'arrivée sur le projet ensuite.
+        try { localStorage.setItem(`yf_smart_onboarding_${response.data.project.id}`, 'pending') } catch { /* ignore */ }
+
         trackProjectCreated('smart', projectToSubmit.craft_type)
 
         // [AI:Claude] Réserve les pelotes (stash_allocations) une fois le projet
@@ -590,7 +636,23 @@ export default function SmartProjectCreator() {
         // redirection que si elle est toujours sur cette page — sinon elle retrouvera
         // simplement son projet dans "Mes projets", sans être arrachée à autre chose.
         if (isMountedRef.current) {
-          navigate(`/projects/${response.data.project.id}`)
+          // [AI:Claude] Signal dédié à l'onboarding "Création Intelligente" (2 parcours
+          // "je commence"/"j'ai déjà commencé", voir ProjectCounter.jsx) — distinct de
+          // ?new=1 (flux manuel/démo) qui ne déclenche pas cet onboarding.
+          navigate(`/projects/${response.data.project.id}?onboarding=smart`)
+        } else {
+          // [AI:Claude] 2026-09-22 — Elle a quitté cette page pendant l'analyse ("Continuer
+          // dans YarnFlow") : pas de redirection automatique possible, donc pas de doublon
+          // avec le cas ci-dessus. Bandeau global unifié (SmartCreationNoticeBanner, monté
+          // dans Layout.jsx, kind 'ready' ici — voir aussi handleAnalyze pour le kind 'gate')
+          // pour lui permettre de retrouver son projet — écriture localStorage + événement
+          // custom, exactement le même principe que yf:row-added déjà utilisé ailleurs dans
+          // l'app pour notifier un composant global depuis une page différente.
+          const noticeInfo = { kind: 'ready', id: response.data.project.id, name: projectToSubmit.title || response.data.project.title }
+          try {
+            localStorage.setItem('yf_smart_project_notice', JSON.stringify(noticeInfo))
+            window.dispatchEvent(new CustomEvent('yf:smart-creation-notice', { detail: noticeInfo }))
+          } catch { /* ignore */ }
         }
       } else {
         // [AI:Claude] Repli sur l'écran de relecture manuelle si la création échoue quand
@@ -738,7 +800,7 @@ export default function SmartProjectCreator() {
             {t('ui.smartCreation')}
           </h1>
           <p className="text-gray-600">
-            {t('ui.smartCreationDesc')}
+            {t('ui.smartCreationIntro')}
           </p>
 
           {/* Badge quota */}
@@ -839,7 +901,7 @@ export default function SmartProjectCreator() {
         {step === 2 && !analyzing && !creating && (
           <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8">
             <h2 className="text-xl font-bold text-flow-ink mb-6">
-              {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.chooseFromLibrary') : mode === 'text' ? t('ui.pasteText') : t('ui.importFromUrl')}
+              {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.smartCreationLibraryTitle') : mode === 'text' ? t('ui.smartCreationTextTitle') : t('ui.importFromUrl')}
             </h2>
 
             {mode === 'library' && (
@@ -909,10 +971,12 @@ export default function SmartProjectCreator() {
                     file:bg-primary-50 file:text-primary-700
                     hover:file:bg-primary-100"
                 />
-                {file && (
+                {file ? (
                   <p className="mt-2 text-sm text-green-600">
                     {t('ui.fileChosen', { name: file.name, size: (file.size / 1024 / 1024).toFixed(2) })}
                   </p>
+                ) : (
+                  <p className="mt-1 text-xs text-gray-400">{t('ui.pdfFileHint')}</p>
                 )}
               </div>
             )}
@@ -949,7 +1013,7 @@ export default function SmartProjectCreator() {
             {mode === 'text' && (
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('ui.pasteTextInstead')}
+                  {t('ui.pasteTextDirectLabel')}
                 </label>
                 <textarea
                   value={pastedText}
@@ -965,14 +1029,15 @@ export default function SmartProjectCreator() {
             {/* Taille (optionnel, pour patrons multi-tailles) */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('ui.mySize')} <span className="text-gray-500 font-normal">{t('ui.sizeOptionalHint')}</span>
+                {t('ui.mySize')}
               </label>
+              <p className="text-xs text-gray-500 mb-2">{t('ui.sizeOptionalHint')}</p>
               <div className="flex flex-wrap gap-2">
                 {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(s => (
                   <button
                     key={s}
                     type="button"
-                    onClick={() => setPatternSize(patternSize === s ? '' : s)}
+                    onClick={() => { setPatternSize(patternSize === s ? '' : s); setCustomSizeMode(false) }}
                     className={`px-3 py-1.5 rounded-control text-sm font-medium border transition ${
                       patternSize === s
                         ? 'bg-primary-600 text-white border-primary-600'
@@ -982,14 +1047,31 @@ export default function SmartProjectCreator() {
                     {s}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomSizeMode(true)
+                    if (['XS','S','M','L','XL','XXL','XXXL'].includes(patternSize)) setPatternSize('')
+                  }}
+                  className={`px-3 py-1.5 rounded-control text-sm font-medium border transition ${
+                    customSizeMode
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'border-gray-200 text-gray-600 hover:border-primary-400'
+                  }`}
+                >
+                  {t('ui.otherSize')}
+                </button>
+              </div>
+              {customSizeMode && (
                 <input
                   type="text"
-                  value={['XS','S','M','L','XL','XXL','XXXL'].includes(patternSize) ? '' : patternSize}
+                  value={patternSize}
                   onChange={e => setPatternSize(e.target.value)}
-                  placeholder={t('ui.otherSize')}
-                  className="px-3 py-1.5 border border-gray-200 rounded-control text-sm focus:ring-2 focus:ring-primary-500 w-36"
+                  placeholder={t('ui.otherSizePlaceholder')}
+                  autoFocus
+                  className="mt-2 px-3 py-1.5 border border-gray-200 rounded-control text-sm focus:ring-2 focus:ring-primary-500 w-full sm:w-48"
                 />
-              </div>
+              )}
             </div>
 
             <div className="flex gap-4">
@@ -997,7 +1079,7 @@ export default function SmartProjectCreator() {
                 onClick={() => setStep(1)}
                 className="px-6 py-3 border border-gray-200 text-gray-700 rounded-control hover:bg-gray-50"
               >
-                {t('ui.backArrow4')}
+                {t('ui.backToMethodChoice')}
               </button>
 
               {extractedData ? (
@@ -1043,19 +1125,23 @@ export default function SmartProjectCreator() {
           </div>
         )}
 
-        {/* LOADING : Analyse en cours */}
+        {/* LOADING : Analyse en cours — écran honnête (2026-09-22), voir handleAnalyze :
+            uniquement 2 états réels (reçu / en cours), plus 2 repères temporels d'affichage
+            (showContinueHint, showLongWait) qui ne prétendent pas connaître l'état réel du
+            traitement backend (un seul appel Gemini opaque, aucune sous-étape mesurable). */}
         {analyzing && (
           <div className="bg-white rounded-card shadow-sm border border-gray-200 p-10 text-center">
             <FlowMascot pose="quiReflechit" size={110} className="mx-auto mb-6" animate />
-            <h2 className="text-xl font-bold text-flow-ink mb-2">{t('ui.analyzingAlt')}</h2>
-            <p className="text-gray-500 text-sm mb-8">{t('ui.aiReadingPattern')}</p>
+            <h2 className="text-xl font-bold text-flow-ink mb-2">
+              {showLongWait ? t('ui.analysisLongerTitle') : t('ui.analyzingAlt')}
+            </h2>
+            <p className="text-gray-500 text-sm mb-8">
+              {showLongWait ? t('ui.analysisLongerBody') : t('ui.aiReadingPattern')}
+            </p>
             <div className="max-w-xs mx-auto space-y-3 text-left">
               {[
-                { labelKey: 'progSending', delay: 0 },
-                { labelKey: 'progReading', delay: 1 },
-                { labelKey: 'progExtracting', delay: 2 },
-                { labelKey: 'progFormatting', delay: 3 },
-                { labelKey: 'progTakingLonger', delay: 4 },
+                { labelKey: 'progReceived' },
+                { labelKey: 'progAnalyzing' },
               ].map((s, i) => (
                 <div key={i} className="flex items-center gap-3">
                   {analyzingStep > i ? (
@@ -1076,6 +1162,23 @@ export default function SmartProjectCreator() {
                 </div>
               ))}
             </div>
+
+            {/* [AI:Claude] Apparaît après un délai raisonnable (10s) — invite à naviguer
+                ailleurs sans jamais promettre qu'elle sera prévenue ou que la création se
+                fera "automatiquement" : ça reste vrai uniquement hors gate diagramme/traduction/
+                partiel (voir handleAnalyze), donc on ne l'affirme pas ici. */}
+            {showContinueHint && (
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-2">{t('ui.continueInAppHint')}</p>
+                <button
+                  type="button"
+                  onClick={() => navigate('/my-projects')}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium underline underline-offset-2"
+                >
+                  {t('ui.continueInAppCta')}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -1102,11 +1205,19 @@ export default function SmartProjectCreator() {
             chemin normal (voir handleAnalyze). */}
         {step === 3 && (translateGatePending || warningGatePending) && (
           <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8 text-center">
-            <h2 className="text-xl font-bold text-flow-ink mb-2">{t('ui.checkAndEdit')}</h2>
-
-            {warningGatePending && (
-              <p className="text-sm text-gray-500 mb-4">{t('ui.projectNotCreatedYet')}</p>
+            {containsDiagram && (
+              <FlowMascot pose="quiReflechit" size={90} className="mx-auto mb-4" />
             )}
+            {!containsDiagram && aiStatus === 'partial' && (
+              <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
+            )}
+            <h2 className="text-xl font-bold text-flow-ink mb-2">
+              {containsDiagram
+                ? t('ui.diagramGateTitle')
+                : aiStatus === 'partial'
+                  ? t('ui.partialGateTitle')
+                  : t('ui.checkAndEdit')}
+            </h2>
 
             {!warningGatePending && translateGatePending && (
               <p className="text-gray-600 mb-4">
@@ -1116,14 +1227,18 @@ export default function SmartProjectCreator() {
 
             {containsDiagram && (
               <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-control text-amber-800 text-sm text-left">
-                {t('ui.diagramWarning')}
+                {t('ui.diagramGateWarning')}
               </div>
             )}
 
-            {aiStatus === 'partial' && (
-              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-control text-gray-600 text-sm text-left">
-                {t('ui.someInfoMissing')}
-              </div>
+            {/* [AI:Claude] Uniquement pour le cas "partial sans diagramme" — l'ancien texte
+                générique (ui.someInfoMissing, conservé tel quel pour l'écran de repli manuel
+                plus bas) invitait à "compléter les champs manquants" alors que cet écran-porte
+                n'a jamais eu de champ éditable. */}
+            {!containsDiagram && aiStatus === 'partial' && (
+              <p className="mb-4 text-gray-600 text-sm">
+                {t('ui.partialGateMessage')}
+              </p>
             )}
 
             {!warningGatePending && translateGatePending ? (

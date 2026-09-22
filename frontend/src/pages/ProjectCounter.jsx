@@ -322,11 +322,30 @@ const ProjectCounter = () => {
   // projet, en plus du projet démo. Déclaration déplacée plus haut (voir commentaire
   // au-dessus de cleEtapesEnvoyees) — reste ici uniquement pour la doc de showTutorial.
 
-  // Affiche la checklist tutoriel sur le projet démo OU le premier vrai projet
-  const showTutorial = isDemoProject || isFirstProject
+  // [AI:Claude] La checklist tutoriel générique reste réservée au projet démo — un vrai
+  // projet importé par Création Intelligente utilise désormais smartOnboardingPhase
+  // ci-dessous (2 parcours "je commence" / "j'ai déjà commencé") à la place.
+  const showTutorial = isDemoProject
 
   // Onboarding guidage visuel — affiché une seule fois par projet si rang = 0
   const [showOnboarding, setShowOnboarding] = useState(false)
+
+  // [AI:Claude] Onboarding "Création Intelligente" — remplace le tutoriel générique pour
+  // un vrai projet importé par IA. phase : null (inactif) | 'choice' | 'pickSection' |
+  // 'setProgress' | 'startedTip'. Le flag localStorage yf_smart_onboarding_${projectId}
+  // n'est écrit qu'à la validation explicite d'un des deux parcours (jamais à l'affichage)
+  // pour que l'onboarding puisse réapparaître si l'utilisatrice ferme/recharge avant
+  // d'avoir choisi — voir l'effet de chargement plus bas et les handlers dédiés.
+  const [smartOnboardingPhase, setSmartOnboardingPhase] = useState(null)
+  const [smartOnboardingSelectedSection, setSmartOnboardingSelectedSection] = useState(null)
+  const [smartOnboardingRowValue, setSmartOnboardingRowValue] = useState('')
+
+  // [AI:Claude] Le tableau des sections normal reste rendu (et cliquable) pendant tout
+  // l'onboarding smart — sans garde, cliquer une section directement dedans contourne le
+  // parcours (change de section sans jamais passer par la saisie de progression). Bloquant
+  // uniquement pendant les phases de décision ; pas 'startedTip', qui est déjà terminé
+  // (flag 'done' déjà écrit) et juste un tip dismissible, pas un choix en attente.
+  const smartOnboardingBlocking = smartOnboardingPhase === 'choice' || smartOnboardingPhase === 'pickSection' || smartOnboardingPhase === 'setProgress'
 
   // Nudge sections — affiché après 5 rangs sans section, une fois par projet
   const [showSectionsNudge, setShowSectionsNudge] = useState(false)
@@ -514,6 +533,30 @@ const ProjectCounter = () => {
         window.history.replaceState(null, '', window.location.pathname)
       }
 
+      // [AI:Claude] Onboarding "Création Intelligente" — ?onboarding=smart n'est posé qu'à
+      // la sortie de SmartProjectCreator (voir SmartProjectCreator.jsx). Le flag localStorage
+      // n'est écrit qu'à la validation explicite (pas ici, pas à l'affichage) : tant qu'il
+      // reste à 'pending', l'onboarding se redéclenche à chaque ouverture même sans le
+      // paramètre d'URL (nettoyé juste après) — voir handleSmartOnboardingStart /
+      // handleSmartOnboardingFinishResume qui le passent à 'done'.
+      const smartOnboardingKey = `yf_smart_onboarding_${projectId}`
+      const smartOnboardingState = localStorage.getItem(smartOnboardingKey)
+      const smartOnboardingFromUrl = urlParams.get('onboarding') === 'smart'
+      const smartOnboardingPending = smartOnboardingState === 'done'
+        ? false
+        : (smartOnboardingFromUrl || smartOnboardingState === 'pending')
+      if (smartOnboardingPending) {
+        if (smartOnboardingFromUrl && !smartOnboardingState) {
+          try { localStorage.setItem(smartOnboardingKey, 'pending') } catch { /* ignore */ }
+        }
+        setSmartOnboardingPhase('choice')
+      }
+      if (smartOnboardingFromUrl) {
+        const url = new URL(window.location.href)
+        url.searchParams.delete('onboarding')
+        window.history.replaceState(null, '', url.pathname + url.search)
+      }
+
       // [AI:Claude] Le paramètre ?demo=1 est nettoyé de l'URL juste au-dessus et ne
       // survit pas à un rechargement — on se base aussi sur le flag localStorage posé
       // à la création (MyProjects.jsx::handleCreateDemoProject) pour que la checklist
@@ -571,7 +614,9 @@ const ProjectCounter = () => {
       const onboardingKey = `yf_onboarded_${projectId}`
       const alreadySeen = localStorage.getItem(onboardingKey)
       const projectRow = projectData?.current_row ?? 0
-      if (!alreadySeen && Number(projectRow) === 0) {
+      // [AI:Claude] Ne pas superposer ce guidage générique à l'onboarding "Création
+      // Intelligente" (smartOnboardingPending) quand celui-ci est actif sur ce projet.
+      if (!alreadySeen && Number(projectRow) === 0 && !smartOnboardingPending) {
         setShowOnboarding(true)
       }
 
@@ -2056,6 +2101,13 @@ const ProjectCounter = () => {
       localStorage.setItem(`yf_onboarded_${projectId}`, '1')
     }
 
+    // [AI:Claude] Masquer le guidage léger "C'est parti !" (onboarding smart, parcours
+    // "je commence") dès le premier rang — déjà marqué 'done' au choix initial, ce n'est
+    // qu'un affichage local à fermer.
+    if (smartOnboardingPhase === 'startedTip') {
+      setSmartOnboardingPhase(null)
+    }
+
     // [AI:Claude] Tutoriel — étape "ajouter des rangs" (plafonnée à 5)
     if (showTutorial) {
       updateDemoSteps(prev => {
@@ -2477,6 +2529,62 @@ const ProjectCounter = () => {
     onIncrement: handleIncrementRow,
     onDecrement: handleDecrementRow,
   })
+
+  // [AI:Claude] Onboarding "Création Intelligente" — parcours "je commence cet ouvrage" :
+  // rien à modifier en base (première section + progression à 0 déjà le comportement par
+  // défaut), on marque juste l'onboarding terminé et on passe au guidage léger du compteur.
+  const handleSmartOnboardingStart = () => {
+    try { localStorage.setItem(`yf_smart_onboarding_${projectId}`, 'done') } catch { /* ignore */ }
+    setSmartOnboardingPhase('startedTip')
+  }
+
+  // [AI:Claude] Parcours "j'ai déjà commencé" — étape 1 : bifurque selon la section choisie.
+  // Section simple + cible connue → passe à l'étape 2 (saisie de la progression). Section
+  // composite ou sans cible exploitable → aucun écran de confirmation superflu (règle UX :
+  // pas d'étape qui ne fait que redemander une info déjà donnée) : on enregistre directement
+  // la section et on termine l'onboarding, comme handleSmartOnboardingFinishResume pour ce
+  // cas précis — même ordre (enregistrer avant de marquer 'done') et même tolérance d'erreur
+  // (dette notée : handleChangeSection n'expose pas son succès/échec à l'appelant, partagée
+  // avec plusieurs autres parcours, pas retouchée ici).
+  const handleSmartOnboardingPickSection = async (section) => {
+    if (section.progression_type === 'composite' || section.total_rows == null) {
+      try {
+        await handleChangeSection(section.id)
+      } finally {
+        try { localStorage.setItem(`yf_smart_onboarding_${projectId}`, 'done') } catch { /* ignore */ }
+        setSmartOnboardingPhase(null)
+      }
+      return
+    }
+    setSmartOnboardingSelectedSection(section)
+    setSmartOnboardingRowValue(section.current_row != null ? String(Math.floor(Number(section.current_row))) : '')
+    setSmartOnboardingPhase('setProgress')
+  }
+
+  // [AI:Claude] Parcours "j'ai déjà commencé" — validation finale, uniquement pour une
+  // section simple avec cible connue (le cas composite/sans cible est traité directement
+  // dans handleSmartOnboardingPickSection, sans passer par ici). Applique la section
+  // choisie (réutilise handleChangeSection, déjà testé partout ailleurs dans ce fichier)
+  // et le rang de départ clampé à [0, total_rows]. localStorage marqué 'done' dans un
+  // finally pour ne jamais laisser l'utilisatrice bloquée par une erreur API.
+  const handleSmartOnboardingFinishResume = async () => {
+    const section = smartOnboardingSelectedSection
+    if (!section) return
+    try {
+      if (section.progression_type !== 'composite' && section.total_rows != null) {
+        const rawValue = Number(smartOnboardingRowValue)
+        const clamped = Math.min(Math.max(0, isNaN(rawValue) ? 0 : rawValue), Number(section.total_rows))
+        await api.put(`/projects/${projectId}/sections/${section.id}`, { current_row: clamped })
+      }
+      await handleChangeSection(section.id)
+    } catch (err) {
+      console.error('Erreur onboarding — reprise de section:', err)
+    } finally {
+      try { localStorage.setItem(`yf_smart_onboarding_${projectId}`, 'done') } catch { /* ignore */ }
+      setSmartOnboardingPhase(null)
+      setSmartOnboardingSelectedSection(null)
+    }
+  }
 
   // [AI:Claude] Changer la section en cours
   const handleChangeSection = async (sectionId) => {
@@ -3474,8 +3582,125 @@ const ProjectCounter = () => {
           pour eux. pb-40 sur mobile (bouton Notes + nav empiles), pb-16 sur desktop (bouton
           Notes seul, pas de nav fixe en bas). */}
 
+      {/* [AI:Claude] Onboarding "Création Intelligente" — remplace le tutoriel générique
+          pour un vrai projet importé par IA (voir showTutorial = isDemoProject uniquement
+          désormais). 2 parcours : "je commence" (aucune saisie) / "j'ai déjà commencé"
+          (choix de section + progression éventuelle). */}
+      {/* [AI:Claude] Composition : padding-top proportionnel (pas de centrage flex) pour
+          positionner le panneau un peu plus bas qu'un simple "collé en haut", sans risque
+          de clipping si le contenu grandit (ex: pickSection avec beaucoup de sections) —
+          un centrage vertical aurait pu pousser le haut du panneau hors écran dans ce cas.
+          Uniquement pendant les phases bloquantes ; startedTip n'est pas concerné. */}
+      <div className={smartOnboardingBlocking ? 'pt-[6vh] sm:pt-[10vh]' : ''}>
+      {smartOnboardingPhase === 'choice' && (
+        <div className="mb-4 bg-primary-50 border border-primary-200 rounded-control p-5">
+          <div className="flex items-start gap-4">
+            <FlowMascot pose="avecPatron" size={64} className="flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-flow-ink text-base mb-1">{t('ui.smartOnboardingTitle')}</p>
+              <p className="text-gray-600 text-sm leading-relaxed mb-4">{t('ui.smartOnboardingIntro')}</p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={handleSmartOnboardingStart}
+                  className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold transition"
+                >
+                  {t('ui.smartOnboardingStartFresh')}
+                </button>
+                <button
+                  onClick={() => setSmartOnboardingPhase('pickSection')}
+                  className="flex-1 px-4 py-2.5 bg-white border border-primary-300 text-primary-700 hover:bg-primary-50 rounded-control text-sm font-semibold transition"
+                >
+                  {t('ui.smartOnboardingAlreadyStarted')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {smartOnboardingPhase === 'pickSection' && (
+        <div className="mb-4 bg-primary-50 border border-primary-200 rounded-control p-5">
+          <div className="flex items-start gap-4">
+            <FlowMascot pose="interrogatif" size={64} className="flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-flow-ink text-base mb-3">{t('ui.smartOnboardingPickSectionTitle')}</p>
+              <div className="flex flex-col gap-2">
+                {sections.map(section => (
+                  <button
+                    key={section.id}
+                    onClick={() => handleSmartOnboardingPickSection(section)}
+                    className="text-left px-4 py-2.5 bg-white border border-gray-200 rounded-control text-sm font-medium text-flow-ink hover:border-primary-400 hover:bg-primary-50 transition"
+                  >
+                    {section.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [AI:Claude] Réservée exclusivement aux sections simples avec cible connue — une
+          section composite/sans cible ne passe plus par cette étape (bifurcation directe
+          dans handleSmartOnboardingPickSection, aucun écran de confirmation superflu). */}
+      {smartOnboardingPhase === 'setProgress' && smartOnboardingSelectedSection && (
+        <div className="mb-4 bg-primary-50 border border-primary-200 rounded-control p-5">
+          <div className="flex items-start gap-4">
+            <FlowMascot pose="interrogatif" size={64} className="flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-flow-ink text-base mb-1">{t('ui.smartOnboardingProgressTitle')}</p>
+              <p className="text-gray-600 text-sm mb-3">{smartOnboardingSelectedSection.name}</p>
+              <label className="text-xs font-medium text-gray-600 block mb-1">
+                {smartOnboardingSelectedSection.counter_unit === 'cm' ? t('ui.smartOnboardingCmLabel') : t('ui.smartOnboardingRowLabel')}
+              </label>
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  type="number"
+                  min="0"
+                  max={smartOnboardingSelectedSection.total_rows}
+                  value={smartOnboardingRowValue}
+                  onChange={(e) => setSmartOnboardingRowValue(e.target.value)}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-control text-sm"
+                />
+                <span className="text-sm text-gray-500">
+                  / {smartOnboardingSelectedSection.counter_unit === 'cm'
+                    ? Number(smartOnboardingSelectedSection.total_rows).toFixed(1)
+                    : Math.floor(Number(smartOnboardingSelectedSection.total_rows))}
+                </span>
+              </div>
+              <button
+                onClick={handleSmartOnboardingFinishResume}
+                className="px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold transition"
+              >
+                {t('ui.continue')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
+
+      {smartOnboardingPhase === 'startedTip' && (
+        <div className="mb-4 bg-primary-50 border border-primary-200 rounded-control p-4 relative">
+          <button
+            onClick={() => setSmartOnboardingPhase(null)}
+            className="absolute top-2 right-2 text-primary-400 hover:text-primary-600 text-xl leading-none"
+            aria-label={t('ui.close')}
+          >
+            ×
+          </button>
+          <div className="flex items-start gap-3 pr-6">
+            <FlowMascot pose="cestParti" size={52} className="flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-flow-ink text-sm mb-1">{t('ui.smartOnboardingStartedTitle')}</p>
+              <p className="text-gray-600 text-sm leading-relaxed">{t('ui.smartOnboardingStartedBody')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* [AI:Claude] Tutoriel interactif — checklist "rangs / section / photo", affichée
-          sur le projet démo ET sur le premier vrai projet (showTutorial) */}
+          sur le projet démo uniquement désormais (showTutorial = isDemoProject) */}
       {showTutorial && !demoSteps.dismissed && (
         <div className="mb-4 bg-amber-50 border border-amber-200 rounded-control p-4 relative">
           <button
@@ -3614,7 +3839,7 @@ const ProjectCounter = () => {
       )}
 
       {/* [AI:Claude] Header ultra-compact */}
-      <div className={isFocusMode ? 'hidden' : 'mb-3'}>
+      <div className={(isFocusMode || smartOnboardingBlocking) ? 'hidden' : 'mb-3'}>
         <div>
           <Link
             to="/my-projects"
@@ -3793,7 +4018,10 @@ const ProjectCounter = () => {
         </div>
       </div>
 
-      {/* [AI:Claude] Barre 1 : Progression globale du projet */}
+      {/* [AI:Claude] Barre 1 : Progression globale du projet. Masquée pendant les phases
+          bloquantes de l'onboarding smart — afficher "0%" avant que l'utilisatrice ait
+          indiqué si elle commence ou reprend l'ouvrage serait trompeur. */}
+      {!smartOnboardingBlocking && (
       <div className="bg-white rounded-card border border-flow-mint px-4 py-3 mb-3 shadow-sm">
         {/* Version Desktop */}
         <div className="hidden sm:flex items-center gap-4">
@@ -3887,8 +4115,14 @@ const ProjectCounter = () => {
           </div>
         </div>
       </div>
+      )}
 
-      {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY */}
+      {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY. Masquée pendant les
+          phases bloquantes de l'onboarding smart (choice/pickSection/setProgress) — même
+          principe que isFocusMode ci-dessous, appliqué en plus ici car cette barre n'est
+          normalement jamais masquée (ni même en mode travail). États indépendants, juste
+          combinés au point de rendu — isFocusMode n'est pas modifié. */}
+      {!smartOnboardingBlocking && (
       <div className="sticky top-[64px] z-40 bg-primary-200 rounded-control border border-primary-200 p-4 mb-3 shadow-sm">
         {/* [AI:Claude] Flow discret dans la zone de progression — charte section 5,
             exemple nomme "Encore 8 rangs pour terminer cette section" (Flow a cote,
@@ -4628,11 +4862,13 @@ const ProjectCounter = () => {
         })()}
 
       </div>
+      )}
 
       {/* [AI:Claude] Accès rapide Patron/Photos/Détails — toujours visible sans avoir
           à scroller sous la liste des sections (retour Véronique). Masqué en mode
-          travail (focus compteur + instructions) — accessible via "Voir tout". */}
-      <div className={isFocusMode ? 'hidden' : 'flex gap-2'}>
+          travail (focus compteur + instructions), et pendant les phases bloquantes de
+          l'onboarding smart — accessible via "Voir tout" sinon. */}
+      <div className={(isFocusMode || smartOnboardingBlocking) ? 'hidden' : 'flex gap-2'}>
         <button
           onClick={() => jumpToTab('patron')}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-control text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"
@@ -4673,7 +4909,7 @@ const ProjectCounter = () => {
         )}
       </div>
 
-      <div className={isFocusMode ? 'hidden' : 'flex flex-col gap-3'}>
+      <div className={(isFocusMode || smartOnboardingBlocking) ? 'hidden' : 'flex flex-col gap-3'}>
 
       {/* Guidage sections — première visite avec sections */}
       {showOnboarding && sections.length > 0 && !currentSectionId && (
@@ -4790,7 +5026,7 @@ const ProjectCounter = () => {
                   return (
                     <tr
                       key={section.id}
-                      onClick={() => !isActive && handleChangeSection(section.id)}
+                      onClick={() => !isActive && !smartOnboardingBlocking && handleChangeSection(section.id)}
                       className={`transition-colors ${
                         isCompleted
                           ? isActive
@@ -5046,7 +5282,7 @@ const ProjectCounter = () => {
                         e.stopPropagation()
                         toggleSectionExpanded(section.id, e)
                         // Si pas active, la rendre active aussi
-                        if (!isActive) {
+                        if (!isActive && !smartOnboardingBlocking) {
                           handleChangeSection(section.id)
                         }
                       }}
@@ -5288,8 +5524,12 @@ const ProjectCounter = () => {
         )}
       </div>
 
-      {/* [AI:Claude] Tabs compacts */}
-      <div ref={tabsRef} className="bg-white rounded-card border border-flow-mint overflow-hidden scroll-mt-20">
+      {/* [AI:Claude] Tabs compacts (Patron/Photos/Détails) — masqué pendant les phases
+          bloquantes de l'onboarding smart. Pas combiné à isFocusMode : ce panneau reste
+          volontairement visible en mode travail aujourd'hui (comportement existant,
+          inchangé), donc pas de fusion avec cette condition ici. className togglé plutôt
+          que démonté pour préserver tabsRef. */}
+      <div ref={tabsRef} className={smartOnboardingBlocking ? 'hidden' : 'bg-white rounded-card border border-flow-mint overflow-hidden scroll-mt-20'}>
         {/* Tabs header */}
         <div className="border-b border-gray-100">
           <div className="flex">
@@ -7917,7 +8157,7 @@ const ProjectCounter = () => {
       )}
 
       {/* [AI:Claude] Bouton flottant pour les notes - masqué quand popup ouverte */}
-      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !isAnyAlertOpen && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && !showAssociatePatternModal && (
+      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !isAnyAlertOpen && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && !showAssociatePatternModal && !smartOnboardingBlocking && (
       <button
         onClick={handleOpenNotes}
         className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-card px-4 py-3 flex items-center gap-3"

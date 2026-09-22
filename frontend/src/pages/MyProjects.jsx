@@ -1111,7 +1111,7 @@ const MyProjects = () => {
       {!loading && !error && (
         <>
           {projects.length === 0 ? (
-            <div className="max-w-lg mx-auto py-10 px-4">
+            <div className="max-w-lg mx-auto pt-6 sm:pt-10 pb-10 px-4">
 
               {/* Accueil — Flow souriant en accompagnement (charte section 12 : etats vides) */}
               <div className="text-center mb-8">
@@ -1119,6 +1119,8 @@ const MyProjects = () => {
                 <h2 className="text-2xl font-bold text-flow-ink mb-2">
                   {user?.first_name ? t('myProjects.welcomeNamed', { name: user.first_name }) : t('myProjects.welcome')}
                 </h2>
+                <p className="text-gray-600 text-sm mb-1">{t('myProjects.flowIntro')}</p>
+                <p className="text-flow-ink text-sm font-medium mb-1">{t('myProjects.addFirstProjectQuestion')}</p>
                 <p className="text-gray-500 text-sm">{t('myProjects.whereToStart')}</p>
               </div>
 
@@ -1170,7 +1172,6 @@ const MyProjects = () => {
                   ou le studio photo. Bande discrète, sous les vrais CTA, pour donner une
                   vue d'ensemble sans concurrencer l'entonnoir principal. */}
               <div className="mt-8 pt-6 border-t border-gray-100">
-                <p className="text-center text-xs text-gray-400 mb-3">{t('myProjects.featuresIntro')}</p>
                 <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
                   <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
                     <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -1192,13 +1193,6 @@ const MyProjects = () => {
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                     </svg>
                     {t('myProjects.featureAssistant')}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                    <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                      <circle cx="12" cy="13" r="4" />
-                    </svg>
-                    {t('myProjects.featurePhoto')}
                   </span>
                 </div>
               </div>

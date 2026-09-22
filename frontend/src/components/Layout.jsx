@@ -4,6 +4,7 @@ import BottomNav from './BottomNav'
 import AiAssistantDrawer from './AiAssistantDrawer'
 import PushNotificationBanner from './PushNotificationBanner'
 import PendingCheckoutBanner from './PendingCheckoutBanner'
+import SmartCreationNoticeBanner from './SmartCreationNoticeBanner'
 import { useAiAssistant } from '../contexts/AiAssistantContext'
 
 const Layout = () => {
@@ -13,6 +14,7 @@ const Layout = () => {
     <div className="min-h-screen bg-slate-50">
       <Navbar />
       <PendingCheckoutBanner />
+      <SmartCreationNoticeBanner />
       <PushNotificationBanner />
       <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
         <Outlet />

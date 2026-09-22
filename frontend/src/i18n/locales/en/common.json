@@ -364,5 +364,12 @@
     "ai_monthly_limit": "Monthly limit reached ({{count}} messages). Come back next month.",
     "import_monthly_limit": "Monthly limit reached ({{count}} imports per month).",
     "stash_insufficient": "Not enough yarn: {{count}} skein(s) available."
+  },
+  "smartCreationNotice": {
+    "readyBanner": "Your project \"{{name}}\" is ready!",
+    "readyCta": "Open my project",
+    "gateBanner": "I've finished analyzing your pattern. I need you to check something.",
+    "gateCta": "See my analysis",
+    "dismiss": "Later"
   }
 }

@@ -364,5 +364,12 @@
     "ai_monthly_limit": "Limite mensuelle atteinte ({{count}} messages). Reviens le mois prochain.",
     "import_monthly_limit": "Limite mensuelle atteinte ({{count}} imports par mois).",
     "stash_insufficient": "Stock insuffisant : {{count}} pelote(s) disponible(s)."
+  },
+  "smartCreationNotice": {
+    "readyBanner": "Ton projet « {{name}} » est prêt !",
+    "readyCta": "Ouvrir mon projet",
+    "gateBanner": "J'ai terminé l'analyse de ton patron. J'ai besoin que tu vérifies un point.",
+    "gateCta": "Voir mon analyse",
+    "dismiss": "Plus tard"
   }
 }
