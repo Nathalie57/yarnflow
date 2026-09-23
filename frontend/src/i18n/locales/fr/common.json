@@ -339,7 +339,6 @@
     "note_too_long": "La note ne peut pas dépasser 2000 caractères",
     "note_required": "La note est obligatoire",
     "password_too_short": "Le mot de passe doit contenir au moins 8 caractères",
-    "library_limit_free": "Limite atteinte : le plan FREE permet 5 patrons en bibliothèque.",
     "secondary_counter_limit": "Limite de 10 compteurs secondaires atteinte pour cette section",
     "contact_rate_limit": "Trop de messages envoyés. Réessaie dans une heure.",
     "preview_rate_limit": "Trop d'aperçus d'affilée. Attends 30 secondes.",

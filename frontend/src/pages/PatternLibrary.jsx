@@ -13,24 +13,17 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
-import { useAuth } from '../contexts/AuthContext'
 import { useAlert } from '../hooks/useAlert'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
-import UpgradePrompt from '../components/UpgradePrompt'
 import { projectTypeKey } from '../data/projectTypes'
-import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 import { apiErrorMessage } from '../utils/apiError'
 import FlowMascot from '../components/FlowMascot'
 const PatternLibrary = () => {
   const { t } = useTranslation('library')
-  const { user } = useAuth()
   const { showAlert, showConfirm, AlertModals } = useAlert()
-  const isPro = user?.subscription_type && user.subscription_type !== 'free'
-  const [showUpgradeLibrary, setShowUpgradeLibrary] = useState(false)
   const [patterns, setPatterns] = useState([])
-  const [stats, setStats] = useState(null)
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -155,7 +148,6 @@ const PatternLibrary = () => {
       const response = await api.get('/pattern-library', { params })
 
       setPatterns(response.data.patterns || [])
-      setStats(response.data.stats || {})
       setCategories(response.data.categories || [])
     } catch (err) {
       console.error('Erreur chargement patrons:', err)
@@ -316,14 +308,8 @@ const PatternLibrary = () => {
       setShowAddModal(false)
     } catch (err) {
       console.error('Erreur ajout patron:', err)
-
-      if (err.response?.data?.upgrade_required) {
-        setShowAddModal(false)
-        setShowUpgradeLibrary(true)
-      } else {
-        const errorMessage = apiErrorMessage(err, t('ui.patternAddFailed'))
-        alert(errorMessage)
-      }
+      const errorMessage = apiErrorMessage(err, t('ui.patternAddFailed'))
+      alert(errorMessage)
     } finally {
       setUploading(false)
     }
@@ -504,56 +490,10 @@ const PatternLibrary = () => {
 
       {/* Barre d'action */}
       <div className="flex items-center justify-between mb-6">
-        {/* Indicateur de limite FREE */}
-        {!isPro && stats !== null && (
-          <div>
-            {(() => {
-              const count = stats.total_patterns || 0
-              const max = 5
-              const pct = Math.min((count / max) * 100, 100)
-              const remaining = max - count
-              const isNearLimit = count >= 3
-              const isAtLimit = count >= max
-              return (
-                <div className={`inline-flex flex-col gap-1 px-3 py-2 rounded-control border ${
-                  isAtLimit ? 'bg-red-50 border-red-200' :
-                  isNearLimit ? 'bg-amber-50 border-amber-200' :
-                  'bg-gray-50 border-gray-200'
-                }`}>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-semibold ${
-                      isAtLimit ? 'text-red-700' : isNearLimit ? 'text-amber-700' : 'text-gray-700'
-                    }`}>
-                      {t('ui.patternsQuota', { count, max })}
-                    </span>
-                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                      isAtLimit ? 'bg-red-100 text-red-700' : isNearLimit ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'
-                    }`}>{t('ui.planFree')}</span>
-                  </div>
-                  <div className="w-32 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        isAtLimit ? 'bg-red-500' : isNearLimit ? 'bg-amber-500' : 'bg-primary-500'
-                      }`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <button
-                    onClick={() => setShowUpgradeLibrary(true)}
-                    className={`text-xs font-medium hover:underline text-left ${
-                      isAtLimit ? 'text-red-600' : isNearLimit ? 'text-amber-600' : 'text-primary-600'
-                    }`}
-                  >
-                    {isAtLimit ? t('ui.limitReachedGoPro') :
-                     isNearLimit ? t('ui.onlyNLeftGoPro', { count: remaining }) :
-                     t('ui.goToPlan', { plan: planLabel(upgradeTarget('pattern_library', 'free')), price: PLAN_PRICES.plus.monthlyEquiv })}
-                  </button>
-                </div>
-              )
-            })()}
-          </div>
-        )}
-
+        {/* [AI:Claude] Indicateur de limite FREE retiré (2026-09-22) : la bibliothèque de
+            patrons est illimitée pour tous les plans (confirmé dans le pricing) — l'ancien
+            blocage backend à 5 patrons contredisait déjà le commentaire "illimité" présent
+            dans PatternLibraryController::checkSubscriptionAccess() et a été retiré avec. */}
         <div className="ml-auto flex items-center gap-2">
           <Link
             to="/pattern-translator"
@@ -1649,11 +1589,6 @@ const PatternLibrary = () => {
           </div>
         </div>
       )}
-      <UpgradePrompt
-        isOpen={showUpgradeLibrary}
-        onClose={() => setShowUpgradeLibrary(false)}
-        feature="pattern_library"
-      />
       <AlertModals />
     </div>
   )

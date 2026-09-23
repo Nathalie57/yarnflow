@@ -722,10 +722,14 @@ class PatternLibraryController
 
     /**
      * [AI:Claude] Vérifier l'accès à la bibliothèque de patrons
-     * v0.16.0+ : Patrons illimités pour tous les plans
+     * v0.16.0+ : Patrons illimités pour tous les plans (confirmé dans le pricing) — le
+     * blocage à 5 patrons pour le plan FREE qui vivait ici était un reliquat contredisant
+     * ce commentaire déjà en place ; retiré le 2026-09-22, la vérification d'utilisateur
+     * reste seule nécessaire.
      *
      * @param int $userId ID de l'utilisateur
-     * @param bool $isCreating True si on crée un nouveau patron (pour vérifier la limite)
+     * @param bool $isCreating True si on crée un nouveau patron (paramètre conservé pour
+     *   compatibilité d'appel, plus aucune limite ne dépend de sa valeur)
      * @return void
      * @throws \Exception Si utilisateur introuvable
      */
@@ -735,30 +739,6 @@ class PatternLibraryController
 
         if (!$user)
             throw new \Exception('Utilisateur introuvable');
-
-        // Limite bibliothèque : FREE = 5 patrons, PRO = illimité
-        if ($isCreating) {
-            $plan = $user['subscription_type'] ?? 'free';
-            $isPro = $plan !== 'free';
-
-            if (!$isPro) {
-                $count = $this->patternLibrary->getUserPatternCount($userId);
-
-                if ($count >= 5) {
-                    http_response_code(403);
-                    echo json_encode([
-                        'success'          => false,
-                        'error'            => 'Limite atteinte : le plan FREE permet 5 patrons en bibliothèque.',
-                        'error_code'       => 'library_limit_free',
-                        'upgrade_required' => true,
-                        'required_plan'    => 'pro',
-                        'current_count'    => $count,
-                        'max_count'        => 5,
-                    ]);
-                    exit;
-                }
-            }
-        }
     }
 
     /**

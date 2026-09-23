@@ -339,7 +339,6 @@
     "note_too_long": "Notes cannot exceed 2,000 characters",
     "note_required": "A note is required",
     "password_too_short": "Your password must be at least 8 characters long",
-    "library_limit_free": "Limit reached: the FREE plan allows 5 patterns in your library.",
     "secondary_counter_limit": "This section already has the maximum of 10 secondary counters",
     "contact_rate_limit": "Too many messages sent. Please try again in an hour.",
     "preview_rate_limit": "Too many previews in a row. Please wait 30 seconds.",
