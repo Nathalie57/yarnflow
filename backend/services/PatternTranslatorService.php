@@ -67,7 +67,7 @@ tbl = sur le brin arrière
 wyif = fil devant
 wyib = fil derrière
 sc = ms (maille serrée)
-dc = mb (maille bride)
+dc = br (bride)
 hdc = demi-bride
 tr = bride double
 sl st = mc (maille coulée)
@@ -133,7 +133,7 @@ fM = maille serrée
 4. Si une abréviation est définie dans le patron lui-même (ex: "MB = Make Bobble"), conserve-la ET traduis sa définition
 5. Ajoute une note en bas si tu as fait des choix de traduction non standards
 6. Pour les termes ambigus, garde le terme anglais entre parenthèses
-7. Attention aux abréviations qui changent de sens entre tricot et crochet (ex: "BO" = rabattre en tricot, mais "bo" au milieu d'une instruction de maille en crochet = maille bouffante/bobble). Détermine le sens à partir du contexte (points utilisés autour : ms/mb/bride = crochet, m end/m env = tricot) avant de traduire.
+7. Attention aux abréviations qui changent de sens entre tricot et crochet (ex: "BO" = rabattre en tricot, mais "bo" au milieu d'une instruction de maille en crochet = maille bouffante/bobble). Détermine le sens à partir du contexte (points utilisés autour : ms/br/bride = crochet, m end/m env = tricot) avant de traduire.
 
 Retourne UNIQUEMENT le texte traduit, sans commentaires ni explications. Commence directement par le contenu traduit.
 PROMPT;
