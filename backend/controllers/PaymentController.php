@@ -712,12 +712,18 @@ class PaymentController
      */
     private function getExpectedAmount(string $paymentType): ?float
     {
+        // [AI:Claude] Prix lus depuis PricingService (source de vérité, .env) plutôt que codés
+        // en dur ici : un prix changé côté .env sans mise à jour de ce match() bloquait
+        // silencieusement l'activation de l'abonnement au webhook (vu avec plus_annual, resté
+        // à 35,88€ après le passage à 29,99€/an — le paiement passait chez Stripe mais
+        // l'utilisatrice restait FREE).
+        $prices = $this->pricingService->getSubscriptionPrices();
         return match($paymentType) {
-            'subscription_plus' => 3.99,
-            'subscription_plus_annual' => 35.88,
-            'subscription_pro' => 6.99,
-            'subscription_pro_annual' => 59.99,
-            'subscription_early_bird' => 2.99,
+            'subscription_plus' => $prices['plus']['monthly'],
+            'subscription_plus_annual' => $prices['plus']['annual'],
+            'subscription_pro' => $prices['pro']['monthly'],
+            'subscription_pro_annual' => $prices['pro']['annual'],
+            'subscription_early_bird' => $prices['early_bird'],
             PAYMENT_CREDITS_PACK_50 => 4.99,
             PAYMENT_CREDITS_PACK_150 => 9.99,
             default => null // Patron personnalisé, pas de montant fixe

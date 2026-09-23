@@ -97,7 +97,7 @@ class PricingService
         return [
             'plus' => [
                 'monthly' => (float)($_ENV['SUBSCRIPTION_PLUS_MONTHLY_PRICE'] ?? 3.99),
-                'annual'  => (float)($_ENV['SUBSCRIPTION_PLUS_ANNUAL_PRICE']  ?? 35.88),
+                'annual'  => (float)($_ENV['SUBSCRIPTION_PLUS_ANNUAL_PRICE']  ?? 29.99),
             ],
             'pro' => [
                 'monthly' => (float)($_ENV['SUBSCRIPTION_PRO_MONTHLY_PRICE'] ?? 6.99),
