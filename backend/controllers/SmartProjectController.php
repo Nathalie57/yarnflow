@@ -107,18 +107,12 @@ class SmartProjectController
                 $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND project_id IS NOT NULL");
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
-                // [AI:Claude] Le frontend (CreateProjectWizard) redirige direct vers /subscription
-                // dès que free_trial_used est vrai, sans jamais laisser passer vers le
-                // formulaire — sans ce champ, le teaser (voir analyze()/confirm()) ne serait
-                // jamais atteignable depuis ce point d'entrée.
-                $teaserAvailable = empty($user['smart_creation_teaser_used_at']);
                 $this->jsonResponse([
                     'success' => true,
                     'quota' => [
                         'plan' => 'free',
                         'is_pro' => false,
                         'free_trial_used' => $totalUsed >= 3,
-                        'teaser_available' => $teaserAvailable,
                         'total_used' => $totalUsed,
                         'remaining' => max(0, 3 - $totalUsed),
                     ]
@@ -275,20 +269,12 @@ class SmartProjectController
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 if ($totalUsed >= 3) {
-                    // [AI:Claude] Une seule analyse "teaser" à vie au-delà des 3 essais :
-                    // l'utilisatrice voit son projet analysé une dernière fois (l'effet "wow"
-                    // avant de payer), mais confirm() bloquera la validation réelle — voir
-                    // plus bas. Sans ce teaser, on bloquerait ici avant même l'appel Gemini.
-                    if (!empty($user['smart_creation_teaser_used_at'])) {
-                        $this->jsonResponse([
-                            'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour continuer',
-                            'upgrade_required' => true,
-                            'free_trial_used' => true
-                        ], 403);
-                        return;
-                    }
-                    $db->prepare('UPDATE users SET smart_creation_teaser_used_at = NOW() WHERE id = :user_id')
-                        ->execute(['user_id' => $userId]);
+                    $this->jsonResponse([
+                        'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour continuer',
+                        'upgrade_required' => true,
+                        'free_trial_used' => true
+                    ], 403);
+                    return;
                 }
             }
 
@@ -626,12 +612,8 @@ class SmartProjectController
                 $sourceFilePath = $importLookup->fetchColumn() ?: null;
             }
 
-            // [AI:Claude] Contrôle qui n'existait pas avant le teaser : analyze() pouvait
-            // jusqu'ici laisser passer une analyse au-delà du quota grâce au teaser (voir
-            // analyze()), confirm() faisait alors confiance à ce blocage en amont pour
-            // protéger la vraie création. Le teaser ne donne droit qu'à VOIR le projet
-            // (étape Validation), pas à l'enregistrer — sinon il ne coûterait plus rien
-            // d'avoir un quota FREE.
+            // [AI:Claude] Re-vérifie le quota FREE ici, pas seulement dans analyze() : entre
+            // les deux appels le quota a pu être atteint (autre onglet, import concurrent).
             $confirmUser = $this->userModel->findById($userId);
             if ($confirmUser) {
                 $confirmPlan = $this->getSmartImportPlan($confirmUser['subscription_type'], $userId);

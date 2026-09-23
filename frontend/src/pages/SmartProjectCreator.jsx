@@ -668,12 +668,11 @@ export default function SmartProjectCreator() {
       setProject(projectToSubmit)
       setSections(sectionsToSubmit)
       setStep(3)
-      // [AI:Claude] Nouveau cas depuis le teaser : analyze() peut laisser passer une analyse
-      // au-delà du quota FREE (voir SmartProjectController::analyze()), confirm() bloque
-      // alors la validation réelle avec ce même 403 — l'utilisatrice a vu son projet
-      // (étape Validation) mais ne peut pas l'enregistrer sans passer à PLUS/PRO. Une popin
-      // dédiée plutôt qu'un simple texte d'erreur : sans ça, rien ne se distinguait vraiment
-      // à l'écran à ce stade (formulaire déjà rempli, bouton qui ne semblait rien faire).
+      // [AI:Claude] Filet de sécurité : le quota FREE a pu être atteint entre l'ouverture du
+      // formulaire et ce clic (autre onglet, import concurrent) — confirm() bloque alors avec
+      // ce même 403. Une popin dédiée plutôt qu'un simple texte d'erreur : sans ça, rien ne se
+      // distinguait vraiment à l'écran à ce stade (formulaire déjà rempli, bouton qui ne
+      // semblait rien faire).
       if (err.response?.status === 403 && err.response?.data?.upgrade_required) {
         fetchQuota()
         setShowUpgradeModal(true)
@@ -745,10 +744,7 @@ export default function SmartProjectCreator() {
   }
 
   // FREE avec essai déjà utilisé → écran d'upgrade (seulement à l'étape 1, pas pendant/après le process)
-  // [AI:Claude] teaser_available : même exception qu'ailleurs (CreateProjectWizard,
-  // SmartProjectController::analyze()/confirm()) — sans elle, ce garde-fou bloquait
-  // avant même le choix du mode, rendant le teaser inatteignable depuis cette page aussi.
-  if (!isPro && quota?.free_trial_used && !quota?.teaser_available && step <= 1) {
+  if (!isPro && quota?.free_trial_used && step <= 1) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">

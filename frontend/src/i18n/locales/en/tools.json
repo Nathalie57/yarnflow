@@ -416,8 +416,6 @@
     "noSectionChart": "This project has no section — the chart will be attached to the project itself.",
     "exceedsSectionRows": " ⚠️ That exceeds the section's total rows.",
     "chooseWeight": "— Choose a weight —",
-    "billedYearlyPlus": "Billed €29.99/year",
-    "billedYearlyPro": "Billed €59.99/year",
     "translatorDisclaimer": "Personal use only. Machine translation can contain mistakes — check the abbreviations before you knit.",
     "inactivityEmail": "Get an email if you haven't knitted for 7 days",
     "minSixChars": "At least 6 characters",
@@ -886,7 +884,6 @@
     "goPlusYearly": "Upgrade to PLUS (yearly) — {{price}}/year",
     "monthlyPrice": "Monthly — {{price}}/month",
     "goToPlan": "Upgrade to {{plan}} — from {{price}}/month",
-    "billedAnnually": "Billed {{annual}}/year · cancel any time",
     "seeAllPlans": "See all plans"
   },
   "toolsList": {

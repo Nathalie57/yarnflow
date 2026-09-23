@@ -151,26 +151,26 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
           ))}
         </ul>
 
-        {/* Prix (équivalent mensuel de l'offre annuelle, comme sur /subscription) */}
+        {/* Prix mensuel sans engagement — cohérent avec ce que /subscription affiche par défaut */}
         {content.plan === 'plus' ? (
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-primary-50 border border-primary-200 rounded-control p-3 flex flex-col">
               <p className="font-bold text-flow-ink text-sm">PLUS</p>
               <p className="text-xs text-gray-500 mt-0.5">{t('ui.forActive')}</p>
               <div className="mt-2">
-                <span className="text-xl font-bold text-primary-600">2,49€</span>
+                <span className="text-xl font-bold text-primary-600">{PLAN_PRICES.plus.monthly}</span>
                 <span className="text-xs text-gray-500">{t('ui.perMonth')}</span>
               </div>
-              <p className="text-[11px] text-green-600 font-medium mt-0.5">{t('ui.billedYearlyPlus')}</p>
+              <p className="text-[11px] text-gray-500 font-medium mt-0.5">{t('ui.cancelAnytime')}</p>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-control p-3 flex flex-col">
               <p className="font-bold text-flow-ink text-sm">PRO</p>
               <p className="text-xs text-gray-500 mt-0.5">{t('ui.allFeatures')}</p>
               <div className="mt-2">
-                <span className="text-xl font-bold text-gray-700">4,99€</span>
+                <span className="text-xl font-bold text-gray-700">{PLAN_PRICES.pro.monthly}</span>
                 <span className="text-xs text-gray-500">{t('ui.perMonth')}</span>
               </div>
-              <p className="text-[11px] text-green-600 font-medium mt-0.5">{t('ui.billedYearlyPro')}</p>
+              <p className="text-[11px] text-gray-500 font-medium mt-0.5">{t('ui.cancelAnytime')}</p>
             </div>
           </div>
         ) : (
@@ -178,10 +178,10 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             <div>
               <p className="font-bold text-flow-ink text-sm">{t('ui.proPlan')}</p>
               <p className="text-xs text-gray-500 mt-0.5">{t('ui.forSeriousProjects')}</p>
-              <p className="text-[11px] text-green-600 font-medium mt-1">{t('ui.billedYearlyPro')}</p>
+              <p className="text-[11px] text-gray-500 font-medium mt-1">{t('ui.cancelAnytime')}</p>
             </div>
             <div className="text-right">
-              <span className="text-2xl font-bold text-primary-600">4,99€</span>
+              <span className="text-2xl font-bold text-primary-600">{PLAN_PRICES.pro.monthly}</span>
               <span className="text-xs text-gray-500">{t('ui.perMonth')}</span>
             </div>
           </div>
@@ -199,11 +199,11 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
             onClick={handleUpgrade}
             className="flex-1 px-4 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-control transition text-sm font-semibold shadow-sm"
           >
-            {t('ui.goToPlan', { plan: planLabel(targetPlan), price: price.monthlyEquiv })}
+            {t('ui.goToPlan', { plan: planLabel(targetPlan), price: price.monthly })}
           </button>
         </div>
         <p className="text-xs text-gray-500 text-center -mt-2">
-          {t('ui.billedAnnually', { annual: price.annual })}
+          {t('ui.cancelAnytime')}
         </p>
         <button
           onClick={handleUpgrade}

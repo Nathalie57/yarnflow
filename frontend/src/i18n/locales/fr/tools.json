@@ -416,8 +416,6 @@
     "noSectionChart": "Ce projet n'a pas de section — la grille sera rattachée directement au projet.",
     "exceedsSectionRows": " ⚠️ Ça dépasse le total de rangs de la section.",
     "chooseWeight": "— Choisir une épaisseur —",
-    "billedYearlyPlus": "Facturé 29,99€/an",
-    "billedYearlyPro": "Facturé 59,99€/an",
     "translatorDisclaimer": "Usage personnel uniquement. La traduction automatique peut contenir des erreurs — vérifie les abréviations avant de tricoter.",
     "inactivityEmail": "Reçois un email si tu n'as pas tricoté depuis 7 jours",
     "minSixChars": "Minimum 6 caractères",
@@ -886,7 +884,6 @@
     "goPlusYearly": "Passer à PLUS (Annuel) — {{price}}/an",
     "monthlyPrice": "Mensuel — {{price}}/mois",
     "goToPlan": "Passer à {{plan}} — dès {{price}}/mois",
-    "billedAnnually": "Facturé {{annual}}/an · résiliable à tout moment",
     "seeAllPlans": "Voir tous les plans"
   },
   "toolsList": {
