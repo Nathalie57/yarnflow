@@ -15,6 +15,12 @@ import { useAlert } from '../../hooks/useAlert'
 
 const MIN_GRID_SIZE = 1
 const DEFAULT_CELL_PX = 20
+// [AI:Claude] 2026-09-22 — Cet outil "bac à sable" n'a aucune persistance tant que la
+// grille n'est pas explicitement enregistrée via SaveChartToProjectModal : une fermeture
+// accidentelle de la page perd tout le travail en cours (retour utilisatrice réel : un
+// grand diagramme jacquard perdu ainsi). Autosave local (localStorage, pas de coût réseau
+// donc pas besoin d'attendre plusieurs minutes) déclenché à chaque modification.
+const DRAFT_STORAGE_KEY = 'yf_chart_designer_draft'
 
 const makeBlankChart = (name, width, height) => ({
   name,
@@ -53,6 +59,40 @@ export default function ChartDesigner() {
   const [myCharts, setMyCharts] = useState([])
   const [loadingMyCharts, setLoadingMyCharts] = useState(true)
   const [showAllCharts, setShowAllCharts] = useState(false)
+
+  const [draftChart, setDraftChart] = useState(null)
+  const draftSaveTimeoutRef = useRef(null)
+
+  // [AI:Claude] Au montage uniquement : un brouillon existant n'est jamais chargé
+  // silencieusement dans `chart` (on pourrait sinon écraser un choix conscient de repartir
+  // de zéro) — juste proposé via un bandeau, tant que `chart` est encore null.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY)
+      if (raw) setDraftChart(JSON.parse(raw))
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Autosave local débounced : à chaque modification du dessin en cours.
+  useEffect(() => {
+    if (!chart) return
+    if (draftSaveTimeoutRef.current) clearTimeout(draftSaveTimeoutRef.current)
+    draftSaveTimeoutRef.current = setTimeout(() => {
+      try { localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(chart)) } catch { /* ignore */ }
+    }, 600)
+    return () => clearTimeout(draftSaveTimeoutRef.current)
+  }, [chart])
+
+  const clearDraft = () => {
+    try { localStorage.removeItem(DRAFT_STORAGE_KEY) } catch { /* ignore */ }
+    setDraftChart(null)
+  }
+
+  const handleResumeDraft = () => {
+    setChart(draftChart)
+    setDraftChart(null)
+  }
 
   useEffect(() => {
     api.get('/charts').then(res => {
@@ -376,6 +416,29 @@ export default function ChartDesigner() {
         <p className="text-sm text-gray-500">
           {t('ui.chartDesignerIntro')}
         </p>
+
+        {draftChart && (
+          <div className="bg-amber-50 border border-amber-200 rounded-control p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+            <p className="text-sm text-amber-800 flex-1">
+              {t('ui.chartDraftFound', { name: draftChart.name, w: draftChart.width, h: draftChart.height })}
+            </p>
+            <div className="flex gap-2 flex-shrink-0">
+              <button
+                onClick={clearDraft}
+                className="px-3 py-1.5 text-sm text-amber-700 hover:text-amber-900 font-medium"
+              >
+                {t('ui.chartDraftDiscard')}
+              </button>
+              <button
+                onClick={handleResumeDraft}
+                className="px-4 py-1.5 bg-amber-600 text-white text-sm font-semibold rounded-control hover:bg-amber-700 transition"
+              >
+                {t('ui.chartDraftResume')}
+              </button>
+            </div>
+          </div>
+        )}
+
         {!loadingMyCharts && myCharts.length > 0 && (
           <button
             onClick={() => setShowAllCharts(true)}
@@ -679,6 +742,10 @@ export default function ChartDesigner() {
           chart={chart}
           onClose={() => setShowSaveModal(false)}
           onSaved={(savedChart) => {
+            // [AI:Claude] Le travail est maintenant persisté côté serveur — le brouillon
+            // local n'a plus lieu d'être (sinon il reviendrait proposer une reprise sur un
+            // dessin déjà enregistré à la prochaine visite de l'outil).
+            clearDraft()
             // [AI:Claude] Après l'enregistrement, on quitte l'édition : vers la
             // grille dans son projet si elle y est rattachée, sinon vers "Mes
             // grilles" — sans ça on reste bloqué sur la grille déjà enregistrée.

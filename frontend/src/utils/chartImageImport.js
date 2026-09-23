@@ -177,6 +177,13 @@ const combFit = (profile, minP, maxP) => {
 
 const MIN_COMB_CONFIDENCE = 0.6
 const ANALYSIS_MAX_DIM = 800
+// [AI:Claude] 2026-09-23 — Le downscale ne s'active qu'au-delà de ANALYSIS_MAX_DIM : une
+// image plus petite mais avec peu de cases (donc de grandes cases en pixels, ex: 528px
+// pour 20 colonnes = ~25px/case) donnait une vraie période hors de la plage recherchée, et
+// l'algo ne trouvait aucune ligne malgré une grille nette. La plage max doit donc suivre la
+// résolution réelle plutôt qu'être figée. En dessous de 5 cases sur le côté le plus court,
+// ça ne ressemble plus vraiment à une grille de motif — on ne cherche pas au-delà.
+const MIN_CELLS_SHORT_SIDE = 5
 
 const buildLinePositions = (phase, period, length) => {
   const lines = []
@@ -201,8 +208,9 @@ const detectGridFromImage = (img) => {
 
   const vProfile = gradientProfile(data, W, H, 'x')
   const hProfile = gradientProfile(data, W, H, 'y')
-  const v = combFit(vProfile, 2.4, 20)
-  const h = combFit(hProfile, 2.4, 20)
+  const maxPeriod = Math.max(20, Math.min(W, H) / MIN_CELLS_SHORT_SIDE)
+  const v = combFit(vProfile, 2.4, maxPeriod)
+  const h = combFit(hProfile, 2.4, maxPeriod)
   if (!v || !h) return null
   if (v.confidence < MIN_COMB_CONFIDENCE || h.confidence < MIN_COMB_CONFIDENCE) return null
 
