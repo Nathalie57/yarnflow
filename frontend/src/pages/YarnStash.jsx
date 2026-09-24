@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { yarnStashAPI, stashAllocationAPI } from '../services/api'
 import api from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
@@ -53,6 +53,18 @@ const YarnStash = () => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingEntry, setEditingEntry] = useState(null)
   const [deletingEntry, setDeletingEntry] = useState(null)
+
+  // [AI:Claude] Ouverture directe du formulaire d'ajout depuis un autre écran
+  // (ex: empty state de Mes Projets, ?openAdd=1)
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get('openAdd') === '1') {
+      setShowAddModal(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete('openAdd')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   // Modale assignation à un projet
   const [assigningEntry, setAssigningEntry] = useState(null)

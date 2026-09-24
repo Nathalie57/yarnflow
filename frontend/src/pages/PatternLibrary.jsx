@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
 import { useAlert } from '../hooks/useAlert'
@@ -53,6 +53,18 @@ const PatternLibrary = () => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingPattern, setEditingPattern] = useState(null)
 
+  // [AI:Claude] Ouverture directe du formulaire d'ajout depuis un autre écran
+  // (ex: empty state de Mes Projets, ?openAdd=1)
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    if (searchParams.get('openAdd') === '1') {
+      setShowAddModal(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete('openAdd')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
   // [AI:Claude] Visualisation de patron
   const [showViewerModal, setShowViewerModal] = useState(false)
   const [viewerData, setViewerData] = useState({ url: '', fileName: '', type: '' })
@@ -75,6 +87,16 @@ const PatternLibrary = () => {
   const [addModalDragOver, setAddModalDragOver] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
+  const [showMoreFields, setShowMoreFields] = useState(false) // section "Ajouter des détails (facultatif)"
+
+  // [AI:Claude] Distingue un nom auto-rempli depuis le nom du fichier d'un nom
+  // que l'utilisatrice a tapé elle-même : seul le second doit résister à un
+  // changement de fichier (sinon un mauvais fichier sélectionné par erreur
+  // "verrouille" son nom même après remplacement par le bon fichier).
+  const [nameEditedByUser, setNameEditedByUser] = useState(false)
+
+  // [AI:Claude] Nom du fichier sans extension, pour préremplir le champ "Nom du patron"
+  const filenameWithoutExtension = (filename) => filename.replace(/\.[^./\\]+$/, '')
 
   // Libelle affichable d'une valeur stockee : la valeur elle-meme reste en base.
   const getCategoryLabel = (category) => {
@@ -427,6 +449,8 @@ const PatternLibrary = () => {
     setAddType('file')
     setEditType('file')
     setValidationErrors({})
+    setShowMoreFields(false)
+    setNameEditedByUser(false)
   }
 
   const resetFilters = () => {
@@ -671,7 +695,7 @@ const PatternLibrary = () => {
                   className="bg-white rounded-control border border-flow-mint hover:shadow-lg transition overflow-hidden"
                 >
                   {/* Preview/Icon */}
-                  <div className="h-48 relative overflow-hidden bg-gray-100">
+                  <div className="h-28 md:h-32 lg:h-36 relative overflow-hidden bg-gray-100">
                     {/* Aperçu selon le type */}
                     {pattern.source_type === 'file' && pattern.file_type === 'image' ? (
                       // [AI:Claude] Image : afficher l'aperçu depuis le cache blob
@@ -679,12 +703,12 @@ const PatternLibrary = () => {
                         <img
                           src={previewUrls[pattern.id]}
                           alt={pattern.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover object-top"
                         />
                       ) : previewErrors[pattern.id] ? (
                         <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                           <div className="text-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-12 h-12 text-gray-400 mx-auto mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-8 h-8 text-gray-400 mx-auto mb-1">
                               <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
                             </svg>
                             <p className="text-xs text-gray-500">{t('ui.imageUnavailable')}</p>
@@ -692,14 +716,14 @@ const PatternLibrary = () => {
                         </div>
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
                         </div>
                       )
                     ) : pattern.source_type === 'file' && pattern.file_type === 'pdf' ? (
                       // [AI:Claude] PDF : fond avec icône stylée
-                      <div className="w-full h-full bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+                      <div className="w-full h-full bg-gray-50 flex items-center justify-center">
                         <div className="text-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-14 h-14 text-red-400 mx-auto mb-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-9 h-9 text-red-400 mx-auto mb-1">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                           </svg>
                           <p className="text-xs text-red-700 font-medium">{t('ui.pdf')}</p>
@@ -707,11 +731,11 @@ const PatternLibrary = () => {
                       </div>
                     ) : pattern.source_type === 'text' ? (
                       // [AI:Claude] TEXTE : aperçu du texte
-                      <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col items-center justify-center p-4 overflow-hidden">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-10 h-10 text-blue-400 mb-2">
+                      <div className="w-full h-full bg-gray-50 flex flex-col items-center justify-center p-4 overflow-hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-7 h-7 text-blue-400 mb-1">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m-1.5 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                         </svg>
-                        <p className="text-xs text-blue-700 font-medium mb-2">{t('ui.textUpper')}</p>
+                        <p className="text-xs text-blue-700 font-medium mb-1">{t('ui.textUpper')}</p>
                         <div className="text-xs text-blue-600 font-mono text-center line-clamp-3 max-w-full">
                           {pattern.pattern_text?.substring(0, 80)}...
                         </div>
@@ -722,11 +746,11 @@ const PatternLibrary = () => {
                         <img
                           src={pattern.preview_image_url || pattern.thumbnail_path}
                           alt={pattern.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover object-top"
                           onError={(e) => {
                             e.target.style.display = 'none'
                             e.target.parentElement.innerHTML = `
-                              <div class="w-full h-full bg-gradient-to-br from-primary-100 to-primary-100 flex items-center justify-center">
+                              <div class="w-full h-full bg-gray-50 flex items-center justify-center">
                                 <div class="text-center">
                                   <p class="text-xs text-primary-700 font-medium mt-2">{t('ui.webLink')}</p>
                                 </div>
@@ -735,9 +759,9 @@ const PatternLibrary = () => {
                           }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-100 flex items-center justify-center">
+                        <div className="w-full h-full bg-gray-50 flex items-center justify-center">
                           <div className="text-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-14 h-14 text-primary-400 mx-auto mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-9 h-9 text-primary-400 mx-auto mb-1">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
                             </svg>
                             <p className="text-xs text-primary-700 font-medium">{t('ui.webLink')}</p>
@@ -921,6 +945,7 @@ const PatternLibrary = () => {
                         const seen = new Set()
                         return all.filter(f => { const k = f.name + f.size; return seen.has(k) ? false : seen.add(k) })
                       })
+                      setFormData(prev => nameEditedByUser ? prev : { ...prev, name: filenameWithoutExtension(dropped[0].name) })
                       setValidationErrors({ ...validationErrors, file: '' })
                     }}
                     className={`border-2 border-dashed rounded-control p-6 text-center transition ${
@@ -947,6 +972,7 @@ const PatternLibrary = () => {
                             const seen = new Set()
                             return all.filter(f => { const k = f.name + f.size; return seen.has(k) ? false : seen.add(k) })
                           })
+                          setFormData(prev => nameEditedByUser ? prev : { ...prev, name: filenameWithoutExtension(picked[0].name) })
                           setValidationErrors({ ...validationErrors, file: '' })
                         }}
                         className="hidden"
@@ -1053,6 +1079,7 @@ const PatternLibrary = () => {
                   value={formData.name}
                   onChange={(e) => {
                     setFormData({ ...formData, name: e.target.value })
+                    setNameEditedByUser(true)
                     setValidationErrors({ ...validationErrors, name: '' })
                   }}
                   placeholder={t('ui.phPatternName')}
@@ -1066,99 +1093,122 @@ const PatternLibrary = () => {
                 )}
               </div>
 
-              {/* Description */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('ui.description')}
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  placeholder={t('ui.phPatternDescription')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-control"
-                />
-              </div>
-
-              {/* Grille de métadonnées */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                {/* Catégorie */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('ui.category')}
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-control"
+              {/* Détails facultatifs — repliés par défaut pour un ajout rapide */}
+              <div className="mb-6 border border-gray-200 rounded-control">
+                <button
+                  type="button"
+                  onClick={() => setShowMoreFields(prev => !prev)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left"
+                >
+                  <span className="text-sm font-medium text-gray-700">
+                    {t('ui.addDetailsOptional')}
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+                    className={`w-4 h-4 text-gray-400 transition-transform ${showMoreFields ? 'rotate-180' : ''}`}
                   >
-                    <option value="">{t('ui.selectPlaceholder')}</option>
-                    <option value="Vêtements">{t('ui.catClothing')}</option>
-                    <option value="Accessoires">{t('ui.catAccessories')}</option>
-                    <option value="Jouets/Peluches">{t('ui.catToys')}</option>
-                    <option value="Vêtements bébé">{t('ui.catBabyClothing')}</option>
-                    <option value="Accessoires bébé">{t('ui.catBabyAccessories')}</option>
-                    <option value="Vêtements enfant">{t('ui.catKidsClothing')}</option>
-                    <option value="Maison/Déco">{t('ui.catHome')}</option>
-                  </select>
-                </div>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
 
-                {/* Technique */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('ui.technique')}
-                  </label>
-                  <select
-                    value={formData.technique}
-                    onChange={(e) => setFormData({ ...formData, technique: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-control"
-                  >
-                    <option value="">{t('ui.selectPlaceholder')}</option>
-                    <option value="crochet">{t('ui.crochet')}</option>
-                    <option value="tricot">{t('ui.knitting')}</option>
-                  </select>
-                </div>
+                {showMoreFields && (
+                  <div className="px-4 pb-4 border-t border-gray-200">
+                    {/* Description */}
+                    <div className="mb-4 mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('ui.description')}
+                      </label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        rows={3}
+                        placeholder={t('ui.phPatternDescription')}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-control"
+                      />
+                    </div>
 
-                {/* Difficulté */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t('ui.difficulty')}
-                  </label>
-                  <select
-                    value={formData.difficulty}
-                    onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-control"
-                  >
-                    <option value="">{t('ui.selectPlaceholder')}</option>
-                    <option value="facile">{t('ui.diffEasy')}</option>
-                    <option value="moyen">{t('ui.diffMedium')}</option>
-                    <option value="difficile">{t('ui.diffHard')}</option>
-                  </select>
-                </div>
+                    {/* Grille de métadonnées */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      {/* Catégorie */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t('ui.category')}
+                        </label>
+                        <select
+                          value={formData.category}
+                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-control"
+                        >
+                          <option value="">{t('ui.selectPlaceholder')}</option>
+                          <option value="Vêtements">{t('ui.catClothing')}</option>
+                          <option value="Accessoires">{t('ui.catAccessories')}</option>
+                          <option value="Jouets/Peluches">{t('ui.catToys')}</option>
+                          <option value="Vêtements bébé">{t('ui.catBabyClothing')}</option>
+                          <option value="Accessoires bébé">{t('ui.catBabyAccessories')}</option>
+                          <option value="Vêtements enfant">{t('ui.catKidsClothing')}</option>
+                          <option value="Maison/Déco">{t('ui.catHome')}</option>
+                        </select>
+                      </div>
+
+                      {/* Technique */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t('ui.technique')}
+                        </label>
+                        <select
+                          value={formData.technique}
+                          onChange={(e) => setFormData({ ...formData, technique: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-control"
+                        >
+                          <option value="">{t('ui.selectPlaceholder')}</option>
+                          <option value="crochet">{t('ui.crochet')}</option>
+                          <option value="tricot">{t('ui.knitting')}</option>
+                        </select>
+                      </div>
+
+                      {/* Difficulté */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t('ui.difficulty')}
+                        </label>
+                        <select
+                          value={formData.difficulty}
+                          onChange={(e) => setFormData({ ...formData, difficulty: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-control"
+                        >
+                          <option value="">{t('ui.selectPlaceholder')}</option>
+                          <option value="facile">{t('ui.diffEasy')}</option>
+                          <option value="moyen">{t('ui.diffMedium')}</option>
+                          <option value="difficile">{t('ui.diffHard')}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t('ui.personalNotes')}
+                      </label>
+                      <textarea
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        rows={3}
+                        placeholder={t('ui.phNotesOnPattern')}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-control"
+                      />
+                    </div>
+
+                    {/* Message encouragement */}
+                    {(!formData.category || !formData.technique || !formData.difficulty) && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-control">
+                        <p className="text-sm text-blue-800">
+                          <strong>{t('ui.tip')}</strong> {t('ui.metadataHelpsSearch')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-
-              {/* Notes */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('ui.personalNotes')}
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={3}
-                  placeholder={t('ui.phNotesOnPattern')}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-control"
-                />
-              </div>
-
-              {/* Message encouragement */}
-              {(!formData.category || !formData.technique || !formData.difficulty) && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-control">
-                  <p className="text-sm text-blue-800">
-                    <strong>{t('ui.tip')}</strong> {t('ui.metadataHelpsSearch')}
-                  </p>
-                </div>
-              )}
 
               {/* Boutons */}
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 modal-actions-mobile">

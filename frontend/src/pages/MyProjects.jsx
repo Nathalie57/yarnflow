@@ -1154,6 +1154,44 @@ const MyProjects = () => {
                 </button>
               </p>
 
+              {/* Organiser son univers — zone secondaire, visuellement en retrait par
+                  rapport à Smart Creation qui reste le chemin recommandé */}
+              <div className="mt-6 mb-6">
+                <p className="text-center text-xs text-gray-500 mb-3">
+                  {t('myProjects.organizeUniverseTitle')}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                  <button
+                    onClick={() => navigate('/pattern-library?openAdd=1')}
+                    className="px-3 py-2 sm:p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-card text-left transition"
+                  >
+                    <p className="text-sm font-semibold text-flow-ink mb-0.5">
+                      📚 {t('myProjects.organizeLibraryTitle')}
+                    </p>
+                    <p className="text-xs text-gray-500 mb-1.5">
+                      {t('myProjects.organizeLibraryDesc')}
+                    </p>
+                    <span className="text-xs font-medium text-primary-600">
+                      {t('myProjects.organizeLibraryCta')}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => navigate('/stash?openAdd=1')}
+                    className="px-3 py-2 sm:p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-card text-left transition"
+                  >
+                    <p className="text-sm font-semibold text-flow-ink mb-0.5">
+                      🧶 {t('myProjects.organizeStashTitle')}
+                    </p>
+                    <p className="text-xs text-gray-500 mb-1.5">
+                      {t('myProjects.organizeStashDesc')}
+                    </p>
+                    <span className="text-xs font-medium text-primary-600">
+                      {t('myProjects.organizeStashCta')}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
               {/* Démo — lien discret, friction zéro, ne concurrence plus les vrais CTA */}
               <p className="text-center text-sm text-gray-500">
                 {t('myProjects.exploreDemoLinkPrefix')}{' '}

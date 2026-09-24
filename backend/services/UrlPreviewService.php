@@ -24,11 +24,15 @@ class UrlPreviewService
     public function getPreviewImage(string $url): ?string
     {
         try {
-            // [AI:Claude] Timeout de 5 secondes max
+            // [AI:Claude] Timeout de 5 secondes max. ignore_errors: true est indispensable —
+            // sans lui, un code HTTP 4xx/5xx (site qui bloque les requêtes serveur, 404, etc.)
+            // déclenche un warning PHP que le gestionnaire d'erreurs global de l'app (bootstrap.php)
+            // transforme en 500 fatal, même avec le @ devant file_get_contents.
             $context = stream_context_create([
                 'http' => [
                     'timeout' => 5,
-                    'user_agent' => 'YarnFlow/1.0 (Pattern Preview Bot)'
+                    'user_agent' => 'YarnFlow/1.0 (Pattern Preview Bot)',
+                    'ignore_errors' => true
                 ]
             ]);
 
@@ -95,7 +99,8 @@ class UrlPreviewService
             $context = stream_context_create([
                 'http' => [
                     'timeout' => 5,
-                    'user_agent' => 'YarnFlow/1.0 (Pattern Preview Bot)'
+                    'user_agent' => 'YarnFlow/1.0 (Pattern Preview Bot)',
+                    'ignore_errors' => true
                 ]
             ]);
 

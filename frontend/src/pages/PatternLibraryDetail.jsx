@@ -796,7 +796,9 @@ const PatternLibraryDetail = () => {
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-flow-ink">{t('ui.usageNotes')}</h3>
                 {!isPro && (
-                  <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 text-xs font-semibold rounded">{t('ui.planPro')}</span>
+                  <span className="px-1.5 py-0.5 bg-primary-100 text-primary-700 text-xs font-semibold rounded">
+                    {planLabel(upgradeTarget('pattern_library', currentPlan))}
+                  </span>
                 )}
               </div>
               {isPro && !showAddNote && (
