@@ -31,6 +31,8 @@
     "copyPaste": "Copy-paste",
     "copyPasteAlt": "Copy/paste",
     "fullscreen": "Fullscreen",
+    "originalTab": "Original",
+    "translatedTab": "Translated",
     "viewLarge": "View large",
     "viewDetails": "View details",
     "moreActions": "More actions",

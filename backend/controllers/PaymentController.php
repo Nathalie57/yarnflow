@@ -56,6 +56,33 @@ class PaymentController
     }
 
     /**
+     * [AI:Claude] Résout l'ID client Stripe stable de l'utilisateur, en le créant si besoin.
+     * Centralise ce que faisait déjà createPortal() en local — les méthodes de checkout
+     * passaient jusqu'ici 'customer_email' à Stripe, qui crée un Customer différent à
+     * chaque session. Comme processCheckoutCompleted() n'enregistrait stripe_customer_id
+     * que si vide, un deuxième abonnement créait un second Customer jamais lié au compte :
+     * le portail (et toute gestion ultérieure) pointait alors vers l'ancien Customer, sans
+     * l'abonnement réellement actif.
+     *
+     * @param array $user Ligne utilisateur (doit contenir au moins id, email, stripe_customer_id)
+     * @return string|null ID client Stripe, ou null si la création a échoué côté Stripe
+     */
+    private function resolveStripeCustomerId(array $user): ?string
+    {
+        $customerId = $user['stripe_customer_id'] ?? null;
+        if ($customerId)
+            return $customerId;
+
+        $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+        $customerId = $this->stripeService->createOrGetCustomer($user['email'], $name ?: $user['email']);
+
+        if ($customerId)
+            $this->userModel->update((int)$user['id'], ['stripe_customer_id' => $customerId]);
+
+        return $customerId;
+    }
+
+    /**
      * [AI:Claude] Créer une session de paiement pour un patron
      * POST /api/payments/checkout/pattern
      */
@@ -88,13 +115,17 @@ class PaymentController
             Response::error('Accès non autorisé', HTTP_FORBIDDEN);
 
         $user = $this->userModel->findById($userData['user_id']);
+        $customerId = $this->resolveStripeCustomerId($user);
+
+        if (!$customerId)
+            Response::serverError('Impossible de créer le client de paiement');
 
         // [AI:Claude] Créer la session Stripe
         $result = $this->stripeService->createPatternCheckoutSession(
             $userData['user_id'],
             $patternId,
             $pattern['price_paid'],
-            $user['email']
+            $customerId
         );
 
         if (!$result['success'])
@@ -140,6 +171,10 @@ class PaymentController
 
         $user = $this->userModel->findById($userData['user_id']);
         $type = $data['type'];
+        $customerId = $this->resolveStripeCustomerId($user);
+
+        if (!$customerId)
+            Response::serverError('Impossible de créer le client de paiement');
 
         // [AI:Claude] Si Early Bird, vérifier disponibilité
         if ($type === 'early_bird') {
@@ -160,11 +195,11 @@ class PaymentController
 
         // [AI:Claude] Créer la session selon le type d'abonnement
         $result = match($type) {
-            'plus' => $this->stripeService->createPlusMonthlySession($userData['user_id'], $user['email']),
-            'plus_annual' => $this->stripeService->createPlusAnnualSession($userData['user_id'], $user['email']),
-            'pro' => $this->stripeService->createProMonthlySession($userData['user_id'], $user['email']),
-            'pro_annual' => $this->stripeService->createProAnnualSession($userData['user_id'], $user['email']),
-            'early_bird' => $this->stripeService->createEarlyBirdSubscriptionSession($userData['user_id'], $user['email']),
+            'plus' => $this->stripeService->createPlusMonthlySession($userData['user_id'], $customerId),
+            'plus_annual' => $this->stripeService->createPlusAnnualSession($userData['user_id'], $customerId),
+            'pro' => $this->stripeService->createProMonthlySession($userData['user_id'], $customerId),
+            'pro_annual' => $this->stripeService->createProAnnualSession($userData['user_id'], $customerId),
+            'early_bird' => $this->stripeService->createEarlyBirdSubscriptionSession($userData['user_id'], $customerId),
             default => ['success' => false]
         };
 
@@ -229,11 +264,15 @@ class PaymentController
 
         $user = $this->userModel->findById($userData['user_id']);
         $pack = $data['pack'];
+        $customerId = $this->resolveStripeCustomerId($user);
+
+        if (!$customerId)
+            Response::serverError('Impossible de créer le client de paiement');
 
         // [AI:Claude] Créer la session selon le pack
         $result = match($pack) {
-            '50' => $this->stripeService->createCredits50Session($userData['user_id'], $user['email']),
-            '150' => $this->stripeService->createCredits150Session($userData['user_id'], $user['email']),
+            '50' => $this->stripeService->createCredits50Session($userData['user_id'], $customerId),
+            '150' => $this->stripeService->createCredits150Session($userData['user_id'], $customerId),
             default => ['success' => false]
         };
 
@@ -338,17 +377,7 @@ class PaymentController
             return;
 
         $user = $this->userModel->findById($userData['user_id']);
-
-        $customerId = $user['stripe_customer_id'] ?? null;
-
-        // [AI:Claude] Si pas de customer_id en base, le chercher/créer via l'email
-        if (!$customerId) {
-            $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
-            $customerId = $this->stripeService->createOrGetCustomer($user['email'], $name ?: $user['email']);
-            if ($customerId) {
-                $this->userModel->update($userData['user_id'], ['stripe_customer_id' => $customerId]);
-            }
-        }
+        $customerId = $this->resolveStripeCustomerId($user);
 
         if (!$customerId) {
             Response::serverError('Impossible d\'accéder au portail : aucun compte Stripe trouvé');
@@ -543,13 +572,14 @@ class PaymentController
             $this->paymentModel->updateStatus($payment['id'], PAYMENT_COMPLETED);
         }
 
-        // Sauvegarder stripe_customer_id et stripe_subscription_id
+        // [AI:Claude] Sauvegarder stripe_customer_id et stripe_subscription_id — toujours
+        // resynchroniser (pas seulement si vide) : depuis que resolveStripeCustomerId() fixe
+        // le customer AVANT le checkout, il doit déjà correspondre, mais ce filet de sécurité
+        // évite de rejouer le bug (compte lié à un ancien Customer sans l'abonnement actif)
+        // si cette résolution amont venait à échouer silencieusement.
         $updateFields = [];
         if (!empty($data['customer_id'])) {
-            $existingUser = $this->userModel->findById($userId);
-            if (empty($existingUser['stripe_customer_id'])) {
-                $updateFields['stripe_customer_id'] = $data['customer_id'];
-            }
+            $updateFields['stripe_customer_id'] = $data['customer_id'];
         }
         if (!empty($data['subscription_id'])) {
             $updateFields['stripe_subscription_id'] = $data['subscription_id'];

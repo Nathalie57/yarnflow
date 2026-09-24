@@ -51,6 +51,8 @@
     "phEnglishPattern": "Colle ici le texte anglais de ton patron...",
     "creditUsedWarning": "Un crédit a été utilisé. Si tu ne sauvegardes pas maintenant, la traduction sera perdue.",
     "saveToLibrary": "Enregistrer dans la bibliothèque",
+    "attachTranslationTo": "Attacher la traduction à \"{{name}}\"",
+    "translatingLibraryPattern": "Patron : \"{{name}}\"",
     "noPdfPattern": "Aucun patron avec PDF dans ta bibliothèque.",
     "loadingLibrary": "Chargement de la bibliothèque…",
     "myLibrary": "Ma bibliothèque",

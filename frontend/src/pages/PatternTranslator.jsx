@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 import { useTranslation } from 'react-i18next'
@@ -13,10 +13,12 @@ import FlowMascot from '../components/FlowMascot'
 export default function PatternTranslator() {
   const { t } = useTranslation('tools')
   const navigate = useNavigate()
-  const [mode, setMode] = useState('url')
+  const location = useLocation()
+  const prefill = location.state?.prefill
+  const [mode, setMode] = useState(prefill?.source_type === 'text' ? 'text' : prefill?.source_type === 'file' ? 'pdf' : 'url')
   const [targetLang, setTargetLang] = useState('fr')
-  const [url, setUrl] = useState('')
-  const [text, setText] = useState('')
+  const [url, setUrl] = useState(prefill?.source_type === 'url' ? (prefill.url ?? '') : '')
+  const [text, setText] = useState(prefill?.source_type === 'text' ? (prefill.pattern_text ?? '') : '')
   const [file, setFile] = useState(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
@@ -52,8 +54,14 @@ export default function PatternTranslator() {
         if (!text.trim()) { setError(t('ui.enterPatternText')); setLoading(false); return }
         formData.append('text', text.trim())
       } else if (mode === 'pdf') {
-        if (!file) { setError(t('ui.selectPdfFile')); setLoading(false); return }
-        formData.append('file', file)
+        // [AI:Claude] Patron PDF déjà en bibliothèque (bouton "Traduire ce patron") : le
+        // serveur relit son propre fichier via l'id, pas besoin de le réuploader.
+        if (prefill?.source_type === 'file' && prefill?.pattern_id) {
+          formData.append('existing_pattern_id', prefill.pattern_id)
+        } else {
+          if (!file) { setError(t('ui.selectPdfFile')); setLoading(false); return }
+          formData.append('file', file)
+        }
       }
 
       formData.append('target_lang', targetLang)
@@ -128,7 +136,28 @@ export default function PatternTranslator() {
   }
 
   const handleSave = async () => {
-    if (!saveName.trim() || !result) return
+    if (!result) return
+    // [AI:Claude] Traduction lancée depuis une fiche bibliothèque existante (bouton "Traduire
+    // ce patron") : on attache le texte traduit à CETTE fiche (onglet Original/Traduit) plutôt
+    // que d'en créer une deuxième — voir SmartProjectController::saveImportToLibrary() pour la
+    // même logique côté Création Intelligente.
+    if (prefill?.pattern_id) {
+      setSaving(true)
+      setSaveError(null)
+      try {
+        await api.put(`/pattern-library/${prefill.pattern_id}`, {
+          translated_text: result,
+          translated_lang: targetLang,
+        })
+        navigate(`/pattern-library/${prefill.pattern_id}`)
+      } catch (err) {
+        setSaveError(t('ui.saveToLibraryFailed'))
+        setSaving(false)
+      }
+      return
+    }
+
+    if (!saveName.trim()) return
     setSaving(true)
     setSaveError(null)
     try {
@@ -193,37 +222,43 @@ export default function PatternTranslator() {
           <div className="flex items-center gap-3">
             <FlowMascot pose="heureux" size={48} className="flex-shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-primary-800">{t('ui.saveToLibrary')}</p>
+              <p className="text-sm font-semibold text-primary-800">
+                {prefill?.pattern_id ? t('ui.attachTranslationTo', { name: prefill.name }) : t('ui.saveToLibrary')}
+              </p>
               <p className="text-xs text-primary-600 mt-0.5">{t('ui.creditUsedWarning')}</p>
             </div>
           </div>
-          <input
-            type="text"
-            placeholder={t('ui.phPatternNameFull')}
-            value={saveName}
-            onChange={e => setSaveName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSave()}
-            className="w-full border border-primary-200 bg-white rounded-control px-4 py-2.5 text-sm focus:outline-none focus:border-primary-400"
-          />
-          <div className="flex gap-2">
-            {['tricot', 'crochet'].map(t => (
-              <button
-                key={t}
-                onClick={() => setSaveTechnique(t)}
-                className={`px-4 py-2 rounded-control text-xs font-semibold border transition ${
-                  saveTechnique === t
-                    ? 'bg-primary-600 text-white border-primary-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300'
-                }`}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
-          </div>
+          {!prefill?.pattern_id && (
+            <>
+              <input
+                type="text"
+                placeholder={t('ui.phPatternNameFull')}
+                value={saveName}
+                onChange={e => setSaveName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSave()}
+                className="w-full border border-primary-200 bg-white rounded-control px-4 py-2.5 text-sm focus:outline-none focus:border-primary-400"
+              />
+              <div className="flex gap-2">
+                {['tricot', 'crochet'].map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setSaveTechnique(t)}
+                    className={`px-4 py-2 rounded-control text-xs font-semibold border transition ${
+                      saveTechnique === t
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300'
+                    }`}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           {saveError && <p className="text-xs text-red-600">{saveError}</p>}
           <button
             onClick={handleSave}
-            disabled={saving || !saveName.trim()}
+            disabled={saving || (!prefill?.pattern_id && !saveName.trim())}
             className="w-full py-3 bg-primary-600 text-white rounded-control font-semibold text-sm hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? t('ui.savingEllipsis') : t('ui.saveToLibrary')}
@@ -352,20 +387,26 @@ export default function PatternTranslator() {
       )}
 
       {mode === 'pdf' && (
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="border-2 border-dashed border-gray-200 rounded-control p-8 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50 transition"
-        >
-          <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={e => setFile(e.target.files[0])} />
-          {file ? (
-            <p className="text-sm text-primary-700 font-medium">{file.name}</p>
-          ) : (
-            <>
-              <p className="text-sm text-gray-500">{t('ui.clickToSelectPdf')}</p>
-              <p className="text-xs text-gray-400 mt-1">{t('ui.maxSize30b')}</p>
-            </>
-          )}
-        </div>
+        prefill?.source_type === 'file' && prefill?.pattern_id ? (
+          <div className="border border-primary-200 bg-primary-50 rounded-control p-4 text-sm text-primary-700 font-medium">
+            {t('ui.translatingLibraryPattern', { name: prefill.name })}
+          </div>
+        ) : (
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="border-2 border-dashed border-gray-200 rounded-control p-8 text-center cursor-pointer hover:border-primary-300 hover:bg-primary-50 transition"
+          >
+            <input ref={fileInputRef} type="file" accept=".pdf" className="hidden" onChange={e => setFile(e.target.files[0])} />
+            {file ? (
+              <p className="text-sm text-primary-700 font-medium">{file.name}</p>
+            ) : (
+              <>
+                <p className="text-sm text-gray-500">{t('ui.clickToSelectPdf')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('ui.maxSize30b')}</p>
+              </>
+            )}
+          </div>
+        )
       )}
 
       {/* Erreur */}

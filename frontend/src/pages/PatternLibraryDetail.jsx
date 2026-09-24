@@ -45,6 +45,7 @@ const PatternLibraryDetail = () => {
   const [showImageLightbox, setShowImageLightbox] = useState(false)
   const [showTextFullscreen, setShowTextFullscreen] = useState(false)
   const [showLinkProjectModal, setShowLinkProjectModal] = useState(false)
+  const [showTranslated, setShowTranslated] = useState(false)
 
   // Liaison projet
   const [userProjects, setUserProjects] = useState([])
@@ -488,6 +489,7 @@ const PatternLibraryDetail = () => {
           <div>
             <Link
               to="/pattern-translator"
+              state={{ prefill: { pattern_id: pattern.id, name: pattern.name, source_type: pattern.source_type, url: pattern.url, pattern_text: pattern.pattern_text } }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-control border border-gray-200 text-gray-500 hover:border-primary-300 hover:text-primary-700 transition"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
@@ -575,6 +577,47 @@ const PatternLibraryDetail = () => {
               </div>
             )}
 
+            {/* Onglet Original/Traduit — visible seulement si une traduction a été attachée à
+                cette fiche (traducteur autonome ou Création Intelligente) */}
+            {pattern.translated_text && (
+              <div className="px-4 pt-4 flex gap-2">
+                <button
+                  onClick={() => setShowTranslated(false)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-control border transition ${
+                    !showTranslated ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300'
+                  }`}
+                >
+                  {t('ui.originalTab')}
+                </button>
+                <button
+                  onClick={() => setShowTranslated(true)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-control border transition ${
+                    showTranslated ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-600 border-gray-200 hover:border-primary-300'
+                  }`}
+                >
+                  {t('ui.translatedTab')}
+                </button>
+              </div>
+            )}
+
+            {showTranslated && pattern.translated_text ? (
+              <div>
+                <div className="px-4 pt-4 pb-0 flex justify-end">
+                  <button onClick={() => setShowTextFullscreen(true)} className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-gray-300 text-gray-600 rounded-control hover:bg-gray-50 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                    </svg>
+                    {t('ui.fullscreen')}
+                  </button>
+                </div>
+                <div className="p-6">
+                  <div className="bg-gray-50 rounded-control p-5">
+                    <pre className="whitespace-pre-wrap font-sans text-gray-800 leading-relaxed text-sm">{pattern.translated_text}</pre>
+                  </div>
+                </div>
+              </div>
+            ) : (
+            <>
             {/* Affichage fichier principal */}
             {pattern.source_type === 'file' && selectedFileId === null && (
               <>
@@ -673,6 +716,8 @@ const PatternLibraryDetail = () => {
                   </div>
                 </div>
               </div>
+            )}
+            </>
             )}
           </div>
         </div>
@@ -950,7 +995,7 @@ const PatternLibraryDetail = () => {
       )}
 
       {/* Modale plein écran texte */}
-      {showTextFullscreen && pattern.pattern_text && (
+      {showTextFullscreen && (showTranslated ? pattern.translated_text : pattern.pattern_text) && (
         <div className="fixed inset-0 bg-white z-[70] flex flex-col">
           <div className="bg-gray-900 text-white p-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">{pattern.name}</h2>
@@ -964,7 +1009,7 @@ const PatternLibraryDetail = () => {
           <div className="flex-1 overflow-auto p-8 bg-gray-50">
             <div className="max-w-4xl mx-auto bg-white rounded-control shadow-lg p-8">
               <pre className="whitespace-pre-wrap font-sans text-gray-800 leading-relaxed text-base">
-                {pattern.pattern_text}
+                {showTranslated ? pattern.translated_text : pattern.pattern_text}
               </pre>
             </div>
           </div>

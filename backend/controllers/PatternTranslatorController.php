@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\User;
+use App\Models\PatternLibrary;
 use App\Middleware\AuthMiddleware;
 use App\Services\PatternTranslatorService;
 use App\Config\Database;
@@ -16,6 +17,7 @@ use App\Config\Database;
 class PatternTranslatorController
 {
     private User $userModel;
+    private PatternLibrary $patternLibraryModel;
     private AuthMiddleware $authMiddleware;
     private PatternTranslatorService $translatorService;
     private \PDO $db;
@@ -26,6 +28,7 @@ class PatternTranslatorController
     public function __construct()
     {
         $this->userModel = new User();
+        $this->patternLibraryModel = new PatternLibrary();
         $this->authMiddleware = new AuthMiddleware();
         $this->translatorService = new PatternTranslatorService();
         $this->db = Database::getInstance()->getConnection();
@@ -98,6 +101,28 @@ class PatternTranslatorController
                 $sourceName = $file['name'];
                 $result = $this->translatorService->translateFromPdf($tempPath, $targetLang);
                 unlink($tempPath);
+
+            } elseif (!empty($_POST['existing_pattern_id'] ?? '')) {
+                // [AI:Claude] Traduction lancée depuis une fiche bibliothèque déjà en PDF —
+                // sans ça, elle devait retélécharger et réuploader le même fichier à la main.
+                // Le pattern_id (jamais un chemin de fichier fourni par le client) garantit
+                // qu'on ne relit que ses propres fichiers via belongsToUser().
+                $patternId = (int)$_POST['existing_pattern_id'];
+                if (!$this->patternLibraryModel->belongsToUser($patternId, $userId)) {
+                    $this->json(['error' => 'Accès non autorisé'], 403); return;
+                }
+                $libraryPattern = $this->patternLibraryModel->getPatternById($patternId);
+                if (!$libraryPattern || $libraryPattern['source_type'] !== 'file' || $libraryPattern['file_type'] !== 'pdf' || empty($libraryPattern['file_path'])) {
+                    $this->json(['error' => 'Ce patron n\'a pas de fichier PDF associé'], 400); return;
+                }
+                $absolutePath = __DIR__ . '/../public' . $libraryPattern['file_path'];
+                if (!file_exists($absolutePath)) {
+                    $this->json(['error' => 'Fichier PDF introuvable sur le serveur'], 404); return;
+                }
+
+                $sourceType = 'pdf';
+                $sourceName = $libraryPattern['name'];
+                $result = $this->translatorService->translateFromPdf($absolutePath, $targetLang);
 
             } elseif (!empty($_POST['url'] ?? '')) {
                 $url = trim($_POST['url']);

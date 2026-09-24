@@ -51,6 +51,8 @@
     "phEnglishPattern": "Paste the English text of your pattern here...",
     "creditUsedWarning": "A credit has been used. If you do not save now, the translation will be lost.",
     "saveToLibrary": "Save to the library",
+    "attachTranslationTo": "Attach translation to \"{{name}}\"",
+    "translatingLibraryPattern": "Pattern: \"{{name}}\"",
     "noPdfPattern": "No pattern with a PDF in your library.",
     "loadingLibrary": "Loading the library…",
     "myLibrary": "My library",

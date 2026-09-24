@@ -78,19 +78,19 @@ class StripeService
      * @param int $userId ID de l'utilisateur
      * @param int $patternId ID du patron
      * @param float $amount Montant en euros
-     * @param string $customerEmail Email du client
+     * @param string $customerId ID client Stripe (stable, réutilisé d'un achat à l'autre)
      * @return array Session Stripe créée
      */
     public function createPatternCheckoutSession(
         int $userId,
         int $patternId,
         float $amount,
-        string $customerEmail
+        string $customerId
     ): array {
         try {
             $session = Session::create([
                 'payment_method_types' => ['card'],
-                'customer_email' => $customerEmail,
+                'customer' => $customerId,
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'eur',
@@ -131,15 +131,15 @@ class StripeService
      * [AI:Claude] Créer une session PLUS mensuel
      *
      * @param int $userId ID de l'utilisateur
-     * @param string $customerEmail Email du client
+     * @param string $customerId ID client Stripe (stable, réutilisé d'un achat à l'autre)
      * @return array Session Stripe créée
      */
-    public function createPlusMonthlySession(int $userId, string $customerEmail): array
+    public function createPlusMonthlySession(int $userId, string $customerId): array
     {
         try {
             $session = Session::create([
                 'payment_method_types' => ['card'],
-                'customer_email' => $customerEmail,
+                'customer' => $customerId,
                 'line_items' => [[
                     'price' => $this->plusMonthlyPriceId,
                     'quantity' => 1
@@ -173,15 +173,15 @@ class StripeService
      * [AI:Claude] Créer une session PLUS annuel
      *
      * @param int $userId ID de l'utilisateur
-     * @param string $customerEmail Email du client
+     * @param string $customerId ID client Stripe (stable, réutilisé d'un achat à l'autre)
      * @return array Session Stripe créée
      */
-    public function createPlusAnnualSession(int $userId, string $customerEmail): array
+    public function createPlusAnnualSession(int $userId, string $customerId): array
     {
         try {
             $session = Session::create([
                 'payment_method_types' => ['card'],
-                'customer_email' => $customerEmail,
+                'customer' => $customerId,
                 'line_items' => [[
                     'price' => $this->plusAnnualPriceId,
                     'quantity' => 1
@@ -215,15 +215,15 @@ class StripeService
      * [AI:Claude] Créer une session PRO mensuel
      *
      * @param int $userId ID de l'utilisateur
-     * @param string $customerEmail Email du client
+     * @param string $customerId ID client Stripe (stable, réutilisé d'un achat à l'autre)
      * @return array Session Stripe créée
      */
-    public function createProMonthlySession(int $userId, string $customerEmail): array
+    public function createProMonthlySession(int $userId, string $customerId): array
     {
         try {
             $session = Session::create([
                 'payment_method_types' => ['card'],
-                'customer_email' => $customerEmail,
+                'customer' => $customerId,
                 'line_items' => [[
                     'price' => $this->proMonthlyPriceId,
                     'quantity' => 1
@@ -257,15 +257,15 @@ class StripeService
      * [AI:Claude] Créer une session PRO annuel
      *
      * @param int $userId ID de l'utilisateur
-     * @param string $customerEmail Email du client
+     * @param string $customerId ID client Stripe (stable, réutilisé d'un achat à l'autre)
      * @return array Session Stripe créée
      */
-    public function createProAnnualSession(int $userId, string $customerEmail): array
+    public function createProAnnualSession(int $userId, string $customerId): array
     {
         try {
             $session = Session::create([
                 'payment_method_types' => ['card'],
-                'customer_email' => $customerEmail,
+                'customer' => $customerId,
                 'line_items' => [[
                     'price' => $this->proAnnualPriceId,
                     'quantity' => 1
@@ -299,15 +299,15 @@ class StripeService
      * [AI:Claude] Créer une session de paiement pour Early Bird (2.99€/mois x 12 mois)
      *
      * @param int $userId ID de l'utilisateur
-     * @param string $customerEmail Email du client
+     * @param string $customerId ID client Stripe (stable, réutilisé d'un achat à l'autre)
      * @return array Session créée ou erreur
      */
-    public function createEarlyBirdSubscriptionSession(int $userId, string $customerEmail): array
+    public function createEarlyBirdSubscriptionSession(int $userId, string $customerId): array
     {
         try {
             $session = Session::create([
                 'payment_method_types' => ['card'],
-                'customer_email' => $customerEmail,
+                'customer' => $customerId,
                 'line_items' => [[
                     'price' => $this->earlyBirdPriceId,
                     'quantity' => 1
@@ -346,15 +346,15 @@ class StripeService
      * [AI:Claude] Créer une session pour pack 50 crédits
      *
      * @param int $userId ID de l'utilisateur
-     * @param string $customerEmail Email du client
+     * @param string $customerId ID client Stripe (stable, réutilisé d'un achat à l'autre)
      * @return array Session Stripe créée
      */
-    public function createCredits50Session(int $userId, string $customerEmail): array
+    public function createCredits50Session(int $userId, string $customerId): array
     {
         try {
             $session = Session::create([
                 'payment_method_types' => ['card'],
-                'customer_email' => $customerEmail,
+                'customer' => $customerId,
                 'line_items' => [[
                     'price' => $this->credits50PriceId,
                     'quantity' => 1
@@ -387,15 +387,15 @@ class StripeService
      * [AI:Claude] Créer une session pour pack 150 crédits
      *
      * @param int $userId ID de l'utilisateur
-     * @param string $customerEmail Email du client
+     * @param string $customerId ID client Stripe (stable, réutilisé d'un achat à l'autre)
      * @return array Session Stripe créée
      */
-    public function createCredits150Session(int $userId, string $customerEmail): array
+    public function createCredits150Session(int $userId, string $customerId): array
     {
         try {
             $session = Session::create([
                 'payment_method_types' => ['card'],
-                'customer_email' => $customerEmail,
+                'customer' => $customerId,
                 'line_items' => [[
                     'price' => $this->credits150PriceId,
                     'quantity' => 1

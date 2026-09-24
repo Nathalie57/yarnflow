@@ -16,6 +16,7 @@ namespace App\Controllers;
 
 use App\Models\Project;
 use App\Models\User;
+use App\Models\PatternLibrary;
 use App\Services\AIPatternExtractorService;
 use App\Services\AnalyticsService;
 use App\Services\PatternStorageService;
@@ -26,6 +27,7 @@ class SmartProjectController
 {
     private Project $projectModel;
     private User $userModel;
+    private PatternLibrary $patternLibraryModel;
     private AIPatternExtractorService $extractorService;
     private PatternStorageService $patternStorage;
     private AuthMiddleware $authMiddleware;
@@ -37,6 +39,7 @@ class SmartProjectController
     {
         $this->projectModel = new Project();
         $this->userModel = new User();
+        $this->patternLibraryModel = new PatternLibrary();
         $this->extractorService = new AIPatternExtractorService();
         $this->patternStorage = new PatternStorageService();
         $this->authMiddleware = new AuthMiddleware();
@@ -827,6 +830,11 @@ class SmartProjectController
 
                 $db->commit();
 
+                // [AI:Claude] Enregistrement automatique dans la bibliothèque de patrons —
+                // hors transaction, best-effort : un souci ici (fichier, doublon...) ne doit
+                // jamais faire échouer la création du projet, qui vient de réussir.
+                $this->saveImportToLibrary($userId, $importId, $sourceType, $sourceUrl, $sourceFilePath, $projectData, $data);
+
                 // Récupérer le projet complet
                 $project = $this->projectModel->findById($projectId);
 
@@ -856,6 +864,148 @@ class SmartProjectController
             error_log('[SmartProject] Erreur confirm: ' . $e->getMessage());
             $this->jsonResponse(['error' => 'Erreur lors de la création du projet'], 500);
         }
+    }
+
+    /**
+     * [AI:Claude] Enregistre automatiquement le patron importé via Smart Creation dans la
+     * bibliothèque de patrons — jusqu'ici, seul l'onglet "Patron" du projet gardait une trace
+     * du document analysé ; la bibliothèque (qui sert aussi à réimporter/réutiliser un patron
+     * plus tard) restait vide pour tout ce qui passait par la Création Intelligente.
+     *
+     * Toujours la source d'origine (PDF — copie séparée, jamais le même fichier que l'onglet
+     * "Patron" du projet, pour ne pas que supprimer l'un casse l'autre —, URL ou texte collé).
+     * Si l'aperçu a été traduit, la traduction est attachée à CETTE MÊME fiche
+     * (translated_text/translated_lang, voir migration add_translation_to_pattern_library.sql)
+     * plutôt que de créer une deuxième entrée séparée — décision du 2026-09-24 : l'UI expose
+     * un onglet "Original/Traduit" sur une seule fiche, pas deux entrées à trier dans la liste.
+     *
+     * Un import réutilisé depuis la bibliothèque elle-même (sourceType 'library') n'a rien à
+     * y ajouter puisqu'il y est déjà. Chaque type de source est dédupliqué avant insertion
+     * (une seule entrée par utilisatrice) : URL par correspondance exacte, texte par contenu
+     * exact, PDF par hash du contenu du fichier (pas du nom, qui change à chaque copie) —
+     * sinon reconfirmer plusieurs fois le même patron (tailles différentes, retour en arrière
+     * dans le formulaire) créerait un doublon à chaque fois. Si un doublon est trouvé, la
+     * traduction s'attache quand même à la fiche existante plutôt que d'être perdue.
+     */
+    private function saveImportToLibrary(
+        int $userId,
+        ?int $importId,
+        string $sourceType,
+        ?string $sourceUrl,
+        ?string $sourceFilePath,
+        array $projectData,
+        array $confirmData
+    ): void {
+        if (!in_array($sourceType, ['pdf', 'url', 'text'], true)) {
+            return;
+        }
+
+        try {
+            $db = \App\Config\Database::getInstance()->getConnection();
+
+            $name = $projectData['title'] ?? 'Patron importé';
+            $baseData = [
+                'user_id' => $userId,
+                'category' => $projectData['category'] ?? null,
+                'technique' => $projectData['craft_type'] ?? null,
+            ];
+
+            $patternLibraryId = null;
+
+            if ($sourceType === 'pdf' && $sourceFilePath) {
+                $absoluteSource = __DIR__ . '/../public' . $sourceFilePath;
+                if (file_exists($absoluteSource)) {
+                    $patternLibraryId = $this->findPdfInLibrary($userId, $absoluteSource);
+                    if (!$patternLibraryId) {
+                        $patternsDir = __DIR__ . '/../public/uploads/patterns';
+                        $filename = 'library_' . uniqid() . '.pdf';
+                        if (copy($absoluteSource, $patternsDir . '/' . $filename)) {
+                            $patternLibraryId = $this->patternLibraryModel->createPattern($baseData + [
+                                'name' => $name,
+                                'source_type' => 'file',
+                                'file_path' => '/uploads/patterns/' . $filename,
+                                'file_type' => 'pdf',
+                            ]) ?: null;
+                        }
+                    }
+                }
+            } elseif ($sourceType === 'url' && $sourceUrl) {
+                $patternLibraryId = $this->findInLibraryByExactMatch($userId, 'url', $sourceUrl)
+                    ?? ($this->patternLibraryModel->createPattern($baseData + [
+                        'name' => $name,
+                        'source_type' => 'url',
+                        'url' => $sourceUrl,
+                    ]) ?: null);
+            } elseif ($sourceType === 'text' && !empty($confirmData['pattern_text'])) {
+                $text = trim($confirmData['pattern_text']);
+                $patternLibraryId = $this->findInLibraryByExactMatch($userId, 'pattern_text', $text)
+                    ?? ($this->patternLibraryModel->createPattern($baseData + [
+                        'name' => $name,
+                        'source_type' => 'text',
+                        'pattern_text' => $text,
+                    ]) ?: null);
+            }
+
+            // En plus, la traduction attachée à cette même fiche si l'aperçu a été traduit
+            if ($patternLibraryId && $importId) {
+                $stmt = $db->prepare('SELECT translated_text, translated_lang FROM ai_pattern_imports WHERE id = :id AND user_id = :uid');
+                $stmt->execute(['id' => $importId, 'uid' => $userId]);
+                $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+                if (!empty($row['translated_text'])) {
+                    $this->patternLibraryModel->updatePattern($patternLibraryId, [
+                        'translated_text' => $row['translated_text'],
+                        'translated_lang' => $row['translated_lang'],
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            error_log('[SmartProject] Erreur saveImportToLibrary: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * [AI:Claude] Dédup par valeur exacte sur une colonne texte de pattern_library (url ou
+     * pattern_text) — $column n'est jamais une entrée utilisateur, toujours un littéral passé
+     * par saveImportToLibrary(), donc pas d'injection possible malgré l'interpolation directe.
+     *
+     * @return int|null ID de la fiche existante, ou null si aucune
+     */
+    private function findInLibraryByExactMatch(int $userId, string $column, string $value): ?int
+    {
+        if (!in_array($column, ['url', 'pattern_text'], true)) {
+            return null;
+        }
+
+        $db = \App\Config\Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT id FROM pattern_library WHERE user_id = :uid AND {$column} = :value LIMIT 1");
+        $stmt->execute(['uid' => $userId, 'value' => $value]);
+        $id = $stmt->fetchColumn();
+        return $id ? (int)$id : null;
+    }
+
+    /**
+     * [AI:Claude] Dédup PDF par hash du contenu du fichier — le nom change à chaque copie
+     * (uniqid()), seul le contenu permet de détecter qu'un même patron a déjà été enregistré.
+     *
+     * @return int|null ID de la fiche existante, ou null si aucune
+     */
+    private function findPdfInLibrary(int $userId, string $newFilePath): ?int
+    {
+        $db = \App\Config\Database::getInstance()->getConnection();
+        $stmt = $db->prepare("SELECT id, file_path FROM pattern_library WHERE user_id = :uid AND source_type = 'file' AND file_type = 'pdf'");
+        $stmt->execute(['uid' => $userId]);
+
+        $newHash = hash_file('sha256', $newFilePath);
+
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $existing) {
+            $existingAbsPath = __DIR__ . '/../public' . $existing['file_path'];
+            if (file_exists($existingAbsPath) && hash_file('sha256', $existingAbsPath) === $newHash) {
+                return (int)$existing['id'];
+            }
+        }
+
+        return null;
     }
 
     /**
