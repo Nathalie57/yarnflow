@@ -779,12 +779,17 @@ class SmartProjectController
                         // prompt : si l'IA renvoie quand même un target malgré composite, on l'ignore
                         // plutôt que d'afficher un compteur X/Y qui pourrait faire manquer une étape.
                         $progressionType = ($section['progression_type'] ?? 'simple') === 'composite' ? 'composite' : 'simple';
+                        // [AI:Claude] Dernier garde-fou avant la base : cible non numérique, nulle ou
+                        // négative (ex: soustraction incohérente, saisie à la relecture) → compteur
+                        // libre plutôt qu'un objectif faux.
+                        $target = $section['target'] ?? null;
+                        $target = (is_numeric($target) && (float)$target > 0 && (float)$target < 100000) ? round((float)$target, 1) : null;
                         $stmt->execute([
                             'project_id' => $projectId,
                             'name' => $section['name'],
                             'counter_unit' => $unit === 'cm' ? 'cm' : 'rows',
                             'progression_type' => $progressionType,
-                            'total_rows' => $progressionType === 'composite' ? null : ($section['target'] ?? null),
+                            'total_rows' => $progressionType === 'composite' ? null : $target,
                             'description' => $section['description'] ?? null,
                             'display_order' => $index + 1
                         ]);

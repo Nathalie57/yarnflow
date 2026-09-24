@@ -76,7 +76,9 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
       "name": "nom de la section (ex: Corps, Manches, Assemblage)",
       "unit": "rangs" | "cm",
       "progression_type": "simple" | "composite" — voir RÈGLE PROGRESSION COMPOSITE ci-dessous,
-      "target": nombre total de rangs/tours/cm pour cette section, UNIQUEMENT si progression_type = "simple" (sinon null, voir RÈGLE PROGRESSION COMPOSITE). RÈGLE MÉCANIQUE (sections simples) : repère TOUTES les lignes numérotées de rang/tour de la section ("Round N", "Rnd N", "Rang N", "Tour N" ou équivalent dans la langue du patron) et prends le N le plus élevé — c'est le target, même si du texte non numéroté suit ensuite (rembourrage/stuffing, FO/rabattre, attache d'une pièce, note, référence à une image). Ne JAMAIS mettre null simplement parce qu'une étape finale non numérotée suit le dernier rang/tour : cette étape fait partie de la même section, elle ne change pas le compte. Si la section énonce plusieurs repères chiffrés successifs en prose (ex: "8 cm (26 rgs) puis jersey jusqu'à 46 cm (132 rgs)"), prendre le DERNIER repère de la section, jamais le premier. IMPORTANT — mettre target à null dans EXACTEMENT deux cas, jamais pour une autre raison : (1) progression_type = "composite" (toujours, quelle que soit la taille) ; (2) progression_type = "simple" MAIS la valeur de l'OBJECTIF DE PROGRESSION lui-même (le nombre de rangs/cm à atteindre pour CETTE section) varie réellement selon la taille (format "19-20-21-23 cm" ou "XS-S-M-L" appliqué À CE NOMBRE PRÉCIS) et qu'on ne connaît pas la taille choisie. Ne JAMAIS mettre target à null à cause d'autres nombres multi-tailles présents ailleurs dans la section (mailles montées, augmentations, diminutions, nombre d'épaules rabattues, etc.) si l'objectif de progression lui-même est identique pour toutes les tailles — dans ce cas target DOIT contenir cette valeur commune, le reste de la section peut très bien varier par taille sans que ça affecte target. Exemples : "Monter 106-114-122-130-142 m. Tricoter 5 rgs côtes 2/2" → target = 5 (le montage multi-tailles ne concerne pas l'objectif de progression de cette section) ; "À 58 cm (166 rgs) de hauteur totale, laisser les m. en attente" (une seule valeur, valable pour toutes les tailles) → target = 166 ; "À 46-47-48-49-50 cm de hauteur totale, rabattre..." sans taille choisie connue → target = null (ici c'est bien l'objectif de progression qui varie selon la taille),
+      "target": nombre total de rangs/tours/cm pour cette section, UNIQUEMENT si progression_type = "simple" (sinon null, voir RÈGLE PROGRESSION COMPOSITE). RÈGLE MÉCANIQUE (sections simples) : repère TOUTES les lignes numérotées de rang/tour de la section ("Round N", "Rnd N", "Rang N", "Tour N" ou équivalent dans la langue du patron) et prends le N le plus élevé — c'est le target, même si du texte non numéroté suit ensuite (rembourrage/stuffing, FO/rabattre, attache d'une pièce, note, référence à une image). Ne JAMAIS mettre null simplement parce qu'une étape finale non numérotée suit le dernier rang/tour : cette étape fait partie de la même section, elle ne change pas le compte. Si la section énonce plusieurs repères chiffrés successifs en prose (ex: "8 cm (26 rgs) puis jersey jusqu'à 46 cm (132 rgs)"), prendre le DERNIER repère de la section, jamais le premier. IMPORTANT — mettre target à null dans EXACTEMENT deux cas, jamais pour une autre raison : (1) progression_type = "composite" (toujours, quelle que soit la taille) ; (2) progression_type = "simple" MAIS la valeur de l'OBJECTIF DE PROGRESSION lui-même (le nombre de rangs/cm à atteindre pour CETTE section) varie réellement selon la taille (format "19-20-21-23 cm" ou "XS-S-M-L" appliqué À CE NOMBRE PRÉCIS) et qu'on ne connaît pas la taille choisie. Ne JAMAIS mettre target à null à cause d'autres nombres multi-tailles présents ailleurs dans la section (mailles montées, augmentations, diminutions, nombre d'épaules rabattues, etc.) si l'objectif de progression lui-même est identique pour toutes les tailles — dans ce cas target DOIT contenir cette valeur commune, le reste de la section peut très bien varier par taille sans que ça affecte target. Exemples : "Monter 106-114-122-130-142 m. Tricoter 5 rgs côtes 2/2" → target = 5 (le montage multi-tailles ne concerne pas l'objectif de progression de cette section) ; "À 58 cm (166 rgs) de hauteur totale, laisser les m. en attente" (une seule valeur, valable pour toutes les tailles) → target = 166 (tel qu'écrit, target_measured_from = "piece_start") ; "À 46-47-48-49-50 cm de hauteur totale, rabattre..." sans taille choisie connue → target = null (ici c'est bien l'objectif de progression qui varie selon la taille). REPÈRE TEL QU'ÉCRIT : target est TOUJOURS le repère chiffré exactement comme il est écrit dans le patron — ne fais JAMAIS de soustraction ni d'autre calcul entre sections. Si ce repère est mesuré depuis le début de la pièce plutôt que depuis le début de cette section, indique-le seulement via target_measured_from (la longueur propre à la section est calculée ensuite automatiquement),
+      "target_measured_from": "section" | "piece_start" — "piece_start" UNIQUEMENT si le repère de target est explicitement mesuré depuis le début de la pièce et non depuis le début de cette section (formulations : "hauteur totale", "depuis le montage", "longueur totale", "measured from cast on", "from cast-on edge", "total length", "from beginning"). "piece_start" aussi quand la numérotation des rangs/tours CONTINUE celle de la section précédente au lieu de repartir à 1 (ex: section qui va de "Rang 21" à "Rang 40" → target = 40, target_measured_from = "piece_start"). "section" dans tous les autres cas : rangs/tours numérotés à partir de 1 dans cette section, "tricoter 10 cm de côtes", "work 40 rows", mesure depuis un repère intermédiaire ("à 5 cm depuis le début de l'encolure"). En cas de doute : "section". Exemple : section 1 "Increase" (commence par "Cast on 2 sts") se termine à "46\" [117 cm] measured along straight edge" → target = 117, target_measured_from = "piece_start" ; section 2 "Maintain Width" se termine à "58\" [147.5 cm] measured from corner cast on" → target = 147.5 (tel qu'écrit, PAS 30.5), target_measured_from = "piece_start",
+      "starts_new_piece": true | false — true si cette section commence une NOUVELLE pièce tricotée/crochetée séparément avec son propre montage (ex: "Dos", puis "Devant", puis "Manche" = chacune une nouvelle pièce ; "Côtes" puis "Corps" du même dos = même pièce, donc false pour "Corps"). Toujours true pour la première section du patron,
       "description": "TOUTES les instructions complètes de cette section, rang par rang ou étape par étape (string). FORMATAGE OBLIGATOIRE : insérer un retour à la ligne (\n) avant chaque nouveau repère chiffré de hauteur/rang/tour (ex: avant chaque \"À X cm...\", \"A X cm (Y rgs)...\", \"Rang N:\", \"Round N:\") et avant chaque étape clé distincte de la section (ex: \"Emmanchures:\", \"Epaules et encolure:\", \"Encolure:\", \"Epaules:\" ou équivalent dans la langue du patron) — jamais de retour à la ligne à l'intérieur d'une même instruction/phrase. Objectif : que le texte se lise comme plusieurs paragraphes successifs plutôt qu'un seul bloc continu, même quand le patron source ne le présentait pas ainsi.",
       "secondary_counter": {
         "label": "libellé court (ex: Répétitions du motif, Tours de diminution)",
@@ -490,6 +492,10 @@ PROMPT;
             );
         }
 
+        if (is_array($data['sections'])) {
+            $data['sections'] = self::normalizeCumulativeTargets($data['sections']);
+        }
+
         return [
             'success' => true,
             'data' => $data,
@@ -497,6 +503,78 @@ PROMPT;
             'ai_status' => $this->determineStatus($data),
             'raw_response' => $response
         ];
+    }
+
+    /**
+     * [AI:Claude] 2026-09-24 — Convertit les repères cumulés ("measured from cast on",
+     * "hauteur totale") en longueur propre à chaque section. Le compteur d'une section
+     * repart toujours de 0 (ProjectCounter.jsx) : stocker le cumul brut faisait recompter
+     * toute la section précédente (vu en prod, projet 471 : 0/147.5 cm au lieu de 0/30.5).
+     *
+     * L'IA ne fait que classer (target_measured_from, starts_new_piece), le calcul est fait
+     * ici de façon déterministe. Principe : un objectif faux est pire que pas d'objectif —
+     * dès que la position de départ de la section est inconnue ou incohérente, target = null
+     * (compteur libre), jamais une valeur approximative.
+     *
+     * Idempotent : le repère d'origine est conservé dans target_raw et toujours relu depuis
+     * là, donc repasser des données déjà normalisées (cache, reprise) ne soustrait pas deux fois.
+     */
+    public static function normalizeCumulativeTargets(array $sections): array
+    {
+        // Position cumulée de fin de la section précédente dans la pièce en cours, par unité.
+        // null = inconnue (section composite, cible absente, ou avancée dans une autre unité).
+        $position = [];
+
+        foreach ($sections as $i => $section) {
+            if (!is_array($section)) {
+                continue;
+            }
+
+            $unit = ($section['unit'] ?? 'rangs') === 'cm' ? 'cm' : 'rows';
+            $raw = array_key_exists('target_raw', $section) ? $section['target_raw'] : ($section['target'] ?? null);
+            $raw = (is_numeric($raw) && (float)$raw > 0) ? (float)$raw : null;
+            $section['target_raw'] = $raw;
+
+            if ($i === 0 || !empty($section['starts_new_piece']) || self::startsWithCastOn($section['description'] ?? '')) {
+                $position = ['cm' => 0.0, 'rows' => 0.0];
+            }
+
+            $isComposite = ($section['progression_type'] ?? 'simple') === 'composite';
+            $fromPieceStart = ($section['target_measured_from'] ?? 'section') === 'piece_start';
+            $start = $position[$unit] ?? null;
+
+            if ($isComposite || $raw === null) {
+                $section['target'] = null;
+                $end = null;
+            } elseif ($fromPieceStart) {
+                $delta = $start !== null ? round($raw - $start, 1) : null;
+                $section['target'] = ($delta !== null && $delta > 0) ? $delta : null;
+                $end = $raw;
+            } else {
+                $section['target'] = $raw;
+                $end = $start !== null ? $start + $raw : null;
+            }
+
+            // Avancer dans une unité rend la position dans l'autre unité inconnue
+            $position = [$unit => $end];
+
+            $sections[$i] = $section;
+        }
+
+        return $sections;
+    }
+
+    /**
+     * Filet de sécurité si l'IA oublie starts_new_piece : une section qui commence par un
+     * montage est forcément une nouvelle pièce. Ne regarde que le tout début de la
+     * description, pour ne pas confondre avec un "cast on 3 sts" en cours de section.
+     */
+    private static function startsWithCastOn(string $description): bool
+    {
+        return (bool)preg_match(
+            '/^\s*(monter|cast\s*on|co\s+\d|faire une chaînette|cercle magique|magic ring)\b/iu',
+            $description
+        );
     }
 
     /**
