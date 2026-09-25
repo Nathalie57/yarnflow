@@ -831,9 +831,9 @@ export default function SmartProjectCreator() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
 
-        {/* Header — [AI:Claude] 2026-09-25 : aux étapes 1 et 2 (saisie, analyse, création),
-            seulement "← Retour" ; titre et quota sont portés par la conversation avec Flow. */}
-        <div className={step <= 2 ? 'mb-4' : 'mb-8'}>
+        {/* Header — [AI:Claude] 2026-09-25 : à toutes les étapes (saisie, analyse, création,
+            porte de l'étape 3), seulement "← Retour" ; titre et quota sont portés par la conversation avec Flow. */}
+        <div className="mb-4">
           <button
             onClick={() => {
               // [AI:Claude] Sur la porte de pré-création (step 3, diagramme/traduction en
@@ -854,29 +854,9 @@ export default function SmartProjectCreator() {
             }}
             className="text-primary-600 hover:text-primary-700 mb-4 flex items-center gap-2"
           >
-            {step <= 2 ? t('ui.backArrow') : t('ui.backToProjectsArrow')}
+            {t('ui.backArrow')}
           </button>
 
-          {step > 2 && (<>
-          <h1 className="text-3xl font-bold text-flow-ink mb-2">
-            {t('ui.smartCreation')}
-          </h1>
-          <p className="text-gray-600">
-            {t('ui.smartCreationIntro')}
-          </p>
-
-          {/* Badge quota */}
-          {quota && (
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-control border bg-primary-50 border-primary-200">
-              <span className="text-sm font-medium text-primary-700">
-                {quota.is_pro
-                  ? t('ui.importsLeft', { count: quota.remaining })
-                  : t('ui.trialsLeft', { count: quota.remaining })
-                }
-              </span>
-            </div>
-          )}
-          </>)}
         </div>
 
         {/* [AI:Claude] Stepper retiré : avec le nouveau flux (analyse -> création auto),
@@ -1309,12 +1289,17 @@ export default function SmartProjectCreator() {
             {!containsDiagram && aiStatus === 'partial' && (
               <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
             )}
+            {/* [AI:Claude] 2026-09-25 — Traduction seule : Flow + titre propre à la question
+                posée (affichait "Vérifie et modifie les informations", sans rapport). */}
+            {!containsDiagram && aiStatus !== 'partial' && (
+              <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
+            )}
             <h2 className="text-xl font-bold text-flow-ink mb-2">
               {containsDiagram
                 ? t('ui.diagramGateTitle')
                 : aiStatus === 'partial'
                   ? t('ui.partialGateTitle')
-                  : t('ui.checkAndEdit')}
+                  : t('ui.patternTranslateGateTitle')}
             </h2>
 
             {!warningGatePending && translateGatePending && (

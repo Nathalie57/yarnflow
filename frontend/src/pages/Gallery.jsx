@@ -515,7 +515,11 @@ const Gallery = () => {
 
       {/* Bouton CTA + quota */}
       <div className="mb-6 flex flex-col items-center gap-2">
-        {photoQuota && !photoQuota.unlimited && (
+        {/* [AI:Claude] 2026-09-25 — Limite de stockage (20 FREE / 200 PLUS), distincte des crédits
+            photo : affichée seulement à l'approche de la limite (75 %), avec un libellé explicite.
+            Affichée en permanence juste sous "2 crédits disponibles", "0 / 20 photos" se lisait
+            comme une contradiction. */}
+        {photoQuota && !photoQuota.unlimited && photoQuota.used >= photoQuota.limit * 0.75 && (
           <p className="text-xs text-gray-500">
             {t('ui.photoQuota', { used: photoQuota.used, limit: photoQuota.limit })}
             {photoQuota.used >= photoQuota.limit && (

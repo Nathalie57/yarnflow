@@ -2238,21 +2238,24 @@ const ProjectCounter = () => {
     }
 
     // [AI:Claude] Mode rangs : sauvegarder avec historique
-    try {
-      const rowData = {
-        row_number: newRow,
-        section_id: currentSectionId,
-        stitch_count: null,
-        duration: null,
-        notes: null,
-        difficulty_rating: null,
-        // [AI:Claude] project_rows ne stocke qu'un seul compteur secondaire (colonnes historiques
-        // scalaires) — on y met un instantané du premier compteur actif, à titre indicatif.
-        secondary_count: secondaryCounters[0]?.count ?? null,
-        secondary_target: secondaryCounters[0]?.target ?? null,
-        secondary_label: secondaryCounters[0]?.label ?? null,
-      }
+    // [AI:Claude] 2026-09-25 — rowData déclaré hors du try : le catch hors-ligne plus bas le
+    // met en file d'attente (pendingRowsRef). Déclaré dans le try, il n'y existait pas
+    // (ReferenceError) et le rang compté sans connexion n'était jamais mis en attente.
+    const rowData = {
+      row_number: newRow,
+      section_id: currentSectionId,
+      stitch_count: null,
+      duration: null,
+      notes: null,
+      difficulty_rating: null,
+      // [AI:Claude] project_rows ne stocke qu'un seul compteur secondaire (colonnes historiques
+      // scalaires) — on y met un instantané du premier compteur actif, à titre indicatif.
+      secondary_count: secondaryCounters[0]?.count ?? null,
+      secondary_target: secondaryCounters[0]?.target ?? null,
+      secondary_label: secondaryCounters[0]?.label ?? null,
+    }
 
+    try {
       const rowResponse = await api.post(`/projects/${projectId}/rows`, rowData)
 
       // [AI:Claude] Prévient la Navbar de rafraîchir son badge de série tout de

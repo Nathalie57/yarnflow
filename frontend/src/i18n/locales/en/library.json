@@ -65,7 +65,7 @@
     "currentStreak": "Current streak",
     "bestHour": "Your best hour",
     "projectBreakdown": "Project breakdown",
-    "aiPhotoStudio": "AI Photo Studio",
+    "aiPhotoStudio": "Photo Studio",
     "photosGenerated": "Photos generated",
     "creditsLeft": "Credits left",
     "favoriteStyle": "Favourite style",
@@ -234,8 +234,8 @@
     "instagramStep2": " to create a new post and upload the downloaded image.",
     "ofKnitting": "of knitting",
     "uploadFailed": "Upload failed",
-    "aiGenerationFailed": "AI generation failed",
-    "viewAiResult": "View the AI result",
+    "aiGenerationFailed": "Generation failed",
+    "viewAiResult": "View the result",
     "viewOriginal": "View the original",
     "afterArrow": "After →",
     "beforeArrow": "← Before",
@@ -287,7 +287,7 @@
     "periodWeek": "Week",
     "periodMonth": "Month",
     "periodAll": "All time",
-    "aiGenFailed2": "AI generation failed",
+    "aiGenFailed2": "Generation failed",
     "confirmDeletePhoto": "Are you sure you want to delete this photo?",
     "planPlusCredits": "PLUS plan: 5 credits/month",
     "planProCredits": "PRO plan: 20 credits/month",
@@ -309,7 +309,7 @@
     "creditsAvailable_one": "credit available",
     "creditsAvailable_other": "credits available",
     "usedThisMonth": "{{count}} used this month",
-    "quotaReached": "Quota reached",
+    "quotaReached": "Gallery full",
     "refillOnDay": "Refills on the {{day}} of each month",
     "refillNextRenewal": "Refills at the next renewal",
     "seasonalMood": "Seasonal mood",
@@ -366,7 +366,7 @@
     "chartWillCover": "The chart will cover rows {{from}} to {{to}} out of {{total}}.",
     "rotate": "↻ Rotate",
     "printBtn": "🖨️ Print",
-    "aiProvider": "AI provider:",
+    "aiProvider": "Engine:",
     "nameLabel": "Name",
     "patternsWord": "patterns",
     "sortAZ": "A → Z",
@@ -414,10 +414,10 @@
     "nameRequired": "Name",
     "currentFileNamed": "Current file: <1>{{name}}</1>",
     "notAvailable": "Not available",
-    "photoQuota": "{{used}} / {{limit}} photos",
+    "photoQuota": "{{used}} / {{limit}} photos stored",
     "photoFormats2": "Formats: JPG, PNG, WEBP • Max 10 MB",
     "printBtn2": "🖨️ Print",
-    "aiProvider2": "AI provider: {{name}}",
+    "aiProvider2": "Engine: {{name}}",
     "chartSize": "{{w}} × {{h}} — row {{row}}/{{h}}",
     "newChartBtn": "＋ New chart",
     "proCalendar": "PRO calendar →",
@@ -438,7 +438,7 @@
     "patternEditFailed": "Failed to update the pattern",
     "notEnoughCredits": "You don't have enough credits. You need 1.",
     "photoGeneratedSuccess": "Photo generated!",
-    "aiPhotoAlt": "AI-generated photo"
+    "aiPhotoAlt": "Photo staged by Flow"
   },
   "badges": {
     "proj-1": {
@@ -603,11 +603,11 @@
     },
     "photo-1": {
       "title": "First vision",
-      "desc": "First AI-generated photo."
+      "desc": "First staged photo."
     },
     "photo-5": {
       "title": "Digital artist",
-      "desc": "5 AI photos created."
+      "desc": "5 staged photos."
     },
     "photo-10": {
       "title": "Photo studio",
@@ -615,7 +615,7 @@
     },
     "photo-25": {
       "title": "Full gallery",
-      "desc": "25 AI photos, a collection."
+      "desc": "25 staged photos, a collection."
     }
   },
   "hub": {

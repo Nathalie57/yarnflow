@@ -477,7 +477,7 @@ class YarnStashController
 
             $apiKey = $_ENV['GEMINI_API_KEY'] ?? '';
             if (empty($apiKey)) {
-                $this->sendResponse(503, ['success' => false, 'error' => 'Service IA non configuré']);
+                $this->sendResponse(503, ['success' => false, 'error' => "Lecture d'étiquette momentanément indisponible. Réessaie plus tard."]);
                 return;
             }
 

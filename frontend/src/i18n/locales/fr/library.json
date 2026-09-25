@@ -65,7 +65,7 @@
     "currentStreak": "Série en cours",
     "bestHour": "Ta meilleure heure",
     "projectBreakdown": "Répartition des projets",
-    "aiPhotoStudio": "AI Photo Studio",
+    "aiPhotoStudio": "Studio photo",
     "photosGenerated": "Photos générées",
     "creditsLeft": "Crédits restants",
     "favoriteStyle": "Style préféré",
@@ -234,8 +234,8 @@
     "instagramStep2": " pour créer un nouveau post et importe l'image téléchargée.",
     "ofKnitting": "de tricot",
     "uploadFailed": "Erreur lors de l'upload",
-    "aiGenerationFailed": "Erreur lors de la génération IA",
-    "viewAiResult": "Voir le résultat IA",
+    "aiGenerationFailed": "Erreur lors de la génération",
+    "viewAiResult": "Voir le résultat",
     "viewOriginal": "Voir l'original",
     "afterArrow": "Après →",
     "beforeArrow": "← Avant",
@@ -287,7 +287,7 @@
     "periodWeek": "Semaine",
     "periodMonth": "Mois",
     "periodAll": "Tout",
-    "aiGenFailed2": "La génération IA a échoué",
+    "aiGenFailed2": "La génération a échoué",
     "confirmDeletePhoto": "Veux-tu vraiment supprimer cette photo ?",
     "planPlusCredits": "Plan PLUS : 5 crédits/mois",
     "planProCredits": "Plan PRO : 20 crédits/mois",
@@ -309,7 +309,7 @@
     "creditsAvailable_one": "crédit disponible",
     "creditsAvailable_other": "crédits disponibles",
     "usedThisMonth": "{{count}} utilisés ce mois-ci",
-    "quotaReached": "Quota atteint",
+    "quotaReached": "Galerie pleine",
     "refillOnDay": "Rechargement le {{day}} de chaque mois",
     "refillNextRenewal": "Rechargement au prochain renouvellement",
     "seasonalMood": "Ambiance saisonnière",
@@ -366,7 +366,7 @@
     "chartWillCover": "La grille couvrira les rangs {{from}} à {{to}} sur {{total}}.",
     "rotate": "↻ Pivoter",
     "printBtn": "🖨️ Imprimer",
-    "aiProvider": "Provider IA :",
+    "aiProvider": "Moteur :",
     "nameLabel": "Nom",
     "patternsWord": "patrons",
     "sortAZ": "A → Z",
@@ -414,10 +414,10 @@
     "nameRequired": "Nom",
     "currentFileNamed": "Fichier actuel : <1>{{name}}</1>",
     "notAvailable": "Non disponible",
-    "photoQuota": "{{used}} / {{limit}} photos",
+    "photoQuota": "{{used}} / {{limit}} photos stockées",
     "photoFormats2": "Formats : JPG, PNG, WEBP • Max 10 Mo",
     "printBtn2": "🖨️ Imprimer",
-    "aiProvider2": "Provider IA : {{name}}",
+    "aiProvider2": "Moteur : {{name}}",
     "chartSize": "{{w}} × {{h}} — rang {{row}}/{{h}}",
     "newChartBtn": "＋ Nouvelle grille",
     "proCalendar": "Calendrier PRO →",
@@ -438,7 +438,7 @@
     "patternEditFailed": "Erreur lors de la modification du patron",
     "notEnoughCredits": "Tu n'as pas assez de crédits. Il t'en faut 1.",
     "photoGeneratedSuccess": "Photo générée avec succès !",
-    "aiPhotoAlt": "Photo générée par IA"
+    "aiPhotoAlt": "Photo mise en scène par Flow"
   },
   "badges": {
     "proj-1": {
@@ -603,11 +603,11 @@
     },
     "photo-1": {
       "title": "Première vision",
-      "desc": "Première photo générée par IA."
+      "desc": "Première photo mise en scène."
     },
     "photo-5": {
       "title": "Artiste numérique",
-      "desc": "5 photos IA créées."
+      "desc": "5 photos mises en scène."
     },
     "photo-10": {
       "title": "Studio photo",
@@ -615,7 +615,7 @@
     },
     "photo-25": {
       "title": "Galerie complète",
-      "desc": "25 photos IA, une collection."
+      "desc": "25 photos mises en scène, une collection."
     }
   },
   "hub": {
