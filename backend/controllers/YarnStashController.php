@@ -551,20 +551,54 @@ PROMPT;
             $json = trim(preg_replace('/^```(?:json)?\s*|\s*```$/m', '', trim($textPart)));
             $data = json_decode($json, true);
 
-            if (!$data || !isset($data['brand'])) {
-                $this->sendResponse(422, ['success' => false, 'error' => 'Impossible de lire l\'étiquette. Essaie avec une photo plus nette.']);
+            $unreadable = fn() => $this->sendResponse(422, ['success' => false, 'error' => 'Impossible de lire l\'étiquette. Essaie avec une photo plus nette.']);
+
+            if (!is_array($data)) {
+                $unreadable();
                 return;
             }
 
+            // [AI:Claude] Ne garder que les champs attendus, chaînes vides → null
+            $fields = ['brand', 'yarn_name', 'color_name', 'color_hex', 'dye_lot', 'composition',
+                       'weight_per_skein_g', 'yardage_per_skein_m', 'needle_size_mm', 'yarn_weight_category'];
+            $clean = [];
+            foreach ($fields as $field) {
+                $value = $data[$field] ?? null;
+                if (is_string($value)) {
+                    $value = trim($value);
+                    if ($value === '') $value = null;
+                }
+                $clean[$field] = is_scalar($value) ? $value : null;
+            }
+            $data = $clean;
+
             // Validation légère des types numériques
             foreach (['weight_per_skein_g', 'yardage_per_skein_m', 'needle_size_mm'] as $field) {
-                if (isset($data[$field])) $data[$field] = is_numeric($data[$field]) ? (float)$data[$field] : null;
+                if (isset($data[$field])) $data[$field] = (is_numeric($data[$field]) && (float)$data[$field] > 0) ? (float)$data[$field] : null;
             }
 
             $allowed = ['lace','fingering','sport','dk','worsted','aran','bulky','super_bulky'];
             if (!in_array($data['yarn_weight_category'] ?? '', $allowed)) $data['yarn_weight_category'] = null;
 
-            if (!preg_match('/^#[0-9a-fA-F]{6}$/', $data['color_hex'] ?? '')) $data['color_hex'] = null;
+            if (!preg_match('/^#[0-9a-fA-F]{6}$/', (string)($data['color_hex'] ?? ''))) $data['color_hex'] = null;
+
+            // [AI:Claude] 2026-09-25 — Scan partiel accepté : une marque illisible ne doit plus
+            // faire échouer tout le scan si le reste de l'étiquette a été lu (parcours scan =
+            // parcours recommandé). color_hex ne compte pas : il est estimé depuis la couleur
+            // du fil, donc présent même sur une photo sans étiquette. La validation à
+            // l'enregistrement (create/update) reste inchangée.
+            $labelFields = array_diff($fields, ['color_hex']);
+            $hasLabelInfo = false;
+            foreach ($labelFields as $field) {
+                if ($data[$field] !== null) {
+                    $hasLabelInfo = true;
+                    break;
+                }
+            }
+            if (!$hasLabelInfo) {
+                $unreadable();
+                return;
+            }
 
             $this->sendResponse(200, ['success' => true, 'data' => $data]);
         } catch (\Throwable $e) {

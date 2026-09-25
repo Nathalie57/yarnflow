@@ -42,6 +42,10 @@ const EMPTY_FORM = {
 // qu'une colonne) — les suivantes ne servent qu'à la lecture IA de l'étiquette.
 const MAX_LABEL_PHOTOS = 3
 
+// Champs obligatoires à l'enregistrement que le scan peut remplir (la quantité a une
+// valeur par défaut) — s'il en manque un après le scan, le message l'annonce.
+const REQUIRED_SCANNABLE_FIELDS = ['brand', 'yarn_name', 'weight_per_skein_g', 'yardage_per_skein_m']
+
 const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading }) => {
   const { t } = useTranslation('tools')
   const [form, setForm] = useState(EMPTY_FORM)
@@ -49,10 +53,18 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
   const [scanning, setScanning] = useState(false)
   const [scanError, setScanError] = useState(null)
   const [duplicateMatch, setDuplicateMatch] = useState(null)
+  // [AI:Claude] 2026-09-25 — En création, écran d'accueil "scanner mon étiquette" avant
+  // le formulaire : le scan est le parcours recommandé, le gros formulaire d'emblée
+  // décourageait. L'édition ouvre toujours directement le formulaire.
+  const [step, setStep] = useState(entry ? 'form' : 'intro') // 'intro' | 'form'
+  const [scanOutcome, setScanOutcome] = useState(null) // null | 'full' | 'partial'
   const fileInputRef = useRef(null)
   const galleryInputRef = useRef(null)
 
   useEffect(() => {
+    setStep(entry ? 'form' : 'intro')
+    setScanOutcome(null)
+    setScanError(null)
     setPhotos([])
     if (entry) {
       setForm({
@@ -99,12 +111,15 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
   const totalWeight  = form.weight_per_skein_g  && form.quantity ? Math.round(parseFloat(form.weight_per_skein_g)  * parseInt(form.quantity) * 10) / 10 : 0
   const totalYardage = form.yardage_per_skein_m && form.quantity ? Math.round(parseFloat(form.yardage_per_skein_m) * parseInt(form.quantity) * 10) / 10 : 0
 
-  const openPhotoInput = (ref) => ref.current?.click()
+  const openPhotoInput = (ref) => {
+    if (scanning) return
+    ref.current?.click()
+  }
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0]
     e.target.value = '' // permet de re-choisir le même fichier après une suppression
-    if (!file || photos.length >= MAX_LABEL_PHOTOS) return
+    if (!file || scanning || photos.length >= MAX_LABEL_PHOTOS) return
 
     const nextPhotos = [...photos, { file, preview: URL.createObjectURL(file) }]
     setPhotos(nextPhotos)
@@ -133,11 +148,17 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
           needle_size_mm:       d.needle_size_mm      != null ? d.needle_size_mm      : f.needle_size_mm,
           yarn_weight_category: d.yarn_weight_category ?? f.yarn_weight_category,
         }))
+        const isMissing = (k) => (d[k] == null || d[k] === '') && (form[k] == null || form[k] === '')
+        setScanOutcome(REQUIRED_SCANNABLE_FIELDS.some(isMissing) ? 'partial' : 'full')
+        setStep('form')
       } catch (err) {
         const msg = err?.message === 'timeout'
           ? t('ui.scanTooLong')
           : (apiErrorMessage(err, t('ui.scanImpossible')))
         setScanError(msg)
+        // Échec depuis l'écran d'accueil : on y reste, la photo ratée est retirée pour
+        // que "Réessayer" reparte d'une photo neuve (sinon elle serait renvoyée au scan)
+        if (step === 'intro') setPhotos([])
       } finally {
         setScanning(false)
       }
@@ -169,8 +190,103 @@ const YarnStashForm = ({ entry, onSubmit, onMergeIntoExisting, onCancel, loading
   const inputCls = "w-full px-3 py-2.5 border border-gray-200 rounded-control text-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-transparent placeholder-gray-300"
   const labelCls = "block text-xs font-medium text-gray-600 mb-1"
 
+  // Hors <form> : aucun champ required ni bouton submit à cette étape
+  if (step === 'intro') {
+    return (
+      <div className="text-center">
+        {photos[0] ? (
+          <div className="relative mb-4">
+            <img
+              src={photos[0].preview}
+              alt={t('ui.labelAlt')}
+              className={`w-full h-40 object-cover rounded-control border border-gray-200 transition-opacity ${scanning ? 'opacity-50' : ''}`}
+            />
+            {scanning && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white/60 rounded-control">
+                <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs font-medium text-primary-700">{t('ui.readingLabel')}</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center text-primary-500">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+            </svg>
+          </div>
+        )}
+
+        <h3 className="text-lg font-semibold text-flow-ink mb-4">{t('ui.stashIntroTitle')}</h3>
+
+        {scanError && (
+          <p className="mb-3 text-xs text-amber-600 bg-amber-50 rounded-control px-3 py-2 text-left">{scanError}</p>
+        )}
+
+        <button
+          type="button"
+          onClick={() => openPhotoInput(fileInputRef)}
+          disabled={scanning}
+          className="w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold transition-colors disabled:opacity-60"
+        >
+          {scanError ? t('ui.stashIntroRetry') : t('ui.stashIntroScan')}
+        </button>
+        <p className="mt-2 text-xs text-gray-500">{t('ui.stashIntroHint')}</p>
+
+        <button
+          type="button"
+          onClick={() => openPhotoInput(galleryInputRef)}
+          disabled={scanning}
+          className="mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium disabled:opacity-60"
+        >
+          {t('ui.stashIntroGallery')}
+        </button>
+
+        <div className="mt-6 pt-4 border-t border-gray-100">
+          <p className="text-xs text-gray-500">{t('ui.stashIntroNoLabel')}</p>
+          <button
+            type="button"
+            onClick={() => { setScanError(null); setStep('form') }}
+            disabled={scanning}
+            className="mt-1 text-sm text-gray-600 hover:text-primary-600 underline underline-offset-2 disabled:opacity-60"
+          >
+            {t('ui.stashIntroManual')}
+          </button>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handlePhotoChange}
+        />
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handlePhotoChange}
+        />
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Résultat du scan lancé depuis l'écran d'accueil */}
+      {!entry && scanOutcome && (
+        <div className="bg-primary-50 border border-primary-100 rounded-control px-3 py-2.5">
+          <p className="text-sm font-semibold text-primary-800">
+            {scanOutcome === 'partial' ? t('ui.scanPartialTitle') : t('ui.scanFoundTitle')}
+          </p>
+          <p className="text-xs text-gray-600 mt-0.5">
+            {scanOutcome === 'partial' ? t('ui.scanPartialDesc') : t('ui.scanFoundDesc')}
+          </p>
+        </div>
+      )}
+
       {/* Photo d'étiquette — en premier pour auto-remplir */}
       {!entry && (
         <div>
