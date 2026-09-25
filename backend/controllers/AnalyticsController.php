@@ -26,6 +26,9 @@ class AnalyticsController
         $this->authMiddleware = new AuthMiddleware();
     }
 
+    // Jalons envoyés par le frontend qui ne doivent exister qu'une fois par utilisatrice
+    private const ONCE_PER_USER_EVENTS = ['onboarding_started', 'demo_completed'];
+
     public function trackEvent(): void
     {
         try {
@@ -38,10 +41,42 @@ class AnalyticsController
                 return;
             }
 
+            $eventName = (string)$eventName;
+            if (!preg_match('/^[a-z0-9_]{2,50}$/', $eventName)) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'event_name invalide']);
+                return;
+            }
+
             $projectId = isset($data['project_id']) ? (int)$data['project_id'] : null;
             unset($data['event_name'], $data['project_id']);
 
-            AnalyticsService::log($userId, $projectId, (string)$eventName, $data);
+            // [AI:Claude] 2026-09-25 — Le plan courant est lu en base plutôt que fourni par
+            // le frontend (état local possiblement périmé après un changement de plan).
+            if ($eventName === 'paywall_shown') {
+                $user = (new \App\Models\User())->findById($userId);
+                $data['current_plan'] = $user['subscription_type'] ?? 'free';
+            }
+
+            // Écran "0 projet" revu par quelqu'un qui a déjà créé un projet (puis tout
+            // supprimé) : ce n'est pas un début d'onboarding.
+            if ($eventName === 'onboarding_started' && AnalyticsService::hasEvent($userId, 'project_created')) {
+                $this->sendResponse(200, ['success' => true]);
+                return;
+            }
+
+            if (in_array($eventName, self::ONCE_PER_USER_EVENTS, true)) {
+                AnalyticsService::logOnce($userId, $projectId, $eventName, $data);
+            } else {
+                AnalyticsService::log($userId, $projectId, $eventName, $data);
+            }
+
+            // [AI:Claude] Premier rang réellement compté sur un projet non démo → jalon
+            // d'activation (une seule fois par utilisatrice, voir AnalyticsService).
+            // project_worked_again aussi : si la progression de départ a été saisie à
+            // l'onboarding, le premier rang compté n'émet jamais first_row_counted.
+            if ($projectId && in_array($eventName, ['first_row_counted', 'project_worked_again'], true)) {
+                AnalyticsService::logActivationIfFirst($userId, $projectId);
+            }
 
             $this->sendResponse(200, ['success' => true]);
         } catch (\Exception $e) {

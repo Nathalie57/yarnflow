@@ -71,6 +71,7 @@ class PatternTranslatorController
                 $message = $plan['tier'] === 'free'
                     ? 'Vos 3 traductions gratuites sont épuisées. Passez à PLUS ou PRO pour continuer.'
                     : "Limite mensuelle atteinte ({$plan['monthly_limit']} traductions/mois). Renouvellement le 1er du mois.";
+                \App\Services\AnalyticsService::logPaywall($userId, 'translator', 'translation', $plan['tier'] === 'free' ? 'free_trial_used' : 'quota_reached', $user['subscription_type'] ?? 'free');
                 $this->json(['error' => $message, 'quota_exceeded' => true, 'upgrade_required' => $plan['tier'] === 'free'], 403);
                 return;
             }

@@ -234,6 +234,16 @@ class PaymentController
             'payment_type' => $paymentType
         ]);
 
+        // [AI:Claude] 2026-09-25 — source = mur payant d'où vient l'utilisatrice (transmis
+        // par Subscription.jsx), limité à un identifiant court.
+        $checkoutSource = $data['source'] ?? 'subscription_page';
+        if (!is_string($checkoutSource) || !preg_match('/^[a-z0-9_]{1,40}$/', $checkoutSource)) {
+            $checkoutSource = 'subscription_page';
+        }
+        \App\Services\AnalyticsService::log((int)$userData['user_id'], null, 'checkout_started', [
+            'source' => $checkoutSource,
+        ] + self::planAndBilling($type));
+
         Response::success([
             'session_id' => $result['session_id'],
             'checkout_url' => $result['checkout_url']
@@ -391,6 +401,17 @@ class PaymentController
             Response::serverError('Erreur lors de la création du portail client');
 
         Response::success(['portal_url' => $result['url']]);
+    }
+
+    /**
+     * [AI:Claude] 'pro_annual' → plan=pro, billing=annual (early_bird = mensuel).
+     */
+    private static function planAndBilling(string $type): array
+    {
+        return [
+            'plan' => str_replace('_annual', '', $type),
+            'billing' => str_ends_with($type, '_annual') ? 'annual' : 'monthly',
+        ];
     }
 
     public function handleWebhook(): void
@@ -609,6 +630,13 @@ class PaymentController
             };
 
             $this->userModel->updateSubscription($userId, $subscriptionType, $expiresAt);
+
+            // [AI:Claude] 2026-09-25 — Après confirmation Stripe uniquement (webhook, session
+            // non déjà traitée, montant vérifié plus haut). paid=false : code promo à 100 %
+            // (comptes offerts), à exclure pour mesurer la vraie conversion.
+            \App\Services\AnalyticsService::log($userId, null, 'subscription_started', [
+                'paid' => isset($data['amount']) && (float)$data['amount'] > 0,
+            ] + self::planAndBilling($subscriptionType));
 
             // Allouer les crédits mensuels correspondant au nouveau plan
             $this->creditManager->initializeUserCredits($userId, $subscriptionType);

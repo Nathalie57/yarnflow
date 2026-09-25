@@ -258,6 +258,7 @@ class SmartProjectController
                 }
                 $usedThisMonth = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 if ($usedThisMonth >= $plan['monthly_limit']) {
+                    AnalyticsService::logPaywall($userId, 'smart_creation', 'smart_import', 'quota_reached', $user['subscription_type'] ?? null);
                     $this->jsonResponse([
                         'error' => "Limite mensuelle atteinte ({$plan['monthly_limit']} imports/mois).",
                         'error_code' => 'import_monthly_limit',
@@ -272,6 +273,7 @@ class SmartProjectController
                 $stmt->execute(['user_id' => $userId]);
                 $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 if ($totalUsed >= 3) {
+                    AnalyticsService::logPaywall($userId, 'smart_creation', 'smart_import', 'free_trial_used', $user['subscription_type'] ?? null);
                     $this->jsonResponse([
                         'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour continuer',
                         'upgrade_required' => true,
@@ -359,6 +361,10 @@ class SmartProjectController
                 return;
             }
 
+            // [AI:Claude] 2026-09-25 — Entonnoir Smart Creation : started ici (source valide,
+            // quota OK), completed à chaque sortie ci-dessous (success/partial/error).
+            AnalyticsService::log($userId, null, 'pattern_import_started', ['source' => $sourceType]);
+
             // Taille choisie (optionnel, pour patrons multi-tailles)
             $patternSize = !empty($_POST['pattern_size']) ? trim($_POST['pattern_size']) : null;
 
@@ -412,6 +418,7 @@ class SmartProjectController
                 );
                 $lockStmt->execute(['user_id' => $userId, 'stale_before' => $lockStaleBefore]);
                 if (!in_array($lockStmt->rowCount(), [1, 2], true)) {
+                    AnalyticsService::log($userId, null, 'pattern_import_completed', ['source' => $sourceType, 'status' => 'error', 'cached' => false, 'reason' => 'already_in_progress']);
                     $this->jsonResponse([
                         'error' => 'Une analyse est déjà en cours pour ce compte — patiente qu\'elle se termine avant d\'en relancer une autre.',
                         'error_code' => 'analyze_already_in_progress'
@@ -470,6 +477,7 @@ class SmartProjectController
 
             // Retourner le résultat
             if (!$result['success']) {
+                AnalyticsService::log($userId, null, 'pattern_import_completed', ['source' => $sourceType, 'status' => 'error', 'cached' => false]);
                 $releaseLock();
                 $this->jsonResponse([
                     'success' => false,
@@ -490,6 +498,11 @@ class SmartProjectController
             // permet de mesurer l'abandon entre l'analyse et la confirmation — patron analysé mais
             // jamais transformé en projet (résultat décevant, hésitation à la relecture...).
             AnalyticsService::log($userId, null, 'smart_creation_analyzed', ['import_id' => $importId, 'source_type' => $sourceType]);
+            AnalyticsService::log($userId, null, 'pattern_import_completed', [
+                'source' => $sourceType,
+                'status' => $result['ai_status'] === 'partial' ? 'partial' : 'success',
+                'cached' => (bool)$cached,
+            ]);
 
             $releaseLock();
             $this->jsonResponse([
@@ -507,6 +520,9 @@ class SmartProjectController
             // une exception avant ce point (validation fichier, etc.) n'a jamais posé de verrou.
             if (isset($releaseLock)) {
                 $releaseLock();
+            }
+            if (!empty($sourceType) && isset($userId)) {
+                AnalyticsService::log($userId, null, 'pattern_import_completed', ['source' => $sourceType, 'status' => 'error', 'cached' => false]);
             }
             error_log('[SmartProject] Erreur analyze: ' . $e->getMessage());
             error_log('[SmartProject] Stack trace: ' . $e->getTraceAsString());
@@ -607,12 +623,15 @@ class SmartProjectController
             // que le patron reste consultable dans l'onglet "Patron" une fois le projet créé —
             // sans ça, seul le JSON extrait par l'IA survivait, jamais le document lui-même.
             $sourceFilePath = null;
+            $importSourceType = null;
             if (!empty($analyzeMetadata['import_id'])) {
                 $importLookup = \App\Config\Database::getInstance()->getConnection()->prepare(
-                    'SELECT source_file_path FROM ai_pattern_imports WHERE id = :id AND user_id = :uid'
+                    'SELECT source_file_path, source_type FROM ai_pattern_imports WHERE id = :id AND user_id = :uid'
                 );
                 $importLookup->execute(['id' => (int)$analyzeMetadata['import_id'], 'uid' => $userId]);
-                $sourceFilePath = $importLookup->fetchColumn() ?: null;
+                $importRow = $importLookup->fetch(\PDO::FETCH_ASSOC) ?: [];
+                $sourceFilePath = ($importRow['source_file_path'] ?? null) ?: null;
+                $importSourceType = $importRow['source_type'] ?? null;
             }
 
             // [AI:Claude] Re-vérifie le quota FREE ici, pas seulement dans analyze() : entre
@@ -626,6 +645,7 @@ class SmartProjectController
                     $stmt->execute(['user_id' => $userId]);
                     $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                     if ($totalUsed >= 3) {
+                        AnalyticsService::logPaywall($userId, 'smart_creation_confirm', 'smart_import', 'free_trial_used', $confirmUser['subscription_type'] ?? null);
                         $this->jsonResponse([
                             'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour enregistrer ce projet',
                             'upgrade_required' => true,
@@ -843,7 +863,11 @@ class SmartProjectController
                 // Récupérer le projet complet
                 $project = $this->projectModel->findById($projectId);
 
-                AnalyticsService::log($userId, $projectId, 'project_created', ['source' => 'smart_import']);
+                // [AI:Claude] import_source (pdf/url/text/library) lu sur l'import rattaché, pas
+                // sur source_type envoyé par le frontend.
+                $importSource = $importSourceType ?: null;
+                AnalyticsService::log($userId, $projectId, 'project_created', ['source' => 'smart_import', 'import_source' => $importSource]);
+                AnalyticsService::logOnce($userId, $projectId, 'real_project_started', ['method' => 'smart', 'source' => $importSource, 'onboarding_version' => 'v2']);
 
                 // [AI:Claude] Permet au frontend de déclencher la checklist tutoriel
                 // (showFirstProjectTip, voir MyProjects.jsx/ProjectCounter.jsx) sur ce

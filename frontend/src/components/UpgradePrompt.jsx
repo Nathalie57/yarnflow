@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 import { useTranslation, Trans } from 'react-i18next'
 import api from '../services/api'
+import { trackPaywallShown } from '../utils/productEvents'
 import FlowMascot from './FlowMascot'
 
 const FEATURES = {
@@ -55,7 +56,7 @@ const FEATURES = {
   },
 }
 
-const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
+const UpgradePrompt = ({ isOpen, onClose, feature = 'tags', source = null }) => {
   const { t } = useTranslation('tools')
   const navigate = useNavigate()
   const { isTWA, getSubscriptionPlan } = useAuth()
@@ -67,6 +68,15 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
   useEffect(() => {
     if (!isOpen) return
     api.post('/analytics/track-event', { event_name: 'upgrade_prompt_shown', feature }).catch(() => {})
+    // [AI:Claude] 2026-09-25 — paywall_shown : même impression, format commun à tous les
+    // murs payants (upgrade_prompt_shown conservé pour l'historique).
+    trackPaywallShown({
+      source: source || window.location.pathname.split('/')[1] || 'app',
+      feature,
+      reason: feature === 'photo_credits' ? 'quota_reached' : 'feature_locked',
+      suggestedPlan: upgradeTarget(feature, getSubscriptionPlan()) || 'plus',
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, feature])
 
   if (!isOpen) return null
@@ -219,7 +229,8 @@ const UpgradePrompt = ({ isOpen, onClose, feature = 'tags' }) => {
 UpgradePrompt.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  feature: PropTypes.string
+  feature: PropTypes.string,
+  source: PropTypes.string
 }
 
 export default UpgradePrompt

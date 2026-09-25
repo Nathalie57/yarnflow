@@ -144,6 +144,7 @@ class AiAssistantController
                 $used = $this->getMonthlyUsage($userId, $month);
 
                 if ($used >= $limit) {
+                    AnalyticsService::logPaywall($userId, 'assistant', 'ai_assistant', 'quota_reached', $plan);
                     $this->sendResponse(429, [
                         'error' => "Limite mensuelle atteinte ({$limit} messages). Revenez le mois prochain.",
                         'error_code' => 'ai_monthly_limit',
@@ -245,10 +246,15 @@ class AiAssistantController
                 $usagePayload = ['used' => $used + 1, 'limit' => $limit, 'remaining' => $limit - $used - 1];
             }
 
-            AnalyticsService::log($userId, $projectId, 'ai_question_asked', [
-                'contextual' => $isContextualRequest,
-                'plan' => $plan,
-            ]);
+            // [AI:Claude] 2026-09-25 — Question contextuelle : où en est l'utilisatrice au
+            // moment où elle demande (section active, rang), pour relier l'usage de Flow à
+            // la progression. Pas de nouvel événement : ai_question_asked (contextual=true)
+            // est déjà lu par les requêtes d'analyse existantes.
+            $questionData = ['contextual' => $isContextualRequest, 'plan' => $plan];
+            if ($isContextualRequest) {
+                $questionData += $this->getProgressSnapshot($projectId, $userId);
+            }
+            AnalyticsService::log($userId, $projectId, 'ai_question_asked', $questionData);
 
             // [AI:Claude] Une ligne par échange, pour permettre le pouce haut/bas côté
             // frontend (POST /api/ai/feedback) — jusqu'ici seules les erreurs techniques
@@ -374,6 +380,33 @@ PROMPT;
      * programmatiquement ses sections à celles suivies manuellement — un LLM fait ce
      * rapprochement nativement à partir du contexte, plus fiable qu'un matching par nom.
      */
+    /**
+     * [AI:Claude] 2026-09-25 — Section active et rang courant (de la section si elle
+     * existe, sinon du projet) pour analytics_events. Vide si indisponible.
+     */
+    private function getProgressSnapshot(int $projectId, int $userId): array
+    {
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT p.current_section_id, p.current_row AS project_row, s.current_row AS section_row
+                 FROM projects p
+                 LEFT JOIN project_sections s ON s.id = p.current_section_id AND s.project_id = p.id
+                 WHERE p.id = :id AND p.user_id = :uid'
+            );
+            $stmt->execute([':id' => $projectId, ':uid' => $userId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) return [];
+            $sectionId = $row['current_section_id'] ? (int)$row['current_section_id'] : null;
+            $currentRow = $sectionId !== null && $row['section_row'] !== null ? $row['section_row'] : $row['project_row'];
+            return [
+                'section_id' => $sectionId,
+                'current_row' => $currentRow !== null ? (float)$currentRow : null,
+            ];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
     private function buildProjectContext(int $projectId, int $userId): ?string
     {
         $stmt = $this->db->prepare(

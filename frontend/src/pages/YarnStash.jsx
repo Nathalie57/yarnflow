@@ -18,6 +18,7 @@ import { PLAN_PRICES, upgradeTarget, planLabel } from '../data/upgradePlans'
 
 import { apiErrorMessage } from '../utils/apiError'
 import FlowMascot from '../components/FlowMascot'
+import { trackPaywallShown } from '../utils/productEvents'
 const YarnStash = () => {
   const { t } = useTranslation('tools')
   const { getSubscriptionPlan } = useAuth()
@@ -171,6 +172,12 @@ const YarnStash = () => {
   // -----------------------------------------------------------------------
 
   const atLimit = !isPro && stashLimit !== null && (stats?.total_references ?? 0) >= stashLimit
+
+  // [AI:Claude] 2026-09-25 — Mur payant "stock plein" (blocage local ou 403 serveur)
+  useEffect(() => {
+    if (error !== 'upgrade_required') return
+    trackPaywallShown({ source: 'stash', feature: 'stash', reason: 'limit_reached', suggestedPlan: upgradeTarget('stash', plan) || 'pro' })
+  }, [error, plan])
 
   const handleAssignClick = async (entry) => {
     setAssigningEntry(entry)

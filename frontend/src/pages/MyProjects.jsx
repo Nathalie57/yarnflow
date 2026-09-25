@@ -29,6 +29,7 @@ import PushNotificationModal, { PUSH_MODAL_STORAGE_KEY } from '../components/Pus
 import FlowMascot from '../components/FlowMascot'
 
 import { apiErrorMessage } from '../utils/apiError'
+import { trackProductEvent } from '../utils/productEvents'
 const MyProjects = () => {
   const { t } = useTranslation('projects')
   const { user, updateUser } = useAuth()
@@ -164,6 +165,18 @@ const MyProjects = () => {
     sort: 'updated_desc'
   })
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false)
+
+  // [AI:Claude] 2026-09-25 — onboarding_started : l'écran d'accueil "0 projet" est
+  // réellement affiché (hors liste vide due à une recherche ou un filtre). Une seule
+  // fois par utilisatrice, dédoublonné côté serveur ; la clé locale évite juste de
+  // renvoyer l'appel à chaque visite.
+  const isFilteringProjects = !!searchQuery || filters.status !== null || filters.favorite !== null || filters.tags.length > 0
+  useEffect(() => {
+    if (loading || error || projects.length > 0 || isFilteringProjects) return
+    if (localStorage.getItem('yf_evt_onboarding_started')) return
+    try { localStorage.setItem('yf_evt_onboarding_started', '1') } catch { /* ignore */ }
+    trackProductEvent('onboarding_started', { onboarding_version: 'v2' })
+  }, [loading, error, projects.length, isFilteringProjects])
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   // [AI:Claude] Ouvrir directement le wizard de création depuis le bouton "+" de la bottom nav

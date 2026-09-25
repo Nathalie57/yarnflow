@@ -5,6 +5,7 @@ import { useAnalytics } from '../hooks/useAnalytics'
 import { useTranslation, Trans } from 'react-i18next'
 import { PLAN_PRICES } from '../data/upgradePlans'
 import FlowMascot from '../components/FlowMascot'
+import { getCheckoutSource } from '../utils/productEvents'
 
 const Check = ({ className = 'text-primary-500' }) => (
   <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 flex-shrink-0 mt-0.5 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -112,7 +113,7 @@ const Subscription = () => {
     trackSubscriptionClick('plus', 'monthly', 'subscription')
     const win = window.open('', '_blank')
     try {
-      const response = await paymentsAPI.checkoutSubscription({ type: 'plus' })
+      const response = await paymentsAPI.checkoutSubscription({ type: 'plus', source: getCheckoutSource() })
       const { checkout_url } = response.data.data
       trackBeginCheckout('subscription', 'plus', 3.99)
       localStorage.setItem('yf_pending_plan', 'plus')
@@ -134,7 +135,7 @@ const Subscription = () => {
     const win = window.open('', '_blank')
     try {
       const amount = isAnnual ? 59.99 : 6.99
-      const response = await paymentsAPI.checkoutSubscription({ type })
+      const response = await paymentsAPI.checkoutSubscription({ type, source: getCheckoutSource() })
       const { checkout_url } = response.data.data
       trackBeginCheckout('subscription', type, amount)
       localStorage.setItem('yf_pending_plan', ['plus', 'plus_annual'].includes(type) ? 'plus' : 'pro')

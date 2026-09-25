@@ -119,6 +119,7 @@ class PhotoController
             // Vérifier le quota de photos
             $quota = $this->getUserPhotoQuota($userId);
             if (!$quota['unlimited'] && $quota['used'] >= $quota['limit']) {
+                \App\Services\AnalyticsService::logPaywall($userId, 'gallery', 'photo_upload', 'quota_reached', null);
                 $this->sendResponse(403, [
                     'success' => false,
                     'error' => 'quota_exceeded',

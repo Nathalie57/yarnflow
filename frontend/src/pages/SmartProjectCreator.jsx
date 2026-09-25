@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { apiErrorMessage } from '../utils/apiError'
 import UpgradePrompt from '../components/UpgradePrompt'
 import FlowMascot from '../components/FlowMascot'
+import { trackPaywallShown } from '../utils/productEvents'
 /**
  * SmartProjectCreator - Création intelligente de projets via IA
  * Version 0.17.0 - 2026-01-07
@@ -743,8 +744,14 @@ export default function SmartProjectCreator() {
     setSections(sections.filter((_, i) => i !== index))
   }
 
+  const showTrialUsedWall = !!(!isPro && quota?.free_trial_used && step <= 1)
+  useEffect(() => {
+    if (!showTrialUsedWall) return
+    trackPaywallShown({ source: 'smart_creation', feature: 'smart_import', reason: 'free_trial_used', suggestedPlan: 'plus' })
+  }, [showTrialUsedWall])
+
   // FREE avec essai déjà utilisé → écran d'upgrade (seulement à l'étape 1, pas pendant/après le process)
-  if (!isPro && quota?.free_trial_used && step <= 1) {
+  if (showTrialUsedWall) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">

@@ -339,6 +339,9 @@ class ProjectController
             // analytics_events, impossible de savoir quel chemin de l'empty state retient le mieux.
             $source = !empty($data['is_demo']) ? 'demo' : 'manual';
             AnalyticsService::log($userId, $projectId, 'project_created', ['source' => $source]);
+            if ($source !== 'demo') {
+                AnalyticsService::logOnce($userId, $projectId, 'real_project_started', ['method' => 'manual', 'onboarding_version' => 'v2']);
+            }
 
             $this->sendResponse(201, [
                 'success' => true,

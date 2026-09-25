@@ -295,6 +295,9 @@ const ProjectCounter = () => {
     if (demoSteps.rows >= 5 && demoSteps.askedAssistant && demoSteps.section && !demoSteps.celebrationShown) {
       setShowDemoCompleteModal(true)
       updateDemoSteps(prev => ({ ...prev, celebrationShown: true }))
+      // [AI:Claude] 2026-09-25 — Checklist démo terminée (5 rangs + assistant + section) ;
+      // une seule fois par utilisatrice, dédoublonné côté serveur.
+      api.post('/analytics/track-event', { event_name: 'demo_completed', project_id: projectId, onboarding_version: 'v2' }).catch(() => {})
     }
   }, [isDemoProject, demoSteps.rows, demoSteps.askedAssistant, demoSteps.section, demoSteps.celebrationShown])
 
