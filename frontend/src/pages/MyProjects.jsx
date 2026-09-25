@@ -127,6 +127,13 @@ const MyProjects = () => {
   const [creating, setCreating] = useState(false)
   const [creatingStep, setCreatingStep] = useState('') // [AI:Claude] Étape en cours
   const [isCreatingDemo, setIsCreatingDemo] = useState(false)
+  // [AI:Claude] Écran d'accueil : autres façons de commencer, dépliées à la demande
+  const [showOtherStarts, setShowOtherStarts] = useState(false)
+  // [AI:Claude] Clic sur un des 3 parcours de l'écran d'accueil, au moment du clic
+  // (smart_creation_opened ne dit pas d'où l'on vient, project_created n'arrive
+  // qu'une fois le projet créé et ne sépare pas ce bouton de "Nouveau projet").
+  const trackOnboardingChoice = (choice) =>
+    trackProductEvent('onboarding_choice_clicked', { choice, onboarding_version: 'v2' })
 
   // [AI:Claude] Import de patron
   const [patternFile, setPatternFile] = useState(null)
@@ -168,20 +175,29 @@ const MyProjects = () => {
 
   // [AI:Claude] 2026-09-25 — onboarding_started : l'écran d'accueil "0 projet" est
   // réellement affiché (hors liste vide due à une recherche ou un filtre). Une seule
-  // fois par utilisatrice, dédoublonné côté serveur ; la clé locale évite juste de
-  // renvoyer l'appel à chaque visite.
+  // fois par utilisatrice, dédoublonné côté serveur ; la clé locale (par compte, même
+  // convention que yf_evt_opened_{projectId}) évite juste de renvoyer l'appel à chaque
+  // visite, sans bloquer un autre compte ouvert sur le même navigateur.
   const isFilteringProjects = !!searchQuery || filters.status !== null || filters.favorite !== null || filters.tags.length > 0
   useEffect(() => {
-    if (loading || error || projects.length > 0 || isFilteringProjects) return
-    if (localStorage.getItem('yf_evt_onboarding_started')) return
-    try { localStorage.setItem('yf_evt_onboarding_started', '1') } catch { /* ignore */ }
+    if (!user?.id || loading || error || projects.length > 0 || isFilteringProjects) return
+    const key = `yf_evt_onboarding_started_${user.id}`
+    if (localStorage.getItem(key)) return
+    try { localStorage.setItem(key, '1') } catch { /* ignore */ }
     trackProductEvent('onboarding_started', { onboarding_version: 'v2' })
-  }, [loading, error, projects.length, isFilteringProjects])
+  }, [user?.id, loading, error, projects.length, isFilteringProjects])
   const [filtersOpen, setFiltersOpen] = useState(false)
 
-  // [AI:Claude] Ouvrir directement le wizard de création depuis le bouton "+" de la bottom nav
+  // [AI:Claude] 2026-09-25 — Création d'un projet : la Création Intelligente est le parcours
+  // normal. ?create=1 (bouton "+" de la bottom nav, anciens liens) y mène directement ;
+  // ?create=manual ouvre le formulaire manuel existant (lien "Je n'ai pas mon patron sous la
+  // main" du Smart Creator, écran quota épuisé).
   useEffect(() => {
-    if (new URLSearchParams(location.search).get('create') === '1') {
+    const create = new URLSearchParams(location.search).get('create')
+    if (create === '1') {
+      navigate('/smart-project-creator', { replace: true })
+    } else if (create === 'manual') {
+      setCreateModalInitialMode('manual')
       setShowCreateModal(true)
       navigate('/my-projects', { replace: true })
     }
@@ -193,6 +209,8 @@ const MyProjects = () => {
       const wizardDraft = sessionStorage.getItem('yf_wizard')
       const patternDraft = sessionStorage.getItem('yf_wizard_pattern')
       if (wizardDraft || patternDraft) {
+        // Les brouillons ne viennent que du formulaire manuel : on le rouvre directement
+        setCreateModalInitialMode('manual')
         setShowCreateModal(true)
         if (patternDraft) {
           const d = JSON.parse(patternDraft)
@@ -842,6 +860,10 @@ const MyProjects = () => {
   // [AI:Claude] Quota utilisateur (v0.14.0 - FREE/PLUS/PRO) + v0.17.1 vérification expiration
   const canCreateProject = true
 
+  // [AI:Claude] Même condition que l'affichage de l'écran d'accueil "0 projet" plus bas :
+  // le titre "Mes projets" y est masqué pour laisser Flow seul en tête d'écran.
+  const showOnboarding = !loading && !error && projects.length === 0
+
   // [AI:Claude] Fonction pour reset le formulaire de création (wizard)
   const handleCancelModal = () => {
     setPatternFile(null)
@@ -952,7 +974,7 @@ const MyProjects = () => {
       )}
 
       {/* Header - Responsive mobile */}
-      <div className="mb-6 sm:mb-8">
+      <div className={showOnboarding ? '' : 'mb-6 sm:mb-8'}>
         {/* Afficher header complet uniquement si des projets existent */}
         {projects.length > 0 ? (
           <>
@@ -982,7 +1004,7 @@ const MyProjects = () => {
             </div>
 
             <button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => navigate('/smart-project-creator', { state: { hasProjects: true } })}
               className="mt-4 flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-control font-semibold text-sm transition-colors touch-manipulation bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 shadow-sm w-full sm:w-auto justify-center"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -1010,12 +1032,12 @@ const MyProjects = () => {
               </div>
             )}
           </>
-        ) : (
-          /* Header minimaliste pour empty state */
+        ) : !showOnboarding ? (
+          /* Header minimaliste (chargement, erreur) — masqué sur l'écran d'accueil */
           <div className="text-center">
             <h1 className="text-2xl sm:text-3xl font-bold text-flow-ink">{t('myProjects.titleAlt')}</h1>
           </div>
-        )}
+        ) : null}
       </div>
 
 
@@ -1124,129 +1146,61 @@ const MyProjects = () => {
       {!loading && !error && (
         <>
           {projects.length === 0 ? (
-            <div className="max-w-lg mx-auto pt-6 sm:pt-10 pb-10 px-4">
+            <div className="max-w-md mx-auto pt-6 sm:pt-10 pb-10 px-4">
 
-              {/* Accueil — Flow souriant en accompagnement (charte section 12 : etats vides) */}
-              <div className="text-center mb-8">
-                <FlowMascot pose="onYVa" size={120} className="mx-auto mb-3" />
+              {/* [AI:Claude] 2026-09-25 — Première arrivée : une seule proposition forte
+                  (donner son patron à Flow). Les autres façons de commencer n'apparaissent
+                  qu'après "Je n'ai pas mon patron sous la main" — retour d'une vraie
+                  découverte : trop de choix visibles d'emblée, on ne savait pas où regarder. */}
+              <div className="text-center">
+                <FlowMascot pose="onYVa" size={120} className="mx-auto mb-4" />
                 <h2 className="text-2xl font-bold text-flow-ink mb-2">
-                  {user?.first_name ? t('myProjects.welcomeNamed', { name: user.first_name }) : t('myProjects.welcome')}
+                  {user?.first_name ? t('myProjects.onboardingGreetingNamed', { name: user.first_name }) : t('myProjects.onboardingGreeting')}
                 </h2>
-                <p className="text-gray-600 text-sm mb-1">{t('myProjects.flowIntro')}</p>
-                <p className="text-flow-ink text-sm font-medium mb-1">{t('myProjects.addFirstProjectQuestion')}</p>
-                <p className="text-gray-500 text-sm">{t('myProjects.whereToStart')}</p>
-              </div>
+                <p className="text-gray-600 leading-relaxed mb-8">{t('myProjects.onboardingPitch')}</p>
 
-              {/* Importer un patron (Smart Creation) — CTA principal : point d'entrée du copilote */}
-              <button
-                onClick={() => navigate('/smart-project-creator')}
-                className="w-full mb-3 p-5 bg-primary-600 hover:bg-primary-700 text-white rounded-card text-left transition shadow-md hover:shadow-lg group"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-white bg-opacity-20 rounded-control flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-white text-base mb-1">{t('myProjects.startSmart')}</p>
-                    <p className="text-primary-100 text-sm leading-relaxed">{t('myProjects.startSmartDesc')}</p>
-                  </div>
-                </div>
-              </button>
-
-              {/* Créer manuellement — plus qu'un lien discret, pour ne pas concurrencer
-                  l'import qui est la vraie promesse de l'écran */}
-              <p className="text-center text-sm text-gray-500 mb-2">
-                {t('myProjects.createManuallyPrefix')}{' '}
+                {/* Création Intelligente directement — pas d'écran de choix intelligent/manuel */}
                 <button
-                  onClick={() => { if (canCreateProject) { setCreateModalInitialMode('manual'); setShowCreateModal(true) } }}
-                  className="text-primary-600 hover:text-primary-700 font-medium underline underline-offset-2"
+                  onClick={() => { trackOnboardingChoice('smart'); navigate('/smart-project-creator', { state: { hasProjects: false } }) }}
+                  className="w-full px-6 py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-card text-base font-semibold shadow-md hover:shadow-lg transition"
                 >
-                  {t('myProjects.createManually')}
+                  {t('myProjects.onboardingAddPattern')}
                 </button>
-              </p>
 
-              {/* Organiser son univers — zone secondaire, visuellement en retrait par
-                  rapport à Smart Creation qui reste le chemin recommandé */}
-              <div className="mt-6 mb-6">
-                <p className="text-center text-xs text-gray-500 mb-3">
-                  {t('myProjects.organizeUniverseTitle')}
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                {!showOtherStarts && (
                   <button
-                    onClick={() => navigate('/pattern-library?openAdd=1')}
-                    className="px-3 py-2 sm:p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-card text-left transition"
+                    onClick={() => setShowOtherStarts(true)}
+                    className="mt-4 text-sm text-gray-500 hover:text-primary-600 transition"
                   >
-                    <p className="text-sm font-semibold text-flow-ink mb-0.5">
-                      📚 {t('myProjects.organizeLibraryTitle')}
-                    </p>
-                    <p className="text-xs text-gray-500 mb-1.5">
-                      {t('myProjects.organizeLibraryDesc')}
-                    </p>
-                    <span className="text-xs font-medium text-primary-600">
-                      {t('myProjects.organizeLibraryCta')}
-                    </span>
+                    {t('myProjects.onboardingNoPattern')}
                   </button>
-                  <button
-                    onClick={() => navigate('/stash?openAdd=1')}
-                    className="px-3 py-2 sm:p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-card text-left transition"
-                  >
-                    <p className="text-sm font-semibold text-flow-ink mb-0.5">
-                      🧶 {t('myProjects.organizeStashTitle')}
-                    </p>
-                    <p className="text-xs text-gray-500 mb-1.5">
-                      {t('myProjects.organizeStashDesc')}
-                    </p>
-                    <span className="text-xs font-medium text-primary-600">
-                      {t('myProjects.organizeStashCta')}
-                    </span>
-                  </button>
-                </div>
+                )}
               </div>
 
-              {/* Démo — lien discret, friction zéro, ne concurrence plus les vrais CTA */}
-              <p className="text-center text-sm text-gray-500">
-                {t('myProjects.exploreDemoLinkPrefix')}{' '}
-                <button
-                  onClick={handleCreateDemoProject}
-                  disabled={isCreatingDemo}
-                  className="text-primary-600 hover:text-primary-700 font-medium underline underline-offset-2 disabled:opacity-60"
-                >
-                  {isCreatingDemo ? t('myProjects.exploreDemoCreating') : t('myProjects.exploreDemo')}
-                </button>
-              </p>
-
-              {/* [AI:Claude] L'écran ne parlait que d'import de patron — quelqu'un qui n'a
-                  pas de patron à importer (ou passe par "Créer mon projet"/"Explorer un
-                  exemple") ne voyait jamais mentionnés le compteur, les notes, l'assistant
-                  ou le studio photo. Bande discrète, sous les vrais CTA, pour donner une
-                  vue d'ensemble sans concurrencer l'entonnoir principal. */}
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                    <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="20" x2="17" y2="4" />
-                      <line x1="11" y1="20" x2="23" y2="4" />
-                      <circle cx="5" cy="20" r="1.5" fill="currentColor" stroke="none" />
-                      <circle cx="11" cy="20" r="1.5" fill="currentColor" stroke="none" />
-                    </svg>
-                    {t('myProjects.featureCounter')}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                    <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    {t('myProjects.featureNotes')}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
-                    <svg className="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                    {t('myProjects.featureAssistant')}
-                  </span>
+              {showOtherStarts && (
+                <div className="mt-8">
+                  <p className="text-center text-sm text-gray-500 mb-3">{t('myProjects.onboardingOtherWaysTitle')}</p>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => { trackOnboardingChoice('demo'); handleCreateDemoProject() }}
+                      disabled={isCreatingDemo}
+                      className="w-full px-4 py-3 bg-white hover:bg-gray-50 border border-gray-200 rounded-card text-left transition disabled:opacity-60"
+                    >
+                      <p className="text-sm font-semibold text-flow-ink">
+                        {isCreatingDemo ? t('myProjects.exploreDemoCreating') : t('myProjects.exploreDemo')}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">{t('myProjects.onboardingDemoDesc')}</p>
+                    </button>
+                    <button
+                      onClick={() => { trackOnboardingChoice('manual'); if (canCreateProject) { setCreateModalInitialMode('manual'); setShowCreateModal(true) } }}
+                      className="w-full px-4 py-3 bg-white hover:bg-gray-50 border border-gray-200 rounded-card text-left transition"
+                    >
+                      <p className="text-sm font-semibold text-flow-ink">{t('myProjects.createManually')}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{t('myProjects.onboardingManualDesc')}</p>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
           ) : filteredProjects.length === 0 ? (
@@ -1267,7 +1221,7 @@ const MyProjects = () => {
                 </button>
                 {canCreateProject && (
                   <button
-                    onClick={() => setShowCreateModal(true)}
+                    onClick={() => navigate('/smart-project-creator', { state: { hasProjects: true } })}
                     className="px-6 py-3 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition focus:outline-none focus:ring-4 focus:ring-primary-300"
                   >
                     {t('ui.createProjectPlus')}

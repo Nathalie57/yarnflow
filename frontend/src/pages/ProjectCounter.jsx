@@ -211,6 +211,11 @@ const ProjectCounter = () => {
   const [isDemoProject, setIsDemoProject] = useState(false)
   const [demoSteps, setDemoSteps] = useState({ rows: 0, askedAssistant: false, section: false, dismissed: false, celebrationShown: false })
   const [demoRowsCelebrate, setDemoRowsCelebrate] = useState(false)
+  // [AI:Claude] 2026-09-25 — Célébration légère du premier rang, dans la zone du compteur
+  // (remplace l'ancienne modale FirstRowCelebration). Affichée uniquement quand le serveur
+  // confirme que activation_reached vient d'être enregistré : jamais sur la démo, une
+  // seule fois par utilisatrice (voir AnalyticsService::logActivationIfFirst).
+  const [showActivationCelebration, setShowActivationCelebration] = useState(false)
   // [AI:Claude] Popup non-bloquante (fermable, pas d'auto-fermeture forcée puisqu'il y a
   // une vraie décision à prendre dessus) au moment précis où les 3 étapes se terminent —
   // plus visible qu'un bandeau qu'on peut rater en scrollant. `celebrationShown` (persisté
@@ -318,6 +323,12 @@ const ProjectCounter = () => {
     const timer = setTimeout(() => setDemoRowsCelebrate(false), 4000)
     return () => clearTimeout(timer)
   }, [demoRowsCelebrate])
+
+  useEffect(() => {
+    if (!showActivationCelebration) return
+    const timer = setTimeout(() => setShowActivationCelebration(false), 4000)
+    return () => clearTimeout(timer)
+  }, [showActivationCelebration])
 
   // [AI:Claude] v0.17.0 - Célébration premier rang
   // [AI:Claude] Remplace l'ancien tip statique "showFirstProjectTip" — sert maintenant
@@ -2351,22 +2362,25 @@ const ProjectCounter = () => {
 
         // Tracker l'événement first_row_counted
         try {
-          await api.post('/analytics/track-event', {
+          const trackRes = await api.post('/analytics/track-event', {
             event_name: 'first_row_counted',
             project_id: projectId,
             counter_unit: counterUnit
           })
+          if (trackRes?.data?.activation_reached) setShowActivationCelebration(true)
         } catch (err) {
           console.error('Erreur tracking first_row_counted:', err)
         }
       } else if (totalProjectRows > 0) {
         // Tracker project_worked_again à chaque incrémentation après le premier rang
         try {
-          await api.post('/analytics/track-event', {
+          const trackRes = await api.post('/analytics/track-event', {
             event_name: 'project_worked_again',
             project_id: projectId,
             current_row: newRow
           })
+          // Premier rang compté après une progression de départ saisie à l'onboarding
+          if (trackRes?.data?.activation_reached) setShowActivationCelebration(true)
         } catch (err) {
           console.error('Erreur tracking project_worked_again:', err)
         }
@@ -3600,8 +3614,41 @@ const ProjectCounter = () => {
           <div className="flex items-start gap-4">
             <FlowMascot pose="avecPatron" size={64} className="flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-flow-ink text-base mb-1">{t('ui.smartOnboardingTitle')}</p>
-              <p className="text-gray-600 text-sm leading-relaxed mb-4">{t('ui.smartOnboardingIntro')}</p>
+              <p className="font-semibold text-flow-ink text-base">{t('ui.smartOnboardingTitle')}</p>
+              {/* [AI:Claude] 2026-09-25 — Rendre concret "J'ai organisé ton patron" : nom du
+                  projet et sections détectées (5 max, objectif affiché seulement s'il existe). */}
+              {project?.name && (
+                <p className="font-bold text-flow-ink text-sm mt-0.5 truncate">{project.name}</p>
+              )}
+              {sections.length > 0 ? (
+                <>
+                  <p className="text-gray-600 text-sm mt-3 mb-2">{t('ui.smartOnboardingOrganized', { count: sections.length })}</p>
+                  <ol className="space-y-1 mb-2">
+                    {sections.slice(0, 5).map((section, index) => {
+                      const hasTarget = section.progression_type !== 'composite' && section.total_rows != null
+                      return (
+                        <li key={section.id} className="flex items-center gap-2 text-sm">
+                          <span className="w-4 flex-shrink-0 text-xs text-gray-400 text-right">{index + 1}</span>
+                          <span className="flex-1 min-w-0 truncate text-flow-ink">{section.name}</span>
+                          {hasTarget && (
+                            <span className="flex-shrink-0 text-xs text-gray-500">
+                              {section.counter_unit === 'cm'
+                                ? t('ui.cmValue', { n: Number(section.total_rows) })
+                                : t('ui.smartOnboardingSectionRows', { count: Math.floor(Number(section.total_rows)) })}
+                            </span>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ol>
+                  {sections.length > 5 && (
+                    <p className="text-xs text-gray-500 mb-2 pl-6">{t('ui.smartOnboardingMoreSections', { count: sections.length - 5 })}</p>
+                  )}
+                  <p className="text-gray-600 text-sm leading-relaxed mt-3 mb-4">{t('ui.smartOnboardingNext')}</p>
+                </>
+              ) : (
+                <p className="text-gray-600 text-sm leading-relaxed mt-1 mb-4">{t('ui.smartOnboardingIntro')}</p>
+              )}
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={handleSmartOnboardingStart}
@@ -4134,7 +4181,22 @@ const ProjectCounter = () => {
             Pendant une session active, Flow passe en plus grand a droite (retour
             utilisatrice : il y avait un vide a cet endroit-la une fois le plein ecran
             ouvert), pose "cestParti" pour marquer l'energie du comptage en cours. */}
-        {isTimerRunning ? (
+        {/* [AI:Claude] 2026-09-25 — Premier rang réel (activation_reached confirmé par le
+            serveur) : Flow prend la place de la ligne habituelle pendant ~4 s, fermable au
+            clic, sans modale ni fond assombri — le compteur juste en dessous reste utilisable. */}
+        {showActivationCelebration ? (
+          <button
+            type="button"
+            onClick={() => setShowActivationCelebration(false)}
+            className="w-full flex items-center gap-2.5 mb-2 text-left"
+          >
+            <FlowMascot pose="cestParti" size={52} className="flex-shrink-0" />
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-primary-900">{t('ui.activationCelebrationTitle')}</span>
+              <span className="block text-xs text-primary-800">{t('ui.activationCelebrationBody')}</span>
+            </span>
+          </button>
+        ) : isTimerRunning ? (
           <div className="flex items-start justify-between gap-2 mb-2">
             <div>
               {progressData.total !== null && progressData.total - progressData.current > 0 && (

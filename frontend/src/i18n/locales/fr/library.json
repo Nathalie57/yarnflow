@@ -346,7 +346,7 @@
     "goalsAlreadyReached_other": "{{count}} objectifs déjà atteints !",
     "moreBadgesToDiscover": "+{{count}} autres<1></1>badges à découvrir",
     "toUnlockCount": "{{count}} à débloquer",
-    "photoStudioPitch": "Prends une photo de ton ouvrage et laisse l'IA le mettre en scène —<1></1>fond, éclairage, ambiance. Ton tricot reste identique.",
+    "photoStudioPitch": "Prends une photo de ton ouvrage et laisse Flow le mettre en scène —<1></1>fond, éclairage, ambiance. Ton tricot reste identique.",
     "freeTrialsAvailable_one": "{{count}} essai gratuit disponible",
     "freeTrialsAvailable_other": "{{count}} essais gratuits disponibles",
     "youWillHaveLeft_one": "Il te restera {{count}} crédit",

@@ -45,8 +45,11 @@ class AnalyticsService
      * real_project_started, activation_reached...) : n'insère rien si l'événement existe
      * déjà pour elle, quel que soit l'appareil. Insertion conditionnelle en une requête
      * (index idx_user_event) plutôt qu'un SELECT puis INSERT.
+     *
+     * Renvoie true seulement si la ligne vient d'être insérée (false si elle existait
+     * déjà ou en cas d'erreur) — les appelants qui ne s'en servent pas l'ignorent.
      */
-    public static function logOnce(int $userId, ?int $projectId, string $eventName, array $data = []): void
+    public static function logOnce(int $userId, ?int $projectId, string $eventName, array $data = []): bool
     {
         try {
             $db = Database::getInstance()->getConnection();
@@ -65,8 +68,10 @@ class AnalyticsService
                 ':user_id2' => $userId,
                 ':event_name2' => $eventName,
             ]);
+            return $stmt->rowCount() > 0;
         } catch (\Exception $e) {
             error_log("[ANALYTICS ERROR] {$eventName}: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -151,21 +156,24 @@ class AnalyticsService
      * rang compté, d'où le court-circuit sur l'existence de l'événement avant de lire
      * le projet.
      */
-    public static function logActivationIfFirst(int $userId, int $projectId): void
+    // Renvoie true uniquement si activation_reached vient d'être enregistré (sert au
+    // frontend pour la célébration du premier rang, affichée une seule fois).
+    public static function logActivationIfFirst(int $userId, int $projectId): bool
     {
         try {
             if (self::hasEvent($userId, 'activation_reached')) {
-                return;
+                return false;
             }
 
             $origin = self::realProjectOrigin($userId, $projectId);
             if ($origin === null) {
-                return;
+                return false;
             }
 
-            self::logOnce($userId, $projectId, 'activation_reached', $origin);
+            return self::logOnce($userId, $projectId, 'activation_reached', $origin);
         } catch (\Exception $e) {
             error_log('[ANALYTICS ERROR] activation_reached: ' . $e->getMessage());
+            return false;
         }
     }
 }

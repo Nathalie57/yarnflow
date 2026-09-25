@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useAnalytics } from '../hooks/useAnalytics'
 import axios from 'axios'
@@ -69,6 +69,15 @@ export default function SmartProjectCreator() {
   // cours d'analyse", voir handleAnalyze) — showContinueHint et showLongWait sont de purs
   // repères temporels d'affichage, pas des états backend.
   const [showContinueHint, setShowContinueHint] = useState(false)
+  // [AI:Claude] 2026-09-25 — "Continuer dans YarnFlow" pendant l'analyse seulement s'il y a
+  // déjà quelque chose vers quoi revenir : sinon une nouvelle utilisatrice retombait sur
+  // l'accueil "Donne-moi ton patron" et pouvait croire son import perdu. hasProjects est
+  // transmis par Mes projets ; à défaut, yf_has_projects (posé par Mes projets) ; sinon masqué.
+  const location = useLocation()
+  const canContinueElsewhere = (() => {
+    if (typeof location.state?.hasProjects === 'boolean') return location.state.hasProjects
+    try { return localStorage.getItem('yf_has_projects') === '1' } catch { return false }
+  })()
   const [showLongWait, setShowLongWait] = useState(false)
   const [extractedData, setExtractedData] = useState(null)
   const [aiStatus, setAiStatus] = useState(null)
@@ -764,9 +773,51 @@ export default function SmartProjectCreator() {
           {/* [AI:Claude] Sans cette porte de sortie gratuite, il ne restait que "payer" ou
               "partir" — alors que remplir le projet à la main ne coûte rien et n'a aucun
               rapport avec le quota IA. Reprend le même lien que dans CreateProjectWizard. */}
-          <Link to="/my-projects" className="block text-sm text-primary-600 hover:text-primary-700 underline underline-offset-2">
+          <Link to="/my-projects?create=manual" className="block text-sm text-primary-600 hover:text-primary-700 underline underline-offset-2">
             {t('ui.fillManuallyInstead')}
           </Link>
+          <button onClick={() => navigate(-1)} className="block w-full text-sm text-gray-400 hover:text-gray-600">
+            {t('ui.back')}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // [AI:Claude] 2026-09-25 — PLUS/PRO avec quota mensuel épuisé : détecté ici, avant le choix
+  // de la source, plutôt qu'un refus à l'analyse après avoir déjà envoyé le patron (ce que
+  // faisait implicitement l'ancienne modale en renvoyant vers /subscription). Pas de
+  // tracking ajouté ici (inchangé volontairement).
+  const showMonthlyQuotaWall = !!(isPro && quota && quota.limit_monthly > 0 && quota.remaining === 0 && step <= 1)
+  if (showMonthlyQuotaWall) {
+    const resetDate = quota.next_reset_date
+      ? new Date(quota.next_reset_date + 'T00:00:00').toLocaleDateString(i18n.language, { day: 'numeric', month: 'long' })
+      : null
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-md mx-auto px-4 py-20 text-center space-y-6">
+          <FlowMascot pose="interrogatif" size={90} className="mx-auto" />
+          <div>
+            <h1 className="text-2xl font-bold text-flow-ink mb-2">{t('ui.monthlyCreationsUsed', { count: quota.limit_monthly })}</h1>
+            {resetDate && <p className="text-gray-500">{t('ui.monthlyCreationsBack', { date: resetDate })}</p>}
+          </div>
+          {/* [AI:Claude] PLUS : quota épuisé = signal d'usage fort → passage à PRO en action
+              principale, manuel en alternative (même hiérarchie que l'écran FREE). PRO : pas
+              de plan supérieur, le manuel devient l'action principale. */}
+          {quota.plan === 'plus' ? (
+            <>
+              <Link to="/subscription" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition">
+                {t('ui.moreAutoCreations')}
+              </Link>
+              <Link to="/my-projects?create=manual" className="block text-sm text-primary-600 hover:text-primary-700 underline underline-offset-2">
+                {t('ui.fillManuallyInstead')}
+              </Link>
+            </>
+          ) : (
+            <Link to="/my-projects?create=manual" className="inline-block px-6 py-3 bg-primary-600 text-white rounded-control font-semibold hover:bg-primary-700 transition">
+              {t('ui.createManuallyMeanwhile')}
+            </Link>
+          )}
           <button onClick={() => navigate(-1)} className="block w-full text-sm text-gray-400 hover:text-gray-600">
             {t('ui.back')}
           </button>
@@ -780,8 +831,9 @@ export default function SmartProjectCreator() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
 
-        {/* Header */}
-        <div className="mb-8">
+        {/* Header — [AI:Claude] 2026-09-25 : aux étapes 1 et 2 (saisie, analyse, création),
+            seulement "← Retour" ; titre et quota sont portés par la conversation avec Flow. */}
+        <div className={step <= 2 ? 'mb-4' : 'mb-8'}>
           <button
             onClick={() => {
               // [AI:Claude] Sur la porte de pré-création (step 3, diagramme/traduction en
@@ -789,6 +841,12 @@ export default function SmartProjectCreator() {
               // cliqué "Continuer quand même" perd tout, silencieusement, alors que sur
               // toutes les autres étapes ce lien ne coûte rien. Retour utilisatrice : ça
               // donnait l'impression que l'import ne fonctionnait pas.
+              // [AI:Claude] Pendant la saisie (étape 2), retour à la question précédente
+              // (choix de la source) plutôt qu'à Mes projets — remplace "← Changer de méthode".
+              if (step === 2 && !analyzing && !creating) {
+                setStep(1)
+                return
+              }
               if ((translateGatePending || warningGatePending) && !window.confirm(t('ui.leaveBeforeConfirmWarning'))) {
                 return
               }
@@ -796,9 +854,10 @@ export default function SmartProjectCreator() {
             }}
             className="text-primary-600 hover:text-primary-700 mb-4 flex items-center gap-2"
           >
-            {t('ui.backToProjectsArrow')}
+            {step <= 2 ? t('ui.backArrow') : t('ui.backToProjectsArrow')}
           </button>
 
+          {step > 2 && (<>
           <h1 className="text-3xl font-bold text-flow-ink mb-2">
             {t('ui.smartCreation')}
           </h1>
@@ -817,6 +876,7 @@ export default function SmartProjectCreator() {
               </span>
             </div>
           )}
+          </>)}
         </div>
 
         {/* [AI:Claude] Stepper retiré : avec le nouveau flux (analyse -> création auto),
@@ -834,67 +894,90 @@ export default function SmartProjectCreator() {
 
         {/* ÉTAPE 1 : Choix du mode */}
         {step === 1 && (
-          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8">
-            <FlowMascot pose="avecPatron" size={100} className="mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-flow-ink mb-6 text-center">
-              {t('ui.howToImport')}
-            </h2>
+          <div className="max-w-xl mx-auto">
+            {/* [AI:Claude] 2026-09-25 — Suite directe de "Donner mon patron à Flow" : pas de carte
+                englobante, la question de Flow devient le titre, les choix arrivent tout de suite. */}
+            <div className="text-center mb-6">
+              <FlowMascot pose="avecPatron" size={100} className="mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-flow-ink mb-2">
+                {t('ui.howToImport')}
+              </h1>
+              <p className="text-gray-600 leading-relaxed">{t('ui.howToImportHint')}</p>
+              {quota && (
+                <p className="mt-2 text-xs text-gray-400">
+                  {quota.plan !== 'free'
+                    ? t('ui.importsLeft', { count: quota.remaining })
+                    : t('ui.trialsLeft', { count: quota.remaining })}
+                </p>
+              )}
+            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {/* Mode PDF */}
+            {/* [AI:Claude] 2026-09-25 — Choix de source en lignes compactes (une colonne, ligne entière
+                cliquable) plutôt qu'en grosses cartes : plus léger sur mobile, plus proche d'un
+                dialogue. Mêmes actions (handleModeSelect) qu'avant. */}
+            <div className="space-y-2">
               <button
                 onClick={() => handleModeSelect('pdf')}
-                className="p-4 border border-gray-200 rounded-card hover:border-primary-400 hover:bg-primary-50 transition group text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-white/70 hover:bg-white border border-gray-200/70 hover:border-primary-300 rounded-control text-left transition"
               >
-                <div className="w-10 h-10 bg-primary-50 rounded-control flex items-center justify-center mb-3">
+                <span className="w-9 h-9 bg-primary-50 rounded-control flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" /></svg>
-                </div>
-                <h3 className="font-bold text-flow-ink mb-1">{t('ui.pdfFile')}</h3>
-                <p className="text-xs text-gray-500">{t('ui.pdfMaxSize')}</p>
-                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-flow-ink">{t('ui.pdfFile')}</span>
+                  <span className="block text-xs text-gray-500 truncate">{t('ui.pdfMaxSize')}</span>
+                </span>
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
               </button>
-
-              {/* Mode URL */}
               <button
                 onClick={() => handleModeSelect('url')}
-                className="p-4 border border-gray-200 rounded-card hover:border-primary-400 hover:bg-primary-50 transition group text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-white/70 hover:bg-white border border-gray-200/70 hover:border-primary-300 rounded-control text-left transition"
               >
-                <div className="w-10 h-10 bg-primary-50 rounded-control flex items-center justify-center mb-3">
+                <span className="w-9 h-9 bg-primary-50 rounded-control flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
-                </div>
-                <h3 className="font-bold text-flow-ink mb-1">{t('ui.webLink')}</h3>
-                <p className="text-xs text-gray-500">{t('ui.fromUrl')}</p>
-                <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-flow-ink">{t('ui.webLink')}</span>
+                  <span className="block text-xs text-gray-500 truncate">{t('ui.fromUrl')}</span>
+                </span>
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
               </button>
-
-              {/* Mode Bibliothèque — pleine largeur sur mobile */}
               <button
                 onClick={() => handleModeSelect('library')}
-                className="col-span-2 md:col-span-1 p-4 border border-gray-200 rounded-card hover:border-primary-400 hover:bg-primary-50 transition group text-left flex md:block items-center gap-4"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-white/70 hover:bg-white border border-gray-200/70 hover:border-primary-300 rounded-control text-left transition"
               >
-                <div className="w-10 h-10 bg-primary-50 rounded-control flex items-center justify-center shrink-0 md:mb-3">
+                <span className="w-9 h-9 bg-primary-50 rounded-control flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" /></svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-flow-ink mb-1">{t('ui.myLibrary')}</h3>
-                  <p className="text-xs text-gray-500">{t('ui.patternAlreadyInLibrary')}</p>
-                  <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
-                </div>
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-flow-ink">{t('ui.myLibrary')}</span>
+                  <span className="block text-xs text-gray-500 truncate">{t('ui.patternAlreadyInLibrary')}</span>
+                </span>
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
               </button>
-
-              {/* Mode Texte collé — pleine largeur sur mobile */}
               <button
                 onClick={() => handleModeSelect('text')}
-                className="col-span-2 md:col-span-1 p-4 border border-gray-200 rounded-card hover:border-primary-400 hover:bg-primary-50 transition group text-left flex md:block items-center gap-4"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-white/70 hover:bg-white border border-gray-200/70 hover:border-primary-300 rounded-control text-left transition"
               >
-                <div className="w-10 h-10 bg-primary-50 rounded-control flex items-center justify-center shrink-0 md:mb-3">
+                <span className="w-9 h-9 bg-primary-50 rounded-control flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                </div>
-                <div>
-                  <h3 className="font-bold text-flow-ink mb-1">{t('ui.pasteText')}</h3>
-                  <p className="text-xs text-gray-500">{t('ui.pasteTextHint')}</p>
-                  <div className="mt-3 text-primary-600 group-hover:text-primary-700 font-medium text-sm">{t('ui.chooseArrow')}</div>
-                </div>
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-semibold text-flow-ink">{t('ui.pasteText')}</span>
+                  <span className="block text-xs text-gray-500 truncate">{t('ui.pasteTextHint')}</span>
+                </span>
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+              </button>
+            </div>
+
+            {/* [AI:Claude] 2026-09-25 — Création manuelle depuis le parcours normal (formulaire
+                existant de Mes projets, ouvert directement via ?create=manual). */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => navigate('/my-projects?create=manual')}
+                className="text-sm text-gray-500 hover:text-primary-600 transition"
+              >
+                {t('ui.noPatternAtHand')}
               </button>
             </div>
           </div>
@@ -902,10 +985,24 @@ export default function SmartProjectCreator() {
 
         {/* ÉTAPE 2 : Upload/URL/Bibliothèque + Analyse */}
         {step === 2 && !analyzing && !creating && (
-          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8">
-            <h2 className="text-xl font-bold text-flow-ink mb-6">
-              {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.smartCreationLibraryTitle') : mode === 'text' ? t('ui.smartCreationTextTitle') : t('ui.importFromUrl')}
-            </h2>
+          <div className="max-w-xl mx-auto">
+            {/* [AI:Claude] 2026-09-25 — Même tête de conversation qu'à l'étape 1 : Flow, titre du
+                parcours, essais restants en discret ; la carte n'entoure plus que le formulaire. */}
+            <div className="text-center mb-6">
+              <FlowMascot pose="avecPatron" size={100} className="mx-auto mb-4" />
+              <h1 className="text-2xl font-bold text-flow-ink">
+                {mode === 'pdf' ? t('ui.importPdf') : mode === 'library' ? t('ui.smartCreationLibraryTitle') : mode === 'text' ? t('ui.smartCreationTextTitle') : t('ui.importFromUrl')}
+              </h1>
+              {quota && (
+                <p className="mt-2 text-xs text-gray-400">
+                  {quota.plan !== 'free'
+                    ? t('ui.importsLeft', { count: quota.remaining })
+                    : t('ui.trialsLeft', { count: quota.remaining })}
+                </p>
+              )}
+            </div>
+
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-6 sm:p-8">
 
             {mode === 'library' && (
               <div className="mb-6">
@@ -1029,6 +1126,9 @@ export default function SmartProjectCreator() {
               </div>
             )}
 
+            {/* [AI:Claude] 2026-09-25 — Bibliothèque sans aucun patron PDF : ni taille ni bouton
+                d'analyse, il n'y a rien à analyser ; seul le lien vers la bibliothèque reste. */}
+            {!(mode === 'library' && !loadingLibrary && libraryPatterns.length === 0) && (<>
             {/* Taille (optionnel, pour patrons multi-tailles) */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1078,13 +1178,6 @@ export default function SmartProjectCreator() {
             </div>
 
             <div className="flex gap-4">
-              <button
-                onClick={() => setStep(1)}
-                className="px-6 py-3 border border-gray-200 text-gray-700 rounded-control hover:bg-gray-50"
-              >
-                {t('ui.backToMethodChoice')}
-              </button>
-
               {extractedData ? (
                 <button
                   onClick={() => {
@@ -1125,6 +1218,8 @@ export default function SmartProjectCreator() {
                 </button>
               )}
             </div>
+            </>)}
+          </div>
           </div>
         )}
 
@@ -1170,7 +1265,7 @@ export default function SmartProjectCreator() {
                 ailleurs sans jamais promettre qu'elle sera prévenue ou que la création se
                 fera "automatiquement" : ça reste vrai uniquement hors gate diagramme/traduction/
                 partiel (voir handleAnalyze), donc on ne l'affirme pas ici. */}
-            {showContinueHint && (
+            {showContinueHint && canContinueElsewhere && (
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <p className="text-xs text-gray-500 mb-2">{t('ui.continueInAppHint')}</p>
                 <button

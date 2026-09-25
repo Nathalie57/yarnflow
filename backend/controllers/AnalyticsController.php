@@ -74,11 +74,16 @@ class AnalyticsController
             // d'activation (une seule fois par utilisatrice, voir AnalyticsService).
             // project_worked_again aussi : si la progression de départ a été saisie à
             // l'onboarding, le premier rang compté n'émet jamais first_row_counted.
+            // activation_reached renvoyé dans la réponse uniquement quand il vient d'être
+            // enregistré : le compteur affiche alors la célébration du premier rang.
+            $activationReached = false;
             if ($projectId && in_array($eventName, ['first_row_counted', 'project_worked_again'], true)) {
-                AnalyticsService::logActivationIfFirst($userId, $projectId);
+                $activationReached = AnalyticsService::logActivationIfFirst($userId, $projectId);
             }
 
-            $this->sendResponse(200, ['success' => true]);
+            $this->sendResponse(200, $activationReached
+                ? ['success' => true, 'activation_reached' => true]
+                : ['success' => true]);
         } catch (\Exception $e) {
             // [AI:Claude] Best-effort : un souci ici ne doit jamais bloquer le
             // parcours utilisateur qui a déclenché l'événement.
