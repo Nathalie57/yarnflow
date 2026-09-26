@@ -316,7 +316,12 @@ class YarnStashController
                 ':needle'     => isset($data['needle_size_mm'])       ? (float)$data['needle_size_mm']   : null,
                 ':cat'        => isset($data['yarn_weight_category']) ? trim($data['yarn_weight_category']) : null,
                 ':hex'        => isset($data['color_hex'])  ? trim($data['color_hex'])  : null,
-                ':photo'        => isset($data['photo_url'])    ? trim($data['photo_url'])    : null,
+                // [AI:Claude] 2026-09-26 — SÉCURITÉ : photo_url désigne un fichier sur le
+                // serveur, lu/effacé par POST .../photo sans jamais recontrôler le chemin en
+                // base — jamais accepté depuis le client, sinon {"photo_url":"/../.env"} puis
+                // un nouvel upload de photo faisait supprimer ce fichier. Seule cette route pose
+                // photo_url (nom de fichier généré côté serveur).
+                ':photo'        => null,
                 ':purchase_url' => isset($data['purchase_url']) ? trim($data['purchase_url']) : null,
                 ':notes'        => isset($data['notes'])        ? trim($data['notes'])        : null,
             ]);
@@ -361,6 +366,11 @@ class YarnStashController
             $data = $this->getJsonInput();
             $this->validateRequired($data, ['brand', 'yarn_name', 'weight_per_skein_g', 'yardage_per_skein_m', 'quantity']);
 
+            // [AI:Claude] 2026-09-26 — SÉCURITÉ : photo_url retiré du SET (même raison que sur
+            // create ci-dessus) — jamais accepté depuis le client. Effet de bord corrigé au
+            // passage : la photo n'était jusqu'ici jamais renvoyée par le formulaire d'édition,
+            // donc chaque modification (marque, quantité...) effaçait silencieusement la photo
+            // déjà enregistrée ; elle est désormais préservée puisqu'on ne la touche plus ici.
             $stmt = $this->db->prepare(
                 'UPDATE yarn_stash SET
                     brand = :brand, yarn_name = :yarn_name, color_name = :color_name,
@@ -368,7 +378,7 @@ class YarnStashController
                     weight_per_skein_g = :weight_g, yardage_per_skein_m = :yardage_m,
                     quantity = :qty, needle_size_mm = :needle,
                     yarn_weight_category = :cat, color_hex = :hex,
-                    photo_url = :photo, purchase_url = :purchase_url, notes = :notes
+                    purchase_url = :purchase_url, notes = :notes
                  WHERE id = :id AND user_id = :uid'
             );
 
@@ -384,7 +394,6 @@ class YarnStashController
                 ':needle'     => isset($data['needle_size_mm'])       ? (float)$data['needle_size_mm']   : null,
                 ':cat'        => isset($data['yarn_weight_category']) ? trim($data['yarn_weight_category']) : null,
                 ':hex'        => isset($data['color_hex'])  ? trim($data['color_hex'])  : null,
-                ':photo'        => isset($data['photo_url'])    ? trim($data['photo_url'])    : null,
                 ':purchase_url' => isset($data['purchase_url']) ? trim($data['purchase_url']) : null,
                 ':notes'        => isset($data['notes'])        ? trim($data['notes'])        : null,
                 ':id'           => $id,
@@ -632,12 +641,17 @@ PROMPT;
             }
 
             $file = $_FILES['photo'];
-            $this->validateImageFile($file);
-            $photoPath = $this->saveStashPhoto($file, $userId);
+            $extension = $this->validateImageFile($file);
+            $photoPath = $this->saveStashPhoto($file, $userId, $extension);
 
             if (!empty($entry['photo_url'])) {
-                $oldPath = __DIR__ . '/../public' . $entry['photo_url'];
-                if (file_exists($oldPath)) @unlink($oldPath);
+                // [AI:Claude] 2026-09-26 — Défense en profondeur pour des lignes déjà en base
+                // avant le correctif ci-dessus : n'unlink jamais hors de public/uploads/.
+                $uploadsRoot = realpath(__DIR__ . '/../public/uploads');
+                $oldPath = realpath(__DIR__ . '/../public' . $entry['photo_url']);
+                if ($oldPath !== false && $uploadsRoot !== false && str_starts_with($oldPath, $uploadsRoot . DIRECTORY_SEPARATOR)) {
+                    @unlink($oldPath);
+                }
             }
 
             $stmt = $this->db->prepare(
@@ -704,7 +718,12 @@ PROMPT;
         return (int)$stmt->fetchColumn();
     }
 
-    private function validateImageFile(array $file): void
+    // [AI:Claude] 2026-09-26 — SÉCURITÉ : renvoie l'extension dérivée du VRAI contenu du
+    // fichier (finfo + getimagesize déjà vérifiés ci-dessous), pour que saveStashPhoto()
+    // ne se serve plus jamais de l'extension du nom envoyé par le client (falsifiable —
+    // un .php présenté comme "image/jpeg" passait la validation puis était enregistré
+    // avec l'extension .php, exécutable une fois servi depuis /uploads/stash/).
+    private function validateImageFile(array $file): string
     {
         $maxSize = 10 * 1024 * 1024;
         if ($file['size'] > $maxSize)
@@ -714,21 +733,23 @@ PROMPT;
 
         $mimeType = (new \finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
 
-        if (!in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp']))
+        $mimeToExt = ['image/jpeg' => 'jpeg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if (!isset($mimeToExt[$mimeType]))
             throw new \InvalidArgumentException('Format invalide. Acceptés : JPEG, PNG, WebP');
 
         $imageInfo = @getimagesize($file['tmp_name']);
         if ($imageInfo === false)
             throw new \InvalidArgumentException('Image corrompue ou invalide');
+
+        return $mimeToExt[$mimeType];
     }
 
-    private function saveStashPhoto(array $file, int $userId): string
+    private function saveStashPhoto(array $file, int $userId, string $extension): string
     {
         $uploadsDir = __DIR__ . '/../public/uploads/stash';
         if (!is_dir($uploadsDir))
             mkdir($uploadsDir, 0755, true);
 
-        $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) ?: 'jpg';
         $filename  = sprintf('%d_%s_%s.%s', $userId, date('Ymd_His'), bin2hex(random_bytes(6)), $extension);
         $filepath  = $uploadsDir . '/' . $filename;
 

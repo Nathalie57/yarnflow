@@ -461,6 +461,20 @@ class ProjectController
                 return;
             }
 
+            // [AI:Claude] 2026-09-26 — SÉCURITÉ : ces champs désignent un fichier sur le
+            // serveur (pattern_path/main_photo lus par des routes qui unlink()/readfile() ce
+            // chemin, pattern_library_id qui associe un patron d'un autre compte) — jamais
+            // depuis le JSON envoyé par ce endpoint générique, sinon {"pattern_path":"/../.env"}
+            // permettait de le faire lire ou supprimer via /pattern puis DELETE .../pattern.
+            // Seul le vidage explicite (null) reste autorisé (utilisé pour effacer le patron
+            // avant d'en associer un autre) ; posés uniquement par leurs routes dédiées
+            // (upload photo, pattern-from-library, pattern-url, pattern-text).
+            foreach (['pattern_path', 'main_photo', 'pattern_library_id'] as $pathField) {
+                if (array_key_exists($pathField, $data) && $data[$pathField] !== null) {
+                    unset($data[$pathField]);
+                }
+            }
+
             // [AI:Claude] v0.16.2 - Valider la valeur du compteur selon l'unité
             if (isset($data['current_row'])) {
                 $project = $this->projectModel->getProjectById($id);
@@ -567,8 +581,13 @@ class ProjectController
                 return;
             }
 
-            // [AI:Claude] 2026-09-26 — section_id reçu dans la requête : doit appartenir au projet
-            if (!empty($data['section_id']) && !$this->projectModel->sectionBelongsToProject((int)$data['section_id'], $id)) {
+            // [AI:Claude] 2026-09-26 — section_id reçu dans la requête : doit appartenir au
+            // projet. Casté UNE SEULE FOIS ici puis réutilisé plus bas (jamais $data['section_id']
+            // à nouveau) : un "123.9" passait ce contrôle sur (int)"123.9"=123 (section à soi)
+            // mais était ensuite écrit tel quel dans project_rows, où MySQL l'arrondit à 124 —
+            // la section d'un autre compte, jamais revérifiée.
+            $sectionId = !empty($data['section_id']) ? (int)$data['section_id'] : null;
+            if ($sectionId !== null && !$this->projectModel->sectionBelongsToProject($sectionId, $id)) {
                 $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet"]);
                 return;
             }
@@ -589,7 +608,7 @@ class ProjectController
 
             $rowData = [
                 'row_number' => (int)$data['row_number'],
-                'section_id' => $data['section_id'] ?? null,
+                'section_id' => $sectionId,
                 'stitch_count' => $data['stitch_count'] ?? null,
                 'stitch_type' => $data['stitch_type'] ?? null,
                 'duration' => $data['duration'] ?? null,
@@ -818,14 +837,14 @@ class ProjectController
                 return;
             }
 
-            // [AI:Claude] 2026-09-26 — section_id reçu dans la requête : doit appartenir au projet
-            if (!empty($data['section_id']) && !$this->projectModel->sectionBelongsToProject((int)$data['section_id'], $id)) {
+            // [AI:Claude] 2026-09-26 — Casté UNE SEULE FOIS puis réutilisé (voir le même
+            // correctif dans addRow ci-dessus : un section_id non casté réutilisé après le
+            // contrôle pouvait contourner sectionBelongsToProject via un nombre décimal).
+            $sectionId = !empty($data['section_id']) ? (int)$data['section_id'] : null;
+            if ($sectionId !== null && !$this->projectModel->sectionBelongsToProject($sectionId, $id)) {
                 $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet"]);
                 return;
             }
-
-            // [AI:Claude] Récupérer section_id si fournie (tracking par section)
-            $sectionId = $data['section_id'] ?? null;
 
             $sessionId = $this->projectModel->startSession($id, $sectionId);
 
@@ -872,6 +891,14 @@ class ProjectController
                 throw new \InvalidArgumentException('session_id manquant');
 
             $sessionId = (int)$data['session_id'];
+
+            // [AI:Claude] 2026-09-26 — SÉCURITÉ : session_id reçu dans la requête doit
+            // appartenir à ce projet (même défaut que celui déjà corrigé sur les sections).
+            if (!$this->projectModel->sessionBelongsToProject($sessionId, $id)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Session introuvable']);
+                return;
+            }
+
             $rowsCompleted = $data['rows_completed'] ?? 0;
             $notes = $data['notes'] ?? null;
             $duration = isset($data['duration']) ? (int)$data['duration'] : null; // [AI:Claude] Durée exacte du frontend
@@ -989,8 +1016,12 @@ class ProjectController
 
             $project = $this->projectModel->getProjectById($id);
             if (!empty($project['pattern_path'])) {
-                $absolutePath = __DIR__ . '/../public' . $project['pattern_path'];
-                if (file_exists($absolutePath)) {
+                // [AI:Claude] 2026-09-26 — Défense en profondeur (en plus du filtrage à
+                // l'écriture dans update()) : n'unlink jamais un chemin qui résoudrait hors de
+                // public/uploads/, pour des lignes déjà en base avant ce correctif.
+                $uploadsRoot = realpath(__DIR__ . '/../public/uploads');
+                $absolutePath = realpath(__DIR__ . '/../public' . $project['pattern_path']);
+                if ($absolutePath !== false && $uploadsRoot !== false && str_starts_with($absolutePath, $uploadsRoot . DIRECTORY_SEPARATOR)) {
                     unlink($absolutePath);
                 }
             }
@@ -1150,29 +1181,28 @@ class ProjectController
 
             $file = $_FILES['photo'];
 
-            // Validation du type de fichier (images uniquement)
-            $allowedTypes = [
-                'image/jpeg',
-                'image/jpg',
-                'image/png',
-                'image/webp'
-            ];
-
-            if (!in_array($file['type'], $allowedTypes)) {
-                throw new \Exception('Type de fichier non autorisé. Utilisez des images (JPG, PNG, WEBP)');
-            }
-
             // Validation de la taille (max 10MB)
             $maxSize = 10 * 1024 * 1024;
             if ($file['size'] > $maxSize) {
-                throw new \Exception('Fichier trop volumineux (max 50MB)');
+                throw new \Exception('Fichier trop volumineux (max 10MB)');
+            }
+            if ($file['size'] === 0) {
+                throw new \Exception('Fichier vide');
             }
 
-            // Déterminer l'extension
-            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            if ($extension === 'jpg') {
-                $extension = 'jpeg';
+            // [AI:Claude] 2026-09-26 — SÉCURITÉ : le type déclaré par le client ($file['type'])
+            // et l'extension du nom de fichier envoyé sont librement falsifiables (upload d'un
+            // .php présenté comme "image/jpeg", exécuté ensuite depuis /uploads/projects/ qui
+            // est servi directement). On vérifie le contenu réel du fichier et on dérive
+            // nous-mêmes l'extension à partir de ce contenu, jamais du nom envoyé.
+            $mimeToExt = ['image/jpeg' => 'jpeg', 'image/png' => 'png', 'image/webp' => 'webp'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $realMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            if (!isset($mimeToExt[$realMime]) || @getimagesize($file['tmp_name']) === false) {
+                throw new \Exception('Type de fichier non autorisé. Utilisez des images (JPG, PNG, WEBP)');
             }
+            $extension = $mimeToExt[$realMime];
 
             // Créer le dossier d'uploads s'il n'existe pas
             $uploadDir = __DIR__.'/../public/uploads/projects';
@@ -1180,8 +1210,8 @@ class ProjectController
                 mkdir($uploadDir, 0755, true);
             }
 
-            // Nom de fichier unique
-            $filename = 'project_'.$id.'_'.time().'.'.$extension;
+            // Nom de fichier unique, non devinable (patrons/photos potentiellement privés)
+            $filename = 'project_'.$id.'_'.bin2hex(random_bytes(16)).'.'.$extension;
             $destination = $uploadDir.'/'.$filename;
 
             // Déplacer le fichier uploadé
@@ -2555,13 +2585,12 @@ class ProjectController
                 return;
             }
 
-            // [AI:Claude] 2026-09-26 — section_id reçu dans la requête : doit appartenir au projet
-            if (!empty($data['section_id']) && !$this->projectModel->sectionBelongsToProject((int)$data['section_id'], $id)) {
+            // [AI:Claude] 2026-09-26 — Casté UNE SEULE FOIS puis réutilisé (voir addRow).
+            $sectionId = !empty($data['section_id']) ? (int)$data['section_id'] : null;
+            if ($sectionId !== null && !$this->projectModel->sectionBelongsToProject($sectionId, $id)) {
                 $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet"]);
                 return;
             }
-
-            $sectionId = $data['section_id'] ?? null;
 
             $success = $this->projectModel->setCurrentSection($id, $sectionId);
 

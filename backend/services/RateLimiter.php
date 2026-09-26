@@ -28,6 +28,10 @@ class RateLimiter
         '/api/auth/register' => [10, 3600],  // 10 requêtes / 1 heure (augmenté pour éviter blocage double-submit)
         '/api/auth/forgot-password' => [3, 3600], // 3 requêtes / 1 heure
         '/api/photos/upload' => [10, 300],  // 10 requêtes / 5 minutes
+        // [AI:Claude] 2026-09-26 — /web-fetch/proxy reste accessible sans compte (iframe de
+        // preview, ne peut pas envoyer de header Authorization) : ce plafond par IP limite
+        // l'abus en serveur mandataire ouvert, en plus du filtrage SSRF (WebFetchService).
+        '/api/web-fetch/proxy' => [30, 60], // 30 requêtes / minute
         '/api/contact' => [3, 3600],        // 3 requêtes / 1 heure (déjà existant)
         // [AI:Claude] Questions contextuelles de l'assistant IA ("Je bloque sur ce rang") :
         // coût réel négligeable (~0,001-0,002 $/question, Gemini 2.5 Flash), donc pas de

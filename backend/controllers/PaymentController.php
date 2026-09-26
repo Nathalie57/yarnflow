@@ -850,8 +850,10 @@ class PaymentController
         if ($userData === null)
             return;
 
-        $page = (int)($_GET['page'] ?? 1);
-        $limit = (int)($_GET['limit'] ?? 20);
+        // [AI:Claude] 2026-09-26 — page/limit bornés : ?limit=0 (ou négatif) donnait une
+        // division par zéro sur "pages" plus bas (erreur 500).
+        $page = max(1, (int)($_GET['page'] ?? 1));
+        $limit = max(1, min(100, (int)($_GET['limit'] ?? 20)));
         $offset = ($page - 1) * $limit;
 
         $payments = $this->paymentModel->findBy(

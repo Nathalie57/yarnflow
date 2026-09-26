@@ -219,6 +219,12 @@ class PatternLibraryController
                 // Mise à jour JSON (sans changement de fichier)
                 error_log('[PatternLibrary UPDATE] Handling JSON update');
                 $data = $this->getJsonInput();
+                // [AI:Claude] 2026-09-26 — SÉCURITÉ : ces champs désignent un fichier sur le
+                // serveur (chemin lu par GET .../file, supprimé par DELETE) — jamais depuis le
+                // JSON envoyé par le client, sinon {"file_path":"/../.env"} permet de lire ou
+                // faire supprimer n'importe quel fichier du serveur. Ils ne sont posés que par
+                // handleFileUpdateWithUpload()/handleExistingFile() ci-dessous, jamais ici.
+                unset($data['file_path'], $data['thumbnail_path'], $data['file_type'], $data['source_type']);
                 error_log('[PatternLibrary UPDATE] Data received: ' . json_encode($data));
                 $success = $this->patternLibrary->updatePattern($id, $data);
 
@@ -279,34 +285,18 @@ class PatternLibraryController
                 exit;
             }
 
-            // [AI:Claude] Le file_path commence par /uploads/... donc on ajoute /public
-            $filePath = __DIR__.'/../public'.$pattern['file_path'];
-
-            if (!file_exists($filePath)) {
-                // [AI:Claude] Tentative alternative : peut-être que file_path est déjà complet
-                error_log('[PatternLibrary] File not found at: ' . $filePath);
-                error_log('[PatternLibrary] Trying alternative path...');
-
-                // Essayer sans ../public si le chemin est déjà complet
-                $alternativePath = __DIR__ . '/..' . $pattern['file_path'];
-
-                if (file_exists($alternativePath)) {
-                    $filePath = $alternativePath;
-                    error_log('[PatternLibrary] File found at alternative path: ' . $filePath);
-                } else {
-                    http_response_code(404);
-                    error_log('[PatternLibrary] File not found at alternative path either: ' . $alternativePath);
-                    echo json_encode([
-                        'success' => false,
-                        'error' => 'Fichier inexistant sur le serveur',
-                        'debug' => [
-                            'file_path_db' => $pattern['file_path'],
-                            'tried_path_1' => $filePath,
-                            'tried_path_2' => $alternativePath
-                        ]
-                    ]);
-                    exit;
-                }
+            // [AI:Claude] 2026-09-26 — SÉCURITÉ (défense en profondeur, en plus du filtrage à
+            // l'écriture dans update()/handleExistingFile()) : file_path doit résoudre à un
+            // fichier réellement situé sous public/uploads/, jamais ailleurs (".env", un autre
+            // dossier du serveur...). L'ancien repli "chemin déjà complet" acceptait n'importe
+            // quel chemin tant qu'il existait ; il exposait aussi les chemins serveur absolus
+            // dans "debug" sur 404, retiré ici.
+            $uploadsRoot = realpath(__DIR__.'/../public/uploads');
+            $filePath = realpath(__DIR__.'/../public'.$pattern['file_path']);
+            if ($filePath === false || $uploadsRoot === false || !str_starts_with($filePath, $uploadsRoot.DIRECTORY_SEPARATOR)) {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Fichier inexistant sur le serveur']);
+                exit;
             }
 
             // [AI:Claude] Déterminer le type MIME
@@ -580,9 +570,13 @@ class PatternLibraryController
 
         $filePath = $data['existing_file_path'];
 
-        // [AI:Claude] Vérifier que le fichier existe
-        $fullPath = __DIR__.'/../public'.$filePath;
-        if (!file_exists($fullPath))
+        // [AI:Claude] 2026-09-26 — SÉCURITÉ : $filePath vient du client. Sans ce contrôle,
+        // "/../.env" (ou tout autre chemin lisible par PHP) devenait file_path, lisible ensuite
+        // via GET .../file — d'où l'exigence d'un chemin déjà dans un dossier d'uploads connu,
+        // en plus de la résolution réelle du chemin (realpath) pour bloquer tout ../.
+        $uploadsRoot = realpath(__DIR__.'/../public/uploads');
+        $fullPath = realpath(__DIR__.'/../public'.$filePath);
+        if ($fullPath === false || $uploadsRoot === false || !str_starts_with($fullPath, $uploadsRoot.DIRECTORY_SEPARATOR))
             throw new \InvalidArgumentException('Le fichier n\'existe pas');
 
         // [AI:Claude] Déterminer le type de fichier
@@ -695,13 +689,23 @@ class PatternLibraryController
      */
     private function deletePatternFiles(array $pattern): void
     {
-        $basePath = __DIR__.'/../../';
+        // [AI:Claude] 2026-09-26 — Base corrigée : file_path/thumbnail_path commencent par
+        // "/uploads/...", donc la base est backend/public (comme partout ailleurs dans ce
+        // contrôleur), pas controllers/../../ (qui pointait hors de backend/ en prod, sur
+        // public_html/ — les suppressions échouaient déjà silencieusement en pratique, et une
+        // valeur malveillante aurait pu y supprimer index.php ou l'API elle-même).
+        // SÉCURITÉ : realpath() + vérification du préfixe uploads/, comme downloadFile() —
+        // n'unlink jamais un chemin qui sortirait de ce dossier.
+        $uploadsRoot = realpath(__DIR__.'/../public/uploads');
+        if ($uploadsRoot === false) return;
 
-        if ($pattern['file_path'] && file_exists($basePath.$pattern['file_path']))
-            unlink($basePath.$pattern['file_path']);
-
-        if ($pattern['thumbnail_path'] && file_exists($basePath.$pattern['thumbnail_path']))
-            unlink($basePath.$pattern['thumbnail_path']);
+        foreach ([$pattern['file_path'] ?? null, $pattern['thumbnail_path'] ?? null] as $path) {
+            if (!$path) continue;
+            $real = realpath(__DIR__.'/../public'.$path);
+            if ($real !== false && str_starts_with($real, $uploadsRoot.DIRECTORY_SEPARATOR)) {
+                unlink($real);
+            }
+        }
     }
 
     /**
@@ -798,23 +802,34 @@ class PatternLibraryController
 
             $file = $_FILES['file'];
 
-            $allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-            if (!in_array($file['type'], $allowedTypes))
-                throw new \InvalidArgumentException('Type de fichier non autorisé (PDF, JPG, PNG, WEBP)');
-
             $maxSize = 50 * 1024 * 1024;
             if ($file['size'] > $maxSize)
                 throw new \InvalidArgumentException('Fichier trop volumineux (max 50MB)');
+            if ($file['size'] === 0)
+                throw new \InvalidArgumentException('Fichier vide');
 
-            $fileType = $file['type'] === 'application/pdf' ? 'pdf' : 'image';
-            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            if ($extension === 'jpg') $extension = 'jpeg';
+            // [AI:Claude] 2026-09-26 — SÉCURITÉ : le type déclaré par le client ($file['type'])
+            // et l'extension du nom envoyé sont librement falsifiables (upload d'un .php présenté
+            // comme "application/pdf", exécuté ensuite depuis /uploads/pattern-library/ servi
+            // directement). On vérifie le contenu réel et on dérive nous-mêmes l'extension.
+            $mimeToExt = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpeg', 'image/png' => 'png', 'image/webp' => 'webp'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $realMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            if (!isset($mimeToExt[$realMime]))
+                throw new \InvalidArgumentException('Type de fichier non autorisé (PDF, JPG, PNG, WEBP)');
+            if ($realMime !== 'application/pdf' && @getimagesize($file['tmp_name']) === false)
+                throw new \InvalidArgumentException('Fichier image corrompu ou invalide');
+
+            $fileType = $realMime === 'application/pdf' ? 'pdf' : 'image';
+            $extension = $mimeToExt[$realMime];
 
             $uploadDir = __DIR__.'/../public/uploads/pattern-library';
             if (!is_dir($uploadDir))
                 mkdir($uploadDir, 0755, true);
 
-            $filename = 'pattern_'.$patternId.'_'.uniqid().'.'.$extension;
+            // Nom non devinable (patrons potentiellement payants) plutôt qu'un uniqid() prévisible
+            $filename = 'pattern_'.$patternId.'_'.bin2hex(random_bytes(16)).'.'.$extension;
             $destination = $uploadDir.'/'.$filename;
 
             if (!move_uploaded_file($file['tmp_name'], $destination))

@@ -1,0 +1,31 @@
+# [AI:Claude] 2026-09-26 — Filet de sécurité indépendant du code applicatif : ce dossier ne
+# contient que des fichiers envoyés par des utilisatrices (photos, PDF, pièces jointes de
+# patrons). Même si une validation d'upload est contournée ou a un défaut, aucun script ne
+# doit jamais s'exécuter ici — ces fichiers ne sont que des données à servir telles quelles.
+
+# Apache 2.4+ (mod_php) : neutralise tout gestionnaire PHP pour ce dossier
+<IfModule mod_php.c>
+    php_flag engine off
+</IfModule>
+<IfModule mod_php7.c>
+    php_flag engine off
+</IfModule>
+
+# Retire tout gestionnaire PHP/CGI éventuellement hérité, quel que soit le mode PHP du serveur
+<FilesMatch "\.(php|php[0-9]?|phtml|phar|pl|py|cgi|sh)$">
+    <IfModule mod_headers.c>
+        ForceType text/plain
+    </IfModule>
+</FilesMatch>
+
+# Refuse purement et simplement de servir ces extensions (couvre aussi PHP-FPM/CGI, où
+# php_flag n'a aucun effet)
+<FilesMatch "\.(php|php[0-9]?|phtml|phar|pl|py|cgi|sh)$">
+    Require all denied
+</FilesMatch>
+
+# Ancienne syntaxe Apache < 2.4, gardée pour compatibilité hébergement
+<FilesMatch "\.(php|php[0-9]?|phtml|phar|pl|py|cgi|sh)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

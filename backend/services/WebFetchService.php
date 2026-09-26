@@ -16,6 +16,63 @@ class WebFetchService {
     private const MAX_REDIRECTS = 5;
 
     /**
+     * [AI:Claude] 2026-09-26 — SÉCURITÉ (SSRF) : valide qu'une URL est http(s) et que
+     * TOUTES les IP vers lesquelles son hôte résout sont publiques (ni privées, ni loopback,
+     * ni link-local/réservées — couvre aussi bien IPv4 que IPv6). Renvoie l'IP à utiliser
+     * (fixée ensuite via CURLOPT_RESOLVE, voir fetchHTML) plutôt que de laisser cURL
+     * re-résoudre le nom au moment de la requête (fenêtre de DNS rebinding).
+     *
+     * @return array{ok: bool, error?: string, ip?: string}
+     */
+    private static function validateUrlSafety($url): array
+    {
+        if (!is_string($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return ['ok' => false, 'error' => 'URL invalide'];
+        }
+
+        $parsed = parse_url($url);
+        $scheme = strtolower($parsed['scheme'] ?? '');
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return ['ok' => false, 'error' => 'Seuls les protocoles HTTP et HTTPS sont autorisés'];
+        }
+
+        // parse_url() garde les crochets d'un littéral IPv6 dans host ("[::1]") — filter_var()
+        // ne reconnaît l'adresse qu'une fois ces crochets retirés.
+        $host = trim($parsed['host'] ?? '', '[]');
+        if ($host === '') {
+            return ['ok' => false, 'error' => 'URL invalide'];
+        }
+
+        // Hôte déjà une IP littérale (ex: "http://127.0.0.1/") : pas de résolution DNS à faire
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            $ips = [$host];
+        } else {
+            $ips = [];
+            foreach (@dns_get_record($host, DNS_A + DNS_AAAA) ?: [] as $record) {
+                if (!empty($record['ip'])) $ips[] = $record['ip'];
+                if (!empty($record['ipv6'])) $ips[] = $record['ipv6'];
+            }
+            if (empty($ips)) {
+                // Repli IPv4 seul si dns_get_record échoue (ex: DNS non configuré en local)
+                $resolved = gethostbyname($host);
+                if ($resolved !== $host) $ips[] = $resolved;
+            }
+        }
+
+        if (empty($ips)) {
+            return ['ok' => false, 'error' => "Impossible de résoudre cette adresse"];
+        }
+
+        foreach ($ips as $ip) {
+            if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return ['ok' => false, 'error' => 'Cette adresse ne peut pas être récupérée'];
+            }
+        }
+
+        return ['ok' => true, 'ip' => $ips[0]];
+    }
+
+    /**
      * Récupère le contenu HTML d'une URL en imitant un navigateur réel
      *
      * @param string $url L'URL à récupérer
@@ -23,23 +80,19 @@ class WebFetchService {
      * @return array ['success' => bool, 'html' => string, 'error' => string, 'status_code' => int]
      */
     public static function fetchHTML($url, $options = []) {
-        // Validation de l'URL
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        // [AI:Claude] 2026-09-26 — SÉCURITÉ (SSRF) : ce endpoint est appelable sans compte
+        // (preview de patron externe). Sans ce contrôle, une URL comme "http://127.0.0.1/..."
+        // ou une adresse du réseau interne de l'hébergeur était récupérée par le serveur, qui
+        // en renvoyait la réponse — accès au réseau interne depuis l'extérieur, exploitable par
+        // n'importe qui. Revalidé à CHAQUE redirection (voir la boucle plus bas), pas seulement
+        // sur l'URL de départ, sinon une redirection suffisait à contourner ce contrôle.
+        $safety = self::validateUrlSafety($url);
+        if (!$safety['ok']) {
             return [
                 'success' => false,
                 'html' => null,
-                'error' => 'URL invalide', 'error_code' => 'url_invalid',
-                'status_code' => 0
-            ];
-        }
-
-        // Sécurité : uniquement HTTP/HTTPS
-        $parsed = parse_url($url);
-        if (!in_array($parsed['scheme'] ?? '', ['http', 'https'])) {
-            return [
-                'success' => false,
-                'html' => null,
-                'error' => 'Seuls les protocoles HTTP et HTTPS sont autorisés',
+                'error' => $safety['error'],
+                'error_code' => 'url_unsafe',
                 'status_code' => 0
             ];
         }
@@ -57,9 +110,6 @@ class WebFetchService {
                 return $cached;
             }
         }
-
-        // Initialiser cURL
-        $ch = curl_init();
 
         // Headers réalistes d'un navigateur moderne (Chrome sur Windows)
         $headers = [
@@ -82,27 +132,76 @@ class WebFetchService {
         // Détection environnement local pour SSL
         $isLocal = in_array($_SERVER['SERVER_NAME'] ?? '', ['localhost', '127.0.0.1', 'patron-maker.local']);
 
-        // Configuration cURL
-        curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_MAXREDIRS => self::MAX_REDIRECTS,
-            CURLOPT_TIMEOUT => $options['timeout'] ?? self::TIMEOUT,
-            CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_ENCODING => '', // Accepter toutes les encodages
-            CURLOPT_SSL_VERIFYPEER => !$isLocal, // Désactiver vérification SSL en local
-            CURLOPT_SSL_VERIFYHOST => $isLocal ? 0 : 2,
-            CURLOPT_COOKIEFILE => '', // Activer les cookies
-            CURLOPT_HEADER => false
-        ]);
+        // [AI:Claude] 2026-09-26 — CURLOPT_FOLLOWLOCATION désactivé : on suit nous-mêmes les
+        // redirections, une à une, pour revalider la sécurité de CHAQUE nouvelle URL (un site
+        // autorisé pourrait rediriger vers une adresse interne). CURLOPT_RESOLVE fixe la
+        // connexion sur l'IP déjà vérifiée par validateUrlSafety(), pour qu'un changement DNS
+        // entre la vérification et la requête (DNS rebinding) ne puisse pas la contourner.
+        $currentUrl = $url;
+        $statusCode = 0;
+        $contentType = null;
+        $html = false;
+        $error = null;
 
-        // Exécuter la requête
-        $html = curl_exec($ch);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-        $error = curl_error($ch);
-        curl_close($ch);
+        for ($hop = 0; $hop <= self::MAX_REDIRECTS; $hop++) {
+            $safety = self::validateUrlSafety($currentUrl);
+            if (!$safety['ok']) {
+                return [
+                    'success' => false,
+                    'html' => null,
+                    'error' => $safety['error'],
+                    'error_code' => 'url_unsafe',
+                    'status_code' => $statusCode,
+                    'url' => $currentUrl
+                ];
+            }
+
+            $parsedHop = parse_url($currentUrl);
+            $hopScheme = strtolower($parsedHop['scheme'] ?? 'https');
+            $hopPort = $parsedHop['port'] ?? ($hopScheme === 'https' ? 443 : 80);
+            $hopHost = trim($parsedHop['host'] ?? '', '[]');
+            // Syntaxe cURL --resolve : une IPv6 dans le champ adresse doit être entre crochets
+            $resolveIp = str_contains($safety['ip'], ':') ? '['.$safety['ip'].']' : $safety['ip'];
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => $currentUrl,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_TIMEOUT => $options['timeout'] ?? self::TIMEOUT,
+                CURLOPT_HTTPHEADER => $headers,
+                CURLOPT_ENCODING => '', // Accepter toutes les encodages
+                CURLOPT_SSL_VERIFYPEER => !$isLocal, // Désactiver vérification SSL en local
+                CURLOPT_SSL_VERIFYHOST => $isLocal ? 0 : 2,
+                CURLOPT_COOKIEFILE => '', // Activer les cookies
+                CURLOPT_HEADER => false,
+                CURLOPT_RESOLVE => [$hopHost.':'.$hopPort.':'.$resolveIp],
+            ]);
+
+            $html = curl_exec($ch);
+            $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+            $redirectUrl = curl_getinfo($ch, CURLINFO_REDIRECT_URL);
+            $error = curl_error($ch);
+            curl_close($ch);
+
+            if ($statusCode >= 300 && $statusCode < 400 && !empty($redirectUrl)) {
+                $currentUrl = $redirectUrl;
+                continue;
+            }
+            break;
+        }
+
+        if ($statusCode >= 300 && $statusCode < 400) {
+            return [
+                'success' => false,
+                'html' => null,
+                'error' => 'Trop de redirections',
+                'error_code' => 'too_many_redirects',
+                'status_code' => $statusCode,
+                'url' => $currentUrl
+            ];
+        }
 
         // Résultat
         $result = [
@@ -111,7 +210,7 @@ class WebFetchService {
             'content_type' => $contentType ?: null,
             'error' => $error ?: ($statusCode >= 400 ? "Erreur HTTP $statusCode" : null),
             'status_code' => $statusCode,
-            'url' => $url
+            'url' => $currentUrl
         ];
 
         // Mettre en cache si succès

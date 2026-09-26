@@ -216,6 +216,17 @@ class ContactController {
      * Envoie les emails de notification
      */
     private function sendNotificationEmails($messageId, $name, $email, $category, $subject, $message) {
+        // [AI:Claude] 2026-09-26 — SÉCURITÉ : name/subject/message viennent du visiteur (le
+        // formulaire est public) et sont envoyés comme corps HTML (isHTML(true) dans
+        // EmailService). Sans échappement, un contenu piégé se glissait tel quel dans l'email
+        // "confirmation" envoyé à $email — n'importe quelle adresse choisie par l'expéditeur,
+        // pas nécessairement la sienne — ce qui en faisait un relais de phishing crédible,
+        // envoyé depuis l'infrastructure SMTP de YarnFlow.
+        $name = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+        $email = htmlspecialchars($email, ENT_QUOTES, 'UTF-8');
+        $subject = htmlspecialchars($subject, ENT_QUOTES, 'UTF-8');
+        $message = htmlspecialchars($message, ENT_QUOTES, 'UTF-8');
+
         // CONTACT_EMAIL = adresse qui REÇOIT les messages de contact
         $contactEmail = $_ENV['CONTACT_EMAIL'] ?? 'contact@yarnflow.fr';
         $appName = 'YarnFlow';

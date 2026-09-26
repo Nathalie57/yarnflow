@@ -12,9 +12,23 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Services\WebFetchService;
+use App\Services\RateLimiter;
 use App\Helpers\SecurityHelper;
+use App\Middleware\AuthMiddleware;
 
 class WebFetchController {
+    // [AI:Claude] 2026-09-26 — SÉCURITÉ : fetch()/fetchMetadata() n'ont plus aucune raison
+    // d'être accessibles sans compte (accès direct au JSON extrait, contrairement à proxy()
+    // qui sert une iframe et ne peut pas envoyer de header Authorization).
+    private function getUserIdFromAuth(): int
+    {
+        $userData = (new AuthMiddleware())->authenticate();
+        if ($userData === null) {
+            throw new \Exception('Non authentifié');
+        }
+        return (int)$userData['user_id'];
+    }
+
     /**
      * Récupère le HTML d'une URL externe
      * POST /api/web-fetch
@@ -22,6 +36,8 @@ class WebFetchController {
      */
     public function fetch() {
         try {
+            $this->getUserIdFromAuth();
+
             // Récupérer l'URL depuis le body
             $data = json_decode(file_get_contents('php://input'), true);
             $url = $data['url'] ?? null;
@@ -69,6 +85,17 @@ class WebFetchController {
      */
     public function proxy() {
         try {
+            // [AI:Claude] 2026-09-26 — SÉCURITÉ : reste sans compte (iframe de preview, ne peut
+            // pas envoyer de header Authorization), donc pas de vérification d'identité
+            // possible ici ; un plafond par IP limite au moins l'abus en serveur mandataire
+            // ouvert (voir RateLimiter::LIMITS). Le filtrage SSRF (WebFetchService) reste la
+            // vraie protection contre l'accès au réseau interne.
+            if (!(new RateLimiter())->check('/api/web-fetch/proxy', RateLimiter::getClientIP())) {
+                http_response_code(429);
+                echo SecurityHelper::escapeHtml('Trop de requêtes, réessaie dans un instant.');
+                return;
+            }
+
             $url = $_GET['url'] ?? null;
 
             if (empty($url)) {
@@ -128,6 +155,8 @@ class WebFetchController {
      */
     public function fetchMetadata() {
         try {
+            $this->getUserIdFromAuth();
+
             $data = json_decode(file_get_contents('php://input'), true);
             $url = $data['url'] ?? null;
 

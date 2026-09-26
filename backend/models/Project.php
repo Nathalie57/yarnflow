@@ -1061,7 +1061,12 @@ class Project extends BaseModel
      */
     public function getPublicProjects(int $limit = 20, int $offset = 0): array
     {
-        $query = "SELECT p.*, u.first_name, u.last_name,
+        // [AI:Claude] 2026-09-26 — SÉCURITÉ : route publique, sans authentification. "p.*"
+        // exposait aussi notes, pattern_text, pattern_path, technical_details et user_id ; le
+        // nom de famille complet était renvoyé en plus du "author_name" déjà abrégé (prénom +
+        // initiale). Liste explicite des seules colonnes utiles à une galerie communautaire.
+        $query = "SELECT p.id, p.name, p.technique, p.type, p.description, p.main_photo,
+                  p.total_rows, p.completed_at,
                   CONCAT(u.first_name, ' ', SUBSTR(u.last_name, 1, 1), '.') as author_name
                   FROM {$this->table} p
                   JOIN users u ON p.user_id = u.id
@@ -1179,6 +1184,21 @@ class Project extends BaseModel
     {
         $stmt = $this->db->prepare('SELECT 1 FROM project_sections WHERE id = :id AND project_id = :project_id LIMIT 1');
         $stmt->bindValue(':id', $sectionId, PDO::PARAM_INT);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->execute();
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
+     * [AI:Claude] 2026-09-26 — Même contrôle que sectionBelongsToProject() : endSession()
+     * mettait à jour une session par son seul id, alors que le contrôleur ne vérifiait que
+     * le projet de l'URL — n'importe quelle session ouverte d'un autre compte pouvait être
+     * clôturée (notes écrasées, temps recrédité sur le mauvais projet/section).
+     */
+    public function sessionBelongsToProject(int $sessionId, int $projectId): bool
+    {
+        $stmt = $this->db->prepare('SELECT 1 FROM project_sessions WHERE id = :id AND project_id = :project_id LIMIT 1');
+        $stmt->bindValue(':id', $sessionId, PDO::PARAM_INT);
         $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
         $stmt->execute();
         return (bool)$stmt->fetchColumn();

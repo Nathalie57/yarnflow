@@ -139,7 +139,15 @@ const ProxyViewer = ({ url, onError, onLoad }) => {
           onLoad={handleLoad}
           onError={handleError}
           allow={youtubeEmbedUrl ? 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture' : undefined}
-          sandbox={youtubeEmbedUrl ? 'allow-same-origin allow-scripts allow-popups' : 'allow-same-origin allow-scripts allow-popups allow-forms'}
+          // [AI:Claude] 2026-09-26 — SÉCURITÉ : pour notre propre proxy (pas le cas YouTube,
+          // un vrai autre domaine), "allow-same-origin" restaure l'origine réelle de la page —
+          // ici yarnflow.fr, puisque /api/web-fetch/proxy est sur le même domaine. Combiné à
+          // "allow-scripts", un script du site externe affiché pouvait alors lire
+          // localStorage.token (voir services/api.js) et prendre le compte de l'utilisatrice.
+          // Sans "allow-same-origin", le contenu externe reste exécuté dans une origine
+          // isolée : ses scripts tournent toujours (affichage inchangé), mais ne peuvent plus
+          // toucher au localStorage ni aux cookies de yarnflow.fr.
+          sandbox={youtubeEmbedUrl ? 'allow-same-origin allow-scripts allow-popups' : 'allow-scripts allow-popups allow-forms'}
         />
       )}
     </div>
