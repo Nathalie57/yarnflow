@@ -14,15 +14,11 @@ import SaveSequenceToSectionModal from './SaveSequenceToSectionModal'
 import { useTranslation, Trans } from 'react-i18next'
 
 // Algorithme de répartition de Bresenham adapté au tricot
-// Retourne un tableau de N intervalles distribués aussi uniformément que possible
+// `remainder` intervalles de (base+1), `(count - remainder)` intervalles de base
 function distribute(total, count) {
-  if (!total || !count || count <= 0 || total <= 0) return null
-  if (count > total) return null
-
   const base = Math.floor(total / count)
   const remainder = total % count
 
-  // `remainder` intervalles de (base+1), `(count - remainder)` intervalles de base
   const longInterval = base + 1
   const shortInterval = base
   const longCount = remainder
@@ -31,26 +27,69 @@ function distribute(total, count) {
   return { longInterval, shortInterval, longCount, shortCount, base, remainder }
 }
 
-// Génère la phrase d'explication en langage naturel
-function buildExplanation(result, type, axis) {
+// Valide la saisie : renvoie { result } ou { error: { key, params } }.
+// Saisie incomplète → {} (ni résultat ni erreur).
+function computeDistribution(totalRaw, countRaw, type, axis) {
+  if (totalRaw === '' || countRaw === '') return {}
+  const total = Number(totalRaw)
+  const count = Number(countRaw)
+  if (!Number.isFinite(total) || !Number.isFinite(count)) return {}
+
+  if (total <= 0 || count <= 0) return { error: { key: 'ui.distMustBePositive' } }
+  if (!Number.isInteger(total) || !Number.isInteger(count)) return { error: { key: 'ui.distMustBeWhole' } }
+
+  if (type === 'dim' && axis === 'mailles') {
+    // [AI:Claude] 2026-09-26 — une diminution consomme 2 mailles (2 ensemble) :
+    // pas plus de floor(total / 2) diminutions sur un rang. Sur l'axe rangs,
+    // la limite reste 1 diminution par rang (count <= total).
+    const max = Math.floor(total / 2)
+    if (count > max) return { error: { key: 'ui.distTooManyDecreasesStitches', params: { count: max, total } } }
+  } else if (count > total) {
+    return { error: { key: type === 'aug' ? 'ui.tooManyIncreases' : 'ui.tooManyDecreases' } }
+  }
+
+  return { result: distribute(total, count) }
+}
+
+// Génère la phrase d'explication (traduite : elle est aussi enregistrée dans les notes)
+function buildExplanation(result, type, axis, t) {
   if (!result) return null
   const { longInterval, shortInterval, longCount, shortCount } = result
-  const verb = type === 'aug' ? 'augmentez' : 'diminuez'
-  const unit = axis === 'rangs' ? 'rang' : 'maille'
-  const units = axis === 'rangs' ? 'rangs' : 'mailles'
 
-  if (longCount === 0) {
-    return `${verb.charAt(0).toUpperCase() + verb.slice(1)} 1 ${unit} tous les ${shortInterval} ${units}.`
+  // Groupes non vides, du plus long au plus court
+  const groups = [
+    { n: longInterval, times: longCount },
+    { n: shortInterval, times: shortCount }
+  ].filter(g => g.times > 0)
+
+  const times = g => t('ui.distTimes', { count: g.times })
+
+  // [AI:Claude] 2026-09-26 — diminutions sur un rang : on donne les mailles à
+  // tricoter avant chaque "2 m. ensemble", sinon "toutes les 8 mailles" laisse
+  // un doute (les 2 mailles diminuées sont-elles comprises ?).
+  if (type === 'dim' && axis === 'mailles') {
+    const segment = g => (g.n > 2
+      ? t('ui.distDecSegment', { count: g.n - 2 })
+      : t('ui.distDecSegmentOnly'))
+    // [AI:Claude] 2026-09-26 — un groupe fait une seule fois se lit "Tricote …", pas
+    // "Répète 1 fois : …" ; le 2e groupe est en minuscule après "puis".
+    const part = (g, lead) => t(
+      g.times === 1 ? (lead ? 'ui.distDecStsLeadOnce' : 'ui.distDecStsNextOnce') : (lead ? 'ui.distDecStsLead' : 'ui.distDecStsNext'),
+      { times: times(g), segment: segment(g) }
+    )
+    if (groups.length === 1) return t('ui.distDecStsSingle', { part: part(groups[0], true) })
+    return t('ui.distDecStsPair', { first: part(groups[0], true), second: part(groups[1], false) })
   }
 
-  if (shortCount === 0) {
-    return `${verb.charAt(0).toUpperCase() + verb.slice(1)} 1 ${unit} tous les ${longInterval} ${units}.`
+  const interval = g => t(axis === 'rangs' ? 'ui.distEveryRows' : 'ui.distEveryStitches', { count: g.n })
+  const prefix = type === 'aug' ? 'ui.distInc' : 'ui.distDec'
+  if (groups.length === 1) {
+    return t(`${prefix}Once`, { interval: interval(groups[0]), times: times(groups[0]) })
   }
-
-  return (
-    `${verb.charAt(0).toUpperCase() + verb.slice(1)} 1 ${unit} tous les ${longInterval} ${units} (${longCount} fois), ` +
-    `puis tous les ${shortInterval} ${units} (${shortCount} fois).`
-  )
+  return t(`${prefix}Two`, {
+    interval1: interval(groups[0]), times1: times(groups[0]),
+    interval2: interval(groups[1]), times2: times(groups[1])
+  })
 }
 
 export default function DistributeIncrDec() {
@@ -66,8 +105,11 @@ export default function DistributeIncrDec() {
   const [showSequenceModal, setShowSequenceModal] = useState(false)
   const [axis, setAxis] = useState('mailles') // mailles | rangs
 
-  const result = useMemo(() => distribute(Number(total), Number(count)), [total, count])
-  const explanation = useMemo(() => buildExplanation(result, type, axis), [result, type, axis])
+  const { result, error } = useMemo(
+    () => computeDistribution(total, count, type, axis),
+    [total, count, type, axis]
+  )
+  const explanation = useMemo(() => buildExplanation(result, type, axis, t), [result, type, axis, t])
   const resultRef = useRef(null)
 
   useEffect(() => {
@@ -75,8 +117,6 @@ export default function DistributeIncrDec() {
       resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
   }, [result])
-
-  const hasError = total && count && !result
 
   return (
     <div className="space-y-5">
@@ -151,9 +191,9 @@ export default function DistributeIncrDec() {
       </div>
 
       {/* Résultat */}
-      {hasError && (
+      {error && (
         <div className="bg-red-50 text-red-700 rounded-control p-4 text-sm">
-          {type === 'aug' ? t('ui.tooManyIncreases') : t('ui.tooManyDecreases')}
+          {t(error.key, error.params)}
         </div>
       )}
 
@@ -162,18 +202,27 @@ export default function DistributeIncrDec() {
           <p className="text-base font-semibold text-primary-900">{explanation}</p>
 
           <div className="flex gap-4 pt-1 text-sm text-primary-700">
-            {result.longCount > 0 && (
-              <span className="bg-white rounded-control px-3 py-1 border border-primary-200">
-                <Trans t={t} i18nKey="ui.everyNth" values={{ n: result.longInterval, count: result.longCount }}><strong /></Trans>
+            {[
+              { n: result.longInterval, times: result.longCount },
+              { n: result.shortInterval, times: result.shortCount }
+            ].filter(g => g.times > 0).map(g => (
+              <span key={g.n} className="bg-white rounded-control px-3 py-1 border border-primary-200">
+                {type === 'dim' && axis === 'mailles' ? (
+                  g.n > 2
+                    ? <Trans t={t} i18nKey="ui.decGroupPill" values={{ knit: g.n - 2, count: g.times }}><strong /></Trans>
+                    : <Trans t={t} i18nKey="ui.decGroupPillOnly" values={{ count: g.times }}><strong /></Trans>
+                ) : (
+                  <Trans t={t} i18nKey={axis === 'rangs' ? 'ui.everyNthRows' : 'ui.everyNthStitches'} values={{ n: g.n, count: g.times }}><strong /></Trans>
+                )}
               </span>
-            )}
-            {result.shortCount > 0 && (
-              <span className="bg-white rounded-control px-3 py-1 border border-primary-200">
-                <Trans t={t} i18nKey="ui.everyNth" values={{ n: result.shortInterval, count: result.shortCount }}><strong /></Trans>
-              </span>
-            )}
+            ))}
           </div>
 
+          {axis === 'mailles' && (
+            <p className="text-sm text-primary-800">
+              {t('ui.stitchesAtRowEnd', { count: type === 'aug' ? Number(total) + Number(count) : Number(total) - Number(count) })}
+            </p>
+          )}
           <p className="text-xs text-primary-600">
             {t('ui.checkResult', { detail: `${result.longCount > 0 ? `${result.longInterval} × ${result.longCount}` : ''}${result.longCount > 0 && result.shortCount > 0 ? ' + ' : ''}${result.shortCount > 0 ? `${result.shortInterval} × ${result.shortCount}` : ''}`, total: Number(total) })}
           </p>
@@ -223,7 +272,7 @@ export default function DistributeIncrDec() {
       {showSequenceModal && result && (
         <SaveSequenceToSectionModal
           sequence={{
-            label: type === 'aug' ? 'Augmentations' : 'Diminutions',
+            label: type === 'aug' ? t('ui.increases') : t('ui.decreases'),
             steps: [
               { target: result.longInterval, repeat: result.longCount },
               { target: result.shortInterval, repeat: result.shortCount }

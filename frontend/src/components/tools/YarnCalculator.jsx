@@ -52,7 +52,9 @@ const MATRIX = {
   },
   bonnet: {
     labelKey: 'itemBeanie',
+    // [AI:Claude] 2026-09-26 — ids stables (valeurs du select), libellés traduits via sizeLabelKeys
     sizes: ['Enfant', 'Adulte S/M', 'Adulte L/XL'],
+    sizeLabelKeys: ['sizeChild', 'sizeAdultSM', 'sizeAdultLXL'],
     weights: {
       lace:      [250, 350, 400],
       fingering: [200, 280, 320],
@@ -65,6 +67,7 @@ const MATRIX = {
   echarpe: {
     labelKey: 'itemScarf',
     sizes: ['Courte (~120 cm)', 'Standard (~160 cm)', 'Longue (~200 cm)'],
+    sizeLabelKeys: ['sizeScarfShort', 'sizeScarfStandard', 'sizeScarfLong'],
     weights: {
       lace:      [400, 600, 900],
       fingering: [300, 450, 650],
@@ -95,6 +98,11 @@ const STASH_CATEGORIES = {
   bulky:     ['bulky', 'super_bulky'],
 }
 
+// Pelotes réellement disponibles : quantity_available (quantité moins la part réservée
+// aux projets actifs) quand l'API la fournit, sinon quantity.
+const availableSkeins = (e) => parseInt(e.quantity_available ?? e.quantity ?? 0, 10) || 0
+const availableMeters = (e) => availableSkeins(e) * (parseFloat(e.yardage_per_skein_m) || 0)
+
 export default function YarnCalculator() {
   const { t, i18n } = useTranslation('tools')
   const [projectType, setProjectType] = useState('')
@@ -102,7 +110,9 @@ export default function YarnCalculator() {
   const [weight, setWeight] = useState('')
   const [skeinMeters, setSkeinMeters] = useState('')
 
-  const [stockCheck, setStockCheck] = useState(null) // null | { loading } | { entries, total, enough }
+  // [AI:Claude] 2026-09-26 — on ne stocke que les entrées récupérées ; total et verdict sont
+  // dérivés de l'estimation courante (sinon le verdict restait figé après un changement de taille)
+  const [stockData, setStockData] = useState(null) // null | { loading } | { entries }
   const [stockError, setStockError] = useState(null)
 
   const { hasActiveSubscription } = useAuth()
@@ -110,16 +120,22 @@ export default function YarnCalculator() {
 
   const project = MATRIX[projectType] || null
 
+  const sizeLabel = (p, s) => {
+    const idx = p ? p.sizes.indexOf(s) : -1
+    const key = idx >= 0 ? p.sizeLabelKeys?.[idx] : null
+    return key ? t(`ui.${key}`) : s
+  }
+
   const handleProjectChange = (val) => {
     setProjectType(val)
     setSize('')
-    setStockCheck(null)
+    setStockData(null)
     setStockError(null)
   }
 
   const handleWeightChange = (val) => {
     setWeight(val)
-    setStockCheck(null)
+    setStockData(null)
     setStockError(null)
   }
 
@@ -139,20 +155,24 @@ export default function YarnCalculator() {
   }, [estimatedMeters, skeinMeters])
 
   const checkStock = async () => {
-    setStockCheck({ loading: true })
+    setStockData({ loading: true })
     setStockError(null)
     try {
       const res = await yarnStashAPI.getAll()
-      const allEntries = res.data?.entries ?? []
-      const cats = STASH_CATEGORIES[weight] ?? [weight]
-      const matching = allEntries.filter(e => cats.includes(e.yarn_weight_category))
-      const total = matching.reduce((sum, e) => sum + parseFloat(e.total_yardage_m ?? 0), 0)
-      setStockCheck({ loading: false, entries: matching, total: Math.round(total), enough: total >= estimatedMeters })
+      setStockData({ loading: false, entries: res.data?.entries ?? [] })
     } catch {
-      setStockCheck(null)
+      setStockData(null)
       setStockError(t('ui.stashFetchFailed'))
     }
   }
+
+  const stockCheck = useMemo(() => {
+    if (!stockData || stockData.loading) return stockData
+    const cats = STASH_CATEGORIES[weight] ?? [weight]
+    const matching = stockData.entries.filter(e => cats.includes(e.yarn_weight_category))
+    const total = Math.round(matching.reduce((sum, e) => sum + availableMeters(e), 0))
+    return { loading: false, entries: matching, total, enough: estimatedMeters != null && total >= estimatedMeters }
+  }, [stockData, weight, estimatedMeters])
 
   return (
     <div className="space-y-6">
@@ -187,7 +207,7 @@ export default function YarnCalculator() {
         >
           <option value="">{t('ui.chooseSize')}</option>
           {project?.sizes.map(s => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>{sizeLabel(project, s)}</option>
           ))}
         </select>
       </div>
@@ -217,10 +237,10 @@ export default function YarnCalculator() {
           {/* Métrage estimé */}
           <div>
             <p className="text-sm text-primary-700 leading-relaxed">
-              <Trans t={t} i18nKey="ui.forAProject" values={{ item: project.labelKey ? t(`ui.${project.labelKey}`) : project.label, size, weight: t(`ui.${WEIGHT_LABEL_KEYS[weight]}`) }}><strong /><strong /><strong /></Trans>
+              <Trans t={t} i18nKey="ui.forAProject" values={{ item: project.labelKey ? t(`ui.${project.labelKey}`) : project.label, size: sizeLabel(project, size), weight: t(`ui.${WEIGHT_LABEL_KEYS[weight]}`) }}><strong /><strong /><strong /></Trans>
             </p>
             <p className="text-4xl font-bold text-primary-700 mt-2">
-              {estimatedMeters.toLocaleString('fr-FR')} m
+              {estimatedMeters.toLocaleString(i18n.language)} m
             </p>
             <p className="text-xs text-primary-500 mt-1">
               {t('ui.estimateDisclaimer')}
@@ -288,6 +308,11 @@ export default function YarnCalculator() {
                       : t('ui.notEnoughYarn', { n: stockCheck.total.toLocaleString(i18n.language) })
                     }
                   </p>
+                  {stockCheck.entries.length > 1 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {t('ui.stashTotalAllYarns')}
+                    </p>
+                  )}
                   {!stockCheck.enough && (
                     <p className="text-xs text-amber-600 mt-1">
                       {t('ui.shortByMeters', { n: (estimatedMeters - stockCheck.total).toLocaleString(i18n.language) })}
@@ -311,10 +336,15 @@ export default function YarnCalculator() {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-800 truncate">{e.brand} — {e.yarn_name}</p>
-                          <p className="text-xs text-gray-500">{t('ui.ballsTimes', { count: e.quantity, m: e.yardage_per_skein_m })}</p>
+                          <p className="text-xs text-gray-500">
+                            {t('ui.ballsTimes', { count: availableSkeins(e), m: e.yardage_per_skein_m })}
+                            {e.quantity_reserved > 0 && (
+                              <> · {t('ui.ballsReservedForProjects', { count: e.quantity_reserved })}</>
+                            )}
+                          </p>
                         </div>
                         <span className="text-sm font-semibold text-primary-700 flex-shrink-0">
-                          {e.total_yardage_m.toLocaleString('fr-FR')} m
+                          {Math.round(availableMeters(e)).toLocaleString(i18n.language)} m
                         </span>
                       </div>
                     ))}

@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
 import { useTranslation } from 'react-i18next'
+import { apiErrorMessage } from '../../utils/apiError'
 
 export default function SaveGaugeToProjectModal({ gauge, onClose }) {
   const { t } = useTranslation('tools')
@@ -14,6 +15,7 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     api.get('/projects?limit=100').then(res => {
@@ -25,6 +27,7 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
   const handleSave = async () => {
     if (!selectedId) return
     setSaving(true)
+    setError('')
 
     const project = projects.find(p => p.id === Number(selectedId))
     let existing = {}
@@ -32,23 +35,31 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
       existing = project?.technical_details ? JSON.parse(project.technical_details) : {}
     } catch (_) {}
 
+    // [AI:Claude] 2026-09-26 — on n'écrase que les champs saisis : un échantillon
+    // 22 × 30 existant garde ses rangs si seules les mailles sont renseignées ici.
     const updated = {
       ...existing,
       gauge: {
-        stitches: gauge.stitches,
-        rows: gauge.rows,
+        ...(existing?.gauge && typeof existing.gauge === 'object' ? existing.gauge : {}),
+        ...(gauge.stitches ? { stitches: gauge.stitches } : {}),
+        ...(gauge.rows ? { rows: gauge.rows } : {}),
         dimensions: '10 x 10 cm',
         notes: existing?.gauge?.notes || '',
       }
     }
 
-    await api.put(`/projects/${selectedId}`, {
-      technical_details: JSON.stringify(updated)
-    })
-
-    setSaving(false)
-    setSaved(true)
-    setTimeout(onClose, 1200)
+    try {
+      await api.put(`/projects/${selectedId}`, {
+        technical_details: JSON.stringify(updated)
+      })
+      setSaved(true)
+      setTimeout(onClose, 1200)
+    } catch (err) {
+      console.error('Erreur sauvegarde échantillon:', err)
+      setError(apiErrorMessage(err, t('ui.saveFailed')))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -57,10 +68,13 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
         <div>
           <h2 className="text-lg font-bold text-flow-ink">{t('ui.saveGauge')}</h2>
           <p className="text-sm text-gray-500 mt-1">
-            {gauge.stitches && <span>{gauge.stitches} m</span>}
-            {gauge.stitches && gauge.rows && <span> × </span>}
-            {gauge.rows && <span>{gauge.rows} {t('ui.rowsAbbr')}</span>}
-            {' '}{t('ui.gaugeFor10')}
+            {gauge.stitches && gauge.rows
+              ? t('ui.gaugeFor10x10', { stitches: gauge.stitches, rows: gauge.rows })
+              : gauge.stitches
+                ? t('ui.gaugeStitchesFor10', { stitches: gauge.stitches })
+                : gauge.rows
+                  ? t('ui.gaugeRowsFor10', { rows: gauge.rows })
+                  : t('ui.gaugeFor10')}
           </p>
         </div>
 
@@ -79,6 +93,10 @@ export default function SaveGaugeToProjectModal({ gauge, onClose }) {
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+        )}
+
+        {error && (
+          <p className="text-sm text-red-600 text-center">{error}</p>
         )}
 
         {saved && (

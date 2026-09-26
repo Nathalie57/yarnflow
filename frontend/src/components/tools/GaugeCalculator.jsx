@@ -33,17 +33,19 @@ export default function GaugeCalculator() {
     const width = parseFloat(wantedWidthCm)
     const height = parseFloat(wantedHeightCm)
 
-    const sts = width && stsPer10 ? Math.round((width / 10) * stsPer10) : null
-    const rows = height && rowsPer10 ? Math.round((height / 10) * rowsPer10) : null
+    // [AI:Claude] 2026-09-26 — valeurs <= 0 traitées comme vides, et un résultat
+    // arrondi à 0 n'est pas affiché (évite "-110 mailles pour -50 cm" et un "0" isolé).
+    const sts = width > 0 && stsPer10 > 0 ? Math.round((width / 10) * stsPer10) : null
+    const rows = height > 0 && rowsPer10 > 0 ? Math.round((height / 10) * rowsPer10) : null
 
-    return { sts, rows }
+    return { sts: sts > 0 ? sts : null, rows: rows > 0 ? rows : null }
   }, [myStsPer10, myRowsPer10, wantedWidthCm, wantedHeightCm])
 
   const adaptResult = useMemo(() => {
     const pSts = parseFloat(patternStsPer10)
     const mySts = parseFloat(myAdaptStsPer10)
     const patRows = parseFloat(patternRows)
-    if (!pSts || !mySts || !patRows) return null
+    if (!(pSts > 0) || !(mySts > 0) || !(patRows > 0)) return null
 
     const adjusted = Math.round((patRows / pSts) * mySts)
     const diff = adjusted - patRows
@@ -130,17 +132,17 @@ export default function GaugeCalculator() {
             </div>
           </div>
 
-          {(simpleResult.sts || simpleResult.rows) && (
+          {(simpleResult.sts != null || simpleResult.rows != null) && (
             <div className="bg-primary-50 border border-primary-200 rounded-card p-5 space-y-4">
               <div className="grid grid-cols-2 gap-4 text-center">
-                {simpleResult.sts && (
+                {simpleResult.sts != null && (
                   <div>
                     <div className="text-3xl font-bold text-primary-700">{simpleResult.sts}</div>
                     <div className="text-sm text-primary-600 mt-1">{t('ui.stitchesWord')}</div>
                     <div className="text-xs text-gray-500">{t('ui.forCm', { n: wantedWidthCm })}</div>
                   </div>
                 )}
-                {simpleResult.rows && (
+                {simpleResult.rows != null && (
                   <div>
                     <div className="text-3xl font-bold text-primary-700">{simpleResult.rows}</div>
                     <div className="text-sm text-primary-600 mt-1">{t('ui.rowsWord')}</div>
@@ -148,7 +150,7 @@ export default function GaugeCalculator() {
                   </div>
                 )}
               </div>
-              {myStsPer10 && (
+              {parseFloat(myStsPer10) > 0 && (
                 <button
                   onClick={() => setShowSaveModal(true)}
                   className="w-full py-2 rounded-control text-sm font-medium bg-primary-600 text-white hover:bg-primary-700 transition"
@@ -163,7 +165,10 @@ export default function GaugeCalculator() {
 
       {showSaveModal && (
         <SaveGaugeToProjectModal
-          gauge={{ stitches: myStsPer10, rows: myRowsPer10 }}
+          gauge={{
+            stitches: parseFloat(myStsPer10) > 0 ? myStsPer10 : '',
+            rows: parseFloat(myRowsPer10) > 0 ? myRowsPer10 : ''
+          }}
           onClose={() => setShowSaveModal(false)}
         />
       )}

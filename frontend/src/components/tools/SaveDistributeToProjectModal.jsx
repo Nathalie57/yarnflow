@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
 import { useTranslation } from 'react-i18next'
+import { apiErrorMessage } from '../../utils/apiError'
 
 export default function SaveDistributeToProjectModal({ text, onClose }) {
   const { t } = useTranslation('tools')
@@ -17,6 +18,7 @@ export default function SaveDistributeToProjectModal({ text, onClose }) {
   const [loadingSections, setLoadingSections] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     api.get('/projects?limit=100').then(res => {
@@ -38,26 +40,33 @@ export default function SaveDistributeToProjectModal({ text, onClose }) {
   const handleSave = async () => {
     if (!selectedProjectId) return
     setSaving(true)
+    setError('')
 
-    if (selectedSectionId) {
-      // Ajouter aux notes de la section
-      const section = sections.find(s => s.id === Number(selectedSectionId))
-      const existing = section?.notes ? section.notes + '\n\n' : ''
-      await api.put(`/projects/${selectedProjectId}/sections/${selectedSectionId}`, {
-        notes: existing + text
-      })
-    } else {
-      // Ajouter aux notes du projet
-      const project = projects.find(p => p.id === Number(selectedProjectId))
-      const existing = project?.notes ? project.notes + '\n\n' : ''
-      await api.put(`/projects/${selectedProjectId}`, {
-        notes: existing + text
-      })
+    try {
+      if (selectedSectionId) {
+        // Ajouter aux notes de la section
+        const section = sections.find(s => s.id === Number(selectedSectionId))
+        const existing = section?.notes ? section.notes + '\n\n' : ''
+        await api.put(`/projects/${selectedProjectId}/sections/${selectedSectionId}`, {
+          notes: existing + text
+        })
+      } else {
+        // Ajouter aux notes du projet
+        const project = projects.find(p => p.id === Number(selectedProjectId))
+        const existing = project?.notes ? project.notes + '\n\n' : ''
+        await api.put(`/projects/${selectedProjectId}`, {
+          notes: existing + text
+        })
+      }
+
+      setSaved(true)
+      setTimeout(onClose, 1200)
+    } catch (err) {
+      console.error('Erreur sauvegarde répartition:', err)
+      setError(apiErrorMessage(err, t('ui.saveFailed')))
+    } finally {
+      setSaving(false)
     }
-
-    setSaving(false)
-    setSaved(true)
-    setTimeout(onClose, 1200)
   }
 
   return (
@@ -108,6 +117,10 @@ export default function SaveDistributeToProjectModal({ text, onClose }) {
               </div>
             )}
           </div>
+        )}
+
+        {error && (
+          <p className="text-sm text-red-600 text-center">{error}</p>
         )}
 
         {saved && (

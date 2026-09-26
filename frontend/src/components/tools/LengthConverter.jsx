@@ -18,27 +18,38 @@ function convert(value, fromUnit, toUnit) {
   return meters / toUnit.toMeters
 }
 
-function fmt(n) {
-  if (isNaN(n)) return '—'
-  return n < 0.01 ? n.toExponential(2) : parseFloat(n.toFixed(4)).toString()
+// [AI:Claude] 2026-09-26 — jamais de notation scientifique : 0 → "0", au-dessus de 1 jusqu'à
+// 4 décimales, en dessous de 1 jusqu'à 4 chiffres significatifs ; séparateur décimal de la langue
+function fmt(n, lang) {
+  if (!Number.isFinite(n)) return '—'
+  if (n === 0) return '0'
+  return n >= 1
+    ? n.toLocaleString(lang, { maximumFractionDigits: 4 })
+    : n.toLocaleString(lang, { maximumSignificantDigits: 4 })
+}
+
+// Accepte "2,5" comme "2.5" ; renvoie NaN si la saisie n'est pas un nombre
+function parseInput(str) {
+  const s = str.trim().replace(',', '.')
+  return /^(\d+\.?\d*|\.\d+)$/.test(s) ? parseFloat(s) : NaN
 }
 
 export default function LengthConverter() {
-  const { t } = useTranslation('tools')
+  const { t, i18n } = useTranslation('tools')
   const [value, setValue] = useState('')
   const [fromId, setFromId] = useState('cm')
 
   const from = UNITS.find(u => u.id === fromId)
-  const numVal = parseFloat(value)
-  const hasValue = value !== '' && !isNaN(numVal) && numVal >= 0
+  const numVal = parseInput(value)
+  const hasValue = !isNaN(numVal) && numVal >= 0
 
   return (
     <div className="space-y-6">
       {/* Saisie */}
       <div className="flex gap-3">
         <input
-          type="number"
-          min="0"
+          type="text"
+          inputMode="decimal"
           value={value}
           onChange={e => setValue(e.target.value)}
           placeholder={t('ui.phValue')}
@@ -61,7 +72,7 @@ export default function LengthConverter() {
           <div key={u.id} className="flex items-center justify-between bg-gray-50 rounded-card px-4 py-3">
             <span className="text-sm text-gray-600">{t(`ui.${u.labelKey}`)}</span>
             <span className="font-semibold text-flow-ink">
-              {hasValue ? fmt(convert(numVal, from, u)) : '—'}
+              {hasValue ? fmt(convert(numVal, from, u), i18n.language) : '—'}
             </span>
           </div>
         ))}

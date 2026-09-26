@@ -2,7 +2,7 @@
  * @file Glossary.jsx
  * @brief Outil : Glossaire tricot / crochet
  *
- * - Recherche en temps réel (terme FR, terme EN, définition)
+ * - Recherche en temps réel, sans tenir compte des accents ni de la casse (terme FR, terme EN, abréviations, définition)
  * - Filtres par catégorie (tous / tricot / crochet / commun)
  * - Filtre par difficulté (pills)
  * - Tri alphabétique par défaut
@@ -67,20 +67,21 @@ const TERMS = [
     category: 'commun',
     difficulty: 'débutant',
   },
+  // [AI:Claude] 2026-09-26 — Point endroit / envers : tricot uniquement, abréviations alignées sur PatternTranslatorService (k = m end, p = m env)
   {
     term: 'Point endroit',
     en: 'Knit stitch (k)',
-    abbr: { fr: 'end', us: 'k', uk: 'k' },
-    definition: `Maille de base du tricot où l'aiguille entre par l'avant de la maille. Au crochet, équivalent approximatif à la maille serrée par l'avant.`,
-    category: 'commun',
+    abbr: { fr: 'm end', us: 'k', uk: 'k' },
+    definition: `Maille de base du tricot où l'aiguille entre par l'avant de la maille.`,
+    category: 'tricot',
     difficulty: 'débutant',
   },
   {
     term: 'Point envers',
     en: 'Purl stitch (p)',
-    abbr: { fr: 'env', us: 'p', uk: 'p' },
+    abbr: { fr: 'm env', us: 'p', uk: 'p' },
     definition: `Maille miroir du point endroit : l'aiguille entre par l'arrière de la maille. Combiné au point endroit, il permet de créer tous les points de texture.`,
-    category: 'commun',
+    category: 'tricot',
     difficulty: 'débutant',
   },
   {
@@ -95,14 +96,14 @@ const TERMS = [
     term: 'Diminution',
     en: 'Decrease (dec)',
     abbr: { fr: 'dim', us: 'dec', uk: 'dec' },
-    definition: `Technique supprimant une ou plusieurs mailles pour rétrécir l'ouvrage. Exemples : k2tog, SSK au tricot ; ms2ensemble au crochet.`,
+    definition: `Technique supprimant une ou plusieurs mailles pour rétrécir l'ouvrage. Exemples : k2tog, SSK au tricot ; 2 ms ensemble au crochet.`,
     category: 'commun',
     difficulty: 'débutant',
   },
   {
     term: 'Jersey',
     en: 'Stockinette stitch (St st)',
-    definition: `Point de base obtenu en alternant un rang endroit et un rang envers. L'endroit est lisse et les mailles forment des V ; l'envers est côtelé.`,
+    definition: `Point de base obtenu en alternant un rang endroit et un rang envers. L'endroit est lisse et les mailles forment des V ; l'envers est granuleux, couvert de petites bosses, et ressemble au point envers.`,
     category: 'commun',
     difficulty: 'débutant',
   },
@@ -117,14 +118,14 @@ const TERMS = [
     term: 'Maille glissée',
     en: 'Slip stitch (sl)',
     abbr: { fr: 'mg', us: 'sl', uk: 'sl' },
-    definition: `Maille transférée d'une aiguille à l'autre (ou ignorée au crochet) sans être tricotée. Elle sert à façonner, créer des textures ou réduire sans torsion.`,
+    definition: `Au tricot, maille transférée d'une aiguille à l'autre sans être tricotée. Elle sert à façonner, à créer des textures ou à réaliser certaines diminutions. Au crochet, « maille glissée » est souvent employé comme synonyme de maille coulée.`,
     category: 'commun',
     difficulty: 'débutant',
   },
   {
     term: 'Fil',
     en: 'Yarn',
-    definition: `Matière première filée utilisée pour tricoter ou crocheter. Les fils se distinguent par leur poids (lace, fingering, DK, worsted, bulky…), leur composition et leur retors.`,
+    definition: `Matière première filée utilisée pour tricoter ou crocheter. Les fils se distinguent par leur poids (lace, fingering, DK, worsted, bulky…), leur composition et leur nombre de brins.`,
     category: 'commun',
     difficulty: 'débutant',
   },
@@ -164,22 +165,6 @@ const TERMS = [
     difficulty: 'débutant',
   },
   {
-    term: 'Maille tricotée ensemble',
-    en: 'Knit two together (k2tog)',
-    abbr: { us: 'k2tog', uk: 'k2tog' },
-    definition: `Diminution simple au tricot : on insère l'aiguille dans deux mailles à la fois et on les tricote comme une seule. Cela penche vers la droite.`,
-    category: 'commun',
-    difficulty: 'débutant',
-  },
-  {
-    term: 'Surjet simple',
-    en: 'Slip, slip, knit (SSK)',
-    abbr: { fr: 'ssk', us: 'ssk', uk: 'skpo' },
-    definition: `Diminution penchant vers la gauche au tricot : on glisse deux mailles une à une à l'envers, puis on les tricote ensemble par l'arrière.`,
-    category: 'commun',
-    difficulty: 'intermédiaire',
-  },
-  {
     term: 'Rentrer les fils',
     en: 'Weave in ends',
     definition: `Finition consistant à cacher les queues de fil à l'intérieur de l'ouvrage à l'aide d'une aiguille à laine, pour qu'elles ne soient pas visibles.`,
@@ -194,9 +179,10 @@ const TERMS = [
     difficulty: 'intermédiaire',
   },
   {
-    term: 'Retors',
+    // [AI:Claude] 2026-09-26 — « ply » = brin ; « retors » désigne le fil obtenu en torsadant plusieurs brins
+    term: 'Brin',
     en: 'Ply',
-    definition: `Nombre de brins torsadés ensemble pour former un fil. Un fil 4 brins (4-ply) est généralement plus solide et plus régulier qu'un fil simple.`,
+    definition: `Chacun des fils simples torsadés ensemble pour former un fil dit retors. Un fil 4 brins (4-ply) est généralement plus solide et plus régulier qu'un fil à un seul brin. Attention : dans les patrons britanniques et australiens, « 4-ply » désigne aussi une grosseur de fil (proche du fingering).`,
     category: 'commun',
     difficulty: 'débutant',
   },
@@ -258,17 +244,28 @@ const TERMS = [
     category: 'tricot',
     difficulty: 'intermédiaire',
   },
+  // [AI:Claude] 2026-09-26 — SSK et surjet simple sont deux diminutions distinctes (même inclinaison à gauche) ; abréviations alignées sur PatternTranslatorService (ssk = gls, k2tog = 2 m ens end)
   {
     term: 'SSK',
-    en: 'Slip, slip, knit',
-    definition: `Diminution penchant à gauche : on glisse deux mailles séparément à l'envers, puis on les retricote ensemble par le brin arrière.`,
+    en: 'Slip, slip, knit (SSK)',
+    abbr: { fr: 'gls', us: 'ssk', uk: 'ssk' },
+    definition: `Diminution penchant à gauche : on glisse deux mailles une à une comme pour les tricoter à l'endroit, puis on les tricote ensemble par le brin arrière.`,
+    category: 'tricot',
+    difficulty: 'intermédiaire',
+  },
+  {
+    term: 'Surjet simple',
+    en: 'Slip, knit, pass (skp / skpo)',
+    abbr: { us: 'skp', uk: 'skpo' },
+    definition: `Diminution penchant à gauche : on glisse 1 maille sans la tricoter, on tricote la maille suivante à l'endroit, puis on passe la maille glissée par-dessus. Même inclinaison que le SSK, mais rendu légèrement différent.`,
     category: 'tricot',
     difficulty: 'intermédiaire',
   },
   {
     term: 'K2tog',
-    en: 'Knit two together',
-    definition: `Diminution penchant à droite : on tricote deux mailles ensemble en une seule passe, en insérant l'aiguille dans les deux boucles simultanément.`,
+    en: 'Knit two together (k2tog)',
+    abbr: { fr: '2 m ens end', us: 'k2tog', uk: 'k2tog' },
+    definition: `Diminution penchant à droite : on tricote deux mailles ensemble à l'endroit en une seule passe, en insérant l'aiguille dans les deux boucles simultanément.`,
     category: 'tricot',
     difficulty: 'débutant',
   },
@@ -312,7 +309,7 @@ const TERMS = [
   {
     term: 'M1L',
     en: 'Make one left',
-    abbr: { us: 'M1L', uk: 'M1L' },
+    abbr: { fr: 'M1G', us: 'M1L', uk: 'M1L' },
     definition: `Augmentation penchant à gauche : on soulève le brin horizontal entre deux mailles par l'avant et on le tricote par le brin arrière pour éviter un trou.`,
     category: 'tricot',
     difficulty: 'intermédiaire',
@@ -320,7 +317,7 @@ const TERMS = [
   {
     term: 'M1R',
     en: 'Make one right',
-    abbr: { us: 'M1R', uk: 'M1R' },
+    abbr: { fr: 'M1D', us: 'M1R', uk: 'M1R' },
     definition: `Augmentation penchant à droite : on soulève le brin horizontal entre deux mailles par l'arrière et on le tricote par le brin avant.`,
     category: 'tricot',
     difficulty: 'intermédiaire',
@@ -333,30 +330,30 @@ const TERMS = [
     difficulty: 'intermédiaire',
   },
   {
-    term: 'Icord',
+    term: 'I-cord',
     en: 'I-cord',
-    definition: `Petit tube de mailles (3 à 5) tricoté en continu sur DPN ou aiguilles circulaires en glissant les mailles sans retourner le travail. Utilisé pour les liens, bordures ou sangles.`,
+    definition: `Petit tube de mailles (3 à 5) tricoté en continu sur DPN ou aiguilles circulaires : après chaque rang, on fait glisser les mailles à l'autre extrémité de l'aiguille sans tourner le travail. Utilisé pour les liens, bordures ou sangles.`,
     category: 'tricot',
     difficulty: 'intermédiaire',
   },
   {
     term: 'Dentelle',
     en: 'Lace',
-    definition: `Technique combinant jetés et diminutions pour créer des motifs ajourés délicats. Les patrons de dentelle sont souvent chartrés sur grille.`,
+    definition: `Technique combinant jetés et diminutions pour créer des motifs ajourés délicats. Les patrons de dentelle sont souvent présentés sous forme de diagramme (grille).`,
     category: 'tricot',
     difficulty: 'avancé',
   },
   {
     term: 'Intarsia',
     en: 'Intarsia',
-    definition: `Technique de colorwork où chaque zone de couleur est tricotée avec une pelote distincte. Les fils ne se croisent pas sur l'envers comme en jacquard.`,
+    definition: `Technique de colorwork où chaque zone de couleur est tricotée avec une pelote distincte. Contrairement au jacquard, les fils ne sont pas portés en flottants sur l'envers : on les croise seulement au changement de couleur pour éviter les trous.`,
     category: 'tricot',
     difficulty: 'avancé',
   },
   {
     term: 'Jacquard',
     en: 'Stranded colorwork / Fair Isle',
-    definition: `Technique de tricot à plusieurs couleurs où les fils non utilisés sont portés en flottantes à l'envers du travail. Permet de créer des motifs géométriques répétitifs.`,
+    definition: `Technique de tricot à plusieurs couleurs où les fils non utilisés sont portés en flottants à l'envers du travail. Permet de créer des motifs géométriques répétitifs.`,
     category: 'tricot',
     difficulty: 'avancé',
   },
@@ -371,9 +368,10 @@ const TERMS = [
   // ── Crochet ───────────────────────────────────────────────────────────────
   {
     term: 'Chaînette',
-    en: 'Chain stitch',
-    abbr: { fr: 'ch', us: 'ch', uk: 'ch' },
-    definition: `Suite de boucles enchaînées formant la base de départ de la plupart des ouvrages au crochet. On peut aussi l'utiliser comme espace d'arc dans les motifs.`,
+    en: 'Chain stitch (ch)',
+    // [AI:Claude] 2026-09-26 — FR : ml (maille en l'air), « ch » est l'abréviation anglaise (cf. PatternTranslatorService)
+    abbr: { fr: 'ml', us: 'ch', uk: 'ch' },
+    definition: `Suite de mailles en l'air enchaînées formant la base de départ de la plupart des ouvrages au crochet. On l'utilise aussi pour former des arceaux (espaces) dans les motifs.`,
     category: 'crochet',
     difficulty: 'débutant',
   },
@@ -397,7 +395,7 @@ const TERMS = [
     term: 'Bride',
     en: 'Double crochet / Treble UK',
     abbr: { fr: 'br', us: 'dc', uk: 'tr' },
-    definition: `Point standard du crochet, deux fois plus haut que la maille serrée : on jette le fil, insère le crochet, tire une boucle, puis tricote deux fois deux boucles ensemble.`,
+    definition: `Point standard du crochet, deux fois plus haut que la maille serrée : on jette le fil, insère le crochet, tire une boucle, puis écoule deux fois deux boucles.`,
     category: 'crochet',
     difficulty: 'débutant',
   },
@@ -410,9 +408,10 @@ const TERMS = [
     difficulty: 'intermédiaire',
   },
   {
-    term: 'Magic ring',
-    en: 'Magic ring / Magic loop',
-    abbr: { fr: 'mr', us: 'mr' },
+    // [AI:Claude] 2026-09-26 — Ne pas confondre avec le Magic loop du tricot
+    term: 'Cercle magique',
+    en: 'Magic ring / Magic circle',
+    abbr: { us: 'mr', uk: 'mr' },
     definition: `Technique de départ en crochet en rond : on forme un anneau ajustable avec le fil, on crochète dedans, puis on tire la queue pour fermer le centre sans trou.`,
     category: 'crochet',
     difficulty: 'débutant',
@@ -427,7 +426,7 @@ const TERMS = [
   {
     term: 'Granny square',
     en: 'Granny square',
-    definition: `Motif carré traditionnel au crochet travaillé en rond à partir d'un centre, composé de groupes de brides séparés par des espaces d'arc. Peut être assemblé en couverture ou vêtement.`,
+    definition: `Motif carré traditionnel au crochet travaillé en rond à partir d'un centre, composé de groupes de brides séparés par des arceaux de mailles en l'air. Peut être assemblé en couverture ou vêtement.`,
     category: 'crochet',
     difficulty: 'débutant',
   },
@@ -435,14 +434,14 @@ const TERMS = [
     term: 'Maille coulée',
     en: 'Slip stitch',
     abbr: { fr: 'mc', us: 'sl st', uk: 'ss' },
-    definition: `Point le plus bas du crochet, sans hauteur propre. Utilisé pour fermer un anneau, se déplacer discrètement sur l'ouvrage ou créer un jonction de rang invisible.`,
+    definition: `Point le plus bas du crochet, sans hauteur propre. Utilisé pour fermer un anneau, se déplacer discrètement sur l'ouvrage ou créer une jonction de rang invisible.`,
     category: 'crochet',
     difficulty: 'débutant',
   },
   {
     term: 'Picot',
     en: 'Picot',
-    definition: `Petite pointe décorative formée d'une chaînette de 3 à 5 mailles fermée par une maille coulée. Souvent utilisée en bordure de dentelle ou d'ouvrage au crochet.`,
+    definition: `Petite pointe décorative formée d'une chaînette de 3 à 5 mailles en l'air fermée par une maille coulée. Souvent utilisée en bordure de dentelle ou d'ouvrage au crochet.`,
     category: 'crochet',
     difficulty: 'intermédiaire',
   },
@@ -463,12 +462,12 @@ const TERMS = [
   {
     term: 'Crochet tunisien',
     en: 'Tunisian crochet',
-    definition: `Technique hybride entre tricot et crochet utilisant un long crochet à arrêt. On ramasse toutes les mailles dans un sens puis on les tricote en retour, créant un tissu dense et légèrement texturé.`,
+    definition: `Technique hybride entre tricot et crochet utilisant un long crochet à arrêt. On relève toutes les mailles sur le crochet à l'aller puis on les écoule au retour, créant un tissu dense et légèrement texturé.`,
     category: 'crochet',
     difficulty: 'intermédiaire',
   },
   {
-    term: 'Crochet en relief avant',
+    term: 'Bride en relief avant',
     en: 'Front post double crochet',
     abbr: { us: 'FPdc', uk: 'FPtr' },
     definition: `Bride travaillée autour du montant de la bride du rang précédent par l'avant du tissu, créant un relief saillant sur l'endroit. Utilisé pour simuler des torsades au crochet.`,
@@ -476,7 +475,7 @@ const TERMS = [
     difficulty: 'intermédiaire',
   },
   {
-    term: 'Crochet en relief arrière',
+    term: 'Bride en relief arrière',
     en: 'Back post double crochet',
     abbr: { us: 'BPdc', uk: 'BPtr' },
     definition: `Bride travaillée autour du montant de la bride du rang précédent par l'arrière du tissu, créant un creux sur l'endroit. Combiné au FPdc, permet des côtes au crochet.`,
@@ -531,6 +530,14 @@ const DIFFICULTY_STYLES = {
   'avancé':        'bg-red-100 text-red-700',
 }
 
+// [AI:Claude] 2026-09-26 — Recherche insensible à la casse et aux accents ("chainette" trouve "Chaînette")
+function normalizeSearch(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+}
+
 // ---------------------------------------------------------------------------
 // Composant
 // ---------------------------------------------------------------------------
@@ -542,18 +549,15 @@ export default function Glossary() {
   const [difficulty, setDifficulty]   = useState(null) // null = tous
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = normalizeSearch(search.trim())
 
     return TERMS
       .filter(t => {
         if (category !== 'all' && t.category !== category) return false
         if (difficulty && t.difficulty !== difficulty) return false
         if (q) {
-          return (
-            t.term.toLowerCase().includes(q) ||
-            t.en.toLowerCase().includes(q) ||
-            t.definition.toLowerCase().includes(q)
-          )
+          const fields = [t.term, t.en, t.definition, ...Object.values(t.abbr || {})]
+          return fields.some(f => normalizeSearch(f).includes(q))
         }
         return true
       })
