@@ -1169,6 +1169,21 @@ class Project extends BaseModel
      * @param int $sectionId ID de la section
      * @return array|null Section ou null
      */
+    /**
+     * [AI:Claude] 2026-09-26 — Contrôle d'appartenance section ↔ projet. Les routes
+     * /projects/{projectId}/sections/{sectionId} ne vérifiaient que le projet : la section
+     * était ensuite lue/modifiée/supprimée par son seul id, donc celle de n'importe quel
+     * compte (ids séquentiels). À combiner avec belongsToUser($projectId, $userId).
+     */
+    public function sectionBelongsToProject(int $sectionId, int $projectId): bool
+    {
+        $stmt = $this->db->prepare('SELECT 1 FROM project_sections WHERE id = :id AND project_id = :project_id LIMIT 1');
+        $stmt->bindValue(':id', $sectionId, PDO::PARAM_INT);
+        $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
+        $stmt->execute();
+        return (bool)$stmt->fetchColumn();
+    }
+
     public function getSectionById(int $sectionId): ?array
     {
         $query = "SELECT * FROM project_sections WHERE id = :id";

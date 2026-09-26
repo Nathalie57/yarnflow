@@ -567,6 +567,12 @@ class ProjectController
                 return;
             }
 
+            // [AI:Claude] 2026-09-26 — section_id reçu dans la requête : doit appartenir au projet
+            if (!empty($data['section_id']) && !$this->projectModel->sectionBelongsToProject((int)$data['section_id'], $id)) {
+                $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet"]);
+                return;
+            }
+
             // [AI:Claude] v0.16.2 - Empêcher l'historique en mode cm
             $project = $this->projectModel->getProjectById($id);
             if (($project['counter_unit'] ?? 'rows') === 'cm') {
@@ -809,6 +815,12 @@ class ProjectController
                     'success' => false,
                     'error' => 'Accès non autorisé'
                 ]);
+                return;
+            }
+
+            // [AI:Claude] 2026-09-26 — section_id reçu dans la requête : doit appartenir au projet
+            if (!empty($data['section_id']) && !$this->projectModel->sectionBelongsToProject((int)$data['section_id'], $id)) {
+                $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet"]);
                 return;
             }
 
@@ -1822,6 +1834,13 @@ class ProjectController
                 return;
             }
 
+            // [AI:Claude] 2026-09-26 — La section de l'URL doit appartenir à ce projet (sinon
+            // la section de n'importe quel compte était accessible par son seul id).
+            if (!$this->projectModel->sectionBelongsToProject($sectionId, $projectId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Section introuvable']);
+                return;
+            }
+
             $success = $this->projectModel->updateSection($sectionId, $data);
 
             if (!$success) {
@@ -1906,6 +1925,12 @@ class ProjectController
             $sectionId = isset($data['section_id']) && $data['section_id'] !== null
                 ? (int)$data['section_id']
                 : null;
+
+            // [AI:Claude] 2026-09-26 — section_id reçu dans la requête : doit appartenir au projet
+            if (!empty($data['section_id']) && !$this->projectModel->sectionBelongsToProject((int)$data['section_id'], $projectId)) {
+                $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet"]);
+                return;
+            }
 
             $counterData = [
                 'label' => trim($data['label']),
@@ -2118,6 +2143,12 @@ class ProjectController
             $sectionId = isset($data['section_id']) && $data['section_id'] !== null
                 ? (int)$data['section_id']
                 : null;
+
+            // [AI:Claude] 2026-09-26 — section_id reçu dans la requête : doit appartenir au projet
+            if (!empty($data['section_id']) && !$this->projectModel->sectionBelongsToProject((int)$data['section_id'], $projectId)) {
+                $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet"]);
+                return;
+            }
 
             $chartData = [
                 'name' => trim($data['name']),
@@ -2469,6 +2500,13 @@ class ProjectController
                 return;
             }
 
+            // [AI:Claude] 2026-09-26 — La section de l'URL doit appartenir à ce projet (sinon
+            // la section de n'importe quel compte était accessible par son seul id).
+            if (!$this->projectModel->sectionBelongsToProject($sectionId, $projectId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Section introuvable']);
+                return;
+            }
+
             $success = $this->projectModel->deleteSection($sectionId);
 
             if (!$success) {
@@ -2517,6 +2555,12 @@ class ProjectController
                 return;
             }
 
+            // [AI:Claude] 2026-09-26 — section_id reçu dans la requête : doit appartenir au projet
+            if (!empty($data['section_id']) && !$this->projectModel->sectionBelongsToProject((int)$data['section_id'], $id)) {
+                $this->sendResponse(400, ['success' => false, 'error' => "Cette section n'appartient pas au projet"]);
+                return;
+            }
+
             $sectionId = $data['section_id'] ?? null;
 
             $success = $this->projectModel->setCurrentSection($id, $sectionId);
@@ -2562,6 +2606,13 @@ class ProjectController
                 return;
             }
 
+            // [AI:Claude] 2026-09-26 — La section de l'URL doit appartenir à ce projet (sinon
+            // la section de n'importe quel compte était accessible par son seul id).
+            if (!$this->projectModel->sectionBelongsToProject($sectionId, $projectId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Section introuvable']);
+                return;
+            }
+
             $limit = isset($params['limit']) ? (int)$params['limit'] : 100;
 
             if ($limit > 500)
@@ -2601,6 +2652,13 @@ class ProjectController
                     'success' => false,
                     'error' => 'Accès non autorisé'
                 ]);
+                return;
+            }
+
+            // [AI:Claude] 2026-09-26 — La section de l'URL doit appartenir à ce projet (sinon
+            // la section de n'importe quel compte était accessible par son seul id).
+            if (!$this->projectModel->sectionBelongsToProject($sectionId, $projectId)) {
+                $this->sendResponse(404, ['success' => false, 'error' => 'Section introuvable']);
                 return;
             }
 
