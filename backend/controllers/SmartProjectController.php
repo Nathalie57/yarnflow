@@ -607,7 +607,6 @@ class SmartProjectController
         try {
             $userId = $this->getUserIdFromAuth();
             $data = json_decode(file_get_contents('php://input'), true);
-
             if (!isset($data['project']) || !isset($data['sections'])) {
                 $this->jsonResponse(['error' => 'Données projet et sections requises', 'error_code' => 'project_data_required'], 400);
                 return;

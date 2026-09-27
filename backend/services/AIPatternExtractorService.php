@@ -179,7 +179,6 @@ PROMPT;
         $processingTime = round((microtime(true) - $startTime) * 1000);
         $result['processing_time_ms'] = $processingTime;
         $result['file_size_bytes'] = $fileSize;
-
         return $result;
     }
 
@@ -360,9 +359,11 @@ PROMPT;
         ];
 
         try {
-            $response = $this->postToGeminiWithRetry($endpoint, $payload);
+            $response = $this->postToGeminiWithRetry($endpoint, $payload, 2);
+
             $body = json_decode((string) $response->getBody(), true);
-            return $this->parseGeminiResponse($body);
+            $result = $this->parseGeminiResponse($body);
+            return $result;
 
         } catch (GuzzleException $e) {
             error_log('[AIPatternExtractor] Erreur Gemini generateContent: ' . $e->getMessage());
@@ -421,10 +422,11 @@ PROMPT;
         while (true) {
             $attempt++;
             try {
-                return $this->httpClient->post($endpoint, [
+                $response = $this->httpClient->post($endpoint, [
                     'json' => $payload,
                     'headers' => ['Content-Type' => 'application/json']
                 ]);
+                return $response;
             } catch (ConnectException $e) {
                 if ($attempt >= $maxAttempts) {
                     throw $e;

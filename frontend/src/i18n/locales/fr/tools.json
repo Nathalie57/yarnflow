@@ -942,7 +942,15 @@
     "everyNthStitches": "Toutes les <1>{{n}}</1> m. → {{count}}×",
     "everyNthRows": "Tous les <1>{{n}}</1> rgs → {{count}}×",
     "stitchesAtRowEnd_one": "À la fin du rang : {{count}} maille.",
-    "stitchesAtRowEnd_other": "À la fin du rang : {{count}} mailles."
+    "stitchesAtRowEnd_other": "À la fin du rang : {{count}} mailles.",
+    "tipPrepareTitle": "Je prépare ton ouvrage",
+    "tipPrepareBody": "Je découpe ton patron en étapes pour que tu puisses avancer facilement.",
+    "tipProgressTitle": "Tu sauras toujours où tu en es",
+    "tipProgressBody": "Ta progression est enregistrée au fil de ton ouvrage.",
+    "tipAskTitle": "Une instruction te bloque ?",
+    "tipAskBody": "En mode travail, je connais ton patron et l'étape où tu te trouves.",
+    "tipNoteTitle": "Une petite précision à retenir ?",
+    "tipNoteBody": "Ajoute une note directement à ton projet."
   },
   "toolsList": {
     "distribute": {

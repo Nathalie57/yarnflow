@@ -346,7 +346,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Onboarding "Création Intelligente" — remplace le tutoriel générique pour
   // un vrai projet importé par IA. phase : null (inactif) | 'choice' | 'pickSection' |
-  // 'setProgress' | 'startedTip'. Le flag localStorage yf_smart_onboarding_${projectId}
+  // 'setProgress' | 'workModeIntro'. Le flag localStorage yf_smart_onboarding_${projectId}
   // n'est écrit qu'à la validation explicite d'un des deux parcours (jamais à l'affichage)
   // pour que l'onboarding puisse réapparaître si l'utilisatrice ferme/recharge avant
   // d'avoir choisi — voir l'effet de chargement plus bas et les handlers dédiés.
@@ -357,9 +357,33 @@ const ProjectCounter = () => {
   // [AI:Claude] Le tableau des sections normal reste rendu (et cliquable) pendant tout
   // l'onboarding smart — sans garde, cliquer une section directement dedans contourne le
   // parcours (change de section sans jamais passer par la saisie de progression). Bloquant
-  // uniquement pendant les phases de décision ; pas 'startedTip', qui est déjà terminé
-  // (flag 'done' déjà écrit) et juste un tip dismissible, pas un choix en attente.
+  // uniquement pendant les phases de décision ; pas 'workModeIntro', qui est déjà terminé
+  // (flag 'done' déjà écrit) et juste une invitation dismissible, pas un choix en attente.
   const smartOnboardingBlocking = smartOnboardingPhase === 'choice' || smartOnboardingPhase === 'pickSection' || smartOnboardingPhase === 'setProgress'
+
+  // [AI:Claude] 2026-09-27 — Coup de pouce discret vers l'assistant, une seule fois, à la
+  // toute première entrée en mode travail sur un projet issu de la Création Intelligente
+  // (yf_smart_onboarding_${projectId} n'existe que pour ces projets-là, 'done' compris —
+  // voir handleSmartOnboardingStart/PickSection/FinishResume). Drapeau PAR PROJET (pas
+  // global) : ne revient plus sur ce projet une fois vue/fermée, mais reste montrable sur
+  // un autre projet Smart Creation — l'assistant est une fonctionnalité encore peu
+  // découverte, mieux vaut la remontrer à chaque nouveau projet plutôt qu'une seule fois
+  // pour tout le navigateur.
+  const [showAiHelpHint, setShowAiHelpHint] = useState(false)
+  const dismissAiHelpHint = () => {
+    setShowAiHelpHint(false)
+    try { localStorage.setItem(`yf_workmode_help_hint_seen_${projectId}`, '1') } catch { /* ignore */ }
+  }
+  useEffect(() => {
+    if (!isTimerRunning || !projectId) return
+    try {
+      const isSmartCreationProject = !!localStorage.getItem(`yf_smart_onboarding_${projectId}`)
+      if (isSmartCreationProject && !localStorage.getItem(`yf_workmode_help_hint_seen_${projectId}`)) {
+        setShowAiHelpHint(true)
+      }
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTimerRunning, projectId])
 
   // Nudge sections — affiché après 5 rangs sans section, une fois par projet
   const [showSectionsNudge, setShowSectionsNudge] = useState(false)
@@ -799,6 +823,12 @@ const ProjectCounter = () => {
   // [AI:Claude] Mettre à jour currentRow UNIQUEMENT quand on change de section
   // [AI:Claude] FIX BUG: Ajouter 'sections' dans les dépendances pour éviter la propagation
   // [AI:Claude] FIX COHERENCE: Ne mettre à jour que si la valeur est différente pour éviter les écrasements
+  // [AI:Claude] 2026-09-27 — counterUnit ('rows'|'cm') suit maintenant la section active elle-
+  // même, pas seulement l'unité globale du projet (chargée une fois dans fetchProject). Chaque
+  // section a sa propre colonne counter_unit en base : une section en cm dans un projet dont
+  // l'unité globale par défaut est 'rows' affichait "0 / 3" en mode travail sans jamais montrer
+  // "cm" nulle part (voir plus bas : le libellé d'unité n'apparaissait que quand il n'y avait
+  // PAS de total), ce qui se lisait comme "3 rangs" alors que le patron dit "tricoter 3 cm".
   useEffect(() => {
     if (currentSectionId && sections.length > 0) {
       const activeSection = sections.find(s => s.id === currentSectionId)
@@ -808,6 +838,10 @@ const ProjectCounter = () => {
         if (sectionCurrentRow !== currentRow) {
           setCurrentRow(sectionCurrentRow)
         }
+        const sectionUnit = activeSection.counter_unit === 'cm' ? 'cm' : 'rows'
+        if (sectionUnit !== counterUnit) {
+          setCounterUnit(sectionUnit)
+        }
       }
     } else if (project && !currentSectionId) {
       // Aucune section active, utiliser le compteur global du projet
@@ -815,8 +849,12 @@ const ProjectCounter = () => {
       if (projectCurrentRow !== currentRow) {
         setCurrentRow(projectCurrentRow)
       }
+      const projectUnit = project.counter_unit === 'cm' ? 'cm' : 'rows'
+      if (projectUnit !== counterUnit) {
+        setCounterUnit(projectUnit)
+      }
     }
-  }, [currentSectionId, sections, project, currentRow])
+  }, [currentSectionId, sections, project, currentRow, counterUnit])
 
   // [AI:Claude] Timer tick
   useEffect(() => {
@@ -1851,6 +1889,14 @@ const ProjectCounter = () => {
     }
   }
 
+  // [AI:Claude] 2026-09-27 — CTA de la carte "workModeIntro" (onboarding smart) : ferme la
+  // carte et ouvre directement le mode travail, plutôt que de la laisser chercher elle-même
+  // le bouton "Passer en mode travail" plus bas.
+  const handleStartWorkModeFromIntro = () => {
+    setSmartOnboardingPhase(null)
+    handleStartSession()
+  }
+
   // [AI:Claude] Mettre en pause la session
   const handlePauseSession = () => {
     if (!isTimerRunning || isTimerPaused) return
@@ -2115,10 +2161,11 @@ const ProjectCounter = () => {
       localStorage.setItem(`yf_onboarded_${projectId}`, '1')
     }
 
-    // [AI:Claude] Masquer le guidage léger "C'est parti !" (onboarding smart, parcours
-    // "je commence") dès le premier rang — déjà marqué 'done' au choix initial, ce n'est
-    // qu'un affichage local à fermer.
-    if (smartOnboardingPhase === 'startedTip') {
+    // [AI:Claude] Masquer l'invitation au mode travail (onboarding smart) dès le premier
+    // rang compté — déjà marquée 'done' au choix initial, ce n'est qu'un affichage local
+    // à fermer. Ne devrait plus être visible à ce stade (le CTA de la carte ouvre déjà le
+    // mode travail), gardé en filet de sécurité si elle a compté un rang sans passer par lui.
+    if (smartOnboardingPhase === 'workModeIntro') {
       setSmartOnboardingPhase(null)
     }
 
@@ -2155,7 +2202,14 @@ const ProjectCounter = () => {
     }
 
     // [AI:Claude] v0.16.2 - Calculer newRow selon l'unité
-    const increment = parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0)
+    // [AI:Claude] 2026-09-27 — Section active : pas déterminé par SA propre unité (counterUnit
+    // suit déjà la section active, voir l'effet de sync plus haut), jamais par
+    // counterIncrement qui ne reflète que l'unité globale du projet — une section en cm dans
+    // un projet resté "rangs" par défaut avançait de 1 au lieu de 0,5. Sans section active,
+    // comportement inchangé (unité globale du projet).
+    const increment = currentSectionId
+      ? (counterUnit === 'cm' ? 0.5 : 1.0)
+      : (parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0))
     const newRow = counterUnit === 'rows'
       ? parseFloat(currentRow) + 1
       : parseFloat(currentRow) + increment
@@ -2430,7 +2484,11 @@ const ProjectCounter = () => {
       isSavingRowRef.current = true
       setIsSavingRow(true)
       // [AI:Claude] v0.16.2 - Calculer newRow selon l'unité
-      const increment = parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0)
+      // [AI:Claude] 2026-09-27 — Même correctif que handleIncrementRow : pas dérivé de la
+      // section active quand il y en a une, jamais de counterIncrement (unité globale projet).
+      const increment = currentSectionId
+        ? (counterUnit === 'cm' ? 0.5 : 1.0)
+        : (parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0))
       const newRow = counterUnit === 'rows'
         ? parseFloat(currentRow) - 1
         : Math.max(0, parseFloat(currentRow) - increment)
@@ -2555,7 +2613,10 @@ const ProjectCounter = () => {
   // défaut), on marque juste l'onboarding terminé et on passe au guidage léger du compteur.
   const handleSmartOnboardingStart = () => {
     try { localStorage.setItem(`yf_smart_onboarding_${projectId}`, 'done') } catch { /* ignore */ }
-    setSmartOnboardingPhase('startedTip')
+    // [AI:Claude] 2026-09-27 — 'startedTip' ("C'est parti !") remplacé par 'workModeIntro' :
+    // les deux parcours ("je commence" / "j'ai déjà commencé") orientent maintenant vers le
+    // mode travail plutôt que de se contenter d'inviter à appuyer sur +.
+    setSmartOnboardingPhase('workModeIntro')
   }
 
   // [AI:Claude] Parcours "j'ai déjà commencé" — étape 1 : bifurque selon la section choisie.
@@ -2572,7 +2633,7 @@ const ProjectCounter = () => {
         await handleChangeSection(section.id)
       } finally {
         try { localStorage.setItem(`yf_smart_onboarding_${projectId}`, 'done') } catch { /* ignore */ }
-        setSmartOnboardingPhase(null)
+        setSmartOnboardingPhase('workModeIntro')
       }
       return
     }
@@ -2601,7 +2662,7 @@ const ProjectCounter = () => {
       console.error('Erreur onboarding — reprise de section:', err)
     } finally {
       try { localStorage.setItem(`yf_smart_onboarding_${projectId}`, 'done') } catch { /* ignore */ }
-      setSmartOnboardingPhase(null)
+      setSmartOnboardingPhase('workModeIntro')
       setSmartOnboardingSelectedSection(null)
     }
   }
@@ -3610,7 +3671,7 @@ const ProjectCounter = () => {
           positionner le panneau un peu plus bas qu'un simple "collé en haut", sans risque
           de clipping si le contenu grandit (ex: pickSection avec beaucoup de sections) —
           un centrage vertical aurait pu pousser le haut du panneau hors écran dans ce cas.
-          Uniquement pendant les phases bloquantes ; startedTip n'est pas concerné. */}
+          Uniquement pendant les phases bloquantes ; workModeIntro n'est pas concerné. */}
       <div className={smartOnboardingBlocking ? 'pt-[6vh] sm:pt-[10vh]' : ''}>
       {smartOnboardingPhase === 'choice' && (
         <div className="mb-4 bg-primary-50 border border-primary-200 rounded-control p-5">
@@ -3625,29 +3686,26 @@ const ProjectCounter = () => {
               )}
               {sections.length > 0 ? (
                 <>
+                  {/* [AI:Claude] 2026-09-27 — Récapitulatif simplifié : le nombre de rangs/cm par
+                      section (3 cm, 1 rang...) était déroutant ici (avant même d'avoir choisi
+                      "je commence"/"j'ai déjà commencé", ces chiffres n'aidaient en rien) — une
+                      simple liste avec coche, comme un sommaire. Le détail reste dans la liste
+                      des sections plus bas dans le projet. */}
                   <p className="text-gray-600 text-sm mt-3 mb-2">{t('ui.smartOnboardingOrganized', { count: sections.length })}</p>
                   <ol className="space-y-1 mb-2">
-                    {sections.slice(0, 5).map((section, index) => {
-                      const hasTarget = section.progression_type !== 'composite' && section.total_rows != null
-                      return (
-                        <li key={section.id} className="flex items-center gap-2 text-sm">
-                          <span className="w-4 flex-shrink-0 text-xs text-gray-400 text-right">{index + 1}</span>
-                          <span className="flex-1 min-w-0 truncate text-flow-ink">{section.name}</span>
-                          {hasTarget && (
-                            <span className="flex-shrink-0 text-xs text-gray-500">
-                              {section.counter_unit === 'cm'
-                                ? t('ui.cmValue', { n: Number(section.total_rows) })
-                                : t('ui.smartOnboardingSectionRows', { count: Math.floor(Number(section.total_rows)) })}
-                            </span>
-                          )}
-                        </li>
-                      )
-                    })}
+                    {sections.slice(0, 5).map((section) => (
+                      <li key={section.id} className="flex items-center gap-2 text-sm">
+                        <svg className="w-4 h-4 text-primary-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span className="flex-1 min-w-0 truncate text-flow-ink">{section.name}</span>
+                      </li>
+                    ))}
                   </ol>
                   {sections.length > 5 && (
                     <p className="text-xs text-gray-500 mb-2 pl-6">{t('ui.smartOnboardingMoreSections', { count: sections.length - 5 })}</p>
                   )}
-                  <p className="text-gray-600 text-sm leading-relaxed mt-3 mb-4">{t('ui.smartOnboardingNext')}</p>
+                  <p className="font-semibold text-flow-ink text-sm mt-4 mb-2">{t('ui.smartOnboardingQuestion')}</p>
                 </>
               ) : (
                 <p className="text-gray-600 text-sm leading-relaxed mt-1 mb-4">{t('ui.smartOnboardingIntro')}</p>
@@ -3733,7 +3791,10 @@ const ProjectCounter = () => {
       )}
       </div>
 
-      {smartOnboardingPhase === 'startedTip' && (
+      {/* [AI:Claude] 2026-09-27 — Remplace l'ancienne carte "startedTip" (C'est parti !) :
+          orientée mode travail avec un CTA qui l'ouvre directement, pour les deux parcours
+          ("je commence" / "j'ai déjà commencé"). Non bloquante comme l'était startedTip. */}
+      {smartOnboardingPhase === 'workModeIntro' && (
         <div className="mb-4 bg-primary-50 border border-primary-200 rounded-control p-4 relative">
           <button
             onClick={() => setSmartOnboardingPhase(null)}
@@ -3744,9 +3805,15 @@ const ProjectCounter = () => {
           </button>
           <div className="flex items-start gap-3 pr-6">
             <FlowMascot pose="cestParti" size={52} className="flex-shrink-0" />
-            <div>
-              <p className="font-semibold text-flow-ink text-sm mb-1">{t('ui.smartOnboardingStartedTitle')}</p>
-              <p className="text-gray-600 text-sm leading-relaxed">{t('ui.smartOnboardingStartedBody')}</p>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-flow-ink text-sm mb-1">{t('ui.workModeIntroTitle')}</p>
+              <p className="text-gray-600 text-sm leading-relaxed mb-3">{t('ui.workModeIntroBody')}</p>
+              <button
+                onClick={handleStartWorkModeFromIntro}
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold transition"
+              >
+                {project?.technique === 'tricot' ? t('ui.startKnittingCta') : t('ui.startCrochetingCta')}
+              </button>
             </div>
           </div>
         </div>
@@ -3986,23 +4053,32 @@ const ProjectCounter = () => {
                 )}
               </div>
 
-              {/* [AI:Claude] Toggle unité — concerne tout le projet */}
-              <div className="flex-shrink-0">
-                <button
-                  onClick={handleToggleUnit}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs font-medium transition-colors"
-                  title={t('ui.changeCountingUnit')}
-                >
-                  <span className={counterUnit === 'rows' ? 'text-flow-ink font-semibold' : 'text-gray-500'}>{t('ui.rows')}</span>
-                  <div className={`relative inline-flex items-center h-4 w-7 rounded-full transition-colors ${counterUnit === 'cm' ? 'bg-flow-sage' : 'bg-gray-400'}`}>
-                    <span
-                      className="inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform"
-                      style={{ transform: counterUnit === 'cm' ? 'translateX(14px)' : 'translateX(2px)' }}
-                    />
-                  </div>
-                  <span className={counterUnit === 'cm' ? 'text-flow-ink font-semibold' : 'text-gray-400'}>cm</span>
-                </button>
-              </div>
+              {/* [AI:Claude] 2026-09-27 — Toggle unité GLOBALE du projet : n'a plus de sens
+                  affiché dès qu'il existe des sections, chacune ayant sa propre counter_unit
+                  (voir l'effet de sync plus haut, counterUnit suit la section active). Cliquer
+                  dessus n'y changeait déjà plus rien à l'écran dans ce cas (la section active
+                  reste affichée avec sa propre unité juste après), tout en modifiant
+                  silencieusement des champs projet devenus inutilisés. Reste affiché pour un
+                  projet sans section, où c'est encore le seul réglage d'unité qui existe. Ne
+                  touche à aucune donnée de section : uniquement une condition d'affichage. */}
+              {sections.length === 0 && (
+                <div className="flex-shrink-0">
+                  <button
+                    onClick={handleToggleUnit}
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-xs font-medium transition-colors"
+                    title={t('ui.changeCountingUnit')}
+                  >
+                    <span className={counterUnit === 'rows' ? 'text-flow-ink font-semibold' : 'text-gray-500'}>{t('ui.rows')}</span>
+                    <div className={`relative inline-flex items-center h-4 w-7 rounded-full transition-colors ${counterUnit === 'cm' ? 'bg-flow-sage' : 'bg-gray-400'}`}>
+                      <span
+                        className="inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform"
+                        style={{ transform: counterUnit === 'cm' ? 'translateX(14px)' : 'translateX(2px)' }}
+                      />
+                    </div>
+                    <span className={counterUnit === 'cm' ? 'text-flow-ink font-semibold' : 'text-gray-400'}>cm</span>
+                  </button>
+                </div>
+              )}
 
             </div>
 
@@ -4334,7 +4410,7 @@ const ProjectCounter = () => {
                     )}
                     <div className="text-xs text-gray-400 leading-none mt-1">
                       {progressData.total
-                        ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
+                        ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))} ${counterUnit === 'cm' ? 'cm' : 'rangs'}`
                         : counterUnit === 'cm' ? 'cm' : 'rangs'}
                     </div>
                   </div>
@@ -4404,7 +4480,7 @@ const ProjectCounter = () => {
                     )}
                     <div className="text-[10px] text-gray-400 leading-none mt-0.5">
                       {progressData.total
-                        ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
+                        ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))} ${counterUnit === 'cm' ? 'cm' : 'rangs'}`
                         : counterUnit === 'cm' ? 'cm' : 'rangs'}
                     </div>
                   </div>
@@ -4483,7 +4559,7 @@ const ProjectCounter = () => {
                 )}
                 <div className="text-[10px] text-gray-400 leading-none mt-0.5">
                   {progressData.total
-                    ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))}`
+                    ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))} ${counterUnit === 'cm' ? 'cm' : 'rangs'}`
                     : counterUnit === 'cm' ? 'cm' : 'rangs'}
                 </div>
               </div>
@@ -4601,15 +4677,35 @@ const ProjectCounter = () => {
         )}
 
         {isTimerRunning ? (
-          <button
-            onClick={() => handleOpenAiHelp()}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-control text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
-          >
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-            </svg>
-            {t('ui.aiHelpOnRow')}
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => { handleOpenAiHelp(); if (showAiHelpHint) dismissAiHelpHint() }}
+              className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-control text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+              </svg>
+              {t('ui.aiHelpOnRow')}
+            </button>
+            {/* [AI:Claude] 2026-09-27 — Coachmark repositionné SOUS le bouton (retour
+                utilisatrice : au-dessus, il recouvrait le compteur/le chrono). Fond clair
+                (au lieu de bg-flow-ink) et texte plus court, comme un vrai coachmark léger
+                plutôt qu'une bulle sombre. Une seule fois (showAiHelpHint), non bloquant. */}
+            {showAiHelpHint && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2.5 w-56 max-w-[85vw] bg-white border border-primary-200 text-flow-ink text-xs rounded-control px-3 py-2.5 shadow-lg z-10">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-t border-l border-primary-200 rotate-45" />
+                <button
+                  onClick={dismissAiHelpHint}
+                  className="absolute top-1 right-1.5 text-gray-400 hover:text-gray-600 text-sm leading-none px-1"
+                  aria-label={t('ui.close')}
+                >
+                  ×
+                </button>
+                <p className="font-semibold text-primary-700 mb-0.5 pr-3">{t('ui.workModeHelpHintTitle')}</p>
+                <p className="text-gray-600 leading-snug pr-1">{t('ui.workModeHelpHintBody')}</p>
+              </div>
+            )}
+          </div>
         ) : (
           <button
             onClick={() => handleOpenAiHelp()}

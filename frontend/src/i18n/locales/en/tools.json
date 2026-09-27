@@ -942,7 +942,15 @@
     "everyNthStitches": "Every <1>{{n}}</1> sts → {{count}}×",
     "everyNthRows": "Every <1>{{n}}</1> rows → {{count}}×",
     "stitchesAtRowEnd_one": "At the end of the row: {{count}} stitch.",
-    "stitchesAtRowEnd_other": "At the end of the row: {{count}} stitches."
+    "stitchesAtRowEnd_other": "At the end of the row: {{count}} stitches.",
+    "tipPrepareTitle": "Getting your project ready",
+    "tipPrepareBody": "I'm breaking your pattern into steps so you can move forward easily.",
+    "tipProgressTitle": "You'll always know where you are",
+    "tipProgressBody": "Your progress is saved as you go.",
+    "tipAskTitle": "Stuck on an instruction?",
+    "tipAskBody": "In work mode, I know your pattern and where you are in it.",
+    "tipNoteTitle": "Something worth remembering?",
+    "tipNoteBody": "Add a note straight to your project."
   },
   "toolsList": {
     "distribute": {

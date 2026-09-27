@@ -21,13 +21,22 @@ import { trackPaywallShown } from '../utils/productEvents'
  * 4. Création confirmée
  */
 
+// [AI:Claude] 2026-09-27 — Tips défilant pendant l'écran d'attente de l'analyse (purement
+// informatif, aucun état réel derrière — voir tipIndex plus bas). Poses variées pour ne pas
+// répéter "quiReflechit" (déjà utilisé juste au-dessus, pour Flow qui pense à l'analyse).
+const ANALYZING_TIPS = [
+  { pose: 'avecPatron', titleKey: 'tipPrepareTitle', bodyKey: 'tipPrepareBody' },
+  { pose: 'content', titleKey: 'tipProgressTitle', bodyKey: 'tipProgressBody' },
+  { pose: 'bonneIdee', titleKey: 'tipAskTitle', bodyKey: 'tipAskBody' },
+  { pose: 'onYVa', titleKey: 'tipNoteTitle', bodyKey: 'tipNoteBody' },
+]
+
 export default function SmartProjectCreator() {
   const { t, i18n } = useTranslation('tools')
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const { trackSmartAnalysis, trackProjectCreated } = useAnalytics()
-
   // [AI:Claude] Événement d'entrée sur Smart Creation, envoyé même si l'utilisateur
   // n'analyse jamais rien ensuite — jusqu'ici seul smart_creation_analyzed existait
   // (déclenché par analyze()), impossible de distinguer "n'est jamais entré" de
@@ -79,6 +88,18 @@ export default function SmartProjectCreator() {
     try { return localStorage.getItem('yf_has_projects') === '1' } catch { return false }
   })()
   const [showLongWait, setShowLongWait] = useState(false)
+  // [AI:Claude] 2026-09-27 — Carrousel de tips Flow pendant l'analyse : purement décoratif/
+  // informatif, aucune interaction (pas de Suivant/Précédent) ni condition d'affichage liée à
+  // l'analyse elle-même (contrairement à analyzingStep/showLongWait ci-dessus, qui reflètent un
+  // état réel) — juste de quoi occuper l'attente. S'arrête tout seul : l'effet ci-dessous ne
+  // tourne que pendant `analyzing`, et le bloc qui l'affiche est démonté dès que analyzing passe
+  // à false (voir plus bas), donc rien à arrêter explicitement à la fin de l'analyse.
+  const [tipIndex, setTipIndex] = useState(0)
+  useEffect(() => {
+    if (!analyzing) return
+    const interval = setInterval(() => setTipIndex(i => (i + 1) % ANALYZING_TIPS.length), 4000)
+    return () => clearInterval(interval)
+  }, [analyzing])
   const [extractedData, setExtractedData] = useState(null)
   const [aiStatus, setAiStatus] = useState(null)
   const [analyzeMetadata, setAnalyzeMetadata] = useState(null)
@@ -385,7 +406,6 @@ export default function SmartProjectCreator() {
     setShowLongWait(false)
     setError(null)
     setErrorCode(null)
-
     // [AI:Claude] 2026-09-22 — Écran d'attente honnête : plus de fausses étapes ("Lecture",
     // "Extraction", "Mise en forme") simulant une progression backend qui n'existe pas (un
     // seul appel Gemini, opaque, aucun état intermédiaire réel). Ne reste que : le passage
@@ -416,14 +436,12 @@ export default function SmartProjectCreator() {
       if (patternSize.trim()) {
         formData.append('pattern_size', patternSize.trim())
       }
-
       const response = await axios.post('/api/projects/smart-create/analyze', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       })
-
       if (response.data.success) {
         const detectedLang = response.data.data.language || null
         setExtractedData(response.data.data)
@@ -583,7 +601,6 @@ export default function SmartProjectCreator() {
 
     setCreating(true)
     setError(null)
-
     try {
       // [AI:Claude] Etait en axios brut avec un chemin absolu ('/api/...') et un
       // token relu a la main, incoherent avec le reste de l'app : l'instance
@@ -1255,6 +1272,30 @@ export default function SmartProjectCreator() {
                   </span>
                 </div>
               ))}
+            </div>
+
+            {/* [AI:Claude] 2026-09-27 — Carrousel de tips Flow, en élément central de l'écran
+                d'attente (retour utilisatrice : trop petit/discret dans la v1). Grande carte,
+                Flow agrandi, titre net ; key={tipIndex} rejoue .animate-fade-in-up (déjà
+                utilisée ailleurs dans l'app) à chaque tip, sans dépendance supplémentaire.
+                Défile seul, sans Suivant/Précédent. */}
+            <div className="mt-8 pt-6 border-t border-gray-100">
+              <div
+                key={tipIndex}
+                className="w-full sm:w-4/5 max-w-md mx-auto bg-primary-50 rounded-card px-6 py-7 text-center animate-fade-in-up"
+              >
+                <FlowMascot pose={ANALYZING_TIPS[tipIndex].pose} size={96} className="mx-auto mb-4" />
+                <p className="text-lg font-bold text-flow-ink mb-1.5">{t(`ui.${ANALYZING_TIPS[tipIndex].titleKey}`)}</p>
+                <p className="text-sm text-gray-600 leading-snug max-w-[15rem] mx-auto">{t(`ui.${ANALYZING_TIPS[tipIndex].bodyKey}`)}</p>
+              </div>
+              <div className="flex items-center justify-center gap-1.5 mt-4">
+                {ANALYZING_TIPS.map((tip, i) => (
+                  <span
+                    key={tip.titleKey}
+                    className={`rounded-full transition-all ${i === tipIndex ? 'w-2.5 h-2.5 bg-primary-600' : 'w-1.5 h-1.5 bg-primary-200'}`}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* [AI:Claude] Apparaît après un délai raisonnable (10s) — invite à naviguer
