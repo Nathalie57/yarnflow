@@ -157,7 +157,7 @@
     "smartOnboardingCmLabel": "Hauteur actuelle (cm)",
     "flowKeepGoing": "Tu avances bien, continue comme ça !",
     "reminders": "Rappels",
-    "aiHelpOnRow": "YarnFlow, aide-moi sur ce rang",
+    "aiHelpOnRow": "Demander à Flow",
     "aiHelpModalTitle": "Débloquer l'aide sur ce rang",
     "aiHelpPatternDesc": "Aide YarnFlow à comprendre ce patron : Flow pourra t'expliquer un rang précis, vérifier un nombre de mailles ou répondre à une question sur ce projet, sans jamais toucher aux sections que tu suis déjà.",
     "aiHelpPatternCta": "Aide YarnFlow à comprendre ce patron",
@@ -506,7 +506,7 @@
     "workModeIntroBody": "Quand tu es prête à commencer, passe en mode travail : je garde ton patron sous les yeux, je suis ta progression et je peux t'aider si tu bloques.",
     "startKnittingCta": "Commencer à tricoter",
     "startCrochetingCta": "Commencer à crocheter",
-    "workModeHelpHintTitle": "Je connais ton patron",
-    "workModeHelpHintBody": "Je peux t'aider sur le rang où tu te trouves."
+    "workModeHelpHintTitle": "Flow connaît ton patron",
+    "workModeHelpHintBody": "Tu peux lui demander de t'aider à l'étape où tu en es."
   }
 }

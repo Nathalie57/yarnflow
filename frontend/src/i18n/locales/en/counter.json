@@ -157,7 +157,7 @@
     "smartOnboardingCmLabel": "Current height (cm)",
     "flowKeepGoing": "You're doing great, keep going!",
     "reminders": "Reminders",
-    "aiHelpOnRow": "YarnFlow, help me with this row",
+    "aiHelpOnRow": "Ask Flow",
     "aiHelpModalTitle": "Unlock help for this row",
     "aiHelpPatternDesc": "Help YarnFlow understand this pattern: Flow will be able to explain a specific row, check a stitch count, or answer a question about this project — without ever touching the sections you're already tracking.",
     "aiHelpPatternCta": "Help YarnFlow understand this pattern",
@@ -506,7 +506,7 @@
     "workModeIntroBody": "When you're ready to start, switch to work mode: I'll keep your pattern in view, follow your progress, and help if you get stuck.",
     "startKnittingCta": "Start knitting",
     "startCrochetingCta": "Start crocheting",
-    "workModeHelpHintTitle": "I know your pattern",
-    "workModeHelpHintBody": "I can help with the row you're on."
+    "workModeHelpHintTitle": "Flow knows your pattern",
+    "workModeHelpHintBody": "You can ask for help with the step you're on."
   }
 }

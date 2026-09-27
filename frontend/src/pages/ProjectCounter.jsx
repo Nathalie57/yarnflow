@@ -4680,11 +4680,9 @@ const ProjectCounter = () => {
           <div className="relative">
             <button
               onClick={() => { handleOpenAiHelp(); if (showAiHelpHint) dismissAiHelpHint() }}
-              className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-control text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
+              className="mt-3 mx-auto min-h-11 w-fit flex items-center justify-center gap-2 px-4 py-1.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-control text-sm font-semibold hover:bg-primary-100 hover:border-primary-300 transition select-none"
             >
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-              </svg>
+              <FlowMascot pose="content" size={30} className="flex-shrink-0" />
               {t('ui.aiHelpOnRow')}
             </button>
             {/* [AI:Claude] 2026-09-27 — Coachmark repositionné SOUS le bouton (retour
@@ -4709,11 +4707,9 @@ const ProjectCounter = () => {
         ) : (
           <button
             onClick={() => handleOpenAiHelp()}
-            className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 text-primary-700 text-sm font-medium hover:text-primary-900 transition select-none"
+            className="mt-2 mx-auto min-h-11 w-fit flex items-center justify-center gap-1.5 px-3 py-1.5 text-primary-700 text-sm font-medium hover:text-primary-900 hover:bg-primary-50 rounded-control transition select-none"
           >
-            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
-            </svg>
+            <FlowMascot pose="content" size={26} className="flex-shrink-0" />
             {t('ui.aiHelpOnRow')}
           </button>
         )}
