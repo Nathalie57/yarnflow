@@ -106,6 +106,8 @@ const ProjectCounter = () => {
   // avant que React n'ait rendu la mise à jour, contournant la protection. Un ref est lu/écrit
   // immédiatement et bloque vraiment les appels qui se chevauchent.
   const isSavingRowRef = useRef(false)
+  const primaryCounterRef = useRef(null)
+  const [showCompactWorkCounter, setShowCompactWorkCounter] = useState(false)
   const [isOnline, setIsOnline] = useState(networkUtils.isOnline()) // [AI:Claude] Détection hors-ligne
   const [pendingSync, setPendingSync] = useState(false) // Actions en attente de sync
   const pendingRowsRef = useRef([]) // Queue des rows à POSTer quand connexion revient
@@ -501,6 +503,31 @@ const ProjectCounter = () => {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  // En mode travail mobile, le compteur compact prend le relais uniquement lorsque les
+  // commandes principales sont sorties par le haut de la zone visible sous le header.
+  useEffect(() => {
+    if (!isFocusMode || !isMobile || !primaryCounterRef.current || !('IntersectionObserver' in window)) {
+      setShowCompactWorkCounter(false)
+      return undefined
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      const hasPassedUnderHeader = entry.boundingClientRect.top <= 64
+      setShowCompactWorkCounter(!entry.isIntersecting && hasPassedUnderHeader)
+    }, {
+      root: null,
+      rootMargin: '-64px 0px 0px 0px',
+      threshold: 0.01
+    })
+
+    observer.observe(primaryCounterRef.current)
+
+    return () => {
+      observer.disconnect()
+      setShowCompactWorkCounter(false)
+    }
+  }, [isFocusMode, isMobile])
 
   // [AI:Claude] Détection connexion réseau + flush queue offline
   useEffect(() => {
@@ -4246,13 +4273,13 @@ const ProjectCounter = () => {
       </div>
       )}
 
-      {/* [AI:Claude] Barre 2 : Compteur de la section active - STICKY. Masquée pendant les
+      {/* [AI:Claude] Barre 2 : Compteur de la section active. Masquée pendant les
           phases bloquantes de l'onboarding smart (choice/pickSection/setProgress) — même
           principe que isFocusMode ci-dessous, appliqué en plus ici car cette barre n'est
           normalement jamais masquée (ni même en mode travail). États indépendants, juste
           combinés au point de rendu — isFocusMode n'est pas modifié. */}
       {!smartOnboardingBlocking && (
-      <div className="sticky top-[64px] z-40 bg-primary-200 rounded-control border border-primary-200 p-4 mb-3 shadow-sm">
+      <div className="bg-primary-200 rounded-control border border-primary-200 p-4 mb-3 shadow-sm">
         {/* [AI:Claude] Flow discret dans la zone de progression — charte section 5,
             exemple nomme "Encore 8 rangs pour terminer cette section" (Flow a cote,
             pas de gros pave). N'apparait que si une section a un objectif chiffre et
@@ -4378,7 +4405,7 @@ const ProjectCounter = () => {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div ref={primaryCounterRef} className="flex items-center gap-3">
                   <button
                     onClick={handleDecrementRow}
                     disabled={currentRow === 0}
@@ -4995,8 +5022,8 @@ const ProjectCounter = () => {
         )}
 
         {/* [AI:Claude] Mode travail : pendant que le timer tourne EN MODE TRAVAIL (isFocusMode),
-            les instructions de la section active restent affichées sous le compteur (dans le
-            bloc sticky) au lieu de vivre uniquement dans la liste des sections plus bas — évite
+            les instructions de la section active restent affichées sous le compteur au lieu de
+            vivre uniquement dans la liste des sections plus bas — évite
             d'avoir à scroller loin du compteur à chaque rang pour relire le patron. Texte complet,
             jamais tronqué, mais dans sa propre zone à défilement borné en hauteur — sans
             ça, un patron long fait grandir tout le bloc sticky au-delà de l'écran et le
@@ -5014,7 +5041,12 @@ const ProjectCounter = () => {
               <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
                 {t('ui.instructions')}
               </div>
-              <div className="text-sm text-gray-700 leading-relaxed max-h-[45vh] overflow-y-auto pr-1">
+              <div
+                className="text-sm text-gray-700 leading-relaxed max-h-[45vh] overflow-y-auto pr-1"
+                onScroll={() => {
+                  if (showAiHelpHint) dismissAiHelpHint()
+                }}
+              >
                 {renderDescriptionLines(workSection.description)}
               </div>
             </div>
@@ -5022,6 +5054,41 @@ const ProjectCounter = () => {
         })()}
 
       </div>
+      )}
+
+      {isFocusMode && showCompactWorkCounter && (
+        <div className="sm:hidden fixed top-16 left-0 right-0 z-40 px-4 pointer-events-none">
+          <div className="max-w-7xl mx-auto h-14 px-2 bg-white border border-primary-200 rounded-b-control shadow-[0_8px_18px_rgba(31,41,55,0.18)] flex items-center gap-2 pointer-events-auto">
+            <div className="flex-1 min-w-0 px-1 font-medium text-gray-500 text-xs truncate">
+              {currentSectionId
+                ? sections.find(section => section.id === currentSectionId)?.name || t('ui.wholeProject')
+                : t('ui.wholeProject')}
+            </div>
+            <button
+              type="button"
+              onClick={handleDecrementRow}
+              disabled={currentRow === 0 || isSavingRow}
+              className="w-11 h-11 flex-shrink-0 bg-primary-50 border-2 border-primary-200 text-gray-600 rounded-control text-2xl font-medium transition disabled:opacity-30 select-none"
+              aria-label={`${t('ui.row')} -`}
+            >
+              −
+            </button>
+            <div className="min-w-[76px] text-center font-extrabold text-primary-700 text-xl tabular-nums whitespace-nowrap">
+              {counterUnit === 'cm'
+                ? `${Number(currentRow || 0).toLocaleString(i18n.resolvedLanguage || i18n.language, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} cm`
+                : t('ui.rowsCount', { count: Math.floor(Number(currentRow) || 0) })}
+            </div>
+            <button
+              type="button"
+              onClick={handleIncrementRow}
+              disabled={isSavingRow}
+              className="w-11 h-11 flex-shrink-0 bg-primary-600 text-white rounded-control text-2xl font-bold active:scale-95 transition shadow-sm disabled:opacity-50 select-none"
+              aria-label={`${t('ui.row')} +`}
+            >
+              +
+            </button>
+          </div>
+        </div>
       )}
 
       {/* [AI:Claude] Accès rapide Patron/Photos/Détails — toujours visible sans avoir
