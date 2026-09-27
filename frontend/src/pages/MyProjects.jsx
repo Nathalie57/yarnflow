@@ -430,6 +430,14 @@ const MyProjects = () => {
     setPendingImport(null)
     try {
       await api.post('/projects/smart-create/pending/dismiss', { import_id: importId })
+      try {
+        const rawNotice = localStorage.getItem('yf_smart_project_notice')
+        const storedNotice = rawNotice ? JSON.parse(rawNotice) : null
+        if (storedNotice?.kind === 'gate' && (!storedNotice.importId || storedNotice.importId === importId)) {
+          localStorage.removeItem('yf_smart_project_notice')
+          window.dispatchEvent(new CustomEvent('yf:smart-creation-notice', { detail: null }))
+        }
+      } catch { /* ignore */ }
     } catch {}
     fetchPendingImport()
   }

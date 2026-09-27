@@ -365,10 +365,23 @@
     "stash_insufficient": "Stock insuffisant : {{count}} pelote(s) disponible(s)."
   },
   "smartCreationNotice": {
+    "readyTitle": "Ton projet est prêt !",
+    "readyBody": "J'ai préparé « {{name}} ». Tu peux le commencer quand tu veux.",
     "readyBanner": "Ton projet « {{name}} » est prêt !",
     "readyCta": "Ouvrir mon projet",
     "gateBanner": "J'ai terminé l'analyse de ton patron. J'ai besoin que tu vérifies un point.",
     "gateCta": "Voir mon analyse",
+    "translationTitle": "Ton patron est en {{language}}",
+    "translationBody": "Je peux le traduire avant de préparer ton projet.",
+    "translationCta": "Choisir",
+    "diagramTitle": "J'ai repéré un diagramme",
+    "diagramBody": "Vérifie mon avertissement avant de créer ton projet.",
+    "partialTitle": "Il me manque quelques informations",
+    "partialBody": "Ton projet peut être créé, mais certains éléments sont à vérifier.",
+    "reviewCta": "Voir mon analyse",
+    "checkCta": "Vérifier mon analyse",
+    "compactReminder": "Flow · J'ai besoin de toi pour terminer ton projet",
+    "resumeCta": "Reprendre",
     "dismiss": "Plus tard"
   }
 }

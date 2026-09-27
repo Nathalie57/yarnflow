@@ -221,15 +221,8 @@ export default function SmartProjectCreator() {
     next.delete('resume')
     setSearchParams(next, { replace: true })
 
-    // [AI:Claude] 2026-09-22 — Elle vient de cliquer "Voir mon analyse" (ou "Reprendre" sur
-    // Mes projets) : la notice globale (kind 'gate') qui l'a amenée ici — ou qu'elle a pu
-    // suivre via l'autre chemin d'entrée — n'a plus lieu d'être, sinon elle réapparaîtrait
-    // indéfiniment même une fois le gate confirmé (submitProject() ne l'écrit/l'efface pas
-    // dans ce cas puisqu'elle reste montée). Supprimée ici plutôt que conditionnée à son
-    // contenu exact : une seule notice Smart Creation à la fois est la limite acceptée pour
-    // cette V1.
-    try { localStorage.removeItem('yf_smart_project_notice') } catch { /* ignore */ }
-
+    // La notice compacte reste disponible pendant la reprise. Elle sera retirée lorsque le
+    // projet sera effectivement créé, si l'import est ignoré, ou si /pending ne le retrouve plus.
     ;(async () => {
       try {
         const response = await api.get('/projects/smart-create/pending')
@@ -504,7 +497,20 @@ export default function SmartProjectCreator() {
             // (diagramme/traduction/partiel) empêche la création automatique du projet. Le
             // CTA renvoie vers la reprise existante (?resume=1 → GET /smart-create/pending,
             // mécanisme pendingImport() non modifié) plutôt que de dupliquer cette logique.
-            const noticeInfo = { kind: 'gate', name: response.data.data.title || getFallbackTitle() }
+            const gateType = hasDiagram
+              ? 'diagram'
+              : response.data.ai_status === 'partial'
+                ? 'partial'
+                : 'translation'
+            const noticeInfo = {
+              kind: 'gate',
+              gateType,
+              name: response.data.data.title || getFallbackTitle(),
+              language: detectedLang,
+              importId: response.data.import_id,
+              display: 'expanded',
+              createdAt: Date.now()
+            }
             try {
               localStorage.setItem('yf_smart_project_notice', JSON.stringify(noticeInfo))
               window.dispatchEvent(new CustomEvent('yf:smart-creation-notice', { detail: noticeInfo }))
@@ -606,6 +612,10 @@ export default function SmartProjectCreator() {
       })
 
       if (response.data.success) {
+        try {
+          localStorage.removeItem('yf_smart_project_notice')
+          window.dispatchEvent(new CustomEvent('yf:smart-creation-notice', { detail: null }))
+        } catch { /* ignore */ }
         // [AI:Claude] 2026-09-22 — Posé ici plutôt que de dépendre du navigate() qui suit
         // (lui-même gardé par isMountedRef) : si l'utilisatrice a quitté cette page pendant
         // l'analyse ("Continuer dans YarnFlow"), ce navigate() ne s'exécute jamais et
@@ -658,7 +668,13 @@ export default function SmartProjectCreator() {
           // pour lui permettre de retrouver son projet — écriture localStorage + événement
           // custom, exactement le même principe que yf:row-added déjà utilisé ailleurs dans
           // l'app pour notifier un composant global depuis une page différente.
-          const noticeInfo = { kind: 'ready', id: response.data.project.id, name: projectToSubmit.title || response.data.project.title }
+          const noticeInfo = {
+            kind: 'ready',
+            id: response.data.project.id,
+            name: projectToSubmit.title || response.data.project.title,
+            display: 'expanded',
+            createdAt: Date.now()
+          }
           try {
             localStorage.setItem('yf_smart_project_notice', JSON.stringify(noticeInfo))
             window.dispatchEvent(new CustomEvent('yf:smart-creation-notice', { detail: noticeInfo }))

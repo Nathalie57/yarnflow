@@ -365,10 +365,23 @@
     "stash_insufficient": "Not enough yarn: {{count}} skein(s) available."
   },
   "smartCreationNotice": {
+    "readyTitle": "Your project is ready!",
+    "readyBody": "I've prepared \"{{name}}\". You can start it whenever you like.",
     "readyBanner": "Your project \"{{name}}\" is ready!",
     "readyCta": "Open my project",
     "gateBanner": "I've finished analyzing your pattern. I need you to check something.",
     "gateCta": "See my analysis",
+    "translationTitle": "Your pattern is in {{language}}",
+    "translationBody": "I can translate it before preparing your project.",
+    "translationCta": "Choose",
+    "diagramTitle": "I found a chart",
+    "diagramBody": "Check my warning before creating your project.",
+    "partialTitle": "I'm missing a few details",
+    "partialBody": "Your project can be created, but a few details need checking.",
+    "reviewCta": "See my analysis",
+    "checkCta": "Check my analysis",
+    "compactReminder": "Flow · I need you to finish your project",
+    "resumeCta": "Resume",
     "dismiss": "Later"
   }
 }
