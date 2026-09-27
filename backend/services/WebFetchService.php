@@ -14,6 +14,7 @@ namespace App\Services;
 class WebFetchService {
     private const TIMEOUT = 15; // secondes
     private const MAX_REDIRECTS = 5;
+    private const MAX_RESPONSE_BYTES = 5 * 1024 * 1024;
 
     /**
      * [AI:Claude] 2026-09-26 — SÉCURITÉ (SSRF) : valide qu'une URL est http(s) et que
@@ -107,6 +108,9 @@ class WebFetchService {
             // Un cache écrit avant l'ajout de content_type n'a pas cette clé :
             // on l'ignore pour forcer un refetch plutôt que de reservir une réponse incomplète
             if ($cached !== null && array_key_exists('content_type', $cached)) {
+                if (isset($cached['html']) && strlen((string)$cached['html']) > ($options['max_response_bytes'] ?? self::MAX_RESPONSE_BYTES)) {
+                    return ['success' => false, 'html' => null, 'error' => 'La page est trop volumineuse.', 'error_code' => 'response_too_large', 'status_code' => 0];
+                }
                 return $cached;
             }
         }
@@ -164,9 +168,12 @@ class WebFetchService {
             $resolveIp = str_contains($safety['ip'], ':') ? '['.$safety['ip'].']' : $safety['ip'];
 
             $ch = curl_init();
+            $maxResponseBytes = (int)($options['max_response_bytes'] ?? self::MAX_RESPONSE_BYTES);
+            $responseBody = '';
+            $responseTooLarge = false;
             curl_setopt_array($ch, [
                 CURLOPT_URL => $currentUrl,
-                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_RETURNTRANSFER => false,
                 CURLOPT_FOLLOWLOCATION => false,
                 CURLOPT_TIMEOUT => $options['timeout'] ?? self::TIMEOUT,
                 CURLOPT_HTTPHEADER => $headers,
@@ -176,14 +183,27 @@ class WebFetchService {
                 CURLOPT_COOKIEFILE => '', // Activer les cookies
                 CURLOPT_HEADER => false,
                 CURLOPT_RESOLVE => [$hopHost.':'.$hopPort.':'.$resolveIp],
+                CURLOPT_WRITEFUNCTION => static function ($curl, string $chunk) use (&$responseBody, &$responseTooLarge, $maxResponseBytes): int {
+                    if (strlen($responseBody) + strlen($chunk) > $maxResponseBytes) {
+                        $responseTooLarge = true;
+                        return 0;
+                    }
+                    $responseBody .= $chunk;
+                    return strlen($chunk);
+                },
             ]);
 
-            $html = curl_exec($ch);
+            $executed = curl_exec($ch);
             $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
             $redirectUrl = curl_getinfo($ch, CURLINFO_REDIRECT_URL);
             $error = curl_error($ch);
             curl_close($ch);
+
+            if ($responseTooLarge) {
+                return ['success' => false, 'html' => null, 'error' => 'La page est trop volumineuse.', 'error_code' => 'response_too_large', 'status_code' => $statusCode, 'url' => $currentUrl];
+            }
+            $html = $executed === false ? false : $responseBody;
 
             if ($statusCode >= 300 && $statusCode < 400 && !empty($redirectUrl)) {
                 $currentUrl = $redirectUrl;

@@ -34,6 +34,9 @@ class SmartProjectController
 
     private const UPLOAD_DIR = __DIR__ . '/../../uploads/patterns/';
     private const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB — relevé depuis 10 MB, un patron scanné/photographié dépasse facilement cette taille (cas réel à 17 MB)
+    private const MAX_TEXT_LENGTH = 200000;
+    private const ANALYSIS_LOCK_TTL_SECONDS = 420;
+    private const ALLOWED_TARGET_LANGUAGES = ['fr', 'en', 'de', 'nl', 'es'];
 
     public function __construct()
     {
@@ -354,6 +357,10 @@ class SmartProjectController
                 // le texte du patron directement", sans qu'aucun champ ne le permette jusqu'ici.
                 $sourceType = 'text';
                 $patternTextInput = trim($_POST['pattern_text']);
+                if (mb_strlen($patternTextInput) > self::MAX_TEXT_LENGTH) {
+                    $this->jsonResponse(['error' => 'Texte trop volumineux pour être analysé.', 'error_code' => 'text_too_large'], 400);
+                    return;
+                }
                 $sourceName = mb_substr($patternTextInput, 0, 80) . (mb_strlen($patternTextInput) > 80 ? '…' : '');
 
             } else {
@@ -409,9 +416,10 @@ class SmartProjectController
                 // chargement laisse deviner. Sans ce verrou, recharger/relancer pendant l'attente
                 // déclenche un second appel IA payant en plus du premier, toujours en cours (le
                 // cache ci-dessus ne protège que les tentatives APRÈS que la première ait fini).
-                // Verrou "périmé" (réutilisable) au-delà de 150s, au cas où une requête
-                // précédente aurait planté sans jamais le libérer.
-                $lockStaleBefore = date('Y-m-d H:i:s', time() - 150);
+                // Verrou "périmé" après 420s : deux timeouts Gemini de 180s, le backoff et
+                // une marge pour l'upload/traitement. Une requête plus ancienne ne peut pas
+                // supprimer un verrou repris, car releaseLock vérifie aussi started_at.
+                $lockStaleBefore = date('Y-m-d H:i:s', time() - self::ANALYSIS_LOCK_TTL_SECONDS);
                 $lockStmt = $db->prepare(
                     'INSERT INTO smart_creation_locks (user_id, started_at) VALUES (:user_id, NOW())
                      ON DUPLICATE KEY UPDATE started_at = IF(started_at < :stale_before, NOW(), started_at)'
@@ -426,12 +434,16 @@ class SmartProjectController
                     return;
                 }
 
+                $lockOwnerStmt = $db->prepare('SELECT started_at FROM smart_creation_locks WHERE user_id = :user_id');
+                $lockOwnerStmt->execute(['user_id' => $userId]);
+                $lockStartedAt = (string)$lockOwnerStmt->fetchColumn();
+
                 // [AI:Claude] jsonResponse() fait exit — un finally ne s'exécuterait jamais après,
                 // donc le verrou doit être libéré explicitement avant chaque sortie (ici-bas et
                 // dans le catch plus bas, y compris si extractFrom*() lève une exception).
-                $releaseLock = function () use ($db, $userId) {
-                    $db->prepare('DELETE FROM smart_creation_locks WHERE user_id = :user_id')
-                        ->execute(['user_id' => $userId]);
+                $releaseLock = function () use ($db, $userId, $lockStartedAt) {
+                    $db->prepare('DELETE FROM smart_creation_locks WHERE user_id = :user_id AND started_at = :started_at')
+                        ->execute(['user_id' => $userId, 'started_at' => $lockStartedAt]);
                 };
 
                 // Extraire avec IA
@@ -557,6 +569,11 @@ class SmartProjectController
             $importId = (int)($data['import_id'] ?? 0);
             $targetLang = $data['target_lang'] ?? 'fr';
 
+            if (!in_array($targetLang, self::ALLOWED_TARGET_LANGUAGES, true)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Langue cible non prise en charge'], 400);
+                return;
+            }
+
             if (!$importId) {
                 $this->jsonResponse(['success' => false, 'error' => 'import_id requis'], 400);
                 return;
@@ -582,12 +599,19 @@ class SmartProjectController
                 return;
             }
 
+            $parsed['translation_validation'] = $result['translation_validation'];
+            $updatedJson = json_encode($parsed, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($updatedJson === false) {
+                throw new \RuntimeException('Impossible de sérialiser la validation de traduction');
+            }
+
             $updateStmt = $db->prepare(
-                'UPDATE ai_pattern_imports SET translated_text = :text, translated_lang = :lang WHERE id = :id'
+                'UPDATE ai_pattern_imports SET translated_text = :text, translated_lang = :lang, ai_response_json = :json WHERE id = :id'
             );
             $updateStmt->execute([
                 'text' => $result['translated_text'],
                 'lang' => $targetLang,
+                'json' => $updatedJson,
                 'id' => $importId,
             ]);
 
@@ -623,12 +647,41 @@ class SmartProjectController
             // sans ça, seul le JSON extrait par l'IA survivait, jamais le document lui-même.
             $sourceFilePath = null;
             $importSourceType = null;
-            if (!empty($analyzeMetadata['import_id'])) {
-                $importLookup = \App\Config\Database::getInstance()->getConnection()->prepare(
-                    'SELECT source_file_path, source_type FROM ai_pattern_imports WHERE id = :id AND user_id = :uid'
+            $importId = !empty($analyzeMetadata['import_id']) ? (int)$analyzeMetadata['import_id'] : null;
+            if (!$importId) {
+                $this->jsonResponse(['error' => 'Import requis', 'error_code' => 'import_id_required'], 400);
+                return;
+            }
+            $db = \App\Config\Database::getInstance()->getConnection();
+            $db->beginTransaction();
+
+            if ($importId) {
+                // La ligne d'import sérialise les confirmations concurrentes. Après l'attente
+                // éventuelle, une seconde requête retrouve project_id et renvoie le même projet.
+                $importLookup = $db->prepare(
+                    'SELECT project_id, source_file_path, source_type FROM ai_pattern_imports WHERE id = :id AND user_id = :uid FOR UPDATE'
                 );
-                $importLookup->execute(['id' => (int)$analyzeMetadata['import_id'], 'uid' => $userId]);
-                $importRow = $importLookup->fetch(\PDO::FETCH_ASSOC) ?: [];
+                $importLookup->execute(['id' => $importId, 'uid' => $userId]);
+                $importRow = $importLookup->fetch(\PDO::FETCH_ASSOC);
+                if (!$importRow) {
+                    $db->rollBack();
+                    $this->jsonResponse(['error' => 'Import introuvable', 'error_code' => 'import_not_found'], 404);
+                    return;
+                }
+                if (!empty($importRow['project_id'])) {
+                    $existingProjectId = (int)$importRow['project_id'];
+                    $countStmt = $db->prepare('SELECT COUNT(*) FROM projects WHERE user_id = :user_id');
+                    $countStmt->execute(['user_id' => $userId]);
+                    $isFirstProject = (int)$countStmt->fetchColumn() === 1;
+                    $db->commit();
+                    $this->jsonResponse([
+                        'success' => true,
+                        'project' => $this->projectModel->findById($existingProjectId),
+                        'is_first_project' => $isFirstProject,
+                        'message' => 'Projet créé avec succès'
+                    ], 200);
+                    return;
+                }
                 $sourceFilePath = ($importRow['source_file_path'] ?? null) ?: null;
                 $importSourceType = $importRow['source_type'] ?? null;
             }
@@ -639,12 +692,12 @@ class SmartProjectController
             if ($confirmUser) {
                 $confirmPlan = $this->getSmartImportPlan($confirmUser['subscription_type'], $userId);
                 if ($confirmPlan['monthly_limit'] === 0) {
-                    $db = \App\Config\Database::getInstance()->getConnection();
                     $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND project_id IS NOT NULL");
                     $stmt->execute(['user_id' => $userId]);
                     $totalUsed = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                     if ($totalUsed >= 3) {
                         AnalyticsService::logPaywall($userId, 'smart_creation_confirm', 'smart_import', 'free_trial_used', $confirmUser['subscription_type'] ?? null);
+                        $db->rollBack();
                         $this->jsonResponse([
                             'error' => 'Essais gratuits utilisés — passez à PLUS ou PRO pour enregistrer ce projet',
                             'upgrade_required' => true,
@@ -656,9 +709,6 @@ class SmartProjectController
             }
 
             // Créer le projet
-            $db = \App\Config\Database::getInstance()->getConnection();
-            $db->beginTransaction();
-
             try {
                 // Préparer les données du projet
                 $insertData = [
@@ -839,7 +889,6 @@ class SmartProjectController
 
                 // [AI:Claude] Relier le log d'import IA (créé lors de l'analyse, avant que
                 // le projet n'existe) au projet fraîchement créé
-                $importId = $analyzeMetadata['import_id'] ?? null;
                 if ($importId) {
                     $stmt = $db->prepare("
                         UPDATE ai_pattern_imports SET project_id = :project_id
@@ -884,11 +933,12 @@ class SmartProjectController
                 ], 201);
 
             } catch (\Exception $e) {
-                $db->rollBack();
+                if ($db->inTransaction()) $db->rollBack();
                 throw $e;
             }
 
         } catch (\Exception $e) {
+            if (isset($db) && $db->inTransaction()) $db->rollBack();
             error_log('[SmartProject] Erreur confirm: ' . $e->getMessage());
             $this->jsonResponse(['error' => 'Erreur lors de la création du projet'], 500);
         }

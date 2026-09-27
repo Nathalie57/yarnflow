@@ -1575,6 +1575,10 @@ class ProjectController
 
             $data = $this->getJsonInput();
             $targetLang = $data['target_lang'] ?? 'fr';
+            if (!\App\Services\PatternTranslatorService::isSupportedTargetLanguage($targetLang)) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Langue cible non prise en charge']);
+                return;
+            }
 
             $db = \App\Config\Database::getInstance()->getConnection();
             $stmt = $db->prepare(
@@ -1603,13 +1607,19 @@ class ProjectController
 
             $translatedSections = $result['translated_sections'];
             $fullTranslatedText = $result['translated_text'];
+            $parsed['translation_validation'] = $result['translation_validation'];
+            $updatedJson = json_encode($parsed, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($updatedJson === false) {
+                throw new \RuntimeException('Impossible de sérialiser la validation de traduction');
+            }
 
             $updateStmt = $db->prepare(
-                'UPDATE ai_pattern_imports SET translated_text = :text, translated_lang = :lang WHERE id = :id'
+                'UPDATE ai_pattern_imports SET translated_text = :text, translated_lang = :lang, ai_response_json = :json WHERE id = :id'
             );
             $updateStmt->execute([
                 'text' => $fullTranslatedText,
                 'lang' => $targetLang,
+                'json' => $updatedJson,
                 'id' => $import['id'],
             ]);
 

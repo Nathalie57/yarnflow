@@ -78,7 +78,12 @@ class PatternTranslatorController
 
             // Langue cible
             $allowedLangs = ['fr', 'en', 'de', 'nl', 'es'];
-            $targetLang = in_array($_POST['target_lang'] ?? '', $allowedLangs) ? $_POST['target_lang'] : 'fr';
+            $requestedLang = $_POST['target_lang'] ?? 'fr';
+            if (!in_array($requestedLang, $allowedLangs, true)) {
+                $this->json(['error' => 'Langue cible non prise en charge'], 400);
+                return;
+            }
+            $targetLang = $requestedLang;
 
             // Déterminer la source
             $sourceType = null;
@@ -89,19 +94,24 @@ class PatternTranslatorController
                 // PDF uploadé
                 $file = $_FILES['file'];
                 if ($file['size'] > self::MAX_FILE_SIZE) {
-                    $this->json(['error' => 'Fichier trop volumineux (max 10 MB)', 'error_code' => 'file_too_large'], 400); return;
+                    $this->json(['error' => 'Fichier trop volumineux (max 30 MB)', 'error_code' => 'file_too_large'], 400); return;
                 }
                 if (mime_content_type($file['tmp_name']) !== 'application/pdf') {
                     $this->json(['error' => 'Seuls les fichiers PDF sont acceptés', 'error_code' => 'pdf_only'], 400); return;
                 }
                 $tempPath = self::UPLOAD_DIR . uniqid('trans_') . '.pdf';
                 if (!is_dir(self::UPLOAD_DIR)) mkdir(self::UPLOAD_DIR, 0755, true);
-                move_uploaded_file($file['tmp_name'], $tempPath);
+                if (!move_uploaded_file($file['tmp_name'], $tempPath)) {
+                    $this->json(['error' => 'Impossible de préparer le fichier PDF'], 500); return;
+                }
 
                 $sourceType = 'pdf';
                 $sourceName = $file['name'];
-                $result = $this->translatorService->translateFromPdf($tempPath, $targetLang);
-                unlink($tempPath);
+                try {
+                    $result = $this->translatorService->translateFromPdf($tempPath, $targetLang);
+                } finally {
+                    if (file_exists($tempPath)) unlink($tempPath);
+                }
 
             } elseif (!empty($_POST['existing_pattern_id'] ?? '')) {
                 // [AI:Claude] Traduction lancée depuis une fiche bibliothèque déjà en PDF —
