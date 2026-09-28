@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import FlowMascot from './FlowMascot'
 import api from '../services/api'
+import { trackProductEvent } from '../utils/productEvents'
+import { buildSmartCreationProgress, noticeTrackingData } from '../utils/smartCreationTracking'
 
 const STORAGE_KEY = 'yf_smart_project_notice'
 const NOTICE_TTL_MS = 7 * 24 * 60 * 60 * 1000
@@ -39,6 +41,14 @@ const SmartCreationNoticeBanner = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [notice, setNotice] = useState(() => readStored())
+  const shownRef = useRef(new Set())
+  useEffect(() => {
+    if (!notice) return
+    const key = `${notice.kind}:${notice.importId || notice.id || notice.createdAt}:${notice.display || 'expanded'}`
+    if (shownRef.current.has(key)) return
+    shownRef.current.add(key)
+    trackProductEvent('smart_creation_progress', buildSmartCreationProgress('notice_shown', noticeTrackingData(notice)))
+  }, [notice])
 
   useEffect(() => {
     const handler = (e) => setNotice(e.detail ?? null)
@@ -82,6 +92,9 @@ const SmartCreationNoticeBanner = () => {
   // Un projet déjà créé peut retirer sa notice. Une analyse à confirmer reste au contraire
   // disponible sous forme compacte jusqu'à sa résolution ou son expiration.
   const handleAction = () => {
+    trackProductEvent('smart_creation_progress', buildSmartCreationProgress('notice_clicked', {
+      ...noticeTrackingData(notice), action: notice.kind === 'ready' ? 'open_project' : 'resume',
+    }))
     if (notice.kind === 'ready') {
       clearStored()
       setNotice(null)
@@ -95,6 +108,9 @@ const SmartCreationNoticeBanner = () => {
   }
 
   const handleDismiss = () => {
+    trackProductEvent('smart_creation_progress', buildSmartCreationProgress('notice_clicked', {
+      ...noticeTrackingData(notice), action: 'later',
+    }))
     if (notice.kind === 'ready') {
       clearStored()
       setNotice(null)

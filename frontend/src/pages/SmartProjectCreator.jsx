@@ -9,7 +9,8 @@ import { useTranslation } from 'react-i18next'
 import { apiErrorMessage } from '../utils/apiError'
 import UpgradePrompt from '../components/UpgradePrompt'
 import FlowMascot from '../components/FlowMascot'
-import { trackPaywallShown } from '../utils/productEvents'
+import { trackPaywallShown, trackProductEvent } from '../utils/productEvents'
+import { buildSmartCreationProgress, createSmartCreationAttemptId, shouldTrackAnalysisDeparture } from '../utils/smartCreationTracking'
 /**
  * SmartProjectCreator - Création intelligente de projets via IA
  * Version 0.17.0 - 2026-01-07
@@ -171,6 +172,23 @@ export default function SmartProjectCreator() {
   // garantit une lecture fiable d'un diagramme/grille — l'IA le signale elle-même pour
   // qu'on prévienne l'utilisatrice de vérifier plutôt que de faire confiance en silence.
   const [containsDiagram, setContainsDiagram] = useState(false)
+  const analysisFlightRef = useRef(null)
+  const shownGatesRef = useRef(new Set())
+  const resumedRef = useRef(searchParams.get('resume') === '1')
+  useEffect(() => {
+    if (step !== 3 || !(translateGatePending || warningGatePending)) return
+    const gateType = containsDiagram ? 'diagram' : aiStatus === 'partial' ? 'partial' : 'translation'
+    const key = `${analyzeMetadata?.import_id || analyzeMetadata?.attempt_id}:${gateType}`
+    if (shownGatesRef.current.has(key)) return
+    shownGatesRef.current.add(key)
+    trackProductEvent('smart_creation_progress', buildSmartCreationProgress('gate_shown', {
+      attempt_id: analyzeMetadata?.attempt_id,
+      import_id: analyzeMetadata?.import_id,
+      source_type: analyzeMetadata?.source_type || mode,
+      gate_type: gateType,
+      display_context: resumedRef.current ? 'resume' : 'foreground',
+    }))
+  }, [step, translateGatePending, warningGatePending, containsDiagram, aiStatus, analyzeMetadata, mode])
 
   const getLanguageName = (code) => {
     try {
@@ -197,7 +215,22 @@ export default function SmartProjectCreator() {
     // bloquée à false pour de bon, et navigate() ne se déclenchait plus jamais après
     // une création pourtant réussie côté serveur.
     isMountedRef.current = true
-    return () => { isMountedRef.current = false }
+    return () => {
+      isMountedRef.current = false
+      const flight = analysisFlightRef.current
+      // Defer past React's StrictMode cleanup/remount. BrowserRouter has already
+      // updated the pathname when a real navigation unmounts this page.
+      queueMicrotask(() => {
+        if (!isMountedRef.current && flight && shouldTrackAnalysisDeparture({
+          ...flight, currentPath: window.location.pathname,
+        })) {
+          flight.alreadyTracked = true
+          trackProductEvent('smart_creation_progress', buildSmartCreationProgress('left_during_analysis', {
+            attempt_id: flight.attempt_id, source_type: flight.source_type, display_context: 'spa_navigation',
+          }))
+        }
+      })
+    }
   }, [])
 
   // [AI:Claude] Arrivée depuis le partage natif du téléphone (Web Share Target,
@@ -260,6 +293,8 @@ export default function SmartProjectCreator() {
           setUrl(response.data.source_name || '')
         }
         setAnalyzeMetadata({
+          attempt_id: response.data.attempt_id,
+          source_type: response.data.source_type,
           source_name: response.data.source_name,
           processing_time_ms: null,
           ai_status: response.data.ai_status,
@@ -317,6 +352,7 @@ export default function SmartProjectCreator() {
   }
 
   const handleModeSelect = async (selectedMode) => {
+    trackProductEvent('smart_creation_progress', buildSmartCreationProgress('source_selected', { source_type: selectedMode }))
     setMode(selectedMode)
     setStep(2)
     setError(null)
@@ -400,6 +436,13 @@ export default function SmartProjectCreator() {
       return
     }
 
+    const attemptId = createSmartCreationAttemptId()
+    resumedRef.current = false
+    analysisFlightRef.current = {
+      attempt_id: attemptId,
+      source_type: (mode === 'text' || (mode === 'url' && pastedText.trim())) ? 'text' : mode,
+      analysisInFlight: true, alreadyTracked: false, sourcePath: window.location.pathname,
+    }
     setAnalyzing(true)
     setAnalyzingStep(0)
     setShowContinueHint(false)
@@ -423,6 +466,8 @@ export default function SmartProjectCreator() {
     try {
       const token = localStorage.getItem('token')
       const formData = new FormData()
+      formData.append('attempt_id', attemptId)
+      formData.append('target_lang', i18n.language.split('-')[0])
 
       if (mode === 'pdf') {
         formData.append('file', file)
@@ -442,12 +487,15 @@ export default function SmartProjectCreator() {
           'Content-Type': 'multipart/form-data'
         }
       })
+      analysisFlightRef.current.analysisInFlight = false
       if (response.data.success) {
         const detectedLang = response.data.data.language || null
         setExtractedData(response.data.data)
         setAiStatus(response.data.ai_status)
         setPatternLanguage(detectedLang)
         const freshAnalyzeMetadata = {
+          attempt_id: response.data.attempt_id || attemptId,
+          source_type: response.data.source_type,
           source_name: response.data.source_name,
           processing_time_ms: response.data.processing_time_ms,
           ai_status: response.data.ai_status,
@@ -526,6 +574,8 @@ export default function SmartProjectCreator() {
               name: response.data.data.title || getFallbackTitle(),
               language: detectedLang,
               importId: response.data.import_id,
+              attemptId: freshAnalyzeMetadata.attempt_id,
+              sourceType: freshAnalyzeMetadata.source_type,
               display: 'expanded',
               createdAt: Date.now()
             }
@@ -568,6 +618,7 @@ export default function SmartProjectCreator() {
         setErrorCode(err.response?.data?.error_code || null)
       }
     } finally {
+      if (analysisFlightRef.current?.attempt_id === attemptId) analysisFlightRef.current.analysisInFlight = false
       stepTimers.forEach(clearTimeout)
       setAnalyzing(false)
       setAnalyzingStep(0)
@@ -687,6 +738,9 @@ export default function SmartProjectCreator() {
           // l'app pour notifier un composant global depuis une page différente.
           const noticeInfo = {
             kind: 'ready',
+            attemptId: analyzeMetadataToSubmit?.attempt_id,
+            importId: analyzeMetadataToSubmit?.import_id,
+            sourceType: analyzeMetadataToSubmit?.source_type,
             id: response.data.project.id,
             name: projectToSubmit.title || response.data.project.title,
             display: 'expanded',

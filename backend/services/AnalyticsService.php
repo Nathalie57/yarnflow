@@ -152,26 +152,42 @@ class AnalyticsService
 
     /**
      * [AI:Claude] 2026-09-25 — activation_reached : première progression réelle (rang
-     * compté) sur un projet non démo, une seule fois par utilisatrice. Appelé à chaque
-     * rang compté, d'où le court-circuit sur l'existence de l'événement avant de lire
-     * le projet.
+     * ou cm enregistré, y compris saisie directe et synchronisation hors ligne) sur
+     * un projet non démo, une seule fois par utilisatrice. Appelé uniquement après
+     * une augmentation persistée, avec sérialisation par utilisatrice.
      */
     // Renvoie true uniquement si activation_reached vient d'être enregistré (sert au
     // frontend pour la célébration du premier rang, affichée une seule fois).
     public static function logActivationIfFirst(int $userId, int $projectId): bool
     {
+        $db = null;
+        $ownsTransaction = false;
         try {
-            if (self::hasEvent($userId, 'activation_reached')) {
+            $db = Database::getInstance()->getConnection();
+            $ownsTransaction = !$db->inTransaction();
+            if ($ownsTransaction) $db->beginTransaction();
+            // Un verrou commun à TOUS les projets d'une utilisatrice. Aucun nouvel index
+            // ni verrou global : les autres utilisatrices peuvent progresser en parallèle.
+            $lock = $db->prepare('SELECT id FROM users WHERE id = :uid FOR UPDATE');
+            $lock->execute([':uid' => $userId]);
+            if (!$lock->fetchColumn()) {
+                if ($ownsTransaction) $db->commit();
                 return false;
             }
-
+            // Lecture courante (pas un ancien snapshot REPEATABLE READ).
+            $existing = $db->prepare("SELECT id FROM analytics_events WHERE user_id = :uid AND event_name = 'activation_reached' LIMIT 1 FOR UPDATE");
+            $existing->execute([':uid' => $userId]);
             $origin = self::realProjectOrigin($userId, $projectId);
-            if ($origin === null) {
+            if ($existing->fetchColumn() || $origin === null) {
+                if ($ownsTransaction) $db->commit();
                 return false;
             }
-
-            return self::logOnce($userId, $projectId, 'activation_reached', $origin);
+            $insert = $db->prepare('INSERT INTO analytics_events (user_id, project_id, event_name, event_data) VALUES (:uid, :pid, :event, :data)');
+            $insert->execute([':uid' => $userId, ':pid' => $projectId, ':event' => 'activation_reached', ':data' => json_encode($origin + ['recorded_by' => 'backend_progression'])]);
+            if ($ownsTransaction) $db->commit();
+            return true;
         } catch (\Exception $e) {
+            if ($ownsTransaction && $db && $db->inTransaction()) $db->rollBack();
             error_log('[ANALYTICS ERROR] activation_reached: ' . $e->getMessage());
             return false;
         }

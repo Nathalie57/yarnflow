@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Models\PatternLibrary;
 use App\Services\AIPatternExtractorService;
 use App\Services\AnalyticsService;
+use App\Services\SmartCreationTrackingService;
 use App\Services\PatternStorageService;
 use App\Services\PatternTranslatorService;
 use App\Middleware\AuthMiddleware;
@@ -170,6 +171,7 @@ class SmartProjectController
             $this->jsonResponse([
                 'pending' => true,
                 'import_id' => (int)$row['id'],
+                'attempt_id' => (json_decode($row['ai_response_json'] ?? '', true)['_analytics']['attempt_id'] ?? null),
                 'source_name' => $row['source_name'],
                 'source_type' => $row['source_type'],
                 'pattern_size' => $row['pattern_size'],
@@ -370,7 +372,20 @@ class SmartProjectController
 
             // [AI:Claude] 2026-09-25 — Entonnoir Smart Creation : started ici (source valide,
             // quota OK), completed à chaque sortie ci-dessous (success/partial/error).
-            AnalyticsService::log($userId, null, 'pattern_import_started', ['source' => $sourceType]);
+            // Le client connaît l'identifiant avant la réponse longue (navigation pendant
+            // l'analyse). Les autres clients reçoivent un identifiant généré côté serveur.
+            $attemptId = SmartCreationTrackingService::normalizeAttemptId(is_string($_POST['attempt_id'] ?? null) ? $_POST['attempt_id'] : null);
+            $attemptStartedAt = microtime(true);
+            $completedLogged = false;
+            $completeAttempt = function (string $status, bool $cached = false, ?int $importId = null, ?string $errorCode = null, array $gates = []) use ($userId, $sourceType, $attemptId, $attemptStartedAt, &$completedLogged): void {
+                if ($completedLogged) return;
+                $completedLogged = true;
+                AnalyticsService::log($userId, null, 'pattern_import_completed', SmartCreationTrackingService::completionData(
+                    $attemptId, $sourceType, $status, $cached,
+                    (int)round((microtime(true) - $attemptStartedAt) * 1000), $importId, $errorCode, $gates
+                ));
+            };
+            AnalyticsService::log($userId, null, 'pattern_import_started', SmartCreationTrackingService::startedData($attemptId, $sourceType));
 
             // Taille choisie (optionnel, pour patrons multi-tailles)
             $patternSize = !empty($_POST['pattern_size']) ? trim($_POST['pattern_size']) : null;
@@ -426,10 +441,11 @@ class SmartProjectController
                 );
                 $lockStmt->execute(['user_id' => $userId, 'stale_before' => $lockStaleBefore]);
                 if (!in_array($lockStmt->rowCount(), [1, 2], true)) {
-                    AnalyticsService::log($userId, null, 'pattern_import_completed', ['source' => $sourceType, 'status' => 'error', 'cached' => false, 'reason' => 'already_in_progress']);
+                    $completeAttempt('error', false, null, 'analyze_already_in_progress');
                     $this->jsonResponse([
                         'error' => 'Une analyse est déjà en cours pour ce compte — patiente qu\'elle se termine avant d\'en relancer une autre.',
-                        'error_code' => 'analyze_already_in_progress'
+                        'error_code' => 'analyze_already_in_progress',
+                        'attempt_id' => $attemptId
                     ], 429);
                     return;
                 }
@@ -489,10 +505,11 @@ class SmartProjectController
 
             // Retourner le résultat
             if (!$result['success']) {
-                AnalyticsService::log($userId, null, 'pattern_import_completed', ['source' => $sourceType, 'status' => 'error', 'cached' => false]);
+                $completeAttempt('error', (bool)$cached, null, $result['error_code'] ?? null);
                 $releaseLock();
                 $this->jsonResponse([
                     'success' => false,
+                    'attempt_id' => $attemptId,
                     'error' => $result['error'],
                     'error_code' => $result['error_code'] ?? null,
                     'ai_status' => $result['ai_status']
@@ -504,17 +521,17 @@ class SmartProjectController
             // [AI:Claude] L'ID est renvoyé au frontend pour être relié au projet lors du confirm()
             // [AI:Claude] $result['data'] (pas null) : sans le PDF conservé, ai_response_json est
             // la seule trace permettant d'auditer a posteriori la qualité d'une extraction.
+            // Métadonnée serveur dans le JSON existant : durable lors d'une reprise, sans
+            // migration. Toujours remplacée sur un cache hit, jamais acceptée de Gemini.
+            $result['data']['_analytics'] = ['attempt_id' => $attemptId];
             $importId = $this->logImport($userId, null, $sourceType, $sourceName, $sourceFilePath, $fileSize, $result['ai_status'], $result['data'] ?? null, $processingTime, null, $patternSize, $sourceHash);
 
             // [AI:Claude] Distinct de 'project_created' (source=smart_import, posé dans confirm()) :
             // permet de mesurer l'abandon entre l'analyse et la confirmation — patron analysé mais
             // jamais transformé en projet (résultat décevant, hésitation à la relecture...).
-            AnalyticsService::log($userId, null, 'smart_creation_analyzed', ['import_id' => $importId, 'source_type' => $sourceType]);
-            AnalyticsService::log($userId, null, 'pattern_import_completed', [
-                'source' => $sourceType,
-                'status' => $result['ai_status'] === 'partial' ? 'partial' : 'success',
-                'cached' => (bool)$cached,
-            ]);
+            AnalyticsService::log($userId, null, 'smart_creation_analyzed', ['import_id' => $importId, 'source_type' => $sourceType, 'attempt_id' => $attemptId]);
+            $completeAttempt($result['ai_status'] === 'partial' ? 'partial' : 'success', (bool)$cached, $importId, null,
+                SmartCreationTrackingService::gateTypes($result['data'], $result['ai_status'], is_string($_POST['target_lang'] ?? null) ? $_POST['target_lang'] : null));
 
             $releaseLock();
             $this->jsonResponse([
@@ -524,7 +541,8 @@ class SmartProjectController
                 'processing_time_ms' => $processingTime,
                 'source_type' => $sourceType,
                 'source_name' => $sourceName,
-                'import_id' => $importId
+                'import_id' => $importId,
+                'attempt_id' => $attemptId
             ]);
 
         } catch (\Exception $e) {
@@ -533,12 +551,12 @@ class SmartProjectController
             if (isset($releaseLock)) {
                 $releaseLock();
             }
-            if (!empty($sourceType) && isset($userId)) {
-                AnalyticsService::log($userId, null, 'pattern_import_completed', ['source' => $sourceType, 'status' => 'error', 'cached' => false]);
+            if (isset($completeAttempt)) {
+                $completeAttempt('error', !empty($cached), $importId ?? null);
             }
             error_log('[SmartProject] Erreur analyze: ' . $e->getMessage());
             error_log('[SmartProject] Stack trace: ' . $e->getTraceAsString());
-            $this->jsonResponse(['error' => 'Erreur lors de l\'analyse: ' . $e->getMessage()], 500);
+            $this->jsonResponse(['error' => 'Erreur lors de l\'analyse: ' . $e->getMessage(), 'attempt_id' => $attemptId ?? null], 500);
         }
     }
 
@@ -659,7 +677,7 @@ class SmartProjectController
                 // La ligne d'import sérialise les confirmations concurrentes. Après l'attente
                 // éventuelle, une seconde requête retrouve project_id et renvoie le même projet.
                 $importLookup = $db->prepare(
-                    'SELECT project_id, source_file_path, source_type FROM ai_pattern_imports WHERE id = :id AND user_id = :uid FOR UPDATE'
+                    'SELECT project_id, source_file_path, source_type, ai_response_json FROM ai_pattern_imports WHERE id = :id AND user_id = :uid FOR UPDATE'
                 );
                 $importLookup->execute(['id' => $importId, 'uid' => $userId]);
                 $importRow = $importLookup->fetch(\PDO::FETCH_ASSOC);
@@ -914,7 +932,11 @@ class SmartProjectController
                 // [AI:Claude] import_source (pdf/url/text/library) lu sur l'import rattaché, pas
                 // sur source_type envoyé par le frontend.
                 $importSource = $importSourceType ?: null;
-                AnalyticsService::log($userId, $projectId, 'project_created', ['source' => 'smart_import', 'import_source' => $importSource]);
+                $attemptId = json_decode($importRow['ai_response_json'] ?? '', true)['_analytics']['attempt_id'] ?? null;
+                AnalyticsService::log($userId, $projectId, 'project_created', array_filter([
+                    'source' => 'smart_import', 'import_source' => $importSource, 'source_type' => $importSource,
+                    'import_id' => $importId, 'attempt_id' => $attemptId,
+                ], static fn($value) => $value !== null));
                 AnalyticsService::logOnce($userId, $projectId, 'real_project_started', ['method' => 'smart', 'source' => $importSource, 'onboarding_version' => 'v2']);
 
                 // [AI:Claude] Permet au frontend de déclencher la checklist tutoriel

@@ -491,6 +491,7 @@ class ProjectController
                 }
             }
 
+            $progressBefore = isset($data['current_row']) ? \App\Services\ProgressActivationService::counterValue($id) : null;
             $success = $this->projectModel->updateProject($id, $data);
 
             if (!$success) {
@@ -501,11 +502,16 @@ class ProjectController
                 return;
             }
 
+            $activationReached = \App\Services\ProgressActivationService::recordCounterUpdate(
+                $userId, $id, $progressBefore, isset($data['current_row']) ? \App\Services\ProgressActivationService::counterValue($id) : null,
+                !isset($data['counter_unit']) && ($data['progress_origin'] ?? '') !== 'initialization'
+            );
             $project = $this->projectModel->getProjectById($id);
 
             $this->sendResponse(200, [
                 'success' => true,
                 'message' => 'Projet mis à jour avec succès',
+                'activation_reached' => $activationReached,
                 'project' => $project
             ]);
         } catch (\Exception $e) {
@@ -621,12 +627,16 @@ class ProjectController
                 'secondary_label' => isset($data['secondary_label']) ? trim($data['secondary_label']) : null,
             ];
 
+            $progressBefore = \App\Services\ProgressActivationService::counterValue($id, $sectionId);
             $rowId = $this->projectModel->addRow($id, $rowData);
 
             if (!$rowId) {
                 throw new \Exception('Erreur lors de l\'ajout du rang');
             }
 
+            $activationReached = \App\Services\ProgressActivationService::recordCounterUpdate(
+                $userId, $id, $progressBefore, $rowData['row_number'], true
+            );
             // [AI:Claude] Récupérer le projet mis à jour (trigger auto-update)
             $project = $this->projectModel->getProjectById($id);
 
@@ -636,6 +646,7 @@ class ProjectController
                 'success' => true,
                 'message' => 'Rang ajouté avec succès',
                 'row_id' => $rowId,
+                'activation_reached' => $activationReached,
                 'project' => $project,
                 'streak_promo_code' => $streakPromoCode
             ]);
@@ -1881,6 +1892,7 @@ class ProjectController
                 return;
             }
 
+            $progressBefore = isset($data['current_row']) ? \App\Services\ProgressActivationService::counterValue($projectId, $sectionId) : null;
             $success = $this->projectModel->updateSection($sectionId, $data);
 
             if (!$success) {
@@ -1892,10 +1904,15 @@ class ProjectController
             }
 
             $section = $this->projectModel->getSectionById($sectionId);
+            $activationReached = \App\Services\ProgressActivationService::recordCounterUpdate(
+                $userId, $projectId, $progressBefore, $section['current_row'] ?? null,
+                !isset($data['counter_unit']) && ($data['progress_origin'] ?? '') !== 'initialization'
+            );
 
             $this->sendResponse(200, [
                 'success' => true,
                 'message' => 'Section mise à jour avec succès',
+                'activation_reached' => $activationReached,
                 'section' => $section
             ]);
         } catch (\Exception $e) {
@@ -2463,6 +2480,11 @@ class ProjectController
                         'section_id' => $sectionId,
                         'row_number' => $requestedRow,
                     ]) !== false;
+                }
+                if ($sectionUpdated) {
+                    \App\Services\ProgressActivationService::recordCounterUpdate(
+                        $userId, $projectId, $existingChart['section_current_row'] ?? null, $requestedRow, true
+                    );
                 }
                 unset($data['current_row']);
             }

@@ -50,6 +50,16 @@ class AnalyticsController
             $projectId = isset($data['project_id']) ? (int)$data['project_id'] : null;
             unset($data['event_name'], $data['project_id']);
 
+            // Ce jalon est réservé aux écritures de progression côté serveur.
+            if ($eventName === 'activation_reached') {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Événement réservé au serveur']);
+                return;
+            }
+            if ($eventName === 'smart_creation_progress' && !in_array($data['stage'] ?? null, \App\Services\SmartCreationTrackingService::STAGES, true)) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'stage invalide']);
+                return;
+            }
+
             // [AI:Claude] 2026-09-25 — Le plan courant est lu en base plutôt que fourni par
             // le frontend (état local possiblement périmé après un changement de plan).
             if ($eventName === 'paywall_shown') {
@@ -70,20 +80,9 @@ class AnalyticsController
                 AnalyticsService::log($userId, $projectId, $eventName, $data);
             }
 
-            // [AI:Claude] Premier rang réellement compté sur un projet non démo → jalon
-            // d'activation (une seule fois par utilisatrice, voir AnalyticsService).
-            // project_worked_again aussi : si la progression de départ a été saisie à
-            // l'onboarding, le premier rang compté n'émet jamais first_row_counted.
-            // activation_reached renvoyé dans la réponse uniquement quand il vient d'être
-            // enregistré : le compteur affiche alors la célébration du premier rang.
-            $activationReached = false;
-            if ($projectId && in_array($eventName, ['first_row_counted', 'project_worked_again'], true)) {
-                $activationReached = AnalyticsService::logActivationIfFirst($userId, $projectId);
-            }
-
-            $this->sendResponse(200, $activationReached
-                ? ['success' => true, 'activation_reached' => true]
-                : ['success' => true]);
+            // Les événements comportementaux restent disponibles ; seul le backend de
+            // progression peut désormais produire activation_reached.
+            $this->sendResponse(200, ['success' => true]);
         } catch (\Exception $e) {
             // [AI:Claude] Best-effort : un souci ici ne doit jamais bloquer le
             // parcours utilisateur qui a déclenché l'événement.

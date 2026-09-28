@@ -2338,6 +2338,8 @@ const ProjectCounter = () => {
 
     try {
       const rowResponse = await api.post(`/projects/${projectId}/rows`, rowData)
+      // Même célébration, désormais fondée sur l'écriture de progression backend.
+      if (rowResponse.data.activation_reached) setShowActivationCelebration(true)
 
       // [AI:Claude] Prévient la Navbar de rafraîchir son badge de série tout de
       // suite, plutôt que d'attendre le prochain retour de visibilité de l'onglet
@@ -2446,25 +2448,22 @@ const ProjectCounter = () => {
 
         // Tracker l'événement first_row_counted
         try {
-          const trackRes = await api.post('/analytics/track-event', {
+          await api.post('/analytics/track-event', {
             event_name: 'first_row_counted',
             project_id: projectId,
             counter_unit: counterUnit
           })
-          if (trackRes?.data?.activation_reached) setShowActivationCelebration(true)
         } catch (err) {
           console.error('Erreur tracking first_row_counted:', err)
         }
       } else if (totalProjectRows > 0) {
         // Tracker project_worked_again à chaque incrémentation après le premier rang
         try {
-          const trackRes = await api.post('/analytics/track-event', {
+          await api.post('/analytics/track-event', {
             event_name: 'project_worked_again',
             project_id: projectId,
             current_row: newRow
           })
-          // Premier rang compté après une progression de départ saisie à l'onboarding
-          if (trackRes?.data?.activation_reached) setShowActivationCelebration(true)
         } catch (err) {
           console.error('Erreur tracking project_worked_again:', err)
         }
@@ -2682,7 +2681,7 @@ const ProjectCounter = () => {
       if (section.progression_type !== 'composite' && section.total_rows != null) {
         const rawValue = Number(smartOnboardingRowValue)
         const clamped = Math.min(Math.max(0, isNaN(rawValue) ? 0 : rawValue), Number(section.total_rows))
-        await api.put(`/projects/${projectId}/sections/${section.id}`, { current_row: clamped })
+        await api.put(`/projects/${projectId}/sections/${section.id}`, { current_row: clamped, progress_origin: 'initialization' })
       }
       await handleChangeSection(section.id)
     } catch (err) {
