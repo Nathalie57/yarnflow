@@ -74,6 +74,59 @@ final class PatternExtractionValidatorTest extends TestCase
         self::assertSame('constant_yarn_quantity_resolved', $result['auto_corrected'][0]['code']);
     }
 
+    public function testMissingYarnsListedInUnresolvedDataAreRestoredWithoutInventingQuantity(): void
+    {
+        $data = $this->baseData();
+        $data['yarn'] = [[
+            'name' => 'Highlands 590 Contrast',
+            'quantity_needed' => ['amount' => null, 'unit' => 'pelotes'],
+        ]];
+        $data['unresolved_data'] = [[
+            'type' => 'yarn_quantity',
+            'yarn' => 'Country Style DK 416 Main',
+            'source_values' => ['6', '7', '8'],
+            'reason' => 'pattern_size_not_selected',
+        ]];
+
+        $result = PatternExtractionValidator::validate($data);
+
+        self::assertCount(2, $result['data']['yarn']);
+        self::assertSame('Country Style DK 416 Main', $result['data']['yarn'][1]['name']);
+        self::assertNull($result['data']['yarn'][1]['quantity_needed']['amount']);
+        self::assertSame('pelotes', $result['data']['yarn'][1]['quantity_needed']['unit']);
+        self::assertSame('unresolved_yarn_restored', $result['auto_corrected'][0]['code']);
+    }
+
+    public function testBrokenCrossSectionMarkerProducesWarning(): void
+    {
+        $data = $this->baseData('Instructions du dos sans repère.');
+        $data['sections'][0]['name'] = 'BACK';
+        $data['sections'][] = [
+            'name' => 'RIGHT FRONT',
+            'description' => 'Work from **** to **** as given for Back.',
+            'progression_type' => 'composite',
+            'target' => null,
+        ];
+
+        $result = PatternExtractionValidator::validate($data);
+
+        self::assertSame('referenced_marker_missing', $result['warnings'][0]['code']);
+        self::assertSame('****', $result['warnings'][0]['context']['marker']);
+    }
+
+    public function testMotifGaugeIsNotConvertedToStitchesAndRows(): void
+    {
+        $data = $this->baseData();
+        $data['gauge'] = ['stitches' => 16, 'rows' => 16, 'size_cm' => 10];
+        $data['pattern_notes'] = 'TENSION: 2 Diamonds to 4in, 10cm on 4mm needles.';
+
+        $result = PatternExtractionValidator::validate($data);
+
+        self::assertNull($result['data']['gauge']['stitches']);
+        self::assertNull($result['data']['gauge']['rows']);
+        self::assertSame('derived_motif_gauge_cleared', $result['auto_corrected'][0]['code']);
+    }
+
     public function testMissingSizeAloneDoesNotMakeExtractionPartial(): void
     {
         $data = $this->baseData('Monter 74/80/86/92/98 mailles.');

@@ -12,6 +12,7 @@ namespace App\Services;
 class PatternExtractionValidator
 {
     private const DIAGRAM_REFERENCE = '/\b(?:suiv(?:re|ant)|selon|voir|reportez-vous\s+(?:à|au)|follow(?:ing)?|see|refer\s+to)\s+(?:la|le|au|the|a|un|une)?\s*(?:grille|diagramme|diagram|chart|graphique)\b/iu';
+    private const MARKER_REFERENCE = '/\b(?:work|complete|proceed)\s+from\s+(\*{2,})(?:\s+to\s+(\*{2,}))?\s+as\s+given\s+for\s+([^\r\n.]+)/iu';
 
     public static function validate(array $data, ?string $patternSize = null): array
     {
@@ -60,6 +61,8 @@ class PatternExtractionValidator
         unset($section);
         $data['sections'] = $sections;
 
+        self::checkSectionReferences($sections, $warnings);
+
         $referenceText = self::referenceText($data);
         if (preg_match(self::DIAGRAM_REFERENCE, $referenceText) && empty($data['contains_diagram'])) {
             $autoCorrected[] = self::issue('diagram_flag_enabled', 'Le signalement du diagramme a été activé car les instructions y font explicitement référence.');
@@ -67,6 +70,7 @@ class PatternExtractionValidator
         }
 
         self::secureDiagramMetadata($data, $autoCorrected);
+        self::secureGauge($data, $autoCorrected);
 
         foreach (self::findUsedYarns($referenceText) as $usedYarn) {
             if (!self::yarnExists($usedYarn, $data['yarn'] ?? [])) {
@@ -77,6 +81,7 @@ class PatternExtractionValidator
         foreach (($data['unresolved_data'] ?? []) as $item) {
             if (!is_array($item)) continue;
             if (($item['type'] ?? '') === 'yarn_quantity' && !empty($item['yarn'])) {
+                self::ensureUnresolvedYarnExists($data, (string)$item['yarn'], $autoCorrected);
                 $constantValue = self::constantNormalizedQuantity($item['source_values'] ?? null);
                 if ($constantValue !== null) {
                     self::setYarnQuantity($data, (string)$item['yarn'], $constantValue);
@@ -177,6 +182,101 @@ class PatternExtractionValidator
             }
         }
         unset($yarn);
+    }
+
+    private static function ensureUnresolvedYarnExists(array &$data, string $yarnName, array &$autoCorrected): void
+    {
+        $yarnName = trim($yarnName);
+        if ($yarnName === '' || self::yarnExists($yarnName, is_array($data['yarn'] ?? null) ? $data['yarn'] : [])) return;
+
+        if (!isset($data['yarn']) || !is_array($data['yarn'])) $data['yarn'] = [];
+
+        $unit = null;
+        foreach ($data['yarn'] as $existingYarn) {
+            $candidate = $existingYarn['quantity_needed']['unit'] ?? null;
+            if (is_string($candidate) && trim($candidate) !== '') {
+                $unit = $candidate;
+                break;
+            }
+        }
+
+        $data['yarn'][] = [
+            'brand' => null,
+            'name' => $yarnName,
+            'color' => null,
+            'weight' => null,
+            'composition' => null,
+            'quantity_needed' => ['amount' => null, 'unit' => $unit],
+        ];
+        $autoCorrected[] = self::issue(
+            'unresolved_yarn_restored',
+            'Un fil explicitement présent dans les quantités multi-tailles a été restauré dans les fournitures.',
+            ['yarn' => $yarnName]
+        );
+    }
+
+    private static function checkSectionReferences(array $sections, array &$warnings): void
+    {
+        foreach ($sections as $section) {
+            if (!is_array($section)) continue;
+            $description = (string)($section['description'] ?? '');
+            if (!preg_match_all(self::MARKER_REFERENCE, $description, $matches, PREG_SET_ORDER)) continue;
+
+            foreach ($matches as $match) {
+                $referencedName = trim($match[3]);
+                $referencedSection = self::findSectionByName($sections, $referencedName);
+                if ($referencedSection === null) {
+                    $warnings[] = self::issue('referenced_section_missing', 'Une section mentionnée par un renvoi est absente.', [
+                        'section_name' => (string)($section['name'] ?? ''),
+                        'referenced_section' => $referencedName,
+                    ]);
+                    continue;
+                }
+
+                $referencedDescription = (string)($referencedSection['description'] ?? '');
+                $markers = array_values(array_unique(array_filter([$match[1] ?? null, $match[2] ?? null])));
+                foreach ($markers as $marker) {
+                    if (!str_contains($referencedDescription, $marker)) {
+                        $warnings[] = self::issue('referenced_marker_missing', 'Un repère utilisé par un renvoi est absent de la section référencée.', [
+                            'section_name' => (string)($section['name'] ?? ''),
+                            'referenced_section' => (string)($referencedSection['name'] ?? $referencedName),
+                            'marker' => $marker,
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    private static function findSectionByName(array $sections, string $name): ?array
+    {
+        $name = mb_strtolower(trim($name));
+        foreach ($sections as $section) {
+            if (!is_array($section)) continue;
+            $candidate = mb_strtolower(trim((string)($section['name'] ?? '')));
+            if ($candidate !== '' && ($candidate === $name || str_contains($candidate, $name) || str_contains($name, $candidate))) {
+                return $section;
+            }
+        }
+        return null;
+    }
+
+    private static function secureGauge(array &$data, array &$autoCorrected): void
+    {
+        if (!is_array($data['gauge'] ?? null)) return;
+        if (($data['gauge']['stitches'] ?? null) === null && ($data['gauge']['rows'] ?? null) === null) return;
+
+        $notes = (string)($data['pattern_notes'] ?? '');
+        $hasMotifGauge = preg_match('/\b\d+(?:[.,]\d+)?\s+(?:diamonds?|motifs?|repeats?)\b.{0,80}\b(?:10\s*cm|4\s*(?:in|inches))\b/iu', $notes);
+        $hasExplicitStitchGauge = preg_match('/\b\d+\s+(?:sts?|stitches|mailles?)\b.{0,80}\b\d+\s+(?:rows?|rangs?)\b/iu', $notes);
+        if (!$hasMotifGauge || $hasExplicitStitchGauge) return;
+
+        $data['gauge']['stitches'] = null;
+        $data['gauge']['rows'] = null;
+        $autoCorrected[] = self::issue(
+            'derived_motif_gauge_cleared',
+            'Une tension exprimée en motifs ne peut pas être convertie de façon certaine en mailles et rangs.'
+        );
     }
 
     private static function constantNormalizedQuantity(mixed $sourceValues): int|float|null
