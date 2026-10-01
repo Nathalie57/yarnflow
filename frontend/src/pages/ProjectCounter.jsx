@@ -4440,7 +4440,7 @@ const ProjectCounter = () => {
                     −
                   </button>
                   <div
-                    className="flex-1 bg-white rounded-control shadow-sm border border-gray-200 text-center py-3 cursor-pointer"
+                    className="flex-1 min-w-0 bg-white rounded-control shadow-sm border border-gray-200 text-center py-3 cursor-pointer overflow-hidden"
                     onClick={handleCounterClick}
                     title={t('ui.clickToEdit')}
                   >
@@ -4454,7 +4454,7 @@ const ProjectCounter = () => {
                         onKeyDown={handleCounterInputKeyDown}
                         onBlur={handleCounterInputSubmit}
                         autoFocus
-                        className="text-6xl font-bold text-primary-600 w-full text-center outline-none tabular-nums"
+                        className="block w-full min-w-0 max-w-full px-1 text-6xl font-bold text-primary-600 text-center outline-none tabular-nums appearance-none bg-transparent"
                       />
                     ) : (
                       <div className="text-6xl font-bold text-primary-600 tabular-nums leading-tight">
@@ -4501,7 +4501,7 @@ const ProjectCounter = () => {
                 </div>
 
                 {/* Compteur mobile */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
                   <button
                     onClick={handleDecrementRow}
                     disabled={currentRow === 0}
@@ -4510,7 +4510,7 @@ const ProjectCounter = () => {
                     −
                   </button>
                   <div
-                    className="bg-white rounded-control shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
+                    className="w-[104px] min-w-0 bg-white rounded-control shadow-sm border border-gray-200 text-center px-2 py-2 cursor-pointer overflow-hidden"
                     onClick={handleCounterClick}
                     title={t('ui.clickToEdit')}
                   >
@@ -4524,7 +4524,7 @@ const ProjectCounter = () => {
                         onKeyDown={handleCounterInputKeyDown}
                         onBlur={handleCounterInputSubmit}
                         autoFocus
-                        className="text-5xl font-bold text-primary-600 w-full text-center outline-none tabular-nums"
+                        className="block w-full min-w-0 max-w-full px-0 text-5xl font-bold text-primary-600 text-center outline-none tabular-nums appearance-none bg-transparent"
                       />
                     ) : (
                       <div className="text-5xl font-bold text-primary-600 tabular-nums leading-tight">
@@ -4589,7 +4589,7 @@ const ProjectCounter = () => {
                 −
               </button>
               <div
-                className="bg-white rounded-control shadow-sm border border-gray-200 text-center px-4 py-2 min-w-[90px] cursor-pointer"
+                className="w-[104px] min-w-0 bg-white rounded-control shadow-sm border border-gray-200 text-center px-2 py-2 cursor-pointer overflow-hidden"
                 onClick={handleCounterClick}
                 title={t('ui.clickToEdit')}
               >
@@ -4603,7 +4603,7 @@ const ProjectCounter = () => {
                     onKeyDown={handleCounterInputKeyDown}
                     onBlur={handleCounterInputSubmit}
                     autoFocus
-                    className="text-5xl font-bold text-primary-600 w-full text-center outline-none tabular-nums"
+                    className="block w-full min-w-0 max-w-full px-0 text-5xl font-bold text-primary-600 text-center outline-none tabular-nums appearance-none bg-transparent"
                   />
                 ) : (
                   <div className="text-5xl font-bold text-primary-600 tabular-nums leading-tight">
