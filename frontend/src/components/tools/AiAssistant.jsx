@@ -132,10 +132,23 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
     if (!isContextual) return null
     const p = projectProgress || {}
     const isCm = p.unit === 'cm'
-    const progressKey = isCm
-      ? (p.total ? 'ui.progressCmWithTotal' : 'ui.progressCmNoTotal')
-      : (p.total ? 'ui.progressRowsWithTotal' : 'ui.progressRowsNoTotal')
-    const progress = t(progressKey, { current: p.currentRow ?? 0, total: p.total })
+    const current = Number(p.currentRow) || 0
+    const total = p.total != null ? Number(p.total) : null
+    const isComplete = Boolean(p.isCompleted) || (total !== null && current >= total)
+    let progressKey
+    let progressValues = { current, total }
+
+    if (isCm) {
+      progressKey = total !== null ? 'ui.progressCmWithTotal' : 'ui.progressCmNoTotal'
+    } else if (p.progressionType === 'composite') {
+      progressKey = 'ui.progressCompositeRows'
+    } else if (isComplete) {
+      progressKey = total !== null ? 'ui.progressRowsCompleteWithTotal' : 'ui.progressRowsComplete'
+    } else {
+      progressKey = total !== null ? 'ui.progressNextRowWithTotal' : 'ui.progressNextRowNoTotal'
+      progressValues = { ...progressValues, next: current + 1 }
+    }
+    const progress = t(progressKey, progressValues)
     return p.sectionName
       ? t('ui.contextualGreetingWithSection', { section: p.sectionName, progress })
       : t('ui.contextualGreetingWithoutSection', { progress })

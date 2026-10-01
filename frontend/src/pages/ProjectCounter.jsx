@@ -2069,6 +2069,9 @@ const ProjectCounter = () => {
     const sectionName = currentSectionId
       ? sections.find(s => s.id === currentSectionId)?.name
       : null
+    const activeSection = currentSectionId
+      ? sections.find(s => s.id === currentSectionId)
+      : null
     // [AI:Claude] Même règle d'affichage que le compteur principal (voir le "-/+/valeur"
     // plus haut) : un rang ne s'affiche jamais avec une décimale, contrairement au cm.
     // Sans ça, le contexte envoyé à l'assistant (chip + message d'accueil) affichait
@@ -2081,7 +2084,16 @@ const ProjectCounter = () => {
     const label = sectionName
       ? `${proj?.name || ''} — ${sectionName} (${progress})`
       : `${proj?.name || ''} — ${progress}`
-    openWithProject(projectId, label, { sectionName, currentRow: displayRow, total, unit: counterUnit })
+    openWithProject(projectId, label, {
+      sectionName,
+      currentRow: displayRow,
+      total,
+      unit: counterUnit,
+      progressionType: activeSection?.progression_type || 'simple',
+      isCompleted: activeSection
+        ? Boolean(Number(activeSection.is_completed))
+        : proj?.status === 'completed'
+    })
 
     // [AI:Claude] Tutoriel — étape "poser une question à l'assistant" : le vrai moment
     // "wow" du nouveau positionnement copilote, remplace l'ancienne étape "éditer une
@@ -2396,7 +2408,8 @@ const ProjectCounter = () => {
 
             // Vérifier si toutes les sections sont terminées
             const updatedSections = await api.get(`/projects/${projectId}/sections`)
-            const allCompleted = updatedSections.data.sections?.every(s => s.is_completed === 1)
+            const freshSections = updatedSections.data.sections || []
+            const allCompleted = freshSections.length > 0 && freshSections.every(s => Number(s.is_completed) === 1)
 
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
@@ -2406,6 +2419,20 @@ const ProjectCounter = () => {
               // Pas d'alert ici — la modale de complétion prend le relais
               await handleAllSectionsCompleted()
             } else {
+              // La section suivante choisie par l'interface devient aussi la source de vérité
+              // du backend, afin que Flow lise exactement la section affichée comme active.
+              const nextSection = freshSections.find(s => Number(s.is_completed) !== 1)
+              if (nextSection) {
+                await api.post(`/projects/${projectId}/current-section`, { section_id: nextSection.id })
+                setCurrentSectionId(nextSection.id)
+                localStorage.setItem(`currentSection_${projectId}`, nextSection.id.toString())
+                await fetchSecondaryCounters(nextSection.id)
+                const nextReminders = typeof nextSection.reminders === 'string'
+                  ? JSON.parse(nextSection.reminders)
+                  : nextSection.reminders
+                setReminders(Array.isArray(nextReminders) ? nextReminders : [])
+                setActiveReminder(null)
+              }
               showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
               await fetchProject()
             }

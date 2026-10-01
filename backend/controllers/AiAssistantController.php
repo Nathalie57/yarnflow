@@ -445,7 +445,7 @@ PROMPT;
     private function buildProjectContext(int $projectId, int $userId): ?string
     {
         $stmt = $this->db->prepare(
-            'SELECT name, type, current_row, total_rows, current_section_id, notes, pattern_notes,
+            'SELECT name, type, current_row, total_rows, current_section_id, counter_unit, status, notes, pattern_notes,
                     yarn_brand, yarn_color, hook_size, technical_details
              FROM projects WHERE id = :id AND user_id = :uid'
         );
@@ -507,10 +507,7 @@ PROMPT;
         if ($sections) {
             foreach ($sections as $section) {
                 $isActive = $project['current_section_id'] && (int)$section['id'] === (int)$project['current_section_id'];
-                $unit = $section['counter_unit'] === 'cm' ? 'cm' : 'rangs';
-                $progress = $section['total_rows']
-                    ? "{$section['current_row']}/{$section['total_rows']} {$unit}"
-                    : "{$section['current_row']} {$unit}";
+                $progress = FlowContextGuidance::progressSummary($section);
                 $status = $section['is_completed'] ? ' [terminée]' : ($isActive ? ' [section active — c\'est ici qu\'est l\'utilisatrice en ce moment]' : '');
                 $lines[] = "Section : {$section['name']}{$status} — progression : {$progress}";
                 if ($isActive) {
@@ -528,8 +525,14 @@ PROMPT;
                 }
             }
         } else {
-            $progress = $project['total_rows'] ? "{$project['current_row']}/{$project['total_rows']}" : (string)$project['current_row'];
-            $lines[] = "Aucune section définie — compteur global : {$progress} rangs";
+            $progress = FlowContextGuidance::progressSummary([
+                'current_row' => $project['current_row'],
+                'total_rows' => $project['total_rows'],
+                'counter_unit' => $project['counter_unit'],
+                'progression_type' => 'simple',
+                'is_completed' => ($project['status'] ?? '') === 'completed',
+            ]);
+            $lines[] = "Aucune section définie — compteur global : {$progress}";
         }
 
         // Compteurs secondaires hors section (section_id NULL) — possible même sur un projet
