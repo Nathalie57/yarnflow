@@ -525,6 +525,33 @@ class StripeService
     {
         $metadata = $session->metadata;
 
+        // The webhook object does not reliably include line items. Fetch them
+        // from Stripe so the purchased Price ID can be validated server-side.
+        $lineItems = Session::allLineItems($session->id, ['limit' => 10]);
+        $firstLineItem = $lineItems->data[0] ?? null;
+        $price = $firstLineItem->price ?? null;
+        $priceId = is_string($price) ? $price : ($price->id ?? null);
+
+        $amountSubtotal = isset($session->amount_subtotal)
+            ? (float)$session->amount_subtotal / 100
+            : null;
+        $amountTotal = isset($session->amount_total)
+            ? (float)$session->amount_total / 100
+            : null;
+        $amountDiscount = isset($session->total_details->amount_discount)
+            ? (float)$session->total_details->amount_discount / 100
+            : 0.0;
+
+        error_log(sprintf(
+            '[checkout.completed] Stripe totals session=%s price_id=%s subtotal=%s total=%s discount=%s currency=%s',
+            $session->id,
+            $priceId ?? 'N/A',
+            $amountSubtotal !== null ? number_format($amountSubtotal, 2, '.', '') : 'N/A',
+            $amountTotal !== null ? number_format($amountTotal, 2, '.', '') : 'N/A',
+            number_format($amountDiscount, 2, '.', ''),
+            strtoupper((string)($session->currency ?? 'N/A'))
+        ));
+
         return [
             'success' => true,
             'event' => 'checkout_completed',
@@ -534,7 +561,16 @@ class StripeService
             'user_id' => $metadata->user_id ?? null,
             'pattern_id' => $metadata->pattern_id ?? null,
             'payment_type' => $metadata->payment_type ?? null,
-            'amount' => $session->amount_total / 100
+            'mode' => $session->mode ?? null,
+            'payment_status' => $session->payment_status ?? null,
+            'price_id' => $priceId,
+            'line_item_count' => count($lineItems->data),
+            'line_items_has_more' => (bool)($lineItems->has_more ?? false),
+            'line_item_quantity' => isset($firstLineItem->quantity) ? (int)$firstLineItem->quantity : null,
+            'currency' => strtolower((string)($session->currency ?? '')),
+            'amount_subtotal' => $amountSubtotal,
+            'amount_discount' => $amountDiscount,
+            'amount' => $amountTotal
         ];
     }
 
@@ -694,40 +730,4 @@ class StripeService
         }
     }
 
-    /**
-     * [AI:Claude] Génère un code promo Stripe à usage unique pour un utilisateur
-     * (récompense gamification : série de X jours). S'appuie sur un Coupon
-     * déjà créé une fois dans le Dashboard Stripe (id dans STRIPE_STREAK_COUPON_ID)
-     * — on ne crée ici qu'un PromotionCode jetable qui pointe vers ce coupon,
-     * pas un nouveau coupon à chaque fois.
-     *
-     * @param int $userId ID de l'utilisateur (pour metadata/traçabilité)
-     * @return string|null Le code à donner à l'utilisateur, ou null si le
-     *                      coupon n'est pas configuré ou en cas d'erreur Stripe
-     */
-    public function createOneTimePromoCode(int $userId): ?string
-    {
-        $couponId = $_ENV['STRIPE_STREAK_COUPON_ID'] ?? '';
-        if (empty($couponId)) {
-            error_log('[Stripe] STRIPE_STREAK_COUPON_ID non configuré — récompense série ignorée');
-            return null;
-        }
-
-        try {
-            $code = 'SERIE7-' . strtoupper(bin2hex(random_bytes(4)));
-
-            $promotionCode = \Stripe\PromotionCode::create([
-                'coupon' => $couponId,
-                'code' => $code,
-                'max_redemptions' => 1,
-                'expires_at' => time() + (7 * 86400),
-                'metadata' => ['user_id' => (string)$userId, 'reward' => 'streak_7_days'],
-            ]);
-
-            return $promotionCode->code;
-        } catch (ApiErrorException $e) {
-            error_log('[Stripe] Erreur création code promo série : ' . $e->getMessage());
-            return null;
-        }
-    }
 }

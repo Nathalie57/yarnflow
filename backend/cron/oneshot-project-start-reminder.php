@@ -145,6 +145,7 @@ try {
                     $row['email'],
                     $row['first_name'] ?? 'Utilisateur',
                     $row['project_name'],
+                    (int)$row['project_id'],
                     $userId
                 );
 

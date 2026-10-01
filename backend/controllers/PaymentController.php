@@ -562,35 +562,105 @@ class PaymentController
      */
     private function processCheckoutCompleted(array $data): void
     {
-        $userId = (int)$data['user_id'];
+        $sessionId = (string)($data['session_id'] ?? '');
+        $userId = (int)($data['user_id'] ?? 0);
         $patternId = isset($data['pattern_id']) ? (int)$data['pattern_id'] : null;
-        $paymentType = $data['payment_type'];
+        $paymentType = (string)($data['payment_type'] ?? '');
 
-        if ($userId === 0) {
-            error_log("[checkout.completed] ABORT: user_id manquant dans les metadata Stripe (session=" . ($data['session_id'] ?? 'N/A') . ")");
+        if ($sessionId === '' || $userId === 0 || $paymentType === '') {
+            error_log("[checkout.completed] SECURITY BLOCK: session, user_id ou payment_type manquant (session=" . ($sessionId ?: 'N/A') . ")");
             return;
         }
 
-        // Vérifier que le montant payé correspond au prix attendu (sauf coupons 100%)
-        if (isset($data['amount']) && $data['amount'] > 0) {
-            $expectedAmount = $this->getExpectedAmount($paymentType);
-            $actualAmount = $data['amount'];
+        // La session signée par Stripe doit correspondre exactement à un paiement YarnFlow.
+        $payment = $this->paymentModel->findOne(['stripe_session_id' => $sessionId]);
+        if (!$payment) {
+            error_log("[checkout.completed] SECURITY BLOCK: aucun paiement YarnFlow pour session={$sessionId}");
+            return;
+        }
 
-            if ($expectedAmount !== null && abs($expectedAmount - $actualAmount) > 0.01) {
-                error_log("[checkout.completed] SECURITY BLOCK: paymentType={$paymentType} expected={$expectedAmount} actual={$actualAmount} session=" . ($data['session_id'] ?? 'N/A'));
+        if ((int)$payment['user_id'] !== $userId || (string)$payment['payment_type'] !== $paymentType) {
+            error_log("[checkout.completed] SECURITY BLOCK: metadata incohérentes session={$sessionId} payment_user={$payment['user_id']} metadata_user={$userId} payment_type={$payment['payment_type']} metadata_type={$paymentType}");
+            return;
+        }
+
+        // Idempotence : ne pas traiter deux fois la même session.
+        if ($payment['status'] === PAYMENT_COMPLETED) {
+            error_log("[checkout.completed] Session {$sessionId} déjà traitée — ignorée");
+            return;
+        }
+        if ($payment['status'] !== PAYMENT_PENDING) {
+            error_log("[checkout.completed] SECURITY BLOCK: statut local {$payment['status']} inattendu pour session={$sessionId}");
+            return;
+        }
+
+        $subscriptionPriceId = $this->getExpectedSubscriptionPriceId($paymentType);
+        if ($subscriptionPriceId !== null) {
+            $mode = (string)($data['mode'] ?? '');
+            $paymentStatus = (string)($data['payment_status'] ?? '');
+            $actualPriceId = (string)($data['price_id'] ?? '');
+            $singleExpectedLineItem = (int)($data['line_item_count'] ?? 0) === 1
+                && empty($data['line_items_has_more'])
+                && (int)($data['line_item_quantity'] ?? 0) === 1;
+
+            if ($subscriptionPriceId === '') {
+                error_log("[checkout.completed] SECURITY BLOCK: Price ID attendu non configuré pour payment_type={$paymentType}");
+                return;
+            }
+            if ($mode !== 'subscription') {
+                error_log("[checkout.completed] SECURITY BLOCK: mode={$mode} au lieu de subscription pour session={$sessionId}");
+                return;
+            }
+            if (!in_array($paymentStatus, ['paid', 'no_payment_required'], true)) {
+                error_log("[checkout.completed] SECURITY BLOCK: payment_status={$paymentStatus} non acceptable pour session={$sessionId}");
+                return;
+            }
+            if (!$singleExpectedLineItem) {
+                error_log("[checkout.completed] SECURITY BLOCK: line items inattendus pour session={$sessionId}");
+                return;
+            }
+            if ($actualPriceId === '' || !hash_equals($subscriptionPriceId, $actualPriceId)) {
+                error_log("[checkout.completed] SECURITY BLOCK: mauvais Price ID payment_type={$paymentType} expected={$subscriptionPriceId} actual=" . ($actualPriceId ?: 'N/A') . " session={$sessionId}");
+                return;
+            }
+            $user = $this->userModel->findById($userId);
+            if (!$user) {
+                error_log("[checkout.completed] SECURITY BLOCK: utilisateur {$userId} introuvable pour session={$sessionId}");
+                return;
+            }
+            $expectedCustomerId = (string)($user['stripe_customer_id'] ?? '');
+            $actualCustomerId = (string)($data['customer_id'] ?? '');
+            if ($expectedCustomerId === '' || $actualCustomerId === '' || !hash_equals($expectedCustomerId, $actualCustomerId)) {
+                error_log("[checkout.completed] SECURITY BLOCK: Stripe Customer incohérent pour user={$userId} session={$sessionId}");
+                return;
+            }
+            if (empty($data['subscription_id'])) {
+                error_log("[checkout.completed] SECURITY BLOCK: subscription_id manquant pour session={$sessionId}");
+                return;
+            }
+        } elseif (isset($data['amount']) && $data['amount'] > 0) {
+            // Conserver le contrôle historique pour les achats hors abonnements PLUS/PRO.
+            $expectedAmount = $this->getExpectedAmount($paymentType);
+            if ($expectedAmount !== null && abs($expectedAmount - (float)$data['amount']) > 0.01) {
+                error_log("[checkout.completed] SECURITY BLOCK: paymentType={$paymentType} expected={$expectedAmount} actual={$data['amount']} session={$sessionId}");
                 return;
             }
         }
 
-        // Idempotence : ne pas traiter deux fois la même session
-        $payment = $this->paymentModel->findOne(['stripe_session_id' => $data['session_id'] ?? '']);
-        if ($payment && $payment['status'] === PAYMENT_COMPLETED) {
-            error_log("[checkout.completed] Session {$data['session_id']} déjà traitée — ignorée");
-            return;
+        // Le schéma ne prévoit pas de prix catalogue séparé : amount devient le total
+        // final Stripe après remise, uniquement une fois les validations terminées.
+        $paymentUpdate = [
+            'status' => PAYMENT_COMPLETED,
+            'updated_at' => date('Y-m-d H:i:s')
+        ];
+        if (isset($data['amount']) && is_numeric($data['amount'])) {
+            $paymentUpdate['amount'] = round((float)$data['amount'], 2);
         }
-
-        if ($payment) {
-            $this->paymentModel->updateStatus($payment['id'], PAYMENT_COMPLETED);
+        if (!empty($data['currency'])) {
+            $paymentUpdate['currency'] = strtoupper((string)$data['currency']);
+        }
+        if (!$this->paymentModel->update((int)$payment['id'], $paymentUpdate)) {
+            throw new \RuntimeException("Échec de mise à jour du paiement {$payment['id']} pour session={$sessionId}");
         }
 
         // [AI:Claude] Sauvegarder stripe_customer_id et stripe_subscription_id — toujours
@@ -785,6 +855,22 @@ class PaymentController
             PAYMENT_CREDITS_PACK_50 => 4.99,
             PAYMENT_CREDITS_PACK_150 => 9.99,
             default => null // Patron personnalisé, pas de montant fixe
+        };
+    }
+
+    /**
+     * Price ID Stripe attendu pour les abonnements standards.
+     * Une variable absente renvoie volontairement une chaîne vide : la validation
+     * du webhook échoue alors de manière fermée au lieu d'activer le mauvais plan.
+     */
+    private function getExpectedSubscriptionPriceId(string $paymentType): ?string
+    {
+        return match($paymentType) {
+            PAYMENT_SUBSCRIPTION_PLUS => $_ENV['STRIPE_PRICE_ID_PLUS_MONTHLY'] ?? '',
+            PAYMENT_SUBSCRIPTION_PLUS_ANNUAL => $_ENV['STRIPE_PRICE_ID_PLUS_ANNUAL'] ?? '',
+            PAYMENT_SUBSCRIPTION_PRO => $_ENV['STRIPE_PRICE_ID_PRO_MONTHLY'] ?? '',
+            PAYMENT_SUBSCRIPTION_PRO_ANNUAL => $_ENV['STRIPE_PRICE_ID_PRO_ANNUAL'] ?? '',
+            default => null
         };
     }
 

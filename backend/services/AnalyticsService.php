@@ -9,7 +9,7 @@
  * reste de l'analyse produit, sans dépendre de l'interface GA4.
  *
  * Ne doit jamais faire échouer l'action appelante : toute erreur est avalée et
- * loguée, jamais remontée (même logique que grantStreakBonusIfEligible dans
+ * loguée, jamais remontée (même logique que markStreakCelebrationIfEligible dans
  * ProjectController).
  */
 

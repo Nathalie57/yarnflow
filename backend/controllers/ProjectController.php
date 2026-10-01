@@ -20,8 +20,6 @@ use App\Models\Project;
 use App\Models\User;
 use App\Middleware\AuthMiddleware;
 use App\Services\PatternStorageService;
-use App\Services\StripeService;
-use App\Services\EmailService;
 use App\Services\AnalyticsService;
 
 class ProjectController
@@ -31,11 +29,10 @@ class ProjectController
     private AuthMiddleware $authMiddleware;
     private PatternStorageService $patternStorage;
 
-    // [AI:Claude] Gamification — récompense pour une série de 7 jours,
-    // octroyée une seule fois par compte (voir streak7_bonus_granted_at).
-    // Un code promo (pas des crédits offerts) pour pousser vers la conversion
-    // plutôt que retenir gratuitement des utilisatrices déjà engagées.
-    private const STREAK_BONUS_THRESHOLD = 7;
+    // Gamification : célébration du palier de 7 jours, une seule fois par compte.
+    // streak7_bonus_granted_at conserve son nom historique mais mémorise désormais
+    // uniquement le déblocage de cette célébration, sans récompense commerciale.
+    private const STREAK_CELEBRATION_THRESHOLD = 7;
 
     public function __construct()
     {
@@ -46,18 +43,16 @@ class ProjectController
     }
 
     /**
-     * [AI:Claude] Récompense pour une série de 7 jours consécutifs : un code
-     * promo Stripe à usage unique, envoyé par email. Une seule fois par
-     * compte. Appelé après chaque ajout de rang.
+     * Débloque une seule fois la célébration d'une série de 7 jours consécutifs.
+     * Appelé après chaque ajout de rang.
      *
-     * Volontairement isolée derrière son propre try/catch : un souci Stripe/email
-     * ne doit jamais faire échouer l'ajout de rang lui-même (déjà en base à ce
-     * stade) — au pire on manque une récompense, on ne casse jamais le compteur.
+     * Volontairement isolée derrière son propre try/catch : la célébration ne doit
+     * jamais faire échouer l'ajout de rang lui-même, déjà enregistré en base.
      *
      * @param int $userId ID de l'utilisateur
-     * @return string|null Le code promo si c'est le cas, sinon null
+     * @return bool True uniquement lorsque le palier vient d'être débloqué
      */
-    private function grantStreakBonusIfEligible(int $userId): ?string
+    private function markStreakCelebrationIfEligible(int $userId): bool
     {
         try {
             $db = \App\Config\Database::getInstance()->getConnection();
@@ -69,12 +64,12 @@ class ProjectController
             );
             $alreadyGranted->execute([':user_id' => $userId]);
             if ($alreadyGranted->fetch()) {
-                return null;
+                return false;
             }
 
             $streak = $this->projectModel->getStreakStatus($userId);
-            if ($streak['current_streak'] < self::STREAK_BONUS_THRESHOLD) {
-                return null;
+            if ($streak['current_streak'] < self::STREAK_CELEBRATION_THRESHOLD) {
+                return false;
             }
 
             $stmt = $db->prepare(
@@ -83,35 +78,16 @@ class ProjectController
             );
             $stmt->execute([':user_id' => $userId]);
 
-            // [AI:Claude] rowCount() = 0 signifie que le bonus a déjà été octroyé
-            // avant (protège contre un double octroi en cas d'appels concurrents)
+            // rowCount() = 0 signifie que la célébration a déjà été débloquée
+            // par un appel concurrent.
             if ($stmt->rowCount() === 0) {
-                return null;
+                return false;
             }
 
-            $promoCode = (new StripeService())->createOneTimePromoCode($userId);
-            if ($promoCode === null) {
-                // [AI:Claude] Coupon Stripe pas configuré ou erreur API : on annule
-                // le flag pour retenter au prochain rang plutôt que de perdre la récompense
-                $db->prepare("UPDATE users SET streak7_bonus_granted_at = NULL WHERE id = :user_id")
-                   ->execute([':user_id' => $userId]);
-                return null;
-            }
-
-            $user = $this->userModel->findById($userId);
-            if ($user) {
-                (new EmailService($db))->sendStreakRewardEmail(
-                    $user['email'],
-                    $user['first_name'] ?? 'Utilisatrice',
-                    $promoCode,
-                    $userId
-                );
-            }
-
-            return $promoCode;
+            return true;
         } catch (\Throwable $e) {
-            error_log('[grantStreakBonusIfEligible] Erreur non bloquante : ' . $e->getMessage());
-            return null;
+            error_log('[markStreakCelebrationIfEligible] Erreur non bloquante : ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -640,7 +616,7 @@ class ProjectController
             // [AI:Claude] Récupérer le projet mis à jour (trigger auto-update)
             $project = $this->projectModel->getProjectById($id);
 
-            $streakPromoCode = $this->grantStreakBonusIfEligible($userId);
+            $streakCelebrationUnlocked = $this->markStreakCelebrationIfEligible($userId);
 
             $this->sendResponse(201, [
                 'success' => true,
@@ -648,7 +624,7 @@ class ProjectController
                 'row_id' => $rowId,
                 'activation_reached' => $activationReached,
                 'project' => $project,
-                'streak_promo_code' => $streakPromoCode
+                'streak_celebration_unlocked' => $streakCelebrationUnlocked
             ]);
         } catch (\InvalidArgumentException $e) {
             $this->sendResponse(400, [

@@ -2,7 +2,7 @@
 <?php
 /**
  * @file send-engagement-emails.php
- * @brief Script cron pour envoyer les emails de réengagement (J+3, J+7, J+21, Projet sans compteur)
+ * @brief Script cron pour envoyer les emails d'engagement contextualisés (J+21 et suivi des projets)
  * @author YarnFlow Team + AI:Claude
  * @created 2026-01-04
  * @modified 2026-01-14 - Suppression rappel J+1 (pas pertinent pour projets tricot)
@@ -33,14 +33,10 @@ try {
     $pushService = new PushService();
 
     $stats = [
-        'day3' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
-        'day7' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'day21' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'project_start'    => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
         'project_inactive' => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
-        'ai_exhausted'     => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
-        'day30'            => ['sent' => 0, 'skipped' => 0, 'errors' => 0],
-        'reactivation'     => ['sent' => 0, 'skipped' => 0, 'errors' => 0]
+        'ai_exhausted'     => ['sent' => 0, 'skipped' => 0, 'errors' => 0]
     ];
 
     // [AI:Claude] Un seul email d'engagement par utilisateur et par jour, tous types confondus
@@ -48,158 +44,18 @@ try {
     $usersEmailedToday = [];
 
     // =========================================
-    // EMAIL J+3 : Utilisateurs inscrits il y a 3 jours
+    // EMAIL J+21 : Demande de feedback aux utilisatrices ayant réellement essayé l'application
     // =========================================
-    echo "\n[J+3] Recherche des utilisateurs inscrits il y a 3 jours...\n";
-
-    $stmt = $db->prepare("
-        SELECT u.id, u.email, u.first_name, u.created_at
-        FROM users u
-        WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 3 DAY)
-        -- [AI:Claude] 2026-08-24 — u.last_login_at ne se met a jour qu'aux vraies
-        -- authentifications (login/register/oauth), pas a chaque ouverture de
-        -- l'app une fois le token JWT en poche : elle reste figee a la premiere
-        -- connexion pour qui a un token longue duree, meme tres active depuis.
-        -- user_sessions.last_activity_at est la vraie mesure d'activite.
-        AND NOT EXISTS (
-            SELECT 1 FROM user_sessions s
-            WHERE s.user_id = u.id AND s.last_activity_at >= DATE_SUB(NOW(), INTERVAL 2 DAY)
-        )
-        AND NOT EXISTS (
-            SELECT 1 FROM emails_sent_log
-            WHERE user_id = u.id AND email_type = 'onboarding_day3' AND status = 'sent'
-        )
-        AND NOT EXISTS (
-            SELECT 1 FROM email_notifications_sent
-            WHERE user_id = u.id AND notification_type LIKE '%onboarding%'
-        )
-    ");
-    $stmt->execute();
-    $usersDay3 = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    echo "[J+3] Trouvé " . count($usersDay3) . " utilisateur(s) éligible(s)\n";
-
-    foreach ($usersDay3 as $user) {
-        if (isset($usersEmailedToday[(int)$user['id']])) {
-            echo "[J+3] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
-            $stats['day3']['skipped']++;
-            continue;
-        }
-
-        echo "[J+3] Envoi à {$user['email']} (ID: {$user['id']})... ";
-
-        try {
-            $success = $emailService->sendOnboardingDay3Email(
-                $user['email'],
-                $user['first_name'] ?? 'Utilisateur',
-                (int)$user['id']
-            );
-
-            if ($success) {
-                echo "✓ Envoyé\n";
-                $stats['day3']['sent']++;
-                $usersEmailedToday[(int)$user['id']] = true;
-            } else {
-                echo "✗ Échec\n";
-                $stats['day3']['errors']++;
-            }
-        } catch (Exception $e) {
-            echo "✗ Erreur: {$e->getMessage()}\n";
-            $stats['day3']['errors']++;
-        }
-
-        // Pause de 2 secondes entre chaque email (rate limiting SMTP)
-        sleep(2);
-    }
-
-    // =========================================
-    // EMAIL J+7 : Utilisateurs inscrits il y a 7 jours ET inactifs
-    // =========================================
-    echo "\n[J+7] Recherche des utilisateurs inscrits il y a 7 jours (inactifs)...\n";
-
-    $stmt = $db->prepare("
-        SELECT u.id, u.email, u.first_name, u.created_at, u.last_login_at
-        FROM users u
-        WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-        AND NOT EXISTS (
-            SELECT 1 FROM user_sessions s
-            WHERE s.user_id = u.id AND s.last_activity_at >= DATE_SUB(NOW(), INTERVAL 3 DAY)
-        )
-        AND NOT EXISTS (
-            SELECT 1 FROM emails_sent_log
-            WHERE user_id = u.id AND email_type = 'reengagement_day7' AND status = 'sent'
-        )
-        AND NOT EXISTS (
-            SELECT 1 FROM email_notifications_sent
-            WHERE user_id = u.id AND notification_type LIKE '%reengagement%'
-        )
-    ");
-    $stmt->execute();
-    $usersDay7 = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    echo "[J+7] Trouvé " . count($usersDay7) . " utilisateur(s) éligible(s)\n";
-
-    foreach ($usersDay7 as $user) {
-        if (isset($usersEmailedToday[(int)$user['id']])) {
-            echo "[J+7] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
-            $stats['day7']['skipped']++;
-            continue;
-        }
-
-        echo "[J+7] Envoi à {$user['email']} (ID: {$user['id']})... ";
-
-        try {
-            // Récupérer un projet en cours si disponible
-            $projectStmt = $db->prepare("
-                SELECT name, current_row, total_rows
-                FROM projects
-                WHERE user_id = ? AND status = 'active' AND is_demo = 0
-                ORDER BY updated_at DESC
-                LIMIT 1
-            ");
-            $projectStmt->execute([$user['id']]);
-            $project = $projectStmt->fetch(PDO::FETCH_ASSOC);
-
-            $projectData = [];
-            if ($project && $project['total_rows'] > 0) {
-                $projectData = [
-                    'name' => $project['name'],
-                    'progress' => round(($project['current_row'] / $project['total_rows']) * 100)
-                ];
-            }
-
-            $success = $emailService->sendReengagementDay7Email(
-                $user['email'],
-                $user['first_name'] ?? 'Utilisateur',
-                $projectData,
-                (int)$user['id']
-            );
-
-            if ($success) {
-                echo "✓ Envoyé\n";
-                $stats['day7']['sent']++;
-                $usersEmailedToday[(int)$user['id']] = true;
-            } else {
-                echo "✗ Échec\n";
-                $stats['day7']['errors']++;
-            }
-        } catch (Exception $e) {
-            echo "✗ Erreur: {$e->getMessage()}\n";
-            $stats['day7']['errors']++;
-        }
-
-        sleep(2);
-    }
-
-    // =========================================
-    // EMAIL J+21 : Utilisateurs inscrits il y a 21 jours ET très inactifs
-    // =========================================
-    echo "\n[J+21] Recherche des utilisateurs inscrits il y a 21 jours (très inactifs)...\n";
+    echo "\n[J+21] Recherche des utilisatrices inscrites il y a 21 jours, ayant une session et très inactives...\n";
 
     $stmt = $db->prepare("
         SELECT u.id, u.email, u.first_name, u.created_at, u.last_login_at
         FROM users u
         WHERE DATE(u.created_at) = DATE_SUB(CURDATE(), INTERVAL 21 DAY)
+        AND EXISTS (
+            SELECT 1 FROM user_sessions s
+            WHERE s.user_id = u.id
+        )
         AND NOT EXISTS (
             SELECT 1 FROM user_sessions s
             WHERE s.user_id = u.id AND s.last_activity_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
@@ -308,6 +164,7 @@ try {
                 $row['email'],
                 $row['first_name'] ?? 'Utilisateur',
                 $row['project_name'],
+                (int)$row['project_id'],
                 $userId
             );
 
@@ -346,6 +203,13 @@ try {
         INNER JOIN projects p ON p.user_id = u.id
         WHERE p.status IN ('in_progress', 'active')
         AND p.is_demo = 0
+        -- Même définition métier que PROJECT_START, inversée : le projet doit
+        -- avoir une progression réelle dans le compteur global, une section ou l'historique.
+        AND (
+            COALESCE(p.current_row, 0) > 0
+            OR COALESCE((SELECT SUM(current_row) FROM project_sections ps WHERE ps.project_id = p.id), 0) > 0
+            OR EXISTS (SELECT 1 FROM project_rows pr WHERE pr.project_id = p.id)
+        )
         AND p.updated_at BETWEEN DATE_SUB(NOW(), INTERVAL 14 DAY) AND DATE_SUB(NOW(), INTERVAL 7 DAY)
         AND u.email_verified = 1
         AND NOT EXISTS (
@@ -423,12 +287,6 @@ try {
     echo "[AI_EPUISE] Trouvé " . count($exhaustedUsers) . " utilisatrice(s) éligible(s)\n";
 
     foreach ($exhaustedUsers as $user) {
-        if (isset($usersEmailedToday[(int)$user['id']])) {
-            echo "[AI_EPUISE] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
-            $stats['ai_exhausted']['skipped']++;
-            continue;
-        }
-
         echo "[AI_EPUISE] Envoi à {$user['email']} ({$user['used']}/{$user['quota']})... ";
         try {
             $ok = $emailService->sendAiQuotaExhaustedEmail(
@@ -448,125 +306,12 @@ try {
     }
 
     // =========================================
-    // J+30 FREE ACTIVE : inscrite il y a 25-35 jours, active, toujours FREE
-    // =========================================
-    echo "\n[J+30] Recherche des utilisatrices FREE actives depuis 30 jours...\n";
-
-    $stmt = $db->prepare("
-        SELECT
-            u.id, u.email, u.first_name,
-            COUNT(DISTINCT p.id) AS project_count,
-            COALESCE(SUM(p.current_row), 0) AS total_rows
-        FROM users u
-        LEFT JOIN projects p ON p.user_id = u.id AND p.status IN ('in_progress', 'active', 'finished') AND p.is_demo = 0
-        WHERE u.created_at BETWEEN DATE_SUB(NOW(), INTERVAL 35 DAY) AND DATE_SUB(NOW(), INTERVAL 25 DAY)
-        AND EXISTS (
-            SELECT 1 FROM user_sessions s
-            WHERE s.user_id = u.id AND s.last_activity_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-        )
-        AND (u.subscription_type = 'free' OR u.subscription_type IS NULL)
-        AND u.email_verified = 1
-        AND NOT EXISTS (
-            SELECT 1 FROM emails_sent_log
-            WHERE user_id = u.id
-            AND email_type = 'active_free_day30'
-            AND status = 'sent'
-        )
-        GROUP BY u.id
-        HAVING project_count >= 1
-    ");
-    $stmt->execute();
-    $day30Users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    echo "[J+30] Trouvé " . count($day30Users) . " utilisatrice(s) éligible(s)\n";
-
-    foreach ($day30Users as $user) {
-        if (isset($usersEmailedToday[(int)$user['id']])) {
-            echo "[J+30] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
-            $stats['day30']['skipped']++;
-            continue;
-        }
-
-        echo "[J+30] Envoi à {$user['email']} ({$user['project_count']} projets, {$user['total_rows']} rangs)... ";
-        try {
-            $ok = $emailService->sendActiveFreeDay30Email(
-                $user['email'],
-                $user['first_name'] ?? 'Utilisatrice',
-                (int)$user['project_count'],
-                (int)$user['total_rows'],
-                (int)$user['id']
-            );
-            if ($ok) {
-                echo "✓\n"; $stats['day30']['sent']++; $usersEmailedToday[(int)$user['id']] = true;
-                $pushService->sendToUser((int)$user['id'], 'Un mois avec YarnFlow', 'Découvre ce que PLUS peut t\'apporter maintenant.', '/subscription');
-            } else { echo "✗\n"; $stats['day30']['errors']++; }
-        } catch (Exception $e) {
-            echo "✗ {$e->getMessage()}\n"; $stats['day30']['errors']++;
-        }
-        sleep(2);
-    }
-
-    // =========================================
-    // RÉACTIVATION J+45 : dernière connexion entre 45 et 60 jours
-    // =========================================
-    echo "\n[REACTIV] Recherche des utilisatrices absentes depuis 45-60 jours...\n";
-
-    $stmt = $db->prepare("
-        SELECT u.id, u.email, u.first_name,
-            DATEDIFF(NOW(), last_seen.max_activity) AS days_since
-        FROM users u
-        JOIN (
-            SELECT user_id, MAX(last_activity_at) AS max_activity
-            FROM user_sessions
-            GROUP BY user_id
-        ) last_seen ON last_seen.user_id = u.id
-        WHERE last_seen.max_activity BETWEEN DATE_SUB(NOW(), INTERVAL 60 DAY) AND DATE_SUB(NOW(), INTERVAL 45 DAY)
-        AND NOT EXISTS (
-            SELECT 1 FROM emails_sent_log
-            WHERE user_id = u.id
-            AND email_type = 'reactivation'
-            AND status = 'sent'
-        )
-    ");
-    $stmt->execute();
-    $reactivUsers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    echo "[REACTIV] Trouvé " . count($reactivUsers) . " utilisatrice(s) éligible(s)\n";
-
-    foreach ($reactivUsers as $user) {
-        if (isset($usersEmailedToday[(int)$user['id']])) {
-            echo "[REACTIV] {$user['email']} déjà emailée aujourd'hui, ignoré\n";
-            $stats['reactivation']['skipped']++;
-            continue;
-        }
-
-        echo "[REACTIV] Envoi à {$user['email']} ({$user['days_since']}j d'absence)... ";
-        try {
-            $ok = $emailService->sendReactivationEmail(
-                $user['email'],
-                $user['first_name'] ?? 'Utilisatrice',
-                (int)$user['days_since'],
-                (int)$user['id']
-            );
-            if ($ok) { echo "✓\n"; $stats['reactivation']['sent']++; $usersEmailedToday[(int)$user['id']] = true; }
-            else      { echo "✗\n"; $stats['reactivation']['errors']++; }
-        } catch (Exception $e) {
-            echo "✗ {$e->getMessage()}\n"; $stats['reactivation']['errors']++;
-        }
-        sleep(2);
-    }
-
-    // =========================================
     // RÉSUMÉ
     // =========================================
     echo "\n" . str_repeat("=", 60) . "\n";
     echo "RÉSUMÉ DES ENVOIS\n";
     echo str_repeat("=", 60) . "\n";
-    echo sprintf("J+3      : %d envoyés, %d erreurs (onboarding)\n", $stats['day3']['sent'], $stats['day3']['errors']);
-    echo sprintf("J+7      : %d envoyés, %d erreurs (réengagement inactif)\n", $stats['day7']['sent'], $stats['day7']['errors']);
     echo sprintf("J+21     : %d envoyés, %d erreurs (besoin d'aide)\n", $stats['day21']['sent'], $stats['day21']['errors']);
-    echo sprintf("J+30     : %d envoyés, %d erreurs (FREE active 30j)\n", $stats['day30']['sent'], $stats['day30']['errors']);
-    echo sprintf("J+45     : %d envoyés, %d erreurs (réactivation)\n", $stats['reactivation']['sent'], $stats['reactivation']['errors']);
     echo sprintf("PROJ_START  : %d envoyés, %d erreurs (projet sans compteur)\n", $stats['project_start']['sent'], $stats['project_start']['errors']);
     echo sprintf("PROJ_INACT  : %d envoyés, %d erreurs (projet inactif 7-14j)\n", $stats['project_inactive']['sent'], $stats['project_inactive']['errors']);
     echo sprintf("AI_EPUISE   : %d envoyés, %d erreurs (quota IA épuisé)\n", $stats['ai_exhausted']['sent'], $stats['ai_exhausted']['errors']);

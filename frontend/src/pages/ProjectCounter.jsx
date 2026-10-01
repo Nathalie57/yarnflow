@@ -218,6 +218,8 @@ const ProjectCounter = () => {
   // confirme que activation_reached vient d'être enregistré : jamais sur la démo, une
   // seule fois par utilisatrice (voir AnalyticsService::logActivationIfFirst).
   const [showActivationCelebration, setShowActivationCelebration] = useState(false)
+  // Palier de série de 7 jours, débloqué une seule fois côté serveur.
+  const [showStreakCelebration, setShowStreakCelebration] = useState(false)
   // [AI:Claude] Popup non-bloquante (fermable, pas d'auto-fermeture forcée puisqu'il y a
   // une vraie décision à prendre dessus) au moment précis où les 3 étapes se terminent —
   // plus visible qu'un bandeau qu'on peut rater en scrollant. `celebrationShown` (persisté
@@ -2357,10 +2359,8 @@ const ProjectCounter = () => {
       // suite, plutôt que d'attendre le prochain retour de visibilité de l'onglet
       window.dispatchEvent(new Event('yf:row-added'))
 
-      // [AI:Claude] Gamification — série de 7 jours récompensée par un code
-      // promo (envoyé aussi par email), voir ProjectController::grantStreakBonusIfEligible
-      if (rowResponse.data.streak_promo_code) {
-        showAlert({ message: t('alerts.streakReward', { code: rowResponse.data.streak_promo_code }), type: 'success' })
+      if (rowResponse.data.streak_celebration_unlocked === true) {
+        setShowStreakCelebration(true)
       }
 
       // [AI:Claude] FIX v0.16.2: Mettre à jour sections/project AVANT setCurrentRow
@@ -3710,6 +3710,29 @@ const ProjectCounter = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-3 pb-40 sm:pb-16">
+      {showStreakCelebration && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-4"
+          onClick={() => setShowStreakCelebration(false)}
+        >
+          <div
+            className="bg-white rounded-card max-w-sm w-full p-8 shadow-2xl text-center"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <FlowMascot pose="heureux" size={130} className="mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-flow-ink mb-2">{t('ui.streakCelebrationTitle')}</h2>
+            <p className="text-gray-500 text-sm leading-relaxed">{t('ui.streakCelebrationBody')}</p>
+            <button
+              type="button"
+              onClick={() => setShowStreakCelebration(false)}
+              className="w-full mt-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-control font-semibold transition"
+            >
+              {t('ui.continue')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : le contenu en bas de page
           (description de section, liste "Sections"...) se retrouvait coupé par le bouton
           "Notes" (fixed) et la barre de navigation (fixed), faute de marge basse reservee
