@@ -117,9 +117,13 @@ class Project extends BaseModel
                       END % 60), 'sec'
                   ) as time_formatted,
                   CASE
+                      WHEN p.status = 'completed' THEN 100
                       WHEN COUNT(s.id) > 0 THEN
                           CASE
-                              WHEN SUM(s.total_rows) > 0 THEN ROUND((SUM(s.current_row) / SUM(s.total_rows)) * 100, 1)
+                              WHEN SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) THEN 1 ELSE 0 END) = 0
+                               AND COUNT(DISTINCT CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' THEN COALESCE(s.counter_unit, 'rows') END) <= 1
+                               AND SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 THEN s.total_rows ELSE 0 END) > 0
+                              THEN ROUND((SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 THEN s.current_row ELSE 0 END) / SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 THEN s.total_rows ELSE 0 END)) * 100, 1)
                               ELSE NULL
                           END
                       WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
@@ -133,6 +137,17 @@ class Project extends BaseModel
                       WHEN COUNT(s.id) > 0 THEN SUM(s.total_rows)
                       ELSE p.total_rows
                   END as total_rows,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 THEN s.current_row ELSE 0 END), 0) as quantifiable_current_rows,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 THEN s.total_rows ELSE 0 END), 0) as quantifiable_total_rows,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) THEN s.current_row ELSE 0 END), 0) as unquantifiable_current_rows,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND COALESCE(s.counter_unit, 'rows') = 'rows' THEN s.current_row ELSE 0 END), 0) as quantifiable_current_rows_unit,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND COALESCE(s.counter_unit, 'rows') = 'rows' THEN s.total_rows ELSE 0 END), 0) as quantifiable_total_rows_unit,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND s.counter_unit = 'cm' THEN s.current_row ELSE 0 END), 0) as quantifiable_current_cm,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND s.counter_unit = 'cm' THEN s.total_rows ELSE 0 END), 0) as quantifiable_total_cm,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) AND COALESCE(s.counter_unit, 'rows') = 'rows' THEN s.current_row ELSE 0 END), 0) as unquantifiable_current_rows_unit,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) AND s.counter_unit = 'cm' THEN s.current_row ELSE 0 END), 0) as unquantifiable_current_cm,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) THEN 1 ELSE 0 END), 0) as unquantifiable_sections_count,
+                  COALESCE(SUM(CASE WHEN s.is_completed = 1 THEN 1 ELSE 0 END), 0) as completed_sections_count,
                   (SELECT name FROM project_sections WHERE id = p.current_section_id) as current_section_name,
                   (SELECT current_row FROM project_sections WHERE id = p.current_section_id) as current_section_row,
                   (SELECT total_rows FROM project_sections WHERE id = p.current_section_id) as current_section_total_rows,
@@ -193,9 +208,13 @@ class Project extends BaseModel
                       END % 60), 'sec'
                   ) as time_formatted,
                   CASE
+                      WHEN p.status = 'completed' THEN 100
                       WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
                           (SELECT CASE
-                              WHEN SUM(total_rows) > 0 THEN ROUND((SUM(current_row) / SUM(total_rows)) * 100, 1)
+                              WHEN SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) THEN 1 ELSE 0 END) = 0
+                               AND COUNT(DISTINCT CASE WHEN COALESCE(progression_type, 'simple') <> 'action' THEN COALESCE(counter_unit, 'rows') END) <= 1
+                               AND SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN total_rows ELSE 0 END) > 0
+                              THEN ROUND((SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN current_row ELSE 0 END) / SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN total_rows ELSE 0 END)) * 100, 1)
                               ELSE NULL
                           END FROM project_sections WHERE project_id = p.id)
                       WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
@@ -211,6 +230,17 @@ class Project extends BaseModel
                           (SELECT SUM(total_rows) FROM project_sections WHERE project_id = p.id)
                       ELSE p.total_rows
                   END as total_rows,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_rows,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_rows,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rows,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_rows_unit,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_rows_unit,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_cm,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_cm,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rows_unit,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_cm,
+                  (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id AND COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0)) as unquantifiable_sections_count,
+                  (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id AND is_completed = 1) as completed_sections_count,
                   (SELECT name FROM project_sections WHERE id = p.current_section_id) as current_section_name,
                   (SELECT current_row FROM project_sections WHERE id = p.current_section_id) as current_section_row,
                   (SELECT total_rows FROM project_sections WHERE id = p.current_section_id) as current_section_total_rows,
@@ -1298,8 +1328,8 @@ class Project extends BaseModel
         }
 
         $query = "INSERT INTO project_secondary_counters
-                  (project_id, section_id, label, target, count, sequence, display_order)
-                  VALUES (:project_id, :section_id, :label, :target, :count, :sequence, :display_order)";
+                  (project_id, section_id, label, target, count, sequence, tracking_role, cycle_length, unit, display_order)
+                  VALUES (:project_id, :section_id, :label, :target, :count, :sequence, :tracking_role, :cycle_length, :unit, :display_order)";
 
         $stmt = $this->db->prepare($query);
         $stmt->bindValue(':project_id', $projectId, PDO::PARAM_INT);
@@ -1312,6 +1342,9 @@ class Project extends BaseModel
         $stmt->bindValue(':target', $data['target'] ?? null, isset($data['target']) ? PDO::PARAM_INT : PDO::PARAM_NULL);
         $stmt->bindValue(':count', (int)($data['count'] ?? 0), PDO::PARAM_INT);
         $stmt->bindValue(':sequence', isset($data['sequence']) ? json_encode($data['sequence']) : null);
+        $stmt->bindValue(':tracking_role', $data['tracking_role'] ?? 'informational');
+        $stmt->bindValue(':cycle_length', $data['cycle_length'] ?? null, isset($data['cycle_length']) ? PDO::PARAM_INT : PDO::PARAM_NULL);
+        $stmt->bindValue(':unit', $data['unit'] ?? 'count');
         $stmt->bindValue(':display_order', $maxOrder + 1, PDO::PARAM_INT);
 
         if (!$stmt->execute()) {
@@ -1350,6 +1383,8 @@ class Project extends BaseModel
      */
     public function updateSecondaryCounter(int $counterId, array $data): bool
     {
+        // Le rôle de suivi est fixé par l'extraction. Les compteurs créés ou édités
+        // manuellement restent informatifs et ne peuvent pas acquérir ce rôle via l'API.
         $allowedFields = ['label', 'target', 'count', 'display_order'];
         $fields = [];
         $params = [':id' => $counterId];

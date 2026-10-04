@@ -30,6 +30,9 @@ import FlowMascot from '../components/FlowMascot'
 
 import { apiErrorMessage } from '../utils/apiError'
 import { trackProductEvent } from '../utils/productEvents'
+// Parcours exemple temporairement masqué, en attendant un patron démo exploitable par Flow.
+const DEMO_ONBOARDING_ENABLED = false
+
 const MyProjects = () => {
   const { t } = useTranslation('projects')
   const { user, updateUser } = useAuth()
@@ -1189,16 +1192,18 @@ const MyProjects = () => {
                 <div className="mt-8">
                   <p className="text-center text-sm text-gray-500 mb-3">{t('myProjects.onboardingOtherWaysTitle')}</p>
                   <div className="space-y-2">
-                    <button
-                      onClick={() => { trackOnboardingChoice('demo'); handleCreateDemoProject() }}
-                      disabled={isCreatingDemo}
-                      className="w-full px-4 py-3 bg-white hover:bg-gray-50 border border-gray-200 rounded-card text-left transition disabled:opacity-60"
-                    >
-                      <p className="text-sm font-semibold text-flow-ink">
-                        {isCreatingDemo ? t('myProjects.exploreDemoCreating') : t('myProjects.exploreDemo')}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">{t('myProjects.onboardingDemoDesc')}</p>
-                    </button>
+                    {DEMO_ONBOARDING_ENABLED && (
+                      <button
+                        onClick={() => { trackOnboardingChoice('demo'); handleCreateDemoProject() }}
+                        disabled={isCreatingDemo}
+                        className="w-full px-4 py-3 bg-white hover:bg-gray-50 border border-gray-200 rounded-card text-left transition disabled:opacity-60"
+                      >
+                        <p className="text-sm font-semibold text-flow-ink">
+                          {isCreatingDemo ? t('myProjects.exploreDemoCreating') : t('myProjects.exploreDemo')}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('myProjects.onboardingDemoDesc')}</p>
+                      </button>
+                    )}
                     <button
                       onClick={() => { trackOnboardingChoice('manual'); if (canCreateProject) { setCreateModalInitialMode('manual'); setShowCreateModal(true) } }}
                       className="w-full px-4 py-3 bg-white hover:bg-gray-50 border border-gray-200 rounded-card text-left transition"
@@ -1390,19 +1395,16 @@ const MyProjects = () => {
                         </div>
                       </div>
                     ) : project.sections_count > 0 ? (
-                      // Projet avec sections mais sans total complet : afficher texte simple
+                      // Projet avec une partie non quantifiable : résumé descriptif, jamais un faux pourcentage global.
                       <div className="mb-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">
-                            {project.counter_unit === 'cm' ? t('myProjects.totalProgressCm') : t('myProjects.totalRows')}
-                          </span>
-                          <span className="text-xs font-bold text-gray-700">
-                            {project.counter_unit === 'cm'
-                              ? t('ui.cmValue', { n: Number(project.current_row || 0).toFixed(1) })
-                              : t('ui.rowsValue', { count: Math.floor(Number(project.current_row || 0)) })
-                            }
-                          </span>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-600">{t('ui.projectSteps')}</span>
+                          <span className="text-xs font-bold text-gray-700">{t('ui.sectionsCompleted', { done: Number(project.completed_sections_count || 0), total: Number(project.sections_count || 0) })}</span>
                         </div>
+                        {Number(project.quantifiable_total_rows_unit || 0) > 0 && <p className="text-xs text-gray-500">{t('ui.quantifiableProgressByUnit', { done: Number(project.quantifiable_current_rows_unit || 0), total: Number(project.quantifiable_total_rows_unit || 0), unit: t('ui.unitRows') })}</p>}
+                        {Number(project.quantifiable_total_cm || 0) > 0 && <p className="text-xs text-gray-500">{t('ui.quantifiableProgressByUnit', { done: Number(project.quantifiable_current_cm || 0), total: Number(project.quantifiable_total_cm || 0), unit: t('ui.unitCm') })}</p>}
+                        {Number(project.unquantifiable_current_rows_unit || 0) > 0 && <p className="text-xs text-gray-500">{t('ui.freeProgressByUnit', { count: Number(project.unquantifiable_current_rows_unit || 0), unit: t('ui.unitRows') })}</p>}
+                        {Number(project.unquantifiable_current_cm || 0) > 0 && <p className="text-xs text-gray-500">{t('ui.freeProgressByUnit', { count: Number(project.unquantifiable_current_cm || 0), unit: t('ui.unitCm') })}</p>}
                       </div>
                     ) : (
                       // Projet sans sections et sans total_rows : afficher nombre de rangs/cm

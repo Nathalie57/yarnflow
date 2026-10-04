@@ -44,6 +44,7 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
   "craft_type": "tricot" | "crochet" | "autre",
   "category": "bonnet" | "écharpe" | "pull" | "amigurumi" | "couverture" | "sac" | "vêtements" | "accessoires bébé" | "vêtements bébé" | "jouets/peluches" | "maison/déco" | "autre" | null,
   "description": "résumé du projet en 1-2 phrases (string ou null)",
+  "available_sizes": ["tailles explicitement proposées par le patron, dans leur notation originale"] ou null,
 
   "yarn": [
     {
@@ -71,21 +72,26 @@ Analyse ce patron et extrais les informations suivantes au format JSON STRICT :
   "gauge": {
     "stitches": nombre de mailles sur 10cm (int ou null),
     "rows": nombre de rangs sur 10cm (int ou null),
-    "size_cm": 10
+    "size_cm": 10 ou null,
+    "notes": "formulation exacte de la jauge lorsqu'elle ne peut pas être structurée en mailles/rangs (string ou null)"
   },
 
   "sections": [
     {
       "name": "nom de la section (ex: Corps, Manches, Assemblage)",
       "unit": "rangs" | "cm",
-      "progression_type": "simple" | "composite" — voir RÈGLE PROGRESSION COMPOSITE ci-dessous,
-      "target": nombre total de rangs/tours/cm pour cette section, UNIQUEMENT si progression_type = "simple" (sinon null, voir RÈGLE PROGRESSION COMPOSITE). RÈGLE MÉCANIQUE (sections simples) : repère TOUTES les lignes numérotées de rang/tour de la section ("Round N", "Rnd N", "Rang N", "Tour N" ou équivalent dans la langue du patron) et prends le N le plus élevé — c'est le target, même si du texte non numéroté suit ensuite (rembourrage/stuffing, FO/rabattre, attache d'une pièce, note, référence à une image). Ne JAMAIS mettre null simplement parce qu'une étape finale non numérotée suit le dernier rang/tour : cette étape fait partie de la même section, elle ne change pas le compte. Si la section énonce plusieurs repères chiffrés successifs en prose (ex: "8 cm (26 rgs) puis jersey jusqu'à 46 cm (132 rgs)"), prendre le DERNIER repère de la section, jamais le premier. IMPORTANT — mettre target à null dans EXACTEMENT deux cas, jamais pour une autre raison : (1) progression_type = "composite" (toujours, quelle que soit la taille) ; (2) progression_type = "simple" MAIS la valeur de l'OBJECTIF DE PROGRESSION lui-même (le nombre de rangs/cm à atteindre pour CETTE section) varie réellement selon la taille (format "19-20-21-23 cm" ou "XS-S-M-L" appliqué À CE NOMBRE PRÉCIS) et qu'on ne connaît pas la taille choisie. Ne JAMAIS mettre target à null à cause d'autres nombres multi-tailles présents ailleurs dans la section (mailles montées, augmentations, diminutions, nombre d'épaules rabattues, etc.) si l'objectif de progression lui-même est identique pour toutes les tailles — dans ce cas target DOIT contenir cette valeur commune, le reste de la section peut très bien varier par taille sans que ça affecte target. Exemples : "Monter 106-114-122-130-142 m. Tricoter 5 rgs côtes 2/2" → target = 5 (le montage multi-tailles ne concerne pas l'objectif de progression de cette section) ; "À 58 cm (166 rgs) de hauteur totale, laisser les m. en attente" (une seule valeur, valable pour toutes les tailles) → target = 166 (tel qu'écrit, target_measured_from = "piece_start") ; "À 46-47-48-49-50 cm de hauteur totale, rabattre..." sans taille choisie connue → target = null (ici c'est bien l'objectif de progression qui varie selon la taille). REPÈRE TEL QU'ÉCRIT : target est TOUJOURS le repère chiffré exactement comme il est écrit dans le patron — ne fais JAMAIS de soustraction ni d'autre calcul entre sections. Si ce repère est mesuré depuis le début de la pièce plutôt que depuis le début de cette section, indique-le seulement via target_measured_from (la longueur propre à la section est calculée ensuite automatiquement),
+      "progression_type": "simple" | "composite" | "action" — voir les règles ci-dessous,
+      "target": nombre total de rangs/tours/cm pour cette section, UNIQUEMENT si progression_type = "simple" (sinon null). RÈGLE MÉCANIQUE (sections simples) : repère TOUTES les lignes numérotées de rang/tour de la section ("Round N", "Rnd N", "Rang N", "Tour N" ou équivalent dans la langue du patron) et prends le N le plus élevé — c'est le target, même si du texte non numéroté suit ensuite (rembourrage/stuffing, FO/rabattre, attache d'une pièce, note, référence à une image). Ne JAMAIS mettre null simplement parce qu'une étape finale non numérotée suit le dernier rang/tour : cette étape fait partie de la même section, elle ne change pas le compte. Si la section énonce plusieurs repères chiffrés successifs en prose (ex: "8 cm (26 rgs) puis jersey jusqu'à 46 cm (132 rgs)"), prendre le DERNIER repère de la section, jamais le premier. IMPORTANT — mettre target à null dans ces cas : (1) progression_type = "composite" ; (2) progression_type = "action" ; (3) progression_type = "simple" MAIS la valeur de l'OBJECTIF DE PROGRESSION lui-même varie réellement selon la taille et qu'on ne connaît pas la taille choisie. Ne JAMAIS mettre target à null à cause d'autres nombres multi-tailles présents ailleurs dans la section si l'objectif de progression lui-même est identique pour toutes les tailles. REPÈRE TEL QU'ÉCRIT : target est TOUJOURS le repère chiffré exactement comme il est écrit dans le patron — ne fais JAMAIS de soustraction ni d'autre calcul entre sections. Si ce repère est mesuré depuis le début de la pièce plutôt que depuis le début de cette section, indique-le seulement via target_measured_from,
       "target_measured_from": "section" | "piece_start" — "piece_start" UNIQUEMENT si le repère de target est explicitement mesuré depuis le début de la pièce et non depuis le début de cette section (formulations : "hauteur totale", "depuis le montage", "longueur totale", "measured from cast on", "from cast-on edge", "total length", "from beginning"). "piece_start" aussi quand la numérotation des rangs/tours CONTINUE celle de la section précédente au lieu de repartir à 1 (ex: section qui va de "Rang 21" à "Rang 40" → target = 40, target_measured_from = "piece_start"). "section" dans tous les autres cas : rangs/tours numérotés à partir de 1 dans cette section, "tricoter 10 cm de côtes", "work 40 rows", mesure depuis un repère intermédiaire ("à 5 cm depuis le début de l'encolure"). En cas de doute : "section". Exemple : section 1 "Increase" (commence par "Cast on 2 sts") se termine à "46\" [117 cm] measured along straight edge" → target = 117, target_measured_from = "piece_start" ; section 2 "Maintain Width" se termine à "58\" [147.5 cm] measured from corner cast on" → target = 147.5 (tel qu'écrit, PAS 30.5), target_measured_from = "piece_start",
       "starts_new_piece": true | false — true si cette section commence une NOUVELLE pièce tricotée/crochetée séparément avec son propre montage (ex: "Dos", puis "Devant", puis "Manche" = chacune une nouvelle pièce ; "Côtes" puis "Corps" du même dos = même pièce, donc false pour "Corps"). Toujours true pour la première section du patron,
+      "pattern_start_row": numéro explicite du premier rang/tour de cette section dans le patron, ou null,
       "description": "TOUTES les instructions complètes de cette section, rang par rang ou étape par étape (string). FORMATAGE OBLIGATOIRE : insérer un retour à la ligne (\n) avant chaque nouveau repère chiffré de hauteur/rang/tour (ex: avant chaque \"À X cm...\", \"A X cm (Y rgs)...\", \"Rang N:\", \"Round N:\") et avant chaque étape clé distincte de la section (ex: \"Emmanchures:\", \"Epaules et encolure:\", \"Encolure:\", \"Epaules:\" ou équivalent dans la langue du patron) — jamais de retour à la ligne à l'intérieur d'une même instruction/phrase. Objectif : que le texte se lise comme plusieurs paragraphes successifs plutôt qu'un seul bloc continu, même quand le patron source ne le présentait pas ainsi.",
       "secondary_counter": {
         "label": "libellé court (ex: Répétitions du motif, Tours de diminution)",
-        "target": nombre total de répétitions (int)
+        "target": nombre total de passages (int),
+        "tracking_role": "required_cycle|required_parallel|informational|unknown",
+        "cycle_length": longueur entière du cycle ou null,
+        "unit": "count|rows|rounds|cm|mm|in" — utiliser "count" lorsque target compte des occurrences d'une opération (augmentations, diminutions, répétitions, boutonnières, etc.). Utiliser "rows" ou "rounds" uniquement lorsque target est réellement un nombre de rangs ou de tours travaillés.
       } ou null — UNIQUEMENT si cette section contient une séquence de rangs/tours à répéter un nombre de fois EXPLICITE et compté (ex: \"répéter les rangs 1-32 15 fois\", \"répéter ces 4 rangs jusqu'à 11 diminutions\"). null si la section ne contient aucune répétition comptée de ce genre, ou si le nombre de répétitions n'est pas donné explicitement (ex: \"répéter jusqu'à la longueur désirée\")
     }
   ],
@@ -127,7 +133,9 @@ RÈGLES STRICTES :
 - category : utiliser les catégories YarnFlow existantes uniquement
 - yarn : lister CHAQUE fil/coloris séparément (un patron jacquard/colorwork utilise souvent 2-3 couleurs différentes) — ne jamais fusionner plusieurs fils en une seule entrée et ne jamais omettre un fil parce que sa quantité dépend de la taille. Sans taille choisie, résoudre la quantité uniquement si toutes les valeurs normalisées sont strictement identiques ; sinon mettre quantity_needed.amount à null. Conserver l'unité certaine et reporter les valeurs exactes dans unresolved_data comme trace source. Une valeur connue mais non résolue n'est pas une extraction échouée.
 - VALEURS MULTI-TAILLES : sans taille choisie, ne jamais sélectionner arbitrairement la première valeur d'une série (quantité, nombre de mailles, rangs ou mesure). Conserver la série exacte dans les instructions et dans unresolved_data lorsque le schéma structuré exige une valeur unique. Cela ne doit pas supprimer la donnée ni être présenté comme une erreur d'extraction.
+- available_sizes : recopier uniquement les tailles explicitement proposées par le patron. Pour un patron explicitement limité à une seule taille, retourner cette taille unique. Ne jamais ajouter la taille demandée par l'utilisatrice si elle n'apparaît pas dans la source. Si aucune taille n'est explicitement identifiable, retourner null.
 - sections : découper logiquement (Corps, Manches, Col, Assemblage, Finitions...) — chaque partie du vêtement/ouvrage doit être une section distincte : "Dos" et "Devant" = 2 sections séparées, "Bras gauche" et "Bras droit" = 2 sections séparées, "Manche gauche" et "Manche droite" = 2 sections séparées. Ne jamais regrouper des parties distinctes dans une même section.
+- PIÈCES SYMÉTRIQUES : créer deux sections seulement lorsque le texte prouve explicitement qu'il existe deux pièces distinctes (gauche/droite, left/right, deuxième pièce identique ou inversée). Développer alors les instructions de chaque pièce. Si le texte suggère une paire sans permettre de garantir qu'il s'agit de deux pièces séparées ou sans permettre de reconstruire fidèlement la seconde, ne pas inventer : ajouter une entrée unresolved_data avec field="sections", reason="ambiguous_mapping" et les formulations sources utiles.
 - SECTIONS ALTERNATIVES : si le patron propose plusieurs variantes à choisir pour une même partie plutôt que des étapes obligatoires (ex: deux styles de col au choix, une méthode d'encolure "avec" ou "sans" mise en forme), créer quand même une section par variante mais ajouter le suffixe " (option)" à son nom (ex: "Col cheminée (option)", "Col replié (option)") — pour que l'utilisatrice comprenne qu'elle doit en choisir une seule et peut supprimer les autres.
 - sections.description : INCLURE TOUTES LES INSTRUCTIONS détaillées de cette section (tous les rangs, toutes les étapes)
 - RÉFÉRENCES CROISÉES : si le patron renvoie vers une autre partie au lieu de réécrire les instructions (ex: "Deuxième manche : comme la première", "Devant droit : comme le devant gauche en inversant les diminutions", "idem dos"), NE JAMAIS laisser une description vague de type "comme la section X" — répéter/développer TOUJOURS les instructions complètes dans cette section (en adaptant les inversions gauche/droite si précisé), pour que chaque section soit utilisable seule, indépendamment des autres. Ne jamais omettre une section sous prétexte qu'elle duplique une autre partie du patron.
@@ -135,7 +143,7 @@ RÈGLES STRICTES :
 - Conserver les abréviations du patron (ms, ml, mc, m, end, env, etc.)
 - Numéroter les rangs/tours si présents (ex: "Rang 1: ..., Rang 2: ..., etc.")
 - Privilégier "rangs" pour crochet, "cm" pour tricot (sauf si explicite dans le patron)
-- gauge : toujours ramener à 10cm (si un échantillon EN MAILLES ET RANGS est donné pour 5cm, multiplier par 2). Remplir stitches et rows uniquement si le patron donne explicitement une tension en mailles et rangs. Ne jamais convertir une tension exprimée en motifs, losanges, répétitions ou rapports en nombre de mailles/rangs ; la conserver telle quelle dans pattern_notes et laisser les champs non explicitement donnés à null.
+- gauge : toujours ramener à 10cm (si un échantillon EN MAILLES ET RANGS est donné pour 5cm, multiplier par 2). Remplir stitches et rows uniquement si le patron donne explicitement une tension en mailles et rangs. Ne jamais convertir une tension exprimée en motifs, losanges, répétitions ou rapports en nombre de mailles/rangs ; conserver sa formulation exacte dans gauge.notes et pattern_notes, laisser stitches, rows et size_cm à null.
 - yarn.weight : utiliser uniquement les catégories standard (pas de "moyen", "épais" français)
 - needles : lister TOUTES les aiguilles/crochets mentionnés séparément, pas juste le premier — un patron a souvent une taille pour le corps et une autre pour les côtes/bords. La mention peut se trouver n'importe où dans le texte (une section dédiée "Aiguilles"/"Needles"/"Hook", mais aussi souvent noyée dans un paragraphe "Notions"/"Materials"/"Gauge"/"Matériel") — chercher dans TOUT le document, ne jamais se limiter à une section au titre explicite.
   - EXCLURE toute aiguille qui n'est pas l'outil de tricot/crochet lui-même : une aiguille à laine/à coudre pour rentrer les fils ou assembler les pièces ("yarn needle", "tapestry needle", "sewing needle", "aiguille à laine/à coudre/à broder") n'est PAS une entrée needles, même si le mot "aiguille"/"needle" apparaît.
@@ -145,10 +153,13 @@ RÈGLES STRICTES :
     - taille US/UK sans mm indiqué (ex: "US 7", "size 7 needles", "hook size H") → convertir vers l'équivalent mm standard (tables de conversion aiguilles tricot et crochets US usuelles)
     - si vraiment aucune taille numérique n'est identifiable ou convertible → null (mais garder quand même l'entrée needles avec son "type" si l'outil est identifié, ex: "Crochet", ne jamais omettre toute l'entrée simplement parce que la taille est introuvable)
 - RÈGLE PROGRESSION COMPOSITE : progression_type = "composite" dès que représenter la section par un unique compteur X/Y risquerait de faire manquer une instruction intermédiaire importante à l'utilisatrice — c'est-à-dire dès que la section contient plusieurs étapes successives qui changent significativement ce qu'elle doit faire, même sans action ponctuelle explicite du type "placer un marqueur". Cela inclut notamment : changement de point (ex: côtes puis jersey), changement d'aiguilles/crochet, changement de couleur, augmentations/diminutions à effectuer à un palier donné, placement de marqueurs, changement de construction (ex: à plat → en rond, division du travail), toute action particulière à effectuer avant de continuer, ou plusieurs objectifs chiffrés successifs nécessitant des comportements différents. En cas de doute raisonnable entre simple et composite, choisir "composite" : un compteur libre (sans total affiché) vaut mieux qu'un objectif chiffré trompeur qui donnerait une fausse impression de suivi complet. Quand progression_type = "composite", target DOIT être null — ne jamais essayer de deviner un total représentatif de toute la section. Une section "simple" a un objectif de progression réellement unique, sans changement significatif d'action en cours de route (ex: "tricoter 40 rangs de jersey", "monter le bonnet en rond jusqu'à 15 cm").
+- RÈGLE ACTION PONCTUELLE : progression_type = "action" si la section demande une action à effectuer puis valider, sans progression numérique à compter : division corps/manches, assemblage, couture, pose de boutons, blocage ou finition ponctuelle. Pour action, unit=null, target=null et secondary_counter=null. Une action ne doit jamais recevoir un faux compteur de rangs.
 - secondary_counter : sert à créer un compteur secondaire automatiquement (suivi séparé du compteur de rangs normal). Deux cas d'usage valides UNIQUEMENT :
   1. une répétition VRAIMENT comptée avec un nombre précis donné dans le patron (ex: "répéter les rangs 1-32 15 fois") — jamais pour "répéter jusqu'à convenance/la longueur désirée" ou une répétition sans total chiffré.
   2. une sous-phase mesurée séparément après un point de bascule dans la même section : le patron scinde l'ouvrage (ex: encolure qui sépare en deux épaules, manche qui se divise pour l'emmanchure) et donne un second repère chiffré propre à cette sous-phase, distinct du target principal (ex: "Encolure : à 45 cm de hauteur totale, cesser de croch. les 33 m. centrales... Épaule à 5 cm à partir du début de l'encolure" → target principal=45, secondary_counter.label="Épaule", secondary_counter.target=5). Ne pas fusionner les deux repères en un seul total (45+5) : le point de bascule doit rester visible.
   Une section peut tout à fait n'avoir aucun secondary_counter (la plupart n'en ont pas).
+  tracking_role porte toute la sémantique : required_cycle si le cycle, sa longueur et le nombre TOTAL de passages (première exécution comprise) sont tous explicites ; required_parallel uniquement pour une cible entière comptée indépendamment qui conditionne aussi explicitement la fin ; informational si elle sert seulement de repère ; unknown si le rôle ou le comptage est ambigu. unit est obligatoire. Une cible qui compte des opérations (ex: 27 augmentations, 9 diminutions, 6 répétitions) utilise unit="count", même si l'opération revient tous les N rangs/tours ; rows/rounds sont réservés à une cible qui compte réellement des rangs/tours travaillés. Ne jamais créer de secondary_counter lorsque la cible est une mesure physique en cm, mm ou in : un clic ne mesure pas une longueur. Conserver cette mesure uniquement dans les instructions de la section composite, avec fin manuelle. cycle_length est obligatoire uniquement pour required_cycle. Pour required_cycle, target de la SECTION est le total certain cycle_length × passages. Ne jamais automatiser une formulation ambiguë (notamment l'inclusion du premier passage), une mesure ou une estimation : utiliser unknown, progression_type="composite" et target=null.
+- pattern_start_row : pour chaque section, conserver le numéro explicite de son premier rang/tour dans le patron, ou null. Ne jamais le déduire de l'ordre des sections.
 - contains_diagram : mettre true dès que l'exécution correcte dépend d'une grille/diagramme/chart/image qui n'est pas intégralement transcrit(e) dans le texte, même si du texte introductif ou partiel existe. Mettre false uniquement si les instructions écrites suffisent réellement sans consulter le visuel.
 - diagram_metadata : métadonnées légères et factuelles uniquement. Ne jamais inverser, corriger ou deviner l'orientation lignes/colonnes. Les dimensions détectées peuvent être conservées comme estimation IA avec dimensions_source="ai_visual_estimate", mais orientation_verified et dimensions_verified doivent rester false si les axes ou le comptage ne sont pas explicitement vérifiables. Dans ce cas compatible_with_chart_editor doit être false. Ne jamais reconstruire les cellules ni inventer une légende.
 
@@ -371,7 +382,7 @@ PROMPT;
     {
         $prompt = self::EXTRACTION_PROMPT;
         if ($size) {
-            $prompt .= "\n\nTAILLE CHOISIE PAR L'UTILISATRICE : {$size}\nPour les patrons multi-tailles, utiliser UNIQUEMENT les valeurs correspondant à cette taille pour les champs target, description et toutes les mesures.";
+            $prompt .= "\n\nTAILLE CHOISIE PAR L'UTILISATRICE : {$size}\nCommence par relever available_sizes depuis la source. Si cette taille n'en fait pas partie, ne lui attribue aucune valeur d'une autre taille et ajoute unresolved_data avec reason=selected_size_not_available. Sinon, pour les patrons multi-tailles, utiliser UNIQUEMENT les valeurs correspondant à cette taille pour les champs target, description et toutes les mesures.";
         }
         return $prompt;
     }
@@ -557,11 +568,11 @@ PROMPT;
         $data = $validation['data'];
 
         if (is_array($data['sections'])) {
-            $data['sections'] = self::normalizeCumulativeTargets($data['sections']);
+            $data['sections'] = self::normalizeCumulativeTargets($data['sections'], $data['craft_type'] ?? null);
         }
 
         $status = $this->determineStatus($data);
-        if ($validation['has_unresolved_errors'] && $status === 'success') {
+        if (($validation['has_unresolved_errors'] || $validation['requires_section_review'] || $validation['requires_manual_review']) && $status === 'success') {
             $status = 'partial';
         }
 
@@ -588,7 +599,7 @@ PROMPT;
      * Idempotent : le repère d'origine est conservé dans target_raw et toujours relu depuis
      * là, donc repasser des données déjà normalisées (cache, reprise) ne soustrait pas deux fois.
      */
-    public static function normalizeCumulativeTargets(array $sections): array
+    public static function normalizeCumulativeTargets(array $sections, ?string $craftType = null): array
     {
         // Position cumulée de fin de la section précédente dans la pièce en cours, par unité.
         // null = inconnue (section composite, cible absente, ou avancée dans une autre unité).
@@ -599,6 +610,21 @@ PROMPT;
                 continue;
             }
 
+            if (($section['progression_type'] ?? 'simple') === 'action') {
+                $section['unit'] = null;
+                $section['target'] = null;
+                $section['secondary_counter'] = null;
+                continue;
+            }
+
+            $isComposite = ($section['progression_type'] ?? 'simple') === 'composite';
+            // Une section composite n'a pas de cible X/Y. Si un patron au crochet
+            // décrit des tours numérotés, chaque appui sur + doit compter un tour,
+            // même si une hauteur en cm sert de repère dans les instructions.
+            if ($craftType === 'crochet' && $isComposite && ($section['unit'] ?? null) === 'cm'
+                && preg_match('/\b(?:round|rnd|row|rang|tour|rg)\s*\d+\b/iu', (string)($section['description'] ?? ''))) {
+                $section['unit'] = 'rangs';
+            }
             $unit = ($section['unit'] ?? 'rangs') === 'cm' ? 'cm' : 'rows';
             $raw = array_key_exists('target_raw', $section) ? $section['target_raw'] : ($section['target'] ?? null);
             $raw = (is_numeric($raw) && (float)$raw > 0) ? (float)$raw : null;
@@ -608,7 +634,6 @@ PROMPT;
                 $position = ['cm' => 0.0, 'rows' => 0.0];
             }
 
-            $isComposite = ($section['progression_type'] ?? 'simple') === 'composite';
             $fromPieceStart = ($section['target_measured_from'] ?? 'section') === 'piece_start';
             $start = $position[$unit] ?? null;
 

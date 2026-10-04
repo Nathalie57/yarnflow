@@ -51,4 +51,55 @@ final class FlowContextGuidanceTest extends TestCase
         self::assertStringContainsString('demander la taille', $unchosen);
         self::assertSame('', FlowContextGuidance::sizeGuidance(null, false));
     }
+
+    public function testActionSectionIsDescribedAsManualAndCanBeMarkedComplete(): void
+    {
+        self::assertSame(
+            'action ponctuelle à réaliser puis à marquer comme terminée',
+            FlowContextGuidance::progressSummary(['progression_type' => 'action', 'is_completed' => 0])
+        );
+        self::assertSame(
+            'action ponctuelle terminée',
+            FlowContextGuidance::progressSummary(['progression_type' => 'action', 'is_completed' => 1])
+        );
+        self::assertStringContainsString(
+            'aucune progression en rangs',
+            FlowContextGuidance::sectionGuidance(['progression_type' => 'action'])
+        );
+    }
+
+    public function testUnknownOperationCounterExposesFullSemanticsWithoutInferringDuration(): void
+    {
+        $summary = FlowContextGuidance::secondaryCounterSummary([
+            'label' => 'Augmentations raglan',
+            'count' => 0,
+            'target' => 27,
+            'unit' => 'count',
+            'tracking_role' => 'unknown',
+            'cycle_length' => 2,
+        ]);
+
+        self::assertStringContainsString('0/27', $summary);
+        self::assertStringContainsString('unité sémantique=count', $summary);
+        self::assertStringContainsString('tracking_role=unknown', $summary);
+        self::assertStringContainsString('cycle_length=2', $summary);
+        self::assertStringContainsString('ne pas en déduire la durée', $summary);
+        self::assertStringContainsString('ni la complétion', $summary);
+    }
+
+    public function testInformationalAndRealRoundCountersKeepDistinctSemantics(): void
+    {
+        $summary = FlowContextGuidance::secondaryCounterSummary([
+            'label' => 'Tours travaillés',
+            'count' => 3,
+            'target' => 10,
+            'unit' => 'rounds',
+            'tracking_role' => 'informational',
+            'cycle_length' => null,
+        ]);
+
+        self::assertStringContainsString('unité sémantique=rounds', $summary);
+        self::assertStringContainsString('informatif', $summary);
+        self::assertStringNotContainsString('cycle_length=', $summary);
+    }
 }

@@ -7,6 +7,7 @@ import api from '../services/api'
 import { useTranslation } from 'react-i18next'
 
 import { apiErrorMessage } from '../utils/apiError'
+import { analysisSelection, bindExtractedSections, blockingPrecreationIssue, blockingPrecreationIssues, projectReviewPoints, sameAnalysisSelection, singleCompatibleSize, translateSmartPreview, updateSmartSection, validSourceUrl } from '../utils/smartCreationSafety'
 import UpgradePrompt from '../components/UpgradePrompt'
 import FlowMascot from '../components/FlowMascot'
 import { trackPaywallShown, trackProductEvent } from '../utils/productEvents'
@@ -32,6 +33,15 @@ const ANALYZING_TIPS = [
   { pose: 'onYVa', titleKey: 'tipNoteTitle', bodyKey: 'tipNoteBody' },
 ]
 
+const TRANSLATING_MESSAGE_KEYS = [
+  'patternTranslatingSections',
+  'patternTranslatingChecks',
+  'patternTranslatingFidelity',
+  'patternTranslatingAlmostDone',
+]
+
+const resumedTextSourceKey = importId => `yf_smart_text_source_${importId}`
+
 export default function SmartProjectCreator() {
   const { t, i18n } = useTranslation('tools')
   const navigate = useNavigate()
@@ -44,11 +54,19 @@ export default function SmartProjectCreator() {
   // "est entré puis reparti sans rien tenter". Dédupliqué par session comme
   // tools_viewed/library_viewed : ce qui compte est d'être passé par l'écran, pas le volume.
   useEffect(() => {
-    if (sessionStorage.getItem('yf_evt_smart_creation_opened')) return
-    try { sessionStorage.setItem('yf_evt_smart_creation_opened', '1') } catch { /* ignore */ }
+    let demoProjectId = null
+    try {
+      // Le CTA démo force un jalon attribué même si cet écran a déjà été ouvert
+      // pendant la session ; la clé est consommée à cette arrivée seulement.
+      demoProjectId = sessionStorage.getItem('yf_smart_creation_from_demo')
+      if (demoProjectId) sessionStorage.removeItem('yf_smart_creation_from_demo')
+      if (!demoProjectId && sessionStorage.getItem('yf_evt_smart_creation_opened')) return
+      sessionStorage.setItem('yf_evt_smart_creation_opened', '1')
+    } catch { /* ignore */ }
     api.post('/analytics/track-event', {
       event_name: 'smart_creation_opened',
-      resumed: searchParams.get('resume') === '1'
+      resumed: searchParams.get('resume') === '1',
+      ...(demoProjectId ? { source: 'demo_guide', project_id: Number(demoProjectId) } : {})
     }).catch(() => {})
   }, [])
 
@@ -69,6 +87,11 @@ export default function SmartProjectCreator() {
   const [selectedLibraryPattern, setSelectedLibraryPattern] = useState(null)
   const [loadingLibrary, setLoadingLibrary] = useState(false)
   const [patternSize, setPatternSize] = useState('')
+  const [resumedImportId, setResumedImportId] = useState(null)
+  const analysisBindingRef = useRef(null)
+  const selectionRef = useRef(null)
+  const selectionRevisionRef = useRef(0)
+  const [reviewPointsConfirmed, setReviewPointsConfirmed] = useState(false)
   // [AI:Claude] Affiche le champ de saisie libre uniquement quand la pilule "Autre
   // taille" est active — évite d'avoir un champ tronqué en permanence à côté des
   // tailles standards, sans changer la logique de patternSize sous-jacente.
@@ -112,6 +135,7 @@ export default function SmartProjectCreator() {
   // depuis longtemps à "copier-coller le texte du patron directement" sans qu'aucun
   // champ ne le permette. N'importe pas le patron_text si non vide.
   const [pastedText, setPastedText] = useState('')
+  selectionRef.current = analysisSelection({ mode, file, url, pastedText, libraryId: selectedLibraryPattern?.id, resumedImportId, patternSize })
 
   // [AI:Claude] Suggestion "utiliser le stock" — une ou plusieurs entrées de
   // yarn_stash à réserver pour ce projet (un patron colorwork/jacquard peut
@@ -162,12 +186,18 @@ export default function SmartProjectCreator() {
   const [creating, setCreating] = useState(false)
   const [patternLanguage, setPatternLanguage] = useState(null)
   const [translatingPreview, setTranslatingPreview] = useState(false)
+  const [translationMessageIndex, setTranslationMessageIndex] = useState(0)
+  useEffect(() => {
+    if (!translatingPreview) return
+    setTranslationMessageIndex(0)
+    const interval = setInterval(
+      () => setTranslationMessageIndex(index => (index + 1) % TRANSLATING_MESSAGE_KEYS.length),
+      4000
+    )
+    return () => clearInterval(interval)
+  }, [translatingPreview])
   const [translateGatePending, setTranslateGatePending] = useState(false)
-  // [AI:Claude] Porte d'avertissement (diagramme et/ou extraction partielle) avant la
-  // création automatique du projet — sans ça, ces bandeaux ne s'affichaient que sur
-  // l'écran de relecture manuelle, devenu un simple repli d'erreur jamais vu dans le
-  // cas normal depuis qu'on crée le projet directement après l'analyse.
-  const [warningGatePending, setWarningGatePending] = useState(false)
+  const [translationIntegrityFailed, setTranslationIntegrityFailed] = useState(false)
   // [AI:Claude] Le patron entier (diagramme inclus) part déjà chez Gemini, mais rien ne
   // garantit une lecture fiable d'un diagramme/grille — l'IA le signale elle-même pour
   // qu'on prévienne l'utilisatrice de vérifier plutôt que de faire confiance en silence.
@@ -176,8 +206,9 @@ export default function SmartProjectCreator() {
   const shownGatesRef = useRef(new Set())
   const resumedRef = useRef(searchParams.get('resume') === '1')
   useEffect(() => {
-    if (step !== 3 || !(translateGatePending || warningGatePending)) return
-    const gateType = containsDiagram ? 'diagram' : aiStatus === 'partial' ? 'partial' : 'translation'
+    if (step !== 3 || !translateGatePending) return
+    if (projectReviewPoints(extractedData, aiStatus).some(point => point.code === 'pattern_size_not_selected' && point.availableSizes?.length > 0)) return
+    const gateType = 'translation'
     const key = `${analyzeMetadata?.import_id || analyzeMetadata?.attempt_id}:${gateType}`
     if (shownGatesRef.current.has(key)) return
     shownGatesRef.current.add(key)
@@ -188,7 +219,7 @@ export default function SmartProjectCreator() {
       gate_type: gateType,
       display_context: resumedRef.current ? 'resume' : 'foreground',
     }))
-  }, [step, translateGatePending, warningGatePending, containsDiagram, aiStatus, analyzeMetadata, mode])
+  }, [step, translateGatePending, analyzeMetadata, mode, extractedData, aiStatus])
 
   const getLanguageName = (code) => {
     try {
@@ -278,17 +309,35 @@ export default function SmartProjectCreator() {
     // La notice compacte reste disponible pendant la reprise. Elle sera retirée lorsque le
     // projet sera effectivement créé, si l'import est ignoré, ou si /pending ne le retrouve plus.
     ;(async () => {
+      const revision = selectionRevisionRef.current
       try {
         const response = await api.get('/projects/smart-create/pending')
-        if (!response.data.pending) return
+        if (!response.data.pending || revision !== selectionRevisionRef.current) return
 
         const data = response.data.data || {}
         const detectedLang = data.language || null
+        const translatedPreview = response.data.translated_preview
+        const interfaceLang = i18n.language.split('-')[0]
+        const canRestoreTranslation = translatedPreview?.target_lang === interfaceLang
+          && Array.isArray(translatedPreview.sections)
+          && translatedPreview.sections.length === (data.sections || []).length
 
         setExtractedData(data)
         setAiStatus(response.data.ai_status)
         setPatternLanguage(detectedLang)
         setMode(response.data.source_type)
+        const restoredSize = response.data.pattern_size || ''
+        setPatternSize(restoredSize)
+        setCustomSizeMode(!!restoredSize && !['XS','S','M','L','XL','XXL','XXXL'].includes(restoredSize))
+        setResumedImportId(response.data.import_id)
+        if (response.data.source_type === 'text') {
+          try {
+            const restoredText = sessionStorage.getItem(resumedTextSourceKey(response.data.import_id))
+            if (restoredText) setPastedText(restoredText)
+          } catch { /* ignore */ }
+        }
+        analysisBindingRef.current = analysisSelection({ mode: response.data.source_type, resumedImportId: response.data.import_id, patternSize: restoredSize })
+        setReviewPointsConfirmed(false)
         if (response.data.source_type === 'url') {
           setUrl(response.data.source_name || '')
         }
@@ -309,16 +358,16 @@ export default function SmartProjectCreator() {
           yarn: data.yarn?.length ? data.yarn : [{ brand: '', color: '', weight: '', composition: '' }],
           needles: data.needles?.length ? data.needles : [{ type: '', size: '', length: '' }],
           gauge: data.gauge || { stitches: null, rows: null, size_cm: 10 },
-          pattern_notes: data.pattern_notes || ''
+          pattern_notes: canRestoreTranslation && typeof translatedPreview.pattern_notes === 'string'
+            ? translatedPreview.pattern_notes
+            : data.pattern_notes || ''
         })
-        setSections(data.sections || [])
+        setSections(bindExtractedSections(canRestoreTranslation ? translatedPreview.sections : data.sections || []))
 
         const hasDiagram = !!data.contains_diagram
         setContainsDiagram(hasDiagram)
-        const needsTranslateGate = !!detectedLang && detectedLang !== i18n.language.split('-')[0]
-        const needsWarningGate = hasDiagram || response.data.ai_status === 'partial'
+        const needsTranslateGate = !canRestoreTranslation && !!detectedLang && detectedLang !== interfaceLang
         setTranslateGatePending(needsTranslateGate)
-        setWarningGatePending(needsWarningGate)
         setStep(3)
       } catch (err) {
         console.error('Erreur reprise import:', err)
@@ -344,11 +393,21 @@ export default function SmartProjectCreator() {
   // "Continuer avec l'analyse précédente" reste affiché et réutilise par erreur les
   // données extraites de l'ancienne source au lieu d'analyser la nouvelle.
   const resetExtraction = () => {
+    selectionRevisionRef.current += 1
+    analysisBindingRef.current = null
+    setResumedImportId(null)
+    setAnalyzeMetadata(null)
+    setReviewPointsConfirmed(false)
     setExtractedData(null)
     setPatternLanguage(null)
     setTranslateGatePending(false)
-    setWarningGatePending(false)
+    setTranslationIntegrityFailed(false)
     setContainsDiagram(false)
+  }
+
+  const changePatternSize = (size) => {
+    if (size.trim() !== patternSize.trim()) resetExtraction()
+    setPatternSize(size)
   }
 
   const handleModeSelect = async (selectedMode) => {
@@ -416,7 +475,8 @@ export default function SmartProjectCreator() {
     return t('ui.untitledPattern')
   }
 
-  const handleAnalyze = async () => {
+  const handleAnalyze = async (forcedPatternSize = null) => {
+    const requestedPatternSize = typeof forcedPatternSize === 'string' ? forcedPatternSize.trim() : patternSize.trim()
     if (mode === 'pdf' && !file) {
       setError(t('ui.selectPdf'))
       return
@@ -437,6 +497,10 @@ export default function SmartProjectCreator() {
     }
 
     const attemptId = createSmartCreationAttemptId()
+    // Une nouvelle analyse part toujours de la source actuellement affichée. Une éventuelle
+    // reprise précédente ne doit pas modifier l'identité de cette sélection lors des re-renders
+    // qui ont lieu pendant les recherches de stock effectuées après la réponse d'analyse.
+    setResumedImportId(null)
     resumedRef.current = false
     analysisFlightRef.current = {
       attempt_id: attemptId,
@@ -478,9 +542,12 @@ export default function SmartProjectCreator() {
       } else if (mode === 'library') {
         formData.append('library_pattern_id', selectedLibraryPattern.id)
       }
-      if (patternSize.trim()) {
-        formData.append('pattern_size', patternSize.trim())
+      if (requestedPatternSize) {
+        formData.append('pattern_size', requestedPatternSize)
       }
+      const analyzedSelection = analysisSelection({ mode, file, url, pastedText, libraryId: selectedLibraryPattern?.id, resumedImportId: null, patternSize: requestedPatternSize })
+      selectionRef.current = analyzedSelection
+      const analyzedRevision = selectionRevisionRef.current
       const response = await axios.post('/api/projects/smart-create/analyze', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -488,7 +555,17 @@ export default function SmartProjectCreator() {
         }
       })
       analysisFlightRef.current.analysisInFlight = false
+      // Tous les changements de source ou de taille passent par resetExtraction(), qui
+      // incrémente cette révision. C'est la référence stable pendant toute la requête ;
+      // selectionRef est recalculée à chaque render et peut transitoirement refléter un ancien
+      // resumedImportId, notamment quand aucune taille n'a été choisie.
+      if (analyzedRevision !== selectionRevisionRef.current) return
       if (response.data.success) {
+        if (response.data.source_type === 'text' && pastedText.trim() && response.data.import_id) {
+          try { sessionStorage.setItem(resumedTextSourceKey(response.data.import_id), pastedText.trim()) } catch { /* ignore */ }
+        }
+        analysisBindingRef.current = analyzedSelection
+        setReviewPointsConfirmed(false)
         const detectedLang = response.data.data.language || null
         setExtractedData(response.data.data)
         setAiStatus(response.data.ai_status)
@@ -534,40 +611,32 @@ export default function SmartProjectCreator() {
         }
         setStashSelections(matches)
 
-        setSections(response.data.data.sections || [])
+        if (analyzedRevision !== selectionRevisionRef.current) return
+
+        setSections(bindExtractedSections(response.data.data.sections || []))
         const hasDiagram = !!response.data.data.contains_diagram
         setContainsDiagram(hasDiagram)
         const needsTranslateGate = !!detectedLang && detectedLang !== i18n.language.split('-')[0]
-        const needsWarningGate = hasDiagram || response.data.ai_status === 'partial'
         setTranslateGatePending(needsTranslateGate)
-        setWarningGatePending(needsWarningGate)
         trackSmartAnalysis(mode, true)
 
         // Recharger le quota
         fetchQuota()
 
-        // [AI:Claude] Retour utilisatrice : le badge de crédits est déjà visible AVANT de
-        // cliquer sur Création Intelligente (pas de surprise à en consommer un), donc l'écran
-        // de relecture/édition ne sert qu'à faire perdre l'effet "wouaw" — trop de gens
-        // analysaient avec succès sans jamais valider. On crée le projet directement et on
-        // envoie sur sa page, sans étape intermédiaire — sauf la traduction ou un avertissement
-        // (diagramme, extraction partielle) qui méritent une confirmation avant de continuer
-        // (juste après), et sauf repli sur l'écran de relecture si la création échoue quand
-        // même (titre manquant, erreur serveur...).
-        if (needsTranslateGate || needsWarningGate) {
-          if (isMountedRef.current) {
-            setStep(3)
-          } else {
-            // [AI:Claude] 2026-09-22 — Même principe que dans submitProject() (kind 'ready') :
-            // elle a quitté la page pendant l'analyse, mais cette fois un avertissement
-            // (diagramme/traduction/partiel) empêche la création automatique du projet. Le
-            // CTA renvoie vers la reprise existante (?resume=1 → GET /smart-create/pending,
-            // mécanisme pendingImport() non modifié) plutôt que de dupliquer cette logique.
+        // L'analyse terminée reste en étape de relecture jusqu'à une validation explicite.
+        // Les portes de traduction et d'avertissement sont affichées avant le formulaire.
+        if (isMountedRef.current) {
+          setStep(3)
+        } else {
+            // Elle a quitté la page pendant l'analyse. Le CTA renvoie vers la reprise
+            // existante (?resume=1 → GET /smart-create/pending) pour relire l'import.
             const gateType = hasDiagram
               ? 'diagram'
               : response.data.ai_status === 'partial'
                 ? 'partial'
-                : 'translation'
+                : needsTranslateGate
+                  ? 'translation'
+                  : 'review'
             const noticeInfo = {
               kind: 'gate',
               gateType,
@@ -583,20 +652,6 @@ export default function SmartProjectCreator() {
               localStorage.setItem('yf_smart_project_notice', JSON.stringify(noticeInfo))
               window.dispatchEvent(new CustomEvent('yf:smart-creation-notice', { detail: noticeInfo }))
             } catch { /* ignore */ }
-          }
-        } else {
-          const freshProject = {
-            title: response.data.data.title || getFallbackTitle(),
-            craft_type: response.data.data.craft_type || 'crochet',
-            category: response.data.data.category || null,
-            description: response.data.data.description || '',
-            yarn: response.data.data.yarn?.length ? response.data.data.yarn : [{ brand: '', color: '', weight: '', composition: '' }],
-            needles: response.data.data.needles?.length ? response.data.data.needles : [{ type: '', size: '', length: '' }],
-            gauge: response.data.data.gauge || { stitches: null, rows: null, size_cm: 10 },
-            pattern_notes: response.data.data.pattern_notes || ''
-          }
-          const freshSections = response.data.data.sections || []
-          submitProject(freshProject, freshSections, freshAnalyzeMetadata)
         }
       } else {
         trackSmartAnalysis(mode, false)
@@ -627,18 +682,31 @@ export default function SmartProjectCreator() {
     }
   }
 
-  // [AI:Claude] Accepte project/sections/analyzeMetadata en override (au lieu de lire l'état
-  // du composant) pour le flux automatique juste après l'analyse : setProject()/setSections()/
-  // setAnalyzeMetadata() sont asynchrones, les relire immédiatement dans le même tick donnerait
-  // les anciennes valeurs. Bug vécu : import_id resté celui de l'analyse PRÉCÉDENTE (ou null),
-  // donc ai_pattern_imports.project_id jamais renseigné — le patron n'apparaissait plus dans
-  // l'onglet "Patron" du projet. Sans override (undefined), lit l'état courant — cas de repli
-  // (relecture manuelle, boutons "Créer le projet" toujours présents sur l'écran de relecture
-  // en cas d'échec, ou un clic de l'utilisatrice après qu'un rendu ait déjà eu lieu).
+  const reanalyzeWithSize = async (size) => {
+    resetExtraction()
+    setPatternSize(size)
+    setCustomSizeMode(!['XS','S','M','L','XL','XXL','XXXL'].includes(size))
+    setStep(2)
+    await handleAnalyze(size)
+  }
+
+  // Les overrides restent acceptés pour les appels explicites qui possèdent déjà un aperçu
+  // local à jour. Le formulaire de relecture utilise normalement l'état courant.
   const submitProject = async (projectOverride, sectionsOverride, analyzeMetadataOverride) => {
     const projectToSubmit = projectOverride ?? project
     const sectionsToSubmit = sectionsOverride ?? sections
     const analyzeMetadataToSubmit = analyzeMetadataOverride ?? analyzeMetadata
+
+    if (!sameAnalysisSelection(analysisBindingRef.current, selectionRef.current)) {
+      setStep(2)
+      setError(t('ui.analysisSelectionChanged'))
+      return
+    }
+    if (reviewPoints.length > 0 && !reviewPointsConfirmed) {
+      setStep(3)
+      setError(t('ui.reviewPointsConfirmationRequired'))
+      return
+    }
 
     if (!projectToSubmit.title) {
       // [AI:Claude] Pas de titre exploitable détecté : on ne peut pas deviner à sa place,
@@ -668,20 +736,18 @@ export default function SmartProjectCreator() {
         // 'url' + repli texte), on garde quand même la vraie URL dans source_url plutôt
         // qu'un extrait du texte collé — sinon le lien vers le patron d'origine est perdu.
         source_type: (mode === 'text' || pastedText.trim()) ? 'text' : mode,
-        source_url: mode === 'pdf'
-          ? file?.name
-          : mode === 'library'
-            ? selectedLibraryPattern?.name
-            : mode === 'url' && pastedText.trim()
-              ? url
-              : (mode === 'text' || pastedText.trim()) ? pastedText.trim().slice(0, 80) : url,
+        source_url: mode === 'url' ? validSourceUrl(url) : null,
         pattern_text: (mode === 'text' || pastedText.trim()) ? pastedText.trim() : undefined,
-        analyze_metadata: analyzeMetadataToSubmit
+        analyze_metadata: analyzeMetadataToSubmit,
+        pattern_size: selectionRef.current.size,
+        review_points_confirmed: reviewPointsConfirmed
       })
 
       if (response.data.success) {
         try {
           localStorage.removeItem('yf_smart_project_notice')
+          const completedImportId = analyzeMetadataToSubmit?.import_id
+          if (completedImportId) sessionStorage.removeItem(resumedTextSourceKey(completedImportId))
           window.dispatchEvent(new CustomEvent('yf:smart-creation-notice', { detail: null }))
         } catch { /* ignore */ }
         // [AI:Claude] 2026-09-22 — Posé ici plutôt que de dépendre du navigate() qui suit
@@ -770,7 +836,28 @@ export default function SmartProjectCreator() {
       // ce même 403. Une popin dédiée plutôt qu'un simple texte d'erreur : sans ça, rien ne se
       // distinguait vraiment à l'écran à ce stade (formulaire déjà rempli, bouton qui ne
       // semblait rien faire).
-      if (err.response?.status === 403 && err.response?.data?.upgrade_required) {
+      if (err.response?.data?.error_code === 'review_points_confirmation_required') {
+        setReviewPointsConfirmed(false)
+        setExtractedData(current => ({
+          ...(current || {}),
+          validation_issues: {
+            ...(current?.validation_issues || {}),
+            warnings: [...(current?.validation_issues?.warnings || []), { code: 'server_review_required', context: {} }],
+          },
+        }))
+        setError(t('ui.reviewPointsConfirmationRequired'))
+      } else if (err.response?.data?.error_code === 'precreation_validation_failed') {
+        const validationErrors = err.response.data.validation_errors || []
+        setExtractedData(current => ({
+          ...(current || {}),
+          validation_issues: { ...(current?.validation_issues || {}), errors: validationErrors },
+        }))
+        setError(t('ui.analysisBlockingErrorBody'))
+      } else if (err.response?.data?.error_code === 'analysis_size_changed') {
+        resetExtraction()
+        setStep(2)
+        setError(t('ui.analysisSelectionChanged'))
+      } else if (err.response?.status === 403 && err.response?.data?.upgrade_required) {
         fetchQuota()
         setShowUpgradeModal(true)
       } else {
@@ -785,59 +872,70 @@ export default function SmartProjectCreator() {
   // import_id — remplace directement les sections/notes affichées dans le formulaire de
   // relecture, pour que ce qu'on modifie/valide soit déjà dans sa langue.
   const handleTranslatePreview = async () => {
-    if (!analyzeMetadata?.import_id) return
+    if (!analyzeMetadata?.import_id || translatingPreview) return
     setTranslatingPreview(true)
-    // [AI:Claude] Valeurs locales plutôt que relire project/sections après setProject()/
-    // setSections() (asynchrones) — soumettre juste après avec les anciennes valeurs
-    // renverrait la version non traduite.
-    let sectionsToUse = sections
-    let projectToUse = project
+    setTranslationIntegrityFailed(false)
+    setError(null)
+    const revision = selectionRevisionRef.current
     try {
-      const res = await api.post('/projects/smart-create/translate-preview', {
+      const translated = await translateSmartPreview(() => api.post('/projects/smart-create/translate-preview', {
         import_id: analyzeMetadata.import_id,
         target_lang: i18n.language
-      })
-      if (res.data.success) {
-        if (res.data.translated_sections?.length === sections.length) {
-          sectionsToUse = sections.map((s, i) => ({
-            ...s,
-            name: res.data.translated_sections[i]?.name || s.name,
-            description: res.data.translated_sections[i]?.description ?? s.description
-          }))
-          setSections(sectionsToUse)
-        }
-        if (res.data.translated_pattern_notes) {
-          projectToUse = { ...project, pattern_notes: res.data.translated_pattern_notes }
-          setProject(projectToUse)
-        }
-        setPatternLanguage(null)
-      }
+      }, {
+        // Une traduction complexe peut nécessiter une réparation ciblée de deux blocs.
+        // Le timeout global de 120 s interrompait la réponse juste avant son arrivée puis
+        // l'intercepteur relançait tout le traitement IA une seconde fois.
+        timeout: 300000,
+        skipAutomaticRetry: true,
+      }), project, sections)
+      if (revision !== selectionRevisionRef.current) return
+      setSections(translated.sections)
+      setProject(translated.project)
+      setPatternLanguage(null)
+      setTranslateGatePending(false)
+      setTranslationIntegrityFailed(false)
     } catch (err) {
       console.error('Erreur traduction aperçu:', err)
+      if (revision === selectionRevisionRef.current) {
+        setTranslateGatePending(true)
+        const integrityRejected = err.response?.status === 422 || err.response?.data?.error_code === 'translation_integrity_failed'
+        setTranslationIntegrityFailed(integrityRejected)
+        // L'échec d'intégrité possède son propre écran explicatif. Ne pas dupliquer
+        // ce message dans l'alerte globale, qui le présenterait comme une erreur
+        // dangereuse alors que la traduction rejetée n'est jamais conservée.
+        setError(integrityRejected ? null : t('ui.patternTranslationFailed'))
+      }
     } finally {
       setTranslatingPreview(false)
-      setTranslateGatePending(false)
-      // [AI:Claude] Si un avertissement (diagramme, extraction partielle) est aussi en
-      // attente, ne pas créer le projet tout de suite — la traduction faite, on retombe
-      // sur l'écran d'avertissement pour l'acquittement final plutôt que de le sauter.
-      if (!warningGatePending) {
-        submitProject(projectToUse, sectionsToUse)
-      }
     }
   }
 
   const addSection = () => {
-    setSections([...sections, { name: '', unit: 'rangs', target: null, description: '' }])
+    setSections([...sections, { name: '', unit: 'rangs', target: null, description: '', _source_index: null, _manually_edited: true }])
+    setReviewPointsConfirmed(false)
+  }
+
+  const duplicateSection = (index) => {
+    const copy = {
+      ...sections[index],
+      secondary_counter: sections[index].secondary_counter
+        ? { ...sections[index].secondary_counter }
+        : sections[index].secondary_counter,
+    }
+    copy._source_index = null
+    copy._manually_edited = true
+    setSections([...sections.slice(0, index + 1), copy, ...sections.slice(index + 1)])
+    setReviewPointsConfirmed(false)
   }
 
   const updateSection = (index, field, value) => {
-    const newSections = [...sections]
-    newSections[index][field] = value
-    setSections(newSections)
+    setSections(sections.map((section, i) => i === index ? updateSmartSection(section, field, value) : section))
+    setReviewPointsConfirmed(false)
   }
 
   const removeSection = (index) => {
     setSections(sections.filter((_, i) => i !== index))
+    setReviewPointsConfirmed(false)
   }
 
   const showTrialUsedWall = !!(!isPro && quota?.free_trial_used && step <= 1)
@@ -913,6 +1011,38 @@ export default function SmartProjectCreator() {
     )
   }
 
+  const blockingIssue = blockingPrecreationIssue(extractedData)
+  const blockingIssues = blockingPrecreationIssues(extractedData)
+  const selectedSizeIssue = blockingIssue?.code === 'selected_size_not_available' ? blockingIssue : null
+  const suggestedSize = singleCompatibleSize(selectedSizeIssue)
+  const diagramSourceUnavailable = containsDiagram && extractedData?.diagram_source_accessible === false
+  const reviewPoints = projectReviewPoints(extractedData, aiStatus)
+  const globalReviewPoints = reviewPoints.filter(point => point.sectionIndex === null)
+  const sizeSelectionReviewPoint = globalReviewPoints.find(point => point.code === 'pattern_size_not_selected') || null
+  const hasSelectableSizeReviewPoint = (sizeSelectionReviewPoint?.availableSizes?.length || 0) > 0
+  const otherGlobalReviewPoints = globalReviewPoints.filter(point => point.code !== 'pattern_size_not_selected')
+  const reviewPointLabel = (point) => {
+    const labels = {
+      structural_ambiguity_unresolved: 'reviewPointAmbiguity',
+      symmetric_piece_missing: 'reviewPointSymmetricPiece',
+      section_empty: 'reviewPointEmptySection',
+      section_instructions_missing: 'reviewPointMissingInstructions',
+      section_target_invalid: 'reviewPointInvalidTarget',
+      section_measurement_conflict: 'reviewPointMeasurement',
+      diagram_unavailable: 'reviewPointDiagramUnavailable',
+      diagram_present: 'reviewPointDiagram',
+      analysis_partial: 'reviewPointPartial',
+      pattern_size_not_selected: 'reviewPointSizeNotSelected',
+    }
+    const base = t(`ui.${labels[point.code] || 'reviewPointGeneric'}`)
+    if (!point.values?.length) return base
+    const values = point.values.map(item => `${new Intl.NumberFormat(i18n.language).format(item.value)} ${item.unit}`).join(` ${t('ui.or')} `)
+    return `${base} ${t('ui.valuesFound', { values })}`
+  }
+  // Plusieurs diagnostics peuvent produire le même conseil visible. Les diagnostics restent
+  // intacts : seule leur présentation est dédupliquée.
+  const uniqueReviewPointLabels = (points) => [...new Set(points.map(reviewPointLabel))]
+
   return (
     <>
     <div className="min-h-screen bg-gray-50 py-8">
@@ -934,7 +1064,7 @@ export default function SmartProjectCreator() {
                 setStep(1)
                 return
               }
-              if ((translateGatePending || warningGatePending) && !window.confirm(t('ui.leaveBeforeConfirmWarning'))) {
+              if (translateGatePending && !window.confirm(t('ui.leaveBeforeConfirmWarning'))) {
                 return
               }
               navigate('/my-projects')
@@ -1207,7 +1337,7 @@ export default function SmartProjectCreator() {
                   <button
                     key={s}
                     type="button"
-                    onClick={() => { setPatternSize(patternSize === s ? '' : s); setCustomSizeMode(false) }}
+                    onClick={() => { changePatternSize(patternSize === s ? '' : s); setCustomSizeMode(false) }}
                     className={`px-3 py-1.5 rounded-control text-sm font-medium border transition ${
                       patternSize === s
                         ? 'bg-primary-600 text-white border-primary-600'
@@ -1221,7 +1351,7 @@ export default function SmartProjectCreator() {
                   type="button"
                   onClick={() => {
                     setCustomSizeMode(true)
-                    if (['XS','S','M','L','XL','XXL','XXXL'].includes(patternSize)) setPatternSize('')
+                    if (['XS','S','M','L','XL','XXL','XXXL'].includes(patternSize)) changePatternSize('')
                   }}
                   className={`px-3 py-1.5 rounded-control text-sm font-medium border transition ${
                     customSizeMode
@@ -1236,7 +1366,7 @@ export default function SmartProjectCreator() {
                 <input
                   type="text"
                   value={patternSize}
-                  onChange={e => setPatternSize(e.target.value)}
+                  onChange={e => changePatternSize(e.target.value)}
                   placeholder={t('ui.otherSizePlaceholder')}
                   autoFocus
                   className="mt-2 px-3 py-1.5 border border-gray-200 rounded-control text-sm focus:ring-2 focus:ring-primary-500 w-full sm:w-48"
@@ -1245,21 +1375,14 @@ export default function SmartProjectCreator() {
             </div>
 
             <div className="flex gap-4">
-              {extractedData ? (
+              {extractedData && sameAnalysisSelection(analysisBindingRef.current, selectionRef.current) ? (
                 <button
                   onClick={() => {
-                    // [AI:Claude] Une analyse précédente existe déjà en état (ex: retour en
-                    // arrière pour changer la taille) — on suit la même logique que juste après
-                    // une analyse fraîche : passer par l'étape de traduction si besoin, sinon
-                    // créer directement le projet, plutôt que de renvoyer vers l'écran de
-                    // relecture manuelle qui n'est plus le chemin normal.
+                    // Une analyse existe pour cette source et cette taille inchangées :
+                    // restaurer sa relecture sans confirmer le projet automatiquement.
                     const needsTranslateGate = !!patternLanguage && patternLanguage !== i18n.language.split('-')[0]
                     setTranslateGatePending(needsTranslateGate)
-                    if (needsTranslateGate || warningGatePending) {
-                      setStep(3)
-                    } else {
-                      submitProject()
-                    }
+                    setStep(3)
                   }}
                   className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-control hover:bg-primary-700 flex items-center justify-center gap-2"
                 >
@@ -1352,10 +1475,8 @@ export default function SmartProjectCreator() {
               </div>
             </div>
 
-            {/* [AI:Claude] Apparaît après un délai raisonnable (10s) — invite à naviguer
-                ailleurs sans jamais promettre qu'elle sera prévenue ou que la création se
-                fera "automatiquement" : ça reste vrai uniquement hors gate diagramme/traduction/
-                partiel (voir handleAnalyze), donc on ne l'affirme pas ici. */}
+            {/* Apparaît après un délai raisonnable (10s). Si elle part, l'analyse terminée
+                reste reprenable dans l'étape de relecture. */}
             {showContinueHint && canContinueElsewhere && (
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <p className="text-xs text-gray-500 mb-2">{t('ui.continueInAppHint')}</p>
@@ -1371,10 +1492,7 @@ export default function SmartProjectCreator() {
           </div>
         )}
 
-        {/* [AI:Claude] Création automatique du projet juste après l'analyse (pas d'écran de
-            relecture manuelle dans le cas normal, voir handleAnalyze/submitProject) — un
-            écran de chargement dédié pour ne pas laisser un flash du formulaire d'étape 2
-            entre la fin de l'analyse et la redirection vers le projet créé. */}
+        {/* Écran de chargement après une validation explicite du formulaire. */}
         {creating && step !== 3 && (
           <div className="bg-white rounded-card shadow-sm border border-gray-200 p-10 text-center">
             <FlowMascot pose="heureux" size={110} className="mx-auto mb-6" />
@@ -1383,121 +1501,177 @@ export default function SmartProjectCreator() {
           </div>
         )}
 
-        {/* ÉTAPE 3 (variante) : porte de pré-création — traduction OU avertissements
-            (diagramme, extraction partielle) AVANT de créer le projet, jamais les deux à
-            la fois. [AI:Claude] Un avertissement (fiabilité de l'extraction en jeu) prime
-            sur la question de traduction (confort) — les cumuler aurait posé deux questions
-            différentes sur un seul écran ("on traduit ?" + "on continue ?"), la traduction
-            est donc sautée silencieusement quand un avertissement est présent : seul le
-            "continuer quand même" reste, le patron restera dans sa langue d'origine.
-            Affichée à la place du formulaire de relecture complet, qui n'est plus le
-            chemin normal (voir handleAnalyze). */}
-        {step === 3 && (translateGatePending || warningGatePending) && (
+        {/* Traduction validée ou langue originale explicitement choisie, puis
+            avertissements éventuels. Un échec de traduction laisse cette porte ouverte. */}
+        {step === 3 && blockingIssue && (
           <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8 text-center">
-            {containsDiagram && (
-              <FlowMascot pose="quiReflechit" size={90} className="mx-auto mb-4" />
-            )}
-            {!containsDiagram && aiStatus === 'partial' && (
-              <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
-            )}
-            {/* [AI:Claude] 2026-09-25 — Traduction seule : Flow + titre propre à la question
-                posée (affichait "Vérifie et modifie les informations", sans rapport). */}
-            {!containsDiagram && aiStatus !== 'partial' && (
-              <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
-            )}
+            <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
             <h2 className="text-xl font-bold text-flow-ink mb-2">
-              {containsDiagram
-                ? t('ui.diagramGateTitle')
-                : aiStatus === 'partial'
-                  ? t('ui.partialGateTitle')
-                  : t('ui.patternTranslateGateTitle')}
+              {selectedSizeIssue ? t('ui.selectedSizeUnavailableTitle') : t('ui.analysisBlockingErrorTitle')}
             </h2>
-
-            {!warningGatePending && translateGatePending && (
-              <p className="text-gray-600 mb-4">
-                {t('ui.patternTranslateGateBody', { lang: getLanguageName(patternLanguage), targetLang: getLanguageName(i18n.language.split('-')[0]) })}
-              </p>
-            )}
-
-            {containsDiagram && (
-              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-control text-amber-800 text-sm text-left">
-                {t('ui.diagramGateWarning')}
+            {selectedSizeIssue ? (
+              <div className="mb-5 text-sm text-gray-700">
+                <p>{t('ui.requestedSizeValue', { size: selectedSizeIssue.context?.selected_size || patternSize })}</p>
+                <p className="font-medium mt-1">{t('ui.availableSizesValue', { sizes: (selectedSizeIssue.context?.available_sizes || []).join(', ') })}</p>
+              </div>
+            ) : (
+              <div className="mb-5 text-sm text-gray-700">
+                <div className="space-y-3 text-left">
+                  {blockingIssues.map((issue, issueIndex) => (
+                    <div key={`${issue.code}-${issueIndex}`} className="bg-amber-50 border border-amber-200 rounded-control p-3">
+                      <p>{t('ui.analysisBlockingErrorBody')}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+            {diagramSourceUnavailable && (
+              <p className="mb-5 text-xs text-amber-700">{t('ui.diagramUnavailableWarning')}</p>
+            )}
+            <div className="flex flex-col items-center gap-3">
+              {suggestedSize && (
+                <button
+                  onClick={() => reanalyzeWithSize(suggestedSize)}
+                  disabled={analyzing}
+                  className="px-6 py-2.5 bg-primary-600 text-white rounded-control hover:bg-primary-700 transition disabled:opacity-60 text-sm font-medium"
+                >
+                  {t('ui.useAvailableSize', { size: suggestedSize })}
+                </button>
+              )}
+              <button
+                onClick={() => { resetExtraction(); setStep(2) }}
+                className="text-sm text-gray-500 hover:text-primary-700 transition"
+              >
+                {t('ui.changeSourceOrSize')}
+              </button>
+            </div>
+          </div>
+        )}
 
-            {/* [AI:Claude] Uniquement pour le cas "partial sans diagramme" — l'ancien texte
-                générique (ui.someInfoMissing, conservé tel quel pour l'écran de repli manuel
-                plus bas) invitait à "compléter les champs manquants" alors que cet écran-porte
-                n'a jamais eu de champ éditable. */}
-            {!containsDiagram && aiStatus === 'partial' && (
-              <p className="mb-4 text-gray-600 text-sm">
-                {t('ui.partialGateMessage')}
+        {step === 3 && !blockingIssue && translateGatePending && hasSelectableSizeReviewPoint && (
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-6 sm:p-8 text-center">
+            <FlowMascot pose="avecPatron" size={80} className="mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-flow-ink mb-2">{t('ui.chooseYourSizeReviewTitle')}</h2>
+            <p className="text-gray-600 mb-5">{t('ui.chooseYourSizeReviewBody')}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {sizeSelectionReviewPoint.availableSizes.map(size => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => reanalyzeWithSize(String(size))}
+                  disabled={analyzing}
+                  className="min-w-12 rounded-full border border-primary-300 bg-white px-4 py-2 text-sm font-medium text-primary-700 hover:border-primary-500 hover:bg-primary-50 disabled:opacity-50"
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 3 && !blockingIssue && translateGatePending && !hasSelectableSizeReviewPoint && (
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8 text-center">
+            <FlowMascot pose="interrogatif" size={90} className="mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-flow-ink mb-2">
+              {translatingPreview
+                ? t('ui.patternTranslatingTitle')
+                : translationIntegrityFailed
+                ? t('ui.patternTranslationIntegrityTitle')
+                : t('ui.patternTranslateGateTitle')}
+            </h2>
+
+            {translateGatePending && (
+              <p key={translationMessageIndex} className={`text-gray-600 mb-4 ${translatingPreview ? 'animate-fade-in-up' : ''}`}>
+                {translatingPreview
+                  ? t(`ui.${TRANSLATING_MESSAGE_KEYS[translationMessageIndex]}`)
+                  : translationIntegrityFailed
+                  ? t('ui.patternTranslationIntegrityBody')
+                  : t('ui.patternTranslateGateBody', { lang: getLanguageName(patternLanguage), targetLang: getLanguageName(i18n.language.split('-')[0]) })}
               </p>
             )}
 
-            {!warningGatePending && translateGatePending ? (
+            {translatingPreview ? (
+              <div className="flex flex-col items-center" aria-live="polite" aria-busy="true">
+                <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-primary-50 text-primary-600">
+                  <svg className="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                </div>
+                <p className="text-xs text-gray-400">{t('ui.patternTranslatingWait')}</p>
+              </div>
+            ) : translationIntegrityFailed ? (
+                <button
+                  onClick={() => { setError(null); setTranslationIntegrityFailed(false); setTranslateGatePending(false) }}
+                  className="px-6 py-2.5 bg-primary-600 text-white rounded-control text-sm font-medium hover:bg-primary-700 transition"
+                >
+                  {t('ui.patternTranslationContinueOriginal')}
+                </button>
+              ) : (
               <div className="flex items-center justify-center gap-3">
                 <button
-                  onClick={() => { setTranslateGatePending(false); submitProject() }}
-                  disabled={translatingPreview}
-                  className="px-4 py-2 text-gray-600 rounded-control text-sm font-medium hover:bg-gray-100 transition disabled:opacity-60"
+                  onClick={() => { setError(null); setTranslateGatePending(false) }}
+                  className="px-4 py-2 text-gray-600 rounded-control text-sm font-medium hover:bg-gray-100 transition"
                 >
                   {t('ui.patternTranslateGateSkip')}
                 </button>
                 <button
                   onClick={handleTranslatePreview}
-                  disabled={translatingPreview}
-                  className="px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-medium hover:bg-primary-700 transition disabled:opacity-60 flex items-center gap-2"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-control text-sm font-medium hover:bg-primary-700 transition flex items-center gap-2"
                 >
-                  {translatingPreview && (
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                  )}
-                  {translatingPreview ? t('ui.patternTranslating') : t('ui.patternTranslateGateCta')}
+                  {t('ui.patternTranslateGateCta')}
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={() => { setWarningGatePending(false); setTranslateGatePending(false); submitProject() }}
-                disabled={creating}
-                className="px-6 py-2.5 bg-primary-600 text-white rounded-control hover:bg-primary-700 transition disabled:opacity-60 text-sm font-medium"
-              >
-                {creating ? t('ui.creatingEllipsis') : t('ui.continueAnyway')}
-              </button>
-            )}
+              )}
           </div>
         )}
 
-        {/* ÉTAPE 3 : Validation/Édition (repli d'erreur uniquement) */}
-        {step === 3 && !translateGatePending && !warningGatePending && (
-          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-8">
-            <div className="flex items-start justify-between gap-4 mb-2">
+        {/* ÉTAPE 3 : Validation/Édition persistante jusqu'à une action explicite. */}
+        {step === 3 && !blockingIssue && !translateGatePending && (
+          <div className="bg-white rounded-card shadow-sm border border-gray-200 p-4 sm:p-8">
+            <div className="mb-4">
               <h2 className="text-xl font-bold text-flow-ink">
                 {t('ui.checkAndEdit')}
               </h2>
-
-              {/* [AI:Claude] Doublon du bouton de validation du bas — retour utilisatrice :
-                  le résumé est long, personne ne descend jusqu'en bas pour valider. */}
-              <div className="flex-shrink-0 flex flex-col items-end gap-1">
-                <button
-                  onClick={() => submitProject()}
-                  disabled={creating || !project.title}
-                  className="px-5 py-2.5 bg-primary-600 text-white rounded-control hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                >
-                  {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
-                </button>
-                <p className="text-xs text-gray-400">{t('ui.usesOneCredit')}</p>
-              </div>
             </div>
 
-            {containsDiagram && (
-              <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-control text-amber-800 text-sm">
-                {t('ui.diagramWarning')}
-              </div>
-            )}
-
-            {aiStatus === 'partial' && (
-              <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-control text-gray-600 text-sm">
-                {t('ui.someInfoMissing')}
+            {reviewPoints.length > 0 && (
+              <div className="mb-6 p-4 bg-primary-50 border border-primary-100 rounded-card text-sm">
+                <div className="flex items-center gap-3">
+                  <FlowMascot pose="avecPatron" size={52} className="shrink-0" />
+                  <div>
+                    <p className="font-semibold text-flow-ink">{t('ui.reviewFlowTitle')}</p>
+                    <p className="text-gray-600 mt-0.5">{t('ui.reviewFlowBody')}</p>
+                  </div>
+                </div>
+                {sizeSelectionReviewPoint && (
+                  <div className="mt-3 border-t border-primary-100 pt-3">
+                    <p className="font-semibold text-flow-ink">{t('ui.chooseYourSizeReviewTitle')}</p>
+                    <p className="mt-1 text-gray-600">{t('ui.chooseYourSizeReviewBody')}</p>
+                    {sizeSelectionReviewPoint.availableSizes.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {sizeSelectionReviewPoint.availableSizes.map(size => (
+                          <button
+                            key={size}
+                            type="button"
+                            onClick={() => reanalyzeWithSize(String(size))}
+                            disabled={analyzing}
+                            className="min-w-11 rounded-full border border-primary-300 bg-white px-3 py-1.5 text-sm font-medium text-primary-700 hover:border-primary-500 hover:bg-primary-100 disabled:opacity-50"
+                          >
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {otherGlobalReviewPoints.length > 0 && (
+                  <details className="mt-3 border-t border-primary-100 pt-3">
+                    <summary className="cursor-pointer text-primary-700 font-medium">
+                      {t('ui.generalPointsToCheck')}
+                    </summary>
+                    <ul className="list-disc pl-5 space-y-1.5 mt-2 text-gray-600">
+                      {uniqueReviewPointLabels(otherGlobalReviewPoints).map(label => <li key={label}>{label}</li>)}
+                    </ul>
+                  </details>
+                )}
               </div>
             )}
 
@@ -1513,7 +1687,7 @@ export default function SmartProjectCreator() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">{t('ui.projectType')}</label>
                   <select
@@ -1563,11 +1737,11 @@ export default function SmartProjectCreator() {
             </div>
 
             {/* Détails techniques */}
-            <details className="mb-6 border border-gray-200 rounded-card p-4" open>
+            <details className="mb-6 border border-gray-200 rounded-card p-4">
               <summary className="font-medium text-flow-ink cursor-pointer">{t('ui.technicalDetails')}</summary>
 
               <div className="mt-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">{t('ui.yarnBrand')}</label>
                     <input
@@ -1614,7 +1788,7 @@ export default function SmartProjectCreator() {
                 })()}
 
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">{t('ui.weight')}</label>
                     <input
@@ -1672,10 +1846,29 @@ export default function SmartProjectCreator() {
               </div>
 
               <div className="space-y-3">
-                {sections.map((section, index) => (
-                  <div key={index} className="border border-gray-200 rounded-card p-3">
-                    <div className="flex gap-2 items-start mb-2">
-                      <div className="flex-1 grid grid-cols-3 gap-2">
+                {sections.map((section, index) => {
+                  const sectionPointLabels = uniqueReviewPointLabels(reviewPoints.filter(point => point.sectionIndex === index))
+                  return (
+                  <div key={index} className="border border-gray-200 rounded-card p-3 sm:p-4">
+                    {sectionPointLabels.length > 0 && (
+                      <details className="mb-3">
+                        <summary className="cursor-pointer list-none flex justify-end">
+                          <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-medium text-amber-800">
+                            {sectionPointLabels.length === 1
+                              ? t('ui.toCheck')
+                              : t('ui.pointsToCheckCount', { count: sectionPointLabels.length })}
+                          </span>
+                        </summary>
+                        <div className="mt-2 rounded-control bg-gray-50 border border-gray-100 px-3 py-2.5">
+                          <p className="text-xs font-semibold text-gray-700 mb-1.5">{t('ui.pointsToCheckDetails')}</p>
+                          <ul className="list-disc pl-5 space-y-1 text-sm text-gray-600">
+                            {sectionPointLabels.map(label => <li key={label}>{label}</li>)}
+                          </ul>
+                        </div>
+                      </details>
+                    )}
+                    <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-start mb-2">
+                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <input
                           type="text"
                           value={section.name}
@@ -1683,28 +1876,52 @@ export default function SmartProjectCreator() {
                           placeholder={t('ui.phSectionName')}
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
                         />
-                        <select
-                          value={section.unit || 'rangs'}
-                          onChange={(e) => updateSection(index, 'unit', e.target.value)}
-                          className="px-2 py-1 border border-gray-300 rounded text-sm"
-                        >
-                          <option value="rangs">{t('ui.rowsLabel')}</option>
-                          <option value="cm">{t('ui.centimeters')}</option>
-                        </select>
-                        <input
-                          type="number"
-                          value={section.target || ''}
-                          onChange={(e) => updateSection(index, 'target', e.target.value ? parseInt(e.target.value) : null)}
-                          placeholder={t('ui.objective')}
-                          className="px-2 py-1 border border-gray-300 rounded text-sm"
-                        />
+                        {section.progression_type === 'action' ? (
+                          <div className="sm:col-span-2 px-2 py-1 bg-primary-50 border border-primary-200 rounded text-sm text-primary-800">
+                            {t('ui.manualActionSection')}
+                          </div>
+                        ) : (
+                          <>
+                            <select
+                              value={section.unit || 'rangs'}
+                              onChange={(e) => updateSection(index, 'unit', e.target.value)}
+                              className="px-2 py-1 border border-gray-300 rounded text-sm"
+                            >
+                              <option value="rangs">{t('ui.rowsLabel')}</option>
+                              <option value="cm">{t('ui.centimeters')}</option>
+                            </select>
+                            {section.progression_type === 'composite' ? (
+                              <div className="px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600">
+                                {t('ui.compositeFreeTracking')}
+                              </div>
+                            ) : (
+                              <input
+                                type="number"
+                                step={section.unit === 'cm' ? '0.1' : '1'}
+                                value={section.target || ''}
+                                onChange={(e) => updateSection(index, 'target', e.target.value)}
+                                placeholder={t('ui.objective')}
+                                className="px-2 py-1 border border-gray-300 rounded text-sm"
+                              />
+                            )}
+                          </>
+                        )}
                       </div>
-                      <button
-                        onClick={() => removeSection(index)}
-                        className="px-2 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
-                      >
-                        ✕
-                      </button>
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => duplicateSection(index)}
+                          className="px-2 py-1 text-primary-700 hover:bg-primary-50 rounded text-sm"
+                        >
+                          {t('ui.duplicateSection')}
+                        </button>
+                        <button
+                          onClick={() => removeSection(index)}
+                          className="px-2 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                     <textarea
                       value={section.description || ''}
@@ -1714,7 +1931,8 @@ export default function SmartProjectCreator() {
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm font-mono"
                     />
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
@@ -1730,8 +1948,15 @@ export default function SmartProjectCreator() {
               />
             </div>
 
+            {reviewPoints.length > 0 && (
+              <label className="mb-4 flex items-start gap-3 rounded-control border border-gray-200 bg-gray-50 p-3 text-sm font-medium text-gray-700">
+                <input type="checkbox" className="mt-0.5 shrink-0" checked={reviewPointsConfirmed} onChange={event => setReviewPointsConfirmed(event.target.checked)} />
+                {t('ui.reviewPointsConfirm')}
+              </label>
+            )}
+
             {/* Actions */}
-            <div className="flex gap-4">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={() => setStep(2)}
                 className="px-6 py-3 border border-gray-200 text-gray-700 rounded-control hover:bg-gray-50"
@@ -1741,7 +1966,7 @@ export default function SmartProjectCreator() {
 
               <button
                 onClick={() => submitProject()}
-                disabled={creating || !project.title}
+                disabled={creating || !project.title || (reviewPoints.length > 0 && !reviewPointsConfirmed)}
                 className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-control hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}

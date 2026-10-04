@@ -371,6 +371,12 @@
     "cmValue": "{{n}} cm",
     "rowsValue_one": "{{count}} row",
     "rowsValue_other": "{{count}} rows",
+    "projectSteps": "Project steps",
+    "sectionsCompleted": "{{done}} of {{total}} sections completed",
+    "quantifiableProgressByUnit": "{{done}} / {{total}} {{unit}} in sections with a target",
+    "freeProgressByUnit": "{{count}} {{unit}} recorded in free tracking",
+    "unitRows": "rows",
+    "unitCm": "cm",
     "goToPlan": "Upgrade to {{plan}} — from {{price}}/month",
     "billedAnnually": "Billed {{annual}}/year · cancel any time",
     "seeAllPlans": "See all plans"

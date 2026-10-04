@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS project_sections (
     display_order INT DEFAULT 0,
     total_rows INT DEFAULT NULL,
     current_row INT DEFAULT 0,
+    pattern_start_row INT UNSIGNED DEFAULT NULL,
     is_completed TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

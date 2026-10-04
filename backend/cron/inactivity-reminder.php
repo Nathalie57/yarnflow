@@ -49,13 +49,30 @@ $sql = <<<SQL
         p.updated_at    AS last_activity,
         CASE
             WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0
-                THEN ROUND(
-                    (SELECT COALESCE(SUM(current_row), 0) FROM project_sections WHERE project_id = p.id) /
-                    NULLIF((SELECT COALESCE(SUM(total_rows), 0) FROM project_sections WHERE project_id = p.id), 0) * 100
-                )
+                THEN (SELECT CASE
+                    WHEN SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) THEN 1 ELSE 0 END) = 0
+                     AND COUNT(DISTINCT CASE WHEN COALESCE(progression_type, 'simple') <> 'action' THEN COALESCE(counter_unit, 'rows') END) <= 1
+                     AND SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN total_rows ELSE 0 END) > 0
+                    THEN ROUND(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN current_row ELSE 0 END) /
+                               SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN total_rows ELSE 0 END) * 100)
+                    ELSE NULL END FROM project_sections WHERE project_id = p.id)
             WHEN p.total_rows > 0 THEN ROUND(p.current_row / p.total_rows * 100)
-            ELSE 0
+            ELSE NULL
         END AS progress,
+        (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) AS sections_count,
+        (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id AND is_completed = 1) AS completed_sections_count,
+        (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) AS quantifiable_current_rows,
+        (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) AS quantifiable_total_rows,
+        (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) AS unquantifiable_current_rows,
+        (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) AS quantifiable_current_rows_unit,
+        (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) AS quantifiable_total_rows_unit,
+        (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) AS quantifiable_current_cm,
+        (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) AS quantifiable_total_cm,
+        (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) AS unquantifiable_current_rows_unit,
+        (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) AS unquantifiable_current_cm,
+        CASE WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0
+             THEN (SELECT COALESCE(SUM(current_row), 0) FROM project_sections WHERE project_id = p.id)
+             ELSE COALESCE(p.current_row, 0) END AS activity_rows,
         u.id            AS user_id,
         u.email,
         u.first_name    AS user_name
@@ -84,7 +101,19 @@ error_log('[CRON inactivity] ' . count($projects) . ' projet(s) à relancer');
 foreach ($projects as $project) {
     $projectData = [
         'name'     => $project['project_name'],
-        'progress' => (int) $project['progress'],
+        'progress' => $project['progress'] !== null ? (int)$project['progress'] : null,
+        'sections_count' => (int)$project['sections_count'],
+        'completed_sections_count' => (int)$project['completed_sections_count'],
+        'quantifiable_current_rows' => (int)$project['quantifiable_current_rows'],
+        'quantifiable_total_rows' => (int)$project['quantifiable_total_rows'],
+        'unquantifiable_current_rows' => (int)$project['unquantifiable_current_rows'],
+        'quantifiable_current_rows_unit' => (float)$project['quantifiable_current_rows_unit'],
+        'quantifiable_total_rows_unit' => (float)$project['quantifiable_total_rows_unit'],
+        'quantifiable_current_cm' => (float)$project['quantifiable_current_cm'],
+        'quantifiable_total_cm' => (float)$project['quantifiable_total_cm'],
+        'unquantifiable_current_rows_unit' => (float)$project['unquantifiable_current_rows_unit'],
+        'unquantifiable_current_cm' => (float)$project['unquantifiable_current_cm'],
+        'activity_rows' => (int)$project['activity_rows'],
     ];
 
     $ok = $emailService->sendReengagementDay7Email(

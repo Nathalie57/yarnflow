@@ -14,6 +14,12 @@ class FlowContextGuidance
         $unit = ($section['counter_unit'] ?? 'rows') === 'cm' ? 'cm' : 'rows';
         $progressionType = $section['progression_type'] ?? 'simple';
 
+        if ($progressionType === 'action') {
+            return !empty($section['is_completed'])
+                ? 'action ponctuelle terminée'
+                : 'action ponctuelle à réaliser puis à marquer comme terminée';
+        }
+
         $format = static function (float $value) use ($unit): string {
             return $unit === 'cm'
                 ? number_format($value, 1, ',', '')
@@ -45,11 +51,47 @@ class FlowContextGuidance
 
     public static function sectionGuidance(array $section): string
     {
+        if (($section['progression_type'] ?? 'simple') === 'action') {
+            return 'Section action : aucune progression en rangs ou en mesure ne doit être déduite. Présenter l’instruction à réaliser et considérer la section terminée uniquement après validation explicite de l’utilisatrice.';
+        }
         if (($section['progression_type'] ?? 'simple') === 'composite') {
             return 'Section composite : le compteur indique seulement une progression enregistrée. Il ne permet pas de déduire avec certitude la sous-étape exacte ; vérifier les instructions et demander un repère à l’utilisatrice si nécessaire.';
         }
 
         return 'Section simple : le compteur BDD est le repère prioritaire pour situer la progression. Sa valeur indique le nombre de rangs déjà terminés, jamais le rang en cours ; utiliser le prochain rang explicitement indiqué dans la progression.';
+    }
+
+    public static function secondaryCounterSummary(array $counter): string
+    {
+        $label = trim((string)($counter['label'] ?? 'Compteur'));
+        $count = (int)($counter['count'] ?? 0);
+        $target = isset($counter['target']) && $counter['target'] !== null
+            ? (int)$counter['target']
+            : null;
+        $unit = in_array(($counter['unit'] ?? 'count'), ['count', 'rows', 'rounds', 'cm', 'mm', 'in'], true)
+            ? $counter['unit']
+            : 'count';
+        $role = in_array(($counter['tracking_role'] ?? 'informational'), ['required_cycle', 'required_parallel', 'informational', 'unknown'], true)
+            ? $counter['tracking_role']
+            : 'unknown';
+        $cycleLength = isset($counter['cycle_length']) && (int)$counter['cycle_length'] > 0
+            ? (int)$counter['cycle_length']
+            : null;
+
+        $progress = $target !== null ? "{$count}/{$target}" : (string)$count;
+        $parts = ["Compteur secondaire « {$label} » : {$progress}", "unité sémantique={$unit}", "tracking_role={$role}"];
+        if ($cycleLength !== null) {
+            $parts[] = "cycle_length={$cycleLength}";
+        }
+
+        $summary = implode(' ; ', $parts) . '.';
+        if ($role === 'unknown') {
+            $summary .= ' Son rôle dans la fin de la section est inconnu : ne pas en déduire la durée, le nombre total de rangs/tours ni la complétion de la section.';
+        } elseif ($role === 'informational') {
+            $summary .= ' Ce compteur est informatif et ne détermine pas la complétion de la section.';
+        }
+
+        return $summary;
     }
 
     public static function sizeGuidance(?string $patternSize, bool $hasMultiSizeData): string

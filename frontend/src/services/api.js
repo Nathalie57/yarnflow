@@ -107,7 +107,7 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     // [AI:Claude] Retry automatique pour erreurs réseau/serveur temporaires
-    if (isRetryableError(error) && originalRequest) {
+    if (isRetryableError(error) && originalRequest && originalRequest.skipAutomaticRetry !== true) {
       const retryCount = originalRequest._retryCount || 0
 
       if (retryCount < RETRY_CONFIG.maxRetries) {

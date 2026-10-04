@@ -22,6 +22,7 @@ use App\Services\AnalyticsService;
 use App\Services\SmartCreationTrackingService;
 use App\Services\PatternStorageService;
 use App\Services\PatternTranslatorService;
+use App\Services\PatternExtractionValidator;
 use App\Middleware\AuthMiddleware;
 
 class SmartProjectController
@@ -168,17 +169,37 @@ class SmartProjectController
                 return;
             }
 
+            $pendingData = json_decode($row['ai_response_json'] ?? '', true) ?: [];
+            $storedPreview = $pendingData['_translated_preview'] ?? null;
+            $translatedPreview = is_array($storedPreview)
+                && !empty($row['translated_text'])
+                && !empty($row['translated_lang'])
+                && ($storedPreview['target_lang'] ?? null) === $row['translated_lang']
+                && (($pendingData['translation_validation']['validated'] ?? false) === true)
+                ? $storedPreview
+                : null;
+            $pendingValidation = PatternExtractionValidator::validate($pendingData, $row['pattern_size'] ?? null);
+            $pendingData = $pendingValidation['data'];
+            if (is_array($pendingData['sections'] ?? null)) {
+                $pendingData['sections'] = AIPatternExtractorService::normalizeCumulativeTargets(
+                    $pendingData['sections'], $pendingData['craft_type'] ?? null
+                );
+            }
+            $measurementIssues = PatternExtractionValidator::sectionMeasurementIssues($pendingData['sections'] ?? []);
+            $pendingData['validation_issues']['section_measurements'] = $measurementIssues;
+
             $this->jsonResponse([
                 'pending' => true,
                 'import_id' => (int)$row['id'],
-                'attempt_id' => (json_decode($row['ai_response_json'] ?? '', true)['_analytics']['attempt_id'] ?? null),
+                'attempt_id' => $pendingData['_analytics']['attempt_id'] ?? null,
                 'source_name' => $row['source_name'],
                 'source_type' => $row['source_type'],
                 'pattern_size' => $row['pattern_size'],
                 'translated_text' => $row['translated_text'],
                 'translated_lang' => $row['translated_lang'],
-                'ai_status' => $row['ai_status'],
-                'data' => json_decode($row['ai_response_json'] ?? '', true) ?: [],
+                'translated_preview' => $translatedPreview,
+                'ai_status' => $measurementIssues ? 'partial' : $row['ai_status'],
+                'data' => $pendingData,
                 'created_at' => $row['created_at']
             ]);
         } catch (\Exception $e) {
@@ -424,6 +445,11 @@ class SmartProjectController
                     'data' => json_decode($cached['ai_response_json'], true),
                     'ai_status' => $cached['ai_status']
                 ];
+                if (is_array($result['data']['sections'] ?? null)) {
+                    $result['data']['sections'] = AIPatternExtractorService::normalizeCumulativeTargets(
+                        $result['data']['sections'], $result['data']['craft_type'] ?? null
+                    );
+                }
                 $releaseLock = function () {};
             } else {
                 // [AI:Claude] Verrou anti-double-analyse : un appel Gemini coûte réellement, et
@@ -472,6 +498,17 @@ class SmartProjectController
                 }
             }
 
+            if (!empty($result['success'])) {
+                $validatedResult = PatternExtractionValidator::validate($result['data'], $patternSize ?: null);
+                $result['data'] = $validatedResult['data'];
+                $result['data']['diagram_source_accessible'] = self::hasAccessibleDiagramSource(
+                    !empty($result['data']['contains_diagram']), $sourceType, $sourceName
+                );
+                $measurementIssues = PatternExtractionValidator::sectionMeasurementIssues($result['data']['sections'] ?? []);
+                $result['data']['validation_issues']['section_measurements'] = $measurementIssues;
+                if ($measurementIssues) $result['ai_status'] = 'partial';
+            }
+            $sourceName = self::resolveImportSourceName($sourceType, $sourceName, $result['data'] ?? null);
             $processingTime = $cached ? 0 : (isset($result['processing_time_ms']) ? (int)$result['processing_time_ms'] : (int)round((microtime(true) - $extractionStart) * 1000));
 
             // [AI:Claude] Persiste le fichier analysé (PDF importé ou depuis la bibliothèque)
@@ -613,11 +650,23 @@ class SmartProjectController
             $result = (new PatternTranslatorService())->translateParsedPattern($parsed, $targetLang);
 
             if (!$result['success']) {
-                $this->jsonResponse(['success' => false, 'error' => $result['error'] ?? 'Échec de la traduction'], 502);
+                $status = ($result['error_code'] ?? null) === 'translation_integrity_failed' ? 422 : 502;
+                $this->jsonResponse([
+                    'success' => false,
+                    'error' => $result['error'] ?? 'Échec de la traduction',
+                    'error_code' => $result['error_code'] ?? 'translation_failed',
+                    'repair_attempted' => (bool)($result['repair_attempted'] ?? false),
+                    'failed_block' => $result['failed_block'] ?? null,
+                ], $status);
                 return;
             }
 
             $parsed['translation_validation'] = $result['translation_validation'];
+            $parsed['_translated_preview'] = [
+                'target_lang' => $targetLang,
+                'sections' => $result['translated_sections'],
+                'pattern_notes' => $result['translated_pattern_notes'],
+            ];
             $updatedJson = json_encode($parsed, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             if ($updatedJson === false) {
                 throw new \RuntimeException('Impossible de sérialiser la validation de traduction');
@@ -657,7 +706,7 @@ class SmartProjectController
             $projectData = $data['project'];
             $sectionsData = $data['sections'];
             $sourceType = $data['source_type'] ?? 'manual';
-            $sourceUrl = $data['source_url'] ?? null;
+            $sourceUrl = self::validatedSourceUrl($data['source_url'] ?? null, $sourceType);
             $analyzeMetadata = $data['analyze_metadata'] ?? null;
 
             // [AI:Claude] Retrouve le fichier persisté par analyze() (voir logImport()) pour
@@ -677,7 +726,7 @@ class SmartProjectController
                 // La ligne d'import sérialise les confirmations concurrentes. Après l'attente
                 // éventuelle, une seconde requête retrouve project_id et renvoie le même projet.
                 $importLookup = $db->prepare(
-                    'SELECT project_id, source_file_path, source_type, ai_response_json FROM ai_pattern_imports WHERE id = :id AND user_id = :uid FOR UPDATE'
+                    'SELECT project_id, source_file_path, source_type, pattern_size, ai_status, ai_response_json FROM ai_pattern_imports WHERE id = :id AND user_id = :uid FOR UPDATE'
                 );
                 $importLookup->execute(['id' => $importId, 'uid' => $userId]);
                 $importRow = $importLookup->fetch(\PDO::FETCH_ASSOC);
@@ -702,6 +751,35 @@ class SmartProjectController
                 }
                 $sourceFilePath = ($importRow['source_file_path'] ?? null) ?: null;
                 $importSourceType = $importRow['source_type'] ?? null;
+                if (array_key_exists('pattern_size', $data)
+                    && trim((string)$data['pattern_size']) !== trim((string)($importRow['pattern_size'] ?? ''))) {
+                    $db->rollBack();
+                    $this->jsonResponse(['error' => 'La taille a changé : une nouvelle analyse est nécessaire.', 'error_code' => 'analysis_size_changed'], 409);
+                    return;
+                }
+
+                $storedAnalysis = json_decode((string)($importRow['ai_response_json'] ?? ''), true);
+                if (is_array($storedAnalysis)) {
+                    $editedValidation = PatternExtractionValidator::validateEditedPreview(
+                        $storedAnalysis, $projectData, $sectionsData, $importRow['pattern_size'] ?: null
+                    );
+                    if (!empty($editedValidation['blocking_errors'])) {
+                        $firstError = $editedValidation['blocking_errors'][0];
+                        $db->rollBack();
+                        $this->jsonResponse([
+                            'error' => $firstError['message'] ?? 'Cette analyse contient une erreur bloquante.',
+                            'error_code' => ($firstError['code'] ?? '') === 'selected_size_not_available'
+                                ? 'selected_size_not_available' : 'precreation_validation_failed',
+                            'validation_errors' => $editedValidation['blocking_errors'],
+                        ], 422);
+                        return;
+                    }
+                    $sectionsData = $editedValidation['data']['sections'];
+                } else {
+                    $db->rollBack();
+                    $this->jsonResponse(['error' => 'Analyse invalide', 'error_code' => 'analysis_invalid'], 422);
+                    return;
+                }
             }
 
             // [AI:Claude] Re-vérifie le quota FREE ici, pas seulement dans analyze() : entre
@@ -724,6 +802,27 @@ class SmartProjectController
                         return;
                     }
                 }
+            }
+
+            // Revalide aussi la sémantique des compteurs envoyée par le client. Un cycle
+            // ancien, incomplet ou modifié ne doit jamais contourner le fallback prudent.
+            // Tous les points non bloquants sont regroupés sous une confirmation unique.
+            // Le serveur les recalcule depuis l'import et les sections envoyées : le booléen
+            // du client atteste uniquement que l'utilisatrice les a vérifiés dans son patron.
+            $measurementIssues = PatternExtractionValidator::sectionMeasurementIssues($sectionsData);
+            $hasReviewPoints = !empty($editedValidation['review_issues'] ?? [])
+                || !empty($editedValidation['warnings'] ?? [])
+                || !empty($editedValidation['unverifiable'] ?? [])
+                || !empty($measurementIssues)
+                || !empty($storedAnalysis['contains_diagram'])
+                || ($importRow['ai_status'] ?? null) === 'partial';
+            if ($hasReviewPoints && ($data['review_points_confirmed'] ?? false) !== true) {
+                $db->rollBack();
+                $this->jsonResponse([
+                    'error' => 'Vérifie les points signalés avec le patron original avant de créer le projet.',
+                    'error_code' => 'review_points_confirmation_required',
+                ], 422);
+                return;
             }
 
             // Créer le projet
@@ -772,8 +871,9 @@ class SmartProjectController
                 if (isset($firstYarn['weight'])) {
                     $insertData['yarn_weight'] = $firstYarn['weight'];
                 }
-                if (isset($projectData['needles'][0]['size'])) {
-                    $insertData['hook_size'] = $projectData['needles'][0]['size'];
+                $primaryNeedle = self::selectPrimaryNeedle($projectData['needles'] ?? []);
+                if (!empty($primaryNeedle['size'])) {
+                    $insertData['hook_size'] = $primaryNeedle['size'];
                 }
                 if (isset($projectData['gauge']['stitches'])) {
                     $insertData['gauge_stitches'] = $projectData['gauge']['stitches'];
@@ -781,8 +881,9 @@ class SmartProjectController
                 if (isset($projectData['gauge']['rows'])) {
                     $insertData['gauge_rows'] = $projectData['gauge']['rows'];
                 }
-                if (isset($projectData['gauge']['size_cm'])) {
-                    $insertData['gauge_size_cm'] = $projectData['gauge']['size_cm'];
+                if (($projectData['gauge']['stitches'] ?? null) !== null
+                    || ($projectData['gauge']['rows'] ?? null) !== null) {
+                    $insertData['gauge_size_cm'] = $projectData['gauge']['size_cm'] ?? 10;
                 }
 
                 // [AI:Claude] L'onglet "Détails techniques" de ProjectCounter ne lit QUE le
@@ -790,17 +891,16 @@ class SmartProjectController
                 // ci-dessus (gauge_stitches, yarn_brand, hook_size...). Sans ce bloc,
                 // l'échantillon et le reste des détails extraits par l'IA restaient invisibles
                 // nulle part dans l'app, alors qu'ils étaient bien enregistrés en base.
-                $sizeCm = $projectData['gauge']['size_cm'] ?? 10;
+                $hasStructuredGauge = ($projectData['gauge']['stitches'] ?? null) !== null
+                    || ($projectData['gauge']['rows'] ?? null) !== null;
+                $sizeCm = $hasStructuredGauge ? ($projectData['gauge']['size_cm'] ?? 10) : null;
                 $insertData['technical_details'] = json_encode([
                     'yarn' => !empty($projectData['yarn']) ? array_map(function ($y) {
-                        // [AI:Claude] Suit la convention du formulaire manuel : "Marque" = marque + nom
-                        // du fil (ex: "DROPS Air"), "Nom" = composition ou épaisseur si le patron
-                        // utilise un système propriétaire (ex: "Groupe C") plutôt qu'une catégorie standard
-                        $brand = trim(($y['brand'] ?? '') . ' ' . ($y['name'] ?? ''));
-                        $nameField = $y['composition'] ?? ($y['weight'] ?? '');
                         return [
-                            'brand' => $brand,
-                            'name' => $nameField,
+                            'brand' => $y['brand'] ?? '',
+                            'name' => $y['name'] ?? '',
+                            'composition' => $y['composition'] ?? '',
+                            'weight' => $y['weight'] ?? '',
                             'url' => '',
                             'quantities' => [[
                                 'amount' => $y['quantity_needed']['amount'] ?? '',
@@ -832,8 +932,8 @@ class SmartProjectController
                     'gauge' => [
                         'stitches' => $projectData['gauge']['stitches'] ?? '',
                         'rows' => $projectData['gauge']['rows'] ?? '',
-                        'dimensions' => "{$sizeCm} x {$sizeCm} cm",
-                        'notes' => ''
+                        'dimensions' => $sizeCm !== null ? "{$sizeCm} x {$sizeCm} cm" : '',
+                        'notes' => $projectData['gauge']['notes'] ?? ''
                     ],
                     'description' => $projectData['description'] ?? ''
                 ]);
@@ -854,18 +954,19 @@ class SmartProjectController
                 if (!empty($sectionsData)) {
                     $stmt = $db->prepare("
                         INSERT INTO project_sections
-                        (project_id, name, counter_unit, progression_type, total_rows, description, display_order)
-                        VALUES (:project_id, :name, :counter_unit, :progression_type, :total_rows, :description, :display_order)
+                        (project_id, name, counter_unit, progression_type, total_rows, current_row, pattern_start_row, description, display_order)
+                        VALUES (:project_id, :name, :counter_unit, :progression_type, :total_rows, 0, :pattern_start_row, :description, :display_order)
                     ");
 
                     foreach ($sectionsData as $index => $section) {
-                        $unit = $section['unit'] ?? 'rangs';
+                        $unit = $section['unit'] ?? null;
                         // [AI:Claude] Section composite = plusieurs paliers/actions successifs qu'un
                         // total unique représenterait de façon trompeuse (voir EXTRACTION_PROMPT,
                         // RÈGLE PROGRESSION COMPOSITE). Invariant forcé ici, pas seulement dans le
                         // prompt : si l'IA renvoie quand même un target malgré composite, on l'ignore
                         // plutôt que d'afficher un compteur X/Y qui pourrait faire manquer une étape.
-                        $progressionType = ($section['progression_type'] ?? 'simple') === 'composite' ? 'composite' : 'simple';
+                        $progressionType = in_array($section['progression_type'] ?? 'simple', ['simple', 'composite', 'action'], true)
+                            ? $section['progression_type'] : 'simple';
                         // [AI:Claude] Dernier garde-fou avant la base : cible non numérique, nulle ou
                         // négative (ex: soustraction incohérente, saisie à la relecture) → compteur
                         // libre plutôt qu'un objectif faux.
@@ -874,9 +975,10 @@ class SmartProjectController
                         $stmt->execute([
                             'project_id' => $projectId,
                             'name' => $section['name'],
-                            'counter_unit' => $unit === 'cm' ? 'cm' : 'rows',
+                            'counter_unit' => $progressionType === 'action' ? null : ($unit === 'cm' ? 'cm' : 'rows'),
                             'progression_type' => $progressionType,
-                            'total_rows' => $progressionType === 'composite' ? null : $target,
+                            'total_rows' => $progressionType === 'simple' ? $target : null,
+                            'pattern_start_row' => !empty($section['pattern_start_row']) ? (int)$section['pattern_start_row'] : null,
                             'description' => $section['description'] ?? null,
                             'display_order' => $index + 1
                         ]);
@@ -899,9 +1001,20 @@ class SmartProjectController
                             $this->projectModel->addSecondaryCounter($projectId, $sectionId, [
                                 'label' => $secondaryCounter['label'],
                                 'target' => (int) $secondaryCounter['target'],
-                                'count' => 0
+                                'count' => 0,
+                                'tracking_role' => in_array($secondaryCounter['tracking_role'] ?? '', ['required_cycle', 'required_parallel', 'informational', 'unknown'], true)
+                                    ? $secondaryCounter['tracking_role'] : 'unknown',
+                                'cycle_length' => !empty($secondaryCounter['cycle_length']) ? (int)$secondaryCounter['cycle_length'] : null,
+                                'unit' => $secondaryCounter['unit'] ?? 'count',
                             ]);
                         }
+                    }
+
+                    $firstSectionStmt = $db->prepare('SELECT id FROM project_sections WHERE project_id = :project_id ORDER BY display_order ASC, id ASC LIMIT 1');
+                    $firstSectionStmt->execute(['project_id' => $projectId]);
+                    $firstSectionId = $firstSectionStmt->fetchColumn();
+                    if ($firstSectionId) {
+                        $this->projectModel->setCurrentSection($projectId, (int)$firstSectionId);
                     }
                 }
 
@@ -964,6 +1077,36 @@ class SmartProjectController
             error_log('[SmartProject] Erreur confirm: ' . $e->getMessage());
             $this->jsonResponse(['error' => 'Erreur lors de la création du projet'], 500);
         }
+    }
+
+    private static function selectPrimaryNeedle(array $needles): ?array
+    {
+        $valid = array_values(array_filter($needles, fn($needle) => is_array($needle) && !empty($needle['size'])));
+        if (count($valid) === 1) return $valid[0];
+
+        foreach ($valid as $needle) {
+            $usage = mb_strtolower(trim((string)($needle['usage'] ?? '')));
+            if ($usage !== '' && preg_match('/\b(?:main|body|garment|pattern|jersey|principal|corps|ouvrage|motif)\b/iu', $usage)) {
+                return $needle;
+            }
+        }
+        return null;
+    }
+
+    private static function hasAccessibleDiagramSource(bool $containsDiagram, string $sourceType, ?string $sourceName): bool
+    {
+        if (!$containsDiagram) return true;
+        if (in_array($sourceType, ['pdf', 'library'], true)) return true;
+        return $sourceType === 'url' && filter_var($sourceName, FILTER_VALIDATE_URL) !== false;
+    }
+
+    private static function validatedSourceUrl(mixed $value, string $sourceType): ?string
+    {
+        if (!in_array($sourceType, ['url', 'text'], true) || !is_string($value)) return null;
+        $value = trim($value);
+        if ($value === '' || filter_var($value, FILTER_VALIDATE_URL) === false) return null;
+        $scheme = strtolower((string)parse_url($value, PHP_URL_SCHEME));
+        return in_array($scheme, ['http', 'https'], true) ? $value : null;
     }
 
     /**
@@ -1181,6 +1324,26 @@ class SmartProjectController
             error_log('[SmartProject] Erreur logImport: ' . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Un import de texte collé n'a pas de nom de fichier ni d'URL. Son libellé doit donc
+     * venir du titre extrait, et non des premiers caractères de la page (souvent une bannière).
+     */
+    private static function resolveImportSourceName(string $sourceType, string $initialName, ?array $analysis): string
+    {
+        if ($sourceType !== 'text') {
+            return $initialName;
+        }
+
+        $title = trim((string)($analysis['title'] ?? ''));
+        $normalizedTitle = preg_replace('/\s+/u', ' ', $title);
+
+        if (is_string($normalizedTitle) && $normalizedTitle !== '') {
+            return mb_substr($normalizedTitle, 0, 500);
+        }
+
+        return 'Texte collé';
     }
 
     /**

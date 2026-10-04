@@ -371,6 +371,12 @@
     "cmValue": "{{n}} cm",
     "rowsValue_one": "{{count}} rang",
     "rowsValue_other": "{{count}} rangs",
+    "projectSteps": "Étapes du projet",
+    "sectionsCompleted": "{{done}} sections terminées sur {{total}}",
+    "quantifiableProgressByUnit": "{{done}} / {{total}} {{unit}} dans les sections avec objectif",
+    "freeProgressByUnit": "{{count}} {{unit}} enregistrés dans le suivi libre",
+    "unitRows": "rangs",
+    "unitCm": "cm",
     "goToPlan": "Passer à {{plan}} — dès {{price}}/mois",
     "billedAnnually": "Facturé {{annual}}/an · résiliable à tout moment",
     "seeAllPlans": "Voir tous les plans"

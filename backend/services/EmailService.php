@@ -761,17 +761,42 @@ HTML;
         $projectBlock = '';
         if ($hasProject) {
             $projectName = htmlspecialchars($projectData['name']);
-            $progress = (int)($projectData['progress'] ?? 0);
+            $progress = isset($projectData['progress']) ? (int)$projectData['progress'] : null;
+            if ($progress !== null) {
+                $progressBlock = <<<HTML
+                <div style="background-color:#e8ede8;border-radius:999px;height:6px;overflow:hidden;">
+                    <div style="background:#557055;height:100%;width:{$progress}%;"></div>
+                </div>
+                <p style="margin:6px 0 0;font-size:13px;color:#9ca3af;">{$progress}% complété</p>
+HTML;
+            } else {
+                $doneSections = (int)($projectData['completed_sections_count'] ?? 0);
+                $totalSections = (int)($projectData['sections_count'] ?? 0);
+                $knownRows = (float)($projectData['quantifiable_current_rows_unit'] ?? $projectData['quantifiable_current_rows'] ?? 0);
+                $totalRows = (float)($projectData['quantifiable_total_rows_unit'] ?? $projectData['quantifiable_total_rows'] ?? 0);
+                $knownCm = (float)($projectData['quantifiable_current_cm'] ?? 0);
+                $totalCm = (float)($projectData['quantifiable_total_cm'] ?? 0);
+                $freeRows = (float)($projectData['unquantifiable_current_rows_unit'] ?? $projectData['unquantifiable_current_rows'] ?? 0);
+                $freeCm = (float)($projectData['unquantifiable_current_cm'] ?? 0);
+                $activityRows = (int)($projectData['activity_rows'] ?? 0);
+                $details = $totalRows > 0 ? "{$knownRows} / {$totalRows} rangs dans les sections avec objectif" : '';
+                if ($totalCm > 0) $details .= ($details !== '' ? ' · ' : '') . "{$knownCm} / {$totalCm} cm dans les sections avec objectif";
+                if ($freeRows > 0) $details .= ($details !== '' ? ' · ' : '') . "{$freeRows} rangs enregistrés dans le suivi libre";
+                if ($freeCm > 0) $details .= ($details !== '' ? ' · ' : '') . "{$freeCm} cm enregistrés dans le suivi libre";
+                if ($totalSections === 0 && $activityRows > 0) $details = "{$activityRows} rangs enregistrés";
+                $heading = $totalSections > 0 ? "{$doneSections} sections terminées sur {$totalSections}" : 'Progression enregistrée dans YarnFlow';
+                $progressBlock = '<p style="margin:6px 0 0;font-size:13px;color:#6b7280;">'
+                    . $heading
+                    . ($details !== '' ? '<br><span style="color:#9ca3af;">' . $details . '</span>' : '')
+                    . '</p>';
+            }
             $projectBlock = <<<HTML
     <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e8ede8;border-radius:8px;margin:0 0 32px;">
         <tr>
             <td style="padding:20px 24px;">
                 <p style="margin:0 0 8px;font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">Ton projet en cours</p>
                 <p style="margin:0 0 12px;font-size:17px;font-weight:600;color:#111827;">{$projectName}</p>
-                <div style="background-color:#e8ede8;border-radius:999px;height:6px;overflow:hidden;">
-                    <div style="background:#557055;height:100%;width:{$progress}%;"></div>
-                </div>
-                <p style="margin:6px 0 0;font-size:13px;color:#9ca3af;">{$progress}% complété</p>
+                {$progressBlock}
             </td>
         </tr>
     </table>

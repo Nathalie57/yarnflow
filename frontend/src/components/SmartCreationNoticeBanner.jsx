@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import FlowMascot from './FlowMascot'
 import api from '../services/api'
@@ -40,6 +40,7 @@ const clearStored = () => {
 const SmartCreationNoticeBanner = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const [notice, setNotice] = useState(() => readStored())
   const shownRef = useRef(new Set())
   useEffect(() => {
@@ -87,7 +88,10 @@ const SmartCreationNoticeBanner = () => {
     return () => clearTimeout(expiryTimer)
   }, [notice?.kind, notice?.createdAt])
 
-  if (!notice) return null
+  // Cette notice sert à retrouver une analyse après avoir quitté la Création
+  // Intelligente. Sur la page elle-même, l'état local présente déjà la prochaine
+  // action (traduction, relecture, confirmation) et doit rester l'unique parcours.
+  if (!notice || location.pathname === '/smart-project-creator') return null
 
   // Un projet déjà créé peut retirer sa notice. Une analyse à confirmer reste au contraire
   // disponible sous forme compacte jusqu'à sa résolution ou son expiration.

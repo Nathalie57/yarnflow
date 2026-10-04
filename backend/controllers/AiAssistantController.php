@@ -18,6 +18,7 @@ use App\Services\AIPatternExtractorService;
 use App\Services\PatternTranslatorService;
 use App\Services\AnalyticsService;
 use App\Services\FlowContextGuidance;
+use App\Services\PatternExtractionValidator;
 
 class AiAssistantController
 {
@@ -161,7 +162,8 @@ class AiAssistantController
 
             // [AI:Claude] Contexte projet — ignoré silencieusement si le projet n'appartient
             // pas à l'utilisateur ou n'existe plus, plutôt que de faire échouer tout le chat
-            $projectContext = $projectId ? $this->buildProjectContext($projectId, $userId) : null;
+            $isDemoProject = false;
+            $projectContext = $projectId ? $this->buildProjectContext($projectId, $userId, $isDemoProject) : null;
 
             if (empty($messages)) {
                 $this->sendResponse(400, ['error' => 'Messages manquants']);
@@ -210,7 +212,7 @@ class AiAssistantController
                     'headers' => ['content-type' => 'application/json'],
                     'json' => [
                         'systemInstruction' => [
-                            'parts' => [['text' => $this->getSystemPrompt($plan, $projectContext !== null ? '' : null, $lang)]]
+                            'parts' => [['text' => $this->getSystemPrompt($plan, $projectContext !== null ? '' : null, $lang, $isDemoProject)]]
                         ],
                         'contents' => $geminiContents,
                         // [AI:Claude] Un patron détaillé + la consigne de toujours donner des
@@ -319,7 +321,7 @@ class AiAssistantController
         }
     }
 
-    private function getSystemPrompt(string $plan = 'free', ?string $projectContext = null, string $lang = 'fr'): string
+    private function getSystemPrompt(string $plan = 'free', ?string $projectContext = null, string $lang = 'fr', bool $isDemoProject = false): string
     {
         $isFree = ($plan === 'free');
 
@@ -353,6 +355,8 @@ Si ta réponse soulève naturellement un besoin couvert par PRO (ex: gérer un g
                 . "Pour les cas 2 et 3 uniquement (jamais le cas 1, traduction) :\n"
                 . "Même face à une question vague (\"je pense avoir fait une erreur\", \"ça ne va pas\"), NE TE CONTENTE JAMAIS de renvoyer une question de clarification sans rien apporter d'autre : donne toujours au moins une ou deux pistes de vérification concrètes tirées du contexte ci-dessus (nombre de mailles/rangs attendu à ce stade, points de vigilance typiques de cette étape du patron, erreur fréquente à cet endroit précis), et pose ta question de clarification EN PLUS de ça, pas à sa place.\n\nÀ la TOUTE FIN de chaque réponse, ajoute impérativement un bloc de 2 à 3 suggestions de questions de suivi, courtes (moins de 8 mots). Elles doivent porter UNIQUEMENT sur un point, une technique ou un terme que TA PROPRE RÉPONSE ci-dessus vient de mentionner explicitement — jamais une technique du patron que tu n'as pas citée dans ta réponse, même si elle apparaît ailleurs dans le patron ou est habituelle pour ce type d'ouvrage (ex: si ta réponse ne parle pas du montage/magic ring, ne le suggère pas juste parce que c'est un amigurumi). En cas de doute sur la pertinence d'une suggestion, ne la propose pas plutôt que de deviner — au format exact suivant, sur ses propres lignes, rien après :\n###SUGGESTIONS###\nQuestion de suivi 1\nQuestion de suivi 2\n"
             : '';
+
+        $demoGuidance = $isDemoProject ? "\nPROJET DE DÉMONSTRATION (confirmé par projects.is_demo en base) : ce projet exemple possède une progression, des sections, des notes et des détails techniques, mais pas le texte analysé du patron. Appuie-toi sur ces données pour répondre aux questions sur l'avancement, les sections et les notes. Ne présente jamais les totaux de rangs comme des instructions détaillées et n'invente ni le contenu d'un rang ni un nombre de mailles. Si une question demande d'expliquer un rang ou une instruction absente, réponds chaleureusement dans la langue de l'interface : explique brièvement que ce projet exemple ne contient pas les instructions du rang, puis montre qu'avec son propre patron ajouté à YarnFlow tu pourrais t'appuyer sur son texte pour l'aider à comprendre le rang suivi. Ne te limite pas à lui demander de recopier le rang. Les suggestions de suivi doivent être utiles avec les données présentes ou porter sur ce que tu pourrais faire avec son propre patron ; n'en suggère aucune qui exige le texte absent.\n" : '';
 
         return <<<PROMPT
 Tu es un assistant expert en tricot et crochet, intégré dans YarnFlow, une application de gestion de projets textile.
@@ -401,6 +405,7 @@ CONTEXTE YARNFLOW
 L'utilisateur gère ses projets dans YarnFlow. Il peut te parler de son projet en cours (sections, rangs, patron importé).
 $projectContextBlock
 $planContext
+$demoGuidance
 PROMPT;
     }
 
@@ -442,16 +447,17 @@ PROMPT;
         }
     }
 
-    private function buildProjectContext(int $projectId, int $userId): ?string
+    private function buildProjectContext(int $projectId, int $userId, bool &$isDemoProject): ?string
     {
         $stmt = $this->db->prepare(
-            'SELECT name, type, current_row, total_rows, current_section_id, counter_unit, status, notes, pattern_notes,
+            'SELECT name, type, current_row, total_rows, current_section_id, counter_unit, status, notes, pattern_notes, is_demo,
                     yarn_brand, yarn_color, hook_size, technical_details
              FROM projects WHERE id = :id AND user_id = :uid'
         );
         $stmt->execute([':id' => $projectId, ':uid' => $userId]);
         $project = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$project) return null;
+        $isDemoProject = (int)$project['is_demo'] === 1;
 
         $lines = ["[SOURCE PRIORITAIRE BDD] Projet : {$project['name']}" . (!empty($project['type']) ? " ({$project['type']})" : '')];
 
@@ -489,14 +495,15 @@ PROMPT;
         // Toutes les sections (pas seulement l'active) — la LLM a besoin de la vue d'ensemble
         // pour répondre à "qu'est-ce qui vient après ?" ou "il me reste combien de parties ?"
         $stmt = $this->db->prepare(
-            'SELECT id, name, description, notes, current_row, total_rows, counter_unit, progression_type, is_completed
+            'SELECT id, name, description, notes, current_row, total_rows, pattern_start_row, counter_unit, progression_type, is_completed
              FROM project_sections WHERE project_id = :pid ORDER BY display_order ASC'
         );
         $stmt->execute([':pid' => $projectId]);
         $sections = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $stmt = $this->db->prepare(
-            'SELECT section_id, label, target, count FROM project_secondary_counters WHERE project_id = :pid'
+            'SELECT section_id, label, target, count, unit, tracking_role, cycle_length
+             FROM project_secondary_counters WHERE project_id = :pid'
         );
         $stmt->execute([':pid' => $projectId]);
         $countersBySection = [];
@@ -510,6 +517,10 @@ PROMPT;
                 $progress = FlowContextGuidance::progressSummary($section);
                 $status = $section['is_completed'] ? ' [terminée]' : ($isActive ? ' [section active — c\'est ici qu\'est l\'utilisatrice en ce moment]' : '');
                 $lines[] = "Section : {$section['name']}{$status} — progression : {$progress}";
+                if ($section['pattern_start_row'] !== null) {
+                    $nextPatternRow = (int)$section['pattern_start_row'] + (int)$section['current_row'];
+                    $lines[] = "  Correspondance patron : le prochain rang/tour est le numéro {$nextPatternRow} du patron (le compteur de section est local).";
+                }
                 if ($isActive) {
                     $lines[] = '  ' . FlowContextGuidance::sectionGuidance($section);
                 }
@@ -520,8 +531,7 @@ PROMPT;
                     $lines[] = '  [CORRECTION/NOTE EXPLICITE DE L\'UTILISATRICE] ' . $section['notes'];
                 }
                 foreach ($countersBySection[$section['id']] ?? [] as $counter) {
-                    $target = $counter['target'] !== null ? "/{$counter['target']}" : '';
-                    $lines[] = "  Compteur secondaire « {$counter['label']} » : {$counter['count']}{$target}";
+                    $lines[] = '  ' . FlowContextGuidance::secondaryCounterSummary($counter);
                 }
             }
         } else {
@@ -538,8 +548,7 @@ PROMPT;
         // Compteurs secondaires hors section (section_id NULL) — possible même sur un projet
         // avec sections, selon comment ils ont été créés.
         foreach ($countersBySection[0] ?? [] as $counter) {
-            $target = $counter['target'] !== null ? "/{$counter['target']}" : '';
-            $lines[] = "Compteur secondaire « {$counter['label']} » (hors section) : {$counter['count']}{$target}";
+            $lines[] = FlowContextGuidance::secondaryCounterSummary($counter) . ' Compteur hors section.';
         }
 
         $stmt = $this->db->prepare(
@@ -560,8 +569,15 @@ PROMPT;
             ));
             $hasMultiSizeData = $hasUnresolvedData
                 || (bool)preg_match('/\b\d+(?:\s*[-\/]\s*\d+){2,}\b/u', $referenceText);
-            $sizeGuidance = FlowContextGuidance::sizeGuidance($importRow['pattern_size'] ?? null, $hasMultiSizeData);
+            $sizeValidation = PatternExtractionValidator::validate($parsed, $importRow['pattern_size'] ?? null);
+            $hasIncompatibleSize = in_array('selected_size_not_available', array_column($sizeValidation['errors'], 'code'), true);
+            $sizeGuidance = $hasIncompatibleSize
+                ? ''
+                : FlowContextGuidance::sizeGuidance($importRow['pattern_size'] ?? null, $hasMultiSizeData);
             if ($sizeGuidance !== '') $lines[] = $sizeGuidance;
+            if ($hasIncompatibleSize) {
+                $lines[] = '[TAILLE NON FIABLE] La taille enregistrée ne correspond pas aux tailles explicitement disponibles dans le patron. Ne jamais attribuer les valeurs extraites à cette taille et inviter à réanalyser le patron avec une taille disponible.';
+            }
             if (!empty($parsed['unresolved_data']) && is_array($parsed['unresolved_data'])) {
                 foreach ($parsed['unresolved_data'] as $unresolved) {
                     if (!is_array($unresolved)) continue;
@@ -581,6 +597,9 @@ PROMPT;
             // section devinée que sur une section transcrite mot pour mot.
             if (!empty($parsed['contains_diagram'])) {
                 $lines[] = "ATTENTION : l'exécution correcte d'au moins une partie dépend d'une grille, d'un diagramme ou d'une image qui n'est pas intégralement représenté dans le texte. Ne donne pas d'instruction cellule par cellule ou de chiffre exact à partir du seul résumé ; invite à consulter le visuel source.";
+                if (($parsed['diagram_source_accessible'] ?? true) === false) {
+                    $lines[] = "Le visuel source n'est pas accessible dans YarnFlow pour cet import texte. Ne prétends jamais pouvoir lire ou retrouver ce diagramme depuis le projet.";
+                }
             }
 
             // [AI:Claude] Si une traduction complète existe déjà (proposée quand la langue du

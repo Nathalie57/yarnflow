@@ -12,6 +12,6 @@
 -- AIPatternExtractorService::EXTRACTION_PROMPT et SmartProjectController::analyzePattern.
 
 ALTER TABLE project_sections
-ADD COLUMN progression_type ENUM('simple', 'composite') NOT NULL DEFAULT 'simple'
-COMMENT 'simple = total_rows fiable pour un compteur X/Y ; composite = plusieurs paliers/actions, compteur libre (total_rows doit rester NULL)'
+ADD COLUMN progression_type ENUM('simple', 'composite', 'action') NOT NULL DEFAULT 'simple'
+COMMENT 'simple = compteur chiffré ; composite = plusieurs paliers ; action = validation manuelle sans compteur'
 AFTER counter_unit;

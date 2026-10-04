@@ -123,7 +123,7 @@ const CreateProjectWizard = ({
     if (!canSubmit || isSubmitting) return
     const sections = sectionDetails.map((s, i) => ({
       name: s.name.trim() || t('wizard.defaultSectionName', { n: i + 1 }),
-      total_rows: s.total_rows ? parseInt(s.total_rows, 10) : null,
+      total_rows: s.total_rows ? Number(String(s.total_rows).replace(',', '.')) : null,
       description: null,
       notes: null
     }))

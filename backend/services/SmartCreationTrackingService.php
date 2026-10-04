@@ -22,18 +22,11 @@ final class SmartCreationTrackingService
 
     public static function gateTypes(?array $data, string $status, ?string $targetLanguage = null): array
     {
-        $types = [];
-        if (!empty($data['contains_diagram'])) $types[] = 'diagram';
-        if ($status === 'partial') $types[] = 'partial';
-
-        // La porte de traduction n'est affichée que lorsqu'aucun avertissement prioritaire
-        // (diagramme/partiel) n'est présent.
         $sourceLanguage = strtolower(substr((string)($data['language'] ?? ''), 0, 2));
         $targetLanguage = strtolower(substr((string)$targetLanguage, 0, 2));
-        if (!$types && $sourceLanguage && $targetLanguage && $sourceLanguage !== $targetLanguage) {
-            $types[] = 'translation';
-        }
-        return $types;
+        return $sourceLanguage && $targetLanguage && $sourceLanguage !== $targetLanguage
+            ? ['translation']
+            : [];
     }
 
     public static function completionData(

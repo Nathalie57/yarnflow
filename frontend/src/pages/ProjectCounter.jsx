@@ -22,8 +22,8 @@ import { useMediaSession } from '../hooks/useMediaSession'
 import { useHints } from '../hooks/useHints'
 import { useAiAssistant } from '../contexts/AiAssistantContext'
 import AssociatePatternForAi from '../components/AssociatePatternForAi'
-import DemoStepsCompleteModal from '../components/DemoStepsCompleteModal'
 import { useAnalytics } from '../hooks/useAnalytics'
+import { trackProductEvent } from '../utils/productEvents'
 import api, { networkUtils, stashAllocationAPI } from '../services/api'
 import PDFViewer from '../components/PDFViewer'
 import ImageLightbox from '../components/ImageLightbox'
@@ -39,24 +39,9 @@ import { PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 import { PROJECT_TYPE_VALUES, projectTypeKey } from '../data/projectTypes'
 
 import { apiErrorMessage } from '../utils/apiError'
+import { summarizeProjectProgress } from '../utils/projectProgress'
 
-// [AI:Claude] Remplace les cases à cocher ✅/⬜ (emojis) de la checklist tutoriel —
-// cohérent avec le reste de l'app, qui n'utilise jamais d'emoji.
-const TutorialStepBox = ({ done }) => (
-  <svg
-    className={`w-4 h-4 flex-shrink-0 ${done ? 'text-amber-600' : 'text-amber-300'}`}
-    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-  >
-    {done ? (
-      <>
-        <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" stroke="none" />
-        <path strokeLinecap="round" strokeLinejoin="round" stroke="white" d="M8 12.5l2.5 2.5L16 9.5" />
-      </>
-    ) : (
-      <rect x="3" y="3" width="18" height="18" rx="4" />
-    )}
-  </svg>
-)
+const DEMO_GUIDE_STEPS = ['welcome', 'row', 'saved', 'flow', 'sections', 'conclusion', 'done']
 
 const ProjectCounter = () => {
   const { t, i18n } = useTranslation('counter')
@@ -207,12 +192,11 @@ const ProjectCounter = () => {
   const [showSatisfactionModal, setShowSatisfactionModal] = useState(false)
   const [generatedPhoto, setGeneratedPhoto] = useState(null)
 
-  // [AI:Claude] Tutoriel interactif du projet démo — checklist "rangs / section / photo"
-  // au lieu du bandeau statique d'exploration libre. Persisté en localStorage (pas de
-  // colonne is_demo en base), même convention que yf_onboarded_${projectId} ci-dessous.
-  const [isDemoProject, setIsDemoProject] = useState(false)
-  const [demoSteps, setDemoSteps] = useState({ rows: 0, askedAssistant: false, section: false, dismissed: false, celebrationShown: false })
-  const [demoRowsCelebrate, setDemoRowsCelebrate] = useState(false)
+  // Le projet est identifié par projects.is_demo ; seul l'avancement du guidage est local.
+  const isDemoProject = Number(project?.is_demo) === 1 && String(project?.id) === String(projectId)
+  const [demoGuideStep, setDemoGuideStep] = useState(null)
+  const demoCounterRef = useRef(null)
+  const demoGuidePanelRef = useRef(null)
   // [AI:Claude] 2026-09-25 — Célébration légère du premier rang, dans la zone du compteur
   // (remplace l'ancienne modale FirstRowCelebration). Affichée uniquement quand le serveur
   // confirme que activation_reached vient d'être enregistré : jamais sur la démo, une
@@ -220,19 +204,54 @@ const ProjectCounter = () => {
   const [showActivationCelebration, setShowActivationCelebration] = useState(false)
   // Palier de série de 7 jours, débloqué une seule fois côté serveur.
   const [showStreakCelebration, setShowStreakCelebration] = useState(false)
-  // [AI:Claude] Popup non-bloquante (fermable, pas d'auto-fermeture forcée puisqu'il y a
-  // une vraie décision à prendre dessus) au moment précis où les 3 étapes se terminent —
-  // plus visible qu'un bandeau qu'on peut rater en scrollant. `celebrationShown` (persisté
-  // dans demoSteps) garantit qu'elle ne s'affiche qu'une seule fois par projet.
-  const [showDemoCompleteModal, setShowDemoCompleteModal] = useState(false)
-
-  const updateDemoSteps = (updater) => {
-    setDemoSteps(prev => {
-      const next = updater(prev)
-      try { localStorage.setItem('yf_tutorial_steps_' + projectId, JSON.stringify(next)) } catch { /* ignore */ }
-      return next
-    })
+  const advanceDemoGuide = (step) => {
+    try { localStorage.setItem(`yf_demo_guide_${projectId}`, step) } catch { /* ignore */ }
+    setDemoGuideStep(step)
   }
+
+  const trackDemoEventOnce = (eventName) => {
+    const key = `yf_demo_event_${eventName}_${projectId}`
+    try {
+      if (localStorage.getItem(key)) return
+      localStorage.setItem(key, '1')
+    } catch { /* L'événement reste envoyé si le stockage est indisponible. */ }
+    trackProductEvent(eventName, { project_id: projectId, onboarding_version: 'v2', guide_version: 'flow_v1' })
+  }
+
+  const handleDemoGuideStart = () => {
+    trackDemoEventOnce('demo_guide_started')
+    advanceDemoGuide('row')
+  }
+
+  const handleDemoGuideConclusion = () => {
+    advanceDemoGuide('conclusion')
+    // demo_completed reste pour les rapports historiques, mais le backend le
+    // déduplique par utilisatrice, y compris si l'ancienne checklist l'a déjà émis.
+    trackDemoEventOnce('demo_guide_completed')
+    trackDemoEventOnce('demo_completed')
+  }
+
+  const handleDemoAddPattern = () => {
+    trackDemoEventOnce('demo_add_pattern_clicked')
+    advanceDemoGuide('done')
+    try { sessionStorage.setItem('yf_smart_creation_from_demo', String(projectId)) } catch { /* ignore */ }
+    navigate('/smart-project-creator')
+  }
+
+  const handleDemoLater = () => {
+    trackDemoEventOnce('demo_later_clicked')
+    trackTutorialMilestone('dismissed', 'demo')
+    advanceDemoGuide('done')
+  }
+
+  useEffect(() => {
+    if (!isDemoProject || !demoGuideStep || demoGuideStep === 'done') return
+    const timer = setTimeout(() => {
+      const target = demoGuideStep === 'row' ? demoCounterRef.current : demoGuidePanelRef.current
+      target?.scrollIntoView({ behavior: 'smooth', block: demoGuideStep === 'row' ? 'center' : 'start' })
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [isDemoProject, demoGuideStep])
 
   // [AI:Claude] 2026-08-05 — Jalons de la premiere seance, pour savoir OU les
   // gens decrochent. 62 % de celles qui ont eu une semaine pour revenir ne sont
@@ -256,59 +275,28 @@ const ProjectCounter = () => {
 
   const cleEtapesEnvoyees = 'yf_tutorial_sent_' + projectId
   const etapesEnvoyees = useRef(null)
+  const etapesProjectId = useRef(null)
 
-  useEffect(() => {
-    // [AI:Claude] 2026-09-14 — Élargi de "isDemoProject uniquement" à showTutorial
-    // (démo OU premier vrai projet) : le même tutoriel s'affiche dans les deux cas
-    // (voir showTutorial plus bas), mais seul le projet démo était jamais tracké.
-    // Impossible jusqu'ici de savoir si la majorité des utilisatrices, qui créent
-    // un vrai projet sans passer par la démo, découvrent le compteur/l'assistant/
-    // les sections. `traceur.current` (GA via gtag) n'écrit jamais en base — voir
-    // useAnalytics.trackEvent — donc ajout d'un log serveur direct (même endpoint
-    // que project_opened plus haut) pour pouvoir interroger ce funnel en SQL.
-    if (!(isDemoProject || isFirstProject) || !projectId) return
-
-    if (etapesEnvoyees.current === null) {
+  const trackTutorialMilestone = (step, context) => {
+    if (etapesProjectId.current !== projectId) {
+      etapesProjectId.current = projectId
       try {
         etapesEnvoyees.current = new Set(JSON.parse(localStorage.getItem(cleEtapesEnvoyees) || '[]'))
       } catch { etapesEnvoyees.current = new Set() }
     }
+    if (etapesEnvoyees.current.has(step)) return
+    etapesEnvoyees.current.add(step)
+    try { localStorage.setItem(cleEtapesEnvoyees, JSON.stringify([...etapesEnvoyees.current])) } catch { /* ignore */ }
+    traceur.current(step, { project_id: projectId, context })
+    api.post('/analytics/track-event', {
+      event_name: 'tutorial_step', project_id: projectId, step, context
+    }).catch(() => {})
+  }
 
-    const contexte = isDemoProject ? 'demo' : 'first_project'
-
-    const franchir = (etape) => {
-      if (etapesEnvoyees.current.has(etape)) return
-      etapesEnvoyees.current.add(etape)
-      try { localStorage.setItem(cleEtapesEnvoyees, JSON.stringify([...etapesEnvoyees.current])) } catch { /* ignore */ }
-      traceur.current(etape, { project_id: projectId, context: contexte })
-      api.post('/analytics/track-event', {
-        event_name: 'tutorial_step',
-        project_id: projectId,
-        step: etape,
-        context: contexte
-      }).catch(() => { /* best-effort, ne doit jamais bloquer le parcours */ })
-    }
-
-    franchir('opened')
-    if (demoSteps.rows > 0) franchir('first_row')
-    if (demoSteps.askedAssistant) franchir('assistant_used')
-    if (demoSteps.section) franchir('section_changed')
-    if (demoSteps.dismissed) franchir('dismissed')
-  }, [isDemoProject, isFirstProject, projectId, demoSteps, cleEtapesEnvoyees])
-
-  // [AI:Claude] Déclenche la popup de fin de checklist exactement au moment où la 3e
-  // étape se termine (pas à chaque re-render une fois toutes faites, d'où le garde-fou
-  // celebrationShown persisté avec le reste de demoSteps).
   useEffect(() => {
-    if (!isDemoProject) return
-    if (demoSteps.rows >= 5 && demoSteps.askedAssistant && demoSteps.section && !demoSteps.celebrationShown) {
-      setShowDemoCompleteModal(true)
-      updateDemoSteps(prev => ({ ...prev, celebrationShown: true }))
-      // [AI:Claude] 2026-09-25 — Checklist démo terminée (5 rangs + assistant + section) ;
-      // une seule fois par utilisatrice, dédoublonné côté serveur.
-      api.post('/analytics/track-event', { event_name: 'demo_completed', project_id: projectId, onboarding_version: 'v2' }).catch(() => {})
-    }
-  }, [isDemoProject, demoSteps.rows, demoSteps.askedAssistant, demoSteps.section, demoSteps.celebrationShown])
+    if (!(isDemoProject || isFirstProject) || !projectId) return
+    trackTutorialMilestone('opened', isDemoProject ? 'demo' : 'first_project')
+  }, [isDemoProject, isFirstProject, projectId])
 
   // [AI:Claude] 2026-08-23 — Équivalent de 'opened' ci-dessus mais pour TOUS les
   // projets (le bloc au-dessus ne loggue que le projet démo). Écrit dans
@@ -323,27 +311,10 @@ const ProjectCounter = () => {
   }, [projectId])
 
   useEffect(() => {
-    if (!demoRowsCelebrate) return
-    const timer = setTimeout(() => setDemoRowsCelebrate(false), 4000)
-    return () => clearTimeout(timer)
-  }, [demoRowsCelebrate])
-
-  useEffect(() => {
     if (!showActivationCelebration) return
     const timer = setTimeout(() => setShowActivationCelebration(false), 4000)
     return () => clearTimeout(timer)
   }, [showActivationCelebration])
-
-  // [AI:Claude] v0.17.0 - Célébration premier rang
-  // [AI:Claude] Remplace l'ancien tip statique "showFirstProjectTip" — sert maintenant
-  // à activer la checklist tutoriel (voir isDemoProject/demoSteps) sur le premier vrai
-  // projet, en plus du projet démo. Déclaration déplacée plus haut (voir commentaire
-  // au-dessus de cleEtapesEnvoyees) — reste ici uniquement pour la doc de showTutorial.
-
-  // [AI:Claude] La checklist tutoriel générique reste réservée au projet démo — un vrai
-  // projet importé par Création Intelligente utilise désormais smartOnboardingPhase
-  // ci-dessous (2 parcours "je commence" / "j'ai déjà commencé") à la place.
-  const showTutorial = isDemoProject
 
   // Onboarding guidage visuel — affiché une seule fois par projet si rang = 0
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -364,6 +335,10 @@ const ProjectCounter = () => {
   // uniquement pendant les phases de décision ; pas 'workModeIntro', qui est déjà terminé
   // (flag 'done' déjà écrit) et juste une invitation dismissible, pas un choix en attente.
   const smartOnboardingBlocking = smartOnboardingPhase === 'choice' || smartOnboardingPhase === 'pickSection' || smartOnboardingPhase === 'setProgress'
+  const activeProjectSection = currentSectionId
+    ? sections.find(section => Number(section.id) === Number(currentSectionId))
+    : null
+  const isActionSection = activeProjectSection?.progression_type === 'action'
 
   // [AI:Claude] 2026-09-27 — Coup de pouce discret vers l'assistant, une seule fois, à la
   // toute première entrée en mode travail sur un projet issu de la Création Intelligente
@@ -624,17 +599,28 @@ const ProjectCounter = () => {
         window.history.replaceState(null, '', url.pathname + url.search)
       }
 
-      // [AI:Claude] Le paramètre ?demo=1 est nettoyé de l'URL juste au-dessus et ne
-      // survit pas à un rechargement — on se base aussi sur le flag localStorage posé
-      // à la création (MyProjects.jsx::handleCreateDemoProject) pour que la checklist
-      // du tutoriel réapparaisse correctement après un F5.
-      try {
-        if (localStorage.getItem('yf_demo_project_' + projectId) === '1') {
-          setIsDemoProject(true)
-          const savedSteps = JSON.parse(localStorage.getItem('yf_tutorial_steps_' + projectId) || 'null')
-          if (savedSteps) setDemoSteps(savedSteps)
-        }
-      } catch { /* ignore */ }
+      // La BDD identifie la démo ; seul l'avancement du guidage est local.
+      const demo = Number(projectData?.is_demo) === 1
+      if (demo) {
+        let savedStep = null
+        try {
+          const guideKey = `yf_demo_guide_${projectId}`
+          savedStep = localStorage.getItem(guideKey)
+          const oldSteps = JSON.parse(localStorage.getItem(`yf_tutorial_steps_${projectId}`) || 'null')
+          if (oldSteps?.dismissed || oldSteps?.celebrationShown) {
+            savedStep = 'done'
+            localStorage.setItem(guideKey, savedStep)
+          } else if (!savedStep) {
+            // Seule l'arrivée depuis la création actuelle (?demo=1) lance un
+            // nouveau guidage. Une démo ancienne sans état local reste tranquille.
+            savedStep = urlParams.get('demo') === '1' ? 'welcome' : 'done'
+            localStorage.setItem(guideKey, savedStep)
+          }
+        } catch { /* ignore */ }
+        setDemoGuideStep(DEMO_GUIDE_STEPS.includes(savedStep) ? savedStep : 'done')
+      } else {
+        setDemoGuideStep(null)
+      }
 
       // Passer le current_section_id du projet fraîchement chargé
       const { sections: loadedSections, resolvedSectionId } = await fetchSections(projectData?.current_section_id)
@@ -2091,17 +2077,17 @@ const ProjectCounter = () => {
       currentRow: displayRow,
       total,
       unit: counterUnit,
+      isDemo: isDemoProject,
       progressionType: activeSection?.progression_type || 'simple',
       isCompleted: activeSection
         ? Boolean(Number(activeSection.is_completed))
         : proj?.status === 'completed'
     })
 
-    // [AI:Claude] Tutoriel — étape "poser une question à l'assistant" : le vrai moment
-    // "wow" du nouveau positionnement copilote, remplace l'ancienne étape "éditer une
-    // section" qui ne démontrait rien de différenciant.
-    if (showTutorial) {
-      updateDemoSteps(prev => ({ ...prev, askedAssistant: true }))
+    if (isDemoProject && demoGuideStep === 'flow') {
+      trackDemoEventOnce('demo_flow_opened')
+      trackTutorialMilestone('assistant_used', 'demo')
+      advanceDemoGuide('sections')
     }
   }
 
@@ -2191,6 +2177,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Incrémenter le rang (sauvegarde directe sans modal)
   const handleIncrementRow = async () => {
+    if (isActionSection) return
     // [AI:Claude] Anti double-clic (ref = blocage immédiat, pas soumis au cycle de rendu)
     if (isSavingRowRef.current) return
     isSavingRowRef.current = true
@@ -2208,16 +2195,6 @@ const ProjectCounter = () => {
     // mode travail), gardé en filet de sécurité si elle a compté un rang sans passer par lui.
     if (smartOnboardingPhase === 'workModeIntro') {
       setSmartOnboardingPhase(null)
-    }
-
-    // [AI:Claude] Tutoriel — étape "ajouter des rangs" (plafonnée à 5)
-    if (showTutorial) {
-      updateDemoSteps(prev => {
-        if (prev.rows >= 5) return prev
-        const rows = prev.rows + 1
-        if (rows >= 5) setDemoRowsCelebrate(true)
-        return { ...prev, rows }
-      })
     }
 
     // [AI:Claude] Vérifier si on a atteint le maximum
@@ -2256,6 +2233,33 @@ const ProjectCounter = () => {
       : parseFloat(currentRow) + increment
     const oldRow = currentRow
 
+    // Les cycles explicitement structurés sont les seuls compteurs secondaires
+    // avancés depuis le compteur principal. Les autres restent indépendants.
+    const syncRequiredCounters = async (primaryValue) => {
+      let allRequiredComplete = true
+      for (const counter of secondaryCounters) {
+        let count = Number(counter.count) || 0
+        if (counter.tracking_role === 'required_cycle' && Number(counter.cycle_length) > 0) {
+          count = Math.min(Number(counter.target), Math.floor(Number(primaryValue) / Number(counter.cycle_length)))
+          if (count !== Number(counter.count)) {
+            try {
+              await api.put(`/projects/${projectId}/secondary-counters/${counter.id}`, { count })
+              setSecondaryCounters(prev => prev.map(item => item.id === counter.id ? { ...item, count } : item))
+            } catch (err) {
+              console.error('Erreur synchronisation du cycle répété:', err)
+              allRequiredComplete = false
+              continue
+            }
+          }
+        }
+        if (['required_cycle', 'required_parallel'].includes(counter.tracking_role)
+            && (counter.target == null || count < Number(counter.target))) {
+          allRequiredComplete = false
+        }
+      }
+      return allRequiredComplete
+    }
+
     // [AI:Claude] v0.16.2 - Mode CM : update direct sans historique
     if (counterUnit === 'cm') {
       try {
@@ -2284,7 +2288,9 @@ const ProjectCounter = () => {
         // Check completion
         if (maxRows !== null && newRow >= maxRows) {
           if (currentSectionId) {
-            await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`)
+            const requiredCountersComplete = await syncRequiredCounters(newRow)
+            if (!requiredCountersComplete) return
+            await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`, { automatic: true })
             setSections(prevSections =>
               prevSections.map(s =>
                 s.id === currentSectionId
@@ -2352,6 +2358,12 @@ const ProjectCounter = () => {
 
     try {
       const rowResponse = await api.post(`/projects/${projectId}/rows`, rowData)
+      const requiredCountersComplete = await syncRequiredCounters(newRow)
+      if (isDemoProject && demoGuideStep === 'row' && rowResponse.data?.success && rowResponse.data?.row_id) {
+        trackDemoEventOnce('demo_first_row_recorded')
+        trackTutorialMilestone('first_row', 'demo')
+        advanceDemoGuide('saved')
+      }
       // Même célébration, désormais fondée sur l'écriture de progression backend.
       if (rowResponse.data.activation_reached) setShowActivationCelebration(true)
 
@@ -2389,11 +2401,11 @@ const ProjectCounter = () => {
       if (triggered) setActiveReminder(triggered)
 
       // [AI:Claude] Si on vient de terminer, marquer comme terminé automatiquement
-      if (maxRows !== null && newRow === maxRows) {
+      if (maxRows !== null && newRow === maxRows && requiredCountersComplete) {
         if (currentSectionId) {
           // Marquer la section comme terminée
           try {
-            await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`)
+            await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`, { automatic: true })
 
             // [AI:Claude] Mettre à jour is_completed localement IMMÉDIATEMENT pour l'UI
             setSections(prevSections =>
@@ -2650,7 +2662,7 @@ const ProjectCounter = () => {
 
   // Écran de verrouillage : affiche le rang courant et les contrôles +/- quand le timer tourne
   useMediaSession({
-    isActive: isTimerRunning,
+    isActive: isTimerRunning && !isActionSection,
     projectName: project?.name || 'YarnFlow',
     sectionName: sections.find(s => s.id === currentSectionId)?.name || null,
     currentRow,
@@ -2824,11 +2836,8 @@ const ProjectCounter = () => {
         }
       } catch { /* ignore */ }
 
-      // [AI:Claude] Checklist démo — remplace l'ancienne étape "photo" (juste un upload,
-      // aucun effet waouh) par le changement de section : démontre la structure du patron
-      // en sections plutôt qu'une simple corvée d'ajout de fichier.
       if (isDemoProject) {
-        updateDemoSteps(prev => ({ ...prev, section: true }))
+        trackTutorialMilestone('section_changed', 'demo')
       }
 
       // [AI:Claude] Maintenant on peut changer la section en cours
@@ -3103,7 +3112,7 @@ const ProjectCounter = () => {
       const sectionData = {
         name: sectionForm.name.trim(),
         description: sectionForm.description.trim() || null,
-        total_rows: sectionForm.total_rows ? parseInt(sectionForm.total_rows) : null,
+        total_rows: sectionForm.total_rows ? Number(String(sectionForm.total_rows).replace(',', '.')) : null,
         display_order: editingSection ? editingSection.display_order : sections.length,
         notes: sectionForm.notes.trim() || null
       }
@@ -3620,44 +3629,6 @@ const ProjectCounter = () => {
   }
 
   // [AI:Claude] Calculer la progression GLOBALE du projet (toutes sections)
-  const getGlobalProgressData = () => {
-    // [AI:Claude] Si le projet est marqué comme terminé, forcer 100%
-    if (project && project.status === 'completed') {
-      const totalRows = sections.length > 0
-        ? sections.reduce((sum, s) => sum + (s.total_rows || 0), 0)
-        : project.total_rows || 0
-      return {
-        current: totalRows,
-        total: totalRows,
-        percentage: 100
-      }
-    }
-
-    if (sections.length > 0) {
-      // Somme de tous les rangs complétés et tous les rangs totaux
-      const totalCompleted = sections.reduce((sum, s) => sum + (s.current_row || 0), 0)
-      const totalRows = sections.reduce((sum, s) => sum + (s.total_rows || 0), 0)
-
-      if (totalRows > 0) {
-        return {
-          current: totalCompleted,
-          total: totalRows,
-          percentage: Math.round((totalCompleted / totalRows) * 100)
-        }
-      }
-    }
-    // Fallback: projet global sans sections
-    if (project && project.total_rows) {
-      return {
-        current: project.current_row || 0,
-        total: project.total_rows,
-        percentage: Math.round(((project.current_row || 0) / project.total_rows) * 100)
-      }
-    }
-    return { current: 0, total: null, percentage: null }
-  }
-
-  // [AI:Claude] Calculer la progression de la SECTION ACTIVE (pour la barre 2)
   const getSectionProgressData = () => {
     if (currentSectionId && sections.length > 0) {
       const activeSection = sections.find(s => s.id === currentSectionId)
@@ -3702,8 +3673,19 @@ const ProjectCounter = () => {
     return { current: 0, total: null, percentage: null }
   }
 
-  const globalProgressData = getGlobalProgressData()
+  const globalProgressData = summarizeProjectProgress(project, sections)
   const globalProgressPercentage = globalProgressData.percentage
+  const progressUnitLabel = unit => unit === 'cm' ? t('ui.unitCm') : unit === 'rounds' ? t('ui.unitRounds') : t('ui.unitRows')
+  const descriptiveProgress = (
+    <>
+      {(globalProgressData.quantifiableByUnit || []).map(group => (
+        <span key={`known-${group.unit}`} className="block">{t('ui.quantifiableProgressByUnit', { done: group.current, total: group.total, unit: progressUnitLabel(group.unit) })}</span>
+      ))}
+      {(globalProgressData.unquantifiableByUnit || []).filter(group => group.current > 0).map(group => (
+        <span key={`free-${group.unit}`} className="block">{t('ui.freeProgressByUnit', { count: group.current, unit: progressUnitLabel(group.unit) })}</span>
+      ))}
+    </>
+  )
 
   const progressData = getSectionProgressData()
   const progressPercentage = progressData.percentage
@@ -3739,9 +3721,8 @@ const ProjectCounter = () => {
           pour eux. pb-40 sur mobile (bouton Notes + nav empiles), pb-16 sur desktop (bouton
           Notes seul, pas de nav fixe en bas). */}
 
-      {/* [AI:Claude] Onboarding "Création Intelligente" — remplace le tutoriel générique
-          pour un vrai projet importé par IA (voir showTutorial = isDemoProject uniquement
-          désormais). 2 parcours : "je commence" (aucune saisie) / "j'ai déjà commencé"
+      {/* Onboarding "Création Intelligente" réservé aux vrais projets importés par IA.
+          2 parcours : "je commence" (aucune saisie) / "j'ai déjà commencé"
           (choix de section + progression éventuelle). */}
       {/* [AI:Claude] Composition : padding-top proportionnel (pas de centrage flex) pour
           positionner le panneau un peu plus bas qu'un simple "collé en haut", sans risque
@@ -3895,104 +3876,77 @@ const ProjectCounter = () => {
         </div>
       )}
 
-      {/* [AI:Claude] Tutoriel interactif — checklist "rangs / section / photo", affichée
-          sur le projet démo uniquement désormais (showTutorial = isDemoProject) */}
-      {showTutorial && !demoSteps.dismissed && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-control p-4 relative">
+      {isDemoProject && demoGuideStep && !['row', 'done'].includes(demoGuideStep) && (
+        <div ref={demoGuidePanelRef} className="mb-4 bg-primary-50 border border-primary-200 rounded-control p-4 relative scroll-mt-20" aria-live="polite">
           <button
-            onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
-            className="absolute top-2 right-2 text-amber-400 hover:text-amber-600 text-xl leading-none"
+            onClick={() => { trackTutorialMilestone('dismissed', 'demo'); advanceDemoGuide('done') }}
+            className="absolute top-2 right-2 text-primary-400 hover:text-primary-600 text-xl leading-none"
             aria-label={t('ui.close')}
-          >
-            ×
-          </button>
-
-          {demoSteps.rows >= 5 && demoSteps.askedAssistant && demoSteps.section ? (
-            <div className="flex items-start gap-3 pr-6">
-              <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-amber-800 text-sm mb-1">{t('ui.allCaughtUp')}</p>
-                {isDemoProject ? (
-                  <>
-                    <p className="text-amber-700 text-sm leading-relaxed mb-3">
-                      {t('ui.demoReadyReal')}
-                    </p>
-                    <button
-                      onClick={() => navigate('/smart-project-creator')}
-                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-control font-medium transition"
-                    >
-                      {t('ui.createRealProject')}
+          >×</button>
+          <div className="flex items-start gap-3 pr-6">
+            <FlowMascot pose={demoGuideStep === 'saved' || demoGuideStep === 'conclusion' ? 'heureux' : 'content'} size={52} className="flex-shrink-0" />
+            <div className="flex-1 min-w-0 text-sm text-flow-ink leading-relaxed">
+              {demoGuideStep === 'welcome' && (
+                <>
+                  <p className="font-semibold">{t('ui.demoGuideWelcome1')}</p>
+                  <p className="mb-3">{t('ui.demoGuideWelcome2')}</p>
+                  <button onClick={handleDemoGuideStart} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-control font-semibold">
+                    {t('ui.demoGuideStart')}
+                  </button>
+                </>
+              )}
+              {demoGuideStep === 'saved' && (
+                <>
+                  <p className="font-semibold mb-3">{t('ui.demoGuideSaved')}</p>
+                  <button onClick={() => advanceDemoGuide('flow')} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-control font-semibold">
+                    {t('ui.continue')}
+                  </button>
+                </>
+              )}
+              {demoGuideStep === 'flow' && (
+                <>
+                  <p className="font-semibold mb-3">{t('ui.demoGuideFlow')}</p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button onClick={() => handleOpenAiHelp()} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-control font-semibold">
+                      {t('ui.demoGuideOpenFlow')}
                     </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-amber-700 text-sm leading-relaxed mb-3">
-                      {t('ui.demoMastered')}
-                    </p>
-                    <button
-                      onClick={() => updateDemoSteps(prev => ({ ...prev, dismissed: true }))}
-                      className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-control font-medium transition"
-                    >
+                    <button onClick={() => advanceDemoGuide('sections')} className="text-primary-700 hover:text-primary-900 font-medium underline">
                       {t('ui.continue')}
                     </button>
-                  </>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
+              {demoGuideStep === 'sections' && (
+                <>
+                  <p className="font-semibold mb-3">{t('ui.demoGuideSections')}</p>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {sections.slice(0, 3).map(section => (
+                      <span key={section.id} className="px-2 py-1 bg-white border border-primary-200 rounded-control text-xs">{section.name}</span>
+                    ))}
+                  </div>
+                  <button onClick={handleDemoGuideConclusion} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-control font-semibold">
+                    {t('ui.continue')}
+                  </button>
+                </>
+              )}
+              {demoGuideStep === 'conclusion' && (
+                <>
+                  <p className="font-semibold">{t('ui.demoGuideConclusion1')}</p>
+                  <p className="mb-3">{t('ui.demoGuideConclusion2')}</p>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button onClick={handleDemoAddPattern} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-control font-semibold">
+                      {t('ui.demoGuideAddPattern')}
+                    </button>
+                    <button onClick={handleDemoLater} className="text-gray-500 hover:text-gray-700 text-xs underline">
+                      {t('ui.demoGuideLater')}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
-          ) : (
-            <div className="flex items-start gap-3 pr-6">
-              <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-amber-800 text-sm mb-2">
-                  {isDemoProject ? t('ui.demoModeBanner') : t('ui.discoverIn1Min')}
-                </p>
-                <ul className="space-y-1.5 text-sm">
-                  <li className="flex items-center gap-2 text-amber-700">
-                    <TutorialStepBox done={demoSteps.rows >= 5} />
-                    <span>
-                      <Trans i18nKey="ui.tutorialAddRows" ns="counter" components={[<strong key="0" />]} />
-                      {demoSteps.rows < 5 && ` (${demoSteps.rows}/5)`}
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-2 text-amber-700">
-                    <TutorialStepBox done={demoSteps.askedAssistant} />
-                    <span>{t('ui.tutorialAskAssistant')}</span>
-                  </li>
-                  <li className="flex items-center gap-2 text-amber-700">
-                    <TutorialStepBox done={demoSteps.section} />
-                    <span>{t('ui.tutorialChangeSection')}</span>
-                  </li>
-                  {/* [AI:Claude] "Créer mon vrai projet" comme étape à part entière, pas un
-                      lien discret sous la checklist — c'est l'arrivée, pas une option annexe.
-                      Distincte visuellement (séparateur, flèche au lieu d'une case, texte
-                      cliquable dès le début) car elle fait sortir du projet démo, contrairement
-                      aux trois étapes précédentes qui restent dedans. Toujours disponible, pas
-                      seulement une fois les trois autres cochées. */}
-                  {isDemoProject && (
-                    <li className="pt-2 mt-1 border-t border-amber-200">
-                      <button
-                        onClick={() => { updateDemoSteps(prev => ({ ...prev, dismissed: true })); navigate('/smart-project-creator') }}
-                        className="flex items-center gap-2 text-amber-900 font-semibold hover:text-amber-950 transition"
-                      >
-                        <span aria-hidden="true">→</span>
-                        <span>{t('ui.createRealProject')}</span>
-                      </button>
-                    </li>
-                  )}
-                </ul>
-                {demoRowsCelebrate && (
-                  <p className="text-xs text-amber-600 mt-2 font-medium">{t('ui.watchProgress')}</p>
-                )}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       )}
-
       {/* Nudge sections */}
       {!isFocusMode && showSectionsNudge && sections.length === 0 && (
         <div className="mb-4 bg-amber-50 border border-amber-200 rounded-control p-4 relative">
@@ -4232,17 +4186,24 @@ const ProjectCounter = () => {
         <div className="hidden sm:flex items-center gap-4">
           <div className="flex-1">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600">{t('ui.totalProgress')}</span>
-              <span className="text-xs font-bold text-primary-700">{globalProgressPercentage || 0}%</span>
+              <span className="text-xs font-medium text-gray-600">{globalProgressData.mode === 'descriptive' ? t('ui.projectSteps') : t('ui.totalProgress')}</span>
+              <span className="text-xs font-bold text-primary-700">
+                {globalProgressData.mode === 'descriptive'
+                  ? t('ui.sectionsCompleted', { done: globalProgressData.completedSections, total: globalProgressData.totalSections })
+                  : `${globalProgressPercentage || 0}%`}
+              </span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+            {globalProgressData.mode !== 'descriptive' && <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
               <div
                 className={`h-2 rounded-full transition-all duration-500 ${
                   'bg-gradient-to-r from-primary-400 to-primary-600'
                 }`}
                 style={{ width: `${globalProgressPercentage || 0}%` }}
               ></div>
-            </div>
+            </div>}
+            {globalProgressData.mode === 'descriptive' && (
+              <p className="text-xs text-gray-500">{descriptiveProgress}</p>
+            )}
           </div>
           {/* [AI:Claude] Tant qu'aucun temps n'a ete chronometre, on masque le
               bloc entier plutot que d'afficher « 0min ». Un zero a cote d'une
@@ -4284,17 +4245,20 @@ const ProjectCounter = () => {
         {/* Version Mobile - Design simplifié */}
         <div className="sm:hidden space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-gray-600">{t('ui.progress')}</span>
-            <span className="font-bold text-primary-700">{globalProgressPercentage || 0}%</span>
+            <span className="font-medium text-gray-600">{globalProgressData.mode === 'descriptive' ? t('ui.projectSteps') : t('ui.progress')}</span>
+            <span className="font-bold text-primary-700">{globalProgressData.mode === 'descriptive' ? t('ui.sectionsCompleted', { done: globalProgressData.completedSections, total: globalProgressData.totalSections }) : `${globalProgressPercentage || 0}%`}</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+          {globalProgressData.mode !== 'descriptive' && <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
             <div
               className={`h-2 rounded-full transition-all duration-500 ${
                 project.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-primary-400 to-primary-600'
               }`}
               style={{ width: `${globalProgressPercentage || 0}%` }}
             ></div>
-          </div>
+          </div>}
+          {globalProgressData.mode === 'descriptive' && (
+            <p className="text-xs text-gray-500">{descriptiveProgress}</p>
+          )}
           <div className="flex items-center justify-between gap-2">
             {/* Le div reste en place meme vide : il tient la premiere place du
                 justify-between, sans quoi le bouton glisserait a gauche. */}
@@ -4322,13 +4286,56 @@ const ProjectCounter = () => {
       </div>
       )}
 
+      {project?.pattern_notes && !smartOnboardingBlocking && !isFocusMode && (
+        <details className="bg-amber-50 border border-amber-200 rounded-control px-4 py-3 mb-3">
+          <summary className="cursor-pointer text-sm font-semibold text-amber-900">
+            {t('ui.importantPatternNotes')}
+          </summary>
+          <p className="mt-2 text-sm text-amber-950 whitespace-pre-line">{project.pattern_notes}</p>
+        </details>
+      )}
+
+      {!smartOnboardingBlocking && isActionSection && (
+        <div className="bg-primary-50 border border-primary-200 rounded-control p-4 mb-3 shadow-sm">
+          <p className="text-sm font-semibold text-primary-900 mb-1">{t('ui.actionSectionTitle')}</p>
+          <div className="text-sm text-gray-700 leading-relaxed mb-4">
+            {renderDescriptionLines(activeProjectSection.description || '')}
+          </div>
+          <button
+            type="button"
+            onClick={(event) => handleToggleSectionComplete(activeProjectSection, event)}
+            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold"
+          >
+            {Number(activeProjectSection.is_completed) === 1 ? t('ui.reopenSection') : t('ui.markDone')}
+          </button>
+        </div>
+      )}
+
       {/* [AI:Claude] Barre 2 : Compteur de la section active. Masquée pendant les
           phases bloquantes de l'onboarding smart (choice/pickSection/setProgress) — même
           principe que isFocusMode ci-dessous, appliqué en plus ici car cette barre n'est
           normalement jamais masquée (ni même en mode travail). États indépendants, juste
           combinés au point de rendu — isFocusMode n'est pas modifié. */}
-      {!smartOnboardingBlocking && (
-      <div className="bg-primary-200 rounded-control border border-primary-200 p-4 mb-3 shadow-sm">
+      {!smartOnboardingBlocking && !isActionSection && (
+      <div ref={demoCounterRef} className="bg-primary-200 rounded-control border border-primary-200 p-4 mb-3 shadow-sm scroll-mt-20">
+        {currentSectionId && sections.find(s => s.id === currentSectionId)?.pattern_start_row && counterUnit === 'rows' && (
+          <p className="text-xs font-medium text-primary-800 mb-2">
+            {t('ui.nextPatternRow', {
+              row: Number(sections.find(s => s.id === currentSectionId).pattern_start_row) + Number(currentRow || 0)
+            })}
+          </p>
+        )}
+        {isDemoProject && demoGuideStep === 'row' && (
+          <div className="flex items-start gap-2.5 mb-3 pr-6 relative" aria-live="polite">
+            <FlowMascot pose="content" size={40} className="flex-shrink-0" />
+            <p className="text-sm font-semibold text-primary-900 pt-2">{t('ui.demoGuideRow')}</p>
+            <button
+              onClick={() => { trackTutorialMilestone('dismissed', 'demo'); advanceDemoGuide('done') }}
+              className="absolute right-0 top-0 text-primary-700 hover:text-primary-900 text-xl leading-none"
+              aria-label={t('ui.close')}
+            >×</button>
+          </div>
+        )}
         {/* [AI:Claude] Flow discret dans la zone de progression — charte section 5,
             exemple nomme "Encore 8 rangs pour terminer cette section" (Flow a cote,
             pas de gros pave). N'apparait que si une section a un objectif chiffre et
@@ -4374,7 +4381,7 @@ const ProjectCounter = () => {
                   compteur libre silencieux, pour ne pas donner l'impression d'un oubli. */}
               {progressData.total === null && sections.find(s => s.id === currentSectionId)?.progression_type === 'composite' && (
                 <p className="text-xs font-medium text-primary-800 mb-1">
-                  {t('ui.compositeSectionTitle')} — {t('ui.compositeSectionHint')}
+                  {t('ui.compositeProgressMarker')} — {t('ui.compositeCounterHintByUnit', { count: Number(currentRow) || 0, unit: progressUnitLabel(counterUnit) })}
                 </p>
               )}
               {/* [AI:Claude] Mode travail : bascule "Voir tout" ⇄ "Mode travail" — permet de
@@ -4426,8 +4433,8 @@ const ProjectCounter = () => {
               <div className="flex items-center gap-2.5 mb-2">
                 <FlowMascot pose="content" size={52} className="flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-primary-800">{t('ui.compositeSectionTitle')}</p>
-                  <p className="text-xs text-primary-700">{t('ui.compositeSectionHint')}</p>
+                  <p className="text-sm font-medium text-primary-800">{t('ui.compositeProgressMarker')}</p>
+                  <p className="text-xs text-primary-700">{t('ui.compositeCounterHintByUnit', { count: Number(currentRow) || 0, unit: progressUnitLabel(counterUnit) })}</p>
                 </div>
               </div>
             )}
@@ -4492,7 +4499,7 @@ const ProjectCounter = () => {
                   </div>
                   <button
                     onClick={handleIncrementRow}
-                    className="w-14 h-14 flex-shrink-0 bg-primary-600 text-white rounded-control text-3xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
+                    className={`w-14 h-14 flex-shrink-0 bg-primary-600 text-white rounded-control text-3xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
                   >
                     +
                   </button>
@@ -4563,7 +4570,7 @@ const ProjectCounter = () => {
                   <div className="relative">
                     <button
                       onClick={handleIncrementRow}
-                      className="w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
+                      className={`w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
                     >
                       +
                     </button>
@@ -4641,7 +4648,7 @@ const ProjectCounter = () => {
               </div>
               <button
                 onClick={handleIncrementRow}
-                className="w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none"
+                className={`w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
               >
                 +
               </button>
@@ -4756,7 +4763,7 @@ const ProjectCounter = () => {
           <div className="relative">
             <button
               onClick={() => { handleOpenAiHelp(); if (showAiHelpHint) dismissAiHelpHint() }}
-              className="mt-3 mx-auto min-h-11 w-fit flex items-center justify-center gap-2 px-4 py-1.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-control text-sm font-semibold hover:bg-primary-100 hover:border-primary-300 transition select-none"
+              className={`mt-3 mx-auto min-h-11 w-fit flex items-center justify-center gap-2 px-4 py-1.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-control text-sm font-semibold hover:bg-primary-100 hover:border-primary-300 transition select-none ${isDemoProject && demoGuideStep === 'flow' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
             >
               <FlowMascot pose="content" size={30} className="flex-shrink-0" />
               {t('ui.aiHelpOnRow')}
@@ -4783,7 +4790,7 @@ const ProjectCounter = () => {
         ) : (
           <button
             onClick={() => handleOpenAiHelp()}
-            className="mt-2 mx-auto min-h-11 w-fit flex items-center justify-center gap-1.5 px-3 py-1.5 text-primary-700 text-sm font-medium hover:text-primary-900 hover:bg-primary-50 rounded-control transition select-none"
+            className={`mt-2 mx-auto min-h-11 w-fit flex items-center justify-center gap-1.5 px-3 py-1.5 text-primary-700 text-sm font-medium hover:text-primary-900 hover:bg-primary-50 rounded-control transition select-none ${isDemoProject && demoGuideStep === 'flow' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
           >
             <FlowMascot pose="content" size={26} className="flex-shrink-0" />
             {t('ui.aiHelpOnRow')}
@@ -5105,7 +5112,7 @@ const ProjectCounter = () => {
       </div>
       )}
 
-      {isFocusMode && showCompactWorkCounter && (
+      {isFocusMode && showCompactWorkCounter && !isActionSection && (
         <div className="sm:hidden fixed top-16 left-0 right-0 z-40 px-4 pointer-events-none">
           <div className="max-w-7xl mx-auto h-14 px-2 bg-white border border-primary-200 rounded-b-control shadow-[0_8px_18px_rgba(31,41,55,0.18)] flex items-center gap-2 pointer-events-auto">
             <div className="flex-1 min-w-0 px-1 font-medium text-gray-500 text-xs truncate">
@@ -5131,7 +5138,7 @@ const ProjectCounter = () => {
               type="button"
               onClick={handleIncrementRow}
               disabled={isSavingRow}
-              className="w-11 h-11 flex-shrink-0 bg-primary-600 text-white rounded-control text-2xl font-bold active:scale-95 transition shadow-sm disabled:opacity-50 select-none"
+              className={`w-11 h-11 flex-shrink-0 bg-primary-600 text-white rounded-control text-2xl font-bold active:scale-95 transition shadow-sm disabled:opacity-50 select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300' : ''}`}
               aria-label={`${t('ui.row')} +`}
             >
               +
@@ -5201,7 +5208,7 @@ const ProjectCounter = () => {
       )}
 
       {/* [AI:Claude] Tableau des sections */}
-      <div className="bg-white rounded-card border border-flow-mint overflow-hidden">
+      <div className={`bg-white rounded-card border border-flow-mint overflow-hidden ${isDemoProject && demoGuideStep === 'sections' ? 'ring-4 ring-amber-200' : ''}`}>
         <div
           className="px-4 py-3 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
           onClick={() => setSectionsCollapsed(!sectionsCollapsed)}
@@ -6642,7 +6649,7 @@ const ProjectCounter = () => {
                 const hasDetails = technicalDetails && (
                   (technicalDetails.yarn && technicalDetails.yarn.length > 0 && technicalDetails.yarn[0].brand) ||
                   (technicalDetails.needles && technicalDetails.needles.length > 0 && (technicalDetails.needles[0].type || technicalDetails.needles[0].size)) ||
-                  (technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows)) ||
+                  (technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows || technicalDetails.gauge.notes)) ||
                   technicalDetails.description
                 )
 
@@ -6736,6 +6743,8 @@ const ProjectCounter = () => {
                                         <div className="text-sm">
                                           <div className="font-medium text-flow-ink">{y.brand}</div>
                                           {y.name && <div className="text-xs text-gray-600">{y.name}</div>}
+                                          {y.composition && <div className="text-xs text-gray-500">{y.composition}</div>}
+                                          {y.weight && <div className="text-xs text-gray-500">{y.weight}</div>}
                                         </div>
                                         {y.quantities && y.quantities.length > 0 && (
                                           <div className="text-right">
@@ -6787,7 +6796,7 @@ const ProjectCounter = () => {
                               )}
 
                               {/* ÉCHANTILLON / GAUGE */}
-                              {technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows) && (
+                              {technicalDetails.gauge && (technicalDetails.gauge.stitches || technicalDetails.gauge.rows || technicalDetails.gauge.notes) && (
                                 <div className="bg-gradient-to-br from-primary-50 to-primary-200 rounded-control p-3 border-l-4 border-primary-400">
                                   <div className="flex items-center gap-2 mb-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 6H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><line x1="7" y1="10" x2="7" y2="14"/><line x1="11" y1="10" x2="11" y2="12"/><line x1="15" y1="10" x2="15" y2="14"/><line x1="19" y1="10" x2="19" y2="12"/></svg>
@@ -8230,6 +8239,7 @@ const ProjectCounter = () => {
                 </label>
                 <input
                   type="number"
+                  step="0.1"
                   value={sectionForm.total_rows}
                   onChange={(e) => setSectionForm({ ...sectionForm, total_rows: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-control focus:ring-2 focus:ring-primary-500"
@@ -8601,13 +8611,6 @@ const ProjectCounter = () => {
         onClose={() => setUpgradeFeature(null)}
         feature={upgradeFeature || 'tags'}
       />
-
-      {showDemoCompleteModal && (
-        <DemoStepsCompleteModal
-          onClose={() => setShowDemoCompleteModal(false)}
-          onCreateProject={() => { setShowDemoCompleteModal(false); navigate('/smart-project-creator') }}
-        />
-      )}
 
       {/* Onboarding premier rang */}
 

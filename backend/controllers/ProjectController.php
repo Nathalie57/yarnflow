@@ -140,9 +140,13 @@ class ProjectController
                           END % 60), 'sec'
                       ) as time_formatted,
                       CASE
+                          WHEN p.status = 'completed' THEN 100
                           WHEN (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id) > 0 THEN
                               (SELECT CASE
-                                  WHEN SUM(total_rows) > 0 THEN ROUND((SUM(current_row) / SUM(total_rows)) * 100, 1)
+                                  WHEN SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) THEN 1 ELSE 0 END) = 0
+                                   AND COUNT(DISTINCT CASE WHEN COALESCE(progression_type, 'simple') <> 'action' THEN COALESCE(counter_unit, 'rows') END) <= 1
+                                   AND SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN total_rows ELSE 0 END) > 0
+                                  THEN ROUND((SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN current_row ELSE 0 END) / SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN total_rows ELSE 0 END)) * 100, 1)
                                   ELSE NULL
                               END FROM project_sections WHERE project_id = p.id)
                           WHEN p.total_rows IS NOT NULL THEN ROUND((p.current_row / p.total_rows) * 100, 1)
@@ -158,6 +162,17 @@ class ProjectController
                               (SELECT SUM(total_rows) FROM project_sections WHERE project_id = p.id)
                           ELSE p.total_rows
                       END as total_rows,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_rows,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_rows,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rows,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_rows_unit,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_rows_unit,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_cm,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_cm,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rows_unit,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_cm,
+                      (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id AND COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0)) as unquantifiable_sections_count,
+                      (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id AND is_completed = 1) as completed_sections_count,
                       ps.name as current_section_name,
                       ps.current_row as current_section_row,
                       ps.total_rows as current_section_total_rows,
@@ -1610,31 +1625,9 @@ class ProjectController
                 'id' => $import['id'],
             ]);
 
-            // [AI:Claude] Ne met à jour les VRAIES sections suivies (project_sections) que si
-            // leur nombre correspond encore exactement à celui du patron original — sinon
-            // l'utilisatrice a ajouté/supprimé une section entre-temps et le remappage
-            // positionnel ne serait plus fiable ; dans ce cas on n'écrase rien, seule la vue
-            // de référence (translated_text ci-dessus) reste disponible.
-            if (!empty($translatedSections) && count($translatedSections) === count($sections)) {
-                $psStmt = $db->prepare(
-                    'SELECT id FROM project_sections WHERE project_id = :pid ORDER BY display_order ASC'
-                );
-                $psStmt->execute(['pid' => $id]);
-                $existingSectionIds = $psStmt->fetchAll(\PDO::FETCH_COLUMN);
-
-                if (count($existingSectionIds) === count($translatedSections)) {
-                    $updatePs = $db->prepare(
-                        'UPDATE project_sections SET name = :name, description = :description WHERE id = :id'
-                    );
-                    foreach ($existingSectionIds as $idx => $psId) {
-                        $updatePs->execute([
-                            'name' => mb_substr($translatedSections[$idx]['name'], 0, 255),
-                            'description' => $translatedSections[$idx]['description'],
-                            'id' => $psId,
-                        ]);
-                    }
-                }
-            }
+            // La traduction tardive reste une vue de référence séparée. Les sections suivies
+            // peuvent avoir été corrigées ou réordonnées depuis l'import : un remappage par
+            // position écraserait ces corrections ou traduirait la mauvaise section.
 
             $this->sendResponse(200, [
                 'success' => true,
@@ -2711,6 +2704,21 @@ class ProjectController
 
             // [AI:Claude] Inverser l'état
             $newState = $section['is_completed'] ? 0 : 1;
+
+            $input = json_decode(file_get_contents('php://input'), true);
+            $input = is_array($input) ? $input : [];
+            if ($newState === 1 && ($input['automatic'] ?? false) === true) {
+                if (!\App\Services\SectionCompletionPolicy::requiredCountersComplete(
+                    $this->projectModel->getSecondaryCounters($projectId, $sectionId)
+                )) {
+                    $this->sendResponse(409, [
+                        'success' => false,
+                        'error' => 'Un compteur requis est encore incomplet.',
+                        'error_code' => 'required_secondary_counter_incomplete'
+                    ]);
+                    return;
+                }
+            }
 
             $success = $this->projectModel->updateSection($sectionId, [
                 'is_completed' => $newState

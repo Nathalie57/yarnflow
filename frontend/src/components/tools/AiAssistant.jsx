@@ -51,6 +51,7 @@ const SUGGESTION_KEYS = ['aiQ1', 'aiQ2', 'aiQ3', 'aiQ4', 'aiQ5', 'aiQ6']
 // n'ont plus de sens — l'utilisatrice vient d'un rang précis, les suggestions doivent
 // s'appuyer sur ce contexte plutôt que de proposer une question sans rapport.
 const CONTEXTUAL_SUGGESTION_KEYS = ['aiCtxQ1', 'aiCtxQ2', 'aiCtxQ3', 'aiCtxQ4']
+const DEMO_SUGGESTION_KEYS = ['aiDemoQ1', 'aiDemoQ2', 'aiDemoQ3', 'aiDemoQ4']
 
 export default function AiAssistant({ projectId, projectLabel, projectProgress, open } = {}) {
   const { t, i18n } = useTranslation('tools')
@@ -70,6 +71,7 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
   // sur un rang resterait affichée hors contexte plus tard. Persistée quand même (pas
   // seulement en mémoire) pour survivre à un F5, contrairement à l'ancien comportement.
   const isContextual = Boolean(projectId)
+  const isDemo = isContextual && projectProgress?.isDemo === true
   const getStorageKey = (pid) => pid ? `ai_assistant_messages_project_${pid}` : GENERAL_STORAGE_KEY
 
   const [messages, setMessages] = useState(() => {
@@ -231,13 +233,13 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
             {isContextual ? (
               <div className="space-y-1">
                 <p className="text-sm text-gray-600 text-center leading-relaxed">{contextualGreeting}</p>
-                <p className="text-sm text-gray-500 text-center">{t('ui.contextualGreetingClosing')}</p>
+                <p className="text-sm text-gray-500 text-center">{t(isDemo ? 'ui.demoGreetingClosing' : 'ui.contextualGreetingClosing')}</p>
               </div>
             ) : (
               <p className="text-sm text-gray-500 text-center">{t('ui.askYourQuestion')}</p>
             )}
             <div className="grid grid-cols-1 gap-2">
-              {(isContextual ? CONTEXTUAL_SUGGESTION_KEYS : SUGGESTION_KEYS).map(k => t(`ui.${k}`)).map(s => (
+              {(isDemo ? DEMO_SUGGESTION_KEYS : isContextual ? CONTEXTUAL_SUGGESTION_KEYS : SUGGESTION_KEYS).map(k => t(`ui.${k}`)).map(s => (
                 <button
                   key={s}
                   onClick={() => send(s)}

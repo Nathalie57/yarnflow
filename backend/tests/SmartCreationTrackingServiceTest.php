@@ -38,10 +38,10 @@ final class SmartCreationTrackingServiceTest extends TestCase
     {
         self::assertSame([], Tracking::gateTypes(['language' => 'en'], 'success'));
         self::assertSame(['translation'], Tracking::gateTypes(['language' => 'en'], 'success', 'fr'));
-        self::assertSame(['diagram', 'partial'], Tracking::gateTypes(['language' => 'en', 'contains_diagram' => true], 'partial', 'fr'));
-        $event = Tracking::completionData('attempt-123456789', 'url', 'partial', false, 20, 3, null, ['diagram', 'partial']);
-        self::assertSame('diagram', $event['gate_type']);
-        self::assertSame(['diagram', 'partial'], $event['gate_types']);
+        self::assertSame(['translation'], Tracking::gateTypes(['language' => 'en', 'contains_diagram' => true], 'partial', 'fr'));
+        $event = Tracking::completionData('attempt-123456789', 'url', 'partial', false, 20, 3, null, ['translation']);
+        self::assertSame('translation', $event['gate_type']);
+        self::assertSame(['translation'], $event['gate_types']);
     }
 
     public function testPendingAndConfirmReadPersistedIdRatherThanClientOrTimeOrdering(): void
@@ -50,5 +50,35 @@ final class SmartCreationTrackingServiceTest extends TestCase
         self::assertStringContainsString("['data']['_analytics'] = ['attempt_id' => \$attemptId]", $source);
         self::assertStringContainsString("['_analytics']['attempt_id'] ?? null", $source);
         self::assertStringContainsString("'import_id' => \$importId, 'attempt_id' => \$attemptId", $source);
+    }
+
+    public function testConfirmRevalidatesEditedPreviewAndRequiresReviewAcknowledgement(): void
+    {
+        $source = file_get_contents(__DIR__ . '/../controllers/SmartProjectController.php');
+        self::assertSame(1, substr_count($source, 'PatternExtractionValidator::validateEditedPreview('));
+        self::assertStringContainsString("'validation_errors' => \$editedValidation['blocking_errors']", $source);
+        self::assertStringContainsString("\$sectionsData = \$editedValidation['data']['sections']", $source);
+        self::assertStringContainsString("\$data['review_points_confirmed']", $source);
+    }
+
+    public function testPastedTextSourceNameUsesExtractedTitle(): void
+    {
+        $method = new \ReflectionMethod(\App\Controllers\SmartProjectController::class, 'resolveImportSourceName');
+
+        self::assertSame(
+            'Riverside Braids Cardigan / DROPS 273-15',
+            $method->invoke(null, 'text', 'DROPS Alpaca Party · SAVE 30%', [
+                'title' => "  Riverside Braids Cardigan / DROPS 273-15\n",
+            ])
+        );
+        self::assertSame('Texte collé', $method->invoke(null, 'text', 'contenu brut', ['title' => '']));
+    }
+
+    public function testFileAndUrlSourceNamesRemainUnchanged(): void
+    {
+        $method = new \ReflectionMethod(\App\Controllers\SmartProjectController::class, 'resolveImportSourceName');
+
+        self::assertSame('patron.pdf', $method->invoke(null, 'pdf', 'patron.pdf', ['title' => 'Titre extrait']));
+        self::assertSame('https://example.com/pattern', $method->invoke(null, 'url', 'https://example.com/pattern', ['title' => 'Titre extrait']));
     }
 }
