@@ -848,7 +848,10 @@ export default function SmartProjectCreator() {
             warnings: [...(current?.validation_issues?.warnings || []), { code: 'server_review_required', context: {} }],
           },
         }))
-        setError(t('ui.reviewPointsConfirmationRequired'))
+        // Le serveur vient de révéler un point de relecture supplémentaire : le formulaire
+        // affiche désormais la carte Flow et la confirmation dédiée. Ce n'est pas une erreur
+        // de création à présenter dans le bandeau rouge global.
+        setError(null)
       } else if (err.response?.data?.error_code === 'precreation_validation_failed') {
         const validationErrors = err.response.data.validation_errors || []
         setExtractedData(current => ({
