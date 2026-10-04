@@ -92,6 +92,7 @@ export default function SmartProjectCreator() {
   const selectionRef = useRef(null)
   const selectionRevisionRef = useRef(0)
   const [reviewPointsConfirmed, setReviewPointsConfirmed] = useState(false)
+  const [serverReviewRequired, setServerReviewRequired] = useState(false)
   // [AI:Claude] Affiche le champ de saisie libre uniquement quand la pilule "Autre
   // taille" est active — évite d'avoir un champ tronqué en permanence à côté des
   // tailles standards, sans changer la logique de patternSize sous-jacente.
@@ -398,6 +399,7 @@ export default function SmartProjectCreator() {
     setResumedImportId(null)
     setAnalyzeMetadata(null)
     setReviewPointsConfirmed(false)
+    setServerReviewRequired(false)
     setExtractedData(null)
     setPatternLanguage(null)
     setTranslateGatePending(false)
@@ -702,7 +704,7 @@ export default function SmartProjectCreator() {
       setError(t('ui.analysisSelectionChanged'))
       return
     }
-    if (reviewPoints.length > 0 && !reviewPointsConfirmed) {
+    if (requiresReviewConfirmation && !reviewPointsConfirmed) {
       setStep(3)
       setError(t('ui.reviewPointsConfirmationRequired'))
       return
@@ -838,6 +840,7 @@ export default function SmartProjectCreator() {
       // semblait rien faire).
       if (err.response?.data?.error_code === 'review_points_confirmation_required') {
         setReviewPointsConfirmed(false)
+        setServerReviewRequired(true)
         setExtractedData(current => ({
           ...(current || {}),
           validation_issues: {
@@ -1017,6 +1020,7 @@ export default function SmartProjectCreator() {
   const suggestedSize = singleCompatibleSize(selectedSizeIssue)
   const diagramSourceUnavailable = containsDiagram && extractedData?.diagram_source_accessible === false
   const reviewPoints = projectReviewPoints(extractedData, aiStatus)
+  const requiresReviewConfirmation = reviewPoints.length > 0 || serverReviewRequired
   const globalReviewPoints = reviewPoints.filter(point => point.sectionIndex === null)
   const sizeSelectionReviewPoint = globalReviewPoints.find(point => point.code === 'pattern_size_not_selected') || null
   const hasSelectableSizeReviewPoint = (sizeSelectionReviewPoint?.availableSizes?.length || 0) > 0
@@ -1632,7 +1636,7 @@ export default function SmartProjectCreator() {
               </h2>
             </div>
 
-            {reviewPoints.length > 0 && (
+            {requiresReviewConfirmation && (
               <div className="mb-6 p-4 bg-primary-50 border border-primary-100 rounded-card text-sm">
                 <div className="flex items-center gap-3">
                   <FlowMascot pose="avecPatron" size={52} className="shrink-0" />
@@ -1948,7 +1952,7 @@ export default function SmartProjectCreator() {
               />
             </div>
 
-            {reviewPoints.length > 0 && (
+            {requiresReviewConfirmation && (
               <label className="mb-4 flex items-start gap-3 rounded-control border border-gray-200 bg-gray-50 p-3 text-sm font-medium text-gray-700">
                 <input type="checkbox" className="mt-0.5 shrink-0" checked={reviewPointsConfirmed} onChange={event => setReviewPointsConfirmed(event.target.checked)} />
                 {t('ui.reviewPointsConfirm')}
@@ -1966,7 +1970,7 @@ export default function SmartProjectCreator() {
 
               <button
                 onClick={() => submitProject()}
-                disabled={creating || !project.title || (reviewPoints.length > 0 && !reviewPointsConfirmed)}
+                disabled={creating || !project.title || (requiresReviewConfirmation && !reviewPointsConfirmed)}
                 className="flex-1 px-6 py-3 bg-primary-600 text-white rounded-control hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {creating ? t('ui.creatingEllipsis') : t('ui.createProjectCheck')}
