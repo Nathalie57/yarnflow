@@ -5,6 +5,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { HintsProvider } from './contexts/HintsContext'
 import { AiAssistantProvider } from './contexts/AiAssistantContext'
 import PrivateRoute from './components/PrivateRoute'
+import JacquardRoute from './components/JacquardRoute'
 import PWAPrompt from './components/PWAPrompt'
 import ContextualHint from './components/ContextualHint'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -214,8 +215,8 @@ function App() {
             <Route path="/my-projects" element={<MyProjects />} />
             <Route path="/projects/:projectId" element={<ProjectCounter />} />
             <Route path="/projects/:projectId/counter" element={<ProjectCounter />} />
-            <Route path="/projects/:projectId/charts" element={<ProjectCharts />} />
-            <Route path="/projects/:projectId/charts/:chartId" element={<ChartEditor />} />
+            <Route path="/projects/:projectId/charts" element={<JacquardRoute><ProjectCharts /></JacquardRoute>} />
+            <Route path="/projects/:projectId/charts/:chartId" element={<JacquardRoute><ChartEditor /></JacquardRoute>} />
             <Route path="/smart-project-creator" element={<SmartProjectCreator />} />
             <Route path="/stats" element={<Stats />} />
             <Route path="/tools" element={<Tools />} />

@@ -523,6 +523,17 @@
     "startKnittingCta": "Start knitting",
     "startCrochetingCta": "Start crocheting",
     "workModeHelpHintTitle": "Flow knows your pattern",
-    "workModeHelpHintBody": "You can ask for help with the step you're on."
+    "workModeHelpHintBody": "You can ask for help with the step you're on.",
+    "chartProgressTitle": "Chart",
+    "chartNextRow": "Row {{row}} of {{total}}",
+    "chartRowToKnit": "Row {{row}} to knit",
+    "chartStartsAtSectionRow": "The chart starts at row {{row}} of this section.",
+    "chartProgressCompleted": "Chart complete",
+    "chartProgressUnavailable": "Chart progress unavailable",
+    "showChart": "View chart",
+    "hideChart": "Hide",
+    "chooseChart": "Section chart",
+    "chartProgressLoading": "Loading chart…",
+    "chartProgressLoadFailed": "Unable to load this chart."
   }
 }

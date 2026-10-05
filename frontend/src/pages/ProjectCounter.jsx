@@ -35,11 +35,14 @@ import UpgradePrompt from '../components/UpgradePrompt'
 import StashAllocationPanel from '../components/stash/StashAllocationPanel'
 import ProjectCloseModal from '../components/stash/ProjectCloseModal'
 import FlowMascot from '../components/FlowMascot'
+import ChartProgressView from '../components/ChartProgressView'
+import { canAccessJacquard } from '../config/features'
 import { PHOTO_STYLES_BY_CATEGORY } from '../data/photoStyles'
 import { PROJECT_TYPE_VALUES, projectTypeKey } from '../data/projectTypes'
 
 import { apiErrorMessage } from '../utils/apiError'
 import { summarizeProjectProgress } from '../utils/projectProgress'
+import { chartsForSection, selectedChartIdForSection } from '../utils/chartProgress'
 
 const DEMO_GUIDE_STEPS = ['welcome', 'row', 'saved', 'flow', 'sections', 'conclusion', 'done']
 
@@ -47,10 +50,9 @@ const ProjectCounter = () => {
   const { t, i18n } = useTranslation('counter')
   const { projectId } = useParams()
   const navigate = useNavigate()
-  const { user, hasActiveSubscription, isAdmin } = useAuth()
-  // [AI:Claude] Grille jacquard encore en test — réservée aux admins + la bêta-testeuse
-  // (user 30) à l'origine de la demande, le temps de valider plus largement
-  const canAccessJacquard = isAdmin() || user?.id === 30
+  const { user, hasActiveSubscription } = useAuth()
+  // Permission bêta centralisée, également imposée par les routes et l'API.
+  const hasJacquardAccess = canAccessJacquard(user)
   const {
     previewImage,
     isGeneratingPreview,
@@ -99,6 +101,15 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Compteurs secondaires (PLUS/PRO) — plusieurs par section (ou par
   // projet si pas de sections), stockés dans project_secondary_counters.
+  // La section reste la seule source de progression. Les details de grille sont
+  // charges a la demande et mis en cache pour ne jamais etre relus sur +/-.
+  const [projectCharts, setProjectCharts] = useState([])
+  const [selectedChartBySection, setSelectedChartBySection] = useState({})
+  const [chartDetailsByKey, setChartDetailsByKey] = useState({})
+  const [chartLoadErrors, setChartLoadErrors] = useState({})
+  const chartListPromisesRef = useRef({})
+  const chartDetailPromisesRef = useRef({})
+
   const MAX_SECONDARY_COUNTERS = 10
   const [secondaryCounters, setSecondaryCounters] = useState([]) // [{id, label, target, count, sequence, ...}]
   const [editingCounterId, setEditingCounterId] = useState(null) // id du compteur en édition, ou null
@@ -545,6 +556,63 @@ const ProjectCounter = () => {
   useEffect(() => {
     if (projectId) localStorage.setItem('yf_last_project_id', projectId)
   }, [projectId])
+
+  useEffect(() => {
+    let cancelled = false
+    setProjectCharts([])
+    setSelectedChartBySection({})
+    setChartDetailsByKey({})
+    setChartLoadErrors({})
+    chartDetailPromisesRef.current = {}
+
+    if (!hasJacquardAccess) return () => { cancelled = true }
+
+    const requestKey = String(projectId)
+    if (!chartListPromisesRef.current[requestKey]) {
+      chartListPromisesRef.current[requestKey] = api.get(`/projects/${projectId}/charts`)
+    }
+
+    chartListPromisesRef.current[requestKey]
+      .then(response => {
+        if (!cancelled) setProjectCharts(response.data?.charts || [])
+      })
+      .catch(() => {
+        if (!cancelled) setChartLoadErrors({ list: true })
+      })
+
+    return () => { cancelled = true }
+  }, [projectId, hasJacquardAccess])
+
+  const activeSectionCharts = chartsForSection(projectCharts, currentSectionId, counterUnit)
+  const preferredChartId = currentSectionId != null ? selectedChartBySection[String(currentSectionId)] : null
+  const activeChartId = selectedChartIdForSection(activeSectionCharts, preferredChartId)
+  const activeChartCacheKey = activeChartId != null ? `${projectId}:${activeChartId}` : null
+  const activeChart = activeChartCacheKey ? chartDetailsByKey[activeChartCacheKey] : null
+
+  useEffect(() => {
+    if (!hasJacquardAccess || activeChartId == null || !activeChartCacheKey || activeChart) return
+
+    let cancelled = false
+    if (!chartDetailPromisesRef.current[activeChartCacheKey]) {
+      chartDetailPromisesRef.current[activeChartCacheKey] = api
+        .get(`/projects/${projectId}/charts/${activeChartId}`)
+        .then(response => response.data?.chart)
+        .finally(() => { delete chartDetailPromisesRef.current[activeChartCacheKey] })
+    }
+
+    chartDetailPromisesRef.current[activeChartCacheKey]
+      .then(chart => {
+        if (!cancelled && chart) {
+          setChartDetailsByKey(previous => ({ ...previous, [activeChartCacheKey]: chart }))
+          setChartLoadErrors(previous => ({ ...previous, [activeChartCacheKey]: false }))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setChartLoadErrors(previous => ({ ...previous, [activeChartCacheKey]: true }))
+      })
+
+    return () => { cancelled = true }
+  }, [projectId, hasJacquardAccess, activeChartId, activeChartCacheKey, activeChart])
 
   useEffect(() => {
     setProxyError(null)
@@ -4441,9 +4509,9 @@ const ProjectCounter = () => {
           </>
         )}
         {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
-        <div className="space-y-3 sm:space-y-0">
+        <div className="flex flex-col gap-3 sm:gap-0">
           {/* Ligne 1 mobile: Section + Compteur | Desktop: cachée car tout sur une seule ligne */}
-          <div className="sm:hidden">
+          <div className="sm:hidden order-1">
             {/* [AI:Claude] Retour utilisatrice : en mode travail, le compteur (l'élément qu'on
                 touche à chaque rang) restait de la même petite taille que collé à côté du nom
                 de section — alors que c'est justement l'élément à mettre le plus en avant une
@@ -4583,7 +4651,7 @@ const ProjectCounter = () => {
           {/* Retour à la ligne à toute largeur si Session+Total+Pause+Arrêter ne
               tiennent pas sur une seule ligne — un seuil fixe (sm:, lg:...) laissait
               toujours une largeur intermédiaire où ça débordait encore */}
-          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+          <div className="order-3 sm:order-1 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
             {/* Section active - visible uniquement desktop */}
             <div className="hidden sm:block text-left flex-shrink-0">
               <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
@@ -4740,6 +4808,49 @@ const ProjectCounter = () => {
               )}
             </div>
           </div>
+
+        {hasJacquardAccess && currentSectionId && counterUnit === 'rows' && activeSectionCharts.length > 0 && (
+          <div className="order-2">
+            {activeSectionCharts.length > 1 && (
+              <div className="mt-3 pt-3 border-t border-primary-300/50">
+                <label htmlFor="active-section-chart" className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+                  {t('ui.chooseChart')}
+                </label>
+                <select
+                  id="active-section-chart"
+                  value={activeChartId ?? ''}
+                  onChange={event => setSelectedChartBySection(previous => ({
+                    ...previous,
+                    [String(currentSectionId)]: Number(event.target.value),
+                  }))}
+                  className="w-full max-w-sm border border-primary-200 rounded-control px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  {activeSectionCharts.map(chart => (
+                    <option key={chart.id} value={chart.id}>{chart.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {activeChart ? (
+              <ChartProgressView
+                key={activeChart.id}
+                chart={activeChart}
+                currentRow={currentRow}
+                counterUnit={counterUnit}
+                mode={isFocusMode ? 'work' : 'compact'}
+              />
+            ) : chartLoadErrors[activeChartCacheKey] ? (
+              <p className="mt-3 pt-3 border-t border-primary-300/50 text-xs text-red-600">
+                {t('ui.chartProgressLoadFailed')}
+              </p>
+            ) : (
+              <p className="mt-3 pt-3 border-t border-primary-300/50 text-xs text-gray-500">
+                {t('ui.chartProgressLoading')}
+              </p>
+            )}
+          </div>
+        )}
         </div>
 
         {/* [AI:Claude] Retour utilisatrice : l'assistant (gros bouton plein largeur) écrasait
@@ -5179,7 +5290,7 @@ const ProjectCounter = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
           )}
         </button>
-        {canAccessJacquard && (
+        {hasJacquardAccess && (
           <Link
             to={`/projects/${projectId}/charts`}
             className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-white border border-gray-200 rounded-control text-xs font-medium text-gray-600 hover:border-primary-400 hover:text-primary-700 transition"

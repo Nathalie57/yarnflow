@@ -19,6 +19,7 @@ import YarnWeightConverter from '../components/tools/YarnWeightConverter'
 import ChartDesigner from '../components/tools/ChartDesigner'
 import { useTranslation } from 'react-i18next'
 import FlowMascot from '../components/FlowMascot'
+import { canAccessJacquard } from '../config/features'
 
 const TILE_COLORS = ['bg-flow-mint text-flow-ink', 'bg-flow-blue/40 text-flow-ink', 'bg-flow-peach text-flow-ink', 'bg-flow-lavender/50 text-flow-ink']
 
@@ -132,7 +133,7 @@ const TOOLS = [
     Icon: IconGrid,
     component: ChartDesigner,
     betaOnly: true,
-    badge: 'PLUS/PRO',
+    badge: 'Bêta',
     wide: true,
   },
 ]
@@ -140,13 +141,11 @@ const TOOLS = [
 export default function Tools() {
   const { t, i18n } = useTranslation('tools')
   const [activeTool, setActiveTool] = useState(null)
-  const { user, isAdmin, hasActiveSubscription } = useAuth()
-  // [AI:Claude] Grille jacquard réservée aux abonnés (PLUS/PRO) + admins.
-  // Accès user 30 (bêta-testeuse) désactivé temporairement — Nathalie teste
-  // d'abord elle-même avant d'ouvrir l'accès.
-  const canAccessJacquard = isAdmin() || /* user?.id === 30 || */ hasActiveSubscription()
+  const { user } = useAuth()
+  // Permission bêta centralisée : admins et compte testeur 30 uniquement.
+  const hasJacquardAccess = canAccessJacquard(user)
   const isFrench = i18n.resolvedLanguage === 'fr'
-  const visibleTools = TOOLS.filter(x => (!x.betaOnly || canAccessJacquard) && (!x.frenchOnly || isFrench))
+  const visibleTools = TOOLS.filter(x => (!x.betaOnly || hasJacquardAccess) && (!x.frenchOnly || isFrench))
 
   const tool = visibleTools.find(t => t.id === activeTool)
 

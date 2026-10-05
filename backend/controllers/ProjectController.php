@@ -2067,7 +2067,7 @@ class ProjectController
     public function getCharts(int $projectId, array $params = []): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
 
             if (!$this->projectModel->belongsToUser($projectId, $userId)) {
                 $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
@@ -2097,7 +2097,7 @@ class ProjectController
     public function getAllCharts(): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
             $charts = $this->projectModel->getAllChartsForUser($userId);
 
             $this->sendResponse(200, ['success' => true, 'charts' => $charts]);
@@ -2116,7 +2116,7 @@ class ProjectController
     public function getChart(int $projectId, int $chartId): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
 
             if (!$this->projectModel->belongsToUser($projectId, $userId)) {
                 $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
@@ -2147,7 +2147,7 @@ class ProjectController
     public function createChart(int $projectId): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
 
             if (!$this->projectModel->belongsToUser($projectId, $userId)) {
                 $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
@@ -2217,7 +2217,7 @@ class ProjectController
     public function createUnassignedChart(): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
             $data = $this->getJsonInput();
 
             if (empty($data['name']) || empty($data['width']) || empty($data['height'])) {
@@ -2262,7 +2262,7 @@ class ProjectController
     public function getUnassignedChart(int $chartId): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
             $chart = $this->projectModel->getChartByUser($chartId, $userId);
 
             if (!$chart) {
@@ -2289,7 +2289,7 @@ class ProjectController
     public function updateUnassignedChart(int $chartId): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
 
             $existingChart = $this->projectModel->getChartByUser($chartId, $userId);
             if (!$existingChart) {
@@ -2351,7 +2351,7 @@ class ProjectController
     public function deleteUnassignedChart(int $chartId): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
 
             $existingChart = $this->projectModel->getChartByUser($chartId, $userId);
             if (!$existingChart) {
@@ -2378,7 +2378,7 @@ class ProjectController
     public function updateChart(int $projectId, int $chartId): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
 
             if (!$this->projectModel->belongsToUser($projectId, $userId)) {
                 $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
@@ -2486,7 +2486,7 @@ class ProjectController
     public function deleteChart(int $projectId, int $chartId): void
     {
         try {
-            $userId = $this->getUserIdFromAuth();
+            $userId = $this->getJacquardUserIdFromAuth();
 
             if (!$this->projectModel->belongsToUser($projectId, $userId)) {
                 $this->sendResponse(403, ['success' => false, 'error' => 'Accès non autorisé']);
@@ -2761,6 +2761,29 @@ class ProjectController
             throw new \Exception('Non authentifié');
 
         return (int)$userData['user_id'];
+    }
+
+    /**
+     * Authentifie puis applique la permission temporaire jacquard avant tout
+     * acces au modele. Les controles de propriete restent ensuite obligatoires.
+     */
+    private function getJacquardUserIdFromAuth(): int
+    {
+        $userData = $this->authMiddleware->authenticate();
+
+        if ($userData === null) {
+            throw new \Exception('Non authentifie');
+        }
+
+        if (!AuthMiddleware::canAccessJacquard($userData)) {
+            $this->sendResponse(403, [
+                'success' => false,
+                'error' => 'Cette fonctionnalite est actuellement reservee aux testeurs.',
+                'error_code' => 'jacquard_beta_forbidden',
+            ]);
+        }
+
+        return (int) $userData['user_id'];
     }
 
     /**

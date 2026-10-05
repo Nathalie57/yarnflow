@@ -12,6 +12,7 @@ import { MAX_GRID_SIZE, NO_GRID_DETECTED, imageFileToChart } from '../../utils/c
 import { photoFileToChart } from '../../utils/photoToChart'
 import { useTranslation } from 'react-i18next'
 import { useAlert } from '../../hooks/useAlert'
+import { ChartColumnLabels, ChartRowLabels } from '../ChartAxisLabels'
 
 const MIN_GRID_SIZE = 1
 const DEFAULT_CELL_PX = 20
@@ -706,26 +707,10 @@ export default function ChartDesigner() {
             />
             {/* Numeros de colonnes, decroissants de gauche a droite (convention
                 jacquard : rang endroit lu de droite a gauche, colonne 1 a droite) */}
-            {cellPx >= 8 && (
-              <div className="flex" style={{ width: chart.width * cellPx }}>
-                {Array.from({ length: chart.width }, (_, x) => (
-                  <div key={x} style={{ width: cellPx }} className="text-center text-[8px] text-gray-500 leading-none pt-0.5">
-                    {chart.width - x}
-                  </div>
-                ))}
-              </div>
-            )}
+            <ChartColumnLabels width={chart.width} cellPx={cellPx} />
           </div>
           {/* Numeros de rangs, du bas (1) vers le haut (convention jacquard) */}
-          {cellPx >= 8 && (
-            <div className="flex flex-col" style={{ height: chart.height * cellPx }}>
-              {Array.from({ length: chart.height }, (_, y) => (
-                <div key={y} style={{ height: cellPx }} className="flex items-center text-[8px] text-gray-500 leading-none pl-0.5">
-                  {chart.height - y}
-                </div>
-              ))}
-            </div>
-          )}
+          <ChartRowLabels height={chart.height} cellPx={cellPx} />
           <div className="flex flex-col gap-1.5">
             <button onClick={() => addColumn('right')} title={t('ui.addColRight')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">+</button>
             <button onClick={() => removeColumn('right')} title={t('ui.removeColRight')} className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm leading-none">−</button>

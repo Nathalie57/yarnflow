@@ -523,6 +523,17 @@
     "startKnittingCta": "Commencer à tricoter",
     "startCrochetingCta": "Commencer à crocheter",
     "workModeHelpHintTitle": "Flow connaît ton patron",
-    "workModeHelpHintBody": "Tu peux lui demander de t'aider à l'étape où tu en es."
+    "workModeHelpHintBody": "Tu peux lui demander de t'aider à l'étape où tu en es.",
+    "chartProgressTitle": "Diagramme",
+    "chartNextRow": "Rang {{row}} sur {{total}}",
+    "chartRowToKnit": "Rang {{row}} à tricoter",
+    "chartStartsAtSectionRow": "Le diagramme commence au rang {{row}} de cette section.",
+    "chartProgressCompleted": "Diagramme terminé",
+    "chartProgressUnavailable": "Progression du diagramme indisponible",
+    "showChart": "Voir le diagramme",
+    "hideChart": "Masquer",
+    "chooseChart": "Diagramme de la section",
+    "chartProgressLoading": "Chargement du diagramme…",
+    "chartProgressLoadFailed": "Impossible de charger ce diagramme."
   }
 }

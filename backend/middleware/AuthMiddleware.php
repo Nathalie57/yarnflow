@@ -21,6 +21,8 @@ use App\Config\Database;
  */
 class AuthMiddleware
 {
+    private const JACQUARD_BETA_USER_ID = 30;
+
     private JWTService $jwtService;
     private User $userModel;
 
@@ -183,5 +185,15 @@ class AuthMiddleware
         }
 
         return true;
+    }
+
+    /**
+     * Permission temporaire de la fonctionnalite Grille jacquard (beta).
+     * L'abonnement n'intervient volontairement pas dans cette decision.
+     */
+    public static function canAccessJacquard(array $userData): bool
+    {
+        return ($userData['role'] ?? null) === ROLE_ADMIN
+            || (int) ($userData['user_id'] ?? 0) === self::JACQUARD_BETA_USER_ID;
     }
 }

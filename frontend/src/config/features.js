@@ -24,3 +24,9 @@ export const LANGUAGE_SWITCHER_USER_IDS = [7]
  */
 export const canSwitchLanguage = (user) =>
   LANGUAGE_SWITCHER_ENABLED || LANGUAGE_SWITCHER_USER_IDS.includes(Number(user?.id))
+
+/** Acces temporaire a la fonctionnalite Grille jacquard pendant sa beta. */
+export const JACQUARD_BETA_USER_IDS = [30]
+
+export const canAccessJacquard = (user) =>
+  user?.role === 'admin' || JACQUARD_BETA_USER_IDS.includes(Number(user?.id))
