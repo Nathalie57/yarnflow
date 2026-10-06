@@ -11,7 +11,7 @@ final class FlowContextGuidanceTest extends TestCase
 {
     public function testSimpleAndCompositeSectionsReceiveDifferentGuidance(): void
     {
-        self::assertStringContainsString('repère prioritaire', FlowContextGuidance::sectionGuidance(['progression_type' => 'simple']));
+        self::assertStringContainsString('progression enregistrée', FlowContextGuidance::sectionGuidance(['progression_type' => 'simple']));
         self::assertStringContainsString('sous-étape exacte', FlowContextGuidance::sectionGuidance(['progression_type' => 'composite']));
     }
 

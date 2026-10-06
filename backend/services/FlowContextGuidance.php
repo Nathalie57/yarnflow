@@ -7,6 +7,19 @@ namespace App\Services;
 /** Consignes déterministes injectées dans le contexte de Flow. */
 class FlowContextGuidance
 {
+    public static function reliabilityGuidance(): string
+    {
+        return <<<'GUIDANCE'
+SOURCES DISTINCTES : PATTERN / APP STATE / USER REALITY.
+PATTERN décrit ce qui devrait être vrai si les instructions ont été suivies ; APP STATE décrit uniquement ce qui est enregistré dans YarnFlow ; USER REALITY décrit ce que l’utilisatrice constate ou vient de faire. Conserve ces trois informations séparées en cas de contradiction.
+Une déclaration explicite récente sur l’ouvrage ne doit jamais être écrasée par un compteur enregistré, une déduction mathématique ou une ancienne réponse de l’assistant. Ne transforme jamais une hypothèse du patron en fait réel.
+Un nombre de mailles peut révéler un écart, mais ne permet pas de déduire le rang actuel ni l’historique réel des augmentations/diminutions. Même un compte conforme ne prouve pas que les opérations ont été régulières.
+Explique brièvement l’écart puis pose une seule question minimale nécessaire au diagnostic, sans redemander une information confirmée. Ne propose ni diminution compensatoire, ni augmentation anticipée ou sautée, ni modification du compteur tant que le diagnostic et les conséquences ne sont pas suffisamment établis. Tu peux indiquer la prochaine opération prévue par le patron, sans la déplacer pour compenser l’écart.
+EXEMPLE : APP STATE = rang 144 ; USER REALITY = rang 144 terminé et 25 mailles ; PATTERN = 6 mailles de départ et une augmentation tous les 8 rangs, soit 24 mailles attendues au rang 144. Réponse : « Tu as terminé le rang 144 et tu comptes 25 mailles. Le patron en prévoit 24 : tu as une maille supplémentaire. Cela ne permet pas de conclure que tu es au rang 152. La prochaine augmentation prévue par le patron est au rang 152. Sais-tu à quel rang tu as fait ta dernière augmentation ? » Ne conclus pas « tu as terminé le rang 152 » ou « prochaine augmentation au rang 160 » et ne conseille pas de modifier la progression.
+La validation structurelle d’une traduction ne garantit pas sa justesse technique. En cas d’ambiguïté du patron ou de son extraction, demande un repère plutôt que d’inventer une correspondance.
+GUIDANCE;
+    }
+
     public static function progressSummary(array $section): string
     {
         $current = (float)($section['current_row'] ?? 0);
@@ -58,7 +71,7 @@ class FlowContextGuidance
             return 'Section composite : le compteur indique seulement une progression enregistrée. Il ne permet pas de déduire avec certitude la sous-étape exacte ; vérifier les instructions et demander un repère à l’utilisatrice si nécessaire.';
         }
 
-        return 'Section simple : le compteur BDD est le repère prioritaire pour situer la progression. Sa valeur indique le nombre de rangs déjà terminés, jamais le rang en cours ; utiliser le prochain rang explicitement indiqué dans la progression.';
+        return 'Section simple : le compteur BDD est un repère de progression enregistrée, pas une preuve de la réalité de l’ouvrage ; respecter les corrections explicites récentes de l’utilisatrice. Sa valeur indique le nombre de rangs enregistrés comme terminés, jamais le rang en cours ; le prochain rang indiqué est celui prévu selon ce compteur.';
     }
 
     public static function secondaryCounterSummary(array $counter): string
