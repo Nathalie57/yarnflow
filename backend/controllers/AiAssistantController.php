@@ -18,6 +18,7 @@ use App\Services\AIPatternExtractorService;
 use App\Services\PatternTranslatorService;
 use App\Services\AnalyticsService;
 use App\Services\FlowContextGuidance;
+use App\Services\FlowPatternContextSelector;
 use App\Services\PatternExtractionValidator;
 
 class AiAssistantController
@@ -350,7 +351,7 @@ Si ta réponse soulève naturellement un besoin couvert par PRO (ex: gérer un g
                 . "1. TRADUIRE (ex: \"traduis-moi le rang 17\", \"c'est quoi en français ?\") : tu ne traduis JAMAIS toi-même ce texte. Réponds UNIQUEMENT par le marqueur suivant suivi du texte EXACT (verbatim, dans sa langue d'origine, sans aucune modification) du passage concerné tel qu'il apparaît dans le patron ci-dessus — rien d'autre, ni clarification, ni suggestions :\n###TRANSLATE_REQUEST###\n<texte exact du passage>\n"
                 . "2. EXPLIQUER (ex: \"je ne comprends pas le rang 17\", \"je pense avoir fait une erreur\") : explique la technique/l'instruction avec tes propres mots, comme d'habitude.\n"
                 . "3. AIDER DANS LE CONTEXTE (ex: \"je suis au rang 17, qu'est-ce que je dois faire ?\") : aide contextuelle habituelle.\n\n"
-                . "Si le patron ci-dessus se termine par la mention \"[Patron tronqué ici...]\", et que la question porte sur une partie du patron qui semble se situer après ce point (ex: une section, un rang ou une taille non couverte par le texte fourni), dis-le clairement au lieu de deviner ou d'inventer — explique que tu n'as pas cette partie du patron sous les yeux.\n\n"
+                . "Si le contexte porte la mention PATTERN PARTIEL, seuls certains extraits du patron sont visibles, dans leur ordre d’origine. Une coupure peut se situer entre les extraits ou dans un passage. Pour une section, une taille ou une définition absente, dis clairement que tu n’as pas ce passage sous les yeux ; ne le reconstruis pas depuis tes connaissances générales.\n\n"
                 . "Pour les cas 2 et 3 uniquement (jamais le cas 1, traduction) :\n"
                 . "En cas d’incertitude, explique brièvement ce qui est connu puis pose une seule question minimale de diagnostic. Évite les pistes spéculatives et les calculs répétitifs.\n\nÀ la fin, ajoute si utile jusqu’à 2 suggestions courtes, sans suggérer de correction avant diagnostic. Elles doivent porter UNIQUEMENT sur un point, une technique ou un terme que TA PROPRE RÉPONSE ci-dessus vient de mentionner explicitement — jamais une technique du patron que tu n'as pas citée dans ta réponse, même si elle apparaît ailleurs dans le patron ou est habituelle pour ce type d'ouvrage (ex: si ta réponse ne parle pas du montage/magic ring, ne le suggère pas juste parce que c'est un amigurumi). En cas de doute sur la pertinence d'une suggestion, ne la propose pas plutôt que de deviner — au format exact suivant, sur ses propres lignes, rien après :\n###SUGGESTIONS###\nQuestion de suivi 1\nQuestion de suivi 2\n"
             : '';
@@ -417,9 +418,9 @@ PROMPT;
      * ne modifie jamais project_sections/project_rows, qui restent la source de vérité de la
      * progression réelle de l'utilisatrice. Le patron associé
      * (ai_pattern_imports.ai_response_json, lié via ProjectController::linkAiPatternReference())
-     * est fourni tel quel en référence : pas de tentative de faire correspondre
-     * programmatiquement ses sections à celles suivies manuellement — un LLM fait ce
-     * rapprochement nativement à partir du contexte, plus fiable qu'un matching par nom.
+     * est fourni en référence verbatim. Pour un patron long, sélectionner les passages
+     * utiles uniquement sur un repère unique (titre ou description exacte), sans
+     * modifier les sections suivies ni supposer de correspondance par position.
      */
     /**
      * [AI:Claude] 2026-09-25 — Section active et rang courant (de la section si elle
@@ -501,6 +502,13 @@ PROMPT;
         );
         $stmt->execute([':pid' => $projectId]);
         $sections = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $activeSection = null;
+        foreach ($sections as $section) {
+            if ((int)$section['id'] === (int)$project['current_section_id']) {
+                $activeSection = $section;
+                break;
+            }
+        }
 
         $stmt = $this->db->prepare(
             'SELECT section_id, label, target, count, unit, tracking_role, cycle_length
@@ -518,10 +526,8 @@ PROMPT;
                 $progress = FlowContextGuidance::progressSummary($section);
                 $status = $section['is_completed'] ? ' [terminée]' : ($isActive ? ' [section active enregistrée]' : '');
                 $lines[] = "Section : {$section['name']}{$status} — progression : {$progress}";
-                if ($section['pattern_start_row'] !== null) {
-                    $nextPatternRow = (int)$section['pattern_start_row'] + (int)$section['current_row'];
-                    $lines[] = "  Correspondance patron selon le compteur enregistré : le prochain rang/tour serait le numéro {$nextPatternRow} du patron (le compteur de section est local).";
-                }
+                $rowGuidance = FlowContextGuidance::patternRowGuidance($section);
+                if ($rowGuidance !== '') $lines[] = '  ' . $rowGuidance;
                 if ($isActive) {
                     $lines[] = '  ' . FlowContextGuidance::sectionGuidance($section);
                 }
@@ -544,6 +550,10 @@ PROMPT;
                 'is_completed' => ($project['status'] ?? '') === 'completed',
             ]);
             $lines[] = "Aucune section définie — compteur global : {$progress}";
+            $lines[] = FlowContextGuidance::sectionGuidance([
+                'counter_unit' => $project['counter_unit'],
+                'progression_type' => 'simple',
+            ]);
         }
 
         // Compteurs secondaires hors section (section_id NULL) — possible même sur un projet
@@ -608,24 +618,19 @@ PROMPT;
             // principal plutôt que d'envoyer les deux versions intégralement — ça double
             // inutilement le budget de contexte, et répondre depuis la traduction suffit pour
             // que l'assistant s'exprime naturellement dans la langue de l'utilisatrice.
-            // [AI:Claude] 6000 caractères (~1500 tokens) coupait silencieusement des patrons
-            // longs (multi-tailles, jacquard) pile sur la section demandée, sans que
-            // l'utilisatrice ni le modèle ne le sache. Gemini Flash gère un contexte bien
-            // plus grand que ça — 30000 caractères couvre la quasi-totalité des patrons
-            // réels, et on prévient explicitement le modèle quand la coupe a quand même lieu.
+            // Budget inchangé : sélectionner les instructions actives et leurs
+            // définitions avant le reste, plutôt que couper aveuglément le début.
             $translationValidated = !empty($parsed['translation_validation']['validated']);
             if (!empty($importRow['translated_text']) && $translationValidated) {
                 $fullText = trim($importRow['translated_text']);
-                $patternText = mb_substr($fullText, 0, 30000);
-                $truncatedNote = mb_strlen($fullText) > 30000 ? "\n[Patron tronqué ici — des sections plus loin dans le patron original ne sont pas visibles dans ce texte de référence.]" : '';
+                $patternText = FlowPatternContextSelector::select($fullText, $activeSection);
                 $originalLang = $parsed['language'] ?? 'une autre langue';
-                $lines[] = "[PATTERN — TRADUCTION VALIDÉE STRUCTURELLEMENT] Patron original en {$originalLang} :\n" . $patternText . $truncatedNote;
+                $lines[] = "[PATTERN — TRADUCTION VALIDÉE STRUCTURELLEMENT] Patron original en {$originalLang} :\n" . $patternText;
             } else {
                 $fullText = $referenceText;
-                $patternText = mb_substr($fullText, 0, 30000);
+                $patternText = FlowPatternContextSelector::select($fullText, $activeSection);
                 if ($patternText !== '') {
-                    $truncatedNote = mb_strlen($fullText) > 30000 ? "\n[Patron tronqué ici — des sections plus loin dans le patron original ne sont pas visibles dans ce texte de référence.]" : '';
-                    $lines[] = "[PATTERN — EXTRACTION IA À VÉRIFIER EN CAS D'AMBIGUÏTÉ] Patron associé au projet :\n" . $patternText . $truncatedNote;
+                    $lines[] = "[PATTERN — EXTRACTION IA À VÉRIFIER EN CAS D'AMBIGUÏTÉ] Patron associé au projet :\n" . $patternText;
                 }
             }
         }

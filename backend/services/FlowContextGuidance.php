@@ -17,7 +17,31 @@ Un nombre de mailles peut révéler un écart, mais ne permet pas de déduire le
 Explique brièvement l’écart puis pose une seule question minimale nécessaire au diagnostic, sans redemander une information confirmée. Ne propose ni diminution compensatoire, ni augmentation anticipée ou sautée, ni modification du compteur tant que le diagnostic et les conséquences ne sont pas suffisamment établis. Tu peux indiquer la prochaine opération prévue par le patron, sans la déplacer pour compenser l’écart.
 EXEMPLE : APP STATE = rang 144 ; USER REALITY = rang 144 terminé et 25 mailles ; PATTERN = 6 mailles de départ et une augmentation tous les 8 rangs, soit 24 mailles attendues au rang 144. Réponse : « Tu as terminé le rang 144 et tu comptes 25 mailles. Le patron en prévoit 24 : tu as une maille supplémentaire. Cela ne permet pas de conclure que tu es au rang 152. La prochaine augmentation prévue par le patron est au rang 152. Sais-tu à quel rang tu as fait ta dernière augmentation ? » Ne conclus pas « tu as terminé le rang 152 » ou « prochaine augmentation au rang 160 » et ne conseille pas de modifier la progression.
 La validation structurelle d’une traduction ne garantit pas sa justesse technique. En cas d’ambiguïté du patron ou de son extraction, demande un repère plutôt que d’inventer une correspondance.
+UNITÉS : une progression en cm décrit une longueur enregistrée, jamais un nombre de rangs. Ne calcule aucun numéro de rang depuis des cm, même avec un échantillon : une estimation ne situe pas le rang réel. Utilise uniquement un repère de rang établi indépendamment et explicitement confirmé.
+TECHNIQUES RÉFÉRENCÉES : priorité à l’instruction spécifique de la section, puis à la définition correspondante ailleurs dans le patron fourni, puis seulement si nécessaire à la connaissance générale. Pour « read explanation above », « voir explication » ou un terme défini, cherche cette définition dans les passages disponibles avant de répondre. Ne remplace jamais silencieusement une variante du patron par une variante habituelle. Si la définition spécifique manque, indique cette limite ; une explication générale doit être annoncée comme générale et ne suffit pas à reconstruire les gestes exacts du patron.
+CLARIFICATION : exploite d’abord la section active, ses instructions, l’unité, la progression enregistrée et les faits déjà confirmés dans la conversation. Rappelle brièvement ce qui est utile avant de poser une question ; ne demande pas une donnée déjà disponible. Si une section est connue sans rang précis, explique ce que ses instructions permettent de savoir et demande seulement la sous-étape manquante. Exemple : « La section active est Neck, avec 0 cm enregistrés sur 4 cm. Le compteur ne situe pas un rang précis. As-tu déjà fait le rang envers après le montage ? » Ne répète pas « quel rang ? » sans exploiter ces repères.
 GUIDANCE;
+    }
+
+    /** Correspondance locale explicite, valable uniquement pour des rangs simples. */
+    public static function patternRowGuidance(array $section): string
+    {
+        if (($section['counter_unit'] ?? null) !== 'rows'
+            || ($section['progression_type'] ?? 'simple') !== 'simple'
+            || !isset($section['pattern_start_row'])
+            || !is_numeric($section['pattern_start_row'])
+            || !is_numeric($section['current_row'] ?? null)) {
+            return '';
+        }
+        $start = (float)$section['pattern_start_row'];
+        $current = (float)$section['current_row'];
+        if ($start < 1 || $current < 0 || floor($start) !== $start || floor($current) !== $current
+            || !empty($section['is_completed'])
+            || (isset($section['total_rows']) && $current >= (float)$section['total_rows'])) {
+            return '';
+        }
+        $next = (int)($start + $current);
+        return "Correspondance patron selon le compteur enregistré : le prochain rang/tour serait le numéro {$next} du patron (le compteur de section est local).";
     }
 
     public static function progressSummary(array $section): string
@@ -66,6 +90,9 @@ GUIDANCE;
     {
         if (($section['progression_type'] ?? 'simple') === 'action') {
             return 'Section action : aucune progression en rangs ou en mesure ne doit être déduite. Présenter l’instruction à réaliser et considérer la section terminée uniquement après validation explicite de l’utilisatrice.';
+        }
+        if (($section['counter_unit'] ?? null) === 'cm') {
+            return 'Section mesurée en cm : le compteur indique une longueur enregistrée, pas un rang terminé ou en cours. Aucun numéro de rang ne peut être déduit de cette mesure. Utiliser les instructions de la section et demander uniquement la sous-étape nécessaire si elle reste inconnue.';
         }
         if (($section['progression_type'] ?? 'simple') === 'composite') {
             return 'Section composite : le compteur indique seulement une progression enregistrée. Il ne permet pas de déduire avec certitude la sous-étape exacte ; vérifier les instructions et demander un repère à l’utilisatrice si nécessaire.';

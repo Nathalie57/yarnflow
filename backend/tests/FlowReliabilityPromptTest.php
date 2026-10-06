@@ -52,4 +52,20 @@ final class FlowReliabilityPromptTest extends TestCase
         self::assertStringContainsString('pas une obligation automatique pour un fil de remplacement', $prompt);
         self::assertStringContainsString('demande l’échantillon manquant', $prompt);
     }
+
+    public function testTechniquesUseSectionThenPatternDefinitionBeforeGeneralKnowledge(): void
+    {
+        $prompt = $this->prompt('');
+        self::assertStringContainsString('priorité à l’instruction spécifique de la section, puis à la définition correspondante ailleurs dans le patron fourni', $prompt);
+        self::assertStringContainsString('Ne remplace jamais silencieusement une variante du patron', $prompt);
+        self::assertStringContainsString('une explication générale doit être annoncée comme générale', $prompt);
+    }
+
+    public function testClarificationUsesAvailableContextAndDoesNotConvertCmToRows(): void
+    {
+        $prompt = $this->prompt('');
+        self::assertStringContainsString('ne demande pas une donnée déjà disponible', $prompt);
+        self::assertStringContainsString('La section active est Neck, avec 0 cm enregistrés sur 4 cm', $prompt);
+        self::assertStringContainsString('Ne calcule aucun numéro de rang depuis des cm, même avec un échantillon', $prompt);
+    }
 }
