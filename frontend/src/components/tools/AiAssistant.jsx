@@ -3,7 +3,7 @@
  * @brief Assistant IA tricot/crochet — réservé aux abonnés PLUS et PRO
  */
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useSyncExternalStore } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
@@ -11,38 +11,8 @@ import { useTranslation } from 'react-i18next'
 import { PLAN_PRICES, upgradeTarget, planLabel } from '../../data/upgradePlans'
 import FlowMascot from '../FlowMascot'
 
-const MarkdownText = ({ text }) => {
-  const lines = text.split('\n')
-  return (
-    <div className="space-y-1">
-      {lines.map((line, i) => {
-        if (!line.trim()) return <div key={i} className="h-2" />
-
-        const renderInline = (str) => {
-          const parts = str.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g)
-          return parts.map((part, j) => {
-            if (part.startsWith('**') && part.endsWith('**'))
-              return <strong key={j}>{part.slice(2, -2)}</strong>
-            if (part.startsWith('*') && part.endsWith('*'))
-              return <em key={j}>{part.slice(1, -1)}</em>
-            return part
-          })
-        }
-
-        if (/^#{1,3}\s/.test(line))
-          return <p key={i} className="font-semibold mt-2">{renderInline(line.replace(/^#{1,3}\s/, ''))}</p>
-
-        if (/^\d+\.\s/.test(line))
-          return <p key={i} className="pl-3">{renderInline(line)}</p>
-
-        if (/^[-•*]\s/.test(line))
-          return <p key={i} className="pl-3">· {renderInline(line.slice(2))}</p>
-
-        return <p key={i}>{renderInline(line)}</p>
-      })}
-    </div>
-  )
-}
+import FlowMarkdown from '../FlowMarkdown'
+import { flowConversations, isFlowQuotaBlocked } from '../../utils/flowConversation'
 
 // cles seulement : les libelles sont resolus au rendu, sinon ils se figeraient
 // dans la langue du premier chargement (et t n'existe pas ici)
@@ -53,7 +23,15 @@ const SUGGESTION_KEYS = ['aiQ1', 'aiQ2', 'aiQ3', 'aiQ4', 'aiQ5', 'aiQ6']
 const CONTEXTUAL_SUGGESTION_KEYS = ['aiCtxQ1', 'aiCtxQ2', 'aiCtxQ3', 'aiCtxQ4']
 const DEMO_SUGGESTION_KEYS = ['aiDemoQ1', 'aiDemoQ2', 'aiDemoQ3', 'aiDemoQ4']
 
-export default function AiAssistant({ projectId, projectLabel, projectProgress, open } = {}) {
+export default function AiAssistant(props = {}) {
+  const { user } = useAuth()
+  if (user?.id == null) return null
+  const conversation = flowConversations.get(user.id, props.projectId)
+  // La clé remonte aussi la saisie et le quota lorsque le compte/projet change.
+  return <AiAssistantConversation key={conversation.key} {...props} conversation={conversation} />
+}
+
+function AiAssistantConversation({ projectId, projectProgress, conversation }) {
   const { t, i18n } = useTranslation('tools')
   const { hasActiveSubscription , getSubscriptionPlan } = useAuth()
   const isPro = hasActiveSubscription()
@@ -64,67 +42,23 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
 
   const currentPlan = getSubscriptionPlan ? getSubscriptionPlan() : (isPro ? 'pro' : 'free')
 
-  const GENERAL_STORAGE_KEY = 'ai_assistant_messages'
-  // [AI:Claude] Une session contextuelle (ouverte depuis un projet) a sa propre clé de
-  // stockage, distincte de l'historique général — sinon des questions génériques passées
-  // pollueraient le contexte du rang courant, et inversement une question posée "à chaud"
-  // sur un rang resterait affichée hors contexte plus tard. Persistée quand même (pas
-  // seulement en mémoire) pour survivre à un F5, contrairement à l'ancien comportement.
-  const isContextual = Boolean(projectId)
+  const isContextual = projectId != null
   const isDemo = isContextual && projectProgress?.isDemo === true
-  const getStorageKey = (pid) => pid ? `ai_assistant_messages_project_${pid}` : GENERAL_STORAGE_KEY
-
-  const [messages, setMessages] = useState(() => {
-    try {
-      const saved = localStorage.getItem(getStorageKey(projectId))
-      return saved ? JSON.parse(saved) : []
-    } catch { return [] }
-  })
-  // [AI:Claude] AiAssistant reste monté en permanence dans le tiroir (juste masqué via
-  // CSS) — sans cet effet, l'initialiseur de useState() ci-dessus ne s'exécutant qu'au
-  // tout premier montage, une conversation contextuelle précédente restait affichée à
-  // chaque réouverture (et, dans l'autre sens, revenir en mode général après une session
-  // contextuelle ne rechargeait pas non plus l'historique général persisté).
-  //
-  // lastProjectIdRef évite de vider la conversation à CHAQUE réouverture du tiroir —
-  // seul un vrai changement de contexte (projet différent, ou bascule contextuel ↔
-  // général) doit recharger depuis le stockage ; fermer puis rouvrir sur le même projet
-  // doit garder la conversation en cours telle quelle.
-  const lastProjectIdRef = useRef(projectId)
-  useEffect(() => {
-    if (!open) return
-    const contextChanged = lastProjectIdRef.current !== projectId
-    lastProjectIdRef.current = projectId
-    if (!contextChanged) return
-
-    try {
-      const saved = localStorage.getItem(getStorageKey(projectId))
-      setMessages(saved ? JSON.parse(saved) : [])
-    } catch { setMessages([]) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, projectId])
+  const { messages, loading } = useSyncExternalStore(conversation.subscribe, conversation.getSnapshot)
 
   const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
   const [usage, setUsage] = useState(null) // { used, limit, remaining }
   const bottomRef = useRef(null)
 
   useEffect(() => {
-    api.get('/ai/usage').then(res => setUsage(res.data)).catch(() => {})
+    let active = true
+    api.get('/ai/usage').then(res => { if (active) setUsage(res.data) }).catch(() => {})
+    return () => { active = false }
   }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
-
-  useEffect(() => {
-    try {
-      // Garder uniquement les 30 derniers messages pour ne pas surcharger localStorage
-      const toSave = messages.slice(-30)
-      localStorage.setItem(getStorageKey(projectId), JSON.stringify(toSave))
-    } catch { /* quota dépassé, on ignore */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, projectId])
 
   // [AI:Claude] Message d'accueil du chat contextuel — construit à partir des données
   // réelles du projet (section/rang/total) transmises par ProjectCounter, plutôt qu'une
@@ -161,27 +95,25 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
     // [AI:Claude] Le quota mensuel affiché (usage.remaining) ne concerne que l'assistant
     // général — une session contextuelle n'a pas de compteur à vérifier ici, seul le
     // plafond de débit invisible côté serveur (voir catch ci-dessous) peut la bloquer.
-    if (!content || loading || (!isContextual && usage?.remaining === 0)) return
+    if (!content || loading || isFlowQuotaBlocked(projectId, usage)) return
 
     setInput('')
-    const newMessages = [...messages, { role: 'user', content }]
-    setMessages(newMessages)
-    setLoading(true)
+    const request = conversation.begin(content)
+    if (!request) return
+    const newMessages = conversation.getSnapshot().messages
 
     try {
-      const res = await api.post('/ai/assistant', { messages: newMessages, lang: i18n.language, ...(projectId ? { project_id: projectId } : {}) })
-      setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply, suggestions: res.data.suggestions || [], messageId: res.data.message_id || null, rating: null }])
+      const res = await api.post('/ai/assistant', { messages: newMessages, lang: i18n.language, ...(isContextual ? { project_id: projectId } : {}) })
+      conversation.complete(request, { role: 'assistant', content: res.data.reply, suggestions: res.data.suggestions || [], messageId: res.data.message_id || null, rating: null })
       if (res.data.usage) setUsage(res.data.usage)
     } catch (err) {
       const data = err.response?.data
       if (data?.limit_reached && data?.error_code === 'ai_monthly_limit') {
         setUsage({ used: data.used, limit: data.limit, remaining: 0 })
-        setMessages(prev => [...prev, { role: 'assistant', content: data.error, isError: true }])
+        conversation.complete(request, { role: 'assistant', content: data.error, isError: true })
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: data?.error || t('ui.genericErrorShort'), isError: true }])
+        conversation.complete(request, { role: 'assistant', content: data?.error || t('ui.genericErrorShort'), isError: true })
       }
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -190,7 +122,7 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
   const rate = async (index, rating) => {
     const msg = messages[index]
     if (!msg?.messageId || msg.rating) return
-    setMessages(prev => prev.map((m, i) => i === index ? { ...m, rating } : m))
+    conversation.rate(index, rating)
     try {
       await api.post('/ai/feedback', { message_id: msg.messageId, rating })
     } catch {
@@ -266,7 +198,7 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
                         : 'bg-flow-mint/50 text-flow-ink rounded-bl-sm'
                   }`}
                 >
-                  {m.role === 'user' ? m.content : <MarkdownText text={m.content} />}
+                  {m.role === 'user' ? m.content : <FlowMarkdown text={m.content} />}
                 </div>
               </div>
               {/* [AI:Claude] Feedback qualité — seul signal existant sur la pertinence
@@ -338,7 +270,7 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
       {messages.length > 0 && !loading && (
         <div className="flex justify-end pb-1">
           <button
-            onClick={() => { setMessages([]); localStorage.removeItem(getStorageKey(projectId)) }}
+            onClick={() => conversation.clear()}
             className="text-xs text-gray-400 hover:text-red-400 transition"
           >
             {t('ui.clearConversation')}
@@ -368,7 +300,7 @@ export default function AiAssistant({ projectId, projectLabel, projectProgress, 
         />
         <button
           onClick={() => send()}
-          disabled={!input.trim() || loading || usage?.remaining === 0}
+          disabled={!input.trim() || loading || isFlowQuotaBlocked(projectId, usage)}
           className="bg-primary-600 text-white rounded-control px-4 py-2.5 text-sm font-medium hover:bg-primary-700 transition disabled:opacity-40"
         >
           →

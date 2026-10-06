@@ -5,11 +5,15 @@
  * transmettre le contexte du projet en cours ("Aide sur ce rang").
  */
 
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
+import { useAuth } from './AuthContext'
 
 const AiAssistantContext = createContext(null)
 
 export function AiAssistantProvider({ children }) {
+  const { user } = useAuth()
+  const userId = user?.id ?? null
+  const [ownerId, setOwnerId] = useState(userId)
   const [open, setOpen] = useState(false)
   const [projectId, setProjectId] = useState(null)
   const [projectLabel, setProjectLabel] = useState(null)
@@ -17,6 +21,14 @@ export function AiAssistantProvider({ children }) {
   // d'accueil du chat puisse formuler une vraie phrase ("Tu travailles sur le corps,
   // rang 24 sur 48") plutôt que de reformater le libellé du chip de contexte.
   const [projectProgress, setProjectProgress] = useState(null)
+
+  useEffect(() => {
+    setOwnerId(userId)
+    setOpen(false)
+    setProjectId(null)
+    setProjectLabel(null)
+    setProjectProgress(null)
+  }, [userId])
 
   const openGeneral = () => {
     setProjectId(null)
@@ -33,9 +45,17 @@ export function AiAssistantProvider({ children }) {
   }
 
   const close = () => setOpen(false)
+  // Masquer immédiatement les métadonnées du compte précédent, avant l’effet.
+  const belongsToUser = ownerId === userId
 
   return (
-    <AiAssistantContext.Provider value={{ open, projectId, projectLabel, projectProgress, openGeneral, openWithProject, close }}>
+    <AiAssistantContext.Provider value={{
+      open: belongsToUser && open,
+      projectId: belongsToUser ? projectId : null,
+      projectLabel: belongsToUser ? projectLabel : null,
+      projectProgress: belongsToUser ? projectProgress : null,
+      openGeneral, openWithProject, close,
+    }}>
       {children}
     </AiAssistantContext.Provider>
   )

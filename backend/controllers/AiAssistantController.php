@@ -103,8 +103,7 @@ class AiAssistantController
                 return;
             }
 
-            $plan = $user['subscription_type'] ?? 'free';
-            if (!$this->hasActiveSubscription($user)) $plan = 'free';
+            $plan = $this->effectivePlan($user);
 
             $data = $this->getJsonInput();
             $messages = $data['messages'] ?? [];
@@ -750,8 +749,8 @@ PROMPT;
                 return;
             }
 
-            $plan = $user['subscription_type'] ?? 'free';
-            $limit = self::LIMITS[$plan] ?? 0;
+            $plan = $this->effectivePlan($user);
+            $limit = self::LIMITS[$plan] ?? 5;
             $used = $limit > 0 ? $this->getMonthlyUsage($userId, date('Y-m')) : 0;
 
             $this->sendResponse(200, [
@@ -778,6 +777,11 @@ PROMPT;
              ON DUPLICATE KEY UPDATE count = count + 1'
         );
         $stmt->execute([$userId, $month]);
+    }
+
+    private function effectivePlan(array $user): string
+    {
+        return $this->hasActiveSubscription($user) ? ($user['subscription_type'] ?? 'free') : 'free';
     }
 
     private function hasActiveSubscription(array $user): bool
