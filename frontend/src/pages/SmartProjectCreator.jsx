@@ -1855,6 +1855,11 @@ export default function SmartProjectCreator() {
               <div className="space-y-3">
                 {sections.map((section, index) => {
                   const sectionPointLabels = uniqueReviewPointLabels(reviewPoints.filter(point => point.sectionIndex === index))
+                  const unresolvedTotalHeight = section.unit === 'cm'
+                    && (section.progression_type || 'simple') === 'simple'
+                    && (section.target == null || section.target === '')
+                    && section.target_measured_from === 'piece_start'
+                    && Number(section.target_raw) > 0
                   return (
                   <div key={index} className="border border-gray-200 rounded-card p-3 sm:p-4">
                     {sectionPointLabels.length > 0 && (
@@ -1930,6 +1935,13 @@ export default function SmartProjectCreator() {
                         </button>
                       </div>
                     </div>
+                    {unresolvedTotalHeight && (
+                      <p className="mb-2 text-xs text-gray-600">
+                        {t('ui.totalHeightWithoutSectionTarget', {
+                          height: new Intl.NumberFormat(i18n.language).format(Number(section.target_raw)),
+                        })}
+                      </p>
+                    )}
                     <textarea
                       value={section.description || ''}
                       onChange={(e) => updateSection(index, 'description', e.target.value)}

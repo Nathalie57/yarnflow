@@ -402,6 +402,7 @@
     "descriptionLabel": "Description",
     "categoryLabel": "Category",
     "objective": "Target",
+    "totalHeightWithoutSectionTarget": "Reach {{height}} cm in total height. This section’s target cannot be calculated automatically because its starting height is unknown. The section counter starts at zero.",
     "manualActionSection": "One-time action · manual completion",
     "compositeFreeTracking": "Free tracking · no automatic target",
     "stitches": "Stitches",

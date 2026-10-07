@@ -402,6 +402,7 @@
     "descriptionLabel": "Description",
     "categoryLabel": "Catégorie",
     "objective": "Objectif",
+    "totalHeightWithoutSectionTarget": "Atteindre {{height}} cm de hauteur totale. L’objectif de cette section ne peut pas être calculé automatiquement : sa hauteur de départ n’est pas connue. Le compteur de section repart de zéro.",
     "manualActionSection": "Action ponctuelle · validation manuelle",
     "compositeFreeTracking": "Suivi libre · sans objectif automatique",
     "stitches": "Mailles",
