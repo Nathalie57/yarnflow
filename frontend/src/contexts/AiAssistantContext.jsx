@@ -5,7 +5,7 @@
  * transmettre le contexte du projet en cours ("Aide sur ce rang").
  */
 
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
 
 const AiAssistantContext = createContext(null)
@@ -44,6 +44,17 @@ export function AiAssistantProvider({ children }) {
     setOpen(true)
   }
 
+  // Le panneau peut rester ouvert pendant que le compteur ou la section change.
+  // Ne synchroniser que le projet actuellement affiché évite qu'une autre page
+  // remplace son contexte local ; le backend reste la source de vérité à l'envoi.
+  const syncProjectProgress = useCallback((id, progress) => {
+    if (projectId == null || String(projectId) !== String(id)) return
+    setProjectProgress(previous => {
+      const next = progress || null
+      return JSON.stringify(previous) === JSON.stringify(next) ? previous : next
+    })
+  }, [projectId])
+
   const close = () => setOpen(false)
   // Masquer immédiatement les métadonnées du compte précédent, avant l’effet.
   const belongsToUser = ownerId === userId
@@ -54,7 +65,7 @@ export function AiAssistantProvider({ children }) {
       projectId: belongsToUser ? projectId : null,
       projectLabel: belongsToUser ? projectLabel : null,
       projectProgress: belongsToUser ? projectProgress : null,
-      openGeneral, openWithProject, close,
+      openGeneral, openWithProject, syncProjectProgress, close,
     }}>
       {children}
     </AiAssistantContext.Provider>

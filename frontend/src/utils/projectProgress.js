@@ -12,6 +12,13 @@ const groupProgressByUnit = sections => Object.values(sections.reduce((groups, s
   return groups
 }, {}))
 
+export function completedStepsProgress(completedSteps, totalSteps) {
+  const total = Math.max(0, Math.floor(number(totalSteps)))
+  if (total === 0) return null
+  const completed = Math.min(total, Math.max(0, Math.floor(number(completedSteps))))
+  return { completed, total, percentage: Math.round((completed / total) * 100) }
+}
+
 export function summarizeProjectProgress(project, sections = []) {
   if (project?.status === 'completed') {
     return {

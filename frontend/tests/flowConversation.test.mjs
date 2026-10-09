@@ -100,6 +100,15 @@ test('contextual send is independent of monthly general quota', () => {
   assert.equal(isFlowQuotaBlocked(502, null), false)
 })
 
+test('asking for successive rows appends to the same history', () => {
+  const conversation = createFlowConversationStore(storage()).get(640, 502)
+  conversation.complete(conversation.begin('Explique-moi ce rang'), reply('Rang 1'))
+  conversation.complete(conversation.begin('Explique-moi ce rang'), reply('Rang 2'))
+  assert.deepEqual(conversation.getSnapshot().messages.map(message => message.content), [
+    'Explique-moi ce rang', 'Rang 1', 'Explique-moi ce rang', 'Rang 2'
+  ])
+})
+
 test('invalid local JSON is ignored and unavailable storage keeps a working in-memory session', () => {
   const disk = storage()
   disk.setItem(flowConversationKey(640, 502), '{bad json')

@@ -134,7 +134,13 @@ RÈGLES STRICTES :
 - yarn : lister CHAQUE fil/coloris séparément (un patron jacquard/colorwork utilise souvent 2-3 couleurs différentes) — ne jamais fusionner plusieurs fils en une seule entrée et ne jamais omettre un fil parce que sa quantité dépend de la taille. Sans taille choisie, résoudre la quantité uniquement si toutes les valeurs normalisées sont strictement identiques ; sinon mettre quantity_needed.amount à null. Conserver l'unité certaine et reporter les valeurs exactes dans unresolved_data comme trace source. Une valeur connue mais non résolue n'est pas une extraction échouée.
 - VALEURS MULTI-TAILLES : sans taille choisie, ne jamais sélectionner arbitrairement la première valeur d'une série (quantité, nombre de mailles, rangs ou mesure). Conserver la série exacte dans les instructions et dans unresolved_data lorsque le schéma structuré exige une valeur unique. Cela ne doit pas supprimer la donnée ni être présenté comme une erreur d'extraction.
 - available_sizes : recopier uniquement les tailles explicitement proposées par le patron. Pour un patron explicitement limité à une seule taille, retourner cette taille unique. Ne jamais ajouter la taille demandée par l'utilisatrice si elle n'apparaît pas dans la source. Si aucune taille n'est explicitement identifiable, retourner null.
-- sections : découper logiquement (Corps, Manches, Col, Assemblage, Finitions...) — chaque partie du vêtement/ouvrage doit être une section distincte : "Dos" et "Devant" = 2 sections séparées, "Bras gauche" et "Bras droit" = 2 sections séparées, "Manche gauche" et "Manche droite" = 2 sections séparées. Ne jamais regrouper des parties distinctes dans une même section.
+- sections : une section représente d'abord une PHASE DE TRAVAIL COHÉRENTE, avec une condition de fin identifiable lorsque le patron le permet. Conserver les grandes parties du patron (Corps, Manches, Col, Assemblage, Finitions...) comme contexte, mais ne pas utiliser systématiquement leurs titres comme frontières de sections. Chaque partie distincte du vêtement/ouvrage doit au minimum rester séparée : "Dos" et "Devant" = 2 sections séparées, "Bras gauche" et "Bras droit" = 2 sections séparées, "Manche gauche" et "Manche droite" = 2 sections séparées. Ne jamais regrouper des parties distinctes dans une même section.
+- DÉCOUPAGE EN PHASES VALIDABLES : lorsqu'une même grande partie contient successivement (a) une préparation ponctuelle, (b) une progression mesurable avec un objectif explicite, puis éventuellement (c) une action finale distincte, créer plusieurs sections ordinaires plutôt qu'une unique section composite. En TRICOT, un montage de mailles suivi d'une progression en cm ou en rangs est TOUJOURS une section action distincte, même si aucune ligne vide ni aucun sous-titre ne les sépare ; ne jamais absorber le montage dans la section simple mesurable. Le montage, le placement des marqueurs et le tour de mise en place qui préparent ensemble cette progression forment UNE SEULE section action : ne pas les fragmenter entre eux. Utiliser action pour les phases ponctuelles et simple pour la phase mesurable. Exemple : "monter 68 m., placer les marqueurs et faire le tour de mise en place ; continuer ce motif jusqu'à 8 cm ; former le col double" → trois sections ordonnées : préparation du col (action), col jusqu'à 8 cm (simple, cm, target=8), formation du col double (action). Même règle pour "monter 24 m. ; travailler le motif jusqu'à 18 cm" → montage (action), puis motif jusqu'à 18 cm (simple).
+- AUTONOMIE DES PHASES : une description ne doit jamais se limiter à "continuer ainsi" ou "selon la technique ci-dessus". Recopier dans la nouvelle section les instructions techniques nécessaires de la phase précédente ou de la définition référencée, sans inventer. Dans l'exemple du col, la section de 8 cm doit rappeler le motif/répartition à continuer et l'action finale doit inclure la définition disponible du col double.
+- FRONTIÈRES D'ACTION : une action finale explicite après une progression (rabattre, assembler, former un col, coudre, bloquer) reste une section action distincte ; ne jamais la fusionner avec la progression simple ou composite qui la précède. À l'inverse, le premier rang qui définit le motif ensuite répété jusqu'à une mesure fait partie de cette progression : ne pas en faire une action séparée. Un "Rang 1" de côtes suivi de "continuer ces côtes jusqu'à 18 cm" forme une seule section simple de 18 cm, après la section de montage.
+- GRANULARITÉ : ne pas créer une section pour chaque rang, tour, répétition ou changement de point à l'intérieur d'une séquence numérotée continue. En CROCHET, un cercle magique ou une chaînette initiale qui sert immédiatement de support aux tours numérotés fait partie de la même section que ces tours : ce n'est pas une action autonome. Des tours consécutifs qui construisent le même motif restent ensemble, même si le dernier tour forme une bordure ou des pétales : cette règle prévaut sur la règle composite liée à un changement de point. Les regrouper dans une seule section simple dont target est le dernier numéro de tour explicite. De même, un cycle explicite de plusieurs tours répété jusqu'à un total certain (ex: tours 1 et 2 répétés jusqu'à 44 tours) reste une section simple avec ce total comme target ; les différences entre les tours du cycle ne le rendent pas composite. Découper seulement lorsque les phases sont successives, ont chacune une fin vérifiable hors du simple numéro de rang/tour et peuvent être validées indépendamment. Conserver composite lorsque les opérations sont imbriquées, ambiguës ou interdépendantes, ou lorsqu'un découpage ferait perdre la logique nécessaire à l'exécution. Avant de retourner le JSON, vérifier qu'aucune séquence continue de tours n'a été éclatée et qu'aucun montage tricot précédant une progression mesurable n'a été fusionné avec elle.
+- OBJECTIF PERSONNALISABLE : si une instruction propose explicitement une mesure chiffrée OU une longueur adaptée à l'utilisatrice (ex: "48 cm au total, ou selon le tour de tête"), la condition de fin n'est pas unique : conserver le repère dans la description, utiliser composite et target=null. Ne jamais renvoyer simple avec target=null pour ce cas.
+- UNITÉ COMPOSITE : lorsqu'une section composite possède malgré tout une unité de suivi explicitement justifiée par sa condition de progression principale (par exemple une longueur personnalisable exprimée en cm), conserver cette unit dans unit avec target=null. Si aucune unité de progression n'est justifiée, mettre unit=null ; ne jamais choisir "rangs" comme valeur par défaut.
 - PIÈCES SYMÉTRIQUES : créer deux sections seulement lorsque le texte prouve explicitement qu'il existe deux pièces distinctes (gauche/droite, left/right, deuxième pièce identique ou inversée). Développer alors les instructions de chaque pièce. Si le texte suggère une paire sans permettre de garantir qu'il s'agit de deux pièces séparées ou sans permettre de reconstruire fidèlement la seconde, ne pas inventer : ajouter une entrée unresolved_data avec field="sections", reason="ambiguous_mapping" et les formulations sources utiles.
 - SECTIONS ALTERNATIVES : si le patron propose plusieurs variantes à choisir pour une même partie plutôt que des étapes obligatoires (ex: deux styles de col au choix, une méthode d'encolure "avec" ou "sans" mise en forme), créer quand même une section par variante mais ajouter le suffixe " (option)" à son nom (ex: "Col cheminée (option)", "Col replié (option)") — pour que l'utilisatrice comprenne qu'elle doit en choisir une seule et peut supprimer les autres.
 - sections.description : INCLURE TOUTES LES INSTRUCTIONS détaillées de cette section (tous les rangs, toutes les étapes)
@@ -240,6 +246,14 @@ PROMPT;
 
         if (!$fetch['success']) {
             $statusCode = $fetch['status_code'] ?? 0;
+            if (($fetch['error_code'] ?? null) === 'url_compression_unsupported') {
+                return $this->errorResponse(
+                    'La page utilise une compression que YarnFlow ne peut pas lire actuellement. Réessayez ou copiez-collez le texte du patron.',
+                    0,
+                    'failed',
+                    'url_compression_unsupported'
+                );
+            }
             if ($statusCode === 404) {
                 return $this->errorResponse('Page introuvable (404). Vérifiez que l\'URL est correcte.', 0);
             }
@@ -272,6 +286,13 @@ PROMPT;
 
             $result = $this->callGeminiWithText($text, $size);
 
+            // Conserver séparément le texte réellement lu sur la page. Le JSON structuré
+            // peut omettre un glossaire ou une définition qui reste nécessaire à Flow.
+            // Cette donnée serveur n'est jamais une instruction générée par le modèle.
+            if (!empty($result['success'])) {
+                $result['source_text'] = $text;
+            }
+
             $processingTime = round((microtime(true) - $startTime) * 1000);
             $result['processing_time_ms'] = $processingTime;
 
@@ -303,6 +324,10 @@ PROMPT;
 
         try {
             $result = $this->callGeminiWithText($text, $size);
+
+            if (!empty($result['success'])) {
+                $result['source_text'] = $text;
+            }
 
             $processingTime = round((microtime(true) - $startTime) * 1000);
             $result['processing_time_ms'] = $processingTime;
@@ -610,29 +635,38 @@ PROMPT;
                 continue;
             }
 
+            // Le montage peut être une action : son origine doit être prise en
+            // compte avant de passer à la section suivante, quel que soit son type.
+            // Une première action quelconque ne prouve pas le début d'une pièce.
+            if (($i === 0 && ($section['progression_type'] ?? 'simple') !== 'action')
+                || !empty($section['starts_new_piece']) || self::startsWithCastOn($section['description'] ?? '')) {
+                $position = ['cm' => 0.0, 'rows' => 0.0, 'rounds' => 0.0];
+            }
+
             if (($section['progression_type'] ?? 'simple') === 'action') {
                 $section['unit'] = null;
                 $section['target'] = null;
                 $section['secondary_counter'] = null;
+                $sections[$i] = $section;
                 continue;
             }
 
             $isComposite = ($section['progression_type'] ?? 'simple') === 'composite';
+            if (!array_key_exists('target_raw_unit', $section)) $section['target_raw_unit'] = $section['unit'] ?? 'rangs';
             // Une section composite n'a pas de cible X/Y. Si un patron au crochet
             // décrit des tours numérotés, chaque appui sur + doit compter un tour,
             // même si une hauteur en cm sert de repère dans les instructions.
             if ($craftType === 'crochet' && $isComposite && ($section['unit'] ?? null) === 'cm'
                 && preg_match('/\b(?:round|rnd|row|rang|tour|rg)\s*\d+\b/iu', (string)($section['description'] ?? ''))) {
-                $section['unit'] = 'rangs';
+                $section['unit'] = preg_match('/\b(?:round|rnd|tour)\s*\d+\b/iu', (string)($section['description'] ?? ''))
+                    ? 'tours' : 'rangs';
             }
-            $unit = ($section['unit'] ?? 'rangs') === 'cm' ? 'cm' : 'rows';
+            $sourceUnit = mb_strtolower(trim((string)($section['unit'] ?? 'rangs')));
+            $unit = $sourceUnit === 'cm' ? 'cm'
+                : (in_array($sourceUnit, ['round', 'rounds', 'tour', 'tours'], true) ? 'rounds' : 'rows');
             $raw = array_key_exists('target_raw', $section) ? $section['target_raw'] : ($section['target'] ?? null);
             $raw = (is_numeric($raw) && (float)$raw > 0) ? (float)$raw : null;
             $section['target_raw'] = $raw;
-
-            if ($i === 0 || !empty($section['starts_new_piece']) || self::startsWithCastOn($section['description'] ?? '')) {
-                $position = ['cm' => 0.0, 'rows' => 0.0];
-            }
 
             $fromPieceStart = ($section['target_measured_from'] ?? 'section') === 'piece_start';
             $start = $position[$unit] ?? null;

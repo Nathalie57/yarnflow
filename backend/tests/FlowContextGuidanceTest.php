@@ -9,10 +9,32 @@ use PHPUnit\Framework\TestCase;
 
 final class FlowContextGuidanceTest extends TestCase
 {
+    public function testRoundsRemainRoundsInFlowProgressContext(): void
+    {
+        $section = ['current_row' => 6, 'total_rows' => 12, 'counter_unit' => 'rounds',
+            'progression_type' => 'simple', 'pattern_start_row' => 1, 'is_completed' => 0];
+        self::assertSame('6 tours terminés sur 12 — prochain tour à effectuer : 7',
+            FlowContextGuidance::progressSummary($section));
+        self::assertStringContainsString('prochain rang/tour', FlowContextGuidance::patternRowGuidance($section));
+        self::assertStringContainsString('nombre de tours enregistrés', FlowContextGuidance::sectionGuidance($section));
+    }
+    public function testExplainNextRowActionForcesFreshContextWithoutAStoredRowNumber(): void
+    {
+        $guidance = FlowContextGuidance::contextActionGuidance('explain_next_row');
+        self::assertStringContainsString('CE bloc de contexte', $guidance);
+        self::assertStringContainsString('pattern_start_row', $guidance);
+        self::assertStringContainsString('répétitions/compteurs secondaires', $guidance);
+        self::assertStringContainsString('Ne réutilise aucun ancien numéro', $guidance);
+        self::assertSame('', FlowContextGuidance::contextActionGuidance('unknown'));
+        self::assertSame('', FlowContextGuidance::contextActionGuidance(null));
+    }
+
     public function testSimpleAndCompositeSectionsReceiveDifferentGuidance(): void
     {
         self::assertStringContainsString('progression enregistrée', FlowContextGuidance::sectionGuidance(['progression_type' => 'simple']));
-        self::assertStringContainsString('sous-étape exacte', FlowContextGuidance::sectionGuidance(['progression_type' => 'composite']));
+        self::assertStringContainsString('sous-étape exacte', FlowContextGuidance::sectionGuidance([
+            'progression_type' => 'composite', 'counter_unit' => 'rows',
+        ]));
     }
 
     public function testSimpleRowProgressMeansCompletedRowsAndNextRow(): void
@@ -41,6 +63,17 @@ final class FlowContextGuidanceTest extends TestCase
             '2,5/10,0 cm',
             FlowContextGuidance::progressSummary(['current_row' => 2.5, 'total_rows' => 10, 'counter_unit' => 'cm'])
         );
+    }
+
+    public function testCompositeWithoutUnitNeverInventsRows(): void
+    {
+        $section = ['current_row' => 0, 'total_rows' => null, 'counter_unit' => null,
+            'progression_type' => 'composite', 'is_completed' => 0];
+        self::assertSame('suivi libre sans unité — validation manuelle de fin',
+            FlowContextGuidance::progressSummary($section));
+        self::assertStringContainsString('aucun compteur en rangs ou en mesure',
+            FlowContextGuidance::sectionGuidance($section));
+        self::assertSame('', FlowContextGuidance::patternRowGuidance($section));
     }
 
     public function testCentimetresNeverProducePatternRowEvenWithStartAndGauge(): void

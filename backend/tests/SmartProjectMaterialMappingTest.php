@@ -53,4 +53,23 @@ final class SmartProjectMaterialMappingTest extends TestCase
         self::assertNull($method->invoke(null, 'https://example.com/library-item', 'library'));
         self::assertNull($method->invoke(null, 'javascript:alert(1)', 'url'));
     }
+
+    public function testUrlProjectKeepsTheVerbatimAnalyzedSourceAsDurableSnapshot(): void
+    {
+        $method = new \ReflectionMethod(SmartProjectController::class, 'projectPatternSnapshot');
+        $source = "ABRÉVIATIONS\nGM = glisser le marqueur.";
+
+        self::assertSame($source, $method->invoke(null, 'url', ['_source_text' => $source], null));
+        self::assertNull($method->invoke(null, 'url', ['sections' => []], null));
+        self::assertNull($method->invoke(null, 'pdf', ['_source_text' => $source], null));
+    }
+
+    public function testPastedTextSnapshotUsesTheExplicitSubmittedText(): void
+    {
+        $method = new \ReflectionMethod(SmartProjectController::class, 'projectPatternSnapshot');
+        self::assertSame(
+            'Texte confirmé',
+            $method->invoke(null, 'text', ['_source_text' => 'Ancien texte'], '  Texte confirmé  ')
+        );
+    }
 }

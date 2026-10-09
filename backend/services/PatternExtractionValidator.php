@@ -38,6 +38,12 @@ class PatternExtractionValidator
 
             $name = trim((string)($section['name'] ?? ''));
             $description = trim((string)($section['description'] ?? ''));
+            // Repère explicite indépendant du compteur : jamais utilisé pour
+            // classer la section ou calculer un objectif automatique.
+            preg_match_all('/(?:jusqu[\x27’]à|à|until)\s*(\d+(?:[.,]\d+)?)\s*cm(?:\s*\([^)]*\))?\s*(?:au total|de hauteur totale|in total|total height)/iu', $description, $heightReferences);
+            if (count($heightReferences[1]) === 1) {
+                $section['pattern_reference'] = ['value' => (float)str_replace(',', '.', $heightReferences[1][0]), 'unit' => 'cm', 'from' => 'piece_start'];
+            }
             $normalizedDescription = preg_replace(
                 '/(\d+(?:[.,]\d+)?)\s*(cm|mm|in(?:ches?)?|pouces?)\s+\2\b/iu',
                 '$1 $2',
@@ -72,6 +78,11 @@ class PatternExtractionValidator
             }
 
             if (in_array($progressionType, ['composite', 'action'], true) && ($section['target'] ?? null) !== null) {
+                // Conserver le repère du patron sans en faire un objectif de suivi.
+                if ($progressionType === 'composite' && is_numeric($section['target']) && (float)$section['target'] > 0) {
+                    if (!array_key_exists('target_raw', $section)) $section['target_raw'] = $section['target'];
+                    if (!array_key_exists('target_raw_unit', $section)) $section['target_raw_unit'] = $section['unit'] ?? null;
+                }
                 $autoCorrected[] = self::issue(
                     $progressionType === 'action' ? 'action_target_cleared' : 'composite_target_cleared',
                     'La cible numérique incompatible avec cette section a été supprimée.',
@@ -125,6 +136,10 @@ class PatternExtractionValidator
                         || !is_numeric($section['target'] ?? null)
                         || abs((float)$section['target'] - $expectedTotal) > 0.0001) {
                         $counter['tracking_role'] = 'unknown';
+                        if (!array_key_exists('target_raw', $section) && is_numeric($section['target'] ?? null)) {
+                            $section['target_raw'] = $section['target'];
+                            $section['target_raw_unit'] = $section['unit'] ?? null;
+                        }
                         $section['progression_type'] = 'composite';
                         $section['target'] = null;
                         $unverifiable[] = self::issue('repeat_cycle_ambiguous',
@@ -132,6 +147,10 @@ class PatternExtractionValidator
                             ['section_index' => $index, 'section_name' => $name]);
                     }
                 } elseif ($role === 'unknown') {
+                    if (!array_key_exists('target_raw', $section) && is_numeric($section['target'] ?? null)) {
+                        $section['target_raw'] = $section['target'];
+                        $section['target_raw_unit'] = $section['unit'] ?? null;
+                    }
                     $section['progression_type'] = 'composite';
                     $section['target'] = null;
                 }
@@ -288,12 +307,16 @@ class PatternExtractionValidator
         foreach ($sections as $index => $section) {
             if (!is_array($section) || ($section['progression_type'] ?? 'simple') !== 'simple') continue;
             $description = trim((string)($section['description'] ?? ''));
-            $unit = $section['unit'] ?? 'rangs';
+            $rawUnit = $section['unit'] ?? 'rangs';
+            $unit = self::normalizeCounterUnit($rawUnit);
             $hasRows = (bool)preg_match('/\b' . $rowInstruction . '\b/iu', $description);
             $hasCm = (bool)preg_match('/\b(?:' . $cmInstruction . '|' . $heightInstruction . ')\b/iu', $description);
-            $conflict = !in_array($unit, ['rangs', 'cm'], true)
+            // Rangs/rows et tours/rounds sont deux vocabulaires d'une même progression
+            // discrète. Ils restent distincts pour l'affichage, mais ne constituent pas
+            // un conflit de mesure. Une longueur et un compte discret restent incompatibles.
+            $conflict = !in_array($unit, ['rows', 'rounds', 'cm'], true)
                 || ($hasRows && !$hasCm && $unit === 'cm')
-                || ($hasCm && !$hasRows && $unit === 'rangs')
+                || ($hasCm && !$hasRows && in_array($unit, ['rows', 'rounds'], true))
                 || ($hasRows && $hasCm);
 
             // Compare targets only for a single complete instruction. More elaborate
@@ -309,7 +332,7 @@ class PatternExtractionValidator
             if ($conflict) {
                 $issues[] = self::issue('section_measurement_conflict',
                     'Vérifier l’unité et l’objectif de cette section avec les instructions du patron.',
-                    ['section_index' => $index, 'section_name' => $section['name'] ?? '', 'unit' => $unit, 'target' => $target]);
+                    ['section_index' => $index, 'section_name' => $section['name'] ?? '', 'unit' => $rawUnit, 'target' => $target]);
             }
         }
         return $issues;
@@ -595,6 +618,11 @@ class PatternExtractionValidator
     private static function normalizeSize(?string $size): string
     {
         $size = mb_strtolower(trim((string)$size));
+        // Les patrons multi-tailles préfixent souvent chaque taille par sa position
+        // dans les séries de valeurs : « a) XS, b) S, c) M ». Ce préfixe identifie
+        // la colonne du patron, il ne fait pas partie du nom de la taille.
+        $size = preg_replace('/^(?:taille|size)\s*[:\-]?\s*/iu', '', $size);
+        $size = preg_replace('/^[a-z]\s*[\)\].:\-]\s*/iu', '', (string)$size);
         $size = preg_replace('/[\s_–—]+/u', '-', $size);
         return trim((string)$size, '-');
     }

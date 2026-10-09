@@ -10,6 +10,74 @@ use PHPUnit\Framework\TestCase;
 
 final class PatternExtractionValidatorTest extends TestCase
 {
+    public function testFourRowsDoNotHaveAMeasurementConflict(): void
+    {
+        self::assertSame([], PatternExtractionValidator::sectionMeasurementIssues([
+            ['name' => 'Bord', 'description' => 'Tricoter 4 rangs.', 'unit' => 'rangs', 'target' => 4, 'progression_type' => 'simple'],
+        ]));
+    }
+
+    public function testRoundsAndToursAreValidDiscreteMeasurementUnits(): void
+    {
+        foreach ([
+            ['Crocheter 12 tours.', 'tours'],
+            ['Crochet 12 rounds.', 'rounds'],
+            // La nuance rang/tour ne doit pas devenir un conflit de dimension.
+            ['Crocheter 12 tours.', 'rows'],
+        ] as [$description, $unit]) {
+            self::assertSame([], PatternExtractionValidator::sectionMeasurementIssues([[
+                'name' => 'Pièce', 'description' => $description, 'unit' => $unit,
+                'target' => 12, 'progression_type' => 'simple',
+            ]]), $description . ' / ' . $unit);
+        }
+    }
+
+    public function testRoundsStillConflictWithPhysicalMeasurementsAndWrongTargets(): void
+    {
+        foreach ([
+            ['Crocheter 12 tours.', 'cm', 12],
+            ['Crocheter 12 tours.', 'tours', 10],
+            ['Crocheter 12 cm.', 'tours', 12],
+        ] as [$description, $unit, $target]) {
+            self::assertCount(1, PatternExtractionValidator::sectionMeasurementIssues([[
+                'name' => 'Pièce', 'description' => $description, 'unit' => $unit,
+                'target' => $target, 'progression_type' => 'simple',
+            ]]), $description . ' / ' . $unit);
+        }
+    }
+
+    public function testKnytStyleRoundSectionsDoNotMakeAnalysisPartial(): void
+    {
+        $sections = [];
+        foreach ([24, 20, 10, 10, 9, 9, 6, 12, 12] as $index => $target) {
+            $sections[] = [
+                'name' => 'Pièce ' . $index,
+                'description' => "Crocheter {$target} tours.",
+                'unit' => 'tours', 'target' => $target, 'progression_type' => 'simple',
+            ];
+        }
+        $data = $this->baseData('Crocheter 1 tour.');
+        $data['sections'] = $sections;
+        $result = PatternExtractionValidator::validate($data);
+        self::assertFalse($result['requires_section_review']);
+        self::assertSame([], $result['unverifiable']);
+    }
+
+    public function testCompositeCmReferenceSurvivesWithoutAutomaticTarget(): void
+    {
+        foreach ([48, null] as $target) {
+            $data = ['sections' => [['name' => 'Corps', 'description' => 'Changer de point puis continuer jusqu’à 48 cm au total.',
+                'unit' => 'cm', 'progression_type' => 'composite', 'target' => $target]]];
+            $validated = PatternExtractionValidator::validate($data)['data'];
+            $sections = AIPatternExtractorService::normalizeCumulativeTargets($validated['sections'], 'tricot');
+            self::assertSame('composite', $sections[0]['progression_type']);
+            self::assertNull($sections[0]['target']);
+            self::assertSame(['value' => 48.0, 'unit' => 'cm', 'from' => 'piece_start'], $sections[0]['pattern_reference']);
+            if ($target !== null) self::assertEquals(48, $sections[0]['target_raw']);
+            self::assertSame($sections, AIPatternExtractorService::normalizeCumulativeTargets($sections, 'tricot'));
+        }
+    }
+
     public function testRowInstructionWithCmRequiresReviewWithoutInventingConversion(): void
     {
         $data = $this->baseData('Work 10 rows.');
@@ -364,6 +432,27 @@ final class PatternExtractionValidatorTest extends TestCase
 
         unset($data['available_sizes']);
         self::assertFalse(PatternExtractionValidator::validate($data, 'L')['has_certain_errors']);
+    }
+
+    public function testSelectedSizeMatchesLetteredPatternColumns(): void
+    {
+        $data = $this->baseData('Tailles a) XS, b) S, c) M, d) L.');
+        $data['available_sizes'] = ['a) XS', 'b) S', 'c) M', 'd) L', 'e) XL', 'f) 2XL'];
+
+        foreach (['XS', 'S', 'M', 'L', 'XL', '2XL'] as $selected) {
+            $result = PatternExtractionValidator::validate($data, $selected);
+            self::assertFalse($result['has_certain_errors'], $selected);
+            self::assertNotContains('selected_size_not_available', array_column($result['errors'], 'code'));
+        }
+    }
+
+    public function testLetteredPatternColumnsStillRejectAnActuallyUnavailableSize(): void
+    {
+        $data = $this->baseData('Tailles a) XS, b) S, c) M.');
+        $data['available_sizes'] = ['a) XS', 'b) S', 'c) M'];
+
+        $result = PatternExtractionValidator::validate($data, '5XL');
+        self::assertContains('selected_size_not_available', array_column($result['errors'], 'code'));
     }
 
     public function testLegacySizeEvidenceAlsoBlocksAnIncompatibleSelection(): void

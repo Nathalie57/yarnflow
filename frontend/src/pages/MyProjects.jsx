@@ -30,6 +30,7 @@ import FlowMascot from '../components/FlowMascot'
 
 import { apiErrorMessage } from '../utils/apiError'
 import { trackProductEvent } from '../utils/productEvents'
+import { completedStepsProgress } from '../utils/projectProgress'
 // Parcours exemple temporairement masqué, en attendant un patron démo exploitable par Flow.
 const DEMO_ONBOARDING_ENABLED = false
 
@@ -732,6 +733,8 @@ const MyProjects = () => {
             name: sections[i].name,
             description: sections[i].description || null,
             total_rows: sections[i].total_rows || null,
+            counter_unit: sections[i].counter_unit || formData.counter_unit || 'rows',
+            progression_type: 'simple',
             display_order: i,
             notes: sections[i].notes || null
           })
@@ -1367,66 +1370,21 @@ const MyProjects = () => {
                       )}
                     </div>
 
-                    {/* Barre de progression ou nombre de rangs */}
-                    {(project.status === 'completed' || project.completion_percentage !== null) ? (
-                      // Projet avec pourcentage calculable : afficher barre de progression
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs text-gray-500">{t('myProjects.progress')}</span>
-                          {project.status === 'completed' ? (
-                            <span className="text-xs font-semibold text-green-600">100%</span>
-                          ) : (
-                            <span className="text-xs font-semibold text-primary-600">
-                              {project.completion_percentage}%
-                            </span>
-                          )}
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-500 ${
-                              'bg-gradient-to-r from-primary-400 to-primary-600'
-                            }`}
-                            style={{
-                              width: project.status === 'completed'
-                                ? '100%'
-                                : `${project.completion_percentage}%`
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    ) : project.sections_count > 0 ? (
-                      // Projet avec une partie non quantifiable : résumé descriptif, jamais un faux pourcentage global.
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-gray-600">{t('ui.projectSteps')}</span>
-                          <span className="text-xs font-bold text-gray-700">{t('ui.sectionsCompleted', { done: Number(project.completed_sections_count || 0), total: Number(project.sections_count || 0) })}</span>
-                        </div>
-                        {Number(project.quantifiable_total_rows_unit || 0) > 0 && <p className="text-xs text-gray-500">{t('ui.quantifiableProgressByUnit', { done: Number(project.quantifiable_current_rows_unit || 0), total: Number(project.quantifiable_total_rows_unit || 0), unit: t('ui.unitRows') })}</p>}
-                        {Number(project.quantifiable_total_cm || 0) > 0 && <p className="text-xs text-gray-500">{t('ui.quantifiableProgressByUnit', { done: Number(project.quantifiable_current_cm || 0), total: Number(project.quantifiable_total_cm || 0), unit: t('ui.unitCm') })}</p>}
-                        {Number(project.unquantifiable_current_rows_unit || 0) > 0 && <p className="text-xs text-gray-500">{t('ui.freeProgressByUnit', { count: Number(project.unquantifiable_current_rows_unit || 0), unit: t('ui.unitRows') })}</p>}
-                        {Number(project.unquantifiable_current_cm || 0) > 0 && <p className="text-xs text-gray-500">{t('ui.freeProgressByUnit', { count: Number(project.unquantifiable_current_cm || 0), unit: t('ui.unitCm') })}</p>}
-                      </div>
-                    ) : (
-                      // Projet sans sections et sans total_rows : afficher nombre de rangs/cm
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-600">
-                            {project.counter_unit === 'cm' ? t('myProjects.progressCm') : t('myProjects.rowsKnitted')}
-                          </span>
-                          <span className="text-xs font-bold text-gray-700">
-                            {project.counter_unit === 'cm'
-                              ? t('ui.cmValue', { n: Number(project.current_row || 0).toFixed(1) })
-                              : t('ui.rowsValue', { count: Math.floor(Number(project.current_row || 0)) })
-                            }
-                          </span>
-                        </div>
-                        {project.current_row === 0 && (
-                          <p className="text-xs text-gray-400 mt-1 text-center">
-                            {project.counter_unit === 'cm' ? t('myProjects.startCountingCm') : t('myProjects.startCounting')}
+                    {/* Progression globale fondée uniquement sur les étapes explicitement terminées. */}
+                    {(() => {
+                      const stepProgress = completedStepsProgress(project.completed_sections_count, project.sections_count)
+                      if (!stepProgress) return null
+                      return (
+                        <div className="mb-4" aria-label={t('ui.stepsCompleted', { count: stepProgress.completed, total: stepProgress.total })}>
+                          <p className="text-xs font-medium text-gray-600 mb-1.5">
+                            {t('ui.stepsCompleted', { count: stepProgress.completed, total: stepProgress.total })}
                           </p>
-                        )}
-                      </div>
-                    )}
+                          <div className="w-full bg-primary-100 rounded-full h-1.5 overflow-hidden" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={stepProgress.percentage}>
+                            <div className="h-1.5 rounded-full bg-primary-500 transition-all duration-500" style={{ width: `${stepProgress.percentage}%` }} />
+                          </div>
+                        </div>
+                      )
+                    })()}
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">

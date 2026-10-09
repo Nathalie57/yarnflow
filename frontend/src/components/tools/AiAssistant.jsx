@@ -13,6 +13,7 @@ import FlowMascot from '../FlowMascot'
 
 import FlowMarkdown from '../FlowMarkdown'
 import { flowConversations, isFlowQuotaBlocked } from '../../utils/flowConversation'
+import { canExplainNextRow, FLOW_CONTEXT_ACTION_EXPLAIN_NEXT_ROW } from '../../utils/flowContextActions'
 
 // cles seulement : les libelles sont resolus au rendu, sinon ils se figeraient
 // dans la langue du premier chargement (et t n'existe pas ici)
@@ -20,7 +21,7 @@ const SUGGESTION_KEYS = ['aiQ1', 'aiQ2', 'aiQ3', 'aiQ4', 'aiQ5', 'aiQ6']
 // [AI:Claude] En mode contextuel, les suggestions génériques ("Comment faire un SSK ?")
 // n'ont plus de sens — l'utilisatrice vient d'un rang précis, les suggestions doivent
 // s'appuyer sur ce contexte plutôt que de proposer une question sans rapport.
-const CONTEXTUAL_SUGGESTION_KEYS = ['aiCtxQ1', 'aiCtxQ2', 'aiCtxQ3', 'aiCtxQ4']
+const CONTEXTUAL_SUGGESTION_KEYS = ['aiCtxQ2', 'aiCtxQ3', 'aiCtxQ4']
 const DEMO_SUGGESTION_KEYS = ['aiDemoQ1', 'aiDemoQ2', 'aiDemoQ3', 'aiDemoQ4']
 
 export default function AiAssistant(props = {}) {
@@ -68,6 +69,7 @@ function AiAssistantConversation({ projectId, projectProgress, conversation }) {
     if (!isContextual) return null
     const p = projectProgress || {}
     const isCm = p.unit === 'cm'
+    const isRounds = p.unit === 'rounds'
     const current = Number(p.currentRow) || 0
     const total = p.total != null ? Number(p.total) : null
     const isComplete = Boolean(p.isCompleted) || (total !== null && current >= total)
@@ -77,7 +79,12 @@ function AiAssistantConversation({ projectId, projectProgress, conversation }) {
     if (isCm) {
       progressKey = total !== null ? 'ui.progressCmWithTotal' : 'ui.progressCmNoTotal'
     } else if (p.progressionType === 'composite') {
-      progressKey = 'ui.progressCompositeRows'
+      progressKey = isRounds ? 'ui.progressCompositeRounds' : 'ui.progressCompositeRows'
+    } else if (isRounds && isComplete) {
+      progressKey = total !== null ? 'ui.progressRoundsCompleteWithTotal' : 'ui.progressRoundsComplete'
+    } else if (isRounds) {
+      progressKey = total !== null ? 'ui.progressNextRoundWithTotal' : 'ui.progressNextRoundNoTotal'
+      progressValues = { ...progressValues, next: current + 1 }
     } else if (isComplete) {
       progressKey = total !== null ? 'ui.progressRowsCompleteWithTotal' : 'ui.progressRowsComplete'
     } else {
@@ -90,7 +97,7 @@ function AiAssistantConversation({ projectId, projectProgress, conversation }) {
       : t('ui.contextualGreetingWithoutSection', { progress })
   })()
 
-  const send = async (text) => {
+  const send = async (text, contextAction = null) => {
     const content = text || input.trim()
     // [AI:Claude] Le quota mensuel affiché (usage.remaining) ne concerne que l'assistant
     // général — une session contextuelle n'a pas de compteur à vérifier ici, seul le
@@ -103,7 +110,12 @@ function AiAssistantConversation({ projectId, projectProgress, conversation }) {
     const newMessages = conversation.getSnapshot().messages
 
     try {
-      const res = await api.post('/ai/assistant', { messages: newMessages, lang: i18n.language, ...(isContextual ? { project_id: projectId } : {}) })
+      const res = await api.post('/ai/assistant', {
+        messages: newMessages,
+        lang: i18n.language,
+        ...(isContextual ? { project_id: projectId } : {}),
+        ...(contextAction ? { context_action: contextAction } : {})
+      })
       conversation.complete(request, { role: 'assistant', content: res.data.reply, suggestions: res.data.suggestions || [], messageId: res.data.message_id || null, rating: null })
       if (res.data.usage) setUsage(res.data.usage)
     } catch (err) {
@@ -284,6 +296,21 @@ function AiAssistantConversation({ projectId, projectProgress, conversation }) {
           {usage.remaining > 0
             ? t('ui.messagesUsedMonth', { used: usage.used, limit: usage.limit })
             : t('ui.monthlyLimitHit')}
+        </div>
+      )}
+
+      {/* Action de travail permanente, indépendante des suggestions générées. Le
+          backend relit la progression persistée au moment de chaque clic. */}
+      {isContextual && canExplainNextRow(projectProgress) && (
+        <div className="pb-2">
+          <button
+            type="button"
+            onClick={() => send(t('ui.aiCtxQ1'), FLOW_CONTEXT_ACTION_EXPLAIN_NEXT_ROW)}
+            disabled={loading}
+            className="w-full text-left text-sm px-4 py-2.5 bg-white hover:bg-flow-mint/40 border border-primary-200 rounded-control transition text-primary-700 font-medium disabled:opacity-50"
+          >
+            {t('ui.aiCtxQ1')}
+          </button>
         </div>
       )}
 

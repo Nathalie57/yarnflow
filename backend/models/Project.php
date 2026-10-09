@@ -31,10 +31,10 @@ class Project extends BaseModel
     {
         $query = "INSERT INTO {$this->table}
                   (user_id, name, technique, type, description, pattern_id, main_photo, status,
-                   total_rows, yarn_brand, yarn_color, yarn_weight, hook_size, notes, technical_details, is_public, is_demo)
+                   total_rows, counter_unit, counter_unit_increment, yarn_brand, yarn_color, yarn_weight, hook_size, notes, technical_details, is_public, is_demo)
                   VALUES
                   (:user_id, :name, :technique, :type, :description, :pattern_id, :main_photo, :status,
-                   :total_rows, :yarn_brand, :yarn_color, :yarn_weight, :hook_size, :notes, :technical_details, :is_public, :is_demo)";
+                   :total_rows, :counter_unit, :counter_unit_increment, :yarn_brand, :yarn_color, :yarn_weight, :hook_size, :notes, :technical_details, :is_public, :is_demo)";
 
         $stmt = $this->db->prepare($query);
 
@@ -48,6 +48,8 @@ class Project extends BaseModel
             ':main_photo' => $data['main_photo'] ?? null,
             ':status' => $data['status'] ?? 'in_progress',
             ':total_rows' => $data['total_rows'] ?? null,
+            ':counter_unit' => $data['counter_unit'] ?? 'rows',
+            ':counter_unit_increment' => $data['counter_unit_increment'] ?? (($data['counter_unit'] ?? 'rows') === 'cm' ? 0.5 : 1.0),
             ':yarn_brand' => $data['yarn_brand'] ?? null,
             ':yarn_color' => $data['yarn_color'] ?? null,
             ':yarn_weight' => $data['yarn_weight'] ?? null,
@@ -142,9 +144,12 @@ class Project extends BaseModel
                   COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) THEN s.current_row ELSE 0 END), 0) as unquantifiable_current_rows,
                   COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND COALESCE(s.counter_unit, 'rows') = 'rows' THEN s.current_row ELSE 0 END), 0) as quantifiable_current_rows_unit,
                   COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND COALESCE(s.counter_unit, 'rows') = 'rows' THEN s.total_rows ELSE 0 END), 0) as quantifiable_total_rows_unit,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND s.counter_unit = 'rounds' THEN s.current_row ELSE 0 END), 0) as quantifiable_current_rounds,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND s.counter_unit = 'rounds' THEN s.total_rows ELSE 0 END), 0) as quantifiable_total_rounds,
                   COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND s.counter_unit = 'cm' THEN s.current_row ELSE 0 END), 0) as quantifiable_current_cm,
                   COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND s.total_rows > 0 AND s.counter_unit = 'cm' THEN s.total_rows ELSE 0 END), 0) as quantifiable_total_cm,
                   COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) AND COALESCE(s.counter_unit, 'rows') = 'rows' THEN s.current_row ELSE 0 END), 0) as unquantifiable_current_rows_unit,
+                  COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) AND s.counter_unit = 'rounds' THEN s.current_row ELSE 0 END), 0) as unquantifiable_current_rounds,
                   COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) AND s.counter_unit = 'cm' THEN s.current_row ELSE 0 END), 0) as unquantifiable_current_cm,
                   COALESCE(SUM(CASE WHEN COALESCE(s.progression_type, 'simple') <> 'action' AND (s.total_rows IS NULL OR s.total_rows <= 0) THEN 1 ELSE 0 END), 0) as unquantifiable_sections_count,
                   COALESCE(SUM(CASE WHEN s.is_completed = 1 THEN 1 ELSE 0 END), 0) as completed_sections_count,
@@ -235,9 +240,12 @@ class Project extends BaseModel
                   (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rows,
                   (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_rows_unit,
                   (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_rows_unit,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'rounds' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_rounds,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'rounds' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_rounds,
                   (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_cm,
                   (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_cm,
                   (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rows_unit,
+                  (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND counter_unit = 'rounds' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rounds,
                   (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_cm,
                   (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id AND COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0)) as unquantifiable_sections_count,
                   (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id AND is_completed = 1) as completed_sections_count,
@@ -1126,9 +1134,9 @@ class Project extends BaseModel
     public function createSection(int $projectId, array $sectionData): int|false
     {
         $query = "INSERT INTO project_sections
-                  (project_id, name, description, notes, display_order, total_rows, current_row)
+                  (project_id, name, description, notes, display_order, total_rows, current_row, counter_unit, progression_type)
                   VALUES
-                  (:project_id, :name, :description, :notes, :display_order, :total_rows, :current_row)";
+                  (:project_id, :name, :description, :notes, :display_order, :total_rows, :current_row, :counter_unit, :progression_type)";
 
         $stmt = $this->db->prepare($query);
 
@@ -1139,7 +1147,9 @@ class Project extends BaseModel
             ':notes' => $sectionData['notes'] ?? null,
             ':display_order' => $sectionData['display_order'] ?? 0,
             ':total_rows' => $sectionData['total_rows'] ?? null,
-            ':current_row' => $sectionData['current_row'] ?? 0  // [AI:Claude] v0.16.2: Support initial row count
+            ':current_row' => $sectionData['current_row'] ?? 0, // [AI:Claude] v0.16.2: Support initial row count
+            ':counter_unit' => $sectionData['counter_unit'] ?? 'rows',
+            ':progression_type' => $sectionData['progression_type'] ?? 'simple'
         ];
 
         if ($stmt->execute($params)) {

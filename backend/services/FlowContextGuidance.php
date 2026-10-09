@@ -7,6 +7,15 @@ namespace App\Services;
 /** Consignes déterministes injectées dans le contexte de Flow. */
 class FlowContextGuidance
 {
+    public static function contextActionGuidance(?string $action): string
+    {
+        if ($action !== 'explain_next_row') {
+            return '';
+        }
+
+        return 'Pour cette demande, explique le prochain rang/tour à effectuer selon la section active et l’APP STATE de CE bloc de contexte. Recalcule le prochain rang depuis la progression enregistrée ici, avec pattern_start_row et les répétitions/compteurs secondaires disponibles. Ne réutilise aucun ancien numéro de rang provenant de l’historique.';
+    }
+
     public static function reliabilityGuidance(): string
     {
         return <<<'GUIDANCE'
@@ -26,7 +35,7 @@ GUIDANCE;
     /** Correspondance locale explicite, valable uniquement pour des rangs simples. */
     public static function patternRowGuidance(array $section): string
     {
-        if (($section['counter_unit'] ?? null) !== 'rows'
+        if (!in_array(($section['counter_unit'] ?? null), ['rows', 'rounds'], true)
             || ($section['progression_type'] ?? 'simple') !== 'simple'
             || !isset($section['pattern_start_row'])
             || !is_numeric($section['pattern_start_row'])
@@ -48,13 +57,23 @@ GUIDANCE;
     {
         $current = (float)($section['current_row'] ?? 0);
         $total = isset($section['total_rows']) ? (float)$section['total_rows'] : null;
-        $unit = ($section['counter_unit'] ?? 'rows') === 'cm' ? 'cm' : 'rows';
+        $unit = match ($section['counter_unit'] ?? 'rows') {
+            'cm' => 'cm',
+            'rounds' => 'rounds',
+            default => 'rows',
+        };
         $progressionType = $section['progression_type'] ?? 'simple';
 
         if ($progressionType === 'action') {
             return !empty($section['is_completed'])
                 ? 'action ponctuelle terminée'
                 : 'action ponctuelle à réaliser puis à marquer comme terminée';
+        }
+
+        if ($progressionType === 'composite' && ($section['counter_unit'] ?? null) === null) {
+            return !empty($section['is_completed'])
+                ? 'suivi libre sans unité — section terminée manuellement'
+                : 'suivi libre sans unité — validation manuelle de fin';
         }
 
         $format = static function (float $value) use ($unit): string {
@@ -70,26 +89,32 @@ GUIDANCE;
         }
 
         if ($progressionType === 'composite') {
-            return $format($current) . ' rangs enregistrés';
+            return $format($current) . ($unit === 'rounds' ? ' tours enregistrés' : ' rangs enregistrés');
         }
 
         $completed = !empty($section['is_completed']) || ($total !== null && $current >= $total);
+        $singular = $unit === 'rounds' ? 'tour' : 'rang';
+        $plural = $unit === 'rounds' ? 'tours' : 'rangs';
         $completedLabel = $current === 0.0
-            ? 'aucun rang terminé'
-            : $format($current) . ' rang' . ($current > 1 ? 's' : '') . ' terminé' . ($current > 1 ? 's' : '');
+            ? 'aucun ' . $singular . ' terminé'
+            : $format($current) . ' ' . ($current > 1 ? $plural : $singular) . ' terminé' . ($current > 1 ? 's' : '');
         $totalLabel = $total !== null ? ' sur ' . $format($total) : '';
 
         if ($completed) {
             return $completedLabel . $totalLabel . ' — section terminée';
         }
 
-        return $completedLabel . $totalLabel . ' — prochain rang à effectuer : ' . $format($current + 1);
+        return $completedLabel . $totalLabel . ' — prochain ' . $singular . ' à effectuer : ' . $format($current + 1);
     }
 
     public static function sectionGuidance(array $section): string
     {
         if (($section['progression_type'] ?? 'simple') === 'action') {
             return 'Section action : aucune progression en rangs ou en mesure ne doit être déduite. Présenter l’instruction à réaliser et considérer la section terminée uniquement après validation explicite de l’utilisatrice.';
+        }
+        if (($section['progression_type'] ?? 'simple') === 'composite'
+            && ($section['counter_unit'] ?? null) === null) {
+            return 'Section composite sans unité établie : aucun compteur en rangs ou en mesure ne doit être déduit. Présenter les instructions et considérer la section terminée uniquement après validation explicite de l’utilisatrice.';
         }
         if (($section['counter_unit'] ?? null) === 'cm') {
             return 'Section mesurée en cm : le compteur indique une longueur enregistrée, pas un rang terminé ou en cours. Aucun numéro de rang ne peut être déduit de cette mesure. Utiliser les instructions de la section et demander uniquement la sous-étape nécessaire si elle reste inconnue.';
@@ -98,6 +123,9 @@ GUIDANCE;
             return 'Section composite : le compteur indique seulement une progression enregistrée. Il ne permet pas de déduire avec certitude la sous-étape exacte ; vérifier les instructions et demander un repère à l’utilisatrice si nécessaire.';
         }
 
+        if (($section['counter_unit'] ?? null) === 'rounds') {
+            return 'Section simple en tours : le compteur BDD est un repère de progression enregistrée, pas une preuve de la réalité de l’ouvrage ; respecter les corrections explicites récentes de l’utilisatrice. Sa valeur indique le nombre de tours enregistrés comme terminés, jamais le tour en cours ; le prochain tour indiqué est celui prévu selon ce compteur.';
+        }
         return 'Section simple : le compteur BDD est un repère de progression enregistrée, pas une preuve de la réalité de l’ouvrage ; respecter les corrections explicites récentes de l’utilisatrice. Sa valeur indique le nombre de rangs enregistrés comme terminés, jamais le rang en cours ; le prochain rang indiqué est celui prévu selon ce compteur.';
     }
 

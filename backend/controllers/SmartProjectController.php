@@ -34,6 +34,46 @@ class SmartProjectController
     private PatternStorageService $patternStorage;
     private AuthMiddleware $authMiddleware;
 
+    // Même insertion que confirm(), isolée pour vérifier la chaîne jusqu'au stockage.
+    private static function insertProjectSection(\PDO $db, int $projectId, array $section, int $index): void
+    {
+        $stmt = $db->prepare("
+            INSERT INTO project_sections
+            (project_id, name, counter_unit, progression_type, total_rows, current_row, pattern_start_row, description, display_order)
+            VALUES (:project_id, :name, :counter_unit, :progression_type, :total_rows, 0, :pattern_start_row, :description, :display_order)
+        ");
+        $unit = $section['unit'] ?? null;
+        $normalizedUnit = match (mb_strtolower(trim((string)$unit))) {
+            'cm' => 'cm',
+            'round', 'rounds', 'tour', 'tours' => 'rounds',
+            default => 'rows',
+        };
+        $hasExplicitUnit = is_string($unit) && trim($unit) !== '';
+        // [AI:Claude] Section composite = plusieurs paliers/actions successifs qu'un
+        // total unique représenterait de façon trompeuse (voir EXTRACTION_PROMPT,
+        // RÈGLE PROGRESSION COMPOSITE). Invariant forcé ici, pas seulement dans le
+        // prompt : si l'IA renvoie quand même un target malgré composite, on l'ignore
+        // plutôt que d'afficher un compteur X/Y qui pourrait faire manquer une étape.
+        $progressionType = in_array($section['progression_type'] ?? 'simple', ['simple', 'composite', 'action'], true)
+            ? $section['progression_type'] : 'simple';
+        // [AI:Claude] Dernier garde-fou avant la base : cible non numérique, nulle ou
+        // négative (ex: soustraction incohérente, saisie à la relecture) → compteur
+        // libre plutôt qu'un objectif faux.
+        $target = $section['target'] ?? null;
+        $target = (is_numeric($target) && (float)$target > 0 && (float)$target < 100000) ? round((float)$target, 1) : null;
+        $stmt->execute([
+            'project_id' => $projectId,
+            'name' => $section['name'],
+            'counter_unit' => ($progressionType === 'action' || ($progressionType === 'composite' && !$hasExplicitUnit))
+                ? null : $normalizedUnit,
+            'progression_type' => $progressionType,
+            'total_rows' => $progressionType === 'simple' ? $target : null,
+            'pattern_start_row' => !empty($section['pattern_start_row']) ? (int)$section['pattern_start_row'] : null,
+            'description' => $section['description'] ?? null,
+            'display_order' => $index + 1
+        ]);
+    }
+
     private const UPLOAD_DIR = __DIR__ . '/../../uploads/patterns/';
     private const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB — relevé depuis 10 MB, un patron scanné/photographié dépasse facilement cette taille (cas réel à 17 MB)
     private const MAX_TEXT_LENGTH = 200000;
@@ -499,8 +539,17 @@ class SmartProjectController
             }
 
             if (!empty($result['success'])) {
+                $verbatimSourceText = $result['source_text'] ?? ($result['data']['_source_text'] ?? null);
                 $validatedResult = PatternExtractionValidator::validate($result['data'], $patternSize ?: null);
                 $result['data'] = $validatedResult['data'];
+                // Le texte source URL/texte est une référence verbatim distincte du JSON
+                // restructuré par Gemini. Il reste côté serveur afin que Flow retrouve les
+                // définitions et glossaires que la structure extraite peut légitimement omettre.
+                if (!empty($verbatimSourceText)) {
+                    $result['data']['_source_text'] = trim((string)$verbatimSourceText);
+                } elseif ($sourceType === 'text' && $patternTextInput !== null) {
+                    $result['data']['_source_text'] = $patternTextInput;
+                }
                 $result['data']['diagram_source_accessible'] = self::hasAccessibleDiagramSource(
                     !empty($result['data']['contains_diagram']), $sourceType, $sourceName
                 );
@@ -571,6 +620,9 @@ class SmartProjectController
                 SmartCreationTrackingService::gateTypes($result['data'], $result['ai_status'], is_string($_POST['target_lang'] ?? null) ? $_POST['target_lang'] : null));
 
             $releaseLock();
+            // Ne pas renvoyer une copie potentiellement longue de la page au navigateur :
+            // le formulaire conserve le JSON utile, la référence verbatim reste en base.
+            unset($result['data']['_source_text'], $result['source_text']);
             $this->jsonResponse([
                 'success' => true,
                 'data' => $result['data'],
@@ -848,15 +900,18 @@ class SmartProjectController
                 ];
 
                 // [AI:Claude] Onglet "Patron" du projet : selon la source analysée, un seul de
-                // ces trois champs est renseigné (fichier persisté par analyze(), URL d'origine,
-                // ou texte collé — celui-ci renvoyé par le frontend puisqu'il n'est pas conservé
-                // côté serveur après l'extraction).
+                // Le support consultable reste dans pattern_path/pattern_url/pattern_text. Pour
+                // une URL, pattern_text garde aussi le texte verbatim lu lors de l'analyse :
+                // c'est le repli durable de Flow si le journal d'import devient indisponible.
                 if ($sourceFilePath) {
                     $insertData['pattern_path'] = $sourceFilePath;
                 } elseif ($sourceType === 'url' && $sourceUrl) {
                     $insertData['pattern_url'] = $sourceUrl;
+                    $sourceSnapshot = self::projectPatternSnapshot($sourceType, $storedAnalysis, $data['pattern_text'] ?? null);
+                    if ($sourceSnapshot !== null) $insertData['pattern_text'] = $sourceSnapshot;
                 } elseif ($sourceType === 'text' && !empty($data['pattern_text'])) {
-                    $insertData['pattern_text'] = trim($data['pattern_text']);
+                    $sourceSnapshot = self::projectPatternSnapshot($sourceType, $storedAnalysis, $data['pattern_text']);
+                    if ($sourceSnapshot !== null) $insertData['pattern_text'] = $sourceSnapshot;
                 }
 
                 // Détails techniques — yarn est maintenant une liste (colorwork = plusieurs fils),
@@ -952,36 +1007,8 @@ class SmartProjectController
 
                 // Créer les sections
                 if (!empty($sectionsData)) {
-                    $stmt = $db->prepare("
-                        INSERT INTO project_sections
-                        (project_id, name, counter_unit, progression_type, total_rows, current_row, pattern_start_row, description, display_order)
-                        VALUES (:project_id, :name, :counter_unit, :progression_type, :total_rows, 0, :pattern_start_row, :description, :display_order)
-                    ");
-
                     foreach ($sectionsData as $index => $section) {
-                        $unit = $section['unit'] ?? null;
-                        // [AI:Claude] Section composite = plusieurs paliers/actions successifs qu'un
-                        // total unique représenterait de façon trompeuse (voir EXTRACTION_PROMPT,
-                        // RÈGLE PROGRESSION COMPOSITE). Invariant forcé ici, pas seulement dans le
-                        // prompt : si l'IA renvoie quand même un target malgré composite, on l'ignore
-                        // plutôt que d'afficher un compteur X/Y qui pourrait faire manquer une étape.
-                        $progressionType = in_array($section['progression_type'] ?? 'simple', ['simple', 'composite', 'action'], true)
-                            ? $section['progression_type'] : 'simple';
-                        // [AI:Claude] Dernier garde-fou avant la base : cible non numérique, nulle ou
-                        // négative (ex: soustraction incohérente, saisie à la relecture) → compteur
-                        // libre plutôt qu'un objectif faux.
-                        $target = $section['target'] ?? null;
-                        $target = (is_numeric($target) && (float)$target > 0 && (float)$target < 100000) ? round((float)$target, 1) : null;
-                        $stmt->execute([
-                            'project_id' => $projectId,
-                            'name' => $section['name'],
-                            'counter_unit' => $progressionType === 'action' ? null : ($unit === 'cm' ? 'cm' : 'rows'),
-                            'progression_type' => $progressionType,
-                            'total_rows' => $progressionType === 'simple' ? $target : null,
-                            'pattern_start_row' => !empty($section['pattern_start_row']) ? (int)$section['pattern_start_row'] : null,
-                            'description' => $section['description'] ?? null,
-                            'display_order' => $index + 1
-                        ]);
+                        self::insertProjectSection($db, $projectId, $section, $index);
 
                         // [AI:Claude] Compteur secondaire auto-créé quand le patron mentionne une
                         // répétition comptée explicite (ex: "répéter les rangs 1-32 15 fois") — voir
@@ -1030,6 +1057,9 @@ class SmartProjectController
                         'import_id' => $importId,
                         'user_id' => $userId
                     ]);
+                    if ($stmt->rowCount() !== 1) {
+                        throw new \RuntimeException('Le rattachement de l’import au projet n’a pas été persisté');
+                    }
                 }
 
                 $db->commit();
@@ -1344,6 +1374,20 @@ class SmartProjectController
         }
 
         return 'Texte collé';
+    }
+
+    /** Texte source durable à conserver avec le projet, sans reconstruction par le modèle. */
+    private static function projectPatternSnapshot(string $sourceType, array $storedAnalysis, ?string $submittedText): ?string
+    {
+        if ($sourceType === 'url') {
+            $source = trim((string)($storedAnalysis['_source_text'] ?? ''));
+            return $source !== '' ? $source : null;
+        }
+        if ($sourceType === 'text') {
+            $source = trim((string)($submittedText ?? ($storedAnalysis['_source_text'] ?? '')));
+            return $source !== '' ? $source : null;
+        }
+        return null;
     }
 
     /**

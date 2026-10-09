@@ -109,6 +109,9 @@ class AiAssistantController
             $data = $this->getJsonInput();
             $messages = $data['messages'] ?? [];
             $projectId = isset($data['project_id']) ? (int)$data['project_id'] : null;
+            $contextAction = isset($data['context_action']) && is_string($data['context_action'])
+                ? $data['context_action']
+                : null;
             // [AI:Claude] Langue cible pour une demande de traduction ponctuelle
             // ("Traduis-moi le rang 17") — la langue actuelle de l'interface, pas celle du patron.
             $lang = $data['lang'] ?? 'fr';
@@ -196,6 +199,16 @@ class AiAssistantController
                     'parts' => [['text' => $msg['content']]]
                 ];
             }, $messages);
+
+            // Action contrôlée par l'interface : elle précise le sens du bouton sans
+            // figer de numéro côté client. Le contexte projet vient d'être relu en BDD.
+            $contextActionGuidance = $projectContext !== null
+                ? FlowContextGuidance::contextActionGuidance($contextAction)
+                : '';
+            if ($contextActionGuidance !== '') {
+                $lastIndex = count($geminiContents) - 1;
+                $geminiContents[$lastIndex]['parts'][0]['text'] .= "\n\n" . $contextActionGuidance;
+            }
 
             if ($projectContext !== null) {
                 array_unshift($geminiContents, [
@@ -452,7 +465,7 @@ PROMPT;
     private function buildProjectContext(int $projectId, int $userId, bool &$isDemoProject): ?string
     {
         $stmt = $this->db->prepare(
-            'SELECT name, type, current_row, total_rows, current_section_id, counter_unit, status, notes, pattern_notes, is_demo,
+            'SELECT name, type, current_row, total_rows, current_section_id, counter_unit, status, notes, pattern_notes, pattern_text, is_demo,
                     yarn_brand, yarn_color, hook_size, technical_details
              FROM projects WHERE id = :id AND user_id = :uid'
         );
@@ -563,9 +576,10 @@ PROMPT;
         }
 
         $stmt = $this->db->prepare(
-            'SELECT ai_response_json, pattern_size, translated_text, translated_lang FROM ai_pattern_imports WHERE project_id = :pid ORDER BY created_at DESC LIMIT 1'
+            'SELECT ai_response_json, pattern_size, translated_text, translated_lang FROM ai_pattern_imports
+             WHERE project_id = :pid AND user_id = :uid ORDER BY created_at DESC LIMIT 1'
         );
-        $stmt->execute([':pid' => $projectId]);
+        $stmt->execute([':pid' => $projectId, ':uid' => $userId]);
         $importRow = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($importRow) {
@@ -573,7 +587,11 @@ PROMPT;
             // sans ça, l'assistant devait deviner laquelle des valeurs "56-62-74-80..." du texte
             // du patron s'applique, au lieu de le savoir avec certitude.
             $parsed = json_decode($importRow['ai_response_json'] ?? '', true) ?? [];
-            $referenceText = AIPatternExtractorService::buildPlainText($parsed);
+            // Une source URL/texte conservée verbatim prime sur la reconstruction du JSON
+            // extrait. C'est notamment là que vivent les glossaires propres au patron.
+            $referenceText = !empty($parsed['_source_text'])
+                ? trim((string)$parsed['_source_text'])
+                : AIPatternExtractorService::buildPlainText($parsed);
             $hasUnresolvedData = !empty(array_filter(
                 is_array($parsed['unresolved_data'] ?? null) ? $parsed['unresolved_data'] : [],
                 static fn($item): bool => is_array($item) && empty($item['resolved'])
@@ -633,6 +651,18 @@ PROMPT;
                     $lines[] = "[PATTERN — EXTRACTION IA À VÉRIFIER EN CAS D'AMBIGUÏTÉ] Patron associé au projet :\n" . $patternText;
                 }
             }
+        } elseif (!empty($project['pattern_text'])) {
+            // Repli durable pour les nouveaux imports URL : le projet possède une copie du
+            // texte lu, même si sa ligne de journal d'import n'est plus disponible. Cette
+            // référence reste isolée par la lecture initiale project_id + user_id.
+            $patternText = FlowPatternContextSelector::select(trim((string)$project['pattern_text']), $activeSection);
+            if ($patternText !== '') {
+                $lines[] = "[PATTERN — TEXTE SOURCE CONSERVÉ SUR LE PROJET] Patron associé au projet :\n" . $patternText;
+            }
+        }
+
+        if (!$importRow && empty($project['pattern_text'])) {
+            $lines[] = "[PATTERN ABSENT] Ce projet manuel ne contient aucun texte de patron. Utilise uniquement les informations réellement enregistrées dans le projet et ses sections. Ne complète pas les instructions depuis tes connaissances générales ; si une explication technique précise exige le patron, indique qu'il n'est pas disponible.";
         }
 
         return implode("\n\n", $lines);

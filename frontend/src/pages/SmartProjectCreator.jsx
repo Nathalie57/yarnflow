@@ -7,7 +7,7 @@ import api from '../services/api'
 import { useTranslation } from 'react-i18next'
 
 import { apiErrorMessage } from '../utils/apiError'
-import { analysisSelection, bindExtractedSections, blockingPrecreationIssue, blockingPrecreationIssues, projectReviewPoints, sameAnalysisSelection, singleCompatibleSize, translateSmartPreview, updateSmartSection, validSourceUrl } from '../utils/smartCreationSafety'
+import { analysisSelection, bindExtractedSections, blockingPrecreationIssue, blockingPrecreationIssues, projectReviewPoints, sameAnalysisSelection, singleCompatibleSize, sectionReviewPoints, patternReference, translateSmartPreview, updateSmartSection, validSourceUrl } from '../utils/smartCreationSafety'
 import UpgradePrompt from '../components/UpgradePrompt'
 import FlowMascot from '../components/FlowMascot'
 import { trackPaywallShown, trackProductEvent } from '../utils/productEvents'
@@ -93,6 +93,10 @@ export default function SmartProjectCreator() {
   const selectionRevisionRef = useRef(0)
   const [reviewPointsConfirmed, setReviewPointsConfirmed] = useState(false)
   const [serverReviewRequired, setServerReviewRequired] = useState(false)
+  const projectTitleRef = useRef(null)
+  const reviewConfirmationRef = useRef(null)
+  const primaryValidationActionRef = useRef(null)
+  const [primaryValidationActionVisible, setPrimaryValidationActionVisible] = useState(true)
   // [AI:Claude] Affiche le champ de saisie libre uniquement quand la pilule "Autre
   // taille" est active — évite d'avoir un champ tronqué en permanence à côté des
   // tailles standards, sans changer la logique de patternSize sous-jacente.
@@ -185,6 +189,19 @@ export default function SmartProjectCreator() {
 
   const [sections, setSections] = useState([])
   const [creating, setCreating] = useState(false)
+  useEffect(() => {
+    if (step !== 3 || analyzing || creating) {
+      setPrimaryValidationActionVisible(true)
+      return undefined
+    }
+    const action = primaryValidationActionRef.current
+    if (!action || typeof IntersectionObserver === 'undefined') return undefined
+    const observer = new IntersectionObserver(([entry]) => setPrimaryValidationActionVisible(entry.isIntersecting), {
+      threshold: 0.15,
+    })
+    observer.observe(action)
+    return () => observer.disconnect()
+  }, [step, analyzing, creating])
   const [patternLanguage, setPatternLanguage] = useState(null)
   const [translatingPreview, setTranslatingPreview] = useState(false)
   const [translationMessageIndex, setTranslationMessageIndex] = useState(0)
@@ -1041,14 +1058,30 @@ export default function SmartProjectCreator() {
       analysis_partial: 'reviewPointPartial',
       pattern_size_not_selected: 'reviewPointSizeNotSelected',
     }
-    const base = t(`ui.${labels[point.code] || 'reviewPointGeneric'}`)
-    if (!point.values?.length) return base
+    const base = labels[point.code] ? t(`ui.${labels[point.code]}`) : (point.message || t('ui.reviewPointGeneric'))
+    if (!point.values?.length) return point.context?.referenced_section ? `${base} (${point.context.referenced_section})` : base
     const values = point.values.map(item => `${new Intl.NumberFormat(i18n.language).format(item.value)} ${item.unit}`).join(` ${t('ui.or')} `)
     return `${base} ${t('ui.valuesFound', { values })}`
   }
   // Plusieurs diagnostics peuvent produire le même conseil visible. Les diagnostics restent
   // intacts : seule leur présentation est dédupliquée.
   const uniqueReviewPointLabels = (points) => [...new Set(points.map(reviewPointLabel))]
+  const missingProjectTitle = !project.title
+  const missingReviewConfirmation = requiresReviewConfirmation && !reviewPointsConfirmed
+  const stickyValidationRequirement = missingProjectTitle
+    ? { message: t('ui.validationProjectTitleMissing'), ref: projectTitleRef }
+    : missingReviewConfirmation
+      ? { message: t('ui.reviewPointsConfirmationRequired'), ref: reviewConfirmationRef }
+      : null
+
+  const handleStickyValidation = () => {
+    if (stickyValidationRequirement) {
+      stickyValidationRequirement.ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      stickyValidationRequirement.ref.current?.focus({ preventScroll: true })
+      return
+    }
+    submitProject()
+  }
 
   return (
     <>
@@ -1297,8 +1330,17 @@ export default function SmartProjectCreator() {
                   placeholder={t('ui.phExampleUrl')}
                   className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
-                {errorCode === 'site_blocks_scraping' && (
-                  <div className="mt-4">
+                {['site_blocks_scraping', 'url_compression_unsupported'].includes(errorCode) && (
+                  <div className="mt-4 rounded-control border border-amber-200 bg-amber-50 p-4">
+                    <p className="mb-3 text-sm text-amber-900">{t('ui.urlImportRecoveryHelp')}</p>
+                    <button
+                      type="button"
+                      onClick={handleAnalyze}
+                      disabled={analyzing}
+                      className="mb-4 rounded-control border border-primary-300 bg-white px-4 py-2 text-sm font-medium text-primary-700 hover:bg-primary-50 disabled:opacity-50"
+                    >
+                      {t('ui.retryUrlImport')}
+                    </button>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       {t('ui.pasteTextInstead')}
                     </label>
@@ -1307,7 +1349,7 @@ export default function SmartProjectCreator() {
                       onChange={(e) => { setPastedText(e.target.value); resetExtraction() }}
                       placeholder={t('ui.phPastedPattern')}
                       rows={8}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+                      className="w-full px-4 py-2 border border-gray-200 bg-white rounded-control focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
                     />
                   </div>
                 )}
@@ -1371,6 +1413,7 @@ export default function SmartProjectCreator() {
               </div>
               {customSizeMode && (
                 <input
+                  ref={projectTitleRef}
                   type="text"
                   value={patternSize}
                   onChange={e => changePatternSize(e.target.value)}
@@ -1854,21 +1897,23 @@ export default function SmartProjectCreator() {
 
               <div className="space-y-3">
                 {sections.map((section, index) => {
-                  const sectionPointLabels = uniqueReviewPointLabels(reviewPoints.filter(point => point.sectionIndex === index))
-                  const unresolvedTotalHeight = section.unit === 'cm'
-                    && (section.progression_type || 'simple') === 'simple'
+                  const sectionPoints = sectionReviewPoints(reviewPoints, section, index)
+                  const sectionPointLabels = [...new Set(sectionPoints.map(point => {
+                    const origin = point.displayState === 'resolved' ? 'reviewOriginResolved'
+                      : point.displayState === 'current' ? 'reviewOriginCurrent' : 'reviewOriginInitial'
+                    return t('ui.' + origin) + ': ' + reviewPointLabel(point)
+                  }))]
+                  const reference = patternReference(section)
+                  const showPatternReference = reference && section.progression_type !== 'action'
                     && (section.target == null || section.target === '')
-                    && section.target_measured_from === 'piece_start'
-                    && Number(section.target_raw) > 0
                   return (
                   <div key={index} className="border border-gray-200 rounded-card p-3 sm:p-4">
                     {sectionPointLabels.length > 0 && (
                       <details className="mb-3">
-                        <summary className="cursor-pointer list-none flex justify-end">
+                        <summary className="cursor-pointer list-none flex justify-start">
                           <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-medium text-amber-800">
-                            {sectionPointLabels.length === 1
-                              ? t('ui.toCheck')
-                              : t('ui.pointsToCheckCount', { count: sectionPointLabels.length })}
+                            {sectionPointLabels[0]}
+                            {sectionPointLabels.length > 1 && ' (+' + (sectionPointLabels.length - 1) + ')'}
                           </span>
                         </summary>
                         <div className="mt-2 rounded-control bg-gray-50 border border-gray-100 px-3 py-2.5">
@@ -1892,6 +1937,10 @@ export default function SmartProjectCreator() {
                           <div className="sm:col-span-2 px-2 py-1 bg-primary-50 border border-primary-200 rounded text-sm text-primary-800">
                             {t('ui.manualActionSection')}
                           </div>
+                        ) : section.progression_type === 'composite' && !section.unit ? (
+                          <div className="sm:col-span-2 px-2 py-1 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600">
+                            {t('ui.compositeManualTracking')}
+                          </div>
                         ) : (
                           <>
                             <select
@@ -1900,6 +1949,7 @@ export default function SmartProjectCreator() {
                               className="px-2 py-1 border border-gray-300 rounded text-sm"
                             >
                               <option value="rangs">{t('ui.rowsLabel')}</option>
+                              <option value="tours">{t('ui.roundsLabel')}</option>
                               <option value="cm">{t('ui.centimeters')}</option>
                             </select>
                             {section.progression_type === 'composite' ? (
@@ -1919,27 +1969,48 @@ export default function SmartProjectCreator() {
                           </>
                         )}
                       </div>
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end items-start gap-1">
+                        <details className="relative">
+                          <summary
+                            className="list-none w-9 h-9 flex items-center justify-center rounded-control text-gray-500 hover:text-gray-700 hover:bg-gray-100 cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                            aria-label={t('ui.sectionActions')}
+                            title={t('ui.sectionActions')}
+                          >
+                            <span aria-hidden="true" className="text-lg leading-none">…</span>
+                          </summary>
+                          <div role="menu" className="absolute right-0 top-full z-20 mt-1 min-w-48 rounded-control border border-gray-200 bg-white p-1 shadow-lg">
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={(event) => {
+                                duplicateSection(index)
+                                event.currentTarget.closest('details')?.removeAttribute('open')
+                              }}
+                              className="w-full rounded px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                            >
+                              {t('ui.duplicateThisStep')}
+                            </button>
+                          </div>
+                        </details>
                         <button
                           type="button"
-                          onClick={() => duplicateSection(index)}
-                          className="px-2 py-1 text-primary-700 hover:bg-primary-50 rounded text-sm"
-                        >
-                          {t('ui.duplicateSection')}
-                        </button>
-                        <button
                           onClick={() => removeSection(index)}
+                          aria-label={t('ui.removeSection')}
                           className="px-2 py-1 text-red-600 hover:bg-red-50 rounded text-sm"
                         >
                           ✕
                         </button>
                       </div>
                     </div>
-                    {unresolvedTotalHeight && (
+                    {showPatternReference && (
                       <p className="mb-2 text-xs text-gray-600">
-                        {t('ui.totalHeightWithoutSectionTarget', {
-                          height: new Intl.NumberFormat(i18n.language).format(Number(section.target_raw)),
+                        {t(reference.from === 'piece_start' ? 'ui.patternTotalReference' : 'ui.patternSectionReference', {
+                          value: new Intl.NumberFormat(i18n.language).format(Number(reference.value)),
+                          unit: reference.unit === 'cm' ? 'cm'
+                            : ['tour', 'tours', 'round', 'rounds'].includes(String(reference.unit).toLowerCase())
+                              ? t('ui.roundsLabel') : t('ui.rowsLabel'),
                         })}
+                        {' '}{t('ui.patternReferenceNotAutomatic')}
                       </p>
                     )}
                     <textarea
@@ -1968,14 +2039,14 @@ export default function SmartProjectCreator() {
             </div>
 
             {requiresReviewConfirmation && (
-              <label className="mb-4 flex items-start gap-3 rounded-control border border-gray-200 bg-gray-50 p-3 text-sm font-medium text-gray-700">
+              <label ref={reviewConfirmationRef} tabIndex={-1} className="mb-4 flex items-start gap-3 rounded-control border border-gray-200 bg-gray-50 p-3 text-sm font-medium text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">
                 <input type="checkbox" className="mt-0.5 shrink-0" checked={reviewPointsConfirmed} onChange={event => setReviewPointsConfirmed(event.target.checked)} />
                 {t('ui.reviewPointsConfirm')}
               </label>
             )}
 
             {/* Actions */}
-            <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
+            <div ref={primaryValidationActionRef} className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
               <button
                 onClick={() => setStep(2)}
                 className="px-6 py-3 border border-gray-200 text-gray-700 rounded-control hover:bg-gray-50"
@@ -1997,6 +2068,31 @@ export default function SmartProjectCreator() {
 
       </div>
     </div>
+    {step === 3 && !analyzing && !primaryValidationActionVisible && (
+      <div
+        className="fixed left-0 right-0 z-40 border-t border-primary-100 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(31,68,49,0.12)] backdrop-blur-sm md:hidden"
+        style={{ bottom: 'var(--yf-bottom-nav-height, calc(4.5rem + env(safe-area-inset-bottom)))' }}
+        role="region"
+        aria-label={t('ui.projectValidationAction')}
+      >
+        <div className="mx-auto max-w-4xl">
+          {stickyValidationRequirement && (
+            <p id="smart-validation-requirement" className="mb-2 text-sm font-medium text-amber-800">
+              {stickyValidationRequirement.message}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={handleStickyValidation}
+            disabled={creating}
+            aria-describedby={stickyValidationRequirement ? 'smart-validation-requirement' : undefined}
+            className="flex w-full items-center justify-center rounded-control bg-primary-600 px-6 py-3 font-semibold text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {creating ? t('ui.creatingEllipsis') : stickyValidationRequirement ? t('ui.goToRequiredCheck') : t('ui.createProjectCheck')}
+          </button>
+        </div>
+      </div>
+    )}
     <UpgradePrompt
       isOpen={showUpgradeModal}
       onClose={() => setShowUpgradeModal(false)}

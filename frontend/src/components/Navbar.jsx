@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
@@ -15,6 +15,28 @@ const Navbar = () => {
   const [showHelpMenu, setShowHelpMenu] = useState(false)
   const [showHelpMenuDesktop, setShowHelpMenuDesktop] = useState(false)
   const [streak, setStreak] = useState(0)
+  const navbarRef = useRef(null)
+
+  // Les éléments sticky placés sous la navigation utilisent sa hauteur réellement
+  // rendue, safe area comprise, plutôt qu'un décalage recopié dans chaque écran.
+  useEffect(() => {
+    const navbar = navbarRef.current
+    if (!navbar) return undefined
+    const updateHeight = () => {
+      const height = navbar.getBoundingClientRect().height
+      document.documentElement.style.setProperty('--yf-navbar-height', `${height}px`)
+      window.dispatchEvent(new CustomEvent('yf:navbar-resized', { detail: { height } }))
+    }
+    updateHeight()
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateHeight) : null
+    observer?.observe(navbar)
+    window.addEventListener('resize', updateHeight)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', updateHeight)
+      document.documentElement.style.removeProperty('--yf-navbar-height')
+    }
+  }, [])
 
   // [AI:Claude] Rappel passif de la série en cours, visible sur toutes les
   // pages (contrairement à Stats qu'il faut aller consulter volontairement).
@@ -72,7 +94,12 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
+    <nav
+      ref={navbarRef}
+      data-yf-navbar
+      className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

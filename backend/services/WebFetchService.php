@@ -17,6 +17,31 @@ class WebFetchService {
     private const MAX_RESPONSE_BYTES = 5 * 1024 * 1024;
 
     /**
+     * Valeur confiée à CURLOPT_ENCODING d'après les décodeurs réellement compilés dans
+     * libcurl. Cette option émet aussi Accept-Encoding, ce qui garde annonce et décodage
+     * strictement cohérents.
+     */
+    public static function supportedContentEncodings(?int $features = null): string
+    {
+        $features ??= (int)(curl_version()['features'] ?? 0);
+        $encodings = ['gzip', 'deflate'];
+        if (defined('CURL_VERSION_BROTLI') && ($features & (int)constant('CURL_VERSION_BROTLI')) !== 0) {
+            $encodings[] = 'br';
+        }
+        if (defined('CURL_VERSION_ZSTD') && ($features & (int)constant('CURL_VERSION_ZSTD')) !== 0) {
+            $encodings[] = 'zstd';
+        }
+        return implode(', ', $encodings);
+    }
+
+    public static function isUnsupportedContentEncodingError(int $curlErrorNumber, string $curlError): bool
+    {
+        $badEncodingCode = defined('CURLE_BAD_CONTENT_ENCODING') ? (int)constant('CURLE_BAD_CONTENT_ENCODING') : 61;
+        return $curlErrorNumber === $badEncodingCode
+            || str_contains(strtolower($curlError), 'unrecognized content encoding');
+    }
+
+    /**
      * [AI:Claude] 2026-09-26 — SÉCURITÉ (SSRF) : valide qu'une URL est http(s) et que
      * TOUTES les IP vers lesquelles son hôte résout sont publiques (ni privées, ni loopback,
      * ni link-local/réservées — couvre aussi bien IPv4 que IPv6). Renvoie l'IP à utiliser
@@ -120,7 +145,6 @@ class WebFetchService {
             'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
             'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
             'Accept-Language: fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-            'Accept-Encoding: gzip, deflate, br',
             'Connection: keep-alive',
             'Upgrade-Insecure-Requests: 1',
             'Sec-Fetch-Dest: document',
@@ -146,6 +170,7 @@ class WebFetchService {
         $contentType = null;
         $html = false;
         $error = null;
+        $curlErrorNumber = 0;
 
         for ($hop = 0; $hop <= self::MAX_REDIRECTS; $hop++) {
             $safety = self::validateUrlSafety($currentUrl);
@@ -177,7 +202,9 @@ class WebFetchService {
                 CURLOPT_FOLLOWLOCATION => false,
                 CURLOPT_TIMEOUT => $options['timeout'] ?? self::TIMEOUT,
                 CURLOPT_HTTPHEADER => $headers,
-                CURLOPT_ENCODING => '', // Accepter toutes les encodages
+                // CURLOPT_ENCODING génère lui-même Accept-Encoding avec cette liste et
+                // décode la réponse. Ne jamais annoncer un format absent de libcurl.
+                CURLOPT_ENCODING => self::supportedContentEncodings(),
                 CURLOPT_SSL_VERIFYPEER => !$isLocal, // Désactiver vérification SSL en local
                 CURLOPT_SSL_VERIFYHOST => $isLocal ? 0 : 2,
                 CURLOPT_COOKIEFILE => '', // Activer les cookies
@@ -198,6 +225,7 @@ class WebFetchService {
             $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
             $redirectUrl = curl_getinfo($ch, CURLINFO_REDIRECT_URL);
             $error = curl_error($ch);
+            $curlErrorNumber = curl_errno($ch);
             curl_close($ch);
 
             if ($responseTooLarge) {
@@ -224,11 +252,15 @@ class WebFetchService {
         }
 
         // Résultat
+        $unsupportedContentEncoding = self::isUnsupportedContentEncodingError($curlErrorNumber, (string)$error);
         $result = [
             'success' => $html !== false && $statusCode >= 200 && $statusCode < 400,
             'html' => $html ?: null,
             'content_type' => $contentType ?: null,
-            'error' => $error ?: ($statusCode >= 400 ? "Erreur HTTP $statusCode" : null),
+            'error' => $unsupportedContentEncoding
+                ? 'La page utilise une compression que ce serveur ne peut pas lire. Réessayez ou utilisez une autre méthode d\'import.'
+                : ($error ?: ($statusCode >= 400 ? "Erreur HTTP $statusCode" : null)),
+            'error_code' => $unsupportedContentEncoding ? 'url_compression_unsupported' : null,
             'status_code' => $statusCode,
             'url' => $currentUrl
         ];

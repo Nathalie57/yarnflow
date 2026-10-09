@@ -13,6 +13,26 @@ const BottomNav = ({ onOpenAi }) => {
 
   const [showNew, setShowNew] = useState(() => !localStorage.getItem(STASH_NEW_KEY))
   const isFirstRender = useRef(true)
+  const navRef = useRef(null)
+
+  // Les actions mobiles qui doivent rester au-dessus de la navigation utilisent sa
+  // hauteur rendue (safe area comprise), plutôt qu'un décalage recopié en dur.
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return undefined
+    const updateHeight = () => {
+      document.documentElement.style.setProperty('--yf-bottom-nav-height', `${nav.getBoundingClientRect().height}px`)
+    }
+    updateHeight()
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateHeight) : null
+    observer?.observe(nav)
+    window.addEventListener('resize', updateHeight)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', updateHeight)
+      document.documentElement.style.removeProperty('--yf-bottom-nav-height')
+    }
+  }, [])
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -27,6 +47,7 @@ const BottomNav = ({ onOpenAi }) => {
 
   return (
     <nav
+      ref={navRef}
       className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 z-50 md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >

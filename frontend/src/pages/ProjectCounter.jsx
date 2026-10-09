@@ -42,9 +42,13 @@ import { PROJECT_TYPE_VALUES, projectTypeKey } from '../data/projectTypes'
 
 import { apiErrorMessage } from '../utils/apiError'
 import { summarizeProjectProgress } from '../utils/projectProgress'
+import { nextJourneySection, resolveJourneySection, sectionHasNumericCounter, sectionIsCompleted, simpleSectionTarget, cappedSectionProgress, patternProgressRange } from '../utils/projectJourney'
+import ProjectCurrentStep, { CurrentStepProgress } from '../components/ProjectCurrentStep'
 import { chartsForSection, selectedChartIdForSection } from '../utils/chartProgress'
+import { liveProjectTime } from '../utils/projectTime'
 
 const DEMO_GUIDE_STEPS = ['welcome', 'row', 'saved', 'flow', 'sections', 'conclusion', 'done']
+const isDiscreteCounterUnit = unit => unit === 'rows' || unit === 'rounds'
 
 const ProjectCounter = () => {
   const { t, i18n } = useTranslation('counter')
@@ -63,7 +67,7 @@ const ProjectCounter = () => {
   } = useImagePreview()
   const { isSupported: isWakeLockSupported, isActive: isWakeLockActive, request: requestWakeLock, release: releaseWakeLock } = useWakeLock()
   const { triggerOnce } = useHints() // [AI:Claude] Hints contextuels
-  const { openWithProject } = useAiAssistant()
+  const { openWithProject, syncProjectProgress } = useAiAssistant()
 
 
   const [project, setProject] = useState(null)
@@ -75,6 +79,8 @@ const ProjectCounter = () => {
   const [currentSectionId, setCurrentSectionId] = useState(null)
   const [expandedSections, setExpandedSections] = useState(new Set()) // [AI:Claude] Sections dépliées
   const [sectionsCollapsed, setSectionsCollapsed] = useState(true) // [AI:Claude] Tout le bloc sections replié/déplié par défaut
+  const sectionsListRef = useRef(null)
+  const sectionsListScrollPendingRef = useRef(false)
   const [sectionsSortBy, setSectionsSortBy] = useState('created') // [AI:Claude] Tri des sections (v0.14.0 - défaut: ordre de création)
   const [expandedNotesSection, setExpandedNotesSection] = useState(null) // [AI:Claude] Section avec notes dépliées
   const [sectionNotesText, setSectionNotesText] = useState('') // [AI:Claude] Texte des notes en cours d'édition
@@ -350,6 +356,12 @@ const ProjectCounter = () => {
     ? sections.find(section => Number(section.id) === Number(currentSectionId))
     : null
   const isActionSection = activeProjectSection?.progression_type === 'action'
+  const hasPrimaryCounter = !currentSectionId || sectionHasNumericCounter(activeProjectSection)
+  const nextProjectSection = nextJourneySection(sections, currentSectionId)
+  const [isChangingSection, setIsChangingSection] = useState(false)
+  const changingSectionRef = useRef(false)
+  const [isCompletingSection, setIsCompletingSection] = useState(false)
+  const completingSectionRef = useRef(false)
 
   // [AI:Claude] 2026-09-27 — Coup de pouce discret vers l'assistant, une seule fois, à la
   // toute première entrée en mode travail sur un projet issu de la Création Intelligente
@@ -453,6 +465,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Détecter si on est sur mobile
   const [isMobile, setIsMobile] = useState(false)
+  const [mobileNavbarHeight, setMobileNavbarHeight] = useState(0)
 
   // [AI:Claude] Gestion des sections
   const [showAddSectionModal, setShowAddSectionModal] = useState(false)
@@ -461,6 +474,7 @@ const ProjectCounter = () => {
     name: '',
     description: '',
     total_rows: '',
+    counter_unit: 'rows',
     notes: ''
   })
   // [AI:Claude] v0.16.2: Modale de confirmation pour attribuer les rangs existants
@@ -492,8 +506,22 @@ const ProjectCounter = () => {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // En mode travail mobile, le compteur compact prend le relais uniquement lorsque les
-  // commandes principales sont sorties par le haut de la zone visible sous le header.
+  useEffect(() => {
+    const readNavbarHeight = event => {
+      const measured = Number(event?.detail?.height)
+      const navbar = document.querySelector('[data-yf-navbar]')
+      setMobileNavbarHeight(Number.isFinite(measured) && measured > 0
+        ? measured
+        : navbar?.getBoundingClientRect().height || 0)
+    }
+    readNavbarHeight()
+    window.addEventListener('yf:navbar-resized', readNavbarHeight)
+    return () => window.removeEventListener('yf:navbar-resized', readNavbarHeight)
+  }, [])
+
+  // Sur mobile, le compteur compact prend le relais dès que les commandes principales
+  // ne sont pas visibles. Cela couvre aussi l'arrivée sur une page où la carte Maintenant
+  // et ses instructions repoussent le compteur sous la ligne de flottaison.
   useEffect(() => {
     if (!isFocusMode || !isMobile || !primaryCounterRef.current || !('IntersectionObserver' in window)) {
       setShowCompactWorkCounter(false)
@@ -501,11 +529,10 @@ const ProjectCounter = () => {
     }
 
     const observer = new IntersectionObserver(([entry]) => {
-      const hasPassedUnderHeader = entry.boundingClientRect.top <= 64
-      setShowCompactWorkCounter(!entry.isIntersecting && hasPassedUnderHeader)
+      setShowCompactWorkCounter(!entry.isIntersecting)
     }, {
       root: null,
-      rootMargin: '-64px 0px 0px 0px',
+      rootMargin: `-${mobileNavbarHeight}px 0px 0px 0px`,
       threshold: 0.01
     })
 
@@ -515,7 +542,14 @@ const ProjectCounter = () => {
       observer.disconnect()
       setShowCompactWorkCounter(false)
     }
-  }, [isFocusMode, isMobile])
+  }, [isFocusMode, isMobile, loading, currentSectionId, mobileNavbarHeight])
+
+  // Entrer en mode travail depuis le haut de page doit conduire directement aux
+  // commandes actives, quelle que soit la position de défilement précédente.
+  useEffect(() => {
+    if (!isFocusMode || !isMobile || !primaryCounterRef.current) return
+    primaryCounterRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [isFocusMode, isMobile, currentSectionId])
 
   // [AI:Claude] Détection connexion réseau + flush queue offline
   useEffect(() => {
@@ -921,7 +955,8 @@ const ProjectCounter = () => {
         if (sectionCurrentRow !== currentRow) {
           setCurrentRow(sectionCurrentRow)
         }
-        const sectionUnit = activeSection.counter_unit === 'cm' ? 'cm' : 'rows'
+        const sectionUnit = activeSection.counter_unit === 'cm' ? 'cm'
+          : isDiscreteCounterUnit(activeSection.counter_unit) ? activeSection.counter_unit : null
         if (sectionUnit !== counterUnit) {
           setCounterUnit(sectionUnit)
         }
@@ -1121,62 +1156,12 @@ const ProjectCounter = () => {
       const response = await api.get(`/projects/${projectId}/sections`)
       const loadedSections = response.data.sections || []
       setSections(loadedSections)
-      if (loadedSections.length > 0) setSectionsCollapsed(false)
 
-      // [AI:Claude] Vérifier si la section actuelle est toujours valide et non terminée
-      let needsNewSection = false
-
-      if (currentSectionId) {
-        const currentSection = loadedSections.find(s => s.id === currentSectionId)
-        // Si la section actuelle est terminée, chercher une section en cours
-        if (currentSection && currentSection.is_completed === 1) {
-          needsNewSection = true
-        }
-      }
-
-      // [AI:Claude] Si aucune section n'est active, si la section actuelle est terminée, ou s'il y a des sections
-      if ((!currentSectionId || needsNewSection) && loadedSections.length > 0) {
-        // Priorité 0 : Section définie dans le projet (passée en paramètre ou depuis state) - la plus importante !
-        const targetSectionId = projectCurrentSectionId || project?.current_section_id
-        if (targetSectionId) {
-          const projectSection = loadedSections.find(s => s.id === targetSectionId)
-          if (projectSection && !needsNewSection) {
-            setCurrentSectionId(projectSection.id)
-            return { sections: loadedSections, resolvedSectionId: projectSection.id }
-          }
-        }
-
-        // Priorité 1 : Section sauvegardée dans localStorage (dernière utilisée)
-        if (!needsNewSection) {
-          const savedSectionId = localStorage.getItem(`currentSection_${projectId}`)
-          if (savedSectionId) {
-            const savedSection = loadedSections.find(s => s.id === parseInt(savedSectionId))
-            if (savedSection && !savedSection.is_completed) {
-              setCurrentSectionId(savedSection.id)
-              return { sections: loadedSections, resolvedSectionId: savedSection.id }
-            }
-          }
-        }
-
-        // Priorité 2 : Première section non terminée
-        const firstIncomplete = loadedSections.find(s => !s.is_completed)
-        if (firstIncomplete) {
-          setCurrentSectionId(firstIncomplete.id)
-          return { sections: loadedSections, resolvedSectionId: firstIncomplete.id }
-        }
-
-        // Priorité 3 : Première section de la liste (si toutes sont terminées)
-        setCurrentSectionId(loadedSections[0].id)
-        return { sections: loadedSections, resolvedSectionId: loadedSections[0].id }
-      }
-
-      // [AI:Claude] BUG CORRIGÉ : cette fonction ne renvoyait que le tableau des sections,
-      // jamais l'ID de section effectivement résolu ci-dessus (setCurrentSectionId() est
-      // asynchrone, illisible immédiatement par l'appelant). Le code appelant relisait donc
-      // le current_section_id BRUT du projet (souvent NULL) au lieu de la section réellement
-      // résolue par le repli ci-dessus — les compteurs secondaires (et les rappels) d'une
-      // section étaient alors cherchés avec section_id=null, jamais trouvés, "disparus".
-      return { sections: loadedSections, resolvedSectionId: currentSectionId ?? (loadedSections[0]?.id ?? null) }
+      const resolvedSectionId = resolveJourneySection(loadedSections,
+        projectCurrentSectionId, currentSectionId, project?.current_section_id,
+        localStorage.getItem(`currentSection_${projectId}`))
+      setCurrentSectionId(resolvedSectionId)
+      return { sections: loadedSections, resolvedSectionId }
     } catch (err) {
       console.error('Erreur chargement sections:', err)
       // [AI:Claude] Pas d'erreur fatale si pas de sections
@@ -2031,7 +2016,7 @@ const ProjectCounter = () => {
   }
 
   // [AI:Claude] Terminer la session
-  const handleEndSession = async () => {
+  const handleEndSession = async (completedProgress = null) => {
     if (!sessionId) return
 
     // [AI:Claude] FIX BUG x4: Marquer qu'on est en train de terminer
@@ -2042,7 +2027,8 @@ const ProjectCounter = () => {
     isEndingSessionRef.current = true
 
     try {
-      const rowsCompleted = currentRow - sessionStartRow
+      const finalProgress = completedProgress == null ? currentRow : completedProgress
+      const rowsCompleted = finalProgress - sessionStartRow
 
       // [AI:Claude] FIX BUG: Calculer la durée exacte au moment de terminer
       const exactDuration = getExactDuration()
@@ -2055,9 +2041,6 @@ const ProjectCounter = () => {
         duration: exactDuration, // [AI:Claude] Envoyer la durée calculée
         notes: null
       })
-
-      await fetchProject()
-      await fetchSections() // [AI:Claude] Rafraîchir les sections pour voir le temps mis à jour
 
       setSessionId(null)
       setSessionStartTime(null)
@@ -2073,6 +2056,15 @@ const ProjectCounter = () => {
 
       // [AI:Claude] Libérer le wake lock quand on arrête le timer
       await releaseWakeLock()
+
+      // La session est déjà enregistrée : un échec de rafraîchissement ne doit pas
+      // laisser le chrono actif ni provoquer une seconde clôture de session.
+      try {
+        await fetchProject()
+        await fetchSections()
+      } catch (refreshError) {
+        console.error('Erreur rafraîchissement après fin session:', refreshError)
+      }
 
       // [AI:Claude] Réinitialiser le flag après avoir tout nettoyé
       isEndingSessionRef.current = false
@@ -2108,49 +2100,68 @@ const ProjectCounter = () => {
   // à lire ne pourrait pas répondre précisément, autant ne pas gaspiller le quota de
   // questions IA sur une réponse forcément vague. Depuis la popin, l'utilisatrice garde la
   // main pour fermer et aller questionner l'assistant général de son propre chef.
+  const getFlowProjectProgress = () => {
+    const activeSection = currentSectionId
+      ? sections.find(section => Number(section.id) === Number(currentSectionId))
+      : null
+    const hasNumericProgress = !activeSection || sectionHasNumericCounter(activeSection)
+    const unit = hasNumericProgress ? counterUnit : null
+    const formatForUnit = value => unit === 'cm'
+      ? Number(value).toFixed(1)
+      : Math.floor(Number(value) || 0)
+    const sectionTotal = activeSection?.total_rows ?? (!activeSection ? project?.total_rows : null)
+
+    return {
+      sectionName: activeSection?.name || null,
+      currentRow: hasNumericProgress ? formatForUnit(currentRow) : null,
+      total: hasNumericProgress && sectionTotal != null ? formatForUnit(sectionTotal) : null,
+      unit,
+      isDemo: isDemoProject,
+      progressionType: activeSection?.progression_type || 'simple',
+      patternStartRow: activeSection?.pattern_start_row ?? null,
+      secondaryCounters: activeSection ? secondaryCounters : [],
+      isCompleted: activeSection
+        ? Boolean(Number(activeSection.is_completed))
+        : project?.status === 'completed'
+    }
+  }
+
+  // Le tiroir est monté au niveau du layout et peut rester ouvert. Lui transmettre
+  // chaque progression/section chargée afin que l'action permanente s'adapte sans
+  // fermer la conversation. La requête elle-même sera encore relue en BDD.
+  useEffect(() => {
+    if (!project || changingSectionRef.current) return
+    syncProjectProgress(projectId, getFlowProjectProgress())
+    // Les compteurs secondaires font partie du contexte utile aux répétitions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, project, currentSectionId, sections, currentRow, counterUnit, secondaryCounters, syncProjectProgress])
+
   const handleOpenAiHelp = (projectOverride) => {
     // [AI:Claude] projectOverride : après association d'un patron (AssociatePatternForAi),
     // le state `project` du composant n'est pas encore à jour au moment de cet appel
     // (setProject() est asynchrone) — on utilise directement les données fraîches renvoyées
     // par fetchProject() plutôt que de risquer de relire l'ancien has_ai_pattern_reference.
+    if (changingSectionRef.current) return
     const proj = projectOverride || project
     // [AI:Claude] Le projet démo n'a jamais de patron réellement analysé (juste un
     // pattern_url factice, voir handleCreateDemoProject) — sans cette exception, la
     // checklist tutoriel "pose une question à ton assistant" serait impossible à
     // valider sur la démo, seule la popin d'association s'afficherait.
-    if (!proj?.has_ai_pattern_reference && !isDemoProject) {
-      setShowAssociatePatternModal(true)
-      return
-    }
-    const sectionName = currentSectionId
-      ? sections.find(s => s.id === currentSectionId)?.name
-      : null
-    const activeSection = currentSectionId
-      ? sections.find(s => s.id === currentSectionId)
-      : null
+    const flowProgress = getFlowProjectProgress()
+    const sectionName = flowProgress.sectionName
     // [AI:Claude] Même règle d'affichage que le compteur principal (voir le "-/+/valeur"
     // plus haut) : un rang ne s'affiche jamais avec une décimale, contrairement au cm.
     // Sans ça, le contexte envoyé à l'assistant (chip + message d'accueil) affichait
     // "0.0/32.0" pour un simple compteur de rangs, la valeur brute (souvent DECIMAL en
     // base pour supporter le cm) n'étant jamais reformatée selon l'unité réelle.
-    const formatForUnit = (value) => counterUnit === 'cm' ? Number(value).toFixed(1) : Math.floor(Number(value) || 0)
-    const displayRow = formatForUnit(currentRow)
-    const total = progressData.total ? formatForUnit(progressData.total) : null
-    const progress = total ? `${displayRow}/${total}` : `${displayRow}`
+    const hasNumericProgress = flowProgress.unit !== null
+    const displayRow = flowProgress.currentRow
+    const total = flowProgress.total
+    const progress = total != null ? `${displayRow}/${total}` : `${displayRow}`
     const label = sectionName
-      ? `${proj?.name || ''} — ${sectionName} (${progress})`
+      ? `${proj?.name || ''} — ${sectionName}${hasNumericProgress ? ` (${progress})` : ''}`
       : `${proj?.name || ''} — ${progress}`
-    openWithProject(projectId, label, {
-      sectionName,
-      currentRow: displayRow,
-      total,
-      unit: counterUnit,
-      isDemo: isDemoProject,
-      progressionType: activeSection?.progression_type || 'simple',
-      isCompleted: activeSection
-        ? Boolean(Number(activeSection.is_completed))
-        : proj?.status === 'completed'
-    })
+    openWithProject(projectId, label, flowProgress)
 
     if (isDemoProject && demoGuideStep === 'flow') {
       trackDemoEventOnce('demo_flow_opened')
@@ -2161,6 +2172,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] v0.16.2 - Handlers pour input éditable du compteur
   const handleCounterClick = () => {
+    if (currentSectionId && !sectionHasNumericCounter(activeProjectSection)) return
     setIsEditingCounter(true)
     const numValue = Number(currentRow) || 0
     setCounterInputValue(counterUnit === 'cm' ? numValue.toFixed(1) : Math.floor(numValue).toString())
@@ -2176,6 +2188,8 @@ const ProjectCounter = () => {
   }
 
   const handleCounterInputSubmit = async () => {
+    if (changingSectionRef.current || completingSectionRef.current || isSavingRowRef.current) return
+    if (currentSectionId && !sectionHasNumericCounter(activeProjectSection)) return
     const parsedValue = parseFloat(counterInputValue)
 
     // Validation
@@ -2186,11 +2200,20 @@ const ProjectCounter = () => {
     }
 
     // Arrondir selon l'unité
-    let validValue = counterUnit === 'rows'
+    let validValue = isDiscreteCounterUnit(counterUnit)
       ? Math.floor(parsedValue)
       : Math.round(parsedValue * 2) / 2 // Arrondir au 0.5 le plus proche
 
     const oldRow = currentRow
+    const sectionTarget = simpleSectionTarget(activeProjectSection)
+    // Une ancienne mesure hors objectif reste intacte sans correction explicite.
+    if (sectionTarget !== null && Number(oldRow) > sectionTarget && parsedValue > sectionTarget) {
+      setIsEditingCounter(false)
+      return
+    }
+    validValue = cappedSectionProgress(activeProjectSection, validValue)
+    isSavingRowRef.current = true
+    setIsSavingRow(true)
 
     try {
       // Mettre à jour l'état local immédiatement
@@ -2220,6 +2243,14 @@ const ProjectCounter = () => {
 
       setIsEditingCounter(false)
       setCounterInputValue('')
+      if (sectionTarget !== null && validValue === sectionTarget && !sectionIsCompleted(activeProjectSection)) {
+        try {
+          if (await syncRequiredCounters(validValue)) await handleAutomaticSectionCompletion(sectionTarget)
+        } catch (err) {
+          console.error('Erreur marquage section terminée:', err)
+          showAlert({ message: t('alerts.updateFailed'), type: 'error' })
+        }
+      }
     } catch (err) {
       console.error('Erreur sauvegarde compteur:', err)
       showAlert({ message: t('alerts.saveFailed'), type: 'error' })
@@ -2240,12 +2271,57 @@ const ProjectCounter = () => {
         }))
       }
       setIsEditingCounter(false)
+    } finally {
+      isSavingRowRef.current = false
+      setIsSavingRow(false)
     }
+  }
+
+  // Les cycles explicitement structurés sont les seuls compteurs secondaires
+  // avancés depuis le compteur principal. Les autres restent indépendants.
+  const syncRequiredCounters = async (primaryValue) => {
+    let allRequiredComplete = true
+    for (const counter of secondaryCounters) {
+      let count = Number(counter.count) || 0
+      if (counter.tracking_role === 'required_cycle' && Number(counter.cycle_length) > 0) {
+        count = Math.min(Number(counter.target), Math.floor(Number(primaryValue) / Number(counter.cycle_length)))
+        if (count !== Number(counter.count)) {
+          try {
+            await api.put(`/projects/${projectId}/secondary-counters/${counter.id}`, { count })
+            setSecondaryCounters(prev => prev.map(item => item.id === counter.id ? { ...item, count } : item))
+          } catch (err) {
+            console.error('Erreur synchronisation du cycle répété:', err)
+            allRequiredComplete = false
+            continue
+          }
+        }
+      }
+      if (['required_cycle', 'required_parallel'].includes(counter.tracking_role)
+          && (counter.target == null || count < Number(counter.target))) {
+        allRequiredComplete = false
+      }
+    }
+    return allRequiredComplete
+  }
+
+
+  // Fin numérique commune aux rangs et aux cm ; la section active reste inchangée.
+  const handleAutomaticSectionCompletion = async (maxRows) => {
+    await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`, { automatic: true })
+    setSections(prev => prev.map(section => Number(section.id) === Number(currentSectionId)
+      ? { ...section, is_completed: 1 } : section))
+    const endedActiveSession = Boolean(isTimerRunning && sessionId)
+    if (endedActiveSession) await handleEndSession(maxRows)
+    const { sections: freshSections } = await fetchSections()
+    if (freshSections.length > 0 && freshSections.every(sectionIsCompleted)) {
+      await handleAllSectionsCompleted(endedActiveSession)
+    }
+    await fetchProject()
   }
 
   // [AI:Claude] Incrémenter le rang (sauvegarde directe sans modal)
   const handleIncrementRow = async () => {
-    if (isActionSection) return
+    if ((currentSectionId && !sectionHasNumericCounter(activeProjectSection)) || sectionIsCompleted(activeProjectSection) || changingSectionRef.current || completingSectionRef.current) return
     // [AI:Claude] Anti double-clic (ref = blocage immédiat, pas soumis au cycle de rendu)
     if (isSavingRowRef.current) return
     isSavingRowRef.current = true
@@ -2268,22 +2344,30 @@ const ProjectCounter = () => {
     // [AI:Claude] Vérifier si on a atteint le maximum
     let maxRows = null
     if (currentSectionId && sections.length > 0) {
-      const activeSection = sections.find(s => s.id === currentSectionId)
-      if (activeSection && activeSection.total_rows) {
-        maxRows = parseFloat(activeSection.total_rows)
-      }
+      maxRows = simpleSectionTarget(activeProjectSection)
     } else if (project && project.total_rows) {
       maxRows = parseFloat(project.total_rows)
     }
 
-    // Bloquer si on a atteint le maximum
-    if (maxRows !== null && parseFloat(currentRow) >= maxRows) {
-      const numMax = Number(maxRows)
-      const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
-      const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-      showAlert({ message: t('alerts.allDone', { max: displayMax, unit: unitLabel }), type: 'success' })
-      isSavingRowRef.current = false
-      setIsSavingRow(false)
+    // À la cible, aucun nouveau rang/mesure ; réessayer seulement la validation
+    // si des compteurs requis viennent d'être terminés ou si l'étape a été rouverte.
+    // Au-delà de la cible (ancienne donnée), ne rien normaliser silencieusement.
+    if (maxRows !== null && Number(currentRow) >= maxRows) {
+      try {
+        if (currentSectionId && Number(currentRow) === maxRows) {
+          if (await syncRequiredCounters(currentRow)) await handleAutomaticSectionCompletion(maxRows)
+        } else {
+          showAlert({ message: t('alerts.allDone', {
+            max: counterUnit === 'cm' ? Number(maxRows).toFixed(1) : Math.floor(Number(maxRows)),
+            unit: counterUnit === 'cm' ? 'cm' : counterUnit === 'rounds' ? 'tours' : 'rangs'
+          }), type: 'success' })
+        }
+      } catch (err) {
+        showAlert({ message: t('alerts.updateFailed'), type: 'error' })
+      } finally {
+        isSavingRowRef.current = false
+        setIsSavingRow(false)
+      }
       return
     }
 
@@ -2296,37 +2380,11 @@ const ProjectCounter = () => {
     const increment = currentSectionId
       ? (counterUnit === 'cm' ? 0.5 : 1.0)
       : (parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0))
-    const newRow = counterUnit === 'rows'
+    const candidate = isDiscreteCounterUnit(counterUnit)
       ? parseFloat(currentRow) + 1
       : parseFloat(currentRow) + increment
+    const newRow = cappedSectionProgress(activeProjectSection, candidate)
     const oldRow = currentRow
-
-    // Les cycles explicitement structurés sont les seuls compteurs secondaires
-    // avancés depuis le compteur principal. Les autres restent indépendants.
-    const syncRequiredCounters = async (primaryValue) => {
-      let allRequiredComplete = true
-      for (const counter of secondaryCounters) {
-        let count = Number(counter.count) || 0
-        if (counter.tracking_role === 'required_cycle' && Number(counter.cycle_length) > 0) {
-          count = Math.min(Number(counter.target), Math.floor(Number(primaryValue) / Number(counter.cycle_length)))
-          if (count !== Number(counter.count)) {
-            try {
-              await api.put(`/projects/${projectId}/secondary-counters/${counter.id}`, { count })
-              setSecondaryCounters(prev => prev.map(item => item.id === counter.id ? { ...item, count } : item))
-            } catch (err) {
-              console.error('Erreur synchronisation du cycle répété:', err)
-              allRequiredComplete = false
-              continue
-            }
-          }
-        }
-        if (['required_cycle', 'required_parallel'].includes(counter.tracking_role)
-            && (counter.target == null || count < Number(counter.target))) {
-          allRequiredComplete = false
-        }
-      }
-      return allRequiredComplete
-    }
 
     // [AI:Claude] v0.16.2 - Mode CM : update direct sans historique
     if (counterUnit === 'cm') {
@@ -2358,18 +2416,7 @@ const ProjectCounter = () => {
           if (currentSectionId) {
             const requiredCountersComplete = await syncRequiredCounters(newRow)
             if (!requiredCountersComplete) return
-            await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`, { automatic: true })
-            setSections(prevSections =>
-              prevSections.map(s =>
-                s.id === currentSectionId
-                  ? { ...s, is_completed: 1 }
-                  : s
-              )
-            )
-            const numMax = Number(maxRows)
-            const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
-            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
+            await handleAutomaticSectionCompletion(maxRows)
           } else {
             await api.put(`/projects/${projectId}`, { status: 'completed' })
             if (isTimerRunning) {
@@ -2377,7 +2424,7 @@ const ProjectCounter = () => {
             }
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
-            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+            const unitLabel = counterUnit === 'cm' ? 'cm' : counterUnit === 'rounds' ? 'tours' : 'rangs'
             showAlert({ message: t('alerts.projectDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           }
         }
@@ -2471,57 +2518,11 @@ const ProjectCounter = () => {
       // [AI:Claude] Si on vient de terminer, marquer comme terminé automatiquement
       if (maxRows !== null && newRow === maxRows && requiredCountersComplete) {
         if (currentSectionId) {
-          // Marquer la section comme terminée
           try {
-            await api.post(`/projects/${projectId}/sections/${currentSectionId}/complete`, { automatic: true })
-
-            // [AI:Claude] Mettre à jour is_completed localement IMMÉDIATEMENT pour l'UI
-            setSections(prevSections =>
-              prevSections.map(s =>
-                s.id === currentSectionId
-                  ? { ...s, is_completed: 1 }
-                  : s
-              )
-            )
-
-            await fetchSections()
-
-            // Vérifier si toutes les sections sont terminées
-            const updatedSections = await api.get(`/projects/${projectId}/sections`)
-            const freshSections = updatedSections.data.sections || []
-            const allCompleted = freshSections.length > 0 && freshSections.every(s => Number(s.is_completed) === 1)
-
-            const numMax = Number(maxRows)
-            const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
-            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-
-            if (allCompleted && sections.length > 0) {
-              // Pas d'alert ici — la modale de complétion prend le relais
-              await handleAllSectionsCompleted()
-            } else {
-              // La section suivante choisie par l'interface devient aussi la source de vérité
-              // du backend, afin que Flow lise exactement la section affichée comme active.
-              const nextSection = freshSections.find(s => Number(s.is_completed) !== 1)
-              if (nextSection) {
-                await api.post(`/projects/${projectId}/current-section`, { section_id: nextSection.id })
-                setCurrentSectionId(nextSection.id)
-                localStorage.setItem(`currentSection_${projectId}`, nextSection.id.toString())
-                await fetchSecondaryCounters(nextSection.id)
-                const nextReminders = typeof nextSection.reminders === 'string'
-                  ? JSON.parse(nextSection.reminders)
-                  : nextSection.reminders
-                setReminders(Array.isArray(nextReminders) ? nextReminders : [])
-                setActiveReminder(null)
-              }
-              showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
-              await fetchProject()
-            }
+            await handleAutomaticSectionCompletion(maxRows)
           } catch (err) {
             console.error('Erreur marquage section terminée:', err)
-            const numMax = Number(maxRows)
-            const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
-            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
-            showAlert({ message: t('alerts.sectionDone', { max: displayMax, unit: unitLabel }), type: 'success' })
+            showAlert({ message: t('alerts.updateFailed'), type: 'error' })
           }
         } else {
           // Pas de sections, marquer le projet global comme terminé
@@ -2534,13 +2535,13 @@ const ProjectCounter = () => {
             await fetchProject()
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
-            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+            const unitLabel = counterUnit === 'cm' ? 'cm' : counterUnit === 'rounds' ? 'tours' : 'rangs'
             showAlert({ message: t('alerts.projectDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           } catch (err) {
             console.error('Erreur marquage projet terminé:', err)
             const numMax = Number(maxRows)
             const displayMax = counterUnit === 'cm' ? numMax.toFixed(1) : Math.floor(numMax)
-            const unitLabel = counterUnit === 'cm' ? 'cm' : 'rangs'
+            const unitLabel = counterUnit === 'cm' ? 'cm' : counterUnit === 'rounds' ? 'tours' : 'rangs'
             showAlert({ message: t('alerts.projectDone', { max: displayMax, unit: unitLabel }), type: 'success' })
           }
         }
@@ -2610,6 +2611,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Décrémenter le rang (supprime le dernier rang au lieu de créer un nouveau)
   const handleDecrementRow = async () => {
+    if ((currentSectionId && !sectionHasNumericCounter(activeProjectSection)) || changingSectionRef.current || completingSectionRef.current) return
     // [AI:Claude] Anti double-clic (ref = blocage immédiat, pas soumis au cycle de rendu)
     if (isSavingRowRef.current) return
 
@@ -2622,7 +2624,7 @@ const ProjectCounter = () => {
       const increment = currentSectionId
         ? (counterUnit === 'cm' ? 0.5 : 1.0)
         : (parseFloat(counterIncrement) || (counterUnit === 'cm' ? 0.5 : 1.0))
-      const newRow = counterUnit === 'rows'
+      const newRow = isDiscreteCounterUnit(counterUnit)
         ? parseFloat(currentRow) - 1
         : Math.max(0, parseFloat(currentRow) - increment)
       const oldRow = currentRow
@@ -2730,7 +2732,7 @@ const ProjectCounter = () => {
 
   // Écran de verrouillage : affiche le rang courant et les contrôles +/- quand le timer tourne
   useMediaSession({
-    isActive: isTimerRunning && !isActionSection,
+    isActive: isTimerRunning && hasPrimaryCounter,
     projectName: project?.name || 'YarnFlow',
     sectionName: sections.find(s => s.id === currentSectionId)?.name || null,
     currentRow,
@@ -2802,6 +2804,9 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Changer la section en cours
   const handleChangeSection = async (sectionId) => {
+    if (changingSectionRef.current || completingSectionRef.current || isSavingRowRef.current) return
+    changingSectionRef.current = true
+    setIsChangingSection(true)
     // [AI:Claude] Fermer les notes et le menu quand on change de section
     setExpandedNotesSection(null)
     setSectionNotesText('')
@@ -2934,6 +2939,9 @@ const ProjectCounter = () => {
     } catch (err) {
       console.error('Erreur changement section:', err)
       showAlert({ message: t('alerts.sectionChangeFailed'), type: 'error' })
+    } finally {
+      changingSectionRef.current = false
+      setIsChangingSection(false)
     }
   }
 
@@ -3098,7 +3106,7 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Ouvrir modal d'ajout de section
   const openAddSectionModal = () => {
-    setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
+    setSectionForm({ name: '', description: '', total_rows: '', counter_unit: counterUnit || 'rows', notes: '' })
     setEditingSection(null)
     setShowAddSectionModal(true)
   }
@@ -3109,6 +3117,7 @@ const ProjectCounter = () => {
       name: section.name,
       description: section.description || '',
       total_rows: section.total_rows || '',
+      counter_unit: section.counter_unit || 'rows',
       notes: section.notes || ''
     })
     setEditingSection(section)
@@ -3185,6 +3194,10 @@ const ProjectCounter = () => {
         notes: sectionForm.notes.trim() || null
       }
 
+      if (!editingSection || (editingSection.progression_type || 'simple') === 'simple') {
+        sectionData.counter_unit = sectionForm.counter_unit || 'rows'
+      }
+
       // [AI:Claude] N'envoyer current_row QUE lors de la création, pas lors de la modification
       if (!editingSection) {
         sectionData.current_row = initialCurrentRow // Attribuer les rangs si demandé
@@ -3193,10 +3206,9 @@ const ProjectCounter = () => {
       if (editingSection) {
         // Modification
         await api.put(`/projects/${projectId}/sections/${editingSection.id}`, sectionData)
-        showAlert({ message: t('alerts.sectionUpdated'), type: 'success' })
       } else {
         // Création
-        const response = await api.post(`/projects/${projectId}/sections`, sectionData)
+        await api.post(`/projects/${projectId}/sections`, sectionData)
 
         // Si le projet était terminé, le remettre en cours
         if (project.status === 'completed') {
@@ -3214,7 +3226,7 @@ const ProjectCounter = () => {
       }
 
       setShowAddSectionModal(false)
-      setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
+      setSectionForm({ name: '', description: '', total_rows: '', counter_unit: 'rows', notes: '' })
       setEditingSection(null)
     } catch (err) {
       console.error('Erreur sauvegarde section:', err)
@@ -3432,7 +3444,6 @@ const ProjectCounter = () => {
         )
       )
 
-      showAlert({ message: t('alerts.notesSavedShort'), type: 'success' })
     } catch (err) {
       console.error('Erreur sauvegarde notes section:', err)
       showAlert({ message: t('alerts.notesSaveFailed'), type: 'error' })
@@ -3474,9 +3485,12 @@ const ProjectCounter = () => {
 
   // [AI:Claude] Marquer une section comme terminée/non terminée
   const handleToggleSectionComplete = async (section, e) => {
-    e.stopPropagation()
+    e?.stopPropagation()
+    if (completingSectionRef.current || changingSectionRef.current || isSavingRowRef.current) return
+    completingSectionRef.current = true
+    setIsCompletingSection(true)
     try {
-      const newState = section.is_completed === 1 ? 0 : 1
+      const newState = sectionIsCompleted(section) ? 0 : 1
 
       await api.post(`/projects/${projectId}/sections/${section.id}/complete`)
 
@@ -3489,10 +3503,12 @@ const ProjectCounter = () => {
         )
       )
 
+      const endedActiveSession = Boolean(newState && isTimerRunning && sessionId
+        && Number(section.id) === Number(currentSectionId))
+      if (endedActiveSession) await handleEndSession(section.current_row ?? currentRow)
+
       await fetchSections()
       await fetchProject()
-      let alertMessage = newState ? t('ui.sectionMarkedDone') : t('ui.sectionReopened')
-
       // [AI:Claude] Recharger les sections pour avoir les données à jour
       const response = await api.get(`/projects/${projectId}/sections`)
       const updatedSections = response.data.sections || []
@@ -3500,30 +3516,30 @@ const ProjectCounter = () => {
       // [AI:Claude] Si la section vient d'être marquée comme terminée
       if (newState && sections.length > 0) {
         // Vérifier si toutes les sections sont terminées
-        const allSectionsCompleted = updatedSections.every(s => s.is_completed === 1)
+        const allSectionsCompleted = updatedSections.length > 0 && updatedSections.every(sectionIsCompleted)
 
         if (allSectionsCompleted && project.status !== 'completed') {
-          await handleAllSectionsCompleted()
+          await handleAllSectionsCompleted(endedActiveSession)
           return
         }
       } else if (!newState && project.status === 'completed') {
         // [AI:Claude] Si une section a été réouverte et que le projet était terminé, réouvrir le projet
         await api.put(`/projects/${projectId}`, { status: 'in_progress' })
         await fetchProject()
-        alertMessage = t('ui.sectionReopenedProjectResumed')
       }
-
-      showAlert({ message: alertMessage, type: 'success' })
     } catch (err) {
       console.error('Erreur toggle section:', err)
       showAlert({ message: t('alerts.updateFailed'), type: 'error' })
+    } finally {
+      completingSectionRef.current = false
+      setIsCompletingSection(false)
     }
   }
 
   // [AI:Claude] Gérer la fin de toutes les sections - afficher modale de confirmation
-  const handleAllSectionsCompleted = async () => {
+  const handleAllSectionsCompleted = async (sessionAlreadyEnded = false) => {
     // Arrêter le timer si en cours
-    if (isTimerRunning) {
+    if (isTimerRunning && !sessionAlreadyEnded) {
       await handleEndSession()
     }
     // Afficher la modale de confirmation
@@ -3628,6 +3644,34 @@ const ProjectCounter = () => {
     })
   }
 
+  // Déplie la liste existante sans changer la section active. Le défilement
+  // attend son rendu afin que l'accès reste immédiatement utile sur mobile.
+  const handleToggleSectionsList = () => {
+    const shouldExpand = sectionsCollapsed || isFocusMode
+    if (isFocusMode) setFocusModeDismissed(true)
+    setSectionsCollapsed(!shouldExpand)
+    if (shouldExpand) {
+      sectionsListScrollPendingRef.current = true
+    }
+  }
+
+  // Le bloc complet est masqué en mode travail. Attendre le commit React qui le
+  // rend visible avant de défiler ; un requestAnimationFrame lancé dans le clic
+  // peut encore voir l'ancien DOM masqué et ne produire aucun mouvement.
+  useEffect(() => {
+    if (!sectionsListScrollPendingRef.current || sectionsCollapsed || isFocusMode) return
+    sectionsListScrollPendingRef.current = false
+    requestAnimationFrame(() => {
+      sectionsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [sectionsCollapsed, isFocusMode])
+
+  const handleSelectSectionFromList = async (sectionId, e) => {
+    e?.stopPropagation?.()
+    if (sectionId === currentSectionId || smartOnboardingBlocking) return
+    await handleChangeSection(sectionId)
+  }
+
   // [AI:Claude] Formater le temps (secondes → HH:MM:SS)
   const formatTime = (seconds) => {
     const h = Math.floor(seconds / 3600)
@@ -3637,6 +3681,11 @@ const ProjectCounter = () => {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
+  const projectTimeIncludingActiveSession = liveProjectTime(
+    project?.total_time,
+    elapsedTime,
+    Boolean(sessionId && isTimerRunning)
+  )
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-3 space-y-3">
@@ -3701,14 +3750,6 @@ const ProjectCounter = () => {
     if (currentSectionId && sections.length > 0) {
       const activeSection = sections.find(s => s.id === currentSectionId)
       if (activeSection) {
-        // [AI:Claude] Si la section est terminée, forcer 100%
-        if (activeSection.is_completed === 1 && activeSection.total_rows) {
-          return {
-            current: activeSection.total_rows,
-            total: activeSection.total_rows,
-            percentage: 100
-          }
-        }
         if (activeSection.total_rows) {
           return {
             current: activeSection.current_row || 0,
@@ -3757,6 +3798,29 @@ const ProjectCounter = () => {
 
   const progressData = getSectionProgressData()
   const progressPercentage = progressData.percentage
+  const activePatternStartRow = Number(activeProjectSection?.pattern_start_row)
+  const hasNextPatternRow = Boolean(
+    currentSectionId && activePatternStartRow && isDiscreteCounterUnit(counterUnit)
+    && !sectionIsCompleted(activeProjectSection)
+    && (progressData.total == null || Number(currentRow) < Number(progressData.total))
+  )
+  const patternRange = hasNextPatternRow
+    ? patternProgressRange(activePatternStartRow, currentRow, progressData.total)
+    : null
+  const remainingProgress = !sectionIsCompleted(activeProjectSection)
+    && progressData.total !== null
+    && Number(progressData.total) - Number(progressData.current) > 0
+    ? (counterUnit === 'cm'
+        ? Number(progressData.total - progressData.current).toFixed(1)
+        : Math.max(0, Math.floor(progressData.total) - Math.ceil(progressData.current)))
+    : null
+  const canShowNotesShortcut = !showNotes && !showEditModal && !showTechnicalDetailsModal
+    && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal
+    && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal
+    && !showStyleExamplesModal && !isAnyAlertOpen && !showProjectCompletionModal
+    && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal
+    && !showInstagramModal && !showSatisfactionModal && !showAssociatePatternModal
+    && !smartOnboardingBlocking && !isFocusMode
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-3 pb-40 sm:pb-16">
@@ -4245,153 +4309,88 @@ const ProjectCounter = () => {
         </div>
       </div>
 
-      {/* [AI:Claude] Barre 1 : Progression globale du projet. Masquée pendant les phases
-          bloquantes de l'onboarding smart — afficher "0%" avant que l'utilisatrice ait
-          indiqué si elle commence ou reprend l'ouvrage serait trompeur. */}
-      {!smartOnboardingBlocking && (
-      <div className="bg-white rounded-card border border-flow-mint px-4 py-3 mb-3 shadow-sm">
-        {/* Version Desktop */}
-        <div className="hidden sm:flex items-center gap-4">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-gray-600">{globalProgressData.mode === 'descriptive' ? t('ui.projectSteps') : t('ui.totalProgress')}</span>
-              <span className="text-xs font-bold text-primary-700">
-                {globalProgressData.mode === 'descriptive'
-                  ? t('ui.sectionsCompleted', { done: globalProgressData.completedSections, total: globalProgressData.totalSections })
-                  : `${globalProgressPercentage || 0}%`}
-              </span>
-            </div>
-            {globalProgressData.mode !== 'descriptive' && <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-              <div
-                className={`h-2 rounded-full transition-all duration-500 ${
-                  'bg-gradient-to-r from-primary-400 to-primary-600'
-                }`}
-                style={{ width: `${globalProgressPercentage || 0}%` }}
-              ></div>
-            </div>}
-            {globalProgressData.mode === 'descriptive' && (
-              <p className="text-xs text-gray-500">{descriptiveProgress}</p>
-            )}
-          </div>
-          {/* [AI:Claude] Tant qu'aucun temps n'a ete chronometre, on masque le
-              bloc entier plutot que d'afficher « 0min ». Un zero a cote d'une
-              barre de progression avancee se lit comme une incoherence — c'est
-              le cas du projet de demo, livre a 38 % sans temps (le temps
-              alimente les statistiques, on ne le fabrique pas), et celui de
-              tout projet qu'on vient de creer. */}
-          {(project?.total_time || 0) > 0 && (
-            <div className="text-center flex-shrink-0 border-l border-gray-100 pl-4">
-              <div className="text-sm font-semibold text-gray-800">
-                {(() => {
-                  const totalTime = project.total_time
-                  const totalHours = Math.floor(totalTime / 3600)
-                  const totalMins = Math.floor((totalTime % 3600) / 60)
-                  return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
-                })()}
-              </div>
-              <div className="text-[10px] text-gray-500">{t('ui.totalTime')}</div>
-            </div>
-          )}
-          <button
-            onClick={handleToggleProjectComplete}
-            className={`px-4 py-2 rounded-control font-medium text-sm transition whitespace-nowrap ${
-              project.status === 'completed'
-                ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                : 'bg-flow-mint text-flow-ink hover:bg-flow-mint/70'
-            }`}
-            title={project.status === 'completed' ? t('ui.reopenProject') : t('ui.markProjectDone')}
-          >
-            {project.status === 'completed' ? (
-              <span className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                {t('ui.done')}
-              </span>
-            ) : t('ui.markDone')}
-          </button>
-        </div>
-
-        {/* Version Mobile - Design simplifié */}
-        <div className="sm:hidden space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-medium text-gray-600">{globalProgressData.mode === 'descriptive' ? t('ui.projectSteps') : t('ui.progress')}</span>
-            <span className="font-bold text-primary-700">{globalProgressData.mode === 'descriptive' ? t('ui.sectionsCompleted', { done: globalProgressData.completedSections, total: globalProgressData.totalSections }) : `${globalProgressPercentage || 0}%`}</span>
-          </div>
-          {globalProgressData.mode !== 'descriptive' && <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-            <div
-              className={`h-2 rounded-full transition-all duration-500 ${
-                project.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-primary-400 to-primary-600'
-              }`}
-              style={{ width: `${globalProgressPercentage || 0}%` }}
-            ></div>
-          </div>}
-          {globalProgressData.mode === 'descriptive' && (
-            <p className="text-xs text-gray-500">{descriptiveProgress}</p>
-          )}
-          <div className="flex items-center justify-between gap-2">
-            {/* Le div reste en place meme vide : il tient la premiere place du
-                justify-between, sans quoi le bouton glisserait a gauche. */}
-            <div className="text-xs text-gray-500">
-              {(() => {
-                const totalTime = project?.total_time || 0
-                if (!totalTime) return null
-                const totalHours = Math.floor(totalTime / 3600)
-                const totalMins = Math.floor((totalTime % 3600) / 60)
-                return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
-              })()}
-            </div>
-            <button
-              onClick={handleToggleProjectComplete}
-              className={`px-3 py-1.5 rounded-control font-medium text-xs transition ${
-                project.status === 'completed'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-flow-mint text-flow-ink'
-              }`}
-            >
-              {project.status === 'completed' ? t('ui.doneCheck') : t('ui.markDone')}
-            </button>
-          </div>
-        </div>
-      </div>
+      {!smartOnboardingBlocking && smartOnboardingPhase !== 'workModeIntro' && !isTimerRunning && project.status !== 'completed' && (
+        <button
+          type="button"
+          onClick={handleStartSession}
+          disabled={isChangingSection || isCompletingSection}
+          className="sm:hidden mb-3 w-full flex items-center justify-center gap-2 py-3 bg-primary-700 text-white rounded-control text-sm font-semibold hover:bg-primary-800 active:scale-[0.99] transition shadow-sm disabled:opacity-50"
+        >
+          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+          {t('ui.startWorkMode')}
+        </button>
       )}
 
-      {project?.pattern_notes && !smartOnboardingBlocking && !isFocusMode && (
-        <details className="bg-amber-50 border border-amber-200 rounded-control px-4 py-3 mb-3">
-          <summary className="cursor-pointer text-sm font-semibold text-amber-900">
-            {t('ui.importantPatternNotes')}
-          </summary>
-          <p className="mt-2 text-sm text-amber-950 whitespace-pre-line">{project.pattern_notes}</p>
-        </details>
-      )}
-
-      {!smartOnboardingBlocking && isActionSection && (
-        <div className="bg-primary-50 border border-primary-200 rounded-control p-4 mb-3 shadow-sm">
-          <p className="text-sm font-semibold text-primary-900 mb-1">{t('ui.actionSectionTitle')}</p>
-          <div className="text-sm text-gray-700 leading-relaxed mb-4">
-            {renderDescriptionLines(activeProjectSection.description || '')}
-          </div>
+      {sections.length > 0 && !smartOnboardingBlocking && (
+        <div className="mb-2 flex justify-end">
           <button
             type="button"
-            onClick={(event) => handleToggleSectionComplete(activeProjectSection, event)}
-            className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-control text-sm font-semibold"
+            onClick={handleToggleSectionsList}
+            aria-expanded={!sectionsCollapsed}
+            aria-controls="project-sections-list"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-control border border-primary-200 bg-white text-primary-800 text-sm font-semibold hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
           >
-            {Number(activeProjectSection.is_completed) === 1 ? t('ui.reopenSection') : t('ui.markDone')}
+            {sectionsCollapsed
+              ? t('ui.viewProjectSteps', { count: sections.length })
+              : t('ui.hideProjectSteps')}
+            <svg
+              className={`w-4 h-4 transition-transform ${sectionsCollapsed ? '' : 'rotate-180'}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </button>
         </div>
       )}
 
+      <ProjectCurrentStep
+        section={smartOnboardingBlocking ? null : activeProjectSection}
+        nextSection={nextProjectSection}
+        renderInstructions={renderDescriptionLines}
+        onInstructionsScroll={() => { if (showAiHelpHint) dismissAiHelpHint() }}
+        t={t}
+        busy={isSavingRow || isChangingSection || isCompletingSection}
+        onToggleComplete={handleToggleSectionComplete}
+        onContinue={handleChangeSection}
+        onFinishProject={handleAllSectionsCompleted}
+        projectCompleted={project.status === 'completed'}
+        prioritizeControls={isFocusMode}
+      >
+        {!smartOnboardingBlocking && isActionSection && (
+          <button
+            type="button"
+            disabled={isChangingSection}
+            onClick={() => handleOpenAiHelp()}
+            className="mx-4 mb-4 flex items-center gap-1.5 px-3 py-1.5 text-primary-700 text-sm font-medium hover:bg-primary-50 rounded-control disabled:opacity-50"
+          >
+            <FlowMascot pose="content" size={26} className="hidden sm:block" />
+            {t('ui.aiHelpOnRow')}
+          </button>
+        )}
       {/* [AI:Claude] Barre 2 : Compteur de la section active. Masquée pendant les
           phases bloquantes de l'onboarding smart (choice/pickSection/setProgress) — même
           principe que isFocusMode ci-dessous, appliqué en plus ici car cette barre n'est
           normalement jamais masquée (ni même en mode travail). États indépendants, juste
           combinés au point de rendu — isFocusMode n'est pas modifié. */}
-      {!smartOnboardingBlocking && !isActionSection && (
-      <div ref={demoCounterRef} className="bg-primary-200 rounded-control border border-primary-200 p-4 mb-3 shadow-sm scroll-mt-20">
-        {currentSectionId && sections.find(s => s.id === currentSectionId)?.pattern_start_row && counterUnit === 'rows' && (
-          <p className="text-xs font-medium text-primary-800 mb-2">
-            {t('ui.nextPatternRow', {
-              row: Number(sections.find(s => s.id === currentSectionId).pattern_start_row) + Number(currentRow || 0)
-            })}
+      {!smartOnboardingBlocking && (
+      <div ref={demoCounterRef} className="bg-primary-200 rounded-control border border-primary-200 p-3 sm:p-4 mb-3 shadow-sm scroll-mt-20">
+        {!hasPrimaryCounter && (
+          <p className="text-sm font-medium text-primary-900 mb-3">
+            {t(isActionSection ? 'ui.timerOnlyTracking' : 'ui.unitlessCompositeTracking')}
           </p>
+        )}
+        {(hasNextPatternRow || remainingProgress !== null) && (
+          <div className="sm:hidden flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium text-primary-800 mb-2" aria-live="polite">
+            {hasNextPatternRow && (
+              <span>{patternRange?.total !== null
+                ? t(counterUnit === 'rounds' ? 'ui.patternRoundOfTotal' : 'ui.patternRowOfTotal', patternRange)
+                : t(counterUnit === 'rounds' ? 'ui.patternRoundNumber' : 'ui.patternRowNumber', patternRange)}</span>
+            )}
+            {hasNextPatternRow && remainingProgress !== null && <span aria-hidden="true">·</span>}
+            {remainingProgress !== null && (
+              <span>{t(counterUnit === 'cm' ? 'ui.flowCmLeft' : counterUnit === 'rounds' ? 'ui.flowRoundsLeft' : 'ui.flowRowsLeft', { count: remainingProgress })}</span>
+            )}
+          </div>
         )}
         {isDemoProject && demoGuideStep === 'row' && (
           <div className="flex items-start gap-2.5 mb-3 pr-6 relative" aria-live="polite">
@@ -4429,9 +4428,9 @@ const ProjectCounter = () => {
         ) : isTimerRunning ? (
           <div className="flex items-start justify-between gap-2 mb-2">
             <div>
-              {progressData.total !== null && progressData.total - progressData.current > 0 && (
-                <p className="text-xs font-medium text-primary-800 mb-1">
-                  {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : 'ui.flowRowsLeft', {
+              {!sectionIsCompleted(activeProjectSection) && progressData.total !== null && progressData.total - progressData.current > 0 && (
+                <p className="hidden sm:block text-xs font-medium text-primary-800 mb-1">
+                  {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : counterUnit === 'rounds' ? 'ui.flowRoundsLeft' : 'ui.flowRowsLeft', {
                     /* [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : total_rows peut
                        être decimal en base (champ partage avec le mode cm). Le "/N" affiche
                        Math.floor(total), donc "reste" doit se baser sur ce meme total arrondi
@@ -4447,7 +4446,7 @@ const ProjectCounter = () => {
                   total fiable pour "Encore X rangs" (progressData.total est null par design,
                   voir progression_type). On l'indique explicitement plutôt que de laisser un
                   compteur libre silencieux, pour ne pas donner l'impression d'un oubli. */}
-              {progressData.total === null && sections.find(s => s.id === currentSectionId)?.progression_type === 'composite' && (
+              {hasPrimaryCounter && progressData.total === null && sections.find(s => s.id === currentSectionId)?.progression_type === 'composite' && (
                 <p className="text-xs font-medium text-primary-800 mb-1">
                   {t('ui.compositeProgressMarker')} — {t('ui.compositeCounterHintByUnit', { count: Number(currentRow) || 0, unit: progressUnitLabel(counterUnit) })}
                 </p>
@@ -4479,15 +4478,15 @@ const ProjectCounter = () => {
                 constate en reel). Flux flex normal a la place, comme la variante "content"
                 plus bas dans ce fichier qui n'a jamais eu ce probleme : Flow reserve sa propre
                 place, aucun calcul de hauteur a maintenir. */}
-            <FlowMascot pose="cestParti" size={64} className="flex-shrink-0" />
+            <FlowMascot pose="cestParti" size={64} className="hidden sm:block flex-shrink-0" />
           </div>
         ) : (
           <>
-            {progressData.total !== null && progressData.total - progressData.current > 0 && (
-              <div className="flex items-center gap-2.5 mb-2">
-                <FlowMascot pose="content" size={52} className="flex-shrink-0" />
+            {!sectionIsCompleted(activeProjectSection) && progressData.total !== null && progressData.total - progressData.current > 0 && (
+              <div className="hidden sm:flex items-center gap-2.5 mb-2">
+                <FlowMascot pose="content" size={52} className="hidden sm:block flex-shrink-0" />
                 <p className="text-sm font-medium text-primary-800">
-                  {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : 'ui.flowRowsLeft', {
+                  {t(counterUnit === 'cm' ? 'ui.flowCmLeft' : counterUnit === 'rounds' ? 'ui.flowRoundsLeft' : 'ui.flowRowsLeft', {
                     count: counterUnit === 'cm'
                       ? Number(progressData.total - progressData.current).toFixed(1)
                       : Math.max(0, Math.floor(progressData.total) - Math.ceil(progressData.current))
@@ -4497,9 +4496,9 @@ const ProjectCounter = () => {
             )}
             {/* [AI:Claude] Section composite : voir commentaire équivalent dans la variante
                 "timer en cours" ci-dessus — même logique, hors session active. */}
-            {progressData.total === null && sections.find(s => s.id === currentSectionId)?.progression_type === 'composite' && (
+            {hasPrimaryCounter && progressData.total === null && sections.find(s => s.id === currentSectionId)?.progression_type === 'composite' && (
               <div className="flex items-center gap-2.5 mb-2">
-                <FlowMascot pose="content" size={52} className="flex-shrink-0" />
+                <FlowMascot pose="content" size={52} className="hidden sm:block flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium text-primary-800">{t('ui.compositeProgressMarker')}</p>
                   <p className="text-xs text-primary-700">{t('ui.compositeCounterHintByUnit', { count: Number(currentRow) || 0, unit: progressUnitLabel(counterUnit) })}</p>
@@ -4509,7 +4508,7 @@ const ProjectCounter = () => {
           </>
         )}
         {/* Mobile: 2 lignes | Desktop: 1 ligne avec tout bien réparti */}
-        <div className="flex flex-col gap-3 sm:gap-0">
+        <div className="flex flex-col gap-2 sm:gap-0">
           {/* Ligne 1 mobile: Section + Compteur | Desktop: cachée car tout sur une seule ligne */}
           <div className="sm:hidden order-1">
             {/* [AI:Claude] Retour utilisatrice : en mode travail, le compteur (l'élément qu'on
@@ -4520,16 +4519,16 @@ const ProjectCounter = () => {
             {isFocusMode ? (
               <div className="space-y-2">
                 <div className="text-left min-w-0">
-                  <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
-                  <div className="font-semibold text-flow-ink text-sm line-clamp-2">
+                  {!activeProjectSection && (<div className="text-xs text-gray-500">{t('ui.activeSection')}</div>)}
+                  {!activeProjectSection && (<div className="font-semibold text-flow-ink text-sm line-clamp-2">
                     {currentSectionId ? (
                       sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                     ) : (
                       t('ui.wholeProject')
                     )}
-                  </div>
+                  </div>)}
                 </div>
-                <div ref={primaryCounterRef} className="flex items-center gap-3">
+                {hasPrimaryCounter && <div ref={primaryCounterRef} className="flex items-center gap-3">
                   <button
                     onClick={handleDecrementRow}
                     disabled={currentRow === 0}
@@ -4555,37 +4554,38 @@ const ProjectCounter = () => {
                         className="block w-full min-w-0 max-w-full px-1 text-6xl font-bold text-primary-600 text-center outline-none tabular-nums appearance-none bg-transparent"
                       />
                     ) : (
-                      <div className="text-6xl font-bold text-primary-600 tabular-nums leading-tight">
-                        {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
+                      <div className={`${progressData.total ? 'text-3xl sm:text-5xl' : 'text-6xl'} font-bold text-primary-600 tabular-nums leading-tight`}>
+                        <CurrentStepProgress current={currentRow} total={progressData.total} unit={counterUnit} unitLabel={progressUnitLabel(counterUnit)} locale={i18n.resolvedLanguage || i18n.language} />
                       </div>
                     )}
-                    <div className="text-xs text-gray-400 leading-none mt-1">
-                      {progressData.total
-                        ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))} ${counterUnit === 'cm' ? 'cm' : 'rangs'}`
-                        : counterUnit === 'cm' ? 'cm' : 'rangs'}
-                    </div>
+                    {(!progressData.total || isEditingCounter) && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {isEditingCounter && progressData.total ? '/ ' + Number(progressData.total).toLocaleString(i18n.language) + ' ' : ''}{progressUnitLabel(counterUnit)}
+                      </div>
+                    )}
                   </div>
                   <button
                     onClick={handleIncrementRow}
-                    className={`w-14 h-14 flex-shrink-0 bg-primary-600 text-white rounded-control text-3xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
+                    disabled={isSavingRow || isChangingSection || isCompletingSection || sectionIsCompleted(activeProjectSection)}
+                    className={`w-14 h-14 flex-shrink-0 bg-primary-600 text-white rounded-control text-3xl font-bold hover:bg-primary-700 active:scale-95 transition disabled:opacity-40 shadow-md select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
                   >
                     +
                   </button>
-                </div>
+                </div>}
               </div>
             ) : (
               <div className="flex items-center justify-between gap-2">
                 {/* Section active mobile */}
                 <div className="text-left flex-shrink min-w-0">
-                  <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
-                  <div className="font-semibold text-flow-ink text-sm line-clamp-2 max-w-[180px]">
+                  {!activeProjectSection && (<div className="text-xs text-gray-500">{t('ui.activeSection')}</div>)}
+                  {!activeProjectSection && (<div className="font-semibold text-flow-ink text-sm line-clamp-2 max-w-[180px]">
                     {currentSectionId ? (
                       sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                     ) : (
                       t('ui.wholeProject')
                     )}
-                  </div>
-                  {showMoreOptions && (
+                  </div>)}
+                  {hasPrimaryCounter && showMoreOptions && (
                     <button
                       onClick={() => setShowReminderManager(true)}
                       className={`mt-0.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
@@ -4599,7 +4599,7 @@ const ProjectCounter = () => {
                 </div>
 
                 {/* Compteur mobile */}
-                <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
+                {hasPrimaryCounter && <div ref={primaryCounterRef} className="flex items-center gap-2 min-w-0">
                   <button
                     onClick={handleDecrementRow}
                     disabled={currentRow === 0}
@@ -4608,7 +4608,7 @@ const ProjectCounter = () => {
                     −
                   </button>
                   <div
-                    className="w-[104px] min-w-0 bg-white rounded-control shadow-sm border border-gray-200 text-center px-2 py-2 cursor-pointer overflow-hidden"
+                    className={`${progressData.total ? 'w-[160px]' : 'w-[104px]'} min-w-0 bg-white rounded-control shadow-sm border border-gray-200 text-center px-2 py-2 cursor-pointer overflow-hidden`}
                     onClick={handleCounterClick}
                     title={t('ui.clickToEdit')}
                   >
@@ -4625,25 +4625,26 @@ const ProjectCounter = () => {
                         className="block w-full min-w-0 max-w-full px-0 text-5xl font-bold text-primary-600 text-center outline-none tabular-nums appearance-none bg-transparent"
                       />
                     ) : (
-                      <div className="text-5xl font-bold text-primary-600 tabular-nums leading-tight">
-                        {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
+                      <div className={`${progressData.total ? 'text-3xl' : 'text-5xl'} font-bold text-primary-600 tabular-nums leading-tight`}>
+                        <CurrentStepProgress current={currentRow} total={progressData.total} unit={counterUnit} unitLabel={progressUnitLabel(counterUnit)} locale={i18n.resolvedLanguage || i18n.language} />
                       </div>
                     )}
-                    <div className="text-[10px] text-gray-400 leading-none mt-0.5">
-                      {progressData.total
-                        ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))} ${counterUnit === 'cm' ? 'cm' : 'rangs'}`
-                        : counterUnit === 'cm' ? 'cm' : 'rangs'}
-                    </div>
+                    {(!progressData.total || isEditingCounter) && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {isEditingCounter && progressData.total ? '/ ' + Number(progressData.total).toLocaleString(i18n.language) + ' ' : ''}{progressUnitLabel(counterUnit)}
+                      </div>
+                    )}
                   </div>
                   <div className="relative">
                     <button
                       onClick={handleIncrementRow}
-                      className={`w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
+                      disabled={isSavingRow || isChangingSection || isCompletingSection || sectionIsCompleted(activeProjectSection)}
+                      className={`w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition disabled:opacity-40 shadow-md select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
                     >
                       +
                     </button>
                   </div>
-                </div>
+                </div>}
               </div>
             )}
           </div>
@@ -4651,19 +4652,19 @@ const ProjectCounter = () => {
           {/* Retour à la ligne à toute largeur si Session+Total+Pause+Arrêter ne
               tiennent pas sur une seule ligne — un seuil fixe (sm:, lg:...) laissait
               toujours une largeur intermédiaire où ça débordait encore */}
-          <div className="order-3 sm:order-1 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+          <div className="order-3 sm:order-1 flex flex-wrap items-center justify-between gap-2 sm:gap-4 pt-1 sm:pt-0">
             {/* Section active - visible uniquement desktop */}
             <div className="hidden sm:block text-left flex-shrink-0">
-              <div className="text-xs text-gray-500">{t('ui.activeSection')}</div>
+              {!activeProjectSection && (<div className="text-xs text-gray-500">{t('ui.activeSection')}</div>)}
               <div className="flex items-center gap-1.5">
-                <div className="font-semibold text-flow-ink text-base">
+                {!activeProjectSection && (<div className="font-semibold text-flow-ink text-base">
                   {currentSectionId ? (
                     sections.find(s => s.id === currentSectionId)?.name || t('ui.wholeProject')
                   ) : (
                     t('ui.wholeProject')
                   )}
-                </div>
-                {!isFocusMode && showMoreOptions && (
+                </div>)}
+                {hasPrimaryCounter && !isFocusMode && showMoreOptions && (
                   <button
                     onClick={() => setShowReminderManager(true)}
                     className={`flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium transition ${reminders.filter(r => !r.done).length > 0 ? 'text-amber-600 bg-amber-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
@@ -4678,7 +4679,7 @@ const ProjectCounter = () => {
             </div>
 
             {/* Compteur - visible uniquement desktop */}
-            <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+            {hasPrimaryCounter && <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={handleDecrementRow}
                 disabled={currentRow === 0}
@@ -4687,7 +4688,7 @@ const ProjectCounter = () => {
                 −
               </button>
               <div
-                className="w-[104px] min-w-0 bg-white rounded-control shadow-sm border border-gray-200 text-center px-2 py-2 cursor-pointer overflow-hidden"
+                className={`${progressData.total ? 'w-[160px]' : 'w-[104px]'} min-w-0 bg-white rounded-control shadow-sm border border-gray-200 text-center px-2 py-2 cursor-pointer overflow-hidden`}
                 onClick={handleCounterClick}
                 title={t('ui.clickToEdit')}
               >
@@ -4704,23 +4705,24 @@ const ProjectCounter = () => {
                     className="block w-full min-w-0 max-w-full px-0 text-5xl font-bold text-primary-600 text-center outline-none tabular-nums appearance-none bg-transparent"
                   />
                 ) : (
-                  <div className="text-5xl font-bold text-primary-600 tabular-nums leading-tight">
-                    {counterUnit === 'cm' ? Number(currentRow).toFixed(1) : Math.floor(Number(currentRow) || 0)}
+                  <div className={`${progressData.total ? 'text-3xl' : 'text-5xl'} font-bold text-primary-600 tabular-nums leading-tight`}>
+                    <CurrentStepProgress current={currentRow} total={progressData.total} unit={counterUnit} unitLabel={progressUnitLabel(counterUnit)} locale={i18n.resolvedLanguage || i18n.language} />
                   </div>
                 )}
-                <div className="text-[10px] text-gray-400 leading-none mt-0.5">
-                  {progressData.total
-                    ? `/ ${counterUnit === 'cm' ? Number(progressData.total).toFixed(1) : Math.floor(Number(progressData.total))} ${counterUnit === 'cm' ? 'cm' : 'rangs'}`
-                    : counterUnit === 'cm' ? 'cm' : 'rangs'}
-                </div>
+                {(!progressData.total || isEditingCounter) && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        {isEditingCounter && progressData.total ? '/ ' + Number(progressData.total).toLocaleString(i18n.language) + ' ' : ''}{progressUnitLabel(counterUnit)}
+                      </div>
+                    )}
               </div>
               <button
                 onClick={handleIncrementRow}
-                className={`w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition shadow-md select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
+                disabled={isSavingRow || isChangingSection || isCompletingSection || sectionIsCompleted(activeProjectSection)}
+                className={`w-11 h-11 bg-primary-600 text-white rounded-control text-2xl font-bold hover:bg-primary-700 active:scale-95 transition disabled:opacity-40 shadow-md select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
               >
                 +
               </button>
-            </div>
+            </div>}
 
             {/* Timers (gauche mobile, centre desktop) */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink">
@@ -4734,6 +4736,15 @@ const ProjectCounter = () => {
                     </svg>
                   )}
                 </div>
+              </div>
+
+              {/* Mobile : total de l'ouvrage incluant la session active non encore
+                  enregistree. Sur desktop, la vue d'ensemble conserve cet affichage. */}
+              <div className="sm:hidden text-center border-l border-gray-300 pl-2">
+                <div className="text-base font-bold text-primary-700">
+                  {formatTime(projectTimeIncludingActiveSession)}
+                </div>
+                <div className="text-[10px] text-gray-500">{t('ui.projectTotalTime')}</div>
               </div>
 
               {/* Temps total de la section — masqué en mode travail (redondant avec Session)
@@ -4750,7 +4761,7 @@ const ProjectCounter = () => {
                 if (!(Number(currentSection.time_spent) > 0)) return null
 
                 return (
-                  <div className="text-center border-l border-gray-300 pl-2 sm:pl-3">
+                  <div className="hidden sm:block text-center border-l border-gray-300 pl-3">
                     <div className="text-sm sm:text-lg font-semibold text-primary-700">
                       {currentSection.time_formatted}
                     </div>
@@ -4809,6 +4820,18 @@ const ProjectCounter = () => {
             </div>
           </div>
 
+          {/* Le detail par etape reste une information secondaire sur mobile. Il est
+              conserve dans Plus d'options, hors du duo Session / Total ouvrage. */}
+          {!isFocusMode && showMoreOptions && (() => {
+            const currentSection = currentSectionId ? sections.find(s => s.id === currentSectionId) : null
+            if (!currentSection || !(Number(currentSection.time_spent) > 0)) return null
+            return (
+              <div className="sm:hidden order-4 w-full pt-2 border-t border-primary-300/50 text-xs text-gray-500">
+                {t('ui.stepTime')}: <span className="font-semibold text-primary-700">{currentSection.time_formatted}</span>
+              </div>
+            )
+          })()}
+
         {hasJacquardAccess && currentSectionId && counterUnit === 'rows' && activeSectionCharts.length > 0 && (
           <div className="order-2">
             {activeSectionCharts.length > 1 && (
@@ -4863,7 +4886,7 @@ const ProjectCounter = () => {
         {!isTimerRunning && project.status !== 'completed' && (
           <button
             onClick={handleStartSession}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-control text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
+            className="hidden sm:flex mt-3 w-full items-center justify-center gap-2 py-2.5 bg-primary-700 text-white rounded-control text-sm font-semibold hover:bg-primary-800 transition shadow-sm select-none"
           >
             <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             {t('ui.startWorkMode')}
@@ -4874,9 +4897,9 @@ const ProjectCounter = () => {
           <div className="relative">
             <button
               onClick={() => { handleOpenAiHelp(); if (showAiHelpHint) dismissAiHelpHint() }}
-              className={`mt-3 mx-auto min-h-11 w-fit flex items-center justify-center gap-2 px-4 py-1.5 bg-primary-50 border border-primary-200 text-primary-800 rounded-control text-sm font-semibold hover:bg-primary-100 hover:border-primary-300 transition select-none ${isDemoProject && demoGuideStep === 'flow' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
+              className={`mt-2 mx-auto min-h-9 w-fit flex items-center justify-center gap-1.5 px-3 py-1 text-primary-700 rounded-control text-xs font-medium hover:bg-primary-50 transition select-none ${isDemoProject && demoGuideStep === 'flow' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
             >
-              <FlowMascot pose="content" size={30} className="flex-shrink-0" />
+              <FlowMascot pose="content" size={24} className="hidden sm:block flex-shrink-0" />
               {t('ui.aiHelpOnRow')}
             </button>
             {/* [AI:Claude] 2026-09-27 — Coachmark repositionné SOUS le bouton (retour
@@ -4901,9 +4924,9 @@ const ProjectCounter = () => {
         ) : (
           <button
             onClick={() => handleOpenAiHelp()}
-            className={`mt-2 mx-auto min-h-11 w-fit flex items-center justify-center gap-1.5 px-3 py-1.5 text-primary-700 text-sm font-medium hover:text-primary-900 hover:bg-primary-50 rounded-control transition select-none ${isDemoProject && demoGuideStep === 'flow' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
+            className={`mt-1 mx-auto min-h-9 w-fit flex items-center justify-center gap-1.5 px-3 py-1 text-primary-700 text-xs sm:text-sm font-medium hover:text-primary-900 hover:bg-primary-50 rounded-control transition select-none ${isDemoProject && demoGuideStep === 'flow' ? 'ring-4 ring-amber-300 ring-offset-2' : ''}`}
           >
-            <FlowMascot pose="content" size={26} className="flex-shrink-0" />
+            <FlowMascot pose="content" size={26} className="hidden sm:block flex-shrink-0" />
             {t('ui.aiHelpOnRow')}
           </button>
         )}
@@ -4948,13 +4971,19 @@ const ProjectCounter = () => {
                 empêchait d'atteindre le contenu en dessous (patron, sections...). Repliés
                 par défaut hors mode travail (résumé compact + "Plus d'options" pour les
                 déplier) ; toujours tous visibles en mode travail, où on en a besoin. */}
-            {secondaryCounters.length > 0 && !isFocusMode && !showSecondaryCountersExpanded && (
+            {!isFocusMode && (
               <button
-                onClick={() => setShowSecondaryCountersExpanded(true)}
+                onClick={() => setShowSecondaryCountersExpanded(value => !value)}
+                aria-expanded={showSecondaryCountersExpanded}
                 className="w-full flex items-center justify-between text-xs text-gray-500 hover:text-primary-600 transition py-1"
               >
                 <span>{t('ui.secondaryCountersFoldedSummary', { count: secondaryCounters.length })}</span>
-                <span className="text-primary-600 font-medium">{t('ui.showSecondaryCounters')}</span>
+                <span className="inline-flex items-center gap-1 text-primary-600 font-medium">
+                  {showSecondaryCountersExpanded ? t('ui.hideSecondaryCounters') : t('ui.manageSecondaryCounters')}
+                  <svg className={`w-3 h-3 transition-transform ${showSecondaryCountersExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </span>
               </button>
             )}
             {(isFocusMode || showSecondaryCountersExpanded) && secondaryCounters.map(counter => (
@@ -5005,16 +5034,16 @@ const ProjectCounter = () => {
                   <div className="space-y-2">
                     {/* Ligne 1 : label + menu ⋮ */}
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      <span className="min-w-0 flex-1 break-words pr-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
                         {counter.label || t('ui.counterWord')}
                       </span>
-                      <div className="relative">
+                      <div className="relative flex-shrink-0">
                         {showSecondaryMenuFor === counter.id && (
                           <div className="fixed inset-0 z-10" onClick={() => setShowSecondaryMenuFor(null)} />
                         )}
                         <button
                           onClick={() => setShowSecondaryMenuFor(v => v === counter.id ? null : counter.id)}
-                          className="w-6 h-6 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition relative z-20"
+                          className="w-10 h-10 sm:w-6 sm:h-6 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-800 transition relative z-20"
                           title={t('ui.options')}
                         >
                           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
@@ -5052,7 +5081,7 @@ const ProjectCounter = () => {
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => handleSecondaryDecrement(counter.id)}
-                        className="w-8 h-8 bg-gray-100 text-gray-600 rounded-full text-base font-bold hover:bg-gray-200 transition flex-shrink-0"
+                        className="w-11 h-11 sm:w-8 sm:h-8 bg-gray-100 text-gray-600 rounded-full text-lg sm:text-base font-bold hover:bg-gray-200 transition flex-shrink-0"
                       >
                         −
                       </button>
@@ -5067,7 +5096,7 @@ const ProjectCounter = () => {
                       <button
                         onClick={() => handleSecondaryIncrement(counter.id)}
                         disabled={counter.target !== null && counter.count >= counter.target && !counter.sequence}
-                        className={`w-8 h-8 rounded-full text-base font-bold transition flex-shrink-0 ${
+                        className={`w-11 h-11 sm:w-8 sm:h-8 rounded-full text-lg sm:text-base font-bold transition flex-shrink-0 ${
                           counter.target !== null && counter.count >= counter.target && !counter.sequence
                             ? 'bg-primary-600 text-white cursor-not-allowed opacity-60'
                             : 'bg-primary-600 text-white hover:bg-primary-700'
@@ -5109,20 +5138,8 @@ const ProjectCounter = () => {
             {/* [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : permettre de replier les
                 compteurs secondaires directement ici (symétrique au bouton pour les déplier),
                 sans avoir à remonter jusqu'au "Plus d'options" tout en haut de la carte. */}
-            {!isFocusMode && showSecondaryCountersExpanded && secondaryCounters.length > 0 && (
-              <button
-                onClick={() => setShowSecondaryCountersExpanded(false)}
-                className="w-full flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
-              >
-                {t('ui.hideSecondaryCounters')}
-                <svg className="w-3 h-3 rotate-180 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            )}
-
             {/* Ajouter un compteur — masqué en mode travail (config, pas du comptage actif) */}
-            {!isFocusMode && (isAddingCounter ? (
+            {!isFocusMode && showSecondaryCountersExpanded && (isAddingCounter ? (
               <div className="flex items-center gap-2 flex-wrap">
                 <input
                   type="text"
@@ -5188,49 +5205,149 @@ const ProjectCounter = () => {
           </div>
         )}
 
-        {/* [AI:Claude] Mode travail : pendant que le timer tourne EN MODE TRAVAIL (isFocusMode),
-            les instructions de la section active restent affichées sous le compteur au lieu de
-            vivre uniquement dans la liste des sections plus bas — évite
-            d'avoir à scroller loin du compteur à chaque rang pour relire le patron. Texte complet,
-            jamais tronqué, mais dans sa propre zone à défilement borné en hauteur — sans
-            ça, un patron long fait grandir tout le bloc sticky au-delà de l'écran et le
-            compteur lui-même finit par sortir de la vue en scrollant les instructions.
-            [AI:Claude] 2026-09-21 — Retour utilisatrice (bêta) : condition sur isTimerRunning
-            seul faisait que ce panneau (potentiellement tres grand) restait affiche meme apres
-            avoir quitte le mode travail ("Revenir en plein ecran"), rendant le reste de la page
-            difficile a atteindre. Sur isFocusMode desormais, comme le reste du "mode travail". */}
-        {isFocusMode && currentSectionId && (() => {
-          const workSection = sections.find(s => s.id === currentSectionId)
-          if (!workSection?.description) return null
-
-          return (
-            <div className="mt-3 pt-3 border-t border-primary-300/50">
-              <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
-                {t('ui.instructions')}
-              </div>
-              <div
-                className="text-sm text-gray-700 leading-relaxed max-h-[45vh] overflow-y-auto pr-1"
-                onScroll={() => {
-                  if (showAiHelpHint) dismissAiHelpHint()
-                }}
-              >
-                {renderDescriptionLines(workSection.description)}
-              </div>
-            </div>
-          )
-        })()}
 
       </div>
       )}
 
-      {isFocusMode && showCompactWorkCounter && !isActionSection && (
-        <div className="sm:hidden fixed top-16 left-0 right-0 z-40 px-4 pointer-events-none">
-          <div className="max-w-7xl mx-auto h-14 px-2 bg-white border border-primary-200 rounded-b-control shadow-[0_8px_18px_rgba(31,41,55,0.18)] flex items-center gap-2 pointer-events-auto">
-            <div className="flex-1 min-w-0 px-1 font-medium text-gray-500 text-xs truncate">
-              {currentSectionId
-                ? sections.find(section => section.id === currentSectionId)?.name || t('ui.wholeProject')
-                : t('ui.wholeProject')}
+      </ProjectCurrentStep>
+
+      {/* [AI:Claude] Barre 1 : Progression globale du projet. Masquée pendant les phases
+          bloquantes de l'onboarding smart — afficher "0%" avant que l'utilisatrice ait
+          indiqué si elle commence ou reprend l'ouvrage serait trompeur. */}
+      {!smartOnboardingBlocking && (
+      <div className="mb-3">
+        {/* Version Desktop */}
+        <div className="hidden sm:flex items-center gap-4 bg-white rounded-card border border-flow-mint px-4 py-3 shadow-sm">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-gray-600">{t('ui.projectOverview')}</span>
+              <span className="text-xs font-bold text-primary-700">
+                {globalProgressData.mode === 'descriptive'
+                  ? t('ui.sectionsCompleted', { done: globalProgressData.completedSections, total: globalProgressData.totalSections })
+                  : `${globalProgressPercentage || 0}%`}
+              </span>
             </div>
+            {globalProgressData.mode !== 'descriptive' && <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  'bg-gradient-to-r from-primary-400 to-primary-600'
+                }`}
+                style={{ width: `${globalProgressPercentage || 0}%` }}
+              ></div>
+            </div>}
+            {globalProgressData.mode === 'descriptive' && (
+              <p className="text-xs text-gray-500">{descriptiveProgress}</p>
+            )}
+          </div>
+          {/* [AI:Claude] Tant qu'aucun temps n'a ete chronometre, on masque le
+              bloc entier plutot que d'afficher « 0min ». Un zero a cote d'une
+              barre de progression avancee se lit comme une incoherence — c'est
+              le cas du projet de demo, livre a 38 % sans temps (le temps
+              alimente les statistiques, on ne le fabrique pas), et celui de
+              tout projet qu'on vient de creer. */}
+          {(project?.total_time || 0) > 0 && (
+            <div className="text-center flex-shrink-0 border-l border-gray-100 pl-4">
+              <div className="text-sm font-semibold text-gray-800">
+                {(() => {
+                  const totalTime = project.total_time
+                  const totalHours = Math.floor(totalTime / 3600)
+                  const totalMins = Math.floor((totalTime % 3600) / 60)
+                  return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
+                })()}
+              </div>
+              <div className="text-[10px] text-gray-500">{t('ui.totalTime')}</div>
+            </div>
+          )}
+          <button
+            onClick={handleToggleProjectComplete}
+            className={`px-4 py-2 rounded-control font-medium text-sm transition whitespace-nowrap ${
+              project.status === 'completed'
+                ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                : 'bg-flow-mint text-flow-ink hover:bg-flow-mint/70'
+            }`}
+            title={project.status === 'completed' ? t('ui.reopenProject') : t('ui.markProjectDone')}
+          >
+            {project.status === 'completed' ? (
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                {t('ui.reopenProject')}
+              </span>
+            ) : t('ui.finishWholeProject')}
+          </button>
+        </div>
+
+        {/* Mobile : les statistiques globales restent disponibles après le travail en cours. */}
+        <details className="sm:hidden bg-white rounded-control border border-gray-200 px-4 py-3">
+          <summary className="cursor-pointer list-none flex items-center justify-between gap-3 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-control">
+            <span className="font-medium">{t('ui.projectOverview')}</span>
+            <span className="flex items-center gap-1.5 font-semibold text-primary-700">
+              {globalProgressData.mode === 'descriptive'
+                ? t('ui.sectionsCompleted', { done: globalProgressData.completedSections, total: globalProgressData.totalSections })
+                : `${globalProgressPercentage || 0}%`}
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+            </span>
+          </summary>
+          <div className="pt-3 mt-3 border-t border-gray-100 space-y-2">
+            {globalProgressData.mode !== 'descriptive' && <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-2 rounded-full transition-all duration-500 ${
+                  project.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' : 'bg-gradient-to-r from-primary-400 to-primary-600'
+                }`}
+                style={{ width: `${globalProgressPercentage || 0}%` }}
+              ></div>
+            </div>}
+            {globalProgressData.mode === 'descriptive' && (
+              <p className="text-xs text-gray-500">{descriptiveProgress}</p>
+            )}
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs text-gray-500">
+                {(() => {
+                  const totalTime = project?.total_time || 0
+                  if (!totalTime) return null
+                  const totalHours = Math.floor(totalTime / 3600)
+                  const totalMins = Math.floor((totalTime % 3600) / 60)
+                  return totalHours > 0 ? `${totalHours}h ${totalMins}min` : `${totalMins}min`
+                })()}
+              </div>
+              <button
+                onClick={handleToggleProjectComplete}
+                className={`px-3 py-1.5 rounded-control font-medium text-xs transition ${
+                  project.status === 'completed'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-flow-mint text-flow-ink'
+                }`}
+                title={project.status === 'completed' ? t('ui.reopenProject') : t('ui.markProjectDone')}
+              >
+                {project.status === 'completed' ? t('ui.reopenProject') : t('ui.finishWholeProject')}
+              </button>
+            </div>
+          </div>
+        </details>
+      </div>
+      )}
+
+      {project?.pattern_notes && !smartOnboardingBlocking && !isFocusMode && (
+        <details className="bg-amber-50 border border-amber-200 rounded-control px-4 py-3 mb-3">
+          <summary className="cursor-pointer text-sm font-semibold text-amber-900">
+            {t('ui.importantPatternNotes')}
+          </summary>
+          <p className="mt-2 text-sm text-amber-950 whitespace-pre-line">{project.pattern_notes}</p>
+        </details>
+      )}
+
+      {isFocusMode && showCompactWorkCounter && hasPrimaryCounter && !smartOnboardingBlocking && (
+        <div
+          className="sm:hidden fixed left-0 right-0 z-40 px-3 pt-2 pointer-events-none"
+          style={{ top: 'var(--yf-navbar-height, calc(4rem + env(safe-area-inset-top)))' }}
+        >
+          <div className="max-w-md mx-auto min-h-14 px-2 py-1.5 bg-white/95 backdrop-blur-sm border border-primary-200 rounded-control shadow-[0_8px_24px_rgba(31,41,55,0.20)] flex items-center gap-2 pointer-events-auto">
+            {isTimerRunning && (
+              <div className="flex-1 min-w-0 px-1 font-medium text-gray-500 text-xs truncate">
+                {currentSectionId
+                  ? sections.find(section => Number(section.id) === Number(currentSectionId))?.name || t('ui.wholeProject')
+                  : t('ui.wholeProject')}
+              </div>
+            )}
             <button
               type="button"
               onClick={handleDecrementRow}
@@ -5241,14 +5358,18 @@ const ProjectCounter = () => {
               −
             </button>
             <div className="min-w-[76px] text-center font-extrabold text-primary-700 text-xl tabular-nums whitespace-nowrap">
-              {counterUnit === 'cm'
+              {progressData.total ? (
+                <CurrentStepProgress current={currentRow} total={progressData.total} unit={counterUnit} unitLabel={progressUnitLabel(counterUnit)} locale={i18n.resolvedLanguage || i18n.language} />
+              ) : counterUnit === 'cm'
                 ? `${Number(currentRow || 0).toLocaleString(i18n.resolvedLanguage || i18n.language, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} cm`
-                : t('ui.rowsCount', { count: Math.floor(Number(currentRow) || 0) })}
+                : counterUnit === 'rounds'
+                  ? t('ui.roundsCount', { count: Math.floor(Number(currentRow) || 0) })
+                  : t('ui.rowsCount', { count: Math.floor(Number(currentRow) || 0) })}
             </div>
             <button
               type="button"
               onClick={handleIncrementRow}
-              disabled={isSavingRow}
+              disabled={isSavingRow || isChangingSection || isCompletingSection || sectionIsCompleted(activeProjectSection)}
               className={`w-11 h-11 flex-shrink-0 bg-primary-600 text-white rounded-control text-2xl font-bold active:scale-95 transition shadow-sm disabled:opacity-50 select-none ${isDemoProject && demoGuideStep === 'row' ? 'ring-4 ring-amber-300' : ''}`}
               aria-label={`${t('ui.row')} +`}
             >
@@ -5319,10 +5440,14 @@ const ProjectCounter = () => {
       )}
 
       {/* [AI:Claude] Tableau des sections */}
-      <div className={`bg-white rounded-card border border-flow-mint overflow-hidden ${isDemoProject && demoGuideStep === 'sections' ? 'ring-4 ring-amber-200' : ''}`}>
+      <div
+        id="project-sections-list"
+        ref={sectionsListRef}
+        className={`bg-white rounded-card border border-flow-mint overflow-hidden scroll-mt-20 ${isDemoProject && demoGuideStep === 'sections' ? 'ring-4 ring-amber-200' : ''}`}
+      >
         <div
           className="px-4 py-3 border-b border-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition"
-          onClick={() => setSectionsCollapsed(!sectionsCollapsed)}
+          onClick={handleToggleSectionsList}
         >
           <div className="flex items-center gap-2">
             <svg
@@ -5420,14 +5545,22 @@ const ProjectCounter = () => {
                   return (
                     <tr
                       key={section.id}
-                      onClick={() => !isActive && !smartOnboardingBlocking && handleChangeSection(section.id)}
+                      aria-current={isActive ? 'step' : undefined}
+                      tabIndex={isActive ? -1 : 0}
+                      onClick={(e) => handleSelectSectionFromList(section.id, e)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleSelectSectionFromList(section.id, e)
+                        }
+                      }}
                       className={`transition-colors ${
                         isCompleted
                           ? isActive
-                            ? 'bg-green-50 border-l-4 border-l-green-600'
+                            ? 'bg-green-50 border-l-4 border-l-green-600 ring-1 ring-inset ring-green-300'
                             : 'bg-green-50 hover:bg-green-100 cursor-pointer'
                           : isActive
-                            ? 'bg-primary-50 border-l-4 border-l-primary-600'
+                            ? 'bg-primary-50 border-l-4 border-l-primary-600 ring-1 ring-inset ring-primary-300'
                             : 'hover:bg-gray-50 cursor-pointer'
                       }`}
                     >
@@ -5494,15 +5627,19 @@ const ProjectCounter = () => {
                       <td className="px-4 py-3">
                         {section.total_rows ? (
                           <span className="text-xs text-gray-500 block mb-1">
-                            {counterUnit === 'cm'
+                            {section.counter_unit === 'cm'
                               ? t('ui.cmOfTotal', { done: Number(section.current_row || 0).toFixed(1), total: Number(section.total_rows).toFixed(1) })
-                              : t('ui.rowOfTotal2', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })}
+                              : section.counter_unit === 'rounds'
+                                ? t('ui.roundOfTotal', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })
+                                : t('ui.rowOfTotal2', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })}
                           </span>
                         ) : section.current_row > 0 ? (
                           <span className="text-xs text-gray-500 block mb-1">
-                            {counterUnit === 'cm'
+                            {section.counter_unit === 'cm'
                               ? t('ui.cmValue', { n: Number(section.current_row).toFixed(1) })
-                              : t('ui.rowValue', { n: Math.floor(section.current_row) })}
+                              : section.counter_unit === 'rounds'
+                                ? t('ui.roundValue', { n: Math.floor(section.current_row) })
+                                : t('ui.rowValue', { n: Math.floor(section.current_row) })}
                           </span>
                         ) : null}
                         {sectionProgress !== null ? (
@@ -5657,13 +5794,14 @@ const ProjectCounter = () => {
                 return (
                   <div
                     key={section.id}
+                    aria-current={isActive ? 'step' : undefined}
                     className={`${
                       isCompleted
                         ? isActive
-                          ? 'bg-green-50 border-l-4 border-l-green-600'
+                          ? 'bg-green-50 border-l-4 border-l-green-600 ring-2 ring-inset ring-green-300'
                           : 'bg-green-50'
                         : isActive
-                          ? 'bg-primary-50 border-l-4 border-l-primary-600'
+                          ? 'bg-primary-50 border-l-4 border-l-primary-600 ring-2 ring-inset ring-primary-300'
                           : ''
                     } ${isExpanded ? 'p-4' : ''}`}
                   >
@@ -5672,12 +5810,18 @@ const ProjectCounter = () => {
                       className={`flex items-center justify-between cursor-pointer ${
                         isExpanded ? '' : 'py-3 px-4'
                       }`}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={isExpanded}
                       onClick={(e) => {
                         e.stopPropagation()
                         toggleSectionExpanded(section.id, e)
-                        // Si pas active, la rendre active aussi
-                        if (!isActive && !smartOnboardingBlocking) {
-                          handleChangeSection(section.id)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          toggleSectionExpanded(section.id, e)
                         }
                       }}
                     >
@@ -5694,12 +5838,16 @@ const ProjectCounter = () => {
                           {(section.total_rows || section.current_row > 0) && (
                             <span className="text-xs text-gray-400">
                               {section.total_rows
-                                ? counterUnit === 'cm'
+                                ? section.counter_unit === 'cm'
                                   ? t('ui.cmOfTotal', { done: Number(section.current_row || 0).toFixed(1), total: Number(section.total_rows).toFixed(1) })
-                                  : t('ui.rowOfTotal2', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })
-                                : counterUnit === 'cm'
+                                  : section.counter_unit === 'rounds'
+                                    ? t('ui.roundOfTotal', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })
+                                    : t('ui.rowOfTotal2', { done: Math.floor(section.current_row || 0), total: Math.floor(section.total_rows) })
+                                : section.counter_unit === 'cm'
                                   ? t('ui.cmValue', { n: Number(section.current_row).toFixed(1) })
-                                  : t('ui.rowValue', { n: Math.floor(section.current_row) })}
+                                  : section.counter_unit === 'rounds'
+                                    ? t('ui.roundValue', { n: Math.floor(section.current_row) })
+                                    : t('ui.rowValue', { n: Math.floor(section.current_row) })}
                             </span>
                           )}
                         </div>
@@ -5749,6 +5897,16 @@ const ProjectCounter = () => {
                     {/* Détails visibles uniquement si section dépliée */}
                     {isExpanded && (
                       <div className="mt-3 space-y-3">
+                        {!isActive && (
+                          <button
+                            type="button"
+                            disabled={isChangingSection || smartOnboardingBlocking}
+                            onClick={(e) => handleSelectSectionFromList(section.id, e)}
+                            className="w-full py-2 px-3 rounded-control bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 transition"
+                          >
+                            {t('ui.selectProjectStep')}
+                          </button>
+                        )}
                         {/* Description */}
                         {section.description && (
                           <div>
@@ -8280,7 +8438,7 @@ const ProjectCounter = () => {
                 onClick={() => {
                   setShowProjectCompletionModal(false)
                   setShowAddSectionModal(true)
-                  setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
+                  setSectionForm({ name: '', description: '', total_rows: '', counter_unit: counterUnit || 'rows', notes: '' })
                   setEditingSection(null)
                 }}
                 className="w-full px-4 py-2.5 border border-gray-200 text-gray-700 rounded-control font-medium hover:bg-gray-50 transition text-sm"
@@ -8343,10 +8501,25 @@ const ProjectCounter = () => {
                 />
               </div>
 
-              {/* Nombre de rangs */}
-              <div className="mb-4">
+              {(!editingSection || (editingSection.progression_type || 'simple') === 'simple') && <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('ui.totalRowsOptional')}
+                  {t('ui.sectionCounterUnit')}
+                </label>
+                <select
+                  value={sectionForm.counter_unit}
+                  onChange={(e) => setSectionForm({ ...sectionForm, counter_unit: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-control bg-white focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="rows">{t('ui.unitRows')}</option>
+                  <option value="rounds">{t('ui.unitRounds')}</option>
+                  <option value="cm">{t('ui.unitCm')}</option>
+                </select>
+              </div>}
+
+              {/* Objectif numérique facultatif */}
+              {(!editingSection || (editingSection.progression_type || 'simple') === 'simple') && <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('ui.sectionTargetOptional')}
                 </label>
                 <input
                   type="number"
@@ -8357,7 +8530,7 @@ const ProjectCounter = () => {
                   placeholder={t('ui.ph50')}
                   min="0"
                 />
-              </div>
+              </div>}
 
               {/* Notes */}
               <div className="mb-6">
@@ -8379,7 +8552,7 @@ const ProjectCounter = () => {
                   type="button"
                   onClick={() => {
                     setShowAddSectionModal(false)
-                    setSectionForm({ name: '', description: '', total_rows: '', notes: '' })
+                    setSectionForm({ name: '', description: '', total_rows: '', counter_unit: 'rows', notes: '' })
                     setEditingSection(null)
                   }}
                   disabled={savingSection}
@@ -8554,7 +8727,7 @@ const ProjectCounter = () => {
       )}
 
       {/* [AI:Claude] Bouton flottant pour les notes - masqué quand popup ouverte */}
-      {!showNotes && !showEditModal && !showTechnicalDetailsModal && !showPatternUrlModal && !showPatternLibraryModal && !showPatternTextModal && !showPatternEditChoiceModal && !showPhotoUploadModal && !showEnhanceModal && !showStyleExamplesModal && !isAnyAlertOpen && !showProjectCompletionModal && !showAddSectionModal && !showAddToLibraryModal && !showRowsConfirmModal && !showInstagramModal && !showSatisfactionModal && !showAssociatePatternModal && !smartOnboardingBlocking && (
+      {canShowNotesShortcut && (
       <button
         onClick={handleOpenNotes}
         className="fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 shadow-2xl transition-all transform hover:scale-105 active:scale-95 bg-primary-600 hover:bg-primary-700 rounded-card px-4 py-3 flex items-center gap-3"

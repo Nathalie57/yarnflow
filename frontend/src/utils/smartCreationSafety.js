@@ -53,6 +53,8 @@ export function projectReviewPoints(data, aiStatus = null) {
     seen.add(key)
     points.push({
       code: issue.code,
+      ...(typeof issue.message === 'string' && issue.message ? { message: issue.message } : {}),
+      ...(issue.context ? { context: issue.context } : {}),
       sectionIndex,
       availableSizes: issue.code === 'pattern_size_not_selected'
         ? (Array.isArray(issue.context?.available_sizes) && issue.context.available_sizes.length
@@ -138,5 +140,55 @@ export function updateSmartSection(section, field, value) {
 }
 
 export function bindExtractedSections(sections = []) {
-  return sections.map((section, index) => ({ ...section, _source_index: index, _manually_edited: false }))
+  return sections.map((section, index) => ({ ...section, _source_index: index, _manually_edited: false,
+    _pattern_reference: patternReference(section),
+  }))
+}
+
+// Le statut visuel ne modifie jamais les diagnostics utilisés à la confirmation.
+export function sectionReviewPoints(points, section, currentIndex) {
+  const sourceIndex = Object.hasOwn(section, '_source_index') ? section._source_index : currentIndex
+  if (!Number.isInteger(sourceIndex)) return []
+  return points.filter(point => point.sectionIndex === sourceIndex).map(point => {
+    let displayState = 'initial'
+    if (point.code === 'section_measurement_conflict') {
+      const conflict = explicitMeasurementConflict(section)
+      if (conflict === false) displayState = 'resolved'
+      else if (conflict === true) displayState = 'current'
+    }
+    return { ...point, displayState }
+  })
+}
+
+// Vérifier uniquement une instruction complète et explicite. Le reste reste à
+// relire : aucun raisonnement sur les répétitions, tailles ou étapes composites.
+export function explicitMeasurementConflict(section) {
+  if ((section.progression_type || 'simple') !== 'simple') return null
+  const match = String(section.description || '').trim().match(/^(?:tricoter|tricotez|crocheter|crochetez|faire|faites|work|knit|crochet)\s+(\d+(?:[.,]\d+)?)\s*(cm|rangs?|tours?|rows?|rounds?)\s*[.!]?$/iu)
+  if (!match) return null
+  const normalizeUnit = value => {
+    const unit = String(value || 'rangs').toLowerCase()
+    if (unit === 'cm') return 'cm'
+    if (['tour', 'tours', 'round', 'rounds'].includes(unit)) return 'rounds'
+    if (['rang', 'rangs', 'row', 'rows'].includes(unit)) return 'rows'
+    return unit
+  }
+  const expectedUnit = normalizeUnit(match[2])
+  const actualUnit = normalizeUnit(section.unit)
+  // rows/rangs et rounds/tours sont tous deux une progression discrète : la nuance
+  // lexicale est conservée à l'affichage, sans devenir un faux conflit de mesure.
+  if (expectedUnit === 'cm' ? actualUnit !== 'cm' : actualUnit === 'cm') return true
+  // Une cible totale et une cible de section ne sont pas directement comparables.
+  if (section.target_measured_from === 'piece_start') return null
+  if (section.target == null || section.target === '' || !Number.isFinite(Number(section.target))) return null
+  return Math.abs(Number(section.target) - Number(match[1].replace(',', '.'))) > 0.0001
+}
+
+export function patternReference(section) {
+  if (section.pattern_reference?.unit === 'cm' && Number(section.pattern_reference.value) > 0) return section.pattern_reference
+  if (Number(section.target_raw) > 0) return {
+    value: Number(section.target_raw), unit: section.target_raw_unit || section.unit,
+    from: section.target_measured_from || 'section',
+  }
+  return section._pattern_reference || null
 }

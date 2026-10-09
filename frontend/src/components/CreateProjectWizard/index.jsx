@@ -68,7 +68,7 @@ const CreateProjectWizard = ({
   const [technicalForm, setTechnicalForm] = useState(draft.technicalForm || DEFAULT_TECHNICAL_FORM)
   const [fileDragOver, setFileDragOver] = useState(false)
   const [selectedPreset, setSelectedPreset] = useState(draft.selectedPreset || null)
-  const [sectionDetails, setSectionDetails] = useState(draft.sectionDetails || [{ name: '', total_rows: '' }])
+  const [sectionDetails, setSectionDetails] = useState(draft.sectionDetails || [{ name: '', total_rows: '', counter_unit: draft.counterUnit || 'rows' }])
 
   // Sauvegarde continue dans sessionStorage
   useEffect(() => {
@@ -78,7 +78,7 @@ const CreateProjectWizard = ({
         name, technique, selectedCategory, counterUnit, description, isFavorite, projectTags, technicalForm, selectedPreset, sectionDetails
       }))
     } catch {}
-  }, [isOpen, name, technique, selectedCategory, counterUnit, description, isFavorite, projectTags, technicalForm])
+  }, [isOpen, name, technique, selectedCategory, counterUnit, description, isFavorite, projectTags, technicalForm, selectedPreset, sectionDetails])
 
   // [AI:Claude] À l'ouverture, synchroniser mode avec initialMode — ex: le bouton
   // "Créer un projet manuellement" passe initialMode="manual" pour sauter l'écran
@@ -102,7 +102,7 @@ const CreateProjectWizard = ({
       setShowTechnicalDetails(false)
       setTechnicalForm(DEFAULT_TECHNICAL_FORM)
       setSelectedPreset(null)
-      setSectionDetails([{ name: '', total_rows: '' }])
+      setSectionDetails([{ name: '', total_rows: '', counter_unit: 'rows' }])
       try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
     }
   }, [isOpen])
@@ -113,9 +113,9 @@ const CreateProjectWizard = ({
     setSelectedPreset(preset.presetKey)
     if (preset.sections.length > 0) {
       // [AI:Claude] sectionKey null = preset 'Personnalisé' : on laisse le champ vide
-      setSectionDetails(preset.sections.map(s => ({ name: s.sectionKey ? t(`wizard.sections.${s.sectionKey}`) : '', total_rows: '' })))
+      setSectionDetails(preset.sections.map(s => ({ name: s.sectionKey ? t(`wizard.sections.${s.sectionKey}`) : '', total_rows: '', counter_unit: counterUnit })))
     } else {
-      setSectionDetails([{ name: '', total_rows: '' }])
+      setSectionDetails([{ name: '', total_rows: '', counter_unit: counterUnit }])
     }
   }
 
@@ -124,6 +124,8 @@ const CreateProjectWizard = ({
     const sections = sectionDetails.map((s, i) => ({
       name: s.name.trim() || t('wizard.defaultSectionName', { n: i + 1 }),
       total_rows: s.total_rows ? Number(String(s.total_rows).replace(',', '.')) : null,
+      counter_unit: s.counter_unit || counterUnit,
+      progression_type: 'simple',
       description: null,
       notes: null
     }))
@@ -327,7 +329,7 @@ const CreateProjectWizard = ({
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => { setSelectedCategory(cat); setSelectedPreset(null); setSectionDetails([{ name: '', total_rows: '' }]) }}
+                  onClick={() => { setSelectedCategory(cat); setSelectedPreset(null); setSectionDetails([{ name: '', total_rows: '', counter_unit: counterUnit }]) }}
                   className={`py-2.5 px-2 rounded-control border text-xs font-medium text-center leading-tight transition ${
                     selectedCategory?.id === cat.id
                       ? 'border-primary-400 bg-primary-50 text-primary-700 ring-1 ring-primary-300'
@@ -369,7 +371,7 @@ const CreateProjectWizard = ({
                 {selectedPreset && (
                   <div className="space-y-2">
                     {sectionDetails.map((section, i) => (
-                      <div key={i} className="flex items-center gap-2">
+                      <div key={i} className="grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem_auto] items-center gap-2">
                         <input
                           type="text"
                           value={section.name}
@@ -393,6 +395,20 @@ const CreateProjectWizard = ({
                           min="0"
                           className="w-24 px-3 py-2 border border-gray-200 rounded-control text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         />
+                        <select
+                          value={section.counter_unit || counterUnit}
+                          onChange={(e) => {
+                            const next = [...sectionDetails]
+                            next[i] = { ...next[i], counter_unit: e.target.value }
+                            setSectionDetails(next)
+                          }}
+                          aria-label={t('wizard.counterUnit')}
+                          className="w-full px-2 py-2 border border-gray-200 rounded-control text-sm bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        >
+                          <option value="rows">{t('wizard.rows')}</option>
+                          <option value="rounds">{t('wizard.rounds')}</option>
+                          <option value="cm">{t('wizard.centimeters')}</option>
+                        </select>
                         {sectionDetails.length > 1 && (
                           <button
                             type="button"
@@ -408,7 +424,7 @@ const CreateProjectWizard = ({
                     ))}
                     <button
                       type="button"
-                      onClick={() => setSectionDetails([...sectionDetails, { name: '', total_rows: '' }])}
+                      onClick={() => setSectionDetails([...sectionDetails, { name: '', total_rows: '', counter_unit: counterUnit }])}
                       className="text-xs text-primary-600 hover:text-primary-700 mt-1"
                     >
                       {t('ui.addPart')}
@@ -443,9 +459,10 @@ const CreateProjectWizard = ({
                 {/* Unité de comptage */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('wizard.counterUnit')}</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     {[
                       { value: 'rows', labelKey: 'rowsLabel' },
+                      { value: 'rounds', label: t('wizard.rounds') },
                       { value: 'cm', label: t('wizard.centimeters') }
                     ].map(opt => (
                       <button

@@ -9,7 +9,7 @@ import * as safety from '../src/utils/smartCreationSafety.js'
 // Lightweight hook harness: executes the real component and its handlers/effects,
 // with HTTP/router/storage doubles. No browser, bundle, network or new dependency.
 function mount(relativePath, { storedNotice = null, sessionEntries = [], analyze, pending, translate, confirm, resume = false, initialPath = '/smart-project-creator' } = {}) {
-  const events = [], requests = [], slots = [], effects = [], listeners = new Map()
+  const events = [], requests = [], slots = [], effects = [], listeners = new Map(), intersections = [], refActions = []
   const storage = new Map([
     ...(storedNotice ? [['yf_smart_project_notice', JSON.stringify(storedNotice)]] : []),
     ...sessionEntries,
@@ -21,6 +21,11 @@ function mount(relativePath, { storedNotice = null, sessionEntries = [], analyze
     addEventListener: (name, fn) => listeners.set(name, fn),
     removeEventListener: name => listeners.delete(name),
     dispatchEvent: e => listeners.get(e.type)?.(e), confirm: () => true,
+  }
+  class IntersectionObserver {
+    constructor(callback) { this.callback = callback; intersections.push(this) }
+    observe(target) { this.target = target }
+    disconnect() {}
   }
   const react = {
     createElement: (type, props, ...children) => ({ type, props: { ...props, children } }),
@@ -53,7 +58,7 @@ function mount(relativePath, { storedNotice = null, sessionEntries = [], analyze
   const code = transform(readFileSync(new URL(relativePath, import.meta.url), 'utf8'), { transforms: ['jsx', 'imports'], production: true }).code
   const module = { exports: {} }
   const context = {
-    module, exports: module.exports, React: react, window, localStorage, sessionStorage: localStorage,
+    module, exports: module.exports, React: react, window, localStorage, sessionStorage: localStorage, IntersectionObserver,
     URLSearchParams, FormData, Intl, Date, Math, Set, queueMicrotask,
     setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
     CustomEvent: class { constructor(type, { detail }) { this.type = type; this.detail = detail } },
@@ -80,6 +85,20 @@ function mount(relativePath, { storedNotice = null, sessionEntries = [], analyze
     let count = 0
     do {
       dirty = false; cursor = 0; tree = module.exports.default()
+      const attachRefs = node => {
+        if (!node || typeof node !== 'object') return
+        if (Array.isArray(node)) return node.forEach(attachRefs)
+        if (node.props?.ref && typeof node.type === 'string') {
+          const target = {
+            scrollIntoView: options => refActions.push({ type: 'scroll', options, node }),
+            focus: options => refActions.push({ type: 'focus', options, node }),
+          }
+          if (typeof node.props.ref === 'function') node.props.ref(target)
+          else node.props.ref.current = target
+        }
+        attachRefs(node.props?.children)
+      }
+      attachRefs(tree)
       effects.splice(0).forEach(effect => effect())
       assert.ok(++count < 15, 'render converges')
     } while (dirty)
@@ -107,7 +126,12 @@ function mount(relativePath, { storedNotice = null, sessionEntries = [], analyze
     return matches
   }
   render()
-  return { events, requests, window, storage, render, find, findAll,
+  return { events, requests, window, storage, refActions, render, find, findAll,
+    setPrimaryActionVisible(isIntersecting) {
+      const observer = intersections.at(-1)
+      assert.ok(observer, 'validation action observer registered')
+      observer.callback([{ isIntersecting }])
+    },
     unmount() { slots.forEach(slot => slot?.cleanup?.()) },
   }
 }
@@ -157,7 +181,7 @@ test('analysis without a selected size opens the editable review', async () => {
   await promise; app.render(); app.render()
 
   button(app, 'ui.createProjectCheck')
-  button(app, 'ui.duplicateSection')
+  button(app, 'ui.duplicateThisStep')
   assert.throws(() => app.find(n => n.props?.onClick?.name === 'handleAnalyze'))
 })
 
@@ -166,6 +190,39 @@ test('analysis failure never confirms or shows a gate', async () => {
   await promise; app.render()
   assert.ok(!app.requests.some(r => r.path.endsWith('/confirm')))
   assert.ok(!app.events.some(e => e.stage === 'gate_shown'))
+})
+
+test('unsupported URL compression offers retry and pasted-text import without exposing curl details', async () => {
+  let calls = 0
+  const app = mount('../src/pages/SmartProjectCreator.jsx', { analyze: async form => {
+    calls += 1
+    if (calls === 1) return { data: {
+      success: false,
+      error: 'La page utilise une compression que YarnFlow ne peut pas lire actuellement.',
+      error_code: 'url_compression_unsupported',
+      ai_status: 'failed',
+    } }
+    return success(form)
+  } })
+  app.find(n => /handleModeSelect\(['"]url['"]\)/.test(n.props?.onClick?.toString() || '')).props.onClick()
+  app.render()
+  app.find(n => n.type === 'input' && n.props.type === 'url').props.onChange({ target: { value: 'https://example.com/pattern' } })
+  app.render()
+  const firstRequest = app.find(n => n.props?.onClick?.name === 'handleAnalyze').props.onClick()
+  await firstRequest; app.render()
+
+  button(app, 'ui.retryUrlImport')
+  app.find(n => n.props?.children?.includes?.('ui.urlImportRecoveryHelp'))
+  assert.equal(app.findAll(n => String(n.props?.children || '').includes('libcurl')).length, 0)
+
+  const fallback = app.find(n => n.type === 'textarea')
+  fallback.props.onChange({ target: { value: 'Un texte de patron suffisamment long pour utiliser la méthode de remplacement sans URL.' } })
+  app.render()
+  const retry = app.find(n => n.props?.onClick?.name === 'handleAnalyze')
+  await retry.props.onClick(); app.render()
+  const secondAnalyze = app.requests.filter(request => request.path.endsWith('/analyze'))[1]
+  assert.equal(secondAnalyze.data.get('pattern_text').includes('méthode de remplacement'), true)
+  assert.equal(secondAnalyze.data.has('url'), false)
 })
 
 test('real SPA departure during HTTP analysis is tracked once and correlated', async () => {
@@ -265,6 +322,44 @@ test('blocking precreation helpers expose only one explicit compatible size', ()
 const button = (app, key) => app.find(n => n.type === 'button' && n.props.children.includes(key))
 const confirms = app => app.requests.filter(r => r.path.endsWith('/confirm'))
 const flush = () => new Promise(resolve => setImmediate(resolve))
+
+test('mobile review exposes the existing confirmation action only while the main action is off screen', async () => {
+  const { app, promise } = await launch(async form => success(form))
+  await promise; app.render()
+
+  app.setPrimaryActionVisible(false); app.render()
+  const region = app.find(n => n.props?.role === 'region' && n.props['aria-label'] === 'ui.projectValidationAction')
+  assert.ok(region.props.className.includes('md:hidden'))
+  const stickyAction = app.find(n => n.type === 'button' && n.props?.onClick?.name === 'handleStickyValidation')
+  assert.ok(stickyAction.props.children.includes('ui.createProjectCheck'))
+  await stickyAction.props.onClick()
+  assert.equal(confirms(app).length, 1)
+
+  app.setPrimaryActionVisible(true); app.render()
+  assert.equal(app.findAll(n => n.props?.role === 'region' && n.props['aria-label'] === 'ui.projectValidationAction').length, 0)
+})
+
+test('mobile review sends an unmet acknowledgement to the existing required control', async () => {
+  const issue = { code: 'symmetric_piece_missing', context: { section_name: 'Left front' } }
+  const { app, promise } = await launch(async form => success(form, {
+    validation_issues: { warnings: [issue] },
+  }))
+  await promise; app.render()
+
+  app.setPrimaryActionVisible(false); app.render()
+  const stickyAction = button(app, 'ui.goToRequiredCheck')
+  assert.equal(stickyAction.props.disabled, false)
+  stickyAction.props.onClick()
+  assert.equal(confirms(app).length, 0)
+  assert.deepEqual(app.refActions.slice(-2).map(action => action.type), ['scroll', 'focus'])
+  assert.ok(app.find(n => n.props?.id === 'smart-validation-requirement').props.children.includes('ui.reviewPointsConfirmationRequired'))
+
+  app.find(n => n.type === 'input' && n.props.type === 'checkbox').props.onChange({ target: { checked: true } })
+  app.render()
+  await button(app, 'ui.createProjectCheck').props.onClick()
+  assert.equal(confirms(app).length, 1)
+  assert.equal(confirms(app)[0].data.review_points_confirmed, true)
+})
 
 test('size mismatch hides translation and creation actions then reanalyzes with the only compatible size', async () => {
   let analyses = 0
@@ -389,12 +484,44 @@ test('missing symmetric piece opens review, can be duplicated, and requires one 
   }))
   await promise; app.render()
   assert.equal(button(app, 'ui.createProjectCheck').props.disabled, true)
-  button(app, 'ui.duplicateSection').props.onClick(); app.render()
+  button(app, 'ui.duplicateThisStep').props.onClick({ currentTarget: { closest: () => ({ removeAttribute() {} }) } }); app.render()
   let names = app.findAll(n => n.type === 'input' && n.props.placeholder === 'ui.phSectionName')
   names[1].props.onChange({ target: { value: 'Right front' } }); app.render()
   assert.equal(button(app, 'ui.createProjectCheck').props.disabled, true)
   app.find(n => n.type === 'input' && n.props.type === 'checkbox').props.onChange({ target: { checked: true } }); app.render()
   assert.equal(button(app, 'ui.createProjectCheck').props.disabled, false)
+})
+
+test('section duplication lives in an accessible secondary menu and preserves insertion and counter data', async () => {
+  const sections = [
+    { name: 'Knit body', description: 'Work.', progression_type: 'simple', unit: 'rangs', target: 4,
+      secondary_counter: { label: 'Repeats', target: 2, count: 0, tracking_role: 'required_cycle', cycle_length: 2 } },
+    { name: 'Bind off', description: 'Bind off.', progression_type: 'action', target: null },
+  ]
+  const { app, promise } = await launch(async form => success(form, { sections }))
+  await promise; app.render()
+
+  assert.equal(app.findAll(n => n.type === 'summary' && n.props['aria-label'] === 'ui.sectionActions').length, 2)
+  assert.equal(app.findAll(n => n.props?.role === 'menu').length, 2)
+  const menuItems = app.findAll(n => n.type === 'button' && n.props.role === 'menuitem'
+    && n.props.children.includes('ui.duplicateThisStep'))
+  assert.equal(menuItems.length, 2)
+  assert.equal(app.findAll(n => JSON.stringify(n.props?.children || '').includes('ui.createIdenticalPiece')).length, 0)
+  assert.equal(app.findAll(n => n.type === 'button' && n.props['aria-label'] === 'ui.removeSection').length, 2)
+
+  let menuClosed = false
+  menuItems[0].props.onClick({ currentTarget: { closest: () => ({ removeAttribute: name => { menuClosed = name === 'open' } }) } })
+  app.render()
+  assert.equal(menuClosed, true)
+  assert.equal(JSON.stringify(
+    app.findAll(n => n.type === 'input' && n.props.placeholder === 'ui.phSectionName').map(n => n.props.value)
+  ), JSON.stringify(['Knit body', 'Knit body', 'Bind off']))
+
+  await button(app, 'ui.createProjectCheck').props.onClick()
+  const submitted = confirms(app).at(-1).data.sections
+  assert.equal(JSON.stringify(submitted.map(section => section.name)), JSON.stringify(['Knit body', 'Knit body', 'Bind off']))
+  assert.equal(JSON.stringify(submitted[1].secondary_counter), JSON.stringify(submitted[0].secondary_counter))
+  assert.notEqual(submitted[1].secondary_counter, submitted[0].secondary_counter)
 })
 
 test('changing size after analysis removes reuse and sends the new size on reanalysis', async () => {
@@ -505,6 +632,20 @@ test('composite section shows free tracking instead of an editable target', asyn
   await promise; app.render()
 
   app.find(n => JSON.stringify(n.props?.children || '').includes('ui.compositeFreeTracking'))
+  assert.equal(app.findAll(n => n.type === 'input' && n.props.placeholder === 'ui.objective').length, 0)
+})
+
+test('unitless composite shows manual tracking without inventing a row unit', async () => {
+  const { app, promise } = await launch(async form => success(form, {
+    sections: [{
+      name: 'Body', description: 'Work several successive steps.',
+      progression_type: 'composite', unit: null, target: null,
+    }],
+  }))
+  await promise; app.render()
+
+  app.find(n => JSON.stringify(n.props?.children || '').includes('ui.compositeManualTracking'))
+  assert.equal(app.findAll(n => n.type === 'select' && n.props.value === 'rangs').length, 0)
   assert.equal(app.findAll(n => n.type === 'input' && n.props.placeholder === 'ui.objective').length, 0)
 })
 

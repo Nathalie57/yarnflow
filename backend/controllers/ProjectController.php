@@ -167,9 +167,12 @@ class ProjectController
                       (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rows,
                       (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_rows_unit,
                       (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND COALESCE(counter_unit, 'rows') = 'rows' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_rows_unit,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'rounds' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_rounds,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'rounds' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_rounds,
                       (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_current_cm,
                       (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND total_rows > 0 AND counter_unit = 'cm' THEN total_rows ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as quantifiable_total_cm,
                       (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND COALESCE(counter_unit, 'rows') = 'rows' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rows_unit,
+                      (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND counter_unit = 'rounds' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_rounds,
                       (SELECT COALESCE(SUM(CASE WHEN COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0) AND counter_unit = 'cm' THEN current_row ELSE 0 END), 0) FROM project_sections WHERE project_id = p.id) as unquantifiable_current_cm,
                       (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id AND COALESCE(progression_type, 'simple') <> 'action' AND (total_rows IS NULL OR total_rows <= 0)) as unquantifiable_sections_count,
                       (SELECT COUNT(*) FROM project_sections WHERE project_id = p.id AND is_completed = 1) as completed_sections_count,
@@ -291,6 +294,10 @@ class ProjectController
             // payante ne repose pas sur le nombre de projets, cf. pricing landing/subscription
             // ("Projets & patrons illimités"). Un plafond de 3 projets actifs pour FREE
             // subsistait ici en contradiction avec ça, jamais retiré.
+            $counterUnit = $data['counter_unit'] ?? 'rows';
+            if (!in_array($counterUnit, ['rows', 'rounds', 'cm'], true))
+                throw new \InvalidArgumentException('Unité de compteur invalide');
+
             $user = $this->userModel->findById($userId);
             if (!$user) {
                 $this->sendResponse(401, ['success' => false, 'error' => 'Utilisateur introuvable']);
@@ -308,6 +315,8 @@ class ProjectController
                 'main_photo' => $data['main_photo'] ?? null,
                 'status' => $data['status'] ?? 'in_progress',
                 'total_rows' => $data['total_rows'] ?? null,
+                'counter_unit' => $counterUnit,
+                'counter_unit_increment' => $counterUnit === 'cm' ? 0.5 : 1.0,
                 'yarn_brand' => $data['yarn_brand'] ?? null,
                 'yarn_color' => $data['yarn_color'] ?? null,
                 'yarn_weight' => $data['yarn_weight'] ?? null,
@@ -401,7 +410,8 @@ class ProjectController
             // réponses qui ne pourraient de toute façon pas être précises.
             $refStmt = $db->prepare('SELECT 1 FROM ai_pattern_imports WHERE project_id = :pid LIMIT 1');
             $refStmt->execute([':pid' => $id]);
-            $project['has_ai_pattern_reference'] = (bool)$refStmt->fetchColumn();
+            $project['has_ai_pattern_reference'] = (bool)$refStmt->fetchColumn()
+                || !empty($project['pattern_text']);
 
             // [AI:Claude] Langue détectée du patron (ai_response_json.language) et présence
             // d'une traduction déjà générée — sert au frontend à décider s'il propose de
@@ -766,8 +776,8 @@ class ProjectController
             }
 
             $newUnit = $data['counter_unit'] ?? null;
-            if (!in_array($newUnit, ['rows', 'cm'])) {
-                $this->sendResponse(400, ['success' => false, 'error' => 'Unité invalide (doit être "rows" ou "cm")']);
+            if (!in_array($newUnit, ['rows', 'rounds', 'cm'], true)) {
+                $this->sendResponse(400, ['success' => false, 'error' => 'Unité invalide']);
                 return;
             }
 
@@ -777,7 +787,7 @@ class ProjectController
 
             // Arrondir la valeur actuelle si nécessaire pour la nouvelle unité
             $validValue = $currentRow;
-            if ($newUnit === 'rows') {
+            if (in_array($newUnit, ['rows', 'rounds'], true)) {
                 // Passer en mode rangs : arrondir à l'entier inférieur
                 $validValue = floor($currentRow);
             } elseif ($newUnit === 'cm') {
@@ -806,7 +816,7 @@ class ProjectController
 
             $this->sendResponse(200, [
                 'success' => true,
-                'message' => "Unité changée en " . ($newUnit === 'rows' ? 'rangs' : 'centimètres'),
+                'message' => "Unité changée en " . ($newUnit === 'rows' ? 'rangs' : ($newUnit === 'rounds' ? 'tours' : 'centimètres')),
                 'project' => $updatedProject
             ]);
         } catch (\Exception $e) {
@@ -1761,13 +1771,19 @@ class ProjectController
             if (empty($data['name']))
                 throw new \InvalidArgumentException('Le nom de la section est obligatoire');
 
+            $counterUnit = $data['counter_unit'] ?? 'rows';
+            if (!in_array($counterUnit, ['rows', 'rounds', 'cm'], true))
+                throw new \InvalidArgumentException('Unité de section invalide');
+
             $sectionData = [
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'display_order' => $data['display_order'] ?? 0,
                 'total_rows' => $data['total_rows'] ?? null,
-                'current_row' => $data['current_row'] ?? 0  // [AI:Claude] v0.16.2: Support affectation rangs
+                'current_row' => $data['current_row'] ?? 0,
+                'counter_unit' => $counterUnit,
+                'progression_type' => 'simple'
             ];
 
             $sectionId = $this->projectModel->createSection($id, $sectionData);
@@ -1861,6 +1877,11 @@ class ProjectController
                 return;
             }
 
+            if (array_key_exists('counter_unit', $data)
+                && !in_array($data['counter_unit'], ['rows', 'rounds', 'cm'], true)) {
+                throw new \InvalidArgumentException('Unité de section invalide');
+            }
+
             $progressBefore = isset($data['current_row']) ? \App\Services\ProgressActivationService::counterValue($projectId, $sectionId) : null;
             $success = $this->projectModel->updateSection($sectionId, $data);
 
@@ -1884,6 +1905,8 @@ class ProjectController
                 'activation_reached' => $activationReached,
                 'section' => $section
             ]);
+        } catch (\InvalidArgumentException $e) {
+            $this->sendResponse(400, ['success' => false, 'error' => $e->getMessage()]);
         } catch (\Exception $e) {
             $this->sendResponse(500, [
                 'success' => false,
