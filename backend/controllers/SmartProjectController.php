@@ -20,6 +20,7 @@ use App\Models\PatternLibrary;
 use App\Services\AIPatternExtractorService;
 use App\Services\AnalyticsService;
 use App\Services\SmartCreationTrackingService;
+use App\Services\SmartImportQuotaPeriod;
 use App\Services\PatternStorageService;
 use App\Services\PatternTranslatorService;
 use App\Services\PatternExtractionValidator;
@@ -114,26 +115,9 @@ class SmartProjectController
             $plan = $this->getSmartImportPlan($user['subscription_type'], $userId);
 
             if ($plan['monthly_limit'] > 0) {
-                // PLUS/PRO : quota sur fenêtre glissante de 30j depuis subscription_expires_at - 30j
-                $subscriptionExpiresAt = $user['subscription_expires_at'] ?? null;
-                $periodStart = null;
-                $nextReset = null;
-
-                if ($subscriptionExpiresAt) {
-                    $expiresAt = new \DateTime($subscriptionExpiresAt);
-                    $now = new \DateTime();
-                    // Reculer d'intervalles de 30j depuis expires_at jusqu'à trouver le début de période actuelle
-                    $periodStart = clone $expiresAt;
-                    while ($periodStart > $now) {
-                        $periodStart->modify('-30 days');
-                    }
-                    $nextReset = clone $periodStart;
-                    $nextReset->modify('+30 days');
-                } else {
-                    // Fallback : mois calendaire
-                    $periodStart = new \DateTime('first day of this month 00:00:00');
-                    $nextReset = new \DateTime('first day of next month 00:00:00');
-                }
+                $period = SmartImportQuotaPeriod::forUser($user);
+                $periodStart = $period['start'];
+                $nextReset = $period['next_reset'];
 
                 $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND created_at >= :period_start AND project_id IS NOT NULL");
                 $stmt->execute(['user_id' => $userId, 'period_start' => $periodStart->format('Y-m-d H:i:s')]);
@@ -307,21 +291,9 @@ class SmartProjectController
             $plan = $this->getSmartImportPlan($user['subscription_type'], $userId);
 
             if ($plan['monthly_limit'] > 0) {
-                // PLUS/PRO : quota sur fenêtre glissante de 30j depuis subscription_expires_at
-                $subscriptionExpiresAt = $user['subscription_expires_at'] ?? null;
-                if ($subscriptionExpiresAt) {
-                    $expiresAt = new \DateTime($subscriptionExpiresAt);
-                    $now = new \DateTime();
-                    $periodStart = clone $expiresAt;
-                    while ($periodStart > $now) {
-                        $periodStart->modify('-30 days');
-                    }
-                    $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND created_at >= :period_start AND project_id IS NOT NULL");
-                    $stmt->execute(['user_id' => $userId, 'period_start' => $periodStart->format('Y-m-d H:i:s')]);
-                } else {
-                    $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND MONTH(created_at) = MONTH(NOW()) AND YEAR(created_at) = YEAR(NOW()) AND project_id IS NOT NULL");
-                    $stmt->execute(['user_id' => $userId]);
-                }
+                $period = SmartImportQuotaPeriod::forUser($user);
+                $stmt = $db->prepare("SELECT COUNT(*) as count FROM ai_pattern_imports WHERE user_id = :user_id AND created_at >= :period_start AND project_id IS NOT NULL");
+                $stmt->execute(['user_id' => $userId, 'period_start' => $period['start']->format('Y-m-d H:i:s')]);
                 $usedThisMonth = (int)$stmt->fetch(\PDO::FETCH_ASSOC)['count'];
                 if ($usedThisMonth >= $plan['monthly_limit']) {
                     AnalyticsService::logPaywall($userId, 'smart_creation', 'smart_import', 'quota_reached', $user['subscription_type'] ?? null);

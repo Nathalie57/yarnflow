@@ -176,10 +176,10 @@ class User extends BaseModel
         string $subscriptionType,
         ?string $expiresAt = null
     ): bool {
-        $data = ['subscription_type' => $subscriptionType];
-
-        if ($expiresAt !== null)
-            $data['subscription_expires_at'] = $expiresAt;
+        $data = [
+            'subscription_type' => $subscriptionType,
+            'subscription_expires_at' => $expiresAt,
+        ];
 
         return $this->update($userId, $data);
     }

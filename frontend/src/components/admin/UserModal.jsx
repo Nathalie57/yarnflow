@@ -25,7 +25,8 @@ const UserModal = ({ user, onClose, onUpdate }) => {
   ]
 
   const handleUpdateSubscription = async (subscriptionType) => {
-    if (!confirm(`Passer l'utilisateur en ${subscriptionType} ?`)) return
+    const duration = subscriptionType.endsWith('_annual') ? ' pour un an à compter d’aujourd’hui' : ''
+    if (!confirm(`Passer l'utilisateur en ${getSubscriptionLabel(subscriptionType)}${duration} ? Cette attribution manuelle ne déclenche aucun paiement.`)) return
 
     setLoading(true)
     try {
@@ -250,9 +251,9 @@ const UserModal = ({ user, onClose, onUpdate }) => {
                 { type: 'pro',         label: 'PRO Mensuel',   desc: '6,99€/mois — 15 imports IA, 30 questions IA, 20 crédits photo/mois' },
                 { type: 'pro_annual',  label: 'PRO Annuel',    desc: '59,99€/an (5,00€/mois) — mêmes avantages PRO' },
                 { type: 'early_bird',  label: 'Early Bird',    desc: '2,99€/mois × 12 — accès PRO complet, tarif bloqué' },
-                { type: 'plus',        label: 'PLUS (legacy)', desc: 'Ancien plan — ne plus attribuer', legacy: true },
-                { type: 'plus_annual', label: 'PLUS Annuel (legacy)', desc: 'Ancien plan — ne plus attribuer', legacy: true },
-              ].map(({ type, label, desc, legacy }) => (
+                { type: 'plus',        label: 'PLUS Mensuel', desc: '3,99€/mois — 3 imports IA, 10 questions IA, 5 crédits photo/mois' },
+                { type: 'plus_annual', label: 'PLUS Annuel', desc: '29,99€/an — accès PLUS pendant un an, 5 crédits photo/mois' },
+              ].map(({ type, label, desc }) => (
                 <button
                   key={type}
                   onClick={() => handleUpdateSubscription(type)}
@@ -260,15 +261,13 @@ const UserModal = ({ user, onClose, onUpdate }) => {
                   className={`w-full p-4 text-left border-2 rounded-lg transition-all ${
                     user.subscription_type === type
                       ? 'border-primary-600 bg-primary-50'
-                      : legacy
-                      ? 'border-gray-100 bg-gray-50 opacity-50 hover:opacity-70'
                       : 'border-gray-200 hover:border-primary-400 hover:bg-gray-50'
                   } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className={`font-bold ${legacy ? 'text-gray-400' : 'text-gray-900'}`}>{label}</div>
-                      <div className={`text-sm ${legacy ? 'text-gray-400' : 'text-gray-600'}`}>{desc}</div>
+                      <div className="font-bold text-gray-900">{label}</div>
+                      <div className="text-sm text-gray-600">{desc}</div>
                     </div>
                     {user.subscription_type === type && (
                       <span className="text-primary-600 font-bold">✓ Actuel</span>

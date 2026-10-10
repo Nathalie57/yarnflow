@@ -396,9 +396,21 @@ class AdminController
         elseif ($subscriptionType === SUBSCRIPTION_EARLY_BIRD)
             $expiresAt = date('Y-m-d H:i:s', strtotime('+12 months'));
 
+        $db = $this->userModel->getDb();
         try {
-            $this->userModel->updateSubscription($userId, $subscriptionType, $expiresAt);
-            $this->creditManager->initializeUserCredits($userId, $subscriptionType);
+            $db->beginTransaction();
+            if (!$this->userModel->updateSubscription($userId, $subscriptionType, $expiresAt)) {
+                throw new \RuntimeException('Échec de la sauvegarde de l’abonnement');
+            }
+            // Vérifier aussi les ENUM anciens : MySQL peut convertir une valeur inconnue.
+            $savedUser = $this->userModel->findById($userId);
+            if (!$savedUser || $savedUser['subscription_type'] !== $subscriptionType) {
+                throw new \RuntimeException('Plan non enregistré : vérifier la migration subscription_type');
+            }
+            if (!$this->creditManager->initializeUserCredits($userId, $subscriptionType)) {
+                throw new \RuntimeException('Échec de l’initialisation des crédits');
+            }
+            $db->commit();
 
             // [AI:Claude] Logger l'action admin
             error_log("[ADMIN] {$userData['email']} a changé l'abonnement de user {$userId} en {$subscriptionType}");
@@ -409,6 +421,9 @@ class AdminController
             ], HTTP_OK, 'Abonnement mis à jour');
 
         } catch (\Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             error_log('[AdminController] Erreur mise à jour abonnement : '.$e->getMessage());
             Response::serverError('Erreur lors de la mise à jour');
         }
